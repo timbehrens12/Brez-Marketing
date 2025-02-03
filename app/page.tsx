@@ -1,6 +1,6 @@
 "use client"
-
-import { useCallback, useEffect, useState } from "react"
+import type { DateRange } from "react-day-picker"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Layout } from "@/components/Layout"
@@ -23,7 +23,6 @@ import { PlatformContent } from "@/components/dashboard/platforms/OtherPlatforms
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { prepareRevenueByDayData } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import type { DateRange } from "react-day-picker"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
@@ -39,7 +38,7 @@ function DashboardContent({
   comparisonDateRange: DateRange | undefined
 }) {
   const { widgets } = useWidgets()
-  const [metrics, setMetrics] = useState<ReturnType<typeof calculateMetrics> | null>(null)
+  const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [needsReauth, setNeedsReauth] = useState(false)
@@ -47,72 +46,62 @@ function DashboardContent({
   const [retryDelay, setRetryDelay] = useState(5000) // Start with a 5-second delay
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const fetchData = useCallback(async () => {
-    if (!selectedStore) return
-
-    setIsRefreshing(true)
-    try {
-      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`)
-
-      if (response.status === 429) {
-        console.warn("Rate limit exceeded. Backing off...")
-        setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000)) // Double the delay, max 5 minutes
-        setTimeout(fetchData, retryDelay)
-        return
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        if (errorData.needsReauth) {
-          setNeedsReauth(true)
-          throw new Error("Authentication expired. Please re-authenticate.")
-        }
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`)
-      }
-
-      const data = await response.json()
-
-      console.log("Received data from API:", data)
-
-      if (!data.orders) {
-        throw new Error("No orders data received")
-      }
-
-      const calculatedMetrics = calculateMetrics(
-        data.orders,
-        data.products || [],
-        data.refunds || [],
-        dateRange,
-        comparisonType,
-        comparisonDateRange,
-      )
-
-      setMetrics(calculatedMetrics)
-      setCurrentWeekRevenue(calculatedMetrics.currentWeekRevenue)
-      setError(null)
-      setNeedsReauth(false)
-      setRetryDelay(5000) // Reset retry delay on successful request
-    } catch (error) {
-      console.error("Error fetching metrics:", error)
-      setError(error instanceof Error ? error.message : "Failed to load dashboard data")
-    } finally {
-      setLoading(false)
-      setIsRefreshing(false)
-    }
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
-
   useEffect(() => {
-    fetchData()
-    const intervalId = setInterval(fetchData, 300000) // Fetch data every 5 minutes
+    async function fetchData() {
+      if (!selectedStore) return
 
-    return () => clearInterval(intervalId) // Clean up on unmount
-  }, [fetchData])
+      setIsRefreshing(true)
+      try {
+        const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`)
+        if (response.status === 429) {
+          console.warn("Rate limit exceeded. Backing off...")
+          setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000)) // Double the delay, max 5 minutes
+          setTimeout(fetchData, retryDelay)
+          return
+        }
 
-  function handleReauth() {
-    if (selectedStore) {
-      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
+        if (!response.ok) {
+          const errorData = await response.json()
+          if (errorData.needsReauth) {
+            setNeedsReauth(true)
+            throw new Error("Authentication expired. Please re-authenticate.")
+          }
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`)
+        }
+
+        const data = await response.json()
+
+        console.log("Received data from API:", data)
+
+        if (!data.orders) {
+          throw new Error("No orders data received")
+        }
+
+        const calculatedMetrics = calculateMetrics(
+          data.orders,
+          data.products || [],
+          data.refunds || [],
+          dateRange,
+          comparisonType,
+          comparisonDateRange,
+        )
+
+        setMetrics(calculatedMetrics)
+        setCurrentWeekRevenue(calculatedMetrics.currentWeekRevenue)
+        setError(null)
+        setNeedsReauth(false)
+        setRetryDelay(5000) // Reset retry delay on successful request
+      } catch (error) {
+        console.error("Error fetching metrics:", error)
+        setError(error instanceof Error ? error.message : "Failed to load dashboard data")
+      } finally {
+        setLoading(false)
+        setIsRefreshing(false)
+      }
     }
-  }
+
+    fetchData()
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
 
   if (loading) {
     return (
@@ -152,6 +141,12 @@ function DashboardContent({
     )
   }
 
+  function handleReauth() {
+    if (selectedStore) {
+      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
+    }
+  }
+
   return (
     <>
       <div className="flex items-center justify-between mb-6">
@@ -160,7 +155,12 @@ function DashboardContent({
           <WidgetManager />
         </div>
         <div className="flex items-center gap-4">
-          <Button onClick={fetchData} disabled={isRefreshing}>
+          <Button
+            onClick={() => {
+              fetchData()
+            }}
+            disabled={isRefreshing}
+          >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             {isRefreshing ? "Refreshing..." : "Refresh Data"}
           </Button>
@@ -328,12 +328,14 @@ function Dashboard({
 }) {
   return (
     <WidgetProvider>
-      <DashboardContent
-        selectedStore={selectedStore}
-        dateRange={dateRange}
-        comparisonType={comparisonType}
-        comparisonDateRange={comparisonDateRange}
-      />
+      <Suspense fallback={<div>Loading dashboard...</div>}>
+        <DashboardContent
+          selectedStore={selectedStore}
+          dateRange={dateRange}
+          comparisonType={comparisonType}
+          comparisonDateRange={comparisonDateRange}
+        />
+      </Suspense>
     </WidgetProvider>
   )
 }
@@ -354,7 +356,6 @@ export default function Page() {
     const shop = searchParams.get("shop")
     if (shop) {
       setSelectedStore(shop)
-      // You might want to trigger data fetching here
     }
     setIsLoading(false)
   }, [searchParams])
