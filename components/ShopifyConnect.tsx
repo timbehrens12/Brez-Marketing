@@ -21,9 +21,17 @@ export function ShopifyConnect() {
     setError(null)
 
     try {
-      // Format the shop URL if needed
-      let shopUrl = shop.toLowerCase()
-      if (!shopUrl.endsWith(".myshopify.com")) {
+      // Clean and format the shop URL
+      let shopUrl = shop.trim().toLowerCase()
+
+      // Remove http:// or https:// if present
+      shopUrl = shopUrl.replace(/^https?:\/\//, "")
+
+      // Remove trailing slash if present
+      shopUrl = shopUrl.replace(/\/$/, "")
+
+      // Add .myshopify.com if not present
+      if (!shopUrl.includes(".myshopify.com")) {
         shopUrl = `${shopUrl}.myshopify.com`
       }
 
@@ -33,9 +41,13 @@ export function ShopifyConnect() {
         throw new Error("Backend server is not responding")
       }
 
+      // Log the redirect URL for debugging
+      console.log(`Redirecting to: ${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`)
+
       // Redirect to the Shopify auth endpoint
       window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
     } catch (err) {
+      console.error("Connection error:", err)
       setError("Backend server is not responding. Please try again later or contact support.")
       setLoading(false)
     }
@@ -57,6 +69,9 @@ export function ShopifyConnect() {
           onChange={(e) => setShop(e.target.value)}
           className="w-full"
         />
+        {shop && !shop.includes(".myshopify.com") && (
+          <p className="text-sm text-muted-foreground">Will connect to: {shop.trim().toLowerCase()}.myshopify.com</p>
+        )}
         <Button onClick={handleConnect} variant="outline" disabled={loading} className="w-full">
           {loading ? "Connecting..." : "Connect Shopify Store"}
         </Button>
