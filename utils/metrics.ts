@@ -17,15 +17,11 @@ import {
   addDays,
   subDays,
 } from "date-fns"
-import { utcToZonedTime as originalUtcToZonedTime, toDate } from "date-fns-tz"
 
-// Fallback implementation of utcToZonedTime
+// Create a custom utcToZonedTime function
 const utcToZonedTime = (date: Date | number, timeZone: string): Date => {
-  if (typeof originalUtcToZonedTime === "function") {
-    return originalUtcToZonedTime(date, timeZone)
-  }
-  console.warn("utcToZonedTime from date-fns-tz is not available. Using fallback implementation.")
-  return new Date(date)
+  const d = new Date(date)
+  return new Date(d.toLocaleString("en-US", { timeZone }))
 }
 
 const SHOPIFY_TIMEZONE = "America/New_York"
@@ -52,15 +48,15 @@ function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
 
     // Convert back to UTC for storage
     return {
-      start: toDate(startOfZonedDay, { timeZone: SHOPIFY_TIMEZONE }),
-      end: toDate(endOfZonedDay, { timeZone: SHOPIFY_TIMEZONE }),
+      start: new Date(startOfZonedDay),
+      end: new Date(endOfZonedDay),
     }
   }
 
   // Convert back to UTC for storage
   return {
-    start: toDate(startOfDay(zonedStart), { timeZone: SHOPIFY_TIMEZONE }),
-    end: toDate(endOfDay(zonedEnd), { timeZone: SHOPIFY_TIMEZONE }),
+    start: new Date(startOfDay(zonedStart)),
+    end: new Date(endOfDay(zonedEnd)),
   }
 }
 
