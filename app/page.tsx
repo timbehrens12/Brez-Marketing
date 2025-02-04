@@ -1,35 +1,35 @@
-"use client";
+"use client"
 
 // Tell Next.js not to statically prerender this page.
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
-import type { DateRange } from "react-day-picker";
-import { Suspense, useEffect, useState } from "react";
+import type { DateRange } from "react-day-picker"
+import { Suspense, useEffect, useState } from "react"
 // Rename the dynamic import so it doesn’t conflict with our export.
-import NextDynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
-import { Layout } from "@/components/Layout";
-import { MetricCard } from "@/components/metrics/MetricCard";
-import { ShopifyOrders } from "@/components/ShopifyOrders";
-import { calculateMetrics } from "@/utils/metrics";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw } from "lucide-react";
-import { RevenueByDay } from "@/components/dashboard/RevenueByDay";
-import type { ComparisonType } from "@/components/ComparisonPicker";
-import { TopProducts } from "@/components/dashboard/TopProducts";
-import { WidgetManager } from "@/components/dashboard/WidgetManager";
-import { WidgetProvider, useWidgets } from "@/context/WidgetContext";
-import type { Metrics } from "@/types/metrics";
-import type { Widget } from "@/types/widgets";
-import { PlatformTabs } from "@/components/dashboard/PlatformTabs";
-import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent";
-import { MetaContent } from "@/components/dashboard/platforms/MetaContent";
-import { PlatformContent } from "@/components/dashboard/platforms/OtherPlatforms";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { prepareRevenueByDayData } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import NextDynamic from "next/dynamic"
+import { Loader2 } from "lucide-react"
+import { Layout } from "@/components/Layout"
+import { MetricCard } from "@/components/metrics/MetricCard"
+import { ShopifyOrders } from "@/components/ShopifyOrders"
+import { calculateMetrics } from "@/utils/metrics"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, RefreshCw } from "lucide-react"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
+import type { ComparisonType } from "@/components/ComparisonPicker"
+import { TopProducts } from "@/components/dashboard/TopProducts"
+import { WidgetManager } from "@/components/dashboard/WidgetManager"
+import { WidgetProvider, useWidgets } from "@/context/WidgetContext"
+import type { Metrics } from "@/types/metrics"
+import type { Widget } from "@/types/widgets"
+import { PlatformTabs } from "@/components/dashboard/PlatformTabs"
+import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
+import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
+import { PlatformContent } from "@/components/dashboard/platforms/OtherPlatforms"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { prepareRevenueByDayData } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com"
 
 // -----------------------------------------------------------------------------
 // DashboardContent Component
@@ -41,50 +41,48 @@ function DashboardContent({
   comparisonType,
   comparisonDateRange,
 }: {
-  selectedStore: string | null;
-  dateRange: DateRange | undefined;
-  comparisonType: ComparisonType;
-  comparisonDateRange: DateRange | undefined;
+  selectedStore: string | null
+  dateRange: DateRange | undefined
+  comparisonType: ComparisonType
+  comparisonDateRange: DateRange | undefined
 }) {
-  const { widgets } = useWidgets();
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [needsReauth, setNeedsReauth] = useState(false);
-  const [currentWeekRevenue, setCurrentWeekRevenue] = useState<number[]>(Array(7).fill(0));
-  const [retryDelay, setRetryDelay] = useState(5000); // Start with a 5-second delay
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { widgets } = useWidgets()
+  const [metrics, setMetrics] = useState<Metrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [needsReauth, setNeedsReauth] = useState(false)
+  const [currentWeekRevenue, setCurrentWeekRevenue] = useState<number[]>(Array(7).fill(0))
+  const [retryDelay, setRetryDelay] = useState(5000) // Start with a 5-second delay
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   async function fetchData() {
-    if (!selectedStore) return;
+    if (!selectedStore) return
 
-    setIsRefreshing(true);
+    setIsRefreshing(true)
     try {
-      const response = await fetch(
-        `${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`
-      );
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`)
 
       if (response.status === 429) {
-        console.warn("Rate limit exceeded. Backing off...");
-        setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000)); // Double delay, max 5 minutes
-        setTimeout(fetchData, retryDelay);
-        return;
+        console.warn("Rate limit exceeded. Backing off...")
+        setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000)) // Double delay, max 5 minutes
+        setTimeout(fetchData, retryDelay)
+        return
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json()
         if (errorData.needsReauth) {
-          setNeedsReauth(true);
-          throw new Error("Authentication expired. Please re-authenticate.");
+          setNeedsReauth(true)
+          throw new Error("Authentication expired. Please re-authenticate.")
         }
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`)
       }
 
-      const data = await response.json();
-      console.log("Received data from API:", data);
+      const data = await response.json()
+      console.log("Received data from API:", data)
 
       if (!data.orders) {
-        throw new Error("No orders data received");
+        throw new Error("No orders data received")
       }
 
       const calculatedMetrics = calculateMetrics(
@@ -93,27 +91,27 @@ function DashboardContent({
         data.refunds || [],
         dateRange,
         comparisonType,
-        comparisonDateRange
-      );
+        comparisonDateRange,
+      )
 
-      setMetrics(calculatedMetrics);
-      setCurrentWeekRevenue(calculatedMetrics.currentWeekRevenue);
-      setError(null);
-      setNeedsReauth(false);
-      setRetryDelay(5000); // Reset retry delay on success
+      setMetrics(calculatedMetrics)
+      setCurrentWeekRevenue(calculatedMetrics.currentWeekRevenue)
+      setError(null)
+      setNeedsReauth(false)
+      setRetryDelay(5000) // Reset retry delay on success
     } catch (error) {
-      console.error("Error fetching metrics:", error);
-      setError(error instanceof Error ? error.message : "Failed to load dashboard data");
+      console.error("Error fetching metrics:", error)
+      setError(error instanceof Error ? error.message : "Failed to load dashboard data")
     } finally {
-      setLoading(false);
-      setIsRefreshing(false);
+      setLoading(false)
+      setIsRefreshing(false)
     }
   }
 
   useEffect(() => {
-    fetchData();
+    fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay]);
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
 
   if (loading) {
     return (
@@ -123,13 +121,13 @@ function DashboardContent({
           <span className="text-lg font-medium">Loading dashboard data...</span>
         </div>
       </div>
-    );
+    )
   }
 
   if (needsReauth) {
     function handleReauth() {
       if (selectedStore) {
-        window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`;
+        window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
       }
     }
     return (
@@ -144,7 +142,7 @@ function DashboardContent({
           </AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   if (error || !metrics) {
@@ -152,17 +150,15 @@ function DashboardContent({
       <div className="flex h-[50vh] items-center justify-center">
         <Alert variant="destructive" className="max-w-xl">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {error || "No data available. Please check your store connection."}
-          </AlertDescription>
+          <AlertDescription>{error || "No data available. Please check your store connection."}</AlertDescription>
         </Alert>
       </div>
-    );
+    )
   }
 
   function handleReauth() {
     if (selectedStore) {
-      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`;
+      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
     }
   }
 
@@ -176,7 +172,7 @@ function DashboardContent({
         <div className="flex items-center gap-4">
           <Button
             onClick={() => {
-              fetchData();
+              fetchData()
             }}
             disabled={isRefreshing}
           >
@@ -190,16 +186,12 @@ function DashboardContent({
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
           <h3 className="text-lg font-semibold">📌 Pinned</h3>
-          <span className="text-sm text-muted-foreground">
-            Quick access to your most important metrics
-          </span>
+          <span className="text-sm text-muted-foreground">Quick access to your most important metrics</span>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {widgets
             .filter((widget) => widget.isPinned)
-            .map((widget) =>
-              renderWidget(widget.id.replace("pinned-", ""), metrics, widgets)
-            )}
+            .map((widget) => renderWidget(widget.id.replace("pinned-", ""), metrics, widgets))}
         </div>
       </div>
 
@@ -232,7 +224,7 @@ function DashboardContent({
         </TabsContent>
       </Tabs>
     </>
-  );
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -240,8 +232,8 @@ function DashboardContent({
 // -----------------------------------------------------------------------------
 
 const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) => {
-  const widget = allWidgets.find((w) => w.id === widgetId || w.id === `pinned-${widgetId}`);
-  if (!widget) return null;
+  const widget = allWidgets.find((w) => w.id === widgetId || w.id === `pinned-${widgetId}`)
+  if (!widget) return null
 
   switch (widget.type) {
     case "totalSales":
@@ -257,7 +249,7 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           platform={widget.platform}
           infoTooltip="Total revenue from all sales including taxes and shipping, excluding refunds"
         />
-      );
+      )
     case "aov":
       return (
         <MetricCard
@@ -273,37 +265,31 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           valueFormat="currency"
           platform={widget.platform}
         />
-      );
+      )
     case "orders":
       return (
         <MetricCard
           key={widget.id}
           title={widget.name}
           value={metrics.ordersPlaced}
-          change={
-            ((metrics.ordersPlaced - metrics.previousOrdersPlaced) / metrics.previousOrdersPlaced) *
-            100
-          }
+          change={((metrics.ordersPlaced - metrics.previousOrdersPlaced) / metrics.previousOrdersPlaced) * 100}
           data={metrics.salesData.map((d) => ({ ...d, value: d.ordersPlaced || 0 }))}
           valueFormat="number"
           platform={widget.platform}
         />
-      );
+      )
     case "units":
       return (
         <MetricCard
           key={widget.id}
           title={widget.name}
           value={metrics.unitsSold}
-          change={
-            ((metrics.unitsSold - metrics.previousUnitsSold) / metrics.previousUnitsSold) *
-            100
-          }
+          change={((metrics.unitsSold - metrics.previousUnitsSold) / metrics.previousUnitsSold) * 100}
           data={metrics.salesData.map((d) => ({ ...d, value: d.unitsSold || 0 }))}
           valueFormat="number"
           platform={widget.platform}
         />
-      );
+      )
     case "sessions":
       return (
         <MetricCard
@@ -315,7 +301,7 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           valueFormat="number"
           platform={widget.platform}
         />
-      );
+      )
     case "conversion":
       return (
         <MetricCard
@@ -328,7 +314,7 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           suffix="%"
           platform={widget.platform}
         />
-      );
+      )
     case "retention":
       return (
         <MetricCard
@@ -341,22 +327,19 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           suffix="%"
           platform={widget.platform}
         />
-      );
+      )
     case "topProducts":
-      return <TopProducts key={widget.id} products={metrics.topProducts} />;
+      return <TopProducts key={widget.id} products={metrics.topProducts} />
     default:
-      return null;
+      return null
   }
-};
+}
 
 // -----------------------------------------------------------------------------
 // Dynamically Import the Client-Only SearchParamsWrapper using NextDynamic
 // -----------------------------------------------------------------------------
 
-const SearchParamsWrapper = NextDynamic(
-  () => import("@/components/SearchParamsWrapper"),
-  { ssr: false }
-);
+const SearchParamsWrapper = NextDynamic(() => import("@/components/SearchParamsWrapper"), { ssr: false })
 
 // -----------------------------------------------------------------------------
 // Dashboard Component
@@ -369,11 +352,11 @@ function Dashboard({
   comparisonType,
   comparisonDateRange,
 }: {
-  selectedStore: string | null;
-  setSelectedStore: (store: string) => void;
-  dateRange: DateRange | undefined;
-  comparisonType: ComparisonType;
-  comparisonDateRange: DateRange | undefined;
+  selectedStore: string | null
+  setSelectedStore: (store: string) => void
+  dateRange: DateRange | undefined
+  comparisonType: ComparisonType
+  comparisonDateRange: DateRange | undefined
 }) {
   return (
     <WidgetProvider>
@@ -389,7 +372,7 @@ function Dashboard({
         />
       </Suspense>
     </WidgetProvider>
-  );
+  )
 }
 
 // -----------------------------------------------------------------------------
@@ -397,26 +380,26 @@ function Dashboard({
 // -----------------------------------------------------------------------------
 
 export default function Page() {
-  const [selectedStore, setSelectedStore] = useState<string | null>(null);
+  const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     to: new Date(),
-  });
-  const [comparisonType, setComparisonType] = useState<ComparisonType>("none");
-  const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>();
+  })
+  const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
+  const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
 
   const onStoreSelect = (store: string) => {
-    setSelectedStore(store);
-  };
+    setSelectedStore(store)
+  }
 
   const onDateRangeChange = (newDateRange: DateRange | undefined) => {
-    setDateRange(newDateRange);
-  };
+    setDateRange(newDateRange)
+  }
 
   const handleComparisonChange = (type: ComparisonType, customRange?: DateRange) => {
-    setComparisonType(type);
-    setComparisonDateRange(customRange);
-  };
+    setComparisonType(type)
+    setComparisonDateRange(customRange)
+  }
 
   return (
     <Suspense fallback={<div>Loading page...</div>}>
@@ -437,5 +420,6 @@ export default function Page() {
         />
       </Layout>
     </Suspense>
-  );
+  )
 }
+

@@ -7,10 +7,9 @@ import { RefreshCcw, Loader2, AlertCircle, Store } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useSearchParams } from "next/navigation"
 import { format } from "date-fns"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com"
 
 interface LineItem {
   id: number

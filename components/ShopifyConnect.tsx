@@ -4,8 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
-// Make sure to replace this with your actual Heroku app URL
-const API_URL = "https://my-campaign-manager-8170707a798c.herokuapp.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com"
 
 export function ShopifyConnect() {
   const [shop, setShop] = useState("")
