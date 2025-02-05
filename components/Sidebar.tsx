@@ -4,17 +4,11 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart3, Settings, Users, Activity, Palette, Store, Menu } from "lucide-react"
+import { LayoutDashboard, Menu } from "lucide-react"
 
 const menuItems = [
   { id: 1, label: "Summary", icon: LayoutDashboard, link: "/" },
-  { id: 2, label: "Orders", icon: ShoppingCart, link: "/orders" },
-  { id: 3, label: "Activity Feed", icon: Activity, link: "/activity" },
-  { id: 4, label: "Creative Dashboard", icon: Palette, link: "/creative" },
-  { id: 5, label: "Analytics", icon: BarChart3, link: "/analytics" },
-  { id: 6, label: "Customer Insights", icon: Users, link: "/customers" },
-  { id: 7, label: "Store", icon: Store, link: "/store" },
-  { id: 8, label: "Settings", icon: Settings, link: "/settings" },
+  // Temporarily removing other routes until they're implemented
 ]
 
 export function Sidebar() {
