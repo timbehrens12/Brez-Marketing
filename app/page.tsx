@@ -367,7 +367,7 @@ function Dashboard({
 
   useEffect(() => {
     if (selectedStore) {
-      console.log("Selected store changed:", selectedStore)
+      console.log("Dashboard: Selected store changed:", selectedStore)
       fetchData(selectedStore)
     }
   }, [selectedStore])
@@ -376,18 +376,18 @@ function Dashboard({
     setIsLoading(true)
     setError(null)
     try {
-      console.log("Fetching data for shop:", shop)
+      console.log("Dashboard: Fetching data for shop:", shop)
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
-      console.log("Received data from API:", data)
+      console.log("Dashboard: Received data from API:", data)
       // Update state variables with data from the API response
       // For example:
       // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error("Dashboard: Error fetching data:", error)
       setError(error instanceof Error ? error.message : "An error occurred while fetching data")
     } finally {
       setIsLoading(false)

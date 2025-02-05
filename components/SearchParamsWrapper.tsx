@@ -10,12 +10,14 @@ export default function SearchParamsWrapper({ onShopFound }: { onShopFound: (sho
   useEffect(() => {
     const shop = searchParams.get("shop")
     if (shop) {
-      console.log("Shop found in URL:", shop)
+      console.log("SearchParamsWrapper: Shop found in URL:", shop)
       onShopFound(shop)
 
       // Remove the 'shop' parameter from the URL without reloading the page
       const newUrl = window.location.pathname
       router.replace(newUrl, undefined, { shallow: true })
+    } else {
+      console.log("SearchParamsWrapper: No shop found in URL")
     }
   }, [searchParams, onShopFound, router])
 
