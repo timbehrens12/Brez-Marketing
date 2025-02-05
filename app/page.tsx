@@ -362,15 +362,19 @@ function Dashboard({
   comparisonType: ComparisonType
   comparisonDateRange: DateRange | undefined
 }) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     if (selectedStore) {
       console.log("Selected store changed:", selectedStore)
-      // Fetch data for the selected store
       fetchData(selectedStore)
     }
   }, [selectedStore])
 
   const fetchData = async (shop: string) => {
+    setIsLoading(true)
+    setError(null)
     try {
       console.log("Fetching data for shop:", shop)
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
@@ -384,7 +388,18 @@ function Dashboard({
       // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
     } catch (error) {
       console.error("Error fetching data:", error)
+      setError(error instanceof Error ? error.message : "An error occurred while fetching data")
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  if (isLoading) {
+    return <div>Loading dashboard data...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
   }
 
   return (

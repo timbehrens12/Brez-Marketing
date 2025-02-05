@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 
 export default function SearchParamsWrapper({ onShopFound }: { onShopFound: (shop: string) => void }) {
   const searchParams = useSearchParams()
+  const router = useRouter()
 
   useEffect(() => {
     const shop = searchParams.get("shop")
@@ -14,9 +15,9 @@ export default function SearchParamsWrapper({ onShopFound }: { onShopFound: (sho
 
       // Remove the 'shop' parameter from the URL without reloading the page
       const newUrl = window.location.pathname
-      window.history.replaceState({}, "", newUrl)
+      router.replace(newUrl, undefined, { shallow: true })
     }
-  }, [searchParams, onShopFound])
+  }, [searchParams, onShopFound, router])
 
   return null
 }
