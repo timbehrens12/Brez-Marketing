@@ -41,34 +41,6 @@ export function ShopifyOrders({ selectedStore }: ShopifyOrdersProps) {
   const [refreshing, setRefreshing] = useState(false)
   const [needsReauth, setNeedsReauth] = useState(false)
   const [fulfillmentFilter, setFulfillmentFilter] = useState<FulfillmentStatus>("all")
-  //const [stores, setStores] = useState<string[]>([]) //Removed
-  //const [selectedStore, setSelectedStore] = useState<string | null>(null) //Removed
-
-  //const searchParams = useSearchParams() //Removed
-  //const shopParam = searchParams.get("shop") //Removed
-
-  //useEffect(() => { //Removed
-  //  if (shopParam) {
-  //    setSelectedStore(shopParam)
-  //  }
-  //  fetchStores()
-  //}, [shopParam])
-
-  //async function fetchStores() { //Removed
-  //  try {
-  //    const response = await fetch(`${API_URL}/api/stores`)
-  //    const data = await response.json()
-  //    setStores(data)
-  //    if (data.length > 0 && !selectedStore) {
-  //      setSelectedStore(data[0])
-  //    }
-  //    setLoading(false)
-  //  } catch (err) {
-  //    console.error("Error fetching stores:", err)
-  //    setError("Failed to fetch stores. Please try again.")
-  //    setLoading(false)
-  //  }
-  //}
 
   async function fetchOrders() {
     if (!selectedStore) {
@@ -110,14 +82,11 @@ export function ShopifyOrders({ selectedStore }: ShopifyOrdersProps) {
     }
   }
 
-  //useEffect(() => { //Removed
-  //  fetchStores()
-  //}, [])
-
   useEffect(() => {
     if (selectedStore) {
       fetchOrders()
     } else {
+      setLoading(false)
       setError("No store selected. Please select a store.")
     }
   }, [selectedStore])
@@ -145,9 +114,11 @@ export function ShopifyOrders({ selectedStore }: ShopifyOrdersProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
     )
   }
 
@@ -166,7 +137,6 @@ export function ShopifyOrders({ selectedStore }: ShopifyOrdersProps) {
         <div className="flex justify-between items-center">
           <CardTitle>Recent Shopify Orders</CardTitle>
           <div className="flex items-center gap-4">
-            {/* Removed Store Selector */}
             <Button onClick={handleAddStore} variant="outline" size="sm">
               <Store className="mr-2 h-4 w-4" />
               Add Store

@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic"
 
 import type { DateRange } from "react-day-picker"
 import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 // Rename the dynamic import so it doesn’t conflict with our export.
 import NextDynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
@@ -145,12 +146,12 @@ function DashboardContent({
     )
   }
 
-  if (error || !metrics) {
+  if (!metrics) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Alert variant="destructive" className="max-w-xl">
+        <Alert variant="default" className="max-w-xl">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error || "No data available. Please check your store connection."}</AlertDescription>
+          <AlertDescription>No data available yet. Please wait while we fetch your store data.</AlertDescription>
         </Alert>
       </div>
     )
@@ -387,9 +388,46 @@ export default function Page() {
   })
   const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
   const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
+  const searchParams = useSearchParams()
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const shop = searchParams.get("shop")
+    if (shop) {
+      setSelectedStore(shop)
+      // Trigger data fetching here
+      fetchData(shop)
+    }
+    setIsLoading(false)
+  }, [searchParams])
+
+  const fetchData = async (shop: string) => {
+    // Implement your data fetching logic here
+    // This should update the necessary state variables
+    // and trigger a re-render of the dashboard components
+    if (!shop) return
+    try {
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
+      // Update state variables with data from the API response
+      // ...
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      // Handle error appropriately
+      // ...
+    }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
 
   const onStoreSelect = (store: string) => {
     setSelectedStore(store)
+    fetchData(store)
   }
 
   const onDateRangeChange = (newDateRange: DateRange | undefined) => {
@@ -399,40 +437,6 @@ export default function Page() {
   const handleComparisonChange = (type: ComparisonType, customRange?: DateRange) => {
     setComparisonType(type)
     setComparisonDateRange(customRange)
-  }
-
-  useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("token")
-    if (token) {
-      localStorage.setItem("shopifyToken", token)
-      window.history.replaceState({}, document.title, "/dashboard")
-      verifyToken(token)
-    } else {
-      const storedToken = localStorage.getItem("shopifyToken")
-      if (storedToken) {
-        verifyToken(storedToken)
-      }
-    }
-  }, [])
-
-  const verifyToken = async (token: string) => {
-    try {
-      const response = await fetch(`${API_URL}/api/verify-token`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      if (response.ok) {
-        const shopData = await response.json()
-        setSelectedStore(shopData.myshopify_domain)
-      } else {
-        console.error("Failed to verify token")
-        localStorage.removeItem("shopifyToken")
-      }
-    } catch (error) {
-      console.error("Error verifying token:", error)
-      localStorage.removeItem("shopifyToken")
-    }
   }
 
   return (
