@@ -1,34 +1,23 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 
-interface SearchParamsWrapperProps {
-  onShopFound: (shop: string) => void;
-}
-
-export default function SearchParamsWrapper({ onShopFound }: SearchParamsWrapperProps) {
-  // Always call useSearchParams unconditionally.
-  const searchParams = useSearchParams();
-  
-  // Use state to track if the component is mounted.
-  const [mounted, setMounted] = useState(false);
+export default function SearchParamsWrapper({ onShopFound }: { onShopFound: (shop: string) => void }) {
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const shop = searchParams.get("shop")
+    if (shop) {
+      console.log("Shop found in URL:", shop)
+      onShopFound(shop)
 
-  // Once mounted, use the search params.
-  useEffect(() => {
-    if (mounted) {
-      const shop = searchParams.get("shop");
-      if (shop) {
-        onShopFound(shop);
-      }
+      // Remove the 'shop' parameter from the URL without reloading the page
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, "", newUrl)
     }
-  }, [mounted, searchParams, onShopFound]);
+  }, [searchParams, onShopFound])
 
-  // Always return null (or you can return a fragment) but do not conditionally
-  // return before calling hooks.
-  return null;
+  return null
 }
+

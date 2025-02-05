@@ -115,7 +115,7 @@ function DashboardContent({
       console.log("Fetching data for store:", selectedStore)
       fetchData()
     }
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay]) // Added missing dependencies
 
   if (loading) {
     return (
@@ -362,6 +362,31 @@ function Dashboard({
   comparisonType: ComparisonType
   comparisonDateRange: DateRange | undefined
 }) {
+  useEffect(() => {
+    if (selectedStore) {
+      console.log("Selected store changed:", selectedStore)
+      // Fetch data for the selected store
+      fetchData(selectedStore)
+    }
+  }, [selectedStore])
+
+  const fetchData = async (shop: string) => {
+    try {
+      console.log("Fetching data for shop:", shop)
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
+      console.log("Received data from API:", data)
+      // Update state variables with data from the API response
+      // For example:
+      // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    }
+  }
+
   return (
     <WidgetProvider>
       <Suspense fallback={<div>Loading search params...</div>}>
