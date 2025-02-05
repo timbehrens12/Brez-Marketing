@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
-export default function DefaultDashboardPage() {
+// This is the default dashboard page that redirects to home
+export default function DashboardPage() {
   redirect("/")
 }
 
