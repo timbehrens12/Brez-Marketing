@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,13 +38,15 @@ export function ShopifyConnect() {
       shopUrl = shopUrl.replace(/\/$/, "")
 
       console.log("Attempting to connect to shop:", shopUrl)
-      console.log("Connecting to shop:", shopUrl)
 
       // First verify the server is running
       const healthCheck = await fetch(`${API_URL}`)
       if (!healthCheck.ok) {
         throw new Error("Backend server is not responding")
       }
+
+      // Store the shop URL in sessionStorage for persistence
+      sessionStorage.setItem("shopify_shop", shopUrl)
 
       // Redirect to the Shopify auth endpoint
       const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
@@ -71,7 +75,7 @@ export function ShopifyConnect() {
           onChange={(e) => setShop(e.target.value)}
           className="w-full"
         />
-        <Button onClick={handleConnect} variant="outline" disabled={loading} className="w-full">
+        <Button onClick={handleConnect} disabled={loading} className="w-full">
           {loading ? "Connecting..." : "Connect Shopify Store"}
         </Button>
       </div>
