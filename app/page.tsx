@@ -401,6 +401,40 @@ export default function Page() {
     setComparisonDateRange(customRange)
   }
 
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get("token")
+    if (token) {
+      localStorage.setItem("shopifyToken", token)
+      window.history.replaceState({}, document.title, "/dashboard")
+      verifyToken(token)
+    } else {
+      const storedToken = localStorage.getItem("shopifyToken")
+      if (storedToken) {
+        verifyToken(storedToken)
+      }
+    }
+  }, [])
+
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/verify-token`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (response.ok) {
+        const shopData = await response.json()
+        setSelectedStore(shopData.myshopify_domain)
+      } else {
+        console.error("Failed to verify token")
+        localStorage.removeItem("shopifyToken")
+      }
+    } catch (error) {
+      console.error("Error verifying token:", error)
+      localStorage.removeItem("shopifyToken")
+    }
+  }
+
   return (
     <Suspense fallback={<div>Loading page...</div>}>
       <Layout
