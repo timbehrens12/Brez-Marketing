@@ -23,13 +23,26 @@ export function ShopifyConnect() {
     try {
       // Clean and format the shop URL
       let shopUrl = shop.trim().toLowerCase()
+
+      // Remove any protocol and www
       shopUrl = shopUrl.replace(/^(https?:\/\/)?(www\.)?/, "")
+
+      // Add myshopify.com if it's not there
       if (!shopUrl.includes("myshopify.com")) {
         shopUrl = `${shopUrl}.myshopify.com`
       }
+
+      // Remove any trailing slashes
       shopUrl = shopUrl.replace(/\/$/, "")
 
+      console.log("Attempting to connect to shop:", shopUrl)
       console.log("Connecting to shop:", shopUrl)
+
+      // First verify the server is running
+      const healthCheck = await fetch(`${API_URL}`)
+      if (!healthCheck.ok) {
+        throw new Error("Backend server is not responding")
+      }
 
       // Redirect to the Shopify auth endpoint
       const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
@@ -37,7 +50,7 @@ export function ShopifyConnect() {
       window.location.href = authUrl
     } catch (err) {
       console.error("Connection error:", err)
-      setError("Failed to initiate connection. Please try again later or contact support.")
+      setError("Backend server is not responding. Please try again later or contact support.")
       setLoading(false)
     }
   }

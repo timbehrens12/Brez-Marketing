@@ -110,8 +110,11 @@ function DashboardContent({
   }
 
   useEffect(() => {
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    console.log("Selected store:", selectedStore)
+    if (selectedStore) {
+      console.log("Fetching data for store:", selectedStore)
+      fetchData()
+    }
   }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
 
   if (loading) {
@@ -388,6 +391,7 @@ export default function Page() {
   })
   const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
   const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
+  const [error, setError] = useState<string | null>(null) // Added error state
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
 
@@ -395,34 +399,37 @@ export default function Page() {
     const shop = searchParams.get("shop")
     if (shop) {
       setSelectedStore(shop)
-      // Trigger data fetching here
       fetchData(shop)
     }
     setIsLoading(false)
   }, [searchParams])
 
   const fetchData = async (shop: string) => {
-    // Implement your data fetching logic here
-    // This should update the necessary state variables
-    // and trigger a re-render of the dashboard components
     if (!shop) return
     try {
+      setIsLoading(true)
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
       // Update state variables with data from the API response
-      // ...
+      // For example:
+      // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
     } catch (error) {
       console.error("Error fetching data:", error)
-      // Handle error appropriately
-      // ...
+      setError(error instanceof Error ? error.message : "An error occurred while fetching data")
+    } finally {
+      setIsLoading(false)
     }
   }
 
   if (isLoading) {
     return <div>Loading...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
   }
 
   const onStoreSelect = (store: string) => {
