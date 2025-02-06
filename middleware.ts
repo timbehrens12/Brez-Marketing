@@ -3,45 +3,82 @@ import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
-  console.log("Middleware running for path:", pathname)
+  console.log(
+    `[Middleware] Path: ${pathname}, Shop: ${searchParams.get("shop")}, Cookies: ${request.cookies.toString()}`,
+  )
 
-  // If we're on the dashboard page and have a shop parameter, let it through
-  if (pathname === "/dashboard" && searchParams.get("shop")) {
-    console.log("Allowing dashboard access with shop param")
+  // Always allow API routes
+  if (pathname.startsWith("/api/")) {
+    console.log("[Middleware] Allowing API route")
     return NextResponse.next()
   }
 
-  // If we're in the auth flow, let it through
-  if (pathname.startsWith("/auth") || pathname.startsWith("/api/auth")) {
-    console.log("Allowing auth flow")
+  // Always allow static assets
+  if (
+    pathname.startsWith("/_next/") ||
+    pathname.includes("/static/") ||
+    pathname.endsWith(".js") ||
+    pathname.endsWith(".css")
+  ) {
     return NextResponse.next()
   }
 
-  // If we're on the dashboard without a shop parameter, check session
+  const shop = searchParams.get("shop")
+  const shopCookie = request.cookies.get("shopify_shop")
+
+  // If we're on the dashboard
   if (pathname === "/dashboard") {
-    // Get the shop from the cookie if it exists
-    const shopCookie = request.cookies.get("shopify_shop")
-    if (!shopCookie?.value) {
-      console.log("No shop in session, redirecting to root")
-      return NextResponse.redirect(new URL("/", request.url))
+    console.log("[Middleware] Dashboard access attempt", {
+      shop,
+      shopCookie: shopCookie?.value,
+      hasShopParam: !!shop,
+      hasCookie: !!shopCookie,
+    })
+
+    // If we have a shop parameter, always allow and set cookie
+    if (shop) {
+      console.log("[Middleware] Setting shop cookie and allowing access")
+      const response = NextResponse.next()
+      response.cookies.set("shopify_shop", shop, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      })
+      return response
+    }
+
+    // If we have a valid cookie but no shop parameter, allow access
+    if (shopCookie?.value) {
+      console.log("[Middleware] Valid cookie found, allowing access")
+      return NextResponse.next()
+    }
+
+    // No shop parameter or cookie, redirect to root
+    console.log("[Middleware] No shop or cookie found, redirecting to root")
+    return NextResponse.redirect(new URL("/", request.url))
+  }
+
+  // If we're on the root path
+  if (pathname === "/") {
+    // If we have a shop parameter, redirect to dashboard
+    if (shop) {
+      console.log("[Middleware] Shop parameter found on root, redirecting to dashboard")
+      return NextResponse.redirect(new URL(`/dashboard?shop=${shop}`, request.url))
     }
     return NextResponse.next()
   }
 
-  // Allow all other requests
+  // Allow all other routes
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
+     * Match all paths except static files
      */
-    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 }
 
