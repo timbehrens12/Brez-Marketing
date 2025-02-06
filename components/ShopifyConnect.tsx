@@ -25,16 +25,10 @@ export function ShopifyConnect() {
     try {
       // Clean and format the shop URL
       let shopUrl = shop.trim().toLowerCase()
-
-      // Remove any protocol and www
       shopUrl = shopUrl.replace(/^(https?:\/\/)?(www\.)?/, "")
-
-      // Add myshopify.com if it's not there
       if (!shopUrl.includes("myshopify.com")) {
         shopUrl = `${shopUrl}.myshopify.com`
       }
-
-      // Remove any trailing slashes
       shopUrl = shopUrl.replace(/\/$/, "")
 
       console.log("Attempting to connect to shop:", shopUrl)
@@ -48,8 +42,10 @@ export function ShopifyConnect() {
       // Store the shop URL in sessionStorage for persistence
       sessionStorage.setItem("shopify_shop", shopUrl)
 
-      // Redirect to the Shopify auth endpoint
-      const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
+      // Include the dashboard as the redirect_uri
+      const redirectUri = `${window.location.origin}/dashboard`
+      const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}&redirect_uri=${encodeURIComponent(redirectUri)}`
+
       console.log("Redirecting to:", authUrl)
       window.location.href = authUrl
     } catch (err) {
