@@ -15,9 +15,9 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Dashboard Page</h1>
+      <h1>Minimal Dashboard Page</h1>
       {shop ? <p>Shop: {shop}</p> : <p>No shop parameter found.</p>}
-      <p>This is a minimal page to test the route.</p>
+      <p>If you see this page, the dashboard route is working without redirection.</p>
     </div>
   );
 }
