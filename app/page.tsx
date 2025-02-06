@@ -1,11 +1,12 @@
 "use client"
 
+// Tell Next.js not to statically prerender this page.
 export const dynamic = "force-dynamic"
 
 import type { DateRange } from "react-day-picker"
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
-// Rename the dynamic import so it doesn't conflict with our export.
+import { useSearchParams } from "next/navigation"
+// Rename the dynamic import so it doesn’t conflict with our export.
 import NextDynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 import { Layout } from "@/components/Layout"
@@ -28,7 +29,6 @@ import { PlatformContent } from "@/components/dashboard/platforms/OtherPlatforms
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { prepareRevenueByDayData } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ShopifyConnect } from "@/components/ShopifyConnect"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com"
 
@@ -233,14 +233,104 @@ function DashboardContent({
 // -----------------------------------------------------------------------------
 
 const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) => {
-  const widget = allWidgets.find((w) => w.id.replace("pinned-", "") === widgetId)
+  const widget = allWidgets.find((w) => w.id === widgetId || w.id === `pinned-${widgetId}`)
   if (!widget) return null
 
   switch (widget.type) {
-    case "metric-card":
-      return <MetricCard metric={metrics[widgetId]} />
-    case "top-products":
-      return <TopProducts metrics={metrics} />
+    case "totalSales":
+      return (
+        <MetricCard
+          key={widget.id}
+          title="Total Sales"
+          value={metrics.totalSales}
+          change={metrics.salesGrowth}
+          data={metrics.salesData}
+          prefix="$"
+          valueFormat="currency"
+          platform={widget.platform}
+          infoTooltip="Total revenue from all sales including taxes and shipping, excluding refunds"
+        />
+      )
+    case "aov":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.averageOrderValue}
+          change={metrics.aovGrowth}
+          data={metrics.salesData.map((d) => ({
+            ...d,
+            value: d.value / (d.ordersPlaced || 1),
+          }))}
+          prefix="$"
+          valueFormat="currency"
+          platform={widget.platform}
+        />
+      )
+    case "orders":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.ordersPlaced}
+          change={((metrics.ordersPlaced - metrics.previousOrdersPlaced) / metrics.previousOrdersPlaced) * 100}
+          data={metrics.salesData.map((d) => ({ ...d, value: d.ordersPlaced || 0 }))}
+          valueFormat="number"
+          platform={widget.platform}
+        />
+      )
+    case "units":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.unitsSold}
+          change={((metrics.unitsSold - metrics.previousUnitsSold) / metrics.previousUnitsSold) * 100}
+          data={metrics.salesData.map((d) => ({ ...d, value: d.unitsSold || 0 }))}
+          valueFormat="number"
+          platform={widget.platform}
+        />
+      )
+    case "sessions":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.sessionCount}
+          change={metrics.sessionGrowth}
+          data={metrics.sessionData}
+          valueFormat="number"
+          platform={widget.platform}
+        />
+      )
+    case "conversion":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.conversionRate}
+          change={metrics.conversionRateGrowth}
+          data={metrics.conversionData}
+          valueFormat="percentage"
+          suffix="%"
+          platform={widget.platform}
+        />
+      )
+    case "retention":
+      return (
+        <MetricCard
+          key={widget.id}
+          title={widget.name}
+          value={metrics.customerRetentionRate}
+          change={metrics.retentionRateGrowth}
+          data={metrics.retentionData}
+          valueFormat="percentage"
+          suffix="%"
+          platform={widget.platform}
+        />
+      )
+    case "topProducts":
+      return <TopProducts key={widget.id} products={metrics.topProducts} />
     default:
       return null
   }
@@ -291,7 +381,7 @@ function Dashboard({
 // -----------------------------------------------------------------------------
 
 export default function Page() {
-  const router = useRouter()
+  console.log("Page component rendered")
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -299,67 +389,37 @@ export default function Page() {
   })
   const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
   const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null) // Added error state
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    console.log("useEffect triggered", { searchParams: searchParams.toString() })
     const shop = searchParams.get("shop")
     console.log("Shop from searchParams:", shop)
-
-    if (!shop) {
-      setIsLoading(false)
-      return
+    if (shop) {
+      setSelectedStore(shop)
+      console.log("Selected store set:", shop)
+      fetchData(shop)
     }
-
-    // Store the shop in sessionStorage
-    sessionStorage.setItem("shopify_shop", shop)
-    setSelectedStore(shop)
-    verifySession(shop)
+    setIsLoading(false)
   }, [searchParams])
 
-  const verifySession = async (shop: string) => {
-    try {
-      setIsLoading(true)
-      const response = await fetch(`${API_URL}/shopify/verify-session?shop=${encodeURIComponent(shop)}`)
-      const data = await response.json()
-
-      if (data.authenticated) {
-        // If authenticated, stay on the dashboard page
-        setSelectedStore(shop)
-        await fetchData(shop)
-      } else {
-        // If not authenticated, initiate auth flow
-        console.log("Not authenticated, initiating auth flow")
-        const redirectUri = `${window.location.origin}/dashboard`
-        window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}&redirect_uri=${encodeURIComponent(redirectUri)}`
-      }
-    } catch (error) {
-      console.error("Error verifying session:", error)
-      setError("An error occurred while verifying your session.")
-      setSelectedStore(null)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const fetchData = async (shop: string) => {
+    console.log("fetchData called with shop:", shop)
     if (!shop) return
     try {
       setIsLoading(true)
+      console.log("Fetching data from API...")
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
       if (!response.ok) {
-        if (response.status === 401) {
-          // If unauthorized, clear the session and redirect to auth
-          sessionStorage.removeItem("shopify_shop")
-          const redirectUri = `${window.location.origin}/dashboard`
-          window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}&redirect_uri=${encodeURIComponent(redirectUri)}`
-          return
-        }
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
-      // Process the data as needed
+      console.log("Data received from API:", data)
+      // Update state variables with data from the API response
+      // For example:
+      // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
     } catch (error) {
       console.error("Error fetching data:", error)
       setError(error instanceof Error ? error.message : "An error occurred while fetching data")
@@ -368,9 +428,17 @@ export default function Page() {
     }
   }
 
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>
+  }
+
   const onStoreSelect = (store: string) => {
     setSelectedStore(store)
-    verifySession(store)
+    fetchData(store)
   }
 
   const onDateRangeChange = (newDateRange: DateRange | undefined) => {
@@ -380,28 +448,6 @@ export default function Page() {
   const handleComparisonChange = (type: ComparisonType, customRange?: DateRange) => {
     setComparisonType(type)
     setComparisonDateRange(customRange)
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="text-lg font-medium">Loading...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Alert variant="destructive" className="max-w-xl">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    )
   }
 
   return (
@@ -414,17 +460,13 @@ export default function Page() {
         comparisonDateRange={comparisonDateRange}
         onComparisonChange={handleComparisonChange}
       >
-        {selectedStore ? (
-          <Dashboard
-            selectedStore={selectedStore}
-            setSelectedStore={setSelectedStore}
-            dateRange={dateRange}
-            comparisonType={comparisonType}
-            comparisonDateRange={comparisonDateRange}
-          />
-        ) : (
-          <ShopifyConnect />
-        )}
+        <Dashboard
+          selectedStore={selectedStore}
+          setSelectedStore={setSelectedStore}
+          dateRange={dateRange}
+          comparisonType={comparisonType}
+          comparisonDateRange={comparisonDateRange}
+        />
       </Layout>
     </Suspense>
   )

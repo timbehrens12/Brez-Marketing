@@ -41,10 +41,11 @@ export function middleware(request: NextRequest) {
       const response = NextResponse.next()
       response.cookies.set("shopify_shop", shop, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,         // Always secure in production
+        sameSite: "none",     // Allow cross-site cookies
         path: "/",
       })
+      
       return response
     }
 
