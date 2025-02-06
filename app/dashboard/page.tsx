@@ -10,14 +10,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const shopParam = searchParams.get("shop");
     setShop(shopParam);
-    console.log("DashboardPage loaded. Shop parameter:", shopParam);
+    console.log("Minimal DashboardPage loaded. Shop parameter:", shopParam);
   }, [searchParams]);
 
   return (
     <div style={{ padding: "2rem", textAlign: "center" }}>
       <h1>Dashboard Page</h1>
       {shop ? <p>Shop: {shop}</p> : <p>No shop parameter found.</p>}
-      <p>If you see this page, the route is working.</p>
+      <p>This is a minimal page to test the route.</p>
     </div>
   );
 }
