@@ -1,11 +1,10 @@
 "use client"
 
-// Tell Next.js not to statically prerender this page.
 export const dynamic = "force-dynamic"
 
 import type { DateRange } from "react-day-picker"
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 // Rename the dynamic import so it doesn't conflict with our export.
 import NextDynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
@@ -292,7 +291,7 @@ function Dashboard({
 // -----------------------------------------------------------------------------
 
 export default function Page() {
-  console.log("Page component rendered")
+  const router = useRouter()
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -305,67 +304,68 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log("useEffect triggered", { searchParams: searchParams.toString() })
     const shop = searchParams.get("shop")
     console.log("Shop from searchParams:", shop)
-    if (shop) {
-      setSelectedStore(shop)
-      console.log("Selected store set:", shop)
-      verifySession(shop)
-    } else {
+
+    if (!shop) {
       setIsLoading(false)
+      return
     }
+
+    // Store the shop in sessionStorage
+    sessionStorage.setItem("shopify_shop", shop)
+    setSelectedStore(shop)
+    verifySession(shop)
   }, [searchParams])
 
   const verifySession = async (shop: string) => {
     try {
       setIsLoading(true)
-      const response = await fetch(`${API_URL}/api/shopify/verify-session?shop=${encodeURIComponent(shop)}`)
+      const response = await fetch(`${API_URL}/shopify/verify-session?shop=${encodeURIComponent(shop)}`)
       const data = await response.json()
 
       if (data.authenticated) {
-        fetchData(shop)
+        // If authenticated, stay on the dashboard page
+        setSelectedStore(shop)
+        await fetchData(shop)
       } else {
-        setSelectedStore(null)
-        setError("Session expired. Please reconnect your store.")
+        // If not authenticated, initiate auth flow
+        console.log("Not authenticated, initiating auth flow")
+        const redirectUri = `${window.location.origin}/dashboard`
+        window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}&redirect_uri=${encodeURIComponent(redirectUri)}`
       }
     } catch (error) {
       console.error("Error verifying session:", error)
       setError("An error occurred while verifying your session.")
+      setSelectedStore(null)
     } finally {
       setIsLoading(false)
     }
   }
 
   const fetchData = async (shop: string) => {
-    console.log("fetchData called with shop:", shop)
     if (!shop) return
     try {
       setIsLoading(true)
-      console.log("Fetching data from API...")
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
       if (!response.ok) {
+        if (response.status === 401) {
+          // If unauthorized, clear the session and redirect to auth
+          sessionStorage.removeItem("shopify_shop")
+          const redirectUri = `${window.location.origin}/dashboard`
+          window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}&redirect_uri=${encodeURIComponent(redirectUri)}`
+          return
+        }
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
-      console.log("Data received from API:", data)
-      // Update state variables with data from the API response
-      // For example:
-      // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
+      // Process the data as needed
     } catch (error) {
       console.error("Error fetching data:", error)
       setError(error instanceof Error ? error.message : "An error occurred while fetching data")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>
   }
 
   const onStoreSelect = (store: string) => {
@@ -380,6 +380,28 @@ export default function Page() {
   const handleComparisonChange = (type: ComparisonType, customRange?: DateRange) => {
     setComparisonType(type)
     setComparisonDateRange(customRange)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="text-lg font-medium">Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Alert variant="destructive" className="max-w-xl">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    )
   }
 
   return (
