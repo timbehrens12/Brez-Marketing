@@ -4,9 +4,9 @@
 export const dynamic = "force-dynamic"
 
 import type { DateRange } from "react-day-picker"
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
-// Rename the dynamic import so it doesn’t conflict with our export.
+// Rename the dynamic import so it doesn't conflict with our export.
 import NextDynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 import { Layout } from "@/components/Layout"
@@ -56,12 +56,14 @@ function DashboardContent({
   const [retryDelay, setRetryDelay] = useState(5000) // Start with a 5-second delay
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!selectedStore) return
 
     setIsRefreshing(true)
     try {
-      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`)
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(selectedStore)}`, {
+        credentials: "include", // Include credentials in the request
+      })
 
       if (response.status === 429) {
         console.warn("Rate limit exceeded. Backing off...")
@@ -107,12 +109,11 @@ function DashboardContent({
       setLoading(false)
       setIsRefreshing(false)
     }
-  }
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
 
   useEffect(() => {
     fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
+  }, [fetchData])
 
   if (loading) {
     return (
@@ -155,12 +156,6 @@ function DashboardContent({
         </Alert>
       </div>
     )
-  }
-
-  function handleReauth() {
-    if (selectedStore) {
-      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
-    }
   }
 
   return (
@@ -389,29 +384,19 @@ export default function Page() {
   })
   const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
   const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
-  const [error, setError] = useState<string | null>(null) // Added error state
+  const [error, setError] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    console.log("useEffect triggered", { searchParams: searchParams.toString() })
-    const shop = searchParams.get("shop")
-    console.log("Shop from searchParams:", shop)
-    if (shop) {
-      setSelectedStore(shop)
-      console.log("Selected store set:", shop)
-      fetchData(shop)
-    }
-    setIsLoading(false)
-  }, [searchParams])
-
-  const fetchData = async (shop: string) => {
+  const fetchData = useCallback(async (shop: string) => {
     console.log("fetchData called with shop:", shop)
     if (!shop) return
     try {
       setIsLoading(true)
       console.log("Fetching data from API...")
-      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`, {
+        credentials: "include", // Include credentials in the request
+      })
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -426,15 +411,19 @@ export default function Page() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>
-  }
+  useEffect(() => {
+    console.log("useEffect triggered", { searchParams: searchParams.toString() })
+    const shop = searchParams.get("shop")
+    console.log("Shop from searchParams:", shop)
+    if (shop) {
+      setSelectedStore(shop)
+      console.log("Selected store set:", shop)
+      fetchData(shop)
+    }
+    setIsLoading(false)
+  }, [searchParams, fetchData])
 
   const onStoreSelect = (store: string) => {
     setSelectedStore(store)
