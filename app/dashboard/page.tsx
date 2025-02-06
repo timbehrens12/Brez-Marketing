@@ -6,21 +6,28 @@ import { DashboardContent } from "@/components/DashboardContent";
 import { Loader2 } from "lucide-react";
 
 // Use the public env variable for your frontend URL.
-// This should be set to "https://brez-marketing.vercel.app" on Vercel.
+// When testing on Vercel, NEXT_PUBLIC_FRONTEND_URL should be set to "https://brez-marketing.vercel.app"
 const FRONTEND_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || window.location.origin;
 // Use the API URL from environment variables.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://my-campaign-manager-8170707a798c.herokuapp.com";
 
 export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // State to store the shop from the query parameter
+  const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const shop = searchParams.get("shop");
-    console.log("[Dashboard] Initial load", { shop, searchParams: searchParams.toString() });
+    console.log("[Dashboard] Initial load", {
+      shop,
+      searchParams: searchParams.toString(),
+    });
 
     if (!shop) {
       const storedShop = sessionStorage.getItem("shopify_shop");
@@ -34,22 +41,24 @@ export default function DashboardPage() {
       return;
     }
 
-    // Store the shop in sessionStorage.
+    // Save the shop in state and in sessionStorage.
+    setSelectedStore(shop);
     sessionStorage.setItem("shopify_shop", shop);
 
     async function verifySession() {
       try {
         console.log("[Dashboard] Verifying session for shop:", shop);
         const response = await fetch(`${API_URL}/shopify/verify-session?shop=${shop}`, {
-          credentials: "include", // Include cookies in the request.
+          credentials: "include", // Include cookies in the request
         });
         const data = await response.json();
 
         if (!data.authenticated) {
           console.log("[Dashboard] Session not authenticated, initiating auth flow");
-          // Instead of using window.location.origin, we now use FRONTEND_URL.
           const redirectUri = `${FRONTEND_URL}/dashboard`;
-          window.location.href = `${API_URL}/shopify/auth?shop=${shop}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+          window.location.href = `${API_URL}/shopify/auth?shop=${shop}&redirect_uri=${encodeURIComponent(
+            redirectUri
+          )}`;
           return;
         }
 
@@ -66,7 +75,7 @@ export default function DashboardPage() {
     verifySession();
   }, [router, searchParams]);
 
-  // Optional: A secondary effect to ensure redirection if no shop exists.
+  // Secondary effect: If there's no shop in the URL or sessionStorage, redirect to root.
   useEffect(() => {
     const shop = searchParams.get("shop");
     if (!shop && !sessionStorage.getItem("shopify_shop")) {
@@ -74,7 +83,7 @@ export default function DashboardPage() {
     }
   }, [router, searchParams]);
 
-  if (isLoading) {
+  if (isLoading || !selectedStore) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="flex items-center gap-2">
@@ -104,5 +113,6 @@ export default function DashboardPage() {
     );
   }
 
-  return <DashboardContent />;
+  // Pass the selectedStore prop to DashboardContent
+  return <DashboardContent selectedStore={selectedStore} />;
 }
