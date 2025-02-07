@@ -26,7 +26,7 @@ export default function OrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const response = await fetch("http://localhost:3001/api/shopify/sales")
+        const response = await fetch("https://api.brezmarketingdashboard.com/api/shopify/sales");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }

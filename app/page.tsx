@@ -30,7 +30,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { prepareRevenueByDayData } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://my-campaign-manager-8170707a798c.herokuapp.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.brezmarketingdashboard.com"
 
 // -----------------------------------------------------------------------------
 // DashboardContent Component
