@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Layout } from "@/components/Layout"
-import { Dashboard } from "@/components/dashboard"
+import Dashboard from '@/components/dashboard';
 import type { DateRange } from "react-day-picker"
 import type { ComparisonType } from "@/components/ComparisonPicker"
 
