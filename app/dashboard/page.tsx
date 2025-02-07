@@ -1,25 +1,30 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-console.log("Minimal DashboardPage loaded");
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { ShopDetails } from "@/components/ShopDetails"
 
 export default function DashboardPage() {
-  const searchParams = useSearchParams();
-  const [shop, setShop] = useState<string | null>(null);
+  const searchParams = useSearchParams()
+  const [shop, setShop] = useState<string | null>(null)
 
   useEffect(() => {
-    const shopParam = searchParams.get("shop");
-    setShop(shopParam);
-    console.log("Minimal DashboardPage, shop parameter:", shopParam);
-  }, [searchParams]);
+    const shopParam = searchParams.get("shop")
+    if (shopParam) {
+      setShop(shopParam)
+    }
+  }, [searchParams])
+
+  if (!shop) {
+    return <div>Loading...</div>
+  }
 
   return (
-    <div style={{ padding: "2rem", textAlign: "center" }}>
-      <h1>Minimal Dashboard Page</h1>
-      {shop ? <p>Shop: {shop}</p> : <p>No shop parameter found.</p>}
-      <p>If you see this page, the /dashboard route is working.</p>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+      <ShopDetails shop={shop} />
+      {/* Add more dashboard components here */}
     </div>
-  );
+  )
 }
+

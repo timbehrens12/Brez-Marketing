@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,13 +23,19 @@ export function ShopifyConnect() {
     try {
       // Clean and format the shop URL
       let shopUrl = shop.trim().toLowerCase()
+
+      // Remove any protocol and www
       shopUrl = shopUrl.replace(/^(https?:\/\/)?(www\.)?/, "")
+
+      // Add myshopify.com if it's not there
       if (!shopUrl.includes("myshopify.com")) {
         shopUrl = `${shopUrl}.myshopify.com`
       }
+
+      // Remove any trailing slashes
       shopUrl = shopUrl.replace(/\/$/, "")
 
-      console.log("Attempting to connect to shop:", shopUrl)
+      console.log("Connecting to shop:", shopUrl)
 
       // First verify the server is running
       const healthCheck = await fetch(`${API_URL}`)
@@ -39,13 +43,8 @@ export function ShopifyConnect() {
         throw new Error("Backend server is not responding")
       }
 
-      // Store the shop URL in sessionStorage for persistence
-      sessionStorage.setItem("shopify_shop", shopUrl)
-
-      // Include the dashboard as the redirect_uri
-      const redirectUri = `${window.location.origin}/dashboard`
-      const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}&redirect_uri=${encodeURIComponent(redirectUri)}`
-
+      // Redirect to the Shopify auth endpoint
+      const authUrl = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
       console.log("Redirecting to:", authUrl)
       window.location.href = authUrl
     } catch (err) {
@@ -71,7 +70,7 @@ export function ShopifyConnect() {
           onChange={(e) => setShop(e.target.value)}
           className="w-full"
         />
-        <Button onClick={handleConnect} disabled={loading} className="w-full">
+        <Button onClick={handleConnect} variant="outline" disabled={loading} className="w-full">
           {loading ? "Connecting..." : "Connect Shopify Store"}
         </Button>
       </div>
