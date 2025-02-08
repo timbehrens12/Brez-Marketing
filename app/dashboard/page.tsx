@@ -7,8 +7,6 @@ import { Dashboard } from "@/components/dashboard";
 import type { DateRange } from "react-day-picker";
 import type { ComparisonType } from "@/components/ComparisonPicker";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.brezmarketingdashboard.com";
-
 export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -23,35 +21,55 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const shop = searchParams.get("shop");
-    if (shop) {
-      setSelectedStore(shop);
-      checkSession(shop);
-    } else {
-      router.push("/");
-    }
-  }, [searchParams, router]);
 
-  async function checkSession(shop: string) {
-    const response = await fetch(`${API_URL}/shopify/verify-session`);
-    const data = await response.json();
-    
-    if (!data.authenticated) {
-      router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
-    } else {
+    if (shop && selectedStore !== shop) {
+      console.log("Persisting shop:", shop);
+      localStorage.setItem("shop", shop); // Save shop to localStorage
+      setSelectedStore(shop);
       setIsLoading(false);
     }
+
+    if (!shop) {
+      const savedShop = localStorage.getItem("shop");
+      if (savedShop) {
+        console.log("Using saved shop:", savedShop);
+        setSelectedStore(savedShop);
+      } else {
+        router.push("/");
+      }
+    }
+  }, [searchParams, router, selectedStore]);
+
+  useEffect(() => {
+    console.log("Checking session...");
+    console.log("Selected Store:", selectedStore);
+  }, [selectedStore]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  if (isLoading) return <div>Loading...</div>;
+  const onStoreSelect = (store: string) => {
+    setSelectedStore(store);
+  };
+
+  const onDateRangeChange = (newDateRange: DateRange | undefined) => {
+    setDateRange(newDateRange);
+  };
+
+  const handleComparisonChange = (type: ComparisonType, customRange?: DateRange) => {
+    setComparisonType(type);
+    setComparisonDateRange(customRange);
+  };
 
   return (
     <Layout
-      onStoreSelect={setSelectedStore}
+      onStoreSelect={onStoreSelect}
       dateRange={dateRange}
-      onDateRangeChange={setDateRange}
+      onDateRangeChange={onDateRangeChange}
       comparisonType={comparisonType}
       comparisonDateRange={comparisonDateRange}
-      onComparisonChange={setComparisonType}
+      onComparisonChange={handleComparisonChange}
     >
       <Dashboard
         selectedStore={selectedStore}
