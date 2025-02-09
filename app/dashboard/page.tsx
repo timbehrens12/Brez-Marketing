@@ -6,6 +6,8 @@ import { Layout } from "@/components/Layout";
 import { Dashboard } from "@/components/dashboard";
 import type { DateRange } from "react-day-picker";
 import type { ComparisonType } from "@/components/ComparisonPicker";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.brezmarketingdashboard.com";
+
 
 export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
@@ -22,24 +24,41 @@ export default function DashboardPage() {
   useEffect(() => {
     const shop = searchParams.get("shop");
   
-    if (shop && selectedStore !== shop) {
+    if (!shop) {
+      console.log("No shop found in URL. Checking local storage...");
+      const savedShop = localStorage.getItem("shop");
+      if (savedShop) {
+        console.log("Using saved shop:", savedShop);
+        setSelectedStore(savedShop);
+      } else {
+        console.warn("No saved shop found, redirecting to Shopify auth.");
+        router.push("/shopify/auth");
+      }
+      return;
+    }
+  
+    if (selectedStore !== shop) {
       console.log("Persisting shop:", shop);
-      localStorage.setItem("shop", shop); // Save shop to localStorage
+      localStorage.setItem("shop", shop);
       setSelectedStore(shop);
-      setIsLoading(false);
-      return;
     }
   
-    const savedShop = localStorage.getItem("shop");
-    if (savedShop) {
-      console.log("Using saved shop:", savedShop);
-      setSelectedStore(savedShop);
-      return;
-    }
-  
-    console.log("No shop found, redirecting to auth...");
-    router.push("/shopify/auth"); // Redirect to Shopify auth instead of root
+    console.log("Fetching session data to verify authentication...");
+    fetch(`${API_URL}/api/check-session?shop=${encodeURIComponent(shop)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.authenticated) {
+          console.warn("Session not found, redirecting to auth...");
+          router.push(`/shopify/auth?shop=${encodeURIComponent(shop)}`);
+        } else {
+          console.log("✅ Session verified, staying on dashboard.");
+        }
+      })
+      .catch((err) => {
+        console.error("Session check failed:", err);
+      });
   }, [searchParams, router, selectedStore]);
+  
   
 
   useEffect(() => {

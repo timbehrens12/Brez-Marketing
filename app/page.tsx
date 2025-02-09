@@ -399,21 +399,36 @@ export default function Page() {
   
     try {
       setIsLoading(true);
-      console.log("Fetching data from API...");
+      console.log("Checking session authentication...");
   
+      // First, verify if session exists before making sales API request
+      const sessionResponse = await fetch(`${API_URL}/api/check-session?shop=${encodeURIComponent(shop)}`);
+      const sessionData = await sessionResponse.json();
+  
+      if (!sessionData.authenticated) {
+        console.warn("Session not found, attempting reauthentication...");
+  
+        if (retryCount >= 3) {
+          console.warn("Auth failed 3 times. Redirecting to reauth...");
+          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
+        } else {
+          console.warn(`Reauth required. Retrying in 2 seconds... (Attempt ${retryCount + 1})`);
+          setTimeout(() => fetchData(shop, retryCount + 1), 2000);
+        }
+        return;
+      }
+  
+      console.log("✅ Session verified. Proceeding with data fetch...");
+  
+      // Fetch sales data
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`);
   
       if (!response.ok) {
         const errorData = await response.json();
   
         if (errorData.needsReauth) {
-          if (retryCount >= 3) {
-            console.warn("Auth failed 3 times. Redirecting to reauth...");
-            router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
-          } else {
-            console.warn(`Reauth required. Retrying in 2 seconds... (Attempt ${retryCount + 1})`);
-            setTimeout(() => fetchData(shop, retryCount + 1), 2000);
-          }
+          console.warn("Session expired. Redirecting to reauth...");
+          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
           return;
         }
   
@@ -421,16 +436,18 @@ export default function Page() {
       }
   
       const data = await response.json();
-      console.log("Data received from API:", data);
-      // Update state variables with data from the API response
+      console.log("📊 Data received from API:", data);
+  
+      // Update state variables with API data if needed
   
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("❌ Error fetching data:", error);
       setError(error instanceof Error ? error.message : "An error occurred while fetching data");
     } finally {
       setIsLoading(false);
     }
   };
+  
   
 
   if (isLoading) {
