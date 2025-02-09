@@ -21,24 +21,26 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const shop = searchParams.get("shop");
-
+  
     if (shop && selectedStore !== shop) {
       console.log("Persisting shop:", shop);
       localStorage.setItem("shop", shop); // Save shop to localStorage
       setSelectedStore(shop);
       setIsLoading(false);
+      return;
     }
-
-    if (!shop) {
-      const savedShop = localStorage.getItem("shop");
-      if (savedShop) {
-        console.log("Using saved shop:", savedShop);
-        setSelectedStore(savedShop);
-      } else {
-        router.push("/");
-      }
+  
+    const savedShop = localStorage.getItem("shop");
+    if (savedShop) {
+      console.log("Using saved shop:", savedShop);
+      setSelectedStore(savedShop);
+      return;
     }
+  
+    console.log("No shop found, redirecting to auth...");
+    router.push("/shopify/auth"); // Redirect to Shopify auth instead of root
   }, [searchParams, router, selectedStore]);
+  
 
   useEffect(() => {
     console.log("Checking session...");

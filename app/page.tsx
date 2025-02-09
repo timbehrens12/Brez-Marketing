@@ -386,40 +386,52 @@ export default function Page() {
     if (shop) {
       setSelectedStore(shop)
       console.log("Selected store set:", shop)
-      fetchData(shop)
+      fetchData(shop, 0);
     } else {
       router.push("/")
     }
     setIsLoading(false)
   }, [searchParams, router])
 
-  const fetchData = async (shop: string) => {
-    console.log("fetchData called with shop:", shop)
-    if (!shop) return
+  const fetchData = async (shop: string, retryCount = 0) => {
+    console.log("fetchData called with shop:", shop);
+    if (!shop) return;
+  
     try {
-      setIsLoading(true)
-      console.log("Fetching data from API...")
-      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`)
+      setIsLoading(true);
+      console.log("Fetching data from API...");
+  
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`);
+  
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json();
+  
         if (errorData.needsReauth) {
-          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`)
-          return
+          if (retryCount >= 3) {
+            console.warn("Auth failed 3 times. Redirecting to reauth...");
+            router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
+          } else {
+            console.warn(`Reauth required. Retrying in 2 seconds... (Attempt ${retryCount + 1})`);
+            setTimeout(() => fetchData(shop, retryCount + 1), 2000);
+          }
+          return;
         }
-        throw new Error(`HTTP error! status: ${response.status}`)
+  
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json()
-      console.log("Data received from API:", data)
+  
+      const data = await response.json();
+      console.log("Data received from API:", data);
       // Update state variables with data from the API response
-      // For example:
-      // setMetrics(calculateMetrics(data.orders, data.products, data.refunds, dateRange, comparisonType, comparisonDateRange));
+  
     } catch (error) {
-      console.error("Error fetching data:", error)
-      setError(error instanceof Error ? error.message : "An error occurred while fetching data")
+      console.error("Error fetching data:", error);
+      setError(error instanceof Error ? error.message : "An error occurred while fetching data");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+  
 
   if (isLoading) {
     return <div>Loading...</div>
