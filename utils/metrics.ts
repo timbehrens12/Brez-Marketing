@@ -17,11 +17,15 @@ import {
   addDays,
   subDays,
 } from "date-fns"
+import { utcToZonedTime as originalUtcToZonedTime, toDate } from "date-fns-tz"
 
-// Create a custom utcToZonedTime function
+// Fallback implementation of utcToZonedTime
 const utcToZonedTime = (date: Date | number, timeZone: string): Date => {
-  const d = new Date(date)
-  return new Date(d.toLocaleString("en-US", { timeZone }))
+  if (typeof originalUtcToZonedTime === "function") {
+    return originalUtcToZonedTime(date, timeZone)
+  }
+  console.warn("utcToZonedTime from date-fns-tz is not available. Using fallback implementation.")
+  return new Date(date)
 }
 
 const SHOPIFY_TIMEZONE = "America/New_York"
@@ -48,15 +52,15 @@ function ensureValidDateRange(start: Date, end: Date): DateRangeWithStartEnd {
 
     // Convert back to UTC for storage
     return {
-      start: new Date(startOfZonedDay),
-      end: new Date(endOfZonedDay),
+      start: toDate(startOfZonedDay, { timeZone: SHOPIFY_TIMEZONE }),
+      end: toDate(endOfZonedDay, { timeZone: SHOPIFY_TIMEZONE }),
     }
   }
 
   // Convert back to UTC for storage
   return {
-    start: new Date(startOfDay(zonedStart)),
-    end: new Date(endOfDay(zonedEnd)),
+    start: toDate(startOfDay(zonedStart), { timeZone: SHOPIFY_TIMEZONE }),
+    end: toDate(endOfDay(zonedEnd), { timeZone: SHOPIFY_TIMEZONE }),
   }
 }
 
@@ -372,23 +376,27 @@ export function calculateMetrics(
   })
 
   // Calculate total sales with refunds subtracted
-  const totalSales = filteredOrders.reduce((sum, order) => {
+  let totalSales = 0
+  let totalRefunds = 0
+
+  filteredOrders.forEach((order) => {
     const orderTotal = Number(order.total_price || 0)
+    totalSales += orderTotal
+
+    // Calculate refunds for this order
     const orderRefunds = filteredRefunds
       .filter((refund) => refund.order_id === order.id)
       .reduce((refundSum, refund) => refundSum + Number(refund.total_price || 0), 0)
-    console.log(`Order ${order.id}: Total: ${orderTotal}, Refunds: ${orderRefunds}`)
-    return sum + orderTotal - orderRefunds
-  }, 0)
 
-  console.log("Total sales after refunds:", totalSales)
+    totalRefunds += orderRefunds
+  })
 
-  // Calculate total refunded amount
-  const totalRefunds = filteredRefunds.reduce((sum, refund) => sum + Number(refund.total_price || 0), 0)
-  console.log("Total refunds amount:", totalRefunds)
+  // Subtract total refunds from total sales
+  totalSales -= totalRefunds
 
-  console.log("Total number of refunds:", refunds.length)
-  console.log("Number of filtered refunds:", filteredRefunds.length)
+  console.log("Total sales before refunds:", totalSales + totalRefunds)
+  console.log("Total refunds:", totalRefunds)
+  console.log("Final total sales:", totalSales)
 
   // Generate intervals (shift dates forward by one day)
   const intervals = isSingleDay
@@ -415,8 +423,6 @@ export function calculateMetrics(
     const dailyRefunds = periodRefunds.reduce((sum, refund) => sum + Number(refund.total_price || 0), 0)
     const netSales = dailySales - dailyRefunds
 
-    console.log(`Date ${key}: Sales: ${dailySales}, Refunds: ${dailyRefunds}, Net: ${netSales}`)
-
     const dailyUnitsSold = periodOrders.reduce(
       (sum, order) => sum + (order.line_items?.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0) || 0),
       0,
@@ -434,8 +440,6 @@ export function calculateMetrics(
       unitsSold: netUnitsSold,
     }
   })
-
-  console.log("Sales data after processing:", salesData)
 
   // Generate conversion rate data
   const conversionData = intervals.map((interval) => {

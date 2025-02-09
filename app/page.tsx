@@ -1,20 +1,13 @@
 "use client"
 
-// Tell Next.js not to statically prerender this page.
-export const dynamic = "force-dynamic"
-
+import { useEffect, useState, useCallback } from "react"
 import type { DateRange } from "react-day-picker"
-import { Suspense, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-// Rename the dynamic import so it doesn’t conflict with our export.
-import NextDynamic from "next/dynamic"
-import { Loader2 } from "lucide-react"
 import { Layout } from "@/components/Layout"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { ShopifyOrders } from "@/components/ShopifyOrders"
 import { calculateMetrics } from "@/utils/metrics"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, RefreshCw } from "lucide-react"
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import type { ComparisonType } from "@/components/ComparisonPicker"
 import { TopProducts } from "@/components/dashboard/TopProducts"
@@ -30,11 +23,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { prepareRevenueByDayData } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.brezmarketingdashboard.com"
-
-// -----------------------------------------------------------------------------
-// DashboardContent Component
-// -----------------------------------------------------------------------------
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 function DashboardContent({
   selectedStore,
@@ -48,16 +37,15 @@ function DashboardContent({
   comparisonDateRange: DateRange | undefined
 }) {
   const { widgets } = useWidgets()
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
+  const [metrics, setMetrics] = useState<ReturnType<typeof calculateMetrics> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [needsReauth, setNeedsReauth] = useState(false)
   const [currentWeekRevenue, setCurrentWeekRevenue] = useState<number[]>(Array(7).fill(0))
-  const [retryDelay, setRetryDelay] = useState(5000)
+  const [retryDelay, setRetryDelay] = useState(5000) // Start with a 5-second delay
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const router = useRouter()
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     if (!selectedStore) return
 
     setIsRefreshing(true)
@@ -66,7 +54,7 @@ function DashboardContent({
 
       if (response.status === 429) {
         console.warn("Rate limit exceeded. Backing off...")
-        setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000))
+        setRetryDelay((prevDelay) => Math.min(prevDelay * 2, 300000)) // Double the delay, max 5 minutes
         setTimeout(fetchData, retryDelay)
         return
       }
@@ -75,13 +63,13 @@ function DashboardContent({
         const errorData = await response.json()
         if (errorData.needsReauth) {
           setNeedsReauth(true)
-          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`)
-          return
+          throw new Error("Authentication expired. Please re-authenticate.")
         }
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error}`)
       }
 
       const data = await response.json()
+
       console.log("Received data from API:", data)
 
       if (!data.orders) {
@@ -101,7 +89,7 @@ function DashboardContent({
       setCurrentWeekRevenue(calculatedMetrics.currentWeekRevenue)
       setError(null)
       setNeedsReauth(false)
-      setRetryDelay(5000)
+      setRetryDelay(5000) // Reset retry delay on successful request
     } catch (error) {
       console.error("Error fetching metrics:", error)
       setError(error instanceof Error ? error.message : "Failed to load dashboard data")
@@ -109,15 +97,21 @@ function DashboardContent({
       setLoading(false)
       setIsRefreshing(false)
     }
-  }
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, retryDelay])
 
   useEffect(() => {
+    fetchData()
+    const intervalId = setInterval(fetchData, 300000) // Fetch data every 5 minutes
+
+    return () => clearInterval(intervalId) // Clean up on unmount
+  }, [fetchData])
+
+  function handleReauth() {
     if (selectedStore) {
-      console.log("Fetching data for:", selectedStore);
-      fetchData(selectedStore);
+      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(selectedStore)}`
     }
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange]);
-  
+  }
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -134,18 +128,23 @@ function DashboardContent({
       <div className="flex h-[50vh] items-center justify-center">
         <Alert variant="destructive" className="max-w-xl">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Authentication expired for {selectedStore}. Please re-authenticate.</AlertDescription>
+          <AlertDescription>
+            Authentication expired for {selectedStore}. Please re-authenticate.
+            <Button onClick={handleReauth} variant="outline" className="ml-4">
+              Re-authenticate
+            </Button>
+          </AlertDescription>
         </Alert>
       </div>
     )
   }
 
-  if (!metrics) {
+  if (error || !metrics) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Alert variant="default" className="max-w-xl">
+        <Alert variant="destructive" className="max-w-xl">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>No data available yet. Please wait while we fetch your store data.</AlertDescription>
+          <AlertDescription>{error || "No data available. Please check your store connection."}</AlertDescription>
         </Alert>
       </div>
     )
@@ -159,12 +158,7 @@ function DashboardContent({
           <WidgetManager />
         </div>
         <div className="flex items-center gap-4">
-          <Button
-            onClick={() => {
-              fetchData()
-            }}
-            disabled={isRefreshing}
-          >
+          <Button onClick={fetchData} disabled={isRefreshing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             {isRefreshing ? "Refreshing..." : "Refresh Data"}
           </Button>
@@ -180,7 +174,7 @@ function DashboardContent({
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {widgets
             .filter((widget) => widget.isPinned)
-            .map((widget) => renderWidget(widget.id.replace("pinned-", ""), metrics, widgets))}
+            .map((widget) => renderWidget(widget.id.replace("pinned-", ""), metrics!, widgets))}
         </div>
       </div>
 
@@ -189,9 +183,11 @@ function DashboardContent({
         <PlatformTabs />
         <TabsContent value="shopify">
           <ShopifyContent metrics={metrics} />
+          {/* Revenue by Day chart */}
           <div className="mt-6">
             <RevenueByDay data={prepareRevenueByDayData(currentWeekRevenue)} />
           </div>
+          {/* Shopify Orders */}
           <div className="mt-6">
             <ShopifyOrders selectedStore={selectedStore} />
           </div>
@@ -215,10 +211,6 @@ function DashboardContent({
     </>
   )
 }
-
-// -----------------------------------------------------------------------------
-// renderWidget Helper Function
-// -----------------------------------------------------------------------------
 
 const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) => {
   const widget = allWidgets.find((w) => w.id === widgetId || w.id === `pinned-${widgetId}`)
@@ -246,10 +238,7 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
           title={widget.name}
           value={metrics.averageOrderValue}
           change={metrics.aovGrowth}
-          data={metrics.salesData.map((d) => ({
-            ...d,
-            value: d.value / (d.ordersPlaced || 1),
-          }))}
+          data={metrics.salesData.map((d) => ({ ...d, value: d.value / (d.ordersPlaced || 1) }))}
           prefix="$"
           valueFormat="currency"
           platform={widget.platform}
@@ -324,52 +313,30 @@ const renderWidget = (widgetId: string, metrics: Metrics, allWidgets: Widget[]) 
   }
 }
 
-// -----------------------------------------------------------------------------
-// Dynamically Import the Client-Only SearchParamsWrapper using NextDynamic
-// -----------------------------------------------------------------------------
-
-const SearchParamsWrapper = NextDynamic(() => import("@/components/SearchParamsWrapper"), { ssr: false })
-
-// -----------------------------------------------------------------------------
-// Dashboard Component
-// -----------------------------------------------------------------------------
-
 function Dashboard({
   selectedStore,
-  setSelectedStore,
   dateRange,
   comparisonType,
   comparisonDateRange,
 }: {
   selectedStore: string | null
-  setSelectedStore: (store: string) => void
   dateRange: DateRange | undefined
   comparisonType: ComparisonType
   comparisonDateRange: DateRange | undefined
 }) {
   return (
     <WidgetProvider>
-      <Suspense fallback={<div>Loading search params...</div>}>
-        <SearchParamsWrapper onShopFound={setSelectedStore} />
-      </Suspense>
-      <Suspense fallback={<div>Loading dashboard...</div>}>
-        <DashboardContent
-          selectedStore={selectedStore}
-          dateRange={dateRange}
-          comparisonType={comparisonType}
-          comparisonDateRange={comparisonDateRange}
-        />
-      </Suspense>
+      <DashboardContent
+        selectedStore={selectedStore}
+        dateRange={dateRange}
+        comparisonType={comparisonType}
+        comparisonDateRange={comparisonDateRange}
+      />
     </WidgetProvider>
   )
 }
 
-// -----------------------------------------------------------------------------
-// Main Page Component (wrapped at the top level in Suspense)
-// -----------------------------------------------------------------------------
-
 export default function Page() {
-  console.log("Page component rendered")
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -377,113 +344,9 @@ export default function Page() {
   })
   const [comparisonType, setComparisonType] = useState<ComparisonType>("none")
   const [comparisonDateRange, setComparisonDateRange] = useState<DateRange>()
-  const [error, setError] = useState<string | null>(null) // Added error state
-  const searchParams = useSearchParams()
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    const shop = searchParams.get("shop");
-    if (!shop) {
-      console.log("No shop found in URL. Checking local storage...");
-      const savedShop = localStorage.getItem("shop");
-      if (savedShop) {
-        console.log("Using saved shop:", savedShop);
-        setSelectedStore(savedShop);
-      } else {
-        console.warn("No saved shop found, redirecting to Shopify auth.");
-        router.replace("/shopify/auth");
-      }
-      return;
-    }
-  
-    console.log("Persisting shop:", shop);
-    localStorage.setItem("shop", shop);
-    setSelectedStore(shop);
-  
-    console.log("Verifying session...");
-    fetch(`${API_URL}/api/check-session?shop=${encodeURIComponent(shop)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.authenticated) {
-          console.warn("Session invalid, redirecting to auth...");
-          router.replace(`/shopify/auth?shop=${encodeURIComponent(shop)}`);
-        } else {
-          console.log("✅ Session verified. Staying on dashboard.");
-        }
-      })
-      .catch((err) => console.error("Session check failed:", err));
-  }, [searchParams, router]);
-  
-
-  const fetchData = async (shop: string, retryCount = 0) => {
-    console.log("fetchData called with shop:", shop);
-    if (!shop) return;
-  
-    try {
-      setIsLoading(true);
-      console.log("Checking session authentication...");
-  
-      // First, verify if session exists before making sales API request
-      const sessionResponse = await fetch(`${API_URL}/api/check-session?shop=${encodeURIComponent(shop)}`);
-      const sessionData = await sessionResponse.json();
-  
-      if (!sessionData.authenticated) {
-        console.warn("Session not found, attempting reauthentication...");
-  
-        if (retryCount >= 3) {
-          console.warn("Auth failed 3 times. Redirecting to reauth...");
-          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
-        } else {
-          console.warn(`Reauth required. Retrying in 2 seconds... (Attempt ${retryCount + 1})`);
-          setTimeout(() => fetchData(shop, retryCount + 1), 2000);
-        }
-        return;
-      }
-  
-      console.log("✅ Session verified. Proceeding with data fetch...");
-  
-      // Fetch sales data
-      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${encodeURIComponent(shop)}`);
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-  
-        if (errorData.needsReauth) {
-          console.warn("Session expired. Redirecting to reauth...");
-          router.push(`${API_URL}/shopify/auth?shop=${encodeURIComponent(shop)}`);
-          return;
-        }
-  
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      console.log("📊 Data received from API:", data);
-  
-      // Update state variables with API data if needed
-  
-    } catch (error) {
-      console.error("❌ Error fetching data:", error);
-      setError(error instanceof Error ? error.message : "An error occurred while fetching data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  
-
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>
-  }
 
   const onStoreSelect = (store: string) => {
     setSelectedStore(store)
-    fetchData(store)
   }
 
   const onDateRangeChange = (newDateRange: DateRange | undefined) => {
@@ -496,24 +359,21 @@ export default function Page() {
   }
 
   return (
-    <Suspense fallback={<div>Loading page...</div>}>
-      <Layout
-        onStoreSelect={onStoreSelect}
+    <Layout
+      onStoreSelect={onStoreSelect}
+      dateRange={dateRange}
+      onDateRangeChange={onDateRangeChange}
+      comparisonType={comparisonType}
+      comparisonDateRange={comparisonDateRange}
+      onComparisonChange={handleComparisonChange}
+    >
+      <Dashboard
+        selectedStore={selectedStore}
         dateRange={dateRange}
-        onDateRangeChange={onDateRangeChange}
         comparisonType={comparisonType}
         comparisonDateRange={comparisonDateRange}
-        onComparisonChange={handleComparisonChange}
-      >
-        <Dashboard
-          selectedStore={selectedStore}
-          setSelectedStore={setSelectedStore}
-          dateRange={dateRange}
-          comparisonType={comparisonType}
-          comparisonDateRange={comparisonDateRange}
-        />
-      </Layout>
-    </Suspense>
+      />
+    </Layout>
   )
 }
 

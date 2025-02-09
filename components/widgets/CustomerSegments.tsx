@@ -16,8 +16,9 @@ const COLORS = {
 }
 
 export function CustomerSegmentsWidget({ segments }: CustomerSegmentsProps) {
-  // Handle missing or invalid data
-  if (!segments || (segments.newCustomers === 0 && segments.returningCustomers === 0)) {
+  // Handle empty or zero-value data
+  const total = segments.newCustomers + segments.returningCustomers
+  if (total === 0) {
     return (
       <Card className="col-span-2">
         <CardHeader>
@@ -42,8 +43,6 @@ export function CustomerSegmentsWidget({ segments }: CustomerSegmentsProps) {
       color: COLORS.returningCustomers,
     },
   ].filter((segment) => segment.value > 0) // Only show segments with values
-
-  const total = segments.newCustomers + segments.returningCustomers
 
   return (
     <Card className="col-span-2">

@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Store } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ShopifyConnect } from "@/components/ShopifyConnect"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.brezmarketingdashboard.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 
 interface StoreSelectorProps {
   onStoreSelect: (store: string) => void
@@ -37,24 +38,32 @@ export function StoreSelector({ onStoreSelect }: StoreSelectorProps) {
     onStoreSelect(store)
   }
 
+  function handleAddStore() {
+    const newStore = prompt("Enter the URL of your Shopify store (e.g., mystore.myshopify.com):")
+    if (newStore) {
+      const shopUrl = newStore.includes(".myshopify.com") ? newStore : `${newStore}.myshopify.com`
+      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(shopUrl)}`
+    }
+  }
+
   return (
     <div className="flex items-center gap-4">
-      {stores.length > 0 ? (
-        <Select value={selectedStore || ""} onValueChange={handleStoreSelect}>
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Select a store" />
-          </SelectTrigger>
-          <SelectContent>
-            {stores.map((store) => (
-              <SelectItem key={store} value={store}>
-                {store}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <ShopifyConnect />
-      )}
+      <Select value={selectedStore || ""} onValueChange={handleStoreSelect}>
+        <SelectTrigger className="w-[250px]">
+          <SelectValue placeholder="Select a store" />
+        </SelectTrigger>
+        <SelectContent>
+          {stores.map((store) => (
+            <SelectItem key={store} value={store}>
+              {store}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button onClick={handleAddStore} variant="outline" size="sm">
+        <Store className="mr-2 h-4 w-4" />
+        Add Store
+      </Button>
     </div>
   )
 }
