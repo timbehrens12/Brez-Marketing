@@ -112,9 +112,12 @@ function DashboardContent({
   }
 
   useEffect(() => {
-    fetchData()
-  }, [selectedStore, dateRange, comparisonType, comparisonDateRange, fetchData]) // Added fetchData to dependencies
-
+    if (selectedStore) {
+      console.log("Fetching data for:", selectedStore);
+      fetchData(selectedStore);
+    }
+  }, [selectedStore, dateRange, comparisonType, comparisonDateRange]);
+  
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -380,18 +383,38 @@ export default function Page() {
   const router = useRouter()
 
   useEffect(() => {
-    console.log("useEffect triggered", { searchParams: searchParams.toString() })
-    const shop = searchParams.get("shop")
-    console.log("Shop from searchParams:", shop)
-    if (shop) {
-      setSelectedStore(shop)
-      console.log("Selected store set:", shop)
-      fetchData(shop, 0);
-    } else {
-      router.push("/")
+    const shop = searchParams.get("shop");
+    if (!shop) {
+      console.log("No shop found in URL. Checking local storage...");
+      const savedShop = localStorage.getItem("shop");
+      if (savedShop) {
+        console.log("Using saved shop:", savedShop);
+        setSelectedStore(savedShop);
+      } else {
+        console.warn("No saved shop found, redirecting to Shopify auth.");
+        router.replace("/shopify/auth");
+      }
+      return;
     }
-    setIsLoading(false)
-  }, [searchParams, router])
+  
+    console.log("Persisting shop:", shop);
+    localStorage.setItem("shop", shop);
+    setSelectedStore(shop);
+  
+    console.log("Verifying session...");
+    fetch(`${API_URL}/api/check-session?shop=${encodeURIComponent(shop)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.authenticated) {
+          console.warn("Session invalid, redirecting to auth...");
+          router.replace(`/shopify/auth?shop=${encodeURIComponent(shop)}`);
+        } else {
+          console.log("✅ Session verified. Staying on dashboard.");
+        }
+      })
+      .catch((err) => console.error("Session check failed:", err));
+  }, [searchParams, router]);
+  
 
   const fetchData = async (shop: string, retryCount = 0) => {
     console.log("fetchData called with shop:", shop);
