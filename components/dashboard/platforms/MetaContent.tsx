@@ -59,8 +59,8 @@ interface MetaAdsData {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-// Add this className for consistent dark styling
-const darkCardClass = "bg-black text-white"
+// Update the dark card class constant
+const darkCardClass = "bg-[#0A0A0A] text-white"
 
 function MetricSkeleton() {
   return (
@@ -222,12 +222,12 @@ export function MetaContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{campaign.name}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-400">
                       Objective: {campaign.objective}
                     </div>
                   </div>
                   <div className={`px-2 py-1 rounded text-sm ${
-                    campaign.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    campaign.status === 'ACTIVE' ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
                   }`}>
                     {campaign.status}
                   </div>
@@ -235,25 +235,25 @@ export function MetaContent() {
                 
                 <div className="grid grid-cols-4 gap-4 text-sm">
                   <div>
-                    <div className="text-gray-500">Spend</div>
+                    <div className="text-gray-400">Spend</div>
                     <div className="font-medium">
                       ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500">Impressions</div>
+                    <div className="text-gray-400">Impressions</div>
                     <div className="font-medium">
                       {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500">Clicks</div>
+                    <div className="text-gray-400">Clicks</div>
                     <div className="font-medium">
                       {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-500">CTR</div>
+                    <div className="text-gray-400">CTR</div>
                     <div className="font-medium">
                       {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
                     </div>
@@ -279,28 +279,28 @@ export function MetaContent() {
         <CardContent>
           <div className="space-y-4">
             {metaData.adsets?.map((adset, index) => (
-              <div key={index} className="flex items-center justify-between border-b pb-4">
+              <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
                 <div className="space-y-1">
-                  <div className="font-medium">{adset.name}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="font-medium text-white">{adset.name}</div>
+                  <div className="text-sm text-gray-400">
                     Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="text-right">
-                    <div className="text-gray-500">Impressions</div>
+                    <div className="text-gray-400">Impressions</div>
                     <div className="font-medium">
                       {parseInt(adset.impressions || "0").toLocaleString()}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-gray-500">Clicks</div>
+                    <div className="text-gray-400">Clicks</div>
                     <div className="font-medium">
                       {parseInt(adset.clicks || "0").toLocaleString()}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-gray-500">CTR</div>
+                    <div className="text-gray-400">CTR</div>
                     <div className="font-medium">
                       {parseFloat(adset.ctr || "0").toFixed(2)}%
                     </div>
