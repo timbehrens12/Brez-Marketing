@@ -98,47 +98,49 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
-            id="date"
-            variant={"outline"}
-            className={cn(
-              "w-[300px] justify-start text-left font-normal bg-gray-300 text-black border-black hover:bg-gray-400",
-              !date && "text-muted-foreground"
-            )}
+            variant="outline"
+            className="w-[260px] justify-start text-left font-normal bg-[#111111] text-white border-[#222222] hover:bg-[#222222]"
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {date?.from ? getSelectedPresetLabel(date) : "Pick a date range"}
-            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+            <CalendarIcon className="mr-2 h-4 w-4 text-white" />
+            {date?.from ? (
+              date.to ? (
+                <>
+                  {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                </>
+              ) : (
+                format(date.from, "LLL dd, y")
+              )
+            ) : (
+              <span>Pick a date range</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <div className="space-y-4 p-4 bg-gray-300">
-            <div className="flex">
-              <div className="border-r flex flex-col">
-                {presets.map((preset) => (
-                  <Button
-                    key={preset.value}
-                    variant="ghost"
-                    className="w-full justify-start rounded-none h-7 px-2 text-sm font-normal hover:bg-accent"
-                    onClick={() => {
-                      onDateChange(preset.getDate())
-                      setIsOpen(false)
-                    }}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
-              </div>
-              <div className="p-2">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={date?.from}
-                  selected={date}
-                  onSelect={onDateChange}
-                  numberOfMonths={2}
-                />
-              </div>
+          <div className="space-y-4 p-4 bg-[#111111] text-white">
+            <div className="border-r flex flex-col">
+              {presets.map((preset) => (
+                <Button
+                  key={preset.value}
+                  variant="ghost"
+                  className="w-full justify-start text-white hover:bg-[#222222]"
+                  onClick={() => {
+                    onDateChange(preset.getDate())
+                    setIsOpen(false)
+                  }}
+                >
+                  {preset.label}
+                </Button>
+              ))}
             </div>
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={onDateChange}
+              numberOfMonths={2}
+              className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
+            />
           </div>
         </PopoverContent>
       </Popover>

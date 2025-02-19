@@ -33,12 +33,16 @@ export function StoreSelector({ onStoreSelect }: StoreSelectorProps) {
 
   return (
     <Select onValueChange={onStoreSelect}>
-      <SelectTrigger className="w-[200px] bg-gray-300 text-black border-black hover:bg-gray-400">
+      <SelectTrigger className="w-[200px] bg-[#111111] text-white border-[#222222] hover:bg-[#222222]">
         <SelectValue placeholder="Select a store" />
       </SelectTrigger>
-      <SelectContent className="bg-gray-300">
+      <SelectContent className="bg-[#111111] border-[#222222]">
         {stores.map((store) => (
-          <SelectItem key={store} value={store} className="hover:bg-gray-400">
+          <SelectItem 
+            key={store} 
+            value={store} 
+            className="text-white hover:bg-[#222222]"
+          >
             {store}
           </SelectItem>
         ))}
