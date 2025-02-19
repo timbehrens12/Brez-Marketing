@@ -49,7 +49,7 @@ export function MetricCard({
 
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-4 w-[60px]" />
@@ -130,12 +130,12 @@ export function MetricCard({
   }
 
   return (
-    <Card className={cn("bg-gray-300 border-black", className)}>
+    <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <PlatformIcon />
           <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium text-gray-900">{title}</CardTitle>
+            <CardTitle className="text-sm font-medium text-white">{title}</CardTitle>
             {infoTooltip && (
               <TooltipProvider>
                 <Tooltip>

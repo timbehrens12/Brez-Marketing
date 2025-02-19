@@ -72,9 +72,9 @@ export function SalesChart({
   }
 
   return (
-    <Card className="col-span-4 bg-gray-300 border-black">
+    <Card className="col-span-4 bg-[#111111] border-[#222222]">
       <CardHeader className="flex flex-row items-center justify-between pb-8">
-        <CardTitle>Sales Overview</CardTitle>
+        <CardTitle className="text-white">Performance Trends</CardTitle>
         <ComparisonPicker
           comparisonType={comparisonType}
           customRange={customRange}
