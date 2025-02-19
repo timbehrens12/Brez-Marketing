@@ -156,7 +156,7 @@ export function MetaContent() {
             value: day.spend,
             comparisonValue: day.clicks
           })) || []}
-          className={darkCardClass}
+          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
         />
         <MetricCard
           title="Total Impressions"
@@ -165,7 +165,7 @@ export function MetaContent() {
           valueFormat="number"
           platform="meta"
           data={[]}
-          className={darkCardClass}
+          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
         />
         <MetricCard
           title="Total Clicks"
@@ -174,7 +174,7 @@ export function MetaContent() {
           valueFormat="number"
           platform="meta"
           data={[]}
-          className={darkCardClass}
+          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
         />
         <MetricCard
           title="Click-Through Rate"
@@ -184,7 +184,7 @@ export function MetaContent() {
           valueFormat="percentage"
           platform="meta"
           data={[]}
-          className={darkCardClass}
+          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
         />
       </div>
 
