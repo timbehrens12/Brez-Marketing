@@ -5,8 +5,8 @@ import { Music, Search, Pin, Linkedin } from "lucide-react"
 
 export function PlatformTabs() {
   return (
-    <TabsList className="grid w-full grid-cols-6 mb-8">
-      <TabsTrigger value="shopify" className="flex items-center gap-2">
+    <TabsList className="grid w-full grid-cols-6 mb-8 bg-[#111111] border-[#222222]">
+      <TabsTrigger value="shopify" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <img
           src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Di8NeCzywloJqM3PWXj5VGVChVgmxi.png"
           alt="Shopify"
@@ -14,7 +14,7 @@ export function PlatformTabs() {
         />
         <span className="hidden md:inline">Shopify</span>
       </TabsTrigger>
-      <TabsTrigger value="meta" className="flex items-center gap-2">
+      <TabsTrigger value="meta" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <img
           src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png"
           alt="Meta"
@@ -22,7 +22,7 @@ export function PlatformTabs() {
         />
         <span className="hidden md:inline">Meta Ads</span>
       </TabsTrigger>
-      <TabsTrigger value="tiktok" className="flex items-center gap-2">
+      <TabsTrigger value="tiktok" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <img
           src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-kQNBaAXHdkQfjbkUEzr7W0yvQmt22Z.png"
           alt="TikTok"
@@ -30,15 +30,15 @@ export function PlatformTabs() {
         />
         <span className="hidden md:inline">TikTok</span>
       </TabsTrigger>
-      <TabsTrigger value="google" className="flex items-center gap-2">
+      <TabsTrigger value="google" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <Search className="h-4 w-4 text-[#4285F4]" />
         <span className="hidden md:inline">Google</span>
       </TabsTrigger>
-      <TabsTrigger value="pinterest" className="flex items-center gap-2">
+      <TabsTrigger value="pinterest" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <Pin className="h-4 w-4 text-[#E60023]" />
         <span className="hidden md:inline">Pinterest</span>
       </TabsTrigger>
-      <TabsTrigger value="linkedin" className="flex items-center gap-2">
+      <TabsTrigger value="linkedin" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
         <Linkedin className="h-4 w-4 text-[#0A66C2]" />
         <span className="hidden md:inline">LinkedIn</span>
       </TabsTrigger>
