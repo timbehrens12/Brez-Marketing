@@ -44,7 +44,7 @@ export function CustomerSegmentsWidget({ segments }: CustomerSegmentsProps) {
   ].filter((segment) => segment.value > 0)
 
   return (
-    <Card className="col-span-2 bg-gray-50 border-gray-200">
+    <Card className="col-span-2 bg-gray-300 border-black">
       <CardHeader>
         <CardTitle className="text-gray-800">Customer Segments</CardTitle>
       </CardHeader>

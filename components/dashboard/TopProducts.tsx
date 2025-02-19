@@ -15,25 +15,25 @@ interface TopProductsProps {
 
 export function TopProducts({ products }: TopProductsProps) {
   return (
-    <Card className="col-span-1 md:col-span-2 xl:col-span-1 bg-gray-100 border-gray-300">
+    <Card className="bg-gray-300 border-black">
       <CardHeader>
-        <CardTitle className="text-gray-800">Top Selling Products</CardTitle>
+        <CardTitle className="text-black">Top Products</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-gray-600">Product</TableHead>
-              <TableHead className="text-gray-600">Quantity</TableHead>
-              <TableHead className="text-gray-600">Revenue</TableHead>
+              <TableHead className="text-black">Product</TableHead>
+              <TableHead className="text-black text-right">Quantity</TableHead>
+              <TableHead className="text-black text-right">Revenue</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {products.slice(0, 3).map((product) => (
               <TableRow key={product.name}>
-                <TableCell className="font-medium text-gray-700">{product.name}</TableCell>
-                <TableCell className="text-gray-700">{product.quantity}</TableCell>
-                <TableCell className="text-gray-700">${product.revenue.toFixed(2)}</TableCell>
+                <TableCell className="font-medium text-black">{product.name}</TableCell>
+                <TableCell className="text-black text-right">{product.quantity}</TableCell>
+                <TableCell className="text-black text-right">${product.revenue.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

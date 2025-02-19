@@ -32,16 +32,13 @@ export function StoreSelector({ onStoreSelect }: StoreSelectorProps) {
   }
 
   return (
-    <Select value={selectedStore || ""} onValueChange={(store) => {
-      setSelectedStore(store)
-      onStoreSelect(store)
-    }}>
-      <SelectTrigger className="w-[250px]">
+    <Select onValueChange={onStoreSelect}>
+      <SelectTrigger className="w-[200px] bg-gray-300 text-black border-black hover:bg-gray-400">
         <SelectValue placeholder="Select a store" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="bg-gray-300">
         {stores.map((store) => (
-          <SelectItem key={store} value={store}>
+          <SelectItem key={store} value={store} className="hover:bg-gray-400">
             {store}
           </SelectItem>
         ))}

@@ -107,35 +107,37 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? getSelectedPresetLabel(date) : "Pick a date range"}
-            <ChevronDown className="ml-auto h-4 w-4" />
+            <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex">
-            <div className="border-r flex flex-col">
-              {presets.map((preset) => (
-                <Button
-                  key={preset.value}
-                  variant="ghost"
-                  className="w-full justify-start rounded-none h-7 px-2 text-sm font-normal hover:bg-accent"
-                  onClick={() => {
-                    onDateChange(preset.getDate())
-                    setIsOpen(false)
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
-            <div className="p-2">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={onDateChange}
-                numberOfMonths={2}
-              />
+          <div className="space-y-4 p-4 bg-gray-300">
+            <div className="flex">
+              <div className="border-r flex flex-col">
+                {presets.map((preset) => (
+                  <Button
+                    key={preset.value}
+                    variant="ghost"
+                    className="w-full justify-start rounded-none h-7 px-2 text-sm font-normal hover:bg-accent"
+                    onClick={() => {
+                      onDateChange(preset.getDate())
+                      setIsOpen(false)
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="p-2">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
+                  selected={date}
+                  onSelect={onDateChange}
+                  numberOfMonths={2}
+                />
+              </div>
             </div>
           </div>
         </PopoverContent>

@@ -72,7 +72,7 @@ export function SalesChart({
   }
 
   return (
-    <Card className="col-span-4 bg-gray-50">
+    <Card className="col-span-4 bg-gray-300 border-black">
       <CardHeader className="flex flex-row items-center justify-between pb-8">
         <CardTitle>Sales Overview</CardTitle>
         <ComparisonPicker

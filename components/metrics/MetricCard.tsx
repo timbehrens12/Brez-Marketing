@@ -130,7 +130,7 @@ export function MetricCard({
   }
 
   return (
-    <Card className={cn("bg-gray-50", className)}>
+    <Card className={cn("bg-gray-300 border-black", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <PlatformIcon />
