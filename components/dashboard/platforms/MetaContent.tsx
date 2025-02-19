@@ -59,8 +59,8 @@ interface MetaAdsData {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-// Update the dark card class constant
-const darkCardClass = "bg-[#0A0A0A] text-white"
+// Update the dark card class constant to match the platform bar color
+const darkCardClass = "bg-[#111111] text-white"
 
 function MetricSkeleton() {
   return (
@@ -192,14 +192,14 @@ export function MetaContent() {
       <Card className={darkCardClass}>
         <CardHeader>
           <CardTitle>Performance Trends</CardTitle>
-          <CardDescription className="text-gray-400">30-day performance metrics</CardDescription>
+          <CardDescription className="text-white/60">30-day performance metrics</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsLineChart data={metaData.insights?.daily_data || []}>
-              <XAxis dataKey="date" stroke="#fff" />
-              <YAxis stroke="#fff" />
-              <Tooltip contentStyle={{ backgroundColor: 'black', border: '1px solid white' }} />
+              <XAxis dataKey="date" stroke="#ffffff" />
+              <YAxis stroke="#ffffff" />
+              <Tooltip contentStyle={{ backgroundColor: '#111111', border: '1px solid #333333', color: '#ffffff' }} />
               <Line type="monotone" dataKey="spend" stroke="#8884d8" />
               <Line type="monotone" dataKey="clicks" stroke="#82ca9d" />
             </RechartsLineChart>
@@ -222,7 +222,7 @@ export function MetaContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{campaign.name}</div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-white/60">
                       Objective: {campaign.objective}
                     </div>
                   </div>
@@ -235,25 +235,25 @@ export function MetaContent() {
                 
                 <div className="grid grid-cols-4 gap-4 text-sm">
                   <div>
-                    <div className="text-gray-400">Spend</div>
+                    <div className="text-white/60">Spend</div>
                     <div className="font-medium">
                       ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Impressions</div>
+                    <div className="text-white/60">Impressions</div>
                     <div className="font-medium">
                       {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Clicks</div>
+                    <div className="text-white/60">Clicks</div>
                     <div className="font-medium">
                       {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div className="text-gray-400">CTR</div>
+                    <div className="text-white/60">CTR</div>
                     <div className="font-medium">
                       {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
                     </div>
@@ -274,7 +274,7 @@ export function MetaContent() {
       <Card className={darkCardClass}>
         <CardHeader>
           <CardTitle>Ad Set Performance</CardTitle>
-          <CardDescription className="text-gray-400">Performance metrics by ad set</CardDescription>
+          <CardDescription className="text-white/60">Performance metrics by ad set</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -282,25 +282,25 @@ export function MetaContent() {
               <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
                 <div className="space-y-1">
                   <div className="font-medium text-white">{adset.name}</div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-white/60">
                     Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="text-right">
-                    <div className="text-gray-400">Impressions</div>
+                    <div className="text-white/60">Impressions</div>
                     <div className="font-medium">
                       {parseInt(adset.impressions || "0").toLocaleString()}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-gray-400">Clicks</div>
+                    <div className="text-white/60">Clicks</div>
                     <div className="font-medium">
                       {parseInt(adset.clicks || "0").toLocaleString()}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-gray-400">CTR</div>
+                    <div className="text-white/60">CTR</div>
                     <div className="font-medium">
                       {parseFloat(adset.ctr || "0").toFixed(2)}%
                     </div>
