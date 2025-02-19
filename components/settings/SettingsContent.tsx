@@ -1,39 +1,105 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 import { StoreConnectButton } from "@/components/dashboard/platforms/StoreConnectButton"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { BrandDialog } from "@/components/settings/BrandDialog"
+
+interface Brand {
+  id: string
+  name: string
+}
 
 export function SettingsContent() {
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
-      
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Store Connections</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Shopify Store</label>
-              <StoreConnectButton />
-            </div>
-          </CardContent>
-        </Card>
+  const [selectedBrand, setSelectedBrand] = useState<string>("")
+  const [isNewBrandDialogOpen, setIsNewBrandDialogOpen] = useState(false)
+  const [brands, setBrands] = useState<Brand[]>([])
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Platform Connections</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Meta Ads</label>
-              <MetaConnectButton />
-            </div>
-          </CardContent>
-        </Card>
+  return (
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-white">Settings</h1>
+        <Button 
+          onClick={() => setIsNewBrandDialogOpen(true)}
+          className="bg-[#111111] text-white hover:bg-[#222222]"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add New Brand
+        </Button>
       </div>
+
+      <div className="flex items-center space-x-4">
+        <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+          <SelectTrigger className="w-[300px] bg-[#111111] text-white border-[#222222]">
+            <SelectValue placeholder="Select a brand to manage" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#111111] border-[#222222]">
+            {brands.map((brand) => (
+              <SelectItem 
+                key={brand.id} 
+                value={brand.id}
+                className="text-white hover:bg-[#222222]"
+              >
+                {brand.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedBrand && (
+        <div className="grid gap-6">
+          <Card className="bg-[#111111] border-[#222222]">
+            <CardHeader>
+              <CardTitle className="text-white">Platform Integrations</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-6">
+              <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Di8NeCzywloJqM3PWXj5VGVChVgmxi.png"
+                    alt="Shopify"
+                    className="h-8 w-8"
+                  />
+                  <div>
+                    <h3 className="text-white font-medium">Shopify</h3>
+                    <p className="text-sm text-gray-400">Connect your Shopify store</p>
+                  </div>
+                </div>
+                <StoreConnectButton />
+              </div>
+
+              <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png"
+                    alt="Meta"
+                    className="h-8 w-8"
+                  />
+                  <div>
+                    <h3 className="text-white font-medium">Meta Ads</h3>
+                    <p className="text-sm text-gray-400">Connect your Meta Ads account</p>
+                  </div>
+                </div>
+                <MetaConnectButton />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <BrandDialog 
+        open={isNewBrandDialogOpen} 
+        onOpenChange={setIsNewBrandDialogOpen}
+        onBrandCreate={(brand) => {
+          setBrands([...brands, brand])
+          setIsNewBrandDialogOpen(false)
+        }}
+      />
     </div>
   )
 }
