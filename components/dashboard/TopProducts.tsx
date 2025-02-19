@@ -17,7 +17,7 @@ export function TopProducts({ products }: TopProductsProps) {
   return (
     <Card className="bg-gray-300 border-black">
       <CardHeader>
-        <CardTitle className="text-black">Top Products</CardTitle>
+        <CardTitle className="text-lg font-medium">Top Products</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
