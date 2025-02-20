@@ -28,20 +28,30 @@ export default function DashboardPage() {
     setError("")
     
     try {
+      console.log('Selected Store:', selectedStore) // Debug log
+
       // Get store connection details from Supabase
-      const { data: connection } = await supabase
+      const { data: connection, error: supabaseError } = await supabase
         .from('platform_connections')
-        .select('access_token, store_url')
+        .select('*')  // Select all fields to debug
         .eq('platform_type', 'shopify')
         .eq('store_url', selectedStore)
-        .single()
 
-      if (!connection) {
+      console.log('Supabase Response:', { connection, error: supabaseError }) // Debug log
+
+      if (supabaseError) {
+        throw new Error(`Supabase error: ${supabaseError.message}`)
+      }
+
+      if (!connection || connection.length === 0) {
         throw new Error("Store connection not found")
       }
 
-      // Use the correct endpoint from your backend
-      const response = await fetch(`https://brez-marketing-dashboard-bf.herokuapp.com/api/shopify/sales?shop=${connection.store_url}`, {
+      // Use first connection found
+      const storeConnection = connection[0]
+
+      // Use your correct backend URL
+      const response = await fetch(`https://api.brezmarketingdashboard.com/api/shopify/sales?shop=${storeConnection.store_url}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
