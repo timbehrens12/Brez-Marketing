@@ -555,6 +555,25 @@ function Dashboard({
     return () => clearInterval(interval)
   }, [selectedStore, dateRange])
 
+  useEffect(() => {
+    const handleBrandSelected = (event: CustomEvent) => {
+      const { brandId, connections } = event.detail
+      console.log('Selected brand:', brandId)
+      console.log('Platform connections:', connections)
+      
+      // Update your widgets based on the connections
+      const hasShopify = connections.some(c => c.platform_type === 'shopify')
+      const hasMeta = connections.some(c => c.platform_type === 'meta')
+      
+      // TODO: Update your widgets state here
+    }
+
+    window.addEventListener('brandSelected', handleBrandSelected as EventListener)
+    return () => {
+      window.removeEventListener('brandSelected', handleBrandSelected as EventListener)
+    }
+  }, [])
+
   return (
     <WidgetProvider>
       <DashboardContent
@@ -611,6 +630,25 @@ export default function DashboardPage() {
     const interval = setInterval(fetchShopifyData, 300000)
     return () => clearInterval(interval)
   }, [selectedStore, dateRange])
+
+  useEffect(() => {
+    const handleBrandSelected = (event: CustomEvent) => {
+      const { brandId, connections } = event.detail
+      console.log('Selected brand:', brandId)
+      console.log('Platform connections:', connections)
+      
+      // Update your widgets based on the connections
+      const hasShopify = connections.some(c => c.platform_type === 'shopify')
+      const hasMeta = connections.some(c => c.platform_type === 'meta')
+      
+      // TODO: Update your widgets state here
+    }
+
+    window.addEventListener('brandSelected', handleBrandSelected as EventListener)
+    return () => {
+      window.removeEventListener('brandSelected', handleBrandSelected as EventListener)
+    }
+  }, [])
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
