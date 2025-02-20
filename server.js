@@ -4,6 +4,7 @@ import axios from "axios"
 import cors from "cors"
 import crypto from "crypto"
 import cookieParser from "cookie-parser"
+import { createClient } from '@supabase/supabase-js'
 
 dotenv.config()
 
@@ -25,6 +26,11 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Origin", "Accept"],
   }),
+)
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 app.get("/test", (req, res) => {
@@ -126,6 +132,34 @@ app.get("/shopify/callback", async (req, res) => {
     stores[shop] = {
       accessToken: tokenResponse.data.access_token,
       lastTokenRefresh: new Date(),
+    }
+
+    // First get the brand ID for this user
+    const { data: brand, error: brandError } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', 'user_id_here')  // We need to get the user_id somehow
+      .single()
+
+    if (brandError) {
+      console.error("Error getting brand:", brandError)
+      return
+    }
+
+    // Then save the platform connection
+    const { error: supabaseError } = await supabase
+      .from('platform_connections')
+      .insert({
+        brand_id: brand.id,
+        platform_type: 'shopify',
+        store_url: shop,
+        access_token: tokenResponse.data.access_token
+      })
+
+    if (supabaseError) {
+      console.error("Error saving to Supabase:", supabaseError)
+    } else {
+      console.log("Successfully saved connection to Supabase")
     }
 
     // Clear the nonce cookie

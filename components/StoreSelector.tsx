@@ -2,47 +2,48 @@
 
 import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { supabase } from "@/utils/supabase"
+import { useUser } from "@clerk/nextjs"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
-interface StoreSelectorProps {
-  onStoreSelect: (store: string) => void
-}
-
-export function StoreSelector({ onStoreSelect }: StoreSelectorProps) {
+export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string) => void }) {
   const [stores, setStores] = useState<string[]>([])
-  const [selectedStore, setSelectedStore] = useState<string | null>(null)
+  const { user } = useUser()
 
   useEffect(() => {
-    fetchStores()
-  }, [])
+    if (user) {
+      loadUserStores()
+    }
+  }, [user])
 
-  async function fetchStores() {
-    try {
-      const response = await fetch(`${API_URL}/api/stores`)
-      const data = await response.json()
-      setStores(data)
-      if (data.length > 0 && !selectedStore) {
-        setSelectedStore(data[0])
-        onStoreSelect(data[0])
-      }
-    } catch (err) {
-      console.error("Error fetching stores:", err)
+  const loadUserStores = async () => {
+    const { data, error } = await supabase
+      .from('brands')
+      .select(`
+        id,
+        platform_connections (
+          store_url
+        )
+      `)
+      .eq('user_id', user?.id)
+
+    if (!error && data) {
+      const storeUrls = data
+        .flatMap(brand => brand.platform_connections)
+        .filter(conn => conn?.store_url)
+        .map(conn => conn.store_url)
+      
+      setStores(storeUrls)
     }
   }
 
   return (
     <Select onValueChange={onStoreSelect}>
-      <SelectTrigger className="w-[200px] bg-[#111111] text-white border-[#222222] hover:bg-[#222222]">
+      <SelectTrigger className="w-[200px]">
         <SelectValue placeholder="Select a store" />
       </SelectTrigger>
-      <SelectContent className="bg-[#111111] border-[#222222]">
+      <SelectContent>
         {stores.map((store) => (
-          <SelectItem 
-            key={store} 
-            value={store} 
-            className="text-white hover:bg-[#222222]"
-          >
+          <SelectItem key={store} value={store}>
             {store}
           </SelectItem>
         ))}

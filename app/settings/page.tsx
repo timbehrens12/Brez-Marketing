@@ -88,15 +88,14 @@ export default function SettingsPage() {
         {
           brand_id: selectedBrand,
           platform_type: platformType,
-          access_token: connectionData.access_token,
           store_url: connectionData.store_url,
-          metadata: connectionData.metadata
+          access_token: connectionData.access_token
         }
       ])
 
     if (!error) {
-      // Reload brands to get updated connection status
-      await loadBrands()
+      // Refresh the store list
+      loadBrands()
     }
   }
 
