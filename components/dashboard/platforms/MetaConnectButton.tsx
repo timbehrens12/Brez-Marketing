@@ -8,9 +8,13 @@ import { useToast } from "@/components/ui/use-toast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-export function MetaConnectButton() {
+interface MetaConnectButtonProps {
+  onConnect: (data: any) => Promise<void>
+  isConnected: boolean
+}
+
+export function MetaConnectButton({ onConnect, isConnected }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()

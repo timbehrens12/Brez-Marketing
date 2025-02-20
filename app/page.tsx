@@ -28,6 +28,7 @@ import { ComparisonPicker } from "@/components/ComparisonPicker"
 import { startOfDay, endOfDay } from "date-fns"
 import { toZonedTime } from "date-fns-tz"
 import Link from 'next/link'
+import { SignIn } from "@clerk/nextjs"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 

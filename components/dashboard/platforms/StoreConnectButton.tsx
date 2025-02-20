@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Store, Loader2 } from "lucide-react"
@@ -19,7 +20,12 @@ if (!API_URL) {
   console.error("NEXT_PUBLIC_API_URL is not defined in the environment variables.")
 }
 
-export function StoreConnectButton() {
+interface StoreConnectButtonProps {
+  onConnect: (data: any) => Promise<void>
+  isConnected: boolean
+}
+
+export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [storeUrl, setStoreUrl] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)

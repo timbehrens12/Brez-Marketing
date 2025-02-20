@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useUser } from "@clerk/nextjs"
+import { supabase } from "@/utils/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 import { StoreConnectButton } from "@/components/dashboard/platforms/StoreConnectButton"
@@ -12,12 +14,97 @@ import { BrandDialog } from "@/components/settings/BrandDialog"
 interface Brand {
   id: string
   name: string
+  connections: {
+    shopify?: {
+      store_url: string
+      access_token: string
+    }
+    meta?: {
+      access_token: string
+    }
+  }
 }
 
 export function SettingsContent() {
+  const { user } = useUser()
   const [selectedBrand, setSelectedBrand] = useState<string>("")
   const [isNewBrandDialogOpen, setIsNewBrandDialogOpen] = useState(false)
   const [brands, setBrands] = useState<Brand[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (user) {
+      loadBrands()
+    }
+  }, [user])
+
+  const loadBrands = async () => {
+    setIsLoading(true)
+    const { data: brandsData, error } = await supabase
+      .from('brands')
+      .select(`
+        id,
+        name,
+        platform_connections (
+          platform_type,
+          access_token,
+          store_url,
+          metadata
+        )
+      `)
+      .eq('user_id', user?.id)
+
+    if (!error && brandsData) {
+      const formattedBrands = brandsData.map(brand => ({
+        id: brand.id,
+        name: brand.name,
+        connections: brand.platform_connections.reduce((acc, conn) => ({
+          ...acc,
+          [conn.platform_type]: {
+            access_token: conn.access_token,
+            store_url: conn.store_url,
+            ...conn.metadata
+          }
+        }), {})
+      }))
+      setBrands(formattedBrands)
+    }
+    setIsLoading(false)
+  }
+
+  const handleBrandCreate = async (newBrand: { name: string }) => {
+    const { data, error } = await supabase
+      .from('brands')
+      .insert([
+        { name: newBrand.name, user_id: user?.id }
+      ])
+      .select()
+
+    if (!error && data) {
+      await loadBrands()
+      setIsNewBrandDialogOpen(false)
+    }
+  }
+
+  const handlePlatformConnect = async (platformType: 'shopify' | 'meta', connectionData: any) => {
+    const { error } = await supabase
+      .from('platform_connections')
+      .insert([
+        {
+          brand_id: selectedBrand,
+          platform_type: platformType,
+          access_token: connectionData.access_token,
+          store_url: connectionData.store_url,
+          metadata: connectionData.metadata
+        }
+      ])
+
+    if (!error) {
+      await loadBrands()
+    }
+  }
+
+  const selectedBrandData = brands.find(b => b.id === selectedBrand)
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -67,10 +154,17 @@ export function SettingsContent() {
                   />
                   <div>
                     <h3 className="text-white font-medium">Shopify</h3>
-                    <p className="text-sm text-gray-400">Connect your Shopify store</p>
+                    <p className="text-sm text-gray-400">
+                      {selectedBrandData?.connections.shopify 
+                        ? `Connected to ${selectedBrandData.connections.shopify.store_url}`
+                        : 'Connect your Shopify store'}
+                    </p>
                   </div>
                 </div>
-                <StoreConnectButton />
+                <StoreConnectButton 
+                  onConnect={(data) => handlePlatformConnect('shopify', data)}
+                  isConnected={!!selectedBrandData?.connections.shopify}
+                />
               </div>
 
               <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
@@ -82,10 +176,17 @@ export function SettingsContent() {
                   />
                   <div>
                     <h3 className="text-white font-medium">Meta Ads</h3>
-                    <p className="text-sm text-gray-400">Connect your Meta Ads account</p>
+                    <p className="text-sm text-gray-400">
+                      {selectedBrandData?.connections.meta 
+                        ? 'Connected to Meta Ads'
+                        : 'Connect your Meta Ads account'}
+                    </p>
                   </div>
                 </div>
-                <MetaConnectButton />
+                <MetaConnectButton 
+                  onConnect={(data) => handlePlatformConnect('meta', data)}
+                  isConnected={!!selectedBrandData?.connections.meta}
+                />
               </div>
             </CardContent>
           </Card>
@@ -95,10 +196,7 @@ export function SettingsContent() {
       <BrandDialog 
         open={isNewBrandDialogOpen} 
         onOpenChange={setIsNewBrandDialogOpen}
-        onBrandCreate={(brand) => {
-          setBrands([...brands, brand])
-          setIsNewBrandDialogOpen(false)
-        }}
+        onBrandCreate={handleBrandCreate}
       />
     </div>
   )
