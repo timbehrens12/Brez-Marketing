@@ -8,10 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { BrandDialog } from "@/components/settings/BrandDialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { StoreConnectButton } from "@/components/dashboard/platforms/StoreConnectButton"
+import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 
 interface Brand {
   id: string
   name: string
+  connections?: {
+    shopify?: any
+    meta?: any
+  }
+}
+
+interface PlatformConnection {
+  platform_type: string
+  access_token: string
+  store_url?: string
+  metadata?: any
 }
 
 export default function SettingsPage() {
@@ -44,11 +57,46 @@ export default function SettingsPage() {
   const loadBrands = async () => {
     const { data, error } = await supabase
       .from('brands')
-      .select('*')
+      .select(`
+        *,
+        platform_connections (
+          platform_type,
+          access_token,
+          store_url,
+          metadata
+        )
+      `)
       .eq('user_id', user?.id)
 
     if (!error && data) {
-      setBrands(data)
+      setBrands(data.map(brand => ({
+        ...brand,
+        connections: brand.platform_connections.reduce((acc: Record<string, any>, conn: PlatformConnection) => ({
+          ...acc,
+          [conn.platform_type]: conn
+        }), {})
+      })))
+    }
+  }
+
+  const handlePlatformConnect = async (platformType: 'shopify' | 'meta', connectionData: any) => {
+    if (!selectedBrand) return
+
+    const { error } = await supabase
+      .from('platform_connections')
+      .insert([
+        {
+          brand_id: selectedBrand,
+          platform_type: platformType,
+          access_token: connectionData.access_token,
+          store_url: connectionData.store_url,
+          metadata: connectionData.metadata
+        }
+      ])
+
+    if (!error) {
+      // Reload brands to get updated connection status
+      await loadBrands()
     }
   }
 
@@ -110,9 +158,10 @@ export default function SettingsPage() {
                       <p className="text-sm text-gray-400">Connect your Shopify store</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="bg-[#222222] hover:bg-[#333333]">
-                    Connect
-                  </Button>
+                  <StoreConnectButton 
+                    onConnect={(data) => handlePlatformConnect('shopify', data)}
+                    isConnected={!!brands.find(b => b.id === selectedBrand)?.connections?.shopify}
+                  />
                 </div>
 
                 <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
@@ -127,9 +176,10 @@ export default function SettingsPage() {
                       <p className="text-sm text-gray-400">Connect your Meta Ads account</p>
                     </div>
                   </div>
-                  <Button variant="outline" className="bg-[#222222] hover:bg-[#333333]">
-                    Connect
-                  </Button>
+                  <MetaConnectButton 
+                    onConnect={(data) => handlePlatformConnect('meta', data)}
+                    isConnected={!!brands.find(b => b.id === selectedBrand)?.connections?.meta}
+                  />
                 </div>
               </div>
             )}
