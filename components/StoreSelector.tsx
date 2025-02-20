@@ -18,17 +18,32 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   const loadUserStores = async () => {
     console.log('Loading stores for user:', user?.id)
     
+    // First check all brands
+    const { data: allBrands, error: brandsError } = await supabase
+      .from('brands')
+      .select('*')
+
+    console.log('All brands:', allBrands)
+    
+    // Then check platform connections
+    const { data: allConnections, error: connectionsError } = await supabase
+      .from('platform_connections')
+      .select('*')
+
+    console.log('All connections:', allConnections)
+
+    // Original query
     const { data, error } = await supabase
       .from('brands')
       .select(`
         id,
-        platform_connections!inner (
+        platform_connections (
           store_url
         )
       `)
       .eq('user_id', user?.id)
 
-    console.log('Raw Supabase response:', data)
+    console.log('User brands:', data)
 
     if (!error && data) {
       const storeUrls = data
