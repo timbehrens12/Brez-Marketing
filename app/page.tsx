@@ -22,12 +22,12 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { prepareRevenueByDayData } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { StoreSelector } from "@/components/StoreSelector"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { ComparisonPicker } from "@/components/ComparisonPicker"
 import { startOfDay, endOfDay } from "date-fns"
 import { toZonedTime } from "date-fns-tz"
 import Link from 'next/link'
+import BrandSelector from '@/components/BrandSelector'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -616,7 +616,7 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen bg-gray-200">
       <div className="bg-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <StoreSelector onStoreSelect={onStoreSelect} />
+          <BrandSelector />
           <div className="flex items-center space-x-4">
             <DateRangePicker date={dateRange} onDateChange={handleDateChange} />
           </div>
