@@ -25,7 +25,7 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div>
           <h2 className="text-white mb-4">🚀 Pinned: Quick access to your most important metrics</h2>
-          <PlatformTabs />
+          <PlatformTabs dateRange={date} />
         </div>
       </div>
     </div>

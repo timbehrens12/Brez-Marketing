@@ -265,7 +265,7 @@ function DashboardContent({
 
       {/* Platform Tabs - Always visible */}
       <Tabs defaultValue="shopify" className="w-full">
-        <PlatformTabs />
+        <PlatformTabs dateRange={dateRange} />
         <TabsContent value="shopify">
           {selectedStore ? (
             <ShopifyContent metrics={metrics || {
@@ -322,7 +322,25 @@ function DashboardContent({
           )}
         </TabsContent>
         <TabsContent value="meta">
-          <MetaContent />
+          <MetaContent metrics={{
+            totalSales: 0,
+            salesGrowth: 0,
+            averageOrderValue: 0,
+            aovGrowth: 0,
+            ordersPlaced: 0,
+            ordersGrowth: 0,
+            unitsSold: 0,
+            unitsGrowth: 0,
+            conversionRate: 0,
+            conversionGrowth: 0,
+            customerRetentionRate: 0,
+            retentionGrowth: 0,
+            returnRate: 0,
+            returnGrowth: 0,
+            inventoryLevels: 0,
+            inventoryGrowth: 0,
+            topProducts: []
+          }} dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="tiktok">
           <PlatformContent platform="TikTok Ads" value="tiktok" />
@@ -599,7 +617,7 @@ export default function DashboardPage() {
 
         {/* Platform Tabs - Always visible */}
         <Tabs defaultValue="shopify" className="w-full">
-          <PlatformTabs />
+          <PlatformTabs dateRange={dateRange} />
           <TabsContent value="shopify">
             {selectedStore ? (
               <ShopifyContent metrics={metrics || {
@@ -656,7 +674,25 @@ export default function DashboardPage() {
             )}
           </TabsContent>
           <TabsContent value="meta">
-            <MetaContent />
+            <MetaContent metrics={{
+              totalSales: 0,
+              salesGrowth: 0,
+              averageOrderValue: 0,
+              aovGrowth: 0,
+              ordersPlaced: 0,
+              ordersGrowth: 0,
+              unitsSold: 0,
+              unitsGrowth: 0,
+              conversionRate: 0,
+              conversionGrowth: 0,
+              customerRetentionRate: 0,
+              retentionGrowth: 0,
+              returnRate: 0,
+              returnGrowth: 0,
+              inventoryLevels: 0,
+              inventoryGrowth: 0,
+              topProducts: []
+            }} dateRange={dateRange} />
           </TabsContent>
           <TabsContent value="tiktok">
             <PlatformContent platform="TikTok Ads" value="tiktok" />

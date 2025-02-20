@@ -11,6 +11,7 @@ import Link from "next/link"
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DateRange } from "react-day-picker"
 
 interface AdSetData {
   name: string
@@ -57,6 +58,29 @@ interface MetaAdsData {
   adsets: Array<AdSetData>
 }
 
+interface MetaContentProps {
+  metrics: {
+    totalSales: number
+    salesGrowth: number
+    averageOrderValue: number
+    aovGrowth: number
+    ordersPlaced: number
+    ordersGrowth: number
+    unitsSold: number
+    unitsGrowth: number
+    conversionRate: number
+    conversionGrowth: number
+    customerRetentionRate: number
+    retentionGrowth: number
+    returnRate: number
+    returnGrowth: number
+    inventoryLevels: number
+    inventoryGrowth: number
+    topProducts: any[]
+  }
+  dateRange: DateRange | undefined
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 // Update the dark card class constant to match the platform bar color
@@ -71,7 +95,7 @@ function MetricSkeleton() {
   )
 }
 
-export function MetaContent() {
+export function MetaContent({ metrics, dateRange }: MetaContentProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [metaData, setMetaData] = useState<MetaAdsData | null>(null)
