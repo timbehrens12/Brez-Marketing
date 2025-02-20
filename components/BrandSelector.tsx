@@ -26,20 +26,7 @@ export default function BrandSelector() {
       if (!userId) return
       
       try {
-        // First get the Supabase user ID mapping
-        const { data: userMapping } = await supabase
-          .from('user_mappings')
-          .select('supabase_id')
-          .eq('clerk_id', userId)
-          .single()
-
-        if (!userMapping) {
-          console.log('No user mapping found')
-          setLoading(false)
-          return
-        }
-
-        // Then get the brands using the Supabase user ID
+        // Query brands directly with Clerk userId
         const { data, error } = await supabase
           .from('brands')
           .select(`
@@ -47,7 +34,7 @@ export default function BrandSelector() {
             name,
             platform_connections (*)
           `)
-          .eq('user_id', userMapping.supabase_id)
+          .eq('user_id', userId)
 
         if (error) throw error
         console.log('Loaded brands:', data)
