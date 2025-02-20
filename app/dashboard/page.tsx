@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/PlatformTabs"
-import { StoreSelector } from "@/components/StoreSelector"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
 import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/utils/supabase"
+import BrandSelector from '@/components/BrandSelector'
 
 export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState("")
@@ -134,7 +134,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <div className="flex gap-4">
-          <StoreSelector onStoreSelect={setSelectedStore} />
+          <BrandSelector />
           <DateRangePicker date={dateRange} onDateChange={setDateRange} />
         </div>
       </div>
