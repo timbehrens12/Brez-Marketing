@@ -6,8 +6,58 @@ import { ShopifyContent } from "./platforms/ShopifyContent"
 import { MetaContent } from "./platforms/MetaContent"
 import { DateRange } from "react-day-picker"
 
+interface ShopifyMetrics {
+  totalSales: number
+  salesGrowth: number
+  averageOrderValue: number
+  aovGrowth: number
+  salesData: any[]
+  ordersPlaced: number
+  previousOrdersPlaced: number
+  unitsSold: number
+  previousUnitsSold: number
+  orderCount: number
+  previousOrderCount: number
+  topProducts: any[]
+  customerRetentionRate: number
+  revenueByDay: any[]
+  sessionCount: number
+  sessionGrowth: number
+  sessionData: any[]
+  conversionRate: number
+  conversionRateGrowth: number
+  conversionData: any[]
+  retentionRateGrowth: number
+  retentionData: any[]
+  currentWeekRevenue: number[]
+  inventoryLevels: number
+  returnRate: number
+  inventoryData: any[]
+  returnData: any[]
+  customerLifetimeValue: number
+  clvData: any[]
+  averageTimeToFirstPurchase: number
+  timeToFirstPurchaseData: any[]
+  categoryPerformance: any[]
+  categoryData: any[]
+  shippingZones: any[]
+  shippingData: any[]
+  paymentMethods: any[]
+  paymentData: any[]
+  discountPerformance: any[]
+  discountData: any[]
+  customerSegments: { newCustomers: number; returningCustomers: number }
+  firstTimeVsReturning: {
+    firstTime: { orders: number; revenue: number }
+    returning: { orders: number; revenue: number }
+  }
+  customerSegmentData: any[]
+}
+
 interface PlatformTabsProps {
   dateRange: DateRange | undefined
+  metrics: ShopifyMetrics
+  isLoading: boolean
 }
 
 const defaultMetrics = {
@@ -66,7 +116,7 @@ const defaultMetrics = {
   inventoryGrowth: 0
 }
 
-export function PlatformTabs({ dateRange }: PlatformTabsProps) {
+export function PlatformTabs({ dateRange, metrics, isLoading }: PlatformTabsProps) {
   return (
     <Tabs defaultValue="shopify">
       <TabsList className="grid w-full grid-cols-6 mb-8 bg-[#111111] border-[#222222]">
