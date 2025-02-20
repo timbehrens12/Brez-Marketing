@@ -35,37 +35,58 @@ export default function BrandSelector() {
 
   // Fetch brands for current user
   const loadUserBrands = async () => {
+    console.log('Loading brands...')
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    console.log('Current user:', user)
 
+    if (!user) {
+      console.log('No user found')
+      return
+    }
+
+    // Get all brands from the brands table
     const { data: brands, error } = await supabase
       .from('brands')
-      .select('*')
+      .select(`
+        id,
+        name,
+        platform_connections (
+          id,
+          platform_type,
+          store_url,
+          account_id
+        )
+      `)
       .eq('user_id', user.id)
+
+    console.log('Brands data:', brands)
+    console.log('Query error:', error)
 
     if (error) {
       console.error('Error loading brands:', error)
       return
     }
 
-    setBrands(brands)
+    setBrands(brands || [])
   }
 
   // Fetch all platform data for selected brand
   const fetchBrandData = async (brandId: string) => {
+    console.log('Fetching data for brand:', brandId)
     try {
       // Fetch Shopify data
       const shopifyResponse = await fetch(`${API_URL}/api/shopify/sales?brandId=${brandId}`)
       const shopifyData = await shopifyResponse.json()
+      console.log('Shopify data:', shopifyData)
 
       // Fetch Meta data
       const metaResponse = await fetch(`${API_URL}/api/meta/insights?brandId=${brandId}`)
       const metaData = await metaResponse.json()
+      console.log('Meta data:', metaData)
 
       setPlatformData({
         shopify: shopifyData,
         meta: metaData,
-        // Add other platforms as needed
       })
     } catch (error) {
       console.error('Error fetching brand data:', error)
@@ -82,19 +103,25 @@ export default function BrandSelector() {
   }, [])
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-xs">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Select Brand
+      </label>
       <select
         value={selectedBrand}
         onChange={(e) => handleBrandChange(e.target.value)}
-        className="w-full p-2 border rounded"
+        className="w-full p-2 border rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Select a Brand</option>
+        <option value="">Choose a brand...</option>
         {brands.map((brand) => (
           <option key={brand.id} value={brand.id}>
             {brand.name}
           </option>
         ))}
       </select>
+      {brands.length === 0 && (
+        <p className="mt-2 text-sm text-gray-500">No brands found. Please create a brand in settings.</p>
+      )}
 
       {selectedBrand && platformData.shopify && (
         <div className="mt-4">
