@@ -1,6 +1,8 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -37,14 +39,16 @@ export default function BrandSelector() {
   const [platformData, setPlatformData] = useState<PlatformData>({})
 
   useEffect(() => {
-    // Initialize Supabase auth
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        await loadUserBrands(session.user.id)
-      } else {
-        // Redirect to login if no session
-        router.push('/login')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          await loadUserBrands(session.user.id)
+        } else {
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Auth error:', error)
       }
     }
 
@@ -52,18 +56,19 @@ export default function BrandSelector() {
   }, [])
 
   const loadUserBrands = async (userId: string) => {
-    const { data: brands, error } = await supabase
-      .from('brands')
-      .select('*, platform_connections(*)')
-      .eq('user_id', userId)
+    try {
+      const { data: brands, error } = await supabase
+        .from('brands')
+        .select('*, platform_connections(*)')
+        .eq('user_id', userId)
 
-    if (error) {
+      if (error) throw error
+
+      console.log('Loaded brands:', brands)
+      setBrands(brands || [])
+    } catch (error) {
       console.error('Error loading brands:', error)
-      return
     }
-
-    console.log('Loaded brands:', brands)
-    setBrands(brands || [])
   }
 
   // Fetch all platform data for selected brand
@@ -89,23 +94,15 @@ export default function BrandSelector() {
     }
   }
 
-  const handleBrandChange = async (brandId: string) => {
+  const handleBrandChange = (brandId: string) => {
     setSelectedBrand(brandId)
-    
-    // Find the selected brand and its connections
     const brand = brands.find(b => b.id === brandId)
     if (!brand) return
 
-    // Only show widgets for connected platforms
     const hasShopify = brand.platform_connections.some(conn => conn.platform_type === 'shopify')
     const hasMeta = brand.platform_connections.some(conn => conn.platform_type === 'meta')
 
-    // Update your widgets state here based on connections
-    // You'll need to implement this part based on your widget system
-    console.log('Connected platforms:', {
-      shopify: hasShopify,
-      meta: hasMeta
-    })
+    console.log('Connected platforms:', { shopify: hasShopify, meta: hasMeta })
 
     fetchBrandData(brandId)
   }
