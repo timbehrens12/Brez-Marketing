@@ -37,39 +37,37 @@ export default function BrandSelector() {
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const router = useRouter()
   const [platformData, setPlatformData] = useState<PlatformData>({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const initAuth = async () => {
+    const loadUserBrands = async () => {
       try {
+        setLoading(true)
         const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          await loadUserBrands(session.user.id)
-        } else {
-          router.push('/login')
+        
+        if (!session?.user) {
+          console.log('No authenticated user')
+          return
         }
+
+        const { data: brands, error } = await supabase
+          .from('brands')
+          .select('*, platform_connections(*)')
+          .eq('user_id', session.user.id)
+
+        if (error) throw error
+
+        console.log('Loaded brands:', brands)
+        setBrands(brands || [])
       } catch (error) {
-        console.error('Auth error:', error)
+        console.error('Error:', error)
+      } finally {
+        setLoading(false)
       }
     }
 
-    initAuth()
+    loadUserBrands()
   }, [])
-
-  const loadUserBrands = async (userId: string) => {
-    try {
-      const { data: brands, error } = await supabase
-        .from('brands')
-        .select('*, platform_connections(*)')
-        .eq('user_id', userId)
-
-      if (error) throw error
-
-      console.log('Loaded brands:', brands)
-      setBrands(brands || [])
-    } catch (error) {
-      console.error('Error loading brands:', error)
-    }
-  }
 
   // Fetch all platform data for selected brand
   const fetchBrandData = async (brandId: string) => {
@@ -106,6 +104,8 @@ export default function BrandSelector() {
 
     fetchBrandData(brandId)
   }
+
+  if (loading) return <div>Loading brands...</div>
 
   return (
     <div className="w-full max-w-xs">
