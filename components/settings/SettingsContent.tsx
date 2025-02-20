@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
-import { supabase } from "@/utils/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 import { StoreConnectButton } from "@/components/dashboard/platforms/StoreConnectButton"
@@ -10,6 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { BrandDialog } from "@/components/settings/BrandDialog"
+
+interface BrandData {
+  id: string
+  name: string
+  platform_connections: Array<{
+    platform_type: string
+    access_token: string
+    store_url?: string
+    metadata?: any
+  }>
+}
 
 interface Brand {
   id: string
@@ -55,10 +66,10 @@ export function SettingsContent() {
       .eq('user_id', user?.id)
 
     if (!error && brandsData) {
-      const formattedBrands = brandsData.map(brand => ({
+      const formattedBrands = brandsData.map((brand: BrandData) => ({
         id: brand.id,
         name: brand.name,
-        connections: brand.platform_connections.reduce((acc, conn) => ({
+        connections: brand.platform_connections.reduce((acc: Record<string, any>, conn: BrandData['platform_connections'][0]) => ({
           ...acc,
           [conn.platform_type]: {
             access_token: conn.access_token,

@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
-import { supabase } from "@/utils/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"

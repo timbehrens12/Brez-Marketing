@@ -7,8 +7,13 @@ import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
 import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
-import { supabase } from "@/utils/supabase"
+import { supabase } from "@/lib/supabaseClient"
 import BrandSelector from '@/components/BrandSelector'
+
+interface PlatformConnection {
+  platform_type: string;
+  store_url?: string;
+}
 
 export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState("")
@@ -16,6 +21,28 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState(defaultMetrics)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    const handleBrandSelected = (event: CustomEvent) => {
+      const { brandId, connections } = event.detail
+      
+      // Clear existing metrics
+      setMetrics(defaultMetrics)
+      
+      // Find Shopify connection
+      const shopifyConnection = connections.find((c: PlatformConnection) => c.platform_type === 'shopify')
+      if (shopifyConnection) {
+        setSelectedStore(shopifyConnection.store_url)
+      } else {
+        setSelectedStore('')
+      }
+    }
+
+    window.addEventListener('brandSelected', handleBrandSelected as EventListener)
+    return () => {
+      window.removeEventListener('brandSelected', handleBrandSelected as EventListener)
+    }
+  }, [])
 
   useEffect(() => {
     if (selectedStore && dateRange) {

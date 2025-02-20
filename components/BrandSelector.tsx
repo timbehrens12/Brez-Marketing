@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useAuth } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabaseClient'
-import { useAuth } from '@/context/AuthContext'
 
 interface Brand {
   id: string
@@ -16,18 +16,18 @@ interface Brand {
 }
 
 export default function BrandSelector() {
-  const { user, loading: authLoading } = useAuth()
+  const { userId, isLoaded } = useAuth()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadUserBrands = async () => {
-      if (!user) return
-
+      if (!userId) return
+      
       try {
-        console.log('Loading brands for user:', user.email)
-        const { data: brands, error } = await supabase
+        console.log('Loading brands for user:', userId)
+        const { data, error } = await supabase
           .from('brands')
           .select(`
             id,
@@ -39,43 +39,42 @@ export default function BrandSelector() {
               account_id
             )
           `)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
 
-        if (error) {
-          console.error('Error fetching brands:', error)
-          return
-        }
+        if (error) throw error
 
-        console.log('Fetched brands:', brands)
-        setBrands(brands || [])
+        console.log('Loaded brands:', data)
+        setBrands(data || [])
       } catch (error) {
-        console.error('Error in loadUserBrands:', error)
+        console.error('Error loading brands:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    if (!authLoading) {
+    if (isLoaded) {
       loadUserBrands()
     }
-  }, [user, authLoading])
+  }, [userId, isLoaded])
 
   const handleBrandChange = (brandId: string) => {
     setSelectedBrand(brandId)
     const brand = brands.find(b => b.id === brandId)
     if (!brand) return
 
-    // Emit event for parent components
-    const event = new CustomEvent('brandSelected', { 
-      detail: { 
-        brandId,
-        connections: brand.platform_connections 
-      }
-    })
-    window.dispatchEvent(event)
+    // Dispatch event with connections
+    window.dispatchEvent(new CustomEvent('brandSelected', {
+      detail: { brandId, connections: brand.platform_connections }
+    }))
   }
 
-  if (loading) return <div>Loading brands...</div>
+  if (!isLoaded || loading) {
+    return <div className="text-white bg-[#222222] p-2 rounded">Loading brands...</div>
+  }
+
+  if (brands.length === 0) {
+    return <div className="text-white bg-[#222222] p-2 rounded">No brands found</div>
+  }
 
   return (
     <div className="w-full max-w-xs">
