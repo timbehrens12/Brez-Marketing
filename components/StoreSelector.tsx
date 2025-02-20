@@ -8,8 +8,8 @@ import { useUser } from "@clerk/nextjs"
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.brezmarketingdashboard.com';
 
 interface Order {
-  total?: string | number;
-  [key: string]: any;  // for other properties we're spreading
+  total_price?: string | number;
+  [key: string]: any;
 }
 
 export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string) => void }) {
@@ -49,7 +49,10 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   }
 
   const createTestConnection = async () => {
-    const brandId = '299e66f2-7b67-4f71-b45f-a2c299843330' // This is your Test brand ID
+    const brandId = '299e66f2-7b67-4f71-b45f-a2c299843330'
+    
+    // This should be your actual Shopify access token from the app installation
+    const shopifyAccessToken = 'shpat_xxxxx' // Replace with your actual access token
     
     const { data, error } = await supabase
       .from('platform_connections')
@@ -58,7 +61,7 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
           brand_id: brandId,
           platform_type: 'shopify',
           store_url: '4xaq8j-5m.myshopify.com',
-          access_token: 'test_token',
+          access_token: shopifyAccessToken,
           connected_at: new Date().toISOString()
         }
       ])
@@ -68,17 +71,14 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
       console.error('Error creating connection:', error)
     } else {
       console.log('Created connection:', data)
-      // Reload the stores
       loadUserStores()
     }
   }
 
-  // Add type safety and default values when processing the API response
   const processApiResponse = (data: any) => {
     const orders = data?.orders?.map((order: Order) => ({
       ...order,
-      total: Number(order.total || 0).toFixed(2),
-      // Add any other number fields that need toFixed
+      total: Number(order.total_price || 0).toFixed(2),
     })) || [];
 
     return {
@@ -90,7 +90,6 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
     };
   };
 
-  // Update the fetch call to use the processor
   const fetchStoreData = async (storeUrl: string) => {
     try {
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${storeUrl}`);
