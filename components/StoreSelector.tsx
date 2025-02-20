@@ -5,6 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/utils/supabase"
 import { useUser } from "@clerk/nextjs"
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.brezmarketingdashboard.com';
+
+interface Order {
+  total?: string | number;
+  [key: string]: any;  // for other properties we're spreading
+}
+
 export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string) => void }) {
   const [stores, setStores] = useState<string[]>([])
   const { user } = useUser()
@@ -65,6 +72,41 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
       loadUserStores()
     }
   }
+
+  // Add type safety and default values when processing the API response
+  const processApiResponse = (data: any) => {
+    const orders = data?.orders?.map((order: Order) => ({
+      ...order,
+      total: Number(order.total || 0).toFixed(2),
+      // Add any other number fields that need toFixed
+    })) || [];
+
+    return {
+      orders,
+      products: data?.products || [],
+      refunds: data?.refunds || [],
+      customerSegments: data?.customerSegments || {},
+      totalSales: Number(data?.totalSales || 0).toFixed(2)
+    };
+  };
+
+  // Update the fetch call to use the processor
+  const fetchStoreData = async (storeUrl: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/shopify/sales?shop=${storeUrl}`);
+      const data = await response.json();
+      return processApiResponse(data);
+    } catch (error) {
+      console.error('Error fetching store data:', error);
+      return {
+        orders: [],
+        products: [],
+        refunds: [],
+        customerSegments: {},
+        totalSales: "0.00"
+      };
+    }
+  };
 
   return (
     <div>
