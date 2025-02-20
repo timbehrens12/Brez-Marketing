@@ -18,21 +18,6 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   const loadUserStores = async () => {
     console.log('Loading stores for user:', user?.id)
     
-    // First check all brands
-    const { data: allBrands, error: brandsError } = await supabase
-      .from('brands')
-      .select('*')
-
-    console.log('All brands:', allBrands)
-    
-    // Then check platform connections
-    const { data: allConnections, error: connectionsError } = await supabase
-      .from('platform_connections')
-      .select('*')
-
-    console.log('All connections:', allConnections)
-
-    // Original query
     const { data, error } = await supabase
       .from('brands')
       .select(`
@@ -56,19 +41,50 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
     }
   }
 
+  const createTestConnection = async () => {
+    const brandId = '299e66f2-7b67-4f71-b45f-a2c299843330' // This is your Test brand ID from the logs
+    
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .insert([
+        {
+          brand_id: brandId,
+          store_url: 'https://test-store.myshopify.com', // Example URL
+          platform: 'shopify'
+        }
+      ])
+      .select()
+
+    if (error) {
+      console.error('Error creating connection:', error)
+    } else {
+      console.log('Created connection:', data)
+      // Reload the stores
+      loadUserStores()
+    }
+  }
+
   return (
-    <Select onValueChange={onStoreSelect}>
-      <SelectTrigger className="w-[200px]">
-        <SelectValue placeholder="Select a store" />
-      </SelectTrigger>
-      <SelectContent>
-        {stores.map((store) => (
-          <SelectItem key={store} value={store}>
-            {store}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div>
+      <Select onValueChange={onStoreSelect}>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Select a store" />
+        </SelectTrigger>
+        <SelectContent>
+          {stores.map((store) => (
+            <SelectItem key={store} value={store}>
+              {store}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <button 
+        onClick={createTestConnection}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        Add Test Connection
+      </button>
+    </div>
   )
 }
 
