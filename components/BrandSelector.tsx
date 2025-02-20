@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { useAuth } from '@/context/AuthContext'
 
 interface Brand {
   id: string
@@ -15,22 +16,17 @@ interface Brand {
 }
 
 export default function BrandSelector() {
+  const { user, loading: authLoading } = useAuth()
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadUserBrands = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session?.user) {
-          console.log('No authenticated user found')
-          return
-        }
+      if (!user) return
 
-        console.log('User found:', session.user.email)
-        
+      try {
+        console.log('Loading brands for user:', user.email)
         const { data: brands, error } = await supabase
           .from('brands')
           .select(`
@@ -43,7 +39,7 @@ export default function BrandSelector() {
               account_id
             )
           `)
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
 
         if (error) {
           console.error('Error fetching brands:', error)
@@ -59,8 +55,10 @@ export default function BrandSelector() {
       }
     }
 
-    loadUserBrands()
-  }, [])
+    if (!authLoading) {
+      loadUserBrands()
+    }
+  }, [user, authLoading])
 
   const handleBrandChange = (brandId: string) => {
     setSelectedBrand(brandId)

@@ -562,8 +562,11 @@ function Dashboard({
       console.log('Platform connections:', connections)
       
       // Update your widgets based on the connections
-      const hasShopify = connections.some(c => c.platform_type === 'shopify')
-      const hasMeta = connections.some(c => c.platform_type === 'meta')
+      interface PlatformConnection {
+        platform_type: string;
+      }
+      const hasShopify = connections.some((c: PlatformConnection) => c.platform_type === 'shopify')
+      const hasMeta = connections.some((c: PlatformConnection) => c.platform_type === 'meta')
       
       // TODO: Update your widgets state here
     }
@@ -638,8 +641,11 @@ export default function DashboardPage() {
       console.log('Platform connections:', connections)
       
       // Update your widgets based on the connections
-      const hasShopify = connections.some(c => c.platform_type === 'shopify')
-      const hasMeta = connections.some(c => c.platform_type === 'meta')
+      interface PlatformConnection {
+        platform_type: string;
+      }
+      const hasShopify = connections.some((c: PlatformConnection) => c.platform_type === 'shopify')
+      const hasMeta = connections.some((c: PlatformConnection) => c.platform_type === 'meta')
       
       // TODO: Update your widgets state here
     }
