@@ -30,28 +30,30 @@ export default function DashboardPage() {
     try {
       console.log('Selected Store:', selectedStore) // Debug log
 
-      // Get store connection details from Supabase
-      const { data: connection, error: supabaseError } = await supabase
+      // Get store connection details from Supabase - modified query to see all connections
+      const { data: connections, error: supabaseError } = await supabase
         .from('platform_connections')
-        .select('*')  // Select all fields to debug
-        .eq('platform_type', 'shopify')
-        .eq('store_url', selectedStore)
+        .select('*')
 
-      console.log('Supabase Response:', { connection, error: supabaseError }) // Debug log
+      console.log('All Supabase Connections:', connections) // Debug log
+      console.log('Looking for store:', selectedStore)
 
       if (supabaseError) {
         throw new Error(`Supabase error: ${supabaseError.message}`)
       }
 
-      if (!connection || connection.length === 0) {
+      // Find the matching connection
+      const connection = connections?.find(conn => 
+        conn.platform_type === 'shopify' && 
+        conn.store_url === selectedStore
+      )
+
+      if (!connection) {
         throw new Error("Store connection not found")
       }
 
-      // Use first connection found
-      const storeConnection = connection[0]
-
       // Use your correct backend URL
-      const response = await fetch(`https://api.brezmarketingdashboard.com/api/shopify/sales?shop=${storeConnection.store_url}`, {
+      const response = await fetch(`https://api.brezmarketingdashboard.com/api/shopify/sales?shop=${connection.store_url}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
