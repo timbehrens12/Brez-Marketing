@@ -82,6 +82,8 @@ export default function SettingsPage() {
   const handlePlatformConnect = async (platformType: 'shopify' | 'meta', connectionData: any) => {
     if (!selectedBrand) return
 
+    console.log('Saving connection:', { platformType, connectionData, selectedBrand })
+
     const { error } = await supabase
       .from('platform_connections')
       .insert([
@@ -93,8 +95,9 @@ export default function SettingsPage() {
         }
       ])
 
+    console.log('Supabase save result:', { error })
+
     if (!error) {
-      // Refresh the store list
       loadBrands()
     }
   }

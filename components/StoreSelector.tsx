@@ -16,6 +16,8 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   }, [user])
 
   const loadUserStores = async () => {
+    console.log('Loading stores for user:', user?.id)
+    
     const { data, error } = await supabase
       .from('brands')
       .select(`
@@ -26,12 +28,15 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
       `)
       .eq('user_id', user?.id)
 
+    console.log('Supabase response:', { data, error })
+
     if (!error && data) {
       const storeUrls = data
         .flatMap(brand => brand.platform_connections)
         .filter(conn => conn?.store_url)
         .map(conn => conn.store_url)
       
+      console.log('Processed store URLs:', storeUrls)
       setStores(storeUrls)
     }
   }
