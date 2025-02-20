@@ -22,17 +22,17 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
       .from('brands')
       .select(`
         id,
-        platform_connections (
+        platform_connections!inner (
           store_url
         )
       `)
       .eq('user_id', user?.id)
 
-    console.log('Supabase response:', { data, error })
+    console.log('Raw Supabase response:', data)
 
     if (!error && data) {
       const storeUrls = data
-        .flatMap(brand => brand.platform_connections)
+        .flatMap(brand => brand.platform_connections || [])
         .filter(conn => conn?.store_url)
         .map(conn => conn.store_url)
       
