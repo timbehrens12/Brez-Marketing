@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { useRouter } from 'next/router'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -10,6 +11,7 @@ if (!API_URL) {
 interface Brand {
   id: string;
   name: string;
+  platform_connections: any[];
   // Add other brand properties as needed
 }
 
@@ -31,61 +33,36 @@ interface PlatformData {
 export default function BrandSelector() {
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const router = useRouter()
   const [platformData, setPlatformData] = useState<PlatformData>({})
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event)
-        if (session?.user) {
-          console.log('User is authenticated:', session.user)
-          await loadUserBrands()
-        }
+    // Initialize Supabase auth
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        await loadUserBrands(session.user.id)
+      } else {
+        // Redirect to login if no session
+        router.push('/login')
       }
-    )
-
-    // Initial load attempt
-    loadUserBrands()
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe()
     }
+
+    initAuth()
   }, [])
 
-  const loadUserBrands = async () => {
-    console.log('Loading brands...')
-    const { data: { user } } = await supabase.auth.getUser()
-    console.log('Current user:', user)
-
-    if (!user) {
-      console.log('No user found')
-      return
-    }
-
+  const loadUserBrands = async (userId: string) => {
     const { data: brands, error } = await supabase
       .from('brands')
-      .select(`
-        id,
-        name,
-        platform_connections (
-          id,
-          platform_type,
-          store_url,
-          account_id
-        )
-      `)
-      .eq('user_id', user.id)
-
-    console.log('Brands data:', brands)
-    console.log('Query error:', error)
+      .select('*, platform_connections(*)')
+      .eq('user_id', userId)
 
     if (error) {
       console.error('Error loading brands:', error)
       return
     }
 
+    console.log('Loaded brands:', brands)
     setBrands(brands || [])
   }
 
@@ -112,8 +89,24 @@ export default function BrandSelector() {
     }
   }
 
-  const handleBrandChange = (brandId: string) => {
+  const handleBrandChange = async (brandId: string) => {
     setSelectedBrand(brandId)
+    
+    // Find the selected brand and its connections
+    const brand = brands.find(b => b.id === brandId)
+    if (!brand) return
+
+    // Only show widgets for connected platforms
+    const hasShopify = brand.platform_connections.some(conn => conn.platform_type === 'shopify')
+    const hasMeta = brand.platform_connections.some(conn => conn.platform_type === 'meta')
+
+    // Update your widgets state here based on connections
+    // You'll need to implement this part based on your widget system
+    console.log('Connected platforms:', {
+      shopify: hasShopify,
+      meta: hasMeta
+    })
+
     fetchBrandData(brandId)
   }
 
@@ -127,7 +120,7 @@ export default function BrandSelector() {
         onChange={(e) => handleBrandChange(e.target.value)}
         className="w-full p-2 border rounded-md bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Choose a brand...</option>
+        <option value="">Select a Brand</option>
         {brands.map((brand) => (
           <option key={brand.id} value={brand.id}>
             {brand.name}
