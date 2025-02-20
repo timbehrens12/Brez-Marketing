@@ -76,23 +76,35 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   }
 
   const processApiResponse = (data: any) => {
-    const orders = data?.orders?.map((order: Order) => ({
-      ...order,
-      total: Number(order.total_price || 0).toFixed(2),
-    })) || [];
+    console.log('Raw API Response:', data);
+    
+    const orders = data?.orders?.map((order: Order) => {
+      console.log('Processing order:', order);
+      console.log('Order total_price:', order.total_price);
+      
+      return {
+        ...order,
+        total: Number(order.total_price || 0).toFixed(2),
+      };
+    }) || [];
 
-    return {
+    const result = {
       orders,
       products: data?.products || [],
       refunds: data?.refunds || [],
       customerSegments: data?.customerSegments || {},
       totalSales: Number(data?.totalSales || 0).toFixed(2)
     };
+
+    console.log('Processed result:', result);
+    return result;
   };
 
   const fetchStoreData = async (storeUrl: string) => {
     try {
+      console.log('Fetching data for store:', storeUrl);
       const response = await fetch(`${API_URL}/api/shopify/sales?shop=${storeUrl}`);
+      console.log('Response status:', response.status);
       const data = await response.json();
       return processApiResponse(data);
     } catch (error) {
