@@ -50,8 +50,8 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
         {
           brand_id: brandId,
           platform_type: 'shopify',
-          store_url: 'https://test-store.myshopify.com',
-          access_token: 'test_token', // Required for platform connection
+          store_url: '4xaq8j-5m.myshopify.com',
+          access_token: 'test_token',
           connected_at: new Date().toISOString()
         }
       ])
