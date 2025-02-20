@@ -42,15 +42,17 @@ export function StoreSelector({ onStoreSelect }: { onStoreSelect: (store: string
   }
 
   const createTestConnection = async () => {
-    const brandId = '299e66f2-7b67-4f71-b45f-a2c299843330' // This is your Test brand ID from the logs
+    const brandId = '299e66f2-7b67-4f71-b45f-a2c299843330' // This is your Test brand ID
     
     const { data, error } = await supabase
       .from('platform_connections')
       .insert([
         {
           brand_id: brandId,
-          store_url: 'https://test-store.myshopify.com', // Example URL
-          platform: 'shopify'
+          platform_type: 'shopify',
+          store_url: 'https://test-store.myshopify.com',
+          access_token: 'test_token', // Required for platform connection
+          connected_at: new Date().toISOString()
         }
       ])
       .select()
