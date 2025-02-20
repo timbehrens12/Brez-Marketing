@@ -53,26 +53,58 @@ export default function DashboardPage() {
       }
 
       const data = await response.json()
-      // Transform the response data into our metrics format
+      console.log('API Response:', data) // Add this to debug
+
+      // Transform the response data into our metrics format with safeguards
       const transformedMetrics = {
-        totalSales: data.totalSales || 0,
-        salesGrowth: 0, // Calculate if available
-        averageOrderValue: data.totalSales / data.orders.length || 0,
-        aovGrowth: 0, // Calculate if available
-        ordersPlaced: data.orders.length || 0,
-        ordersGrowth: 0, // Calculate if available
-        unitsSold: data.orders.reduce((acc, order) => acc + (order.line_items?.length || 0), 0),
-        unitsGrowth: 0, // Calculate if available
-        conversionRate: 0, // Calculate if available
-        conversionGrowth: 0,
-        customerRetentionRate: data.customerSegments.returningCustomers / 
-          (data.customerSegments.returningCustomers + data.customerSegments.newCustomers) * 100 || 0,
-        retentionGrowth: 0,
-        returnRate: 0, // Calculate if available
-        returnGrowth: 0,
-        inventoryLevels: 0, // Calculate if available
-        inventoryGrowth: 0,
-        topProducts: data.products || []
+        totalSales: data?.totalSales || 0,
+        salesGrowth: 0,
+        averageOrderValue: data?.orders?.length ? data.totalSales / data.orders.length : 0,
+        aovGrowth: 0,
+        salesData: [],
+        ordersPlaced: data?.orders?.length || 0,
+        previousOrdersPlaced: 0,
+        unitsSold: data?.orders?.reduce((acc: number, order: { line_items?: any[] }) => 
+          acc + (order.line_items?.length || 0), 0) || 0,
+        previousUnitsSold: 0,
+        orderCount: 0,
+        previousOrderCount: 0,
+        topProducts: data?.products || [],
+        customerRetentionRate: data?.customerSegments ? 
+          (data.customerSegments.returningCustomers / 
+          (data.customerSegments.returningCustomers + data.customerSegments.newCustomers) * 100) || 0 : 0,
+        revenueByDay: [],
+        sessionCount: 0,
+        sessionGrowth: 0,
+        sessionData: [],
+        conversionRate: 0,
+        conversionRateGrowth: 0,
+        conversionData: [],
+        retentionRateGrowth: 0,
+        retentionData: [],
+        currentWeekRevenue: [],
+        inventoryLevels: 0,
+        returnRate: 0,
+        inventoryData: [],
+        returnData: [],
+        customerLifetimeValue: 0,
+        clvData: [],
+        averageTimeToFirstPurchase: 0,
+        timeToFirstPurchaseData: [],
+        categoryPerformance: [],
+        categoryData: [],
+        shippingZones: [],
+        shippingData: [],
+        paymentMethods: [],
+        paymentData: [],
+        discountPerformance: [],
+        discountData: [],
+        customerSegments: { newCustomers: 0, returningCustomers: 0 },
+        firstTimeVsReturning: {
+          firstTime: { orders: 0, revenue: 0 },
+          returning: { orders: 0, revenue: 0 }
+        },
+        customerSegmentData: []
       }
       
       setMetrics(transformedMetrics)
@@ -113,7 +145,25 @@ export default function DashboardPage() {
           )}
         </TabsContent>
         <TabsContent value="meta">
-          <MetaContent metrics={metrics} dateRange={dateRange} />
+          <MetaContent metrics={{
+            totalSales: metrics.totalSales,
+            salesGrowth: metrics.salesGrowth,
+            averageOrderValue: metrics.averageOrderValue,
+            aovGrowth: metrics.aovGrowth,
+            ordersPlaced: metrics.ordersPlaced,
+            ordersGrowth: 0,
+            unitsSold: metrics.unitsSold,
+            unitsGrowth: 0,
+            conversionRate: metrics.conversionRate,
+            conversionGrowth: 0,
+            customerRetentionRate: metrics.customerRetentionRate,
+            retentionGrowth: 0,
+            returnRate: metrics.returnRate,
+            returnGrowth: 0,
+            inventoryLevels: metrics.inventoryLevels,
+            inventoryGrowth: 0,
+            topProducts: metrics.topProducts
+          }} dateRange={dateRange} />
         </TabsContent>
       </Tabs>
     </div>
@@ -125,17 +175,45 @@ const defaultMetrics = {
   salesGrowth: 0,
   averageOrderValue: 0,
   aovGrowth: 0,
+  salesData: [],
   ordersPlaced: 0,
-  ordersGrowth: 0,
+  previousOrdersPlaced: 0,
   unitsSold: 0,
-  unitsGrowth: 0,
-  conversionRate: 0,
-  conversionGrowth: 0,
+  previousUnitsSold: 0,
+  orderCount: 0,
+  previousOrderCount: 0,
+  topProducts: [],
   customerRetentionRate: 0,
-  retentionGrowth: 0,
-  returnRate: 0,
-  returnGrowth: 0,
+  revenueByDay: [],
+  sessionCount: 0,
+  sessionGrowth: 0,
+  sessionData: [],
+  conversionRate: 0,
+  conversionRateGrowth: 0,
+  conversionData: [],
+  retentionRateGrowth: 0,
+  retentionData: [],
+  currentWeekRevenue: [],
   inventoryLevels: 0,
-  inventoryGrowth: 0,
-  topProducts: []
+  returnRate: 0,
+  inventoryData: [],
+  returnData: [],
+  customerLifetimeValue: 0,
+  clvData: [],
+  averageTimeToFirstPurchase: 0,
+  timeToFirstPurchaseData: [],
+  categoryPerformance: [],
+  categoryData: [],
+  shippingZones: [],
+  shippingData: [],
+  paymentMethods: [],
+  paymentData: [],
+  discountPerformance: [],
+  discountData: [],
+  customerSegments: { newCustomers: 0, returningCustomers: 0 },
+  firstTimeVsReturning: {
+    firstTime: { orders: 0, revenue: 0 },
+    returning: { orders: 0, revenue: 0 }
+  },
+  customerSegmentData: []
 }
