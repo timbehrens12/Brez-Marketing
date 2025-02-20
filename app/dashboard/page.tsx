@@ -1,95 +1,85 @@
 "use client"
 
-import { useUser } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/PlatformTabs"
 import { StoreSelector } from "@/components/StoreSelector"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
+import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
+import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/utils/supabase"
 
-interface ShopifyMetrics {
-  totalSales: number
-  salesGrowth: number
-  averageOrderValue: number
-  aovGrowth: number
-  salesData: any[]
-  ordersPlaced: number
-  previousOrdersPlaced: number
-  unitsSold: number
-  previousUnitsSold: number
-  orderCount: number
-  previousOrderCount: number
-  topProducts: any[]
-  customerRetentionRate: number
-  revenueByDay: any[]
-  sessionCount: number
-  sessionGrowth: number
-  sessionData: any[]
-  conversionRate: number
-  conversionRateGrowth: number
-  conversionData: any[]
-  retentionRateGrowth: number
-  retentionData: any[]
-  currentWeekRevenue: number[]
-  inventoryLevels: number
-  returnRate: number
-  inventoryData: any[]
-  returnData: any[]
-  customerLifetimeValue: number
-  clvData: any[]
-  averageTimeToFirstPurchase: number
-  timeToFirstPurchaseData: any[]
-  categoryPerformance: any[]
-  categoryData: any[]
-  shippingZones: any[]
-  shippingData: any[]
-  paymentMethods: any[]
-  paymentData: any[]
-  discountPerformance: any[]
-  discountData: any[]
-  customerSegments: { newCustomers: number; returningCustomers: number }
-  firstTimeVsReturning: {
-    firstTime: { orders: number; revenue: number }
-    returning: { orders: number; revenue: number }
-  }
-  customerSegmentData: any[]
-}
-
 export default function DashboardPage() {
-  const { user } = useUser()
   const [selectedStore, setSelectedStore] = useState("")
-  const [date, setDate] = useState<DateRange | undefined>()
-  const [metrics, setMetrics] = useState<ShopifyMetrics | null>(null)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [metrics, setMetrics] = useState(defaultMetrics)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    if (selectedStore && date) {
-      loadShopifyData()
+    if (selectedStore && dateRange) {
+      loadMetrics()
     }
-  }, [selectedStore, date])
+  }, [selectedStore, dateRange])
 
-  const loadShopifyData = async () => {
+  const loadMetrics = async () => {
     setLoading(true)
+    setError("")
+    
     try {
-      // Use your existing backend API endpoint
-      const response = await fetch('https://your-heroku-backend.herokuapp.com/api/shopify/metrics', {
-        method: 'POST',
+      // Get store connection details from Supabase
+      const { data: connection } = await supabase
+        .from('platform_connections')
+        .select('access_token, store_url')
+        .eq('platform_type', 'shopify')
+        .eq('store_url', selectedStore)
+        .single()
+
+      if (!connection) {
+        throw new Error("Store connection not found")
+      }
+
+      // Use the correct endpoint from your backend
+      const response = await fetch(`https://brez-marketing-dashboard-bf.herokuapp.com/api/shopify/sales?shop=${connection.store_url}`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          storeId: selectedStore,
-          dateRange: date
-        }),
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setMetrics(data)
+      if (!response.ok) {
+        throw new Error("Failed to fetch metrics")
       }
-    } catch (error) {
-      console.error('Error loading Shopify data:', error)
+
+      const data = await response.json()
+      // Transform the response data into our metrics format
+      const transformedMetrics = {
+        totalSales: data.totalSales || 0,
+        salesGrowth: 0, // Calculate if available
+        averageOrderValue: data.totalSales / data.orders.length || 0,
+        aovGrowth: 0, // Calculate if available
+        ordersPlaced: data.orders.length || 0,
+        ordersGrowth: 0, // Calculate if available
+        unitsSold: data.orders.reduce((acc, order) => acc + (order.line_items?.length || 0), 0),
+        unitsGrowth: 0, // Calculate if available
+        conversionRate: 0, // Calculate if available
+        conversionGrowth: 0,
+        customerRetentionRate: data.customerSegments.returningCustomers / 
+          (data.customerSegments.returningCustomers + data.customerSegments.newCustomers) * 100 || 0,
+        retentionGrowth: 0,
+        returnRate: 0, // Calculate if available
+        returnGrowth: 0,
+        inventoryLevels: 0, // Calculate if available
+        inventoryGrowth: 0,
+        topProducts: data.products || []
+      }
+      
+      setMetrics(transformedMetrics)
+    } catch (err) {
+      console.error('Error:', err)
+      setError(err instanceof Error ? err.message : "Failed to load metrics")
+      setMetrics(defaultMetrics)
     } finally {
       setLoading(false)
     }
@@ -101,68 +91,51 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         <div className="flex gap-4">
           <StoreSelector onStoreSelect={setSelectedStore} />
-          <DateRangePicker date={date} onDateChange={setDate} />
+          <DateRangePicker date={dateRange} onDateChange={setDateRange} />
         </div>
       </div>
 
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-white mb-4">🚀 Pinned: Quick access to your most important metrics</h2>
-          <PlatformTabs 
-            dateRange={date} 
-            metrics={metrics || defaultMetrics} 
-            isLoading={loading}
-          />
+      {error && (
+        <div className="text-red-500 mb-4 p-4 bg-red-500/10 rounded">
+          {error}
         </div>
-      </div>
+      )}
+
+      <Tabs defaultValue="shopify" className="w-full">
+        <PlatformTabs dateRange={dateRange} metrics={metrics} isLoading={loading} />
+        <TabsContent value="shopify">
+          {selectedStore ? (
+            <ShopifyContent metrics={metrics} dateRange={dateRange} />
+          ) : (
+            <div className="text-center text-gray-500 mt-8">
+              Select a store to view metrics
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="meta">
+          <MetaContent metrics={metrics} dateRange={dateRange} />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
 
-const defaultMetrics: ShopifyMetrics = {
+const defaultMetrics = {
   totalSales: 0,
   salesGrowth: 0,
   averageOrderValue: 0,
   aovGrowth: 0,
-  salesData: [],
   ordersPlaced: 0,
-  previousOrdersPlaced: 0,
+  ordersGrowth: 0,
   unitsSold: 0,
-  previousUnitsSold: 0,
-  orderCount: 0,
-  previousOrderCount: 0,
-  topProducts: [],
-  customerRetentionRate: 0,
-  revenueByDay: [],
-  sessionCount: 0,
-  sessionGrowth: 0,
-  sessionData: [],
+  unitsGrowth: 0,
   conversionRate: 0,
-  conversionRateGrowth: 0,
-  conversionData: [],
-  retentionRateGrowth: 0,
-  retentionData: [],
-  currentWeekRevenue: [],
-  inventoryLevels: 0,
+  conversionGrowth: 0,
+  customerRetentionRate: 0,
+  retentionGrowth: 0,
   returnRate: 0,
-  inventoryData: [],
-  returnData: [],
-  customerLifetimeValue: 0,
-  clvData: [],
-  averageTimeToFirstPurchase: 0,
-  timeToFirstPurchaseData: [],
-  categoryPerformance: [],
-  categoryData: [],
-  shippingZones: [],
-  shippingData: [],
-  paymentMethods: [],
-  paymentData: [],
-  discountPerformance: [],
-  discountData: [],
-  customerSegments: { newCustomers: 0, returningCustomers: 0 },
-  firstTimeVsReturning: {
-    firstTime: { orders: 0, revenue: 0 },
-    returning: { orders: 0, revenue: 0 }
-  },
-  customerSegmentData: []
+  returnGrowth: 0,
+  inventoryLevels: 0,
+  inventoryGrowth: 0,
+  topProducts: []
 }
