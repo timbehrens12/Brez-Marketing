@@ -33,7 +33,27 @@ export default function BrandSelector() {
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [platformData, setPlatformData] = useState<PlatformData>({})
 
-  // Fetch brands for current user
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event)
+        if (session?.user) {
+          console.log('User is authenticated:', session.user)
+          await loadUserBrands()
+        }
+      }
+    )
+
+    // Initial load attempt
+    loadUserBrands()
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   const loadUserBrands = async () => {
     console.log('Loading brands...')
     const { data: { user } } = await supabase.auth.getUser()
@@ -44,7 +64,6 @@ export default function BrandSelector() {
       return
     }
 
-    // Get all brands from the brands table
     const { data: brands, error } = await supabase
       .from('brands')
       .select(`
@@ -97,10 +116,6 @@ export default function BrandSelector() {
     setSelectedBrand(brandId)
     fetchBrandData(brandId)
   }
-
-  useEffect(() => {
-    loadUserBrands()
-  }, [])
 
   return (
     <div className="w-full max-w-xs">
