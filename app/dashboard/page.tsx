@@ -11,37 +11,20 @@ import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabaseClient"
 import BrandSelector from '@/components/BrandSelector'
 
-interface BrandSelectedEvent extends CustomEvent {
-  detail: {
-    brandId: string;
-    connections: Array<{ platform_type: string; store_url?: string }>;
-  }
-}
-
 export default function DashboardPage() {
   const { userId } = useAuth()
-  const [selectedStore, setSelectedStore] = useState("")
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [metrics, setMetrics] = useState(defaultMetrics)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
   const [connections, setConnections] = useState<any[]>([])
 
   useEffect(() => {
-    const handleBrandSelected = async (event: BrandSelectedEvent) => {
+    const handleBrandSelected = async (event: CustomEvent) => {
       const { brandId, connections } = event.detail
+      setSelectedBrandId(brandId)
       setConnections(connections || [])
-      
-      // Clear existing metrics
-      setMetrics(defaultMetrics)
-      
-      // Find Shopify connection
-      const shopifyConnection = connections.find(c => c.platform_type === 'shopify')
-      if (shopifyConnection) {
-        setSelectedStore(shopifyConnection.store_url || '')
-      } else {
-        setSelectedStore('')
-      }
+      setMetrics(defaultMetrics) // Reset metrics when brand changes
     }
 
     window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
@@ -50,37 +33,6 @@ export default function DashboardPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (selectedStore && dateRange && userId) {
-      loadMetrics()
-    }
-  }, [selectedStore, dateRange, userId])
-
-  const loadMetrics = async () => {
-    setLoading(true)
-    setError("")
-    
-    try {
-      // Get metrics for the specific user and store
-      const { data: metricsData, error: metricsError } = await supabase
-        .from('metrics')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('store_url', selectedStore)
-        .single()
-
-      if (metricsError) throw metricsError
-
-      setMetrics(metricsData || defaultMetrics)
-    } catch (error) {
-      console.error('Error loading metrics:', error)
-      setError("Failed to load metrics")
-      setMetrics(defaultMetrics)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
@@ -88,47 +40,40 @@ export default function DashboardPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <BrandSelector />
-        <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+        <DateRangePicker 
+          date={dateRange} 
+          onDateChange={setDateRange} 
+        />
       </div>
 
-      {loading ? (
-        <div>Loading metrics...</div>
+      {!selectedBrandId ? (
+        <div className="text-center p-8 text-gray-400">
+          Select a brand to view analytics
+        </div>
+      ) : loading ? (
+        <div className="text-center p-8">Loading metrics...</div>
       ) : (
         <Tabs defaultValue={hasShopify ? "shopify" : hasMeta ? "meta" : undefined}>
-          <PlatformTabs 
-            dateRange={dateRange}
-            metrics={metrics}
-            isLoading={loading}
-          />
-          
-          {hasShopify && (
-            <TabsContent value="shopify">
-              <ShopifyContent metrics={metrics} dateRange={dateRange} />
-            </TabsContent>
-          )}
-          
-          {hasMeta && (
-            <TabsContent value="meta">
-              <MetaContent metrics={{
-                totalSales: metrics.totalSales,
-                salesGrowth: metrics.salesGrowth,
-                averageOrderValue: metrics.averageOrderValue,
-                aovGrowth: metrics.aovGrowth,
-                ordersPlaced: metrics.ordersPlaced,
-                ordersGrowth: 0,
-                unitsSold: metrics.unitsSold,
-                unitsGrowth: 0,
-                conversionRate: metrics.conversionRate,
-                conversionGrowth: 0,
-                customerRetentionRate: metrics.customerRetentionRate,
-                retentionGrowth: 0,
-                returnRate: metrics.returnRate,
-                returnGrowth: 0,
-                inventoryLevels: metrics.inventoryLevels,
-                inventoryGrowth: 0,
-                topProducts: metrics.topProducts
-              }} dateRange={dateRange} />
-            </TabsContent>
+          {(hasShopify || hasMeta) ? (
+            <>
+              <PlatformTabs showShopify={hasShopify} showMeta={hasMeta} />
+              
+              {hasShopify && (
+                <TabsContent value="shopify">
+                  <ShopifyContent metrics={metrics} dateRange={dateRange} />
+                </TabsContent>
+              )}
+              
+              {hasMeta && (
+                <TabsContent value="meta">
+                  <MetaContent metrics={metrics} dateRange={dateRange} />
+                </TabsContent>
+              )}
+            </>
+          ) : (
+            <div className="text-center p-8 text-gray-400">
+              No platforms connected to this brand. Go to Settings to connect platforms.
+            </div>
           )}
         </Tabs>
       )}
