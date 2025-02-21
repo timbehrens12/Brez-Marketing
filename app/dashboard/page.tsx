@@ -15,6 +15,7 @@ import { defaultMetrics } from '@/lib/defaultMetrics'
 import type { Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -90,6 +91,7 @@ export default function DashboardPage() {
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     async function loadConnections() {
@@ -112,32 +114,50 @@ export default function DashboardPage() {
   }, [selectedBrandId])
 
   useEffect(() => {
-    const handleBrandSelected = (event: CustomEvent) => {
-      const { brandId, connections } = event.detail
+    const handleBrandSelected = async (event: CustomEvent) => {
+      const brandId = event.detail.brandId
       console.log('Selected brand:', brandId)
+
+      // Fetch platform connections from Supabase
+      const { data: connections, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', brandId)
+
+      if (error) {
+        console.error('Error fetching connections:', error)
+        return
+      }
+
       console.log('Platform connections:', connections)
-      
-      // Update platforms state based on connections
-      const hasShopify = connections.some((c: PlatformConnection) => c.platform_type === 'shopify')
-      const hasMeta = connections.some((c: PlatformConnection) => c.platform_type === 'meta')
-      
-      // Set platforms state
+
+      // Update platforms state based on connections from database
+      const hasShopify = connections.some((c: PlatformConnection) => 
+        c.platform_type === 'shopify' && c.status === 'active'
+      )
+      const hasMeta = connections.some((c: PlatformConnection) => 
+        c.platform_type === 'meta' && c.status === 'active'
+      )
+
       setPlatforms({
         shopify: hasShopify,
         meta: hasMeta
       })
 
       // If Shopify is connected, set the store
-      if (hasShopify && connections.find((c: PlatformConnection) => c.platform_type === 'shopify')?.shop) {
-        setSelectedStore(connections.find((c: PlatformConnection) => c.platform_type === 'shopify')?.shop)
+      const shopifyConnection = connections.find(c => 
+        c.platform_type === 'shopify' && c.status === 'active'
+      )
+      if (hasShopify && shopifyConnection?.shop) {
+        setSelectedStore(shopifyConnection.shop)
       }
     }
 
-    window.addEventListener('brandSelected', handleBrandSelected as EventListener)
+    window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
     return () => {
-      window.removeEventListener('brandSelected', handleBrandSelected as EventListener)
+      window.removeEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
     }
-  }, [setSelectedStore])
+  }, [supabase, setSelectedStore])
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
