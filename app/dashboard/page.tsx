@@ -85,7 +85,7 @@ function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [connections, setConnections] = useState<any[]>([])
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
   const { selectedBrandId } = useBrandContext()
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
@@ -97,6 +97,7 @@ export default function DashboardPage() {
     async function loadConnections() {
       if (!selectedBrandId) return
       
+      console.log('Loading connections for brand:', selectedBrandId)
       const { data, error } = await supabase
         .from('platform_connections')
         .select('*')
@@ -107,11 +108,21 @@ export default function DashboardPage() {
         return
       }
       
+      console.log('Loaded connections:', data)
       setConnections(data || [])
+      
+      // Update platforms state
+      const hasShopify = data?.some(c => c.platform_type === 'shopify' && c.status === 'active')
+      const hasMeta = data?.some(c => c.platform_type === 'meta' && c.status === 'active')
+      
+      setPlatforms({
+        shopify: hasShopify || false,
+        meta: hasMeta || false
+      })
     }
 
     loadConnections()
-  }, [selectedBrandId])
+  }, [selectedBrandId, supabase])
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
@@ -199,6 +210,9 @@ export default function DashboardPage() {
         ) : (
           <div className="text-center text-gray-500 mt-8">
             No platforms connected to this brand. Go to Settings to connect platforms.
+            <pre className="mt-4 text-left text-xs">
+              {JSON.stringify({ selectedBrandId, connections, platforms }, null, 2)}
+            </pre>
           </div>
         )}
       </div>
