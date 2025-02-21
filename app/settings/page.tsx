@@ -46,28 +46,21 @@ export default function SettingsPage() {
       setConnectingPlatform(platformType)
 
       if (platformType === 'shopify') {
-        // Use a modal instead of prompt
-        const storeUrl = window.prompt('Enter your Shopify store URL (e.g., my-store.myshopify.com):')
+        const storeUrl = prompt('Enter your Shopify store URL (e.g., my-store.myshopify.com):')
         if (!storeUrl) return
 
-        // Validate store URL format
-        if (!storeUrl.includes('.myshopify.com')) {
-          throw new Error('Invalid Shopify store URL format')
+        try {
+          // Log the redirect
+          console.log('Redirecting to Shopify auth with:', { storeUrl, brandId: selectedBrandId })
+          
+          // Update the redirect URL to match our callback route
+          window.location.href = `/api/auth/shopify/callback?` +
+            `shop=${encodeURIComponent(storeUrl)}` +
+            `&state=${selectedBrandId}`  // state is our brandId
+        } catch (error) {
+          console.error('Error connecting Shopify:', error)
+          toast.error('Failed to connect to Shopify')
         }
-
-        // Store connection attempt in localStorage to handle auth redirect
-        localStorage.setItem('connecting_platform', JSON.stringify({
-          type: 'shopify',
-          brandId: selectedBrandId,
-          timestamp: Date.now()
-        }))
-
-        // Redirect to Shopify auth
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/shopify/auth?` +
-          `shop=${encodeURIComponent(storeUrl)}` +
-          `&brandId=${selectedBrandId}` +
-          `&nonce=${crypto.randomUUID()}`  // Add security nonce
-
       } else if (platformType === 'meta') {
         const { error } = await supabase
           .from('platform_connections')

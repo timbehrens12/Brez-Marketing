@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
 
 export async function GET(request: Request) {
+  console.log('Callback route hit!') // Debug log
+  
   const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
   const code = searchParams.get('code')
   const state = searchParams.get('state') // This is our brandId
 
-  console.log('Shopify callback received:', { shop, code, state }) // Debug log
+  console.log('Received params:', { shop, code, state }) // Debug log
 
   if (!shop || !code || !state) {
     console.error('Missing required params:', { shop, code, state })
