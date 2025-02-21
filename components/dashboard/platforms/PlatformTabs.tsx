@@ -24,7 +24,7 @@ interface PlatformTabsProps {
 
 export function PlatformTabs({ platforms, dateRange, metrics, isLoading, data }: PlatformTabsProps) {
   return (
-    <Tabs defaultValue="shopify">
+    <Tabs defaultValue="shopify" className="w-full">
       <TabsList className="grid w-full grid-cols-6 mb-8 bg-[#111111] border-[#222222]">
         {platforms.shopify && (
           <TabsTrigger value="shopify" className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]">
@@ -59,12 +59,20 @@ export function PlatformTabs({ platforms, dateRange, metrics, isLoading, data }:
         {/* Other platform tabs */}
       </TabsList>
 
-      <TabsContent value="shopify">
-        <ShopifyContent metrics={metrics} dateRange={dateRange} />
-      </TabsContent>
-      <TabsContent value="meta">
-        <MetaContent metrics={transformToMetaMetrics(metrics)} dateRange={dateRange} />
-      </TabsContent>
+      <div className="mt-6">
+        <TabsContent value="shopify" className="space-y-4">
+          <ShopifyContent 
+            metrics={metrics} 
+            dateRange={dateRange} 
+          />
+        </TabsContent>
+        <TabsContent value="meta">
+          <MetaContent 
+            metrics={transformToMetaMetrics(metrics)} 
+            dateRange={dateRange} 
+          />
+        </TabsContent>
+      </div>
     </Tabs>
   )
 }

@@ -15,6 +15,7 @@ import { defaultMetrics } from '@/lib/defaultMetrics'
 import type { Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
+import { calculateMetrics } from "@/lib/metrics"
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -196,18 +197,18 @@ export default function DashboardPage() {
       
       if (shopifyConnection) {
         try {
-          // Load Shopify data
+          console.log('Fetching Shopify data for connection:', shopifyConnection.id)
           const { data: shopifyData } = await supabase
             .from('shopify_data')
             .select('*')
             .eq('connection_id', shopifyConnection.id)
             .single()
 
-          // Update widget data
-          setWidgetData({
-            ...widgetData,
+          console.log('Loaded Shopify data:', shopifyData)
+          setWidgetData(current => ({
+            ...current,
             shopify: shopifyData
-          })
+          }))
         } catch (error) {
           console.error('Error loading Shopify data:', error)
         }
@@ -239,6 +240,34 @@ export default function DashboardPage() {
 
     loadWidgetData()
   }, [selectedBrandId, connections, supabase])
+
+  useEffect(() => {
+    async function fetchShopifyData() {
+      if (!selectedBrandId) return
+      
+      try {
+        const response = await fetch(`/api/shopify/sales?brandId=${selectedBrandId}`)
+        if (!response.ok) throw new Error('Failed to fetch Shopify data')
+        
+        const data = await response.json()
+        console.log('Fetched Shopify data:', data)
+        
+        if (data.orders) {
+          const calculatedMetrics = calculateMetrics(
+            data.orders,
+            data.products || [],
+            data.refunds || [],
+            dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined
+          )
+          setMetrics(calculatedMetrics)
+        }
+      } catch (error) {
+        console.error('Error fetching Shopify data:', error)
+      }
+    }
+
+    fetchShopifyData()
+  }, [selectedBrandId, dateRange])
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
