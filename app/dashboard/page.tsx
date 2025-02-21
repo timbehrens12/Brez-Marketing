@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const { userId } = useAuth()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [metrics, setMetrics] = useState(defaultMetrics)
+  const [metrics, setMetrics] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [connections, setConnections] = useState<any[]>([])
   const [error, setError] = useState("")
@@ -48,49 +48,29 @@ export default function DashboardPage() {
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
-  const loadMetrics = async () => {
-    setLoading(true)
-    setError("")
-    
-    try {
-      // Load Shopify metrics if connected
-      if (connections.some(c => c.platform_type === 'shopify')) {
-        const { data: shopifyData } = await supabase
-          .from('shopify_metrics')
-          .select('*')
-          .eq('brand_id', selectedBrandId)
-          .single()
-        
-        if (shopifyData) {
-          setMetrics(prev => ({
-            ...prev,
-            ...shopifyData
-          }))
-        }
-      }
+  useEffect(() => {
+    const loadMetrics = async () => {
+      if (!selectedBrandId) return
+      setLoading(true)
 
-      // Load Meta metrics if connected
-      if (connections.some(c => c.platform_type === 'meta')) {
-        const { data: metaData } = await supabase
-          .from('meta_metrics')
+      try {
+        const { data, error } = await supabase
+          .from('metrics')
           .select('*')
           .eq('brand_id', selectedBrandId)
-          .single()
-        
-        if (metaData) {
-          setMetrics(prev => ({
-            ...prev,
-            ...metaData
-          }))
-        }
+
+        if (error) throw error
+        console.log('Loaded metrics:', data)
+        setMetrics(data)
+      } catch (error) {
+        console.error('Error loading metrics:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Error loading metrics:', error)
-      setError("Failed to load metrics")
-    } finally {
-      setLoading(false)
     }
-  }
+
+    loadMetrics()
+  }, [selectedBrandId])
 
   return (
     <div className="p-8">
@@ -108,30 +88,30 @@ export default function DashboardPage() {
         </div>
       ) : loading ? (
         <div className="text-center p-8">Loading metrics...</div>
-      ) : (
-        <Tabs defaultValue={hasShopify ? "shopify" : hasMeta ? "meta" : undefined}>
-          {(hasShopify || hasMeta) ? (
-            <>
-              <PlatformTabs showShopify={hasShopify} showMeta={hasMeta} />
-              
-              {hasShopify && (
-                <TabsContent value="shopify">
-                  <ShopifyContent metrics={metrics} dateRange={dateRange} />
-                </TabsContent>
-              )}
-              
-              {hasMeta && (
-                <TabsContent value="meta">
-                  <MetaContent metrics={metrics} dateRange={dateRange} />
-                </TabsContent>
-              )}
-            </>
-          ) : (
-            <div className="text-center p-8 text-gray-400">
-              No platforms connected to this brand. Go to Settings to connect platforms.
+      ) : metrics ? (
+        <div className="grid grid-cols-3 gap-4">
+          {/* Shopify Metrics */}
+          {metrics.find((m: any) => m.platform_type === 'shopify') && (
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <h3>Shopify Metrics</h3>
+              <div>Total Sales: ${metrics.find((m: any) => m.platform_type === 'shopify').total_sales}</div>
+              <div>Orders: {metrics.find((m: any) => m.platform_type === 'shopify').orders_count}</div>
             </div>
           )}
-        </Tabs>
+
+          {/* Meta Metrics */}
+          {metrics.find((m: any) => m.platform_type === 'meta') && (
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <h3>Meta Metrics</h3>
+              <div>Total Sales: ${metrics.find((m: any) => m.platform_type === 'meta').total_sales}</div>
+              <div>Orders: {metrics.find((m: any) => m.platform_type === 'meta').orders_count}</div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center p-8 text-gray-400">
+          No platforms connected to this brand. Go to Settings to connect platforms.
+        </div>
       )}
     </div>
   )
