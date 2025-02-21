@@ -30,8 +30,8 @@ interface MetricCardProps {
 
 export function MetricCard({
   title = "",
-  value,
-  change,
+  value = 0,
+  change = 0,
   data = [],
   prefix = "",
   suffix = "",
@@ -45,9 +45,10 @@ export function MetricCard({
   isCustomRange = false,
   emptyState,
 }: MetricCardProps) {
-  // Force numbers to be 0 if undefined/null
-  const safeValue = Number(value) || 0
-  const safeChange = Number(change) || 0
+  // Force everything to be numbers
+  const safeValue = typeof value === 'number' ? value : Number(value) || 0
+  const safeChange = typeof change === 'number' ? change : Number(change) || 0
+  const safeData = Array.isArray(data) ? data : []
   
   const isPositive = safeChange > 0
 
@@ -66,7 +67,6 @@ export function MetricCard({
     )
   }
 
-  // Simplified formatting with extra safety
   const formatValue = (val: number) => {
     try {
       switch(valueFormat) {
@@ -141,8 +141,6 @@ export function MetricCard({
     
     return `Compared to ${prevStart} - ${prevEnd}`
   }
-
-  const safeData = Array.isArray(data) ? data : []
 
   return (
     <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
