@@ -19,6 +19,7 @@ import { calculateMetrics } from "@/lib/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { ShopifyTab } from "@/components/dashboard/platforms/tabs/ShopifyTab"
 import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
+import { transformToMetaMetrics } from '@/lib/transforms'
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -288,7 +289,7 @@ export default function DashboardPage() {
           
           <TabsContent value="meta">
             <MetaTab 
-              metrics={metrics}
+              metrics={transformToMetaMetrics(metrics)}
               dateRange={dateRange}
               isLoading={false}
             />

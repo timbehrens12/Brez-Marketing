@@ -1,26 +1,4 @@
-import type { Metrics } from "@/types/metrics"
-
-export interface MetaMetrics {
-  totalSales: number
-  salesGrowth: number
-  averageOrderValue: number
-  aovGrowth: number
-  ordersPlaced: number
-  ordersGrowth: number
-  unitsSold: number
-  unitsGrowth: number
-  conversionRate: number
-  conversionGrowth: number
-  customerRetentionRate: number
-  retentionGrowth: number
-  returnRate: number
-  returnGrowth: number
-  inventoryLevels: number
-  inventoryGrowth: number
-  topProducts: any[]
-  dailyData: any[]
-  chartData: any[]
-}
+import type { Metrics, MetaMetrics } from '@/types/metrics'
 
 export function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
   return {
@@ -36,9 +14,9 @@ export function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
     conversionGrowth: metrics.conversionRateGrowth || 0,
     customerRetentionRate: metrics.customerRetentionRate,
     retentionGrowth: metrics.retentionRateGrowth || 0,
-    returnRate: metrics.returnRate,
+    returnRate: metrics.returnRate || 0,
     returnGrowth: 0,
-    inventoryLevels: metrics.inventoryLevels,
+    inventoryLevels: metrics.inventoryLevels || 0,
     inventoryGrowth: 0,
     topProducts: metrics.topProducts || [],
     dailyData: metrics.dailyData || [],
