@@ -14,6 +14,7 @@ import { useBrandContext } from '@/lib/context/BrandContext'
 import { defaultMetrics } from '@/lib/defaultMetrics'
 import type { Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
+import { PlatformConnection } from '@/types/platformConnection'
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -86,6 +87,9 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<any[]>([])
   const { selectedBrandId } = useBrandContext()
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
+  const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
+  const [selectedStore, setSelectedStore] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     async function loadConnections() {
@@ -107,6 +111,34 @@ export default function DashboardPage() {
     loadConnections()
   }, [selectedBrandId])
 
+  useEffect(() => {
+    const handleBrandSelected = (event: CustomEvent) => {
+      const { brandId, connections } = event.detail
+      console.log('Selected brand:', brandId)
+      console.log('Platform connections:', connections)
+      
+      // Update platforms state based on connections
+      const hasShopify = connections.some((c: PlatformConnection) => c.platform_type === 'shopify')
+      const hasMeta = connections.some((c: PlatformConnection) => c.platform_type === 'meta')
+      
+      // Set platforms state
+      setPlatforms({
+        shopify: hasShopify,
+        meta: hasMeta
+      })
+
+      // If Shopify is connected, set the store
+      if (hasShopify && connections.find((c: PlatformConnection) => c.platform_type === 'shopify')?.shop) {
+        setSelectedStore(connections.find((c: PlatformConnection) => c.platform_type === 'shopify')?.shop)
+      }
+    }
+
+    window.addEventListener('brandSelected', handleBrandSelected as EventListener)
+    return () => {
+      window.removeEventListener('brandSelected', handleBrandSelected as EventListener)
+    }
+  }, [setSelectedStore])
+
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
@@ -126,10 +158,10 @@ export default function DashboardPage() {
         {connections && connections.length > 0 ? (
           <Tabs defaultValue="overview" className="w-full">
             <PlatformTabs 
-              platforms={{ shopify: hasShopify, meta: hasMeta }}
+              platforms={platforms}
               dateRange={dateRange}
               metrics={metrics || defaultMetrics}
-              isLoading={false}
+              isLoading={loading}
             />
             <TabsContent value="shopify">
               <ShopifyContent 
