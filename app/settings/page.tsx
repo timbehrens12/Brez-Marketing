@@ -47,8 +47,10 @@ export default function SettingsPage() {
       if (!storeUrl) return
 
       try {
-        // Redirect to our auth route first
-        window.location.href = `/api/auth/shopify?` +
+        console.log('Connecting to Shopify:', { storeUrl, brandId: selectedBrandId })
+        
+        // Hit your Heroku backend instead of Next.js API routes
+        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/shopify/auth?` +
           `shop=${encodeURIComponent(storeUrl)}` +
           `&brandId=${selectedBrandId}`
       } catch (error) {
