@@ -34,7 +34,7 @@ export default function SettingsPage() {
   const [testMessage, setTestMessage] = useState("")
   const [brands, setBrands] = useState<Brand[]>([])
   const [selectedBrand, setSelectedBrand] = useState<string>("")
-  const [isNewBrandDialogOpen, setIsNewBrandDialogOpen] = useState(false)
+  const [showBrandDialog, setShowBrandDialog] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -105,112 +105,74 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
-        <Button 
-          onClick={() => setIsNewBrandDialogOpen(true)}
-          className="bg-[#111111] text-white hover:bg-[#222222]"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Brand
-        </Button>
+    <div className="p-8 max-w-4xl mx-auto">
+      {/* Brands Section */}
+      <div className="bg-[#111111] p-6 rounded-lg mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Brands</h2>
+          <Button 
+            onClick={() => setShowBrandDialog(true)}
+            className="bg-[#222222] hover:bg-[#333333]"
+          >
+            Add Brand
+          </Button>
+        </div>
+        <BrandSelector />
       </div>
 
-      <div className="grid gap-6">
-        {/* Connection Status */}
-        <Card className="bg-[#111111] border-[#222222] text-white">
-          <CardHeader>
-            <CardTitle>Connection Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{testMessage}</p>
-            <p>Logged in as: {user?.emailAddresses[0].emailAddress}</p>
-          </CardContent>
-        </Card>
+      {/* Integrations Section */}
+      <div className="bg-[#111111] p-6 rounded-lg">
+        <h2 className="text-xl font-semibold mb-6">Platform Integrations</h2>
+        <div className="space-y-4">
+          {/* Shopify */}
+          <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+            <div className="flex items-center gap-3">
+              <img src="/shopify-icon.png" alt="Shopify" className="w-8 h-8" />
+              <span>Shopify</span>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="bg-transparent">Manage</Button>
+              <Button variant="outline" className="bg-transparent text-red-500">Disconnect</Button>
+            </div>
+          </div>
 
-        {/* Brand Management */}
-        <Card className="bg-[#111111] border-[#222222] text-white">
-          <CardHeader>
-            <CardTitle>Brand Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-              <SelectTrigger className="w-full mb-4">
-                <SelectValue placeholder="Select a brand to manage" />
-              </SelectTrigger>
-              <SelectContent>
-                {brands.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Meta Ads */}
+          <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+            <div className="flex items-center gap-3">
+              <img src="/meta-icon.png" alt="Meta" className="w-8 h-8" />
+              <span>Meta Ads</span>
+            </div>
+            <Button className="bg-blue-600 hover:bg-blue-700">Connect</Button>
+          </div>
 
-            {selectedBrand && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Di8NeCzywloJqM3PWXj5VGVChVgmxi.png"
-                      alt="Shopify"
-                      className="h-8 w-8"
-                    />
-                    <div>
-                      <h3 className="font-medium">Shopify</h3>
-                      <p className="text-sm text-gray-400">Connect your Shopify store</p>
-                    </div>
-                  </div>
-                  <StoreConnectButton 
-                    onConnect={(data) => handlePlatformConnect('shopify', data)}
-                    isConnected={!!brands.find(b => b.id === selectedBrand)?.connections?.shopify}
-                  />
-                </div>
+          {/* Google Ads */}
+          <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+            <div className="flex items-center gap-3">
+              <img src="/google-ads-icon.png" alt="Google Ads" className="w-8 h-8" />
+              <span>Google Ads</span>
+            </div>
+            <Button className="bg-blue-600 hover:bg-blue-700">Connect</Button>
+          </div>
 
-                <div className="flex items-center justify-between p-4 border border-[#222222] rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png"
-                      alt="Meta"
-                      className="h-8 w-8"
-                    />
-                    <div>
-                      <h3 className="font-medium">Meta Ads</h3>
-                      <p className="text-sm text-gray-400">Connect your Meta Ads account</p>
-                    </div>
-                  </div>
-                  <MetaConnectButton 
-                    onConnect={(data) => handlePlatformConnect('meta', data)}
-                    isConnected={!!brands.find(b => b.id === selectedBrand)?.connections?.meta}
-                  />
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* TikTok */}
+          <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+            <div className="flex items-center gap-3">
+              <img src="/tiktok-icon.png" alt="TikTok" className="w-8 h-8" />
+              <span>TikTok</span>
+            </div>
+            <Button className="bg-blue-600 hover:bg-blue-700">Connect</Button>
+          </div>
+        </div>
       </div>
 
       <BrandDialog 
-        open={isNewBrandDialogOpen} 
-        onOpenChange={setIsNewBrandDialogOpen}
-        onBrandCreate={async (brand) => {
-          const { data, error } = await supabase
-            .from('brands')
-            .insert([
-              { name: brand.name, user_id: user?.id }
-            ])
-            .select()
-
-          if (!error && data) {
-            setBrands([...brands, data[0]])
-            setIsNewBrandDialogOpen(false)
-          }
+        open={showBrandDialog} 
+        onOpenChange={setShowBrandDialog}
+        onBrandCreate={(brand) => {
+          console.log('Created brand:', brand)
+          setShowBrandDialog(false)
         }}
       />
-
-      <BrandSelector />
-      {selectedBrand && <PlatformConnections brandId={selectedBrand} />}
     </div>
   )
 }
