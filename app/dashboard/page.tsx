@@ -250,7 +250,7 @@ export default function DashboardPage() {
         if (!response.ok) throw new Error('Failed to fetch Shopify data')
         
         const data = await response.json()
-        console.log('Fetched Shopify data:', data)
+        console.log('Raw Shopify data:', data)
         
         if (data.orders) {
           const calculatedMetrics = calculateMetrics(
@@ -259,10 +259,61 @@ export default function DashboardPage() {
             data.refunds || [],
             dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined
           )
+          console.log('Calculated metrics before setting:', calculatedMetrics)
           setMetrics(calculatedMetrics)
         }
       } catch (error) {
         console.error('Error fetching Shopify data:', error)
+        // Set default metrics on error
+        setMetrics({
+          totalSales: 0,
+          salesGrowth: 0,
+          averageOrderValue: 0,
+          aovGrowth: 0,
+          salesData: [],
+          ordersPlaced: 0,
+          previousOrdersPlaced: 0,
+          unitsSold: 0,
+          previousUnitsSold: 0,
+          orderCount: 0,
+          previousOrderCount: 0,
+          topProducts: [],
+          customerRetentionRate: 0,
+          revenueByDay: [],
+          sessionCount: 0,
+          sessionGrowth: 0,
+          sessionData: [],
+          conversionRate: 0,
+          conversionRateGrowth: 0,
+          conversionData: [],
+          retentionRateGrowth: 0,
+          retentionData: [],
+          currentWeekRevenue: [],
+          inventoryLevels: 0,
+          returnRate: 0,
+          inventoryData: [],
+          returnData: [],
+          customerLifetimeValue: 0,
+          clvData: [],
+          dailyData: [],
+          chartData: [],
+          averageTimeToFirstPurchase: 0,
+          timeToFirstPurchaseData: [],
+          categoryPerformance: [],
+          categoryData: [],
+          shippingZones: [],
+          shippingData: [],
+          paymentMethods: [],
+          paymentData: [],
+          discountPerformance: [],
+          discountData: [],
+          customerSegments: { newCustomers: 0, returningCustomers: 0 },
+          firstTimeVsReturning: {
+            firstTime: { orders: 0, revenue: 0 },
+            returning: { orders: 0, revenue: 0 }
+          },
+          customerSegmentData: []
+        })
       }
     }
 

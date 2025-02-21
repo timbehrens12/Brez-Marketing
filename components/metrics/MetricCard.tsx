@@ -30,15 +30,15 @@ interface MetricCardProps {
 
 export function MetricCard({
   title,
-  value,
-  change,
+  value = 0,
+  change = 0,
   data,
   prefix = "",
   suffix = "",
   className,
   loading = false,
   valueFormat = "number",
-  platform,
+  platform = "shopify",
   infoTooltip,
   includesRefunds = false,
   dateRange,
@@ -63,20 +63,35 @@ export function MetricCard({
   }
 
   const formatValue = (val: number) => {
-    switch (valueFormat) {
-      case "percentage":
-        return `${val.toFixed(2)}`
-      case "currency":
-        return val
-          .toLocaleString("en-US", {
-            style: "currency",
-            currency: "USD",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })
-          .replace(/^\$/, "") // Remove the leading dollar sign
-      default:
-        return val.toLocaleString()
+    if (val === undefined || val === null) return '0'
+    
+    try {
+      if (valueFormat === "currency") {
+        return val.toLocaleString('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })
+      }
+      if (valueFormat === "percentage") {
+        return `${val.toFixed(1)}%`
+      }
+      return val.toLocaleString()
+    } catch (error) {
+      console.error('Error formatting value:', error)
+      return '0'
+    }
+  }
+
+  const formatChange = (val: number) => {
+    if (val === undefined || val === null) return '0%'
+    
+    try {
+      return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
+    } catch (error) {
+      console.error('Error formatting change:', error)
+      return '0%'
     }
   }
 
@@ -168,7 +183,7 @@ export function MetricCard({
                   ) : (
                     <>
                       {isPositive ? "+" : ""}
-                      {change.toFixed(1)}%
+                      {formatChange(change)}
                     </>
                   )}
                 </div>
