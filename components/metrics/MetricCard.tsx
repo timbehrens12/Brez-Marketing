@@ -32,7 +32,7 @@ export function MetricCard({
   title,
   value = 0,
   change = 0,
-  data,
+  data = [],
   prefix = "",
   suffix = "",
   className,
@@ -144,6 +144,8 @@ export function MetricCard({
     return `Compared to ${prevStart} - ${prevEnd}`
   }
 
+  const safeData = Array.isArray(data) ? data : []
+
   return (
     <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -201,7 +203,7 @@ export function MetricCard({
         )}
         <div className="h-[100px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
+            <LineChart data={safeData}>
               <XAxis
                 dataKey="date"
                 fontSize={10}
@@ -274,7 +276,7 @@ export function MetricCard({
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke={isPositive ? "#16a34a" : "#dc2626"}
+                stroke={change >= 0 ? "#16a34a" : "#dc2626"}
                 strokeWidth={2}
                 dot={false}
               />

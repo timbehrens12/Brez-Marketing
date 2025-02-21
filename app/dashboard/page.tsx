@@ -16,6 +16,7 @@ import type { Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
+import { MetricCard } from "@/components/metrics/MetricCard"
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -323,6 +324,13 @@ export default function DashboardPage() {
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
+  // Before mapping over data, ensure it's safe
+  const safeMetrics = metrics || {
+    totalSales: 0,
+    salesGrowth: 0,
+    // ... all default values
+  }
+
   return (
     <main className="flex flex-col w-full">
       <div className="flex items-center justify-between p-4 border-b">
@@ -344,7 +352,7 @@ export default function DashboardPage() {
                 meta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
               }}
               dateRange={dateRange}
-              metrics={metrics || defaultMetrics}
+              metrics={safeMetrics}
               isLoading={!widgetData}
               data={widgetData}
             />
@@ -354,6 +362,16 @@ export default function DashboardPage() {
             No platforms connected to this brand. Go to Settings to connect platforms.
           </div>
         )}
+      </div>
+
+      <div className="p-8">
+        <MetricCard
+          title="Total Sales"
+          value={safeMetrics.totalSales}
+          change={safeMetrics.salesGrowth}
+          data={Array.isArray(safeMetrics.salesData) ? safeMetrics.salesData : []}
+          valueFormat="currency"
+        />
       </div>
     </main>
   )
