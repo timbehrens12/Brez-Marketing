@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState(defaultMetrics)
   const [loading, setLoading] = useState(false)
   const [connections, setConnections] = useState<any[]>([])
+  const [error, setError] = useState("")
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
@@ -46,6 +47,50 @@ export default function DashboardPage() {
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
+
+  const loadMetrics = async () => {
+    setLoading(true)
+    setError("")
+    
+    try {
+      // Load Shopify metrics if connected
+      if (connections.some(c => c.platform_type === 'shopify')) {
+        const { data: shopifyData } = await supabase
+          .from('shopify_metrics')
+          .select('*')
+          .eq('brand_id', selectedBrandId)
+          .single()
+        
+        if (shopifyData) {
+          setMetrics(prev => ({
+            ...prev,
+            ...shopifyData
+          }))
+        }
+      }
+
+      // Load Meta metrics if connected
+      if (connections.some(c => c.platform_type === 'meta')) {
+        const { data: metaData } = await supabase
+          .from('meta_metrics')
+          .select('*')
+          .eq('brand_id', selectedBrandId)
+          .single()
+        
+        if (metaData) {
+          setMetrics(prev => ({
+            ...prev,
+            ...metaData
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Error loading metrics:', error)
+      setError("Failed to load metrics")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="p-8">
