@@ -87,6 +87,7 @@ export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const { selectedBrandId } = useBrandContext()
   const [connections, setConnections] = useState<PlatformConnection[]>([])
+  const [widgetData, setWidgetData] = useState<any>(null)
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
@@ -181,6 +182,61 @@ export default function DashboardPage() {
     }
   }, [supabase, setSelectedStore])
 
+  // Load widget data when connections change
+  useEffect(() => {
+    async function loadWidgetData() {
+      if (!selectedBrandId || !connections.length) return
+
+      const shopifyConnection = connections.find(c => 
+        c.platform_type === 'shopify' && c.status === 'active'
+      )
+      
+      if (shopifyConnection) {
+        try {
+          // Load Shopify data
+          const { data: shopifyData } = await supabase
+            .from('shopify_data')
+            .select('*')
+            .eq('connection_id', shopifyConnection.id)
+            .single()
+
+          // Update widget data
+          setWidgetData({
+            ...widgetData,
+            shopify: shopifyData
+          })
+        } catch (error) {
+          console.error('Error loading Shopify data:', error)
+        }
+      }
+
+      const metaConnection = connections.find(c => 
+        c.platform_type === 'meta' && c.status === 'active'
+      )
+
+      if (metaConnection) {
+        try {
+          // Load Meta data
+          const { data: metaData } = await supabase
+            .from('meta_data')
+            .select('*')
+            .eq('connection_id', metaConnection.id)
+            .single()
+
+          // Update widget data
+          setWidgetData(current => ({
+            ...current,
+            meta: metaData
+          }))
+        } catch (error) {
+          console.error('Error loading Meta data:', error)
+        }
+      }
+    }
+
+    loadWidgetData()
+  }, [selectedBrandId, connections, supabase])
+
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
@@ -197,33 +253,22 @@ export default function DashboardPage() {
       </div>
 
       <div className="p-8">
-        {connections && connections.length > 0 ? (
+        {connections.length > 0 ? (
           <Tabs defaultValue="overview" className="w-full">
             <PlatformTabs 
-              platforms={platforms}
+              platforms={{
+                shopify: connections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
+                meta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
+              }}
               dateRange={dateRange}
               metrics={metrics || defaultMetrics}
-              isLoading={loading}
+              isLoading={!widgetData}
+              data={widgetData}
             />
-            <TabsContent value="shopify">
-              <ShopifyContent 
-                metrics={metrics || defaultMetrics} 
-                dateRange={dateRange} 
-              />
-            </TabsContent>
-            <TabsContent value="meta">
-              <MetaContent 
-                metrics={transformToMetaMetrics(metrics)} 
-                dateRange={dateRange} 
-              />
-            </TabsContent>
           </Tabs>
         ) : (
           <div className="text-center text-gray-500 mt-8">
             No platforms connected to this brand. Go to Settings to connect platforms.
-            <pre className="mt-4 text-left text-xs">
-              {JSON.stringify({ selectedBrandId, connections, platforms }, null, 2)}
-            </pre>
           </div>
         )}
       </div>
