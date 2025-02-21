@@ -32,26 +32,20 @@ export default function SettingsPage() {
 
   const handleConnect = async (platformType: string) => {
     if (platformType === 'shopify') {
-      // Redirect to Shopify OAuth
       const shopifyAuthUrl = `https://accounts.shopify.com/oauth/authorize?` +
         `client_id=${process.env.NEXT_PUBLIC_SHOPIFY_CLIENT_ID}` +
         `&scope=read_products,read_orders` +
         `&redirect_uri=${encodeURIComponent('https://brezmarketingdashboard.com/api/auth/callback/shopify')}` +
+        `&response_type=code` +
         `&state=${selectedBrandId}`
       window.location.href = shopifyAuthUrl
     } else if (platformType === 'meta') {
-      // For testing, let's just create a connection directly
-      const { error } = await supabase
-        .from('platform_connections')
-        .insert([{
-          brand_id: selectedBrandId,
-          platform_type: 'meta',
-          access_token: 'test_token'
-        }])
-      
-      if (!error) {
-        window.location.reload()
-      }
+      // Create a proper Meta authentication flow
+      window.location.href = `https://www.facebook.com/v18.0/dialog/oauth?` +
+        `client_id=${process.env.NEXT_PUBLIC_META_APP_ID}` +
+        `&redirect_uri=${encodeURIComponent('https://brezmarketingdashboard.com/api/auth/callback/meta')}` +
+        `&scope=ads_read,ads_management` +
+        `&state=${selectedBrandId}`
     }
   }
 
