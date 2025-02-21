@@ -60,12 +60,12 @@ function getStoreCredentials(shop) {
 }
 
 app.get("/shopify/auth", (req, res) => {
-  const shop = req.query.shop
+  const { shop, brandId } = req.query
   if (!shop) {
     return res.status(400).send("Missing shop parameter")
   }
 
-  console.log("Auth request for shop:", shop)
+  console.log("Auth request for shop:", shop, "brandId:", brandId)
   const credentials = getStoreCredentials(shop)
 
   if (!credentials) {
@@ -73,19 +73,10 @@ app.get("/shopify/auth", (req, res) => {
     return res.status(400).send("No credentials found for this shop")
   }
 
-  console.log("Initiating OAuth flow for shop:", shop)
   const redirectUri = `${process.env.BACKEND_URL}/shopify/callback`
   const scopes = "read_orders,read_products,read_customers,read_discounts,read_inventory"
-  const nonce = crypto.randomBytes(16).toString("hex")
-  const shopifyAuthUrl = `https://${shop}/admin/oauth/authorize?client_id=${credentials.clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${nonce}`
-
-  // Set cookie with proper options
-  res.cookie("shopify_nonce", nonce, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 1000, // 1 hour
-  })
+  const state = brandId // Use brandId as state instead of random nonce
+  const shopifyAuthUrl = `https://${shop}/admin/oauth/authorize?client_id=${credentials.clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
 
   console.log("Redirecting to Shopify auth URL:", shopifyAuthUrl)
   res.redirect(shopifyAuthUrl)
@@ -97,21 +88,9 @@ app.get("/", (req, res) => {
 
 // Shopify OAuth callback
 app.get("/shopify/callback", async (req, res) => {
-  const { code, shop, state } = req.query
-  const storedNonce = req.cookies.shopify_nonce
+  const { code, shop, state: brandId } = req.query // state is our brandId
 
-  console.log("Callback received:", { shop, state, hasNonce: !!storedNonce })
-
-  // Verify the state matches the stored nonce
-  if (!storedNonce || state !== storedNonce) {
-    console.error("Nonce verification failed:", {
-      receivedState: state,
-      storedNonce: storedNonce,
-    })
-    return res.status(403).send("Invalid state parameter")
-  }
-
-  if (!code || !shop) {
+  if (!code || !shop || !brandId) {
     return res.status(400).send("Missing required parameters")
   }
 
@@ -134,23 +113,11 @@ app.get("/shopify/callback", async (req, res) => {
       lastTokenRefresh: new Date(),
     }
 
-    // First get the brand ID for this user
-    const { data: brand, error: brandError } = await supabase
-      .from('brands')
-      .select('id')
-      .eq('user_id', 'user_id_here')  // We need to get the user_id somehow
-      .single()
-
-    if (brandError) {
-      console.error("Error getting brand:", brandError)
-      return
-    }
-
-    // Then save the platform connection
+    // Save to Supabase with the brandId
     const { error: supabaseError } = await supabase
       .from('platform_connections')
       .insert({
-        brand_id: brand.id,
+        brand_id: brandId,
         platform_type: 'shopify',
         store_url: shop,
         access_token: tokenResponse.data.access_token

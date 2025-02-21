@@ -49,10 +49,9 @@ export default function SettingsPage() {
       try {
         console.log('Connecting to Shopify:', { storeUrl, brandId: selectedBrandId })
         
-        // Hit your Heroku backend instead of Next.js API routes
         window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/shopify/auth?` +
-          `shop=${encodeURIComponent(storeUrl)}` +
-          `&brandId=${selectedBrandId}`
+        `shop=${encodeURIComponent(storeUrl)}` +
+        `&brandId=${selectedBrandId}`
       } catch (error) {
         console.error('Error connecting Shopify:', error)
         toast.error('Failed to connect to Shopify')
