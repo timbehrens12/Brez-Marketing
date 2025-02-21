@@ -85,44 +85,55 @@ function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [connections, setConnections] = useState<PlatformConnection[]>([])
   const { selectedBrandId } = useBrandContext()
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const supabase = createClientComponentClient()
 
+  // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
     async function loadConnections() {
-      if (!selectedBrandId) return
-      
-      console.log('Loading connections for brand:', selectedBrandId)
-      const { data, error } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('brand_id', selectedBrandId)
-
-      if (error) {
-        console.error('Supabase error:', error)
+      if (!selectedBrandId) {
+        console.log('No brand selected yet')
         return
       }
       
-      console.log('Loaded connections:', data)
-      setConnections(data || [])
-      
-      // Update platforms state
-      const hasShopify = data?.some(c => c.platform_type === 'shopify' && c.status === 'active')
-      const hasMeta = data?.some(c => c.platform_type === 'meta' && c.status === 'active')
-      
-      setPlatforms({
-        shopify: hasShopify || false,
-        meta: hasMeta || false
-      })
+      console.log('Loading connections for brand:', selectedBrandId)
+      try {
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('brand_id', selectedBrandId)
+
+        if (error) throw error
+
+        console.log('Loaded connections:', data)
+        if (data && data.length > 0) {
+          setConnections(data)
+          setPlatforms({
+            shopify: data.some(c => c.platform_type === 'shopify' && c.status === 'active'),
+            meta: data.some(c => c.platform_type === 'meta' && c.status === 'active')
+          })
+        }
+      } catch (error) {
+        console.error('Error loading connections:', error)
+      }
     }
 
     loadConnections()
   }, [selectedBrandId, supabase])
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Current state:', {
+      selectedBrandId,
+      connections,
+      platforms
+    })
+  }, [selectedBrandId, connections, platforms])
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
