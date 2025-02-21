@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 
 const BrandContext = createContext<{
   selectedBrandId: string | null
@@ -13,7 +13,6 @@ const BrandContext = createContext<{
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const supabase = createClientComponentClient()
 
   useEffect(() => {
     // Load initial brand
@@ -37,7 +36,7 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
     }
 
     loadInitialBrand()
-  }, [supabase])
+  }, [])
 
   return (
     <BrandContext.Provider value={{ selectedBrandId, setSelectedBrandId }}>

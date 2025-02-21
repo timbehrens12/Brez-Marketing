@@ -3,19 +3,18 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { PlatformTabs } from "@/components/dashboard/PlatformTabs"
+import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
 import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
-import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "@/lib/supabase"
 import BrandSelector from '@/components/BrandSelector'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { defaultMetrics } from '@/lib/defaultMetrics'
 import type { Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -82,17 +81,21 @@ function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
   }
 }
 
+interface WidgetData {
+  shopify?: any;
+  meta?: any;
+}
+
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const { selectedBrandId } = useBrandContext()
   const [connections, setConnections] = useState<PlatformConnection[]>([])
-  const [widgetData, setWidgetData] = useState<any>(null)
+  const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const supabase = createClientComponentClient()
 
   // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
