@@ -22,9 +22,20 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
       const { brandId, connections } = event.detail
+      console.log('Selected brand connections:', connections) // Debug log
       setSelectedBrandId(brandId)
       setConnections(connections || [])
-      setMetrics(defaultMetrics) // Reset metrics when brand changes
+      
+      // Fetch fresh connections data
+      const { data: freshConnections } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', brandId)
+      
+      if (freshConnections) {
+        console.log('Fresh connections:', freshConnections) // Debug log
+        setConnections(freshConnections)
+      }
     }
 
     window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)

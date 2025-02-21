@@ -10,6 +10,8 @@ import { BrandDialog } from "@/components/settings/BrandDialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StoreConnectButton } from "@/components/dashboard/platforms/StoreConnectButton"
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
+import { PlatformConnections } from "@/components/settings/PlatformConnections"
+import BrandSelector from "@/components/BrandSelector"
 
 interface Brand {
   id: string
@@ -206,6 +208,9 @@ export default function SettingsPage() {
           }
         }}
       />
+
+      <BrandSelector />
+      {selectedBrand && <PlatformConnections brandId={selectedBrand} />}
     </div>
   )
 }
