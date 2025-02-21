@@ -29,9 +29,9 @@ interface MetricCardProps {
 }
 
 export function MetricCard({
-  title,
-  value = 0,
-  change = 0,
+  title = "",
+  value,
+  change,
   data = [],
   prefix = "",
   suffix = "",
@@ -45,7 +45,11 @@ export function MetricCard({
   isCustomRange = false,
   emptyState,
 }: MetricCardProps) {
-  const isPositive = change > 0
+  // Force numbers to be 0 if undefined/null
+  const safeValue = Number(value) || 0
+  const safeChange = Number(change) || 0
+  
+  const isPositive = safeChange > 0
 
   if (loading) {
     return (
@@ -62,25 +66,19 @@ export function MetricCard({
     )
   }
 
+  // Simplified formatting with extra safety
   const formatValue = (val: number) => {
-    if (val === undefined || val === null) return '0'
-    
     try {
-      if (valueFormat === "currency") {
-        return val.toLocaleString('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        })
+      switch(valueFormat) {
+        case "currency":
+          return `$${val.toFixed(2)}`
+        case "percentage":
+          return `${val.toFixed(1)}%`
+        default:
+          return val.toFixed(0)
       }
-      if (valueFormat === "percentage") {
-        return `${val.toFixed(1)}%`
-      }
-      return val.toLocaleString()
-    } catch (error) {
-      console.error('Error formatting value:', error)
-      return '0'
+    } catch {
+      return "0"
     }
   }
 
@@ -95,7 +93,7 @@ export function MetricCard({
     }
   }
 
-  const formattedValue = typeof value === "string" ? value : formatValue(Number(value))
+  const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
 
   const PlatformIcon = () => {
     switch (platform) {
@@ -185,7 +183,7 @@ export function MetricCard({
                   ) : (
                     <>
                       {isPositive ? "+" : ""}
-                      {formatChange(change)}
+                      {formatChange(safeChange)}
                     </>
                   )}
                 </div>
@@ -276,7 +274,7 @@ export function MetricCard({
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke={change >= 0 ? "#16a34a" : "#dc2626"}
+                stroke={safeChange >= 0 ? "#16a34a" : "#dc2626"}
                 strokeWidth={2}
                 dot={false}
               />
