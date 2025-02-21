@@ -42,43 +42,31 @@ export default function SettingsPage() {
   }, [selectedBrandId])
 
   const handleConnect = async (platformType: string) => {
-    try {
-      setConnectingPlatform(platformType)
+    if (platformType === 'shopify') {
+      const storeUrl = prompt('Enter your Shopify store URL (e.g., my-store.myshopify.com):')
+      if (!storeUrl) return
 
-      if (platformType === 'shopify') {
-        const storeUrl = prompt('Enter your Shopify store URL (e.g., my-store.myshopify.com):')
-        if (!storeUrl) return
-
-        try {
-          // Log the redirect
-          console.log('Redirecting to Shopify auth with:', { storeUrl, brandId: selectedBrandId })
-          
-          // Update the redirect URL to match our callback route
-          window.location.href = `/api/auth/shopify/callback?` +
-            `shop=${encodeURIComponent(storeUrl)}` +
-            `&state=${selectedBrandId}`  // state is our brandId
-        } catch (error) {
-          console.error('Error connecting Shopify:', error)
-          toast.error('Failed to connect to Shopify')
-        }
-      } else if (platformType === 'meta') {
-        const { error } = await supabase
-          .from('platform_connections')
-          .insert([{
-            brand_id: selectedBrandId,
-            platform_type: 'meta',
-            connected_at: new Date().toISOString()
-          }])
-
-        if (error) throw error
-        toast.success('Successfully connected Meta Ads')
-        await loadConnections()
+      try {
+        // Redirect to our auth route first
+        window.location.href = `/api/auth/shopify?` +
+          `shop=${encodeURIComponent(storeUrl)}` +
+          `&brandId=${selectedBrandId}`
+      } catch (error) {
+        console.error('Error connecting Shopify:', error)
+        toast.error('Failed to connect to Shopify')
       }
-    } catch (error) {
-      toast.error(`Failed to connect ${platformType}`)
-      console.error(error)
-    } finally {
-      setConnectingPlatform(null)
+    } else if (platformType === 'meta') {
+      const { error } = await supabase
+        .from('platform_connections')
+        .insert([{
+          brand_id: selectedBrandId,
+          platform_type: 'meta',
+          connected_at: new Date().toISOString()
+        }])
+
+      if (error) throw error
+      toast.success('Successfully connected Meta Ads')
+      await loadConnections()
     }
   }
 

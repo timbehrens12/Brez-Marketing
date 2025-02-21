@@ -1,34 +1,25 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
-  const code = searchParams.get('code')
-  const brandId = searchParams.get('state') // Pass brandId as state
+  const brandId = searchParams.get('brandId')
 
-  if (!shop || !code || !brandId) {
+  if (!shop || !brandId) {
     return NextResponse.redirect('/settings?error=missing_params')
   }
 
-  try {
-    // Save the connection
-    const { data, error } = await supabase
-      .from('platform_connections')
-      .insert({
-        brand_id: brandId,
-        platform_type: 'shopify',
-        store_url: shop,
-        access_token: code // Note: In production, you'd want to exchange this for a permanent token
-      })
-      .select()
-      .single()
+  // Your Shopify app credentials
+  const clientId = process.env.SHOPIFY_CLIENT_ID
+  const scopes = 'read_orders,read_products,read_customers'
+  const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/shopify/callback`
 
-    if (error) throw error
+  // Construct Shopify OAuth URL
+  const shopifyAuthUrl = `https://${shop}/admin/oauth/authorize?` +
+    `client_id=${clientId}&` +
+    `scope=${scopes}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `state=${brandId}`
 
-    return NextResponse.redirect('/settings?success=shopify_connected')
-  } catch (error) {
-    console.error('Shopify connection error:', error)
-    return NextResponse.redirect('/settings?error=connection_failed')
-  }
-} 
+  return NextResponse.redirect(shopifyAuthUrl)
+}
