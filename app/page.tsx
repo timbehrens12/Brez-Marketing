@@ -660,7 +660,10 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen bg-gray-200">
       <div className="bg-gray-200 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
-          <BrandSelector />
+          <BrandSelector onSelect={(brandId) => {
+            // Handle brand selection
+            console.log('Selected brand:', brandId)
+          }} />
           <div className="flex items-center space-x-4">
             <DateRangePicker date={dateRange} onDateChange={handleDateChange} />
           </div>

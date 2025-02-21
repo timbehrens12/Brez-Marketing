@@ -95,10 +95,10 @@ export default function DashboardPage() {
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
-        <BrandSelector />
+        <BrandSelector onSelect={setSelectedBrandId} />
         <DateRangePicker 
-          date={dateRange} 
-          onDateChange={setDateRange} 
+          date={dateRange}
+          onDateChange={setDateRange}
         />
       </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import BrandSelector from "@/components/BrandSelector"
 import { BrandDialog } from "@/components/settings/BrandDialog"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,63 @@ export default function SettingsPage() {
   const { userId } = useAuth()
   const [showBrandDialog, setShowBrandDialog] = useState(false)
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const [connections, setConnections] = useState<any[]>([])
+
+  useEffect(() => {
+    const loadConnections = async () => {
+      if (!selectedBrandId) return
+      
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', selectedBrandId)
+
+      if (!error) {
+        setConnections(data || [])
+      }
+    }
+
+    loadConnections()
+  }, [selectedBrandId])
+
+  const handleConnect = async (platformType: string) => {
+    if (platformType === 'shopify') {
+      // Redirect to Shopify OAuth
+      const shopifyAuthUrl = `https://accounts.shopify.com/oauth/authorize?` +
+        `client_id=${process.env.NEXT_PUBLIC_SHOPIFY_CLIENT_ID}` +
+        `&scope=read_products,read_orders` +
+        `&redirect_uri=${encodeURIComponent('https://brezmarketingdashboard.com/api/auth/callback/shopify')}` +
+        `&state=${selectedBrandId}`
+      window.location.href = shopifyAuthUrl
+    } else if (platformType === 'meta') {
+      // For testing, let's just create a connection directly
+      const { error } = await supabase
+        .from('platform_connections')
+        .insert([{
+          brand_id: selectedBrandId,
+          platform_type: 'meta',
+          access_token: 'test_token'
+        }])
+      
+      if (!error) {
+        window.location.reload()
+      }
+    }
+  }
+
+  const handleDisconnect = async (platformType: string) => {
+    const { error } = await supabase
+      .from('platform_connections')
+      .delete()
+      .match({ 
+        brand_id: selectedBrandId,
+        platform_type: platformType 
+      })
+
+    if (!error) {
+      window.location.reload()
+    }
+  }
 
   const platforms = [
     {
@@ -44,17 +101,32 @@ export default function SettingsPage() {
         <div className="bg-[#111111] p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-6">Platform Integrations</h2>
           <div className="space-y-4">
-            {platforms.map(platform => (
-              <div key={platform.type} className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
-                <div className="flex items-center gap-3">
-                  <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
-                  <span>{platform.name}</span>
+            {platforms.map(platform => {
+              const isConnected = connections.some(c => c.platform_type === platform.type)
+              return (
+                <div key={platform.type} className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
+                    <span>{platform.name}</span>
+                  </div>
+                  {isConnected ? (
+                    <Button 
+                      variant="destructive"
+                      onClick={() => handleDisconnect(platform.type)}
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => handleConnect(platform.type)}
+                    >
+                      Connect
+                    </Button>
+                  )}
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Connect
-                </Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
