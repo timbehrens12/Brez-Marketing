@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@clerk/nextjs"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
@@ -17,6 +17,8 @@ import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
+import { ShopifyTab } from "@/components/dashboard/platforms/tabs/ShopifyTab"
+import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -59,30 +61,6 @@ const initialMetrics: Metrics = {
   customerSegmentData: []
 }
 
-function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
-  return {
-    totalSales: metrics.totalSales,
-    salesGrowth: metrics.salesGrowth,
-    averageOrderValue: metrics.averageOrderValue,
-    aovGrowth: metrics.aovGrowth,
-    ordersPlaced: metrics.ordersPlaced,
-    ordersGrowth: metrics.retentionRateGrowth || 0,
-    unitsSold: metrics.unitsSold,
-    unitsGrowth: metrics.salesGrowth || 0,
-    conversionRate: metrics.conversionRate,
-    conversionGrowth: metrics.conversionRateGrowth || 0,
-    customerRetentionRate: metrics.customerRetentionRate,
-    retentionGrowth: metrics.retentionRateGrowth || 0,
-    returnRate: metrics.returnRate || 0,
-    returnGrowth: 0,
-    inventoryLevels: metrics.inventoryLevels || 0,
-    inventoryGrowth: 0,
-    topProducts: metrics.topProducts || [],
-    dailyData: metrics.dailyData || [],
-    chartData: metrics.chartData || []
-  }
-}
-
 interface WidgetData {
   shopify?: any;
   meta?: any;
@@ -98,6 +76,7 @@ export default function DashboardPage() {
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("shopify")
 
   // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
@@ -293,24 +272,28 @@ export default function DashboardPage() {
       </div>
 
       <div className="p-8">
-        {connections.length > 0 ? (
-          <Tabs defaultValue="overview" className="w-full">
-            <PlatformTabs 
-              platforms={{
-                shopify: connections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
-                meta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
-              }}
+        <Tabs defaultValue="shopify" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="bg-[#222222]">
+            <TabsTrigger value="shopify">Shopify</TabsTrigger>
+            <TabsTrigger value="meta">Meta Ads</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="shopify">
+            <ShopifyTab 
+              metrics={metrics} 
               dateRange={dateRange}
-              metrics={safeMetrics}
-              isLoading={!widgetData}
-              data={widgetData}
+              isLoading={false}
             />
-          </Tabs>
-        ) : (
-          <div className="text-center text-gray-500 mt-8">
-            No platforms connected to this brand. Go to Settings to connect platforms.
-          </div>
-        )}
+          </TabsContent>
+          
+          <TabsContent value="meta">
+            <MetaTab 
+              metrics={metrics}
+              dateRange={dateRange}
+              isLoading={false}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <div className="p-8">

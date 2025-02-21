@@ -3,17 +3,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-interface TopProduct {
+interface Product {
   name: string
   quantity: number
   revenue: number
 }
 
 interface TopProductsProps {
-  products: TopProduct[]
+  products: Product[]
 }
 
-export function TopProducts({ products }: TopProductsProps) {
+export function TopProducts({ products = [] as Product[] }) {
+  if (!products.length) {
+    return (
+      <div className="bg-[#111111] p-4 rounded-lg">
+        <h3 className="text-sm font-medium mb-4">Top Products</h3>
+        <div className="text-center text-gray-500 py-4">
+          No products data available
+        </div>
+      </div>
+    )
+  }
   return (
     <Card className="bg-[#111111] border-[#222222]">
       <CardHeader>
@@ -29,7 +39,7 @@ export function TopProducts({ products }: TopProductsProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.slice(0, 3).map((product) => (
+            {(products as Product[]).slice(0, 3).map((product) => (
               <TableRow key={product.name}>
                 <TableCell className="font-medium text-white">{product.name}</TableCell>
                 <TableCell className="text-white text-right">{product.quantity}</TableCell>

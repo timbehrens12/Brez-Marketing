@@ -82,15 +82,9 @@ export function MetricCard({
     }
   }
 
-  const formatChange = (val: number) => {
-    if (val === undefined || val === null) return '0%'
-    
-    try {
-      return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
-    } catch (error) {
-      console.error('Error formatting change:', error)
-      return '0%'
-    }
+  const formatChange = (change: number) => {
+    if (!isFinite(change)) return '+0.0%'
+    return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
   }
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
