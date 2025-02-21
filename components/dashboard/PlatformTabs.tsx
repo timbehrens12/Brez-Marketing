@@ -5,6 +5,7 @@ import { Music, Search, Pin, Linkedin } from "lucide-react"
 import { ShopifyContent } from "./platforms/ShopifyContent"
 import { MetaContent } from "./platforms/MetaContent"
 import { DateRange } from "react-day-picker"
+import type { Metrics } from "@/types/metrics"
 
 interface ShopifyMetrics {
   totalSales: number
@@ -52,11 +53,17 @@ interface ShopifyMetrics {
     returning: { orders: number; revenue: number }
   }
   customerSegmentData: any[]
+  dailyData: any[]
+  chartData: any[]
 }
 
 interface PlatformTabsProps {
+  platforms: {
+    shopify: boolean
+    meta: boolean
+  }
   dateRange: DateRange | undefined
-  metrics: ShopifyMetrics
+  metrics: Metrics
   isLoading: boolean
 }
 
@@ -113,10 +120,12 @@ const defaultMetrics = {
   conversionGrowth: 0,
   retentionGrowth: 0,
   returnGrowth: 0,
-  inventoryGrowth: 0
+  inventoryGrowth: 0,
+  dailyData: [],
+  chartData: [],
 }
 
-export function PlatformTabs({ dateRange, metrics, isLoading }: PlatformTabsProps) {
+export function PlatformTabs({ platforms, dateRange, metrics, isLoading }: PlatformTabsProps) {
   return (
     <Tabs defaultValue="shopify">
       <TabsList className="grid w-full grid-cols-6 mb-8 bg-[#111111] border-[#222222]">

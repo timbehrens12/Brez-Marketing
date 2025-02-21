@@ -28,6 +28,7 @@ import { startOfDay, endOfDay } from "date-fns"
 import { toZonedTime } from "date-fns-tz"
 import Link from 'next/link'
 import BrandSelector from '@/components/BrandSelector'
+import { defaultMetrics } from '@/lib/defaultMetrics'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -266,104 +267,21 @@ function DashboardContent({
       {/* Platform Tabs - Always visible */}
       <Tabs defaultValue="shopify" className="w-full">
         <PlatformTabs 
+          platforms={{ shopify: true, meta: true }}
           dateRange={dateRange} 
           metrics={metrics || {
-            totalSales: 0,
-            salesGrowth: 0,
-            averageOrderValue: 0,
-            aovGrowth: 0,
-            salesData: [],
-            ordersPlaced: 0,
-            previousOrdersPlaced: 0,
-            unitsSold: 0,
-            previousUnitsSold: 0,
-            orderCount: 0,
-            previousOrderCount: 0,
-            topProducts: [],
-            customerRetentionRate: 0,
-            revenueByDay: [],
-            sessionCount: 0,
-            sessionGrowth: 0,
-            sessionData: [],
-            conversionRate: 0,
-            conversionRateGrowth: 0,
-            conversionData: [],
-            retentionRateGrowth: 0,
-            retentionData: [],
-            currentWeekRevenue: [],
-            inventoryLevels: 0,
-            returnRate: 0,
-            inventoryData: [],
-            returnData: [],
-            customerLifetimeValue: 0,
-            clvData: [],
-            averageTimeToFirstPurchase: 0,
-            timeToFirstPurchaseData: [],
-            categoryPerformance: [],
-            categoryData: [],
-            shippingZones: [],
-            shippingData: [],
-            paymentMethods: [],
-            paymentData: [],
-            discountPerformance: [],
-            discountData: [],
-            customerSegments: { newCustomers: 0, returningCustomers: 0 },
-            firstTimeVsReturning: {
-              firstTime: { orders: 0, revenue: 0 },
-              returning: { orders: 0, revenue: 0 }
-            },
-            customerSegmentData: []
-          }} 
-          isLoading={loading} 
+            ...defaultMetrics,
+            dailyData: [],
+            chartData: []
+          }}
+          isLoading={loading}
         />
         <TabsContent value="shopify">
           {selectedStore ? (
             <ShopifyContent metrics={metrics || {
-              totalSales: 0,
-              salesGrowth: 0,
-              averageOrderValue: 0,
-              aovGrowth: 0,
-              salesData: [],
-              ordersPlaced: 0,
-              previousOrdersPlaced: 0,
-              unitsSold: 0,
-              previousUnitsSold: 0,
-              orderCount: 0,
-              previousOrderCount: 0,
-              topProducts: [],
-              customerRetentionRate: 0,
-              revenueByDay: [],
-              sessionCount: 0,
-              sessionGrowth: 0,
-              sessionData: [],
-              conversionRate: 0,
-              conversionRateGrowth: 0,
-              conversionData: [],
-              retentionRateGrowth: 0,
-              retentionData: [],
-              currentWeekRevenue: [],
-              inventoryLevels: 0,
-              returnRate: 0,
-              inventoryData: [],
-              returnData: [],
-              customerLifetimeValue: 0,
-              clvData: [],
-              averageTimeToFirstPurchase: 0,
-              timeToFirstPurchaseData: [],
-              categoryPerformance: [],
-              categoryData: [],
-              shippingZones: [],
-              shippingData: [],
-              paymentMethods: [],
-              paymentData: [],
-              discountPerformance: [],
-              discountData: [],
-              customerSegments: { newCustomers: 0, returningCustomers: 0 },
-              firstTimeVsReturning: {
-                firstTime: { orders: 0, revenue: 0 },
-                returning: { orders: 0, revenue: 0 }
-              },
-              customerSegmentData: []
+              ...defaultMetrics,
+              dailyData: [],
+              chartData: []
             }} dateRange={dateRange} />
           ) : (
             <div className="text-center py-8">
@@ -373,23 +291,9 @@ function DashboardContent({
         </TabsContent>
         <TabsContent value="meta">
           <MetaContent metrics={{
-            totalSales: 0,
-            salesGrowth: 0,
-            averageOrderValue: 0,
-            aovGrowth: 0,
-            ordersPlaced: 0,
-            ordersGrowth: 0,
-            unitsSold: 0,
-            unitsGrowth: 0,
-            conversionRate: 0,
-            conversionGrowth: 0,
-            customerRetentionRate: 0,
-            retentionGrowth: 0,
-            returnRate: 0,
-            returnGrowth: 0,
-            inventoryLevels: 0,
-            inventoryGrowth: 0,
-            topProducts: []
+            ...defaultMetrics,
+            dailyData: [],
+            chartData: []
           }} dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="tiktok">
@@ -716,104 +620,21 @@ export default function DashboardPage() {
         {/* Platform Tabs - Always visible */}
         <Tabs defaultValue="shopify" className="w-full">
           <PlatformTabs 
+            platforms={{ shopify: true, meta: true }}
             dateRange={dateRange} 
             metrics={metrics || {
-              totalSales: 0,
-              salesGrowth: 0,
-              averageOrderValue: 0,
-              aovGrowth: 0,
-              salesData: [],
-              ordersPlaced: 0,
-              previousOrdersPlaced: 0,
-              unitsSold: 0,
-              previousUnitsSold: 0,
-              orderCount: 0,
-              previousOrderCount: 0,
-              topProducts: [],
-              customerRetentionRate: 0,
-              revenueByDay: [],
-              sessionCount: 0,
-              sessionGrowth: 0,
-              sessionData: [],
-              conversionRate: 0,
-              conversionRateGrowth: 0,
-              conversionData: [],
-              retentionRateGrowth: 0,
-              retentionData: [],
-              currentWeekRevenue: [],
-              inventoryLevels: 0,
-              returnRate: 0,
-              inventoryData: [],
-              returnData: [],
-              customerLifetimeValue: 0,
-              clvData: [],
-              averageTimeToFirstPurchase: 0,
-              timeToFirstPurchaseData: [],
-              categoryPerformance: [],
-              categoryData: [],
-              shippingZones: [],
-              shippingData: [],
-              paymentMethods: [],
-              paymentData: [],
-              discountPerformance: [],
-              discountData: [],
-              customerSegments: { newCustomers: 0, returningCustomers: 0 },
-              firstTimeVsReturning: {
-                firstTime: { orders: 0, revenue: 0 },
-                returning: { orders: 0, revenue: 0 }
-              },
-              customerSegmentData: []
-            }} 
-            isLoading={loading} 
+              ...defaultMetrics,
+              dailyData: [],
+              chartData: []
+            }}
+            isLoading={loading}
           />
           <TabsContent value="shopify">
             {selectedStore ? (
               <ShopifyContent metrics={metrics || {
-                totalSales: 0,
-                salesGrowth: 0,
-                averageOrderValue: 0,
-                aovGrowth: 0,
-                salesData: [],
-                ordersPlaced: 0,
-                previousOrdersPlaced: 0,
-                unitsSold: 0,
-                previousUnitsSold: 0,
-                orderCount: 0,
-                previousOrderCount: 0,
-                topProducts: [],
-                customerRetentionRate: 0,
-                revenueByDay: [],
-                sessionCount: 0,
-                sessionGrowth: 0,
-                sessionData: [],
-                conversionRate: 0,
-                conversionRateGrowth: 0,
-                conversionData: [],
-                retentionRateGrowth: 0,
-                retentionData: [],
-                currentWeekRevenue: [],
-                inventoryLevels: 0,
-                returnRate: 0,
-                inventoryData: [],
-                returnData: [],
-                customerLifetimeValue: 0,
-                clvData: [],
-                averageTimeToFirstPurchase: 0,
-                timeToFirstPurchaseData: [],
-                categoryPerformance: [],
-                categoryData: [],
-                shippingZones: [],
-                shippingData: [],
-                paymentMethods: [],
-                paymentData: [],
-                discountPerformance: [],
-                discountData: [],
-                customerSegments: { newCustomers: 0, returningCustomers: 0 },
-                firstTimeVsReturning: {
-                  firstTime: { orders: 0, revenue: 0 },
-                  returning: { orders: 0, revenue: 0 }
-                },
-                customerSegmentData: []
+                ...defaultMetrics,
+                dailyData: [],
+                chartData: []
               }} dateRange={dateRange} />
             ) : (
               <div className="text-center py-8">
@@ -823,23 +644,9 @@ export default function DashboardPage() {
           </TabsContent>
           <TabsContent value="meta">
             <MetaContent metrics={{
-              totalSales: 0,
-              salesGrowth: 0,
-              averageOrderValue: 0,
-              aovGrowth: 0,
-              ordersPlaced: 0,
-              ordersGrowth: 0,
-              unitsSold: 0,
-              unitsGrowth: 0,
-              conversionRate: 0,
-              conversionGrowth: 0,
-              customerRetentionRate: 0,
-              retentionGrowth: 0,
-              returnRate: 0,
-              returnGrowth: 0,
-              inventoryLevels: 0,
-              inventoryGrowth: 0,
-              topProducts: []
+              ...defaultMetrics,
+              dailyData: [],
+              chartData: []
             }} dateRange={dateRange} />
           </TabsContent>
           <TabsContent value="tiktok">

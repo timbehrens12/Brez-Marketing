@@ -58,26 +58,28 @@ interface MetaAdsData {
   adsets: Array<AdSetData>
 }
 
+interface MetaMetrics {
+  totalSales: number;
+  salesGrowth: number;
+  averageOrderValue: number;
+  aovGrowth: number;
+  ordersPlaced: number;
+  ordersGrowth: number;
+  unitsSold: number;
+  unitsGrowth: number;
+  conversionRate: number;
+  conversionGrowth: number;
+  customerRetentionRate: number;
+  retentionGrowth: number;
+  returnRate: number;
+  returnGrowth: number;
+  inventoryLevels: number;
+  inventoryGrowth: number;
+  topProducts: any[];
+}
+
 interface MetaContentProps {
-  metrics: {
-    totalSales: number
-    salesGrowth: number
-    averageOrderValue: number
-    aovGrowth: number
-    ordersPlaced: number
-    ordersGrowth: number
-    unitsSold: number
-    unitsGrowth: number
-    conversionRate: number
-    conversionGrowth: number
-    customerRetentionRate: number
-    retentionGrowth: number
-    returnRate: number
-    returnGrowth: number
-    inventoryLevels: number
-    inventoryGrowth: number
-    topProducts: any[]
-  }
+  metrics: MetaMetrics
   dateRange: DateRange | undefined
 }
 
