@@ -109,6 +109,11 @@ export default function DashboardPage() {
     loadConnections()
   }, [selectedBrandId])
 
+  // Force re-render when connections change
+  useEffect(() => {
+    console.log('Connections updated:', connections)
+  }, [connections])
+
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
@@ -153,6 +158,22 @@ export default function DashboardPage() {
           No platforms connected to this brand. Go to Settings to connect platforms.
         </div>
       )}
+
+      <div className="mt-4">
+        {connections && connections.length > 0 ? (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Connected Platforms</h2>
+            {connections.map(conn => (
+              <div key={conn.id} className="p-4 border rounded mb-2">
+                <p>Platform: {conn.platform_type}</p>
+                <p>Store: {conn.store_url}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No platforms connected to this brand. Go to Settings to connect platforms.</p>
+        )}
+      </div>
     </div>
   )
 }
