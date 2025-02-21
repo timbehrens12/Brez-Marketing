@@ -47,8 +47,7 @@ export default function SettingsPage() {
       if (!storeUrl) return
 
       try {
-        // Use your actual Heroku URL here
-        const backendUrl = 'https://brez-marketing-dashboard-backend.herokuapp.com' // or whatever your Heroku URL is
+        const backendUrl = 'https://api.brezmarketingdashboard.com'
         
         console.log('Connecting to:', backendUrl)
         
