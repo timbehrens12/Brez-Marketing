@@ -5,35 +5,25 @@ import { useAuth } from '@clerk/nextjs'
 import { supabase } from '@/lib/supabaseClient'
 
 interface Brand {
-  id: string
-  name: string
-  platform_connections: Array<{
-    id: string
-    platform_type: string
-    store_url?: string
-    account_id?: string
-  }>
+  id: string;
+  name: string;
 }
 
-export default function BrandSelector() {
-  const { userId, isLoaded } = useAuth()
+export default function BrandSelector({ onSelect }: { onSelect: (brandId: string) => void }) {
+  const { userId } = useAuth()
   const [brands, setBrands] = useState<Brand[]>([])
-  const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [selectedBrand, setSelectedBrand] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadUserBrands = async () => {
+    const loadBrands = async () => {
       if (!userId) return
       
       try {
-        // Query brands directly with Clerk userId
+        console.log('Loading brands for user:', userId)
         const { data, error } = await supabase
           .from('brands')
-          .select(`
-            id,
-            name,
-            platform_connections (*)
-          `)
+          .select('*')
           .eq('user_id', userId)
 
         if (error) throw error
@@ -46,23 +36,15 @@ export default function BrandSelector() {
       }
     }
 
-    if (isLoaded) {
-      loadUserBrands()
-    }
-  }, [userId, isLoaded])
+    loadBrands()
+  }, [userId])
 
-  const handleBrandChange = (brandId: string) => {
+  const handleChange = (brandId: string) => {
     setSelectedBrand(brandId)
-    const brand = brands.find(b => b.id === brandId)
-    if (!brand) return
-
-    // Dispatch event with connections
-    window.dispatchEvent(new CustomEvent('brandSelected', {
-      detail: { brandId, connections: brand.platform_connections }
-    }))
+    onSelect(brandId)
   }
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return <div className="text-white bg-[#222222] p-2 rounded">Loading brands...</div>
   }
 
@@ -71,19 +53,17 @@ export default function BrandSelector() {
   }
 
   return (
-    <div className="w-full max-w-xs">
-      <select
-        value={selectedBrand}
-        onChange={(e) => handleBrandChange(e.target.value)}
-        className="w-full p-2 border rounded-md bg-white/10 text-white"
-      >
-        <option value="">Select a Brand</option>
-        {brands.map((brand) => (
-          <option key={brand.id} value={brand.id}>
-            {brand.name}
-          </option>
-        ))}
-      </select>
-    </div>
+    <select
+      value={selectedBrand}
+      onChange={(e) => handleChange(e.target.value)}
+      className="bg-[#222222] text-white border border-[#333333] rounded p-2 w-full"
+    >
+      <option value="">Select a Brand</option>
+      {brands.map((brand: any) => (
+        <option key={brand.id} value={brand.id}>
+          {brand.name}
+        </option>
+      ))}
+    </select>
   )
 }

@@ -1,52 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import BrandSelector from "@/components/BrandSelector"
 import { BrandDialog } from "@/components/settings/BrandDialog"
 import { Button } from "@/components/ui/button"
-import { PlatformCard } from "@/components/settings/PlatformCard"
 import { supabase } from "@/lib/supabaseClient"
+import { useAuth } from "@clerk/nextjs"
 
 export default function SettingsPage() {
+  const { userId } = useAuth()
   const [showBrandDialog, setShowBrandDialog] = useState(false)
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const [connections, setConnections] = useState<any[]>([])
-
-  useEffect(() => {
-    const loadConnections = async () => {
-      if (!selectedBrandId) return
-      
-      const { data } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('brand_id', selectedBrandId)
-      
-      setConnections(data || [])
-    }
-
-    loadConnections()
-  }, [selectedBrandId])
 
   const platforms = [
     {
       name: 'Shopify',
       icon: '/shopify-icon.png',
-      type: 'shopify' as const
+      type: 'shopify'
     },
     {
       name: 'Meta Ads',
       icon: '/meta-icon.png',
-      type: 'meta' as const
-    },
-    {
-      name: 'Google Ads',
-      icon: '/google-ads-icon.png',
-      type: 'google' as const
-    },
-    {
-      name: 'TikTok',
-      icon: '/tiktok-icon.png',
-      type: 'tiktok' as const
+      type: 'meta'
     }
   ]
 
@@ -69,20 +44,17 @@ export default function SettingsPage() {
         <div className="bg-[#111111] p-6 rounded-lg">
           <h2 className="text-xl font-semibold mb-6">Platform Integrations</h2>
           <div className="space-y-4">
-            {platforms.map(platform => {
-              const connection = connections.find(c => c.platform_type === platform.type)
-              return (
-                <PlatformCard
-                  key={platform.type}
-                  name={platform.name}
-                  icon={platform.icon}
-                  platformType={platform.type}
-                  brandId={selectedBrandId}
-                  isConnected={!!connection}
-                  connectionDetails={connection}
-                />
-              )
-            })}
+            {platforms.map(platform => (
+              <div key={platform.type} className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+                <div className="flex items-center gap-3">
+                  <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
+                  <span>{platform.name}</span>
+                </div>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Connect
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -93,7 +65,10 @@ export default function SettingsPage() {
         onBrandCreate={async (brand) => {
           const { data, error } = await supabase
             .from('brands')
-            .insert([brand])
+            .insert([{
+              ...brand,
+              user_id: userId
+            }])
             .select()
             .single()
           
