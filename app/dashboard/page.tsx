@@ -118,63 +118,34 @@ export default function DashboardPage() {
   const hasMeta = connections.some(c => c.platform_type === 'meta')
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <BrandSelector onSelect={setSelectedBrandId} />
-        <DateRangePicker 
-          date={dateRange}
-          onDateChange={setDateRange}
-        />
+    <main className="flex flex-col w-full">
+      <div className="flex items-center justify-between p-4 border-b">
+        <BrandSelector onSelect={(brandId) => {
+          // This will be called when a brand is selected
+          console.log('Brand selected:', brandId)
+        }} />
+        <button className="px-4 py-2 bg-gray-100 rounded">
+          Pick a date range
+        </button>
       </div>
 
-      {!selectedBrandId ? (
-        <div className="text-center p-8 text-gray-400">
-          Select a brand to view analytics
-        </div>
-      ) : loading ? (
-        <div className="text-center p-8">Loading metrics...</div>
-      ) : metrics ? (
-        <div className="grid grid-cols-2 gap-4">
-          {/* Shopify Metrics */}
-          {metrics.shopify && (
-            <div className="bg-[#111111] p-4 rounded-lg">
-              <h3>Shopify Metrics</h3>
-              <div>Total Sales: ${metrics.shopify.total_sales}</div>
-              <div>Orders: {metrics.shopify.orders_count}</div>
-            </div>
-          )}
-
-          {/* Meta Metrics */}
-          {metrics.meta && (
-            <div className="bg-[#111111] p-4 rounded-lg">
-              <h3>Meta Metrics</h3>
-              <div>Total Sales: ${metrics.meta.total_sales}</div>
-              <div>Orders: {metrics.meta.orders_count}</div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center p-8 text-gray-400">
-          No platforms connected to this brand. Go to Settings to connect platforms.
-        </div>
-      )}
-
-      <div className="mt-4">
+      <div className="p-8">
         {connections && connections.length > 0 ? (
-          <div>
-            <h2 className="text-xl font-bold mb-4">Connected Platforms</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {connections.map(conn => (
-              <div key={conn.id} className="p-4 border rounded mb-2">
-                <p>Platform: {conn.platform_type}</p>
-                <p>Store: {conn.store_url}</p>
+              <div key={conn.id} className="p-6 bg-white rounded-lg shadow">
+                <h3 className="text-lg font-semibold capitalize">{conn.platform_type}</h3>
+                <p className="text-gray-600">{conn.store_url}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p>No platforms connected to this brand. Go to Settings to connect platforms.</p>
+          <div className="text-center text-gray-500 mt-8">
+            No platforms connected to this brand. Go to Settings to connect platforms.
+          </div>
         )}
       </div>
-    </div>
+    </main>
   )
 }
 
