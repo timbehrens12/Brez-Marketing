@@ -47,11 +47,14 @@ export default function SettingsPage() {
       if (!storeUrl) return
 
       try {
-        console.log('Connecting to Shopify:', { storeUrl, brandId: selectedBrandId })
+        // Use your actual Heroku URL here
+        const backendUrl = 'https://brez-marketing-dashboard-backend.herokuapp.com' // or whatever your Heroku URL is
         
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL}/shopify/auth?` +
-        `shop=${encodeURIComponent(storeUrl)}` +
-        `&brandId=${selectedBrandId}`
+        console.log('Connecting to:', backendUrl)
+        
+        window.location.href = `${backendUrl}/shopify/auth?` +
+          `shop=${encodeURIComponent(storeUrl)}` +
+          `&brandId=${selectedBrandId}`
       } catch (error) {
         console.error('Error connecting Shopify:', error)
         toast.error('Failed to connect to Shopify')
