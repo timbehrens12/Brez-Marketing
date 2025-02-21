@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import type React from "react"
 import { Sidebar } from "@/components/Sidebar"
 import { WidgetProvider } from "@/context/WidgetContext"
-import { ClerkProvider } from '@clerk/nextjs'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,21 +22,21 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={cn("min-h-screen bg-slate-50 font-sans antialiased", inter.className)}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <WidgetProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("min-h-screen bg-slate-50 font-sans antialiased", inter.className)}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <WidgetProvider>
+            <AuthProvider>
               <div className="flex min-h-screen">
                 <Sidebar />
                 <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">{children}</div>
               </div>
-            </WidgetProvider>
-            <Toaster />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+            </AuthProvider>
+          </WidgetProvider>
+          <Toaster />
+        </ThemeProvider>
+      </body>
+    </html>
   )
 }
 

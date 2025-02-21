@@ -10,6 +10,8 @@ import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabaseClient"
 import BrandSelector from '@/components/BrandSelector'
+import { useBrandContext } from '@/lib/context/BrandContext'
+import toast from 'react-hot-toast'
 
 interface Metrics {
   [key: string]: any;  // or define more specific platform metric types
@@ -23,6 +25,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [connections, setConnections] = useState<any[]>([])
   const [error, setError] = useState("")
+  const { selectedBrandId: brandContextSelectedBrandId } = useBrandContext()
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
@@ -79,6 +82,30 @@ export default function DashboardPage() {
       window.removeEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
       metricsSubscription.unsubscribe()
     }
+  }, [selectedBrandId])
+
+  useEffect(() => {
+    async function loadConnections() {
+      if (!selectedBrandId) return
+      
+      try {
+        console.log('Loading connections for brand:', selectedBrandId)
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('brand_id', selectedBrandId)
+
+        if (error) throw error
+        
+        console.log('Loaded connections:', data)
+        setConnections(data || [])
+      } catch (error) {
+        console.error('Error loading connections:', error)
+        toast.error('Failed to load platform connections')
+      }
+    }
+
+    loadConnections()
   }, [selectedBrandId])
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
