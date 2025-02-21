@@ -6,18 +6,34 @@ export function calculateMetrics(
   refunds: any[],
   dateRange?: { from: Date; to: Date }
 ): Metrics {
+  // Ensure we have arrays even if undefined is passed
+  const safeOrders = orders || []
+  const safeProducts = products || []
+  const safeRefunds = refunds || []
+
   // Filter orders by date range if provided
   const filteredOrders = dateRange 
-    ? orders.filter(order => {
+    ? safeOrders.filter(order => {
         const orderDate = new Date(order.created_at)
         return orderDate >= dateRange.from && orderDate <= dateRange.to
       })
-    : orders
+    : safeOrders
 
-  const totalSales = filteredOrders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
-  const totalRefunds = refunds.reduce((sum, refund) => sum + parseFloat(refund.amount), 0)
-  const returnRate = totalRefunds / totalSales || 0
-  const averageOrderValue = totalSales / filteredOrders.length || 0
+  // Safe calculations with null checks
+  const totalSales = filteredOrders.reduce((sum, order) => {
+    const price = parseFloat(order?.total_price || '0')
+    return sum + (isNaN(price) ? 0 : price)
+  }, 0)
+
+  const totalRefunds = safeRefunds.reduce((sum, refund) => {
+    const amount = parseFloat(refund?.amount || '0')
+    return sum + (isNaN(amount) ? 0 : amount)
+  }, 0)
+
+  const returnRate = totalSales > 0 ? (totalRefunds / totalSales) : 0
+  const averageOrderValue = filteredOrders.length > 0 ? (totalSales / filteredOrders.length) : 0
+
+  console.log('Calculated metrics:', { totalSales, totalRefunds, returnRate, averageOrderValue })
   
   // Add more metric calculations here
   
@@ -33,7 +49,7 @@ export function calculateMetrics(
     previousUnitsSold: 0,
     orderCount: filteredOrders.length,
     previousOrderCount: 0,
-    topProducts: products,
+    topProducts: safeProducts,
     customerRetentionRate: 0,
     revenueByDay: [],
     sessionCount: 0,

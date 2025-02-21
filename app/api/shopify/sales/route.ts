@@ -46,12 +46,20 @@ export async function GET(request: Request) {
 
     const productsData = await productsResponse.json()
 
-    return NextResponse.json({
-      orders: ordersData.orders,
-      products: productsData.products
-    })
+    const data = {
+      orders: ordersData.orders || [],
+      products: productsData.products || [],
+      refunds: [] // Add refunds data if available
+    }
+
+    console.log('API response data:', data)
+    return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching Shopify data:', error)
-    return NextResponse.json({ error: 'Failed to fetch Shopify data' }, { status: 500 })
+    console.error('Error in sales route:', error)
+    return NextResponse.json({ 
+      orders: [], 
+      products: [], 
+      refunds: [] 
+    }, { status: 500 })
   }
 } 
