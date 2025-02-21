@@ -11,11 +11,15 @@ import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabaseClient"
 import BrandSelector from '@/components/BrandSelector'
 
+interface Metrics {
+  [key: string]: any;  // or define more specific platform metric types
+}
+
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [metrics, setMetrics] = useState<any>(null)
+  const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(false)
   const [connections, setConnections] = useState<any[]>([])
   const [error, setError] = useState("")
@@ -23,45 +27,29 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
       const { brandId, connections } = event.detail
-      console.log('Selected brand connections:', connections) // Debug log
       setSelectedBrandId(brandId)
       setConnections(connections || [])
-      
-      // Fetch fresh connections data
-      const { data: freshConnections } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('brand_id', brandId)
-      
-      if (freshConnections) {
-        console.log('Fresh connections:', freshConnections) // Debug log
-        setConnections(freshConnections)
-      }
-    }
-
-    window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
-    return () => {
-      window.removeEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
-    }
-  }, [])
-
-  const hasShopify = connections.some(c => c.platform_type === 'shopify')
-  const hasMeta = connections.some(c => c.platform_type === 'meta')
-
-  useEffect(() => {
-    const loadMetrics = async () => {
-      if (!selectedBrandId) return
       setLoading(true)
 
       try {
-        const { data, error } = await supabase
+        // First, get cached metrics from database
+        const { data: cachedMetrics } = await supabase
           .from('metrics')
           .select('*')
-          .eq('brand_id', selectedBrandId)
+          .eq('brand_id', brandId)
+        
+        if (cachedMetrics) {
+          setMetrics(cachedMetrics)
+        }
 
-        if (error) throw error
-        console.log('Loaded metrics:', data)
-        setMetrics(data)
+        // Then trigger background refresh of metrics
+        if (connections.some((c: any) => c.platform_type === 'shopify')) {
+          fetch(`/api/shopify/refresh-metrics?brandId=${brandId}`)
+        }
+        if (connections.some((c: any) => c.platform_type === 'meta')) {
+          fetch(`/api/meta/refresh-metrics?brandId=${brandId}`)
+        }
+
       } catch (error) {
         console.error('Error loading metrics:', error)
       } finally {
@@ -69,8 +57,32 @@ export default function DashboardPage() {
       }
     }
 
-    loadMetrics()
+    // Listen for real-time metrics updates
+    const metricsSubscription = supabase
+      .channel('metrics_changes')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'metrics',
+        filter: `brand_id=eq.${selectedBrandId}`
+      }, payload => {
+        setMetrics((current: Metrics | null) => ({
+          ...current,
+          [payload.new.platform_type]: payload.new
+        }))
+      })
+      .subscribe()
+
+    window.addEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
+    
+    return () => {
+      window.removeEventListener('brandSelected', handleBrandSelected as unknown as EventListener)
+      metricsSubscription.unsubscribe()
+    }
   }, [selectedBrandId])
+
+  const hasShopify = connections.some(c => c.platform_type === 'shopify')
+  const hasMeta = connections.some(c => c.platform_type === 'meta')
 
   return (
     <div className="p-8">
@@ -89,22 +101,22 @@ export default function DashboardPage() {
       ) : loading ? (
         <div className="text-center p-8">Loading metrics...</div>
       ) : metrics ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {/* Shopify Metrics */}
-          {metrics.find((m: any) => m.platform_type === 'shopify') && (
+          {metrics.shopify && (
             <div className="bg-[#111111] p-4 rounded-lg">
               <h3>Shopify Metrics</h3>
-              <div>Total Sales: ${metrics.find((m: any) => m.platform_type === 'shopify').total_sales}</div>
-              <div>Orders: {metrics.find((m: any) => m.platform_type === 'shopify').orders_count}</div>
+              <div>Total Sales: ${metrics.shopify.total_sales}</div>
+              <div>Orders: {metrics.shopify.orders_count}</div>
             </div>
           )}
 
           {/* Meta Metrics */}
-          {metrics.find((m: any) => m.platform_type === 'meta') && (
+          {metrics.meta && (
             <div className="bg-[#111111] p-4 rounded-lg">
               <h3>Meta Metrics</h3>
-              <div>Total Sales: ${metrics.find((m: any) => m.platform_type === 'meta').total_sales}</div>
-              <div>Orders: {metrics.find((m: any) => m.platform_type === 'meta').orders_count}</div>
+              <div>Total Sales: ${metrics.meta.total_sales}</div>
+              <div>Orders: {metrics.meta.orders_count}</div>
             </div>
           )}
         </div>
