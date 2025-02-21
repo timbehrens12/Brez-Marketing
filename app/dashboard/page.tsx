@@ -70,11 +70,11 @@ function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
     conversionGrowth: metrics.conversionRateGrowth || 0,
     customerRetentionRate: metrics.customerRetentionRate,
     retentionGrowth: metrics.retentionRateGrowth || 0,
-    returnRate: metrics.returnRate,
+    returnRate: metrics.returnRate || 0,
     returnGrowth: 0,
-    inventoryLevels: metrics.inventoryLevels,
+    inventoryLevels: metrics.inventoryLevels || 0,
     inventoryGrowth: 0,
-    topProducts: metrics.topProducts,
+    topProducts: metrics.topProducts || [],
     dailyData: metrics.dailyData || [],
     chartData: metrics.chartData || []
   }
@@ -132,7 +132,10 @@ export default function DashboardPage() {
               isLoading={false}
             />
             <TabsContent value="shopify">
-              <ShopifyContent metrics={metrics} dateRange={dateRange} />
+              <ShopifyContent 
+                metrics={metrics || defaultMetrics} 
+                dateRange={dateRange} 
+              />
             </TabsContent>
             <TabsContent value="meta">
               <MetaContent 

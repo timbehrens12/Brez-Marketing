@@ -113,24 +113,24 @@ export interface ComparisonDates {
 }
 
 export interface MetaMetrics {
-  totalSales: number;
-  salesGrowth: number;
-  averageOrderValue: number;
-  aovGrowth: number;
-  ordersPlaced: number;
-  ordersGrowth: number;
-  unitsSold: number;
-  unitsGrowth: number;
-  conversionRate: number;
-  conversionGrowth: number;
-  customerRetentionRate: number;
-  retentionGrowth: number;
-  returnRate: number;
-  returnGrowth: number;
-  inventoryLevels: number;
-  inventoryGrowth: number;
-  topProducts: any[];
-  dailyData: any[];
-  chartData: any[];
+  totalSales: number
+  salesGrowth: number
+  averageOrderValue: number
+  aovGrowth: number
+  ordersPlaced: number
+  ordersGrowth: number
+  unitsSold: number
+  unitsGrowth: number
+  conversionRate: number
+  conversionGrowth: number
+  customerRetentionRate: number
+  retentionGrowth: number
+  returnRate: number
+  returnGrowth: number
+  inventoryLevels: number
+  inventoryGrowth: number
+  topProducts: any[]
+  dailyData: any[]
+  chartData: any[]
 }
 

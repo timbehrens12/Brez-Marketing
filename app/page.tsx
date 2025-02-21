@@ -12,7 +12,7 @@ import type { ComparisonType } from "@/components/ComparisonPicker"
 import { TopProducts } from "@/components/dashboard/TopProducts"
 import { WidgetManager } from "@/components/dashboard/WidgetManager"
 import { WidgetProvider, useWidgets } from "@/context/WidgetContext"
-import type { Metrics } from "@/types/metrics"
+import type { Metrics, MetaMetrics } from "@/types/metrics"
 import type { Widget } from "@/types/widgets"
 import { PlatformTabs } from "@/components/dashboard/PlatformTabs"
 import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
@@ -291,9 +291,25 @@ function DashboardContent({
         </TabsContent>
         <TabsContent value="meta">
           <MetaContent metrics={{
-            ...defaultMetrics,
-            dailyData: [],
-            chartData: []
+            totalSales: defaultMetrics.totalSales,
+            salesGrowth: defaultMetrics.salesGrowth,
+            averageOrderValue: defaultMetrics.averageOrderValue,
+            aovGrowth: defaultMetrics.aovGrowth,
+            ordersPlaced: defaultMetrics.ordersPlaced,
+            ordersGrowth: 0,
+            unitsSold: defaultMetrics.unitsSold,
+            unitsGrowth: 0,
+            conversionRate: defaultMetrics.conversionRate,
+            conversionGrowth: 0,
+            customerRetentionRate: defaultMetrics.customerRetentionRate,
+            retentionGrowth: 0,
+            returnRate: defaultMetrics.returnRate,
+            returnGrowth: 0,
+            inventoryLevels: defaultMetrics.inventoryLevels,
+            inventoryGrowth: 0,
+            topProducts: defaultMetrics.topProducts,
+            dailyData: defaultMetrics.dailyData || [],
+            chartData: defaultMetrics.chartData || []
           }} dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="tiktok">
@@ -644,9 +660,25 @@ export default function DashboardPage() {
           </TabsContent>
           <TabsContent value="meta">
             <MetaContent metrics={{
-              ...defaultMetrics,
-              dailyData: [],
-              chartData: []
+              totalSales: defaultMetrics.totalSales,
+              salesGrowth: defaultMetrics.salesGrowth,
+              averageOrderValue: defaultMetrics.averageOrderValue,
+              aovGrowth: defaultMetrics.aovGrowth,
+              ordersPlaced: defaultMetrics.ordersPlaced,
+              ordersGrowth: 0,
+              unitsSold: defaultMetrics.unitsSold,
+              unitsGrowth: 0,
+              conversionRate: defaultMetrics.conversionRate,
+              conversionGrowth: 0,
+              customerRetentionRate: defaultMetrics.customerRetentionRate,
+              retentionGrowth: 0,
+              returnRate: defaultMetrics.returnRate,
+              returnGrowth: 0,
+              inventoryLevels: defaultMetrics.inventoryLevels,
+              inventoryGrowth: 0,
+              topProducts: defaultMetrics.topProducts,
+              dailyData: defaultMetrics.dailyData || [],
+              chartData: defaultMetrics.chartData || []
             }} dateRange={dateRange} />
           </TabsContent>
           <TabsContent value="tiktok">
@@ -665,5 +697,29 @@ export default function DashboardPage() {
       </div>
     </div>
   )
+}
+
+function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
+  return {
+    totalSales: metrics.totalSales,
+    salesGrowth: metrics.salesGrowth,
+    averageOrderValue: metrics.averageOrderValue,
+    aovGrowth: metrics.aovGrowth,
+    ordersPlaced: metrics.ordersPlaced,
+    ordersGrowth: metrics.retentionRateGrowth || 0,
+    unitsSold: metrics.unitsSold,
+    unitsGrowth: metrics.salesGrowth || 0,
+    conversionRate: metrics.conversionRate,
+    conversionGrowth: metrics.conversionRateGrowth || 0,
+    customerRetentionRate: metrics.customerRetentionRate,
+    retentionGrowth: metrics.retentionRateGrowth || 0,
+    returnRate: metrics.returnRate,
+    returnGrowth: 0,
+    inventoryLevels: metrics.inventoryLevels,
+    inventoryGrowth: 0,
+    topProducts: metrics.topProducts,
+    dailyData: [],
+    chartData: []
+  }
 }
 
