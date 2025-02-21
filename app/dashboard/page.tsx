@@ -86,23 +86,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function loadConnections() {
-      if (!selectedBrandId) return
-      
-      try {
-        console.log('Loading connections for brand:', selectedBrandId)
-        const { data, error } = await supabase
-          .from('platform_connections')
-          .select('*')
-          .eq('brand_id', selectedBrandId)
-
-        if (error) throw error
-        
-        console.log('Loaded connections:', data)
-        setConnections(data || [])
-      } catch (error) {
-        console.error('Error loading connections:', error)
-        toast.error('Failed to load platform connections')
+      if (!selectedBrandId) {
+        console.log('No brand selected')
+        return
       }
+      
+      console.log('Loading connections for brand:', selectedBrandId)
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', selectedBrandId)
+
+      if (error) {
+        console.error('Supabase error:', error)
+        return
+      }
+      
+      console.log('Found connections:', data)
+      setConnections(data || [])
     }
 
     loadConnections()
