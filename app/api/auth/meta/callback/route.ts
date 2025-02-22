@@ -25,26 +25,40 @@ export async function GET(request: Request) {
     tokenUrl.searchParams.append('client_id', process.env.META_APP_ID!)
     tokenUrl.searchParams.append('client_secret', process.env.META_APP_SECRET!)
     tokenUrl.searchParams.append('code', code)
-    tokenUrl.searchParams.append('redirect_uri', `${process.env.FRONTEND_URL}/api/auth/meta/callback`)
+    tokenUrl.searchParams.append('redirect_uri', `https://www.brezmarketingdashboard.com/api/auth/meta/callback`)
 
     console.log('Requesting token with URL:', tokenUrl.toString())
 
     // Exchange code for access token
     const tokenResponse = await fetch(tokenUrl.toString(), {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
       cache: 'no-store',
+    }).catch(error => {
+      console.error('Fetch error:', error)
+      throw error
     })
 
-    const tokenData = await tokenResponse.json()
-    console.log('Token response:', tokenData) // Debug logging
-
-    if (!tokenResponse.ok || !tokenData.access_token) {
-      console.error('Token response error:', tokenData)
-      throw new Error(tokenData.error?.message || 'Failed to get access token')
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error('Token response not ok:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        body: errorText
+      })
+      throw new Error(`Token response not ok: ${tokenResponse.status} ${tokenResponse.statusText}`)
     }
 
-    console.log('Successfully got access token, storing in database...')
+    const tokenData = await tokenResponse.json()
+    console.log('Token response:', tokenData)
+
+    if (!tokenData.access_token) {
+      console.error('No access token in response:', tokenData)
+      throw new Error('No access token received')
+    }
 
     // Store the connection in database
     const { error: dbError } = await supabase
@@ -62,10 +76,15 @@ export async function GET(request: Request) {
       throw dbError
     }
 
-    console.log('Successfully stored connection, redirecting to settings...')
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?success=meta_connected`)
+    // Redirect back to settings page with success message
+    const redirectUrl = new URL(`${process.env.FRONTEND_URL}/settings`)
+    redirectUrl.searchParams.append('success', 'meta_connected')
+    
+    return NextResponse.redirect(redirectUrl.toString())
   } catch (error) {
     console.error('Error in Meta callback:', error)
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=meta_connection_failed`)
+    const redirectUrl = new URL(`${process.env.FRONTEND_URL}/settings`)
+    redirectUrl.searchParams.append('error', 'meta_connection_failed')
+    return NextResponse.redirect(redirectUrl.toString())
   }
 } 
