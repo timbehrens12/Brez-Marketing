@@ -10,7 +10,8 @@ export async function GET(request: Request) {
 
   const clientId = process.env.META_APP_ID
   const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
-  const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+  const redirectUri = `${baseUrl.replace('api.', '')}/api/auth/meta/callback`
 
   const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
     `client_id=${clientId}&` +
