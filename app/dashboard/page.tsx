@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
-import { DateRangePicker } from "@/components/DateRangePicker"
 import { DateRange } from "react-day-picker"
 import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
@@ -20,6 +19,8 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { ShopifyTab } from "@/components/dashboard/platforms/tabs/ShopifyTab"
 import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
 import { transformToMetaMetrics } from '@/lib/transforms'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DateRangePicker } from "@/components/DateRangePicker"
 
 // Add missing properties to defaultMetrics
 const initialMetrics: Metrics = {
@@ -70,7 +71,7 @@ interface WidgetData {
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const { selectedBrandId, brands } = useBrandContext()
+  const { selectedBrandId, setSelectedBrandId, brands } = useBrandContext()
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
@@ -265,85 +266,96 @@ export default function DashboardPage() {
     // ... all default values
   }
 
-  // Show empty state when no brand is selected
-  if (!selectedBrandId) {
-    return (
-      <div className="flex items-center justify-center h-[500px] text-gray-500">
-        Please select a brand to view metrics
-      </div>
-    )
-  }
-
   return (
-    <main className="flex flex-col w-full">
-      <div className="flex items-center justify-between p-4 border-b">
-        <BrandSelector onSelect={(brandId) => {
-          console.log('Brand selected:', brandId)
-        }} />
-        <DateRangePicker 
-          date={dateRange}
-          onDateChange={setDateRange}
-        />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between p-4 bg-[#111111]">
+        <Select
+          value={selectedBrandId || ""}
+          onValueChange={(value) => setSelectedBrandId(value)}
+        >
+          <SelectTrigger className="w-[200px] bg-[#222222] border-[#333333]">
+            <SelectValue placeholder="Select a brand" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#222222] border-[#333333]">
+            {brands.map((brand) => (
+              <SelectItem 
+                key={brand.id} 
+                value={brand.id}
+                className="text-white hover:bg-[#333333]"
+              >
+                {brand.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <DatePickerWithRange />
       </div>
 
-      <div className="p-8">
-        <Tabs defaultValue="shopify" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-[#111111] border-[#222222]">
-            <TabsTrigger 
-              value="shopify" 
-              className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
-            >
-              <img 
-                src="/shopify-icon.png" 
-                alt="Shopify" 
-                className="h-4 w-4" 
-              />
-              Shopify
-            </TabsTrigger>
-            <TabsTrigger 
-              value="meta" 
-              className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
-            >
-              <img 
-                src="/meta-icon.png" 
-                alt="Meta" 
-                className="h-4 w-4" 
-              />
-              Meta Ads
-            </TabsTrigger>
-          </TabsList>
+      {!selectedBrandId ? (
+        <div className="flex items-center justify-center h-[500px] text-gray-500">
+          Please select a brand to view metrics
+        </div>
+      ) : (
+        <div className="p-4">
+          <Tabs defaultValue="shopify" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-[#111111] border-[#222222]">
+              <TabsTrigger 
+                value="shopify" 
+                className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
+              >
+                <img 
+                  src="/shopify-icon.png" 
+                  alt="Shopify" 
+                  className="h-4 w-4" 
+                />
+                Shopify
+              </TabsTrigger>
+              <TabsTrigger 
+                value="meta" 
+                className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
+              >
+                <img 
+                  src="/meta-icon.png" 
+                  alt="Meta" 
+                  className="h-4 w-4" 
+                />
+                Meta Ads
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="shopify" className="mt-6">
-            <div className="grid gap-4">
-              <ShopifyTab 
-                metrics={metrics}
-                dateRange={dateRange}
-                isLoading={isLoading}
-              />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="meta" className="mt-6">
-            <div className="grid gap-4">
-              <MetaTab 
-                metrics={transformToMetaMetrics(metrics)}
-                dateRange={dateRange}
-                isLoading={isLoading}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            <TabsContent value="shopify" className="mt-6">
+              <div className="grid gap-4">
+                <ShopifyTab 
+                  metrics={metrics}
+                  dateRange={dateRange}
+                  isLoading={isLoading}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="meta" className="mt-6">
+              <div className="grid gap-4">
+                <MetaTab 
+                  metrics={transformToMetaMetrics(metrics)}
+                  dateRange={dateRange}
+                  isLoading={isLoading}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
 
-      <div className="p-8">
-        <MetricCard
-          title="Total Sales"
-          value={safeMetrics.totalSales}
-          change={safeMetrics.salesGrowth}
-          data={Array.isArray(safeMetrics.salesData) ? safeMetrics.salesData : []}
-          valueFormat="currency"
-        />
-      </div>
-    </main>
+          <div className="p-8">
+            <MetricCard
+              title="Total Sales"
+              value={safeMetrics.totalSales}
+              change={safeMetrics.salesGrowth}
+              data={Array.isArray(safeMetrics.salesData) ? safeMetrics.salesData : []}
+              valueFormat="currency"
+            />
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
