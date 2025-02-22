@@ -316,73 +316,69 @@ app.get("/api/shopify/sales", async (req, res) => {
   }
 })
 
-app.get("/api/meta/auth", (req, res) => {
-  console.log("Meta auth route hit")
-  const redirectUri = `${process.env.BACKEND_URL}/api/meta/callback`
-  const scopes = "ads_read,ads_management,read_insights"
-  const state = crypto.randomBytes(16).toString("hex")
+app.get("/meta/auth", (req, res) => {
+  const { brandId } = req.query
+  if (!brandId) {
+    return res.status(400).send("Missing brandId parameter")
+  }
 
-  res.cookie("meta_auth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 10 * 60 * 1000, // 10 minutes
-  })
+  console.log("Auth request for Meta, brandId:", brandId)
 
-  const authUrl = new URL("https://www.facebook.com/v17.0/dialog/oauth")
-  authUrl.searchParams.append("client_id", process.env.META_APP_ID)
-  authUrl.searchParams.append("redirect_uri", redirectUri)
-  authUrl.searchParams.append("scope", scopes)
-  authUrl.searchParams.append("state", state)
-  authUrl.searchParams.append("response_type", "code")
+  const redirectUri = `${process.env.BACKEND_URL}/meta/callback`
+  const scopes = "ads_read,ads_management,business_management,pages_read_engagement"
+  const state = brandId // Use brandId as state, just like Shopify
 
-  console.log("Initiating Meta Ads authentication. Redirect URL:", redirectUri)
-  console.log("Full Auth URL:", authUrl.toString())
-  res.redirect(authUrl.toString())
+  const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+    `client_id=${process.env.META_APP_ID}&` +
+    `scope=${scopes}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `state=${state}`
+
+  console.log("Redirecting to Meta auth URL:", metaAuthUrl)
+  res.redirect(metaAuthUrl)
 })
 
-// Meta Ads Authentication Callback
-app.get("/api/meta/callback", async (req, res) => {
-  const { code, state } = req.query
+app.get("/meta/callback", async (req, res) => {
+  const { code, state: brandId } = req.query // state is our brandId
 
-  console.log('Meta callback received:', { code: code?.substring(0, 10) + '...', state })
-
-  if (!code || !state) {
-    console.error('Missing required params:', { code: !!code, state: !!state })
-    return res.redirect(`${process.env.FRONTEND_URL}/settings?error=missing_params`)
+  if (!code || !brandId) {
+    return res.status(400).send("Missing required parameters")
   }
 
   try {
-    // Exchange code for access token
+    console.log("Exchanging code for access token")
     const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
       params: {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
         code: code,
-        redirect_uri: `${process.env.API_URL}/api/meta/callback`
+        redirect_uri: `${process.env.BACKEND_URL}/meta/callback`
       }
     })
 
-    if (!tokenResponse.data.access_token) {
-      throw new Error('Failed to get access token')
-    }
-
-    // Save to Supabase
-    const { error } = await supabase
+    // Save to Supabase with the brandId (just like Shopify)
+    const { error: supabaseError } = await supabase
       .from('platform_connections')
-      .insert([{
-        brand_id: state,
+      .insert({
+        brand_id: brandId,
         platform_type: 'meta',
         access_token: tokenResponse.data.access_token,
         connected_at: new Date().toISOString()
-      }])
+      })
 
-    if (error) throw error
+    if (supabaseError) {
+      console.error("Error saving to Supabase:", supabaseError)
+      return res.status(500).send("Failed to save connection")
+    }
 
-    // Redirect back to settings with success
-    return res.redirect(`${process.env.FRONTEND_URL}/settings?success=true`)
+    console.log("Successfully saved Meta connection to Supabase")
+    res.redirect(`${process.env.FRONTEND_URL}/settings?success=true`)
   } catch (error) {
-    console.error('Error in Meta callback:', error)
-    return res.redirect(`${process.env.FRONTEND_URL}/settings?error=connection_failed`)
+    console.error("Error in Meta callback:", error.message)
+    if (error.response) {
+      console.error("Error response:", error.response.data)
+    }
+    res.redirect(`${process.env.FRONTEND_URL}/settings?error=connection_failed`)
   }
 })
 

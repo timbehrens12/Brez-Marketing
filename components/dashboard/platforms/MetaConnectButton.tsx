@@ -15,22 +15,9 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   const [isConnecting, setIsConnecting] = useState(false)
   const { toast } = useToast()
 
-  const handleConnect = async () => {
-    setIsConnecting(true)
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/api/meta/auth?brandId=${brandId}`
-      console.log('Connecting to Meta with URL:', authUrl)
-      window.location.href = authUrl
-    } catch (error) {
-      console.error("Failed to initiate Meta connection:", error)
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect Meta Ads. Please try again.",
-        variant: "destructive",
-      })
-      setIsConnecting(false)
-    }
+  const handleConnect = () => {
+    const authUrl = `${process.env.NEXT_PUBLIC_API_URL}/meta/auth?brandId=${brandId}`
+    window.location.href = authUrl
   }
 
   return (
