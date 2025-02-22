@@ -15,16 +15,22 @@ export async function GET(request: Request) {
   }
 
   if (!code || !state) {
+    console.error('Missing code or state:', { code, state })
     return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=invalid_callback`)
   }
 
   try {
+    // Construct token URL with all required parameters
+    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    tokenUrl.searchParams.append('client_id', process.env.META_APP_ID!)
+    tokenUrl.searchParams.append('client_secret', process.env.META_APP_SECRET!)
+    tokenUrl.searchParams.append('code', code)
+    tokenUrl.searchParams.append('redirect_uri', `${process.env.FRONTEND_URL}/api/auth/meta/callback`)
+
+    console.log('Requesting token with URL:', tokenUrl.toString())
+
     // Exchange code for access token
-    const tokenResponse = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?` +
-      `client_id=${process.env.META_APP_ID}&` +
-      `client_secret=${process.env.META_APP_SECRET}&` +
-      `code=${code}&` +
-      `redirect_uri=${encodeURIComponent(`${process.env.FRONTEND_URL}/api/auth/meta/callback`)}`, {
+    const tokenResponse = await fetch(tokenUrl.toString(), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
@@ -33,9 +39,12 @@ export async function GET(request: Request) {
     const tokenData = await tokenResponse.json()
     console.log('Token response:', tokenData) // Debug logging
 
-    if (!tokenResponse.ok) {
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      console.error('Token response error:', tokenData)
       throw new Error(tokenData.error?.message || 'Failed to get access token')
     }
+
+    console.log('Successfully got access token, storing in database...')
 
     // Store the connection in database
     const { error: dbError } = await supabase
@@ -48,8 +57,12 @@ export async function GET(request: Request) {
         status: 'active'
       }])
 
-    if (dbError) throw dbError
+    if (dbError) {
+      console.error('Database error:', dbError)
+      throw dbError
+    }
 
+    console.log('Successfully stored connection, redirecting to settings...')
     return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?success=meta_connected`)
   } catch (error) {
     console.error('Error in Meta callback:', error)
