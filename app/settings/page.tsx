@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabaseClient"
 import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
+import { useBrandContext } from "@/lib/context/BrandContext"
 
 export default function SettingsPage() {
   const { userId } = useAuth()
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [connections, setConnections] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
+  const { refreshBrands } = useBrandContext()
 
   const loadConnections = async () => {
     if (!selectedBrandId) return
@@ -115,6 +117,14 @@ export default function SettingsPage() {
     }
   ]
 
+  const handleBrandAdded = async () => {
+    // Your existing brand creation logic
+    // ...
+    
+    // After successful creation, refresh the brands list
+    await refreshBrands()
+  }
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="bg-[#111111] p-6 rounded-lg mb-8">
@@ -184,30 +194,7 @@ export default function SettingsPage() {
       <BrandDialog 
         open={showBrandDialog} 
         onOpenChange={setShowBrandDialog}
-        onBrandCreate={async (brand) => {
-          try {
-            const { data, error } = await supabase
-              .from('brands')
-              .insert([{
-                ...brand,
-                user_id: userId,
-                created_at: new Date().toISOString()
-              }])
-              .select()
-              .single()
-            
-            if (error) throw error
-            if (data) {
-              setSelectedBrandId(data.id)
-              toast.success('Brand created successfully')
-            }
-          } catch (error) {
-            toast.error('Failed to create brand')
-            console.error(error)
-          } finally {
-            setShowBrandDialog(false)
-          }
-        }}
+        onBrandCreate={handleBrandAdded}
       />
     </div>
   )

@@ -70,10 +70,10 @@ interface WidgetData {
 export default function DashboardPage() {
   const { userId } = useAuth()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const { selectedBrandId } = useBrandContext()
+  const { selectedBrandId, brands } = useBrandContext()
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
-  const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
+  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -224,9 +224,13 @@ export default function DashboardPage() {
   }, [selectedBrandId, connections, supabase])
 
   useEffect(() => {
+    // Reset metrics when no brand is selected
+    if (!selectedBrandId) {
+      setMetrics(defaultMetrics)
+      return
+    }
+
     async function fetchShopifyData() {
-      if (!selectedBrandId) return
-      
       setIsLoading(true)
       try {
         const response = await fetch(`/api/shopify/sales?brandId=${selectedBrandId}`)
@@ -259,6 +263,15 @@ export default function DashboardPage() {
     totalSales: 0,
     salesGrowth: 0,
     // ... all default values
+  }
+
+  // Show empty state when no brand is selected
+  if (!selectedBrandId) {
+    return (
+      <div className="flex items-center justify-center h-[500px] text-gray-500">
+        Please select a brand to view metrics
+      </div>
+    )
   }
 
   return (

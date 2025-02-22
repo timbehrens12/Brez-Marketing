@@ -3,43 +3,54 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const BrandContext = createContext<{
+interface Brand {
+  id: string
+  name: string
+}
+
+interface BrandContextType {
   selectedBrandId: string | null
-  setSelectedBrandId: (id: string) => void
-}>({
+  setSelectedBrandId: (id: string | null) => void
+  brands: Brand[]
+  refreshBrands: () => Promise<void>
+}
+
+const BrandContext = createContext<BrandContextType>({
   selectedBrandId: null,
-  setSelectedBrandId: () => {}
+  setSelectedBrandId: () => {},
+  brands: [],
+  refreshBrands: async () => {}
 })
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const [brands, setBrands] = useState<Brand[]>([])
+
+  const loadBrands = async () => {
+    const { data: brandsData, error } = await supabase
+      .from('brands')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('Error loading brands:', error)
+      return
+    }
+    
+    setBrands(brandsData || [])
+  }
 
   useEffect(() => {
-    // Load initial brand
-    const loadInitialBrand = async () => {
-      console.log('Loading initial brand...')
-      const { data: brands, error } = await supabase
-        .from('brands')
-        .select('*')
-        .limit(1)
-      
-      if (error) {
-        console.error('Error loading brands:', error)
-        return
-      }
-      
-      console.log('Loaded brands:', brands)
-      if (brands && brands.length > 0) {
-        console.log('Setting initial brand:', brands[0].id)
-        setSelectedBrandId(brands[0].id)
-      }
-    }
-
-    loadInitialBrand()
+    loadBrands()
   }, [])
 
   return (
-    <BrandContext.Provider value={{ selectedBrandId, setSelectedBrandId }}>
+    <BrandContext.Provider value={{ 
+      selectedBrandId, 
+      setSelectedBrandId,
+      brands,
+      refreshBrands: loadBrands
+    }}>
       {children}
     </BrandContext.Provider>
   )
