@@ -8,10 +8,6 @@ export async function GET(request: Request) {
   const brandId = searchParams.get('brandId')
   
   console.log('Brand ID:', brandId)
-  console.log('Environment variables:', {
-    META_APP_ID: !!process.env.META_APP_ID,
-    API_URL: process.env.NEXT_PUBLIC_API_URL
-  })
 
   if (!brandId) {
     console.error('Missing brandId')
@@ -20,8 +16,7 @@ export async function GET(request: Request) {
 
   const clientId = process.env.META_APP_ID
   const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-  const redirectUri = `${baseUrl}/api/auth/meta/callback`
+  const redirectUri = `${process.env.API_URL}/api/meta/callback`
 
   console.log('Auth configuration:', {
     redirectUri,
