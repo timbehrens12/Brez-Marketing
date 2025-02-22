@@ -4,49 +4,52 @@ import { supabase } from '@/lib/supabaseClient'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const state = searchParams.get('state') // This is our brandId
-
-  console.log('Meta callback received:', { code, state })
-
+  const state = searchParams.get('state') // brandId
+  
   if (!code || !state) {
-    console.error('Missing required params:', { code, state })
+    console.error('Missing code or state')
     return NextResponse.redirect('/settings?error=missing_params')
   }
 
   try {
     // Exchange code for access token
     const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
-      method: 'POST',
+      method: 'POST', // Changed from GET to POST
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
-        code,
-        redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
+        code: code,
+        redirect_uri: `${process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'}/api/auth/meta/callback`,
       }),
     })
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get access token')
+      const error = await tokenResponse.text()
+      console.error('Token exchange failed:', error)
+      return NextResponse.redirect('/settings?error=token_exchange_failed')
     }
 
-    const { access_token } = await tokenResponse.json()
+    const { access_token, expires_in } = await tokenResponse.json()
 
-    // Save the connection to Supabase
-    const { error } = await supabase
+    // Save to Supabase
+    const { error: dbError } = await supabase
       .from('platform_connections')
-      .insert([{
+      .insert({
         brand_id: state,
         platform_type: 'meta',
-        access_token: access_token,
+        access_token,
+        expires_at: new Date(Date.now() + (expires_in * 1000)).toISOString(),
         connected_at: new Date().toISOString()
-      }])
+      })
 
-    if (error) throw error
+    if (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.redirect('/settings?error=database_error')
+    }
 
-    // Redirect back to settings with success
     return NextResponse.redirect('/settings?success=true')
   } catch (error) {
     console.error('Error in Meta callback:', error)
