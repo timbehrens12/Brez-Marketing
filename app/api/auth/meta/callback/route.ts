@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   const state = searchParams.get('state')
   const error = searchParams.get('error')
 
-  console.log('Callback received:', { code, state, error }) // Debug logging
+  console.log('Meta callback received:', { code, state, error })
 
   if (error) {
     console.error('Meta auth error:', error)
@@ -20,71 +20,47 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Construct token URL with all required parameters
-    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
-    tokenUrl.searchParams.append('client_id', process.env.META_APP_ID!)
-    tokenUrl.searchParams.append('client_secret', process.env.META_APP_SECRET!)
-    tokenUrl.searchParams.append('code', code)
-    tokenUrl.searchParams.append('redirect_uri', `${process.env.API_URL}/api/auth/meta/callback`)
-
-    console.log('Requesting token with URL:', tokenUrl.toString())
-
     // Exchange code for access token
-    const tokenResponse = await fetch(tokenUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      cache: 'no-store',
-    }).catch(error => {
-      console.error('Fetch error:', error)
-      throw error
+    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
+    const params = new URLSearchParams({
+      client_id: process.env.META_APP_ID!,
+      client_secret: process.env.META_APP_SECRET!,
+      code: code,
+      redirect_uri: `${process.env.FRONTEND_URL}/api/auth/meta/callback`
     })
 
-    if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text()
-      console.error('Token response not ok:', {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        body: errorText
-      })
-      throw new Error(`Token response not ok: ${tokenResponse.status} ${tokenResponse.statusText}`)
-    }
+    console.log('Requesting token with params:', Object.fromEntries(params))
+
+    const tokenResponse = await fetch(`${tokenUrl}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
 
     const tokenData = await tokenResponse.json()
     console.log('Token response:', tokenData)
 
-    if (!tokenData.access_token) {
-      console.error('No access token in response:', tokenData)
-      throw new Error('No access token received')
+    if (!tokenResponse.ok || !tokenData.access_token) {
+      throw new Error(tokenData.error?.message || 'Failed to get access token')
     }
 
-    // Store the connection in database
+    // Store connection in Supabase
     const { error: dbError } = await supabase
       .from('platform_connections')
-      .insert([{
+      .insert({
         brand_id: state,
         platform_type: 'meta',
         access_token: tokenData.access_token,
         connected_at: new Date().toISOString(),
         status: 'active'
-      }])
+      })
 
-    if (dbError) {
-      console.error('Database error:', dbError)
-      throw dbError
-    }
+    if (dbError) throw dbError
 
-    // Redirect back to settings page with success message
-    const redirectUrl = new URL(`${process.env.FRONTEND_URL}/settings`)
-    redirectUrl.searchParams.append('success', 'meta_connected')
-    
-    return NextResponse.redirect(redirectUrl.toString())
+    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?success=meta_connected`)
   } catch (error) {
     console.error('Error in Meta callback:', error)
-    const redirectUrl = new URL(`${process.env.FRONTEND_URL}/settings`)
-    redirectUrl.searchParams.append('error', 'meta_connection_failed')
-    return NextResponse.redirect(redirectUrl.toString())
+    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=meta_connection_failed`)
   }
 } 
