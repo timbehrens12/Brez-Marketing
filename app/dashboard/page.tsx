@@ -289,7 +289,10 @@ export default function DashboardPage() {
           </SelectContent>
         </Select>
 
-        <DatePickerWithRange />
+        <DateRangePicker 
+          date={dateRange}
+          onDateChange={setDateRange}
+        />
       </div>
 
       {!selectedBrandId ? (
