@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import axios from 'axios'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -15,30 +16,37 @@ export async function GET(request: Request) {
 
   try {
     // Exchange code for access token
-    const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
-      method: 'GET',  // Meta uses GET, not POST
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).then(res => res.json())
+    const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+      params: {
+        client_id: process.env.META_APP_ID,
+        client_secret: process.env.META_APP_SECRET,
+        code: code,
+        redirect_uri: `${process.env.API_URL}/meta/callback`
+      }
+    })
 
-    if (!tokenResponse.access_token) {
-      throw new Error('Failed to get access token')
-    }
+    // Test the token works by making a test API call
+    const testResponse = await axios.get('https://graph.facebook.com/v18.0/me/adaccounts', {
+      params: {
+        access_token: tokenResponse.data.access_token,
+        fields: 'account_id,name'
+      }
+    })
 
-    // Save the connection to Supabase (just like Shopify)
+    console.log('Test API call successful:', testResponse.data)
+
+    // Save to Supabase
     const { error } = await supabase
       .from('platform_connections')
-      .insert([{
+      .insert({
         brand_id: state,
         platform_type: 'meta',
-        access_token: tokenResponse.access_token,
+        access_token: tokenResponse.data.access_token,
         connected_at: new Date().toISOString()
-      }])
+      })
 
     if (error) throw error
 
-    // Redirect back to settings with success (same as Shopify)
     return NextResponse.redirect('/settings?success=true')
   } catch (error) {
     console.error('Error in Meta callback:', error)

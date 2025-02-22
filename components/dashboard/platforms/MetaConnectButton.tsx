@@ -33,28 +33,57 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
     }
   }
 
+  const handleTest = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+      const response = await fetch(`${baseUrl}/api/meta/insights?brandId=${brandId}`)
+      const data = await response.json()
+      console.log('Meta API Test Response:', data)
+      
+      toast({
+        title: "Connection Test",
+        description: "Successfully fetched Meta Ads data!",
+        variant: "default",
+      })
+    } catch (error) {
+      console.error('Meta API test failed:', error)
+      toast({
+        title: "Connection Test Failed",
+        description: "Could not fetch Meta Ads data. Check console for details.",
+        variant: "destructive",
+      })
+    }
+  }
+
   return (
-    <Button 
-      onClick={handleConnect}
-      disabled={isConnecting || isConnected}
-      className={isConnected ? "bg-green-600 hover:bg-green-700" : ""}
-    >
-      {isConnecting ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Connecting...
-        </>
-      ) : isConnected ? (
-        <>
-          Connected to Meta Ads
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </>
-      ) : (
-        <>
-          Connect Meta Ads
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </>
+    <>
+      <Button 
+        onClick={handleConnect}
+        disabled={isConnecting || isConnected}
+        className={isConnected ? "bg-green-600 hover:bg-green-700" : ""}
+      >
+        {isConnecting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Connecting...
+          </>
+        ) : isConnected ? (
+          <>
+            Connected to Meta Ads
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        ) : (
+          <>
+            Connect Meta Ads
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </>
+        )}
+      </Button>
+      {isConnected && (
+        <Button onClick={handleTest} variant="outline" size="sm">
+          Test Connection
+        </Button>
       )}
-    </Button>
+    </>
   )
 }
