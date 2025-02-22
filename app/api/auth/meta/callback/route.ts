@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       client_id: process.env.META_APP_ID!,
       client_secret: process.env.META_APP_SECRET!,
       code: code,
-      redirect_uri: `${process.env.FRONTEND_URL}/api/auth/meta/callback`
+      redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
     })
 
     console.log('Requesting token with params:', Object.fromEntries(params))
