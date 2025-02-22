@@ -343,42 +343,46 @@ app.get("/api/meta/auth", (req, res) => {
 // Meta Ads Authentication Callback
 app.get("/api/meta/callback", async (req, res) => {
   const { code, state } = req.query
-  const storedState = req.cookies.meta_auth_state
-  const redirectUri = `${process.env.BACKEND_URL}/api/meta/callback`
 
-  if (state !== storedState) {
-    return res.status(400).send("Invalid state parameter")
+  console.log('Meta callback received:', { code: code?.substring(0, 10) + '...', state })
+
+  if (!code || !state) {
+    console.error('Missing required params:', { code: !!code, state: !!state })
+    return res.redirect(`${process.env.FRONTEND_URL}/settings?error=missing_params`)
   }
 
   try {
-    const tokenResponse = await axios.get("https://graph.facebook.com/v17.0/oauth/access_token", {
+    // Exchange code for access token
+    const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
       params: {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
-        redirect_uri: redirectUri,
         code: code,
-      },
+        redirect_uri: `${process.env.API_URL}/api/meta/callback`
+      }
     })
 
-    const accessToken = tokenResponse.data.access_token
+    if (!tokenResponse.data.access_token) {
+      throw new Error('Failed to get access token')
+    }
 
-    // In a real app, store this token securely
-    console.log("Access Token received:", accessToken)
+    // Save to Supabase
+    const { error } = await supabase
+      .from('platform_connections')
+      .insert([{
+        brand_id: state,
+        platform_type: 'meta',
+        access_token: tokenResponse.data.access_token,
+        connected_at: new Date().toISOString()
+      }])
 
-    res.cookie("meta_access_token", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax',
-      domain: process.env.NODE_ENV === "production" ? ".brezmarketingdashboard.com" : "localhost"
-    })
+    if (error) throw error
 
-    res.redirect(`${process.env.FRONTEND_URL}/settings?meta_connected=true`)
+    // Redirect back to settings with success
+    return res.redirect(`${process.env.FRONTEND_URL}/settings?success=true`)
   } catch (error) {
-    console.error("Error in Meta callback:", error.response ? error.response.data : error.message)
-    res.redirect(
-      `${process.env.FRONTEND_URL}/settings?meta_connected=false&error=${encodeURIComponent(error.message)}`
-    )
+    console.error('Error in Meta callback:', error)
+    return res.redirect(`${process.env.FRONTEND_URL}/settings?error=connection_failed`)
   }
 })
 

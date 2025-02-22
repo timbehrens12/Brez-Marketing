@@ -19,7 +19,7 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
     setIsConnecting(true)
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/api/auth/meta?brandId=${brandId}`
+      const authUrl = `${baseUrl}/api/meta/auth?brandId=${brandId}`
       console.log('Connecting to Meta with URL:', authUrl)
       window.location.href = authUrl
     } catch (error) {
