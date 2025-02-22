@@ -50,28 +50,19 @@ export default function SettingsPage() {
 
       try {
         const backendUrl = 'https://api.brezmarketingdashboard.com'
-        
-        console.log('Connecting to:', backendUrl)
-        
-        window.location.href = `${backendUrl}/shopify/auth?` +
-          `shop=${encodeURIComponent(storeUrl)}` +
-          `&brandId=${selectedBrandId}`
+        window.location.href = `${backendUrl}/shopify/auth?shop=${encodeURIComponent(storeUrl)}&brandId=${selectedBrandId}`
       } catch (error) {
         console.error('Error connecting Shopify:', error)
         toast.error('Failed to connect to Shopify')
       }
     } else if (platformType === 'meta') {
-      const { error } = await supabase
-        .from('platform_connections')
-        .insert([{
-          brand_id: selectedBrandId,
-          platform_type: 'meta',
-          connected_at: new Date().toISOString()
-        }])
-
-      if (error) throw error
-      toast.success('Successfully connected Meta Ads')
-      await loadConnections()
+      try {
+        // Redirect to Meta OAuth flow
+        window.location.href = `/api/auth/meta?brandId=${selectedBrandId}`
+      } catch (error) {
+        console.error('Error connecting Meta:', error)
+        toast.error('Failed to connect to Meta')
+      }
     }
   }
 

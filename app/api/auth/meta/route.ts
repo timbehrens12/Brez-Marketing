@@ -5,18 +5,20 @@ export async function GET(request: Request) {
   const brandId = searchParams.get('brandId')
 
   if (!brandId) {
-    return NextResponse.redirect('/settings?error=missing_params')
+    return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
   }
 
-  const clientId = process.env.META_CLIENT_ID
-  const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
-  const scope = 'ads_read,ads_management,business_management'
-
-  const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
-    `client_id=${clientId}&` +
-    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-    `scope=${scope}&` +
-    `state=${brandId}`
-
-  return NextResponse.redirect(metaAuthUrl)
+  // Meta OAuth configuration using your env variable names
+  const clientId = process.env.META_APP_ID
+  const redirectUri = `${process.env.API_URL}/api/auth/meta/callback`
+  const scope = 'ads_read,ads_management,business_management,pages_read_engagement'
+  
+  // Construct Meta OAuth URL
+  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+    `client_id=${clientId}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&state=${brandId}`
+    
+  return NextResponse.redirect(authUrl)
 } 
