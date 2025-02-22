@@ -316,6 +316,7 @@ app.get("/api/shopify/sales", async (req, res) => {
   }
 })
 
+// Meta OAuth routes - match Shopify pattern exactly
 app.get("/meta/auth", (req, res) => {
   const { brandId } = req.query
   if (!brandId) {
@@ -324,9 +325,9 @@ app.get("/meta/auth", (req, res) => {
 
   console.log("Auth request for Meta, brandId:", brandId)
 
-  const redirectUri = `${process.env.BACKEND_URL}/meta/callback`
+  const redirectUri = `${process.env.BACKEND_URL}/meta/callback` // Match Shopify pattern
   const scopes = "ads_read,ads_management,business_management,pages_read_engagement"
-  const state = brandId // Use brandId as state, just like Shopify
+  const state = brandId
 
   const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
     `client_id=${process.env.META_APP_ID}&` +
@@ -339,7 +340,7 @@ app.get("/meta/auth", (req, res) => {
 })
 
 app.get("/meta/callback", async (req, res) => {
-  const { code, state: brandId } = req.query // state is our brandId
+  const { code, state: brandId } = req.query
 
   if (!code || !brandId) {
     return res.status(400).send("Missing required parameters")
@@ -352,11 +353,11 @@ app.get("/meta/callback", async (req, res) => {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
         code: code,
-        redirect_uri: `${process.env.BACKEND_URL}/meta/callback`
+        redirect_uri: `${process.env.BACKEND_URL}/meta/callback` // Match auth URL
       }
     })
 
-    // Save to Supabase with the brandId (just like Shopify)
+    // Save to Supabase
     const { error: supabaseError } = await supabase
       .from('platform_connections')
       .insert({
