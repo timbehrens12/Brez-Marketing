@@ -25,6 +25,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading }: ShopifyTabProps) {
           prefix="$"
           valueFormat="currency"
           platform="shopify"
+          data={metrics.salesData || []}
         />
         <MetricCard
           title="Average Order Value"
@@ -33,6 +34,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading }: ShopifyTabProps) {
           prefix="$"
           valueFormat="currency"
           platform="shopify"
+          data={metrics.dailyData || []}
         />
         <MetricCard
           title="Orders Placed"
@@ -40,6 +42,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading }: ShopifyTabProps) {
           change={metrics.salesGrowth}
           valueFormat="number"
           platform="shopify"
+          data={metrics.dailyData || []}
         />
         {/* Add more metric cards */}
       </div>
