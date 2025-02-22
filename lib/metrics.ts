@@ -4,7 +4,8 @@ export function calculateMetrics(
   orders: any[],
   products: any[],
   refunds: any[],
-  dateRange?: { from: Date; to: Date }
+  dateRange?: { from: Date; to: Date },
+  metaData?: any
 ): Metrics {
   // Ensure we have arrays even if undefined is passed
   const safeOrders = orders || []
@@ -37,7 +38,7 @@ export function calculateMetrics(
   
   // Add more metric calculations here
   
-  return {
+  const defaultMetrics = {
     totalSales,
     salesGrowth: 0,
     averageOrderValue,
@@ -86,4 +87,17 @@ export function calculateMetrics(
     },
     customerSegmentData: []
   }
+
+  const metrics = {
+    ...defaultMetrics,
+    // Add Meta metrics if metaData exists
+    ...(metaData && {
+      impressions: metaData.impressions || 0,
+      clicks: metaData.clicks || 0,
+      conversions: metaData.conversions || 0,
+      adSpend: metaData.spend || 0
+    })
+  }
+  
+  return metrics
 } 

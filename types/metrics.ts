@@ -105,6 +105,19 @@ export interface Metrics {
   customerSegmentData: MetricData[]
   dailyData: any[]
   chartData: any[]
+  timeseriesData: any[]
+  impressions: number
+  impressionGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  adSpend: number
+  adSpendGrowth: number
+  unitsGrowth: number
+  retentionGrowth: number
+  ordersGrowth: number
+  returnGrowth: number
 }
 
 export interface ComparisonDates {
@@ -119,18 +132,86 @@ export interface MetaMetrics {
   aovGrowth: number
   ordersPlaced: number
   ordersGrowth: number
-  unitsSold: number
-  unitsGrowth: number
-  conversionRate: number
+  impressions: number
+  impressionGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
   conversionGrowth: number
-  customerRetentionRate: number
+  adSpend: number
+  adSpendGrowth: number
+  unitsGrowth: number
   retentionGrowth: number
+  dailyData: any[]
+  chartData: any[]
+  timeseriesData: any[]
+  unitsSold: number
+  conversionRate: number
+  customerRetentionRate: number
   returnRate: number
-  returnGrowth: number
   inventoryLevels: number
   inventoryGrowth: number
   topProducts: any[]
-  dailyData: any[]
-  chartData: any[]
+  returnGrowth: number
+}
+
+export const defaultMetrics: Metrics = {
+  totalSales: 0,
+  salesGrowth: 0,
+  averageOrderValue: 0,
+  aovGrowth: 0,
+  ordersPlaced: 0,
+  ordersGrowth: 0,
+  salesData: [],
+  previousOrdersPlaced: 0,
+  unitsSold: 0,
+  previousUnitsSold: 0,
+  orderCount: 0,
+  previousOrderCount: 0,
+  impressions: 0,
+  impressionGrowth: 0,
+  clicks: 0,
+  clickGrowth: 0,
+  conversions: 0,
+  conversionGrowth: 0,
+  adSpend: 0,
+  adSpendGrowth: 0,
+  unitsGrowth: 0,
+  retentionGrowth: 0,
+  topProducts: [],
+  customerRetentionRate: 0,
+  revenueByDay: [],
+  sessionCount: 0,
+  sessionGrowth: 0,
+  sessionData: [],
+  conversionRate: 0,
+  conversionRateGrowth: 0,
+  conversionData: [],
+  retentionRateGrowth: 0,
+  retentionData: [],
+  currentWeekRevenue: [],
+  inventoryLevels: 0,
+  returnRate: 0,
+  inventoryData: [],
+  returnData: [],
+  customerLifetimeValue: 0,
+  clvData: [],
+  averageTimeToFirstPurchase: 0,
+  timeToFirstPurchaseData: [],
+  categoryPerformance: [],
+  categoryData: [],
+  shippingZones: [],
+  shippingData: [],
+  paymentMethods: [],
+  paymentData: [],
+  discountPerformance: [],
+  discountData: [],
+  customerSegments: { newCustomers: 0, returningCustomers: 0 },
+  firstTimeVsReturning: { firstTime: { orders: 0, revenue: 0 }, returning: { orders: 0, revenue: 0 } },
+  customerSegmentData: [],
+  dailyData: [],
+  chartData: [],
+  timeseriesData: [],
+  returnGrowth: 0
 }
 

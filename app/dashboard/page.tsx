@@ -10,8 +10,7 @@ import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabase"
 import BrandSelector from '@/components/BrandSelector'
 import { useBrandContext } from '@/lib/context/BrandContext'
-import { defaultMetrics } from '@/lib/defaultMetrics'
-import type { Metrics } from '@/types/metrics'
+import { defaultMetrics, type Metrics } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
@@ -21,47 +20,6 @@ import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
 import { transformToMetaMetrics } from '@/lib/transforms'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/DateRangePicker"
-
-// Add missing properties to defaultMetrics
-const initialMetrics: Metrics = {
-  ...defaultMetrics,
-  orderCount: 0,
-  previousOrderCount: 0,
-  topProducts: [],
-  customerRetentionRate: 0,
-  revenueByDay: [],
-  sessionCount: 0,
-  sessionGrowth: 0,
-  sessionData: [],
-  conversionRate: 0,
-  conversionRateGrowth: 0,
-  conversionData: [],
-  retentionRateGrowth: 0,
-  retentionData: [],
-  currentWeekRevenue: [],
-  inventoryLevels: 0,
-  returnRate: 0,
-  inventoryData: [],
-  returnData: [],
-  customerLifetimeValue: 0,
-  clvData: [],
-  averageTimeToFirstPurchase: 0,
-  timeToFirstPurchaseData: [],
-  categoryPerformance: [],
-  categoryData: [],
-  shippingZones: [],
-  shippingData: [],
-  paymentMethods: [],
-  paymentData: [],
-  discountPerformance: [],
-  discountData: [],
-  customerSegments: { newCustomers: 0, returningCustomers: 0 },
-  firstTimeVsReturning: {
-    firstTime: { orders: 0, revenue: 0 },
-    returning: { orders: 0, revenue: 0 }
-  },
-  customerSegmentData: []
-}
 
 interface WidgetData {
   shopify?: any;
@@ -225,25 +183,30 @@ export default function DashboardPage() {
   }, [selectedBrandId, connections, supabase])
 
   useEffect(() => {
-    // Reset metrics when no brand is selected
     if (!selectedBrandId) {
       setMetrics(defaultMetrics)
       return
     }
 
-    async function fetchShopifyData() {
+    async function fetchData() {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/shopify/sales?brandId=${selectedBrandId}`)
-        const data = await response.json()
-        
+        const [shopifyResponse, metaResponse] = await Promise.all([
+          fetch(`/api/shopify/sales?brandId=${selectedBrandId}`),
+          fetch(`/api/meta/analytics?brandId=${selectedBrandId}`)
+        ])
+
+        const shopifyData = await shopifyResponse.json()
+        const metaData = await metaResponse.json()
+
         const calculatedMetrics = calculateMetrics(
-          data.orders || [],
-          data.products || [],
-          data.refunds || [],
-          dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined
+          shopifyData.orders || [],
+          shopifyData.products || [],
+          shopifyData.refunds || [],
+          dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined,
+          metaData // Pass Meta data to metrics calculation
         )
-        
+
         setMetrics(calculatedMetrics)
       } catch (error) {
         console.error('Error:', error)
@@ -253,7 +216,7 @@ export default function DashboardPage() {
       }
     }
 
-    fetchShopifyData()
+    fetchData()
   }, [selectedBrandId, dateRange])
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')

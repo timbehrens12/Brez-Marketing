@@ -391,7 +391,6 @@ export function calculateMetrics(
     clvData: [],
     averageTimeToFirstPurchase: 0,
     timeToFirstPurchaseData: [],
-    // Add the missing properties
     categoryData: [],
     shippingZones: [],
     shippingData: [],
@@ -404,6 +403,21 @@ export function calculateMetrics(
       returning: { orders: 0, revenue: 0 },
     },
     customerSegmentData: [],
+    dailyData: [],
+    chartData: [],
+    timeseriesData: [],
+    impressions: 0,
+    impressionGrowth: 0,
+    clicks: 0,
+    clickGrowth: 0,
+    conversions: 0,
+    conversionGrowth: 0,
+    adSpend: 0,
+    adSpendGrowth: 0,
+    unitsGrowth: 0,
+    retentionGrowth: 0,
+    ordersGrowth: 0,
+    returnGrowth: 0
   }
 
   if (!Array.isArray(orders) || orders.length === 0 || !dateRange?.from || !dateRange?.to) {
@@ -589,6 +603,21 @@ export function calculateMetrics(
     customerSegmentData,
     categoryPerformance,
     customerSegments,
+    dailyData: [],
+    chartData: [],
+    timeseriesData: [],
+    impressions: 0,
+    impressionGrowth: 0,
+    clicks: 0,
+    clickGrowth: 0,
+    conversions: 0,
+    conversionGrowth: 0,
+    adSpend: 0,
+    adSpendGrowth: 0,
+    unitsGrowth: 0,
+    retentionGrowth: 0,
+    ordersGrowth: 0,
+    returnGrowth: 0
   }
 }
 

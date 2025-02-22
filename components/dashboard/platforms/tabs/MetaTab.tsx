@@ -16,17 +16,40 @@ export function MetaTab({ metrics, dateRange, isLoading }: MetaTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <MetricCard
           title="Ad Spend"
           value={metrics.totalSales}
           change={metrics.salesGrowth}
-          data={[]}
           prefix="$"
           valueFormat="currency"
           platform="meta"
+          data={metrics.dailyData || []}
         />
-        {/* Add other Meta-specific metrics */}
+        <MetricCard
+          title="Impressions"
+          value={metrics.impressions || 0}
+          change={metrics.impressionGrowth || 0}
+          valueFormat="number"
+          platform="meta"
+          data={metrics.dailyData || []}
+        />
+        <MetricCard
+          title="Clicks"
+          value={metrics.clicks || 0}
+          change={metrics.clickGrowth || 0}
+          valueFormat="number"
+          platform="meta"
+          data={metrics.dailyData || []}
+        />
+        <MetricCard
+          title="Conversions"
+          value={metrics.conversions || 0}
+          change={metrics.conversionGrowth || 0}
+          valueFormat="number"
+          platform="meta"
+          data={metrics.dailyData || []}
+        />
       </div>
     </div>
   )
