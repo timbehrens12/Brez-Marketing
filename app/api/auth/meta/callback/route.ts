@@ -1,66 +1,55 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabaseClient'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const state = searchParams.get('state')
-  const error = searchParams.get('error')
+  const state = searchParams.get('state') // This is our brandId
 
-  console.log('Meta callback received:', { code, state, error })
-
-  if (error) {
-    console.error('Meta auth error:', error)
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=meta_auth_failed`)
-  }
+  console.log('Meta callback received:', { code, state })
 
   if (!code || !state) {
-    console.error('Missing code or state:', { code, state })
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=invalid_callback`)
+    console.error('Missing required params:', { code, state })
+    return NextResponse.redirect('/settings?error=missing_params')
   }
 
   try {
     // Exchange code for access token
-    const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token')
-    const params = new URLSearchParams({
-      client_id: process.env.META_APP_ID!,
-      client_secret: process.env.META_APP_SECRET!,
-      code: code,
-      redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
-    })
-
-    console.log('Requesting token with params:', Object.fromEntries(params))
-
-    const tokenResponse = await fetch(`${tokenUrl}?${params}`, {
-      method: 'GET',
+    const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
+      method: 'POST',
       headers: {
-        'Accept': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: process.env.META_APP_ID,
+        client_secret: process.env.META_APP_SECRET,
+        code,
+        redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
+      }),
     })
 
-    const tokenData = await tokenResponse.json()
-    console.log('Token response:', tokenData)
-
-    if (!tokenResponse.ok || !tokenData.access_token) {
-      throw new Error(tokenData.error?.message || 'Failed to get access token')
+    if (!tokenResponse.ok) {
+      throw new Error('Failed to get access token')
     }
 
-    // Store connection in Supabase
-    const { error: dbError } = await supabase
+    const { access_token } = await tokenResponse.json()
+
+    // Save the connection to Supabase
+    const { error } = await supabase
       .from('platform_connections')
-      .insert({
+      .insert([{
         brand_id: state,
         platform_type: 'meta',
-        access_token: tokenData.access_token,
-        connected_at: new Date().toISOString(),
-        status: 'active'
-      })
+        access_token: access_token,
+        connected_at: new Date().toISOString()
+      }])
 
-    if (dbError) throw dbError
+    if (error) throw error
 
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?success=meta_connected`)
+    // Redirect back to settings with success
+    return NextResponse.redirect('/settings?success=true')
   } catch (error) {
     console.error('Error in Meta callback:', error)
-    return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=meta_connection_failed`)
+    return NextResponse.redirect('/settings?error=connection_failed')
   }
 } 
