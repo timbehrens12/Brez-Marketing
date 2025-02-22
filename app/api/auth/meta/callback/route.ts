@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     tokenUrl.searchParams.append('client_id', process.env.META_APP_ID!)
     tokenUrl.searchParams.append('client_secret', process.env.META_APP_SECRET!)
     tokenUrl.searchParams.append('code', code)
-    tokenUrl.searchParams.append('redirect_uri', `https://www.brezmarketingdashboard.com/api/auth/meta/callback`)
+    tokenUrl.searchParams.append('redirect_uri', `${process.env.API_URL}/api/auth/meta/callback`)
 
     console.log('Requesting token with URL:', tokenUrl.toString())
 
