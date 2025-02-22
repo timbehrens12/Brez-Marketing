@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   const clientId = process.env.META_APP_ID
-  const redirectUri = `${process.env.API_URL}/api/auth/meta/callback`
+  const redirectUri = `${process.env.FRONTEND_URL}/api/auth/meta/callback`
   const scope = 'ads_read,ads_management,business_management,pages_read_engagement'
   
   // Debug logging

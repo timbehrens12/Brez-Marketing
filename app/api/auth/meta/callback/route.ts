@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   const state = searchParams.get('state')
   const error = searchParams.get('error')
 
+  console.log('Callback received:', { code, state, error }) // Debug logging
+
   if (error) {
     console.error('Meta auth error:', error)
     return NextResponse.redirect(`${process.env.FRONTEND_URL}/settings?error=meta_auth_failed`)
@@ -18,17 +20,18 @@ export async function GET(request: Request) {
 
   try {
     // Exchange code for access token
-    const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token?' +
+    const tokenResponse = await fetch(`https://graph.facebook.com/v18.0/oauth/access_token?` +
       `client_id=${process.env.META_APP_ID}&` +
       `client_secret=${process.env.META_APP_SECRET}&` +
       `code=${code}&` +
-      `redirect_uri=${encodeURIComponent(`${process.env.API_URL}/api/auth/meta/callback`)}`, {
+      `redirect_uri=${encodeURIComponent(`${process.env.FRONTEND_URL}/api/auth/meta/callback`)}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
     })
 
     const tokenData = await tokenResponse.json()
+    console.log('Token response:', tokenData) // Debug logging
 
     if (!tokenResponse.ok) {
       throw new Error(tokenData.error?.message || 'Failed to get access token')
