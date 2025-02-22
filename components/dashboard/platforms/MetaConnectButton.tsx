@@ -6,11 +6,12 @@ import { ArrowRight, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 interface MetaConnectButtonProps {
-  brandId: string
+  onConnect: (data: any) => Promise<void>
   isConnected: boolean
+  brandId: string
 }
 
-export function MetaConnectButton({ brandId, isConnected }: MetaConnectButtonProps) {
+export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
   const { toast } = useToast()
 

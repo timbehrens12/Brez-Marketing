@@ -197,6 +197,7 @@ export function SettingsContent() {
                 <MetaConnectButton 
                   onConnect={(data) => handlePlatformConnect('meta', data)}
                   isConnected={!!selectedBrandData?.connections.meta}
+                  brandId={selectedBrandData?.id || ''}
                 />
               </div>
             </CardContent>
