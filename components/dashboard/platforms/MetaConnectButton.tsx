@@ -56,7 +56,7 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   }
 
   return (
-    <>
+    <div className="flex gap-2 items-center">
       <Button 
         onClick={handleConnect}
         disabled={isConnecting || isConnected}
@@ -84,6 +84,6 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
           Test Connection
         </Button>
       )}
-    </>
+    </div>
   )
 }
