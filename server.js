@@ -325,7 +325,7 @@ app.get("/meta/auth", (req, res) => {
 
   console.log("Auth request for Meta, brandId:", brandId)
 
-  const redirectUri = `${process.env.BACKEND_URL}/meta/callback` // Match Shopify pattern
+  const redirectUri = `${process.env.BACKEND_URL}/meta/callback`
   const scopes = "ads_read,ads_management,business_management,pages_read_engagement"
   const state = brandId
 
@@ -353,7 +353,7 @@ app.get("/meta/callback", async (req, res) => {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
         code: code,
-        redirect_uri: `${process.env.BACKEND_URL}/meta/callback` // Match auth URL
+        redirect_uri: `${process.env.BACKEND_URL}/meta/callback`
       }
     })
 
