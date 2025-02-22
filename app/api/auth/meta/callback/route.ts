@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?success=true')
   } catch (error) {
     console.error('=== META CALLBACK FATAL ERROR ===', error)
-    return NextResponse.redirect('/settings?error=connection_failed&details=' + encodeURIComponent(error.message))
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    return NextResponse.redirect('/settings?error=connection_failed&details=' + encodeURIComponent(errorMessage))
   }
 } 

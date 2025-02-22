@@ -1,29 +1,26 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
 interface MetaConnectButtonProps {
-  onConnect: (data: any) => Promise<void>
+  brandId: string
   isConnected: boolean
 }
 
-export function MetaConnectButton({ onConnect, isConnected }: MetaConnectButtonProps) {
+export function MetaConnectButton({ brandId, isConnected }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
 
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // Use the correct endpoint path that matches your backend
-      window.location.href = `${API_URL}/api/meta/auth`
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+      const authUrl = `${baseUrl}/api/auth/meta?brandId=${brandId}`
+      console.log('Connecting to Meta with URL:', authUrl)
+      window.location.href = authUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
       toast({
@@ -31,7 +28,6 @@ export function MetaConnectButton({ onConnect, isConnected }: MetaConnectButtonP
         description: "Failed to connect Meta Ads. Please try again.",
         variant: "destructive",
       })
-    } finally {
       setIsConnecting(false)
     }
   }
