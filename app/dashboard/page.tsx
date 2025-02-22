@@ -78,6 +78,7 @@ export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("shopify")
+  const [isLoading, setIsLoading] = useState(false)
 
   // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
@@ -226,11 +227,10 @@ export default function DashboardPage() {
     async function fetchShopifyData() {
       if (!selectedBrandId) return
       
+      setIsLoading(true)
       try {
         const response = await fetch(`/api/shopify/sales?brandId=${selectedBrandId}`)
         const data = await response.json()
-        
-        console.log('Raw Shopify data:', data)
         
         const calculatedMetrics = calculateMetrics(
           data.orders || [],
@@ -239,11 +239,12 @@ export default function DashboardPage() {
           dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined
         )
         
-        console.log('Calculated metrics:', calculatedMetrics)
         setMetrics(calculatedMetrics)
       } catch (error) {
         console.error('Error:', error)
         setMetrics(defaultMetrics)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -273,26 +274,50 @@ export default function DashboardPage() {
       </div>
 
       <div className="p-8">
-        <Tabs defaultValue="shopify" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="bg-[#222222]">
-            <TabsTrigger value="shopify">Shopify</TabsTrigger>
-            <TabsTrigger value="meta">Meta Ads</TabsTrigger>
+        <Tabs defaultValue="shopify" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-[#111111] border-[#222222]">
+            <TabsTrigger 
+              value="shopify" 
+              className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
+            >
+              <img 
+                src="/shopify-icon.png" 
+                alt="Shopify" 
+                className="h-4 w-4" 
+              />
+              Shopify
+            </TabsTrigger>
+            <TabsTrigger 
+              value="meta" 
+              className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
+            >
+              <img 
+                src="/meta-icon.png" 
+                alt="Meta" 
+                className="h-4 w-4" 
+              />
+              Meta Ads
+            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="shopify">
-            <ShopifyTab 
-              metrics={metrics} 
-              dateRange={dateRange}
-              isLoading={false}
-            />
+
+          <TabsContent value="shopify" className="mt-6">
+            <div className="grid gap-4">
+              <ShopifyTab 
+                metrics={metrics}
+                dateRange={dateRange}
+                isLoading={isLoading}
+              />
+            </div>
           </TabsContent>
           
-          <TabsContent value="meta">
-            <MetaTab 
-              metrics={transformToMetaMetrics(metrics)}
-              dateRange={dateRange}
-              isLoading={false}
-            />
+          <TabsContent value="meta" className="mt-6">
+            <div className="grid gap-4">
+              <MetaTab 
+                metrics={transformToMetaMetrics(metrics)}
+                dateRange={dateRange}
+                isLoading={isLoading}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -17,18 +17,33 @@ export function ShopifyTab({ metrics, dateRange, isLoading }: ShopifyTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <MetricCard
           title="Total Sales"
           value={metrics.totalSales}
           change={metrics.salesGrowth}
-          data={metrics.salesData}
           prefix="$"
           valueFormat="currency"
           platform="shopify"
         />
-        {/* Add other metric cards */}
+        <MetricCard
+          title="Average Order Value"
+          value={metrics.averageOrderValue}
+          change={metrics.aovGrowth}
+          prefix="$"
+          valueFormat="currency"
+          platform="shopify"
+        />
+        <MetricCard
+          title="Orders Placed"
+          value={metrics.ordersPlaced}
+          change={metrics.salesGrowth}
+          valueFormat="number"
+          platform="shopify"
+        />
+        {/* Add more metric cards */}
       </div>
+      
       <TopProducts products={metrics.topProducts} />
     </div>
   )
