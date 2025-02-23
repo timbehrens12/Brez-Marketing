@@ -150,18 +150,40 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   {connections.some(c => c.platform_type === platform.type) ? (
-                    <Button 
-                      variant="outline" 
-                      className="bg-transparent text-red-500"
-                      onClick={() => handleDisconnect(platform.type)}
-                      disabled={connectingPlatform === platform.type}
-                    >
-                      {connectingPlatform === platform.type ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Disconnect'
+                    <div className="flex items-center gap-2">
+                      {platform.type === 'meta' && (
+                        <Button
+                          variant="outline"
+                          className="bg-transparent text-white"
+                          onClick={async () => {
+                            try {
+                              const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+                              const response = await fetch(`${baseUrl}/api/meta/insights?brandId=${selectedBrandId}`)
+                              const data = await response.json()
+                              console.log('Meta API Test Response:', data)
+                              toast.success('Successfully fetched Meta Ads data!')
+                            } catch (error) {
+                              console.error('Meta API test failed:', error)
+                              toast.error('Could not fetch Meta Ads data')
+                            }
+                          }}
+                        >
+                          Test
+                        </Button>
                       )}
-                    </Button>
+                      <Button
+                        variant="outline"
+                        className="bg-transparent text-red-500"
+                        onClick={() => handleDisconnect(platform.type)}
+                        disabled={connectingPlatform === platform.type}
+                      >
+                        {connectingPlatform === platform.type ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Disconnect'
+                        )}
+                      </Button>
+                    </div>
                   ) : (
                     <Button 
                       className="bg-blue-600 hover:bg-blue-700"
