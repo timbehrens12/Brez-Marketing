@@ -12,6 +12,7 @@ import { Plus } from "lucide-react"
 import { BrandDialog } from "@/components/settings/BrandDialog"
 import { toast } from "@/components/ui/use-toast"
 
+
 interface BrandData {
   id: string
   name: string
@@ -189,14 +190,12 @@ export function SettingsContent() {
                   <div>
                     <h3 className="text-white font-medium">Meta Ads</h3>
                     <p className="text-sm text-gray-400">
-                      {selectedBrandData?.connections.meta 
-                        ? 'Connected to Meta Ads'
-                        : 'Connect your Meta Ads account'}
+                      {selectedBrandData?.connections.meta ? 'Connected to Meta Ads' : 'Connect Meta Ads to track ad performance'}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {selectedBrandData?.connections.meta && (
+                {selectedBrandData?.connections.meta ? (
+                  <div className="flex items-center gap-2">
                     <Button 
                       onClick={async () => {
                         try {
@@ -219,17 +218,26 @@ export function SettingsContent() {
                       }}
                       variant="outline" 
                       size="sm"
-                      className="bg-[#222222] text-white hover:bg-[#333333]"
+                      className="text-white hover:bg-[#333333]"
                     >
-                      Test Connection
+                      Test
                     </Button>
-                  )}
+                    <Button 
+                      onClick={() => {/* Add disconnect handler */}} 
+                      variant="outline"
+                      size="sm" 
+                      className="text-red-500 hover:text-red-400"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                ) : (
                   <MetaConnectButton 
                     onConnect={(data) => handlePlatformConnect('meta', data)}
-                    isConnected={!!selectedBrandData?.connections.meta}
+                    isConnected={false}
                     brandId={selectedBrandData?.id || ''}
                   />
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
