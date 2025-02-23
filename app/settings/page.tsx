@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { UserButton, useUser } from "@clerk/nextjs"
 import BrandSelector from "@/components/BrandSelector"
 import { BrandDialog } from "@/components/settings/BrandDialog"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabaseClient"
-import { useAuth } from "@clerk/nextjs"
 import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { useBrandContext } from "@/lib/context/BrandContext"
+import { Separator } from "@/components/ui/separator"
 
 export default function SettingsPage() {
-  const { userId } = useAuth()
+  const { user } = useUser()
   const [showBrandDialog, setShowBrandDialog] = useState(false)
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [connections, setConnections] = useState<any[]>([])
@@ -117,92 +118,139 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="bg-[#111111] p-6 rounded-lg mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Brands</h2>
+    <div className="container max-w-6xl mx-auto p-8 space-y-8">
+      {/* User Section */}
+      <div className="bg-[#111111] p-6 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold">Account Settings</h1>
+            <p className="text-sm text-gray-400">
+              Manage your account and connected platforms
+            </p>
+          </div>
+          <UserButton afterSignOutUrl="/" />
+        </div>
+        
+        <Separator className="my-6 bg-[#222222]" />
+        
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <h2 className="text-sm font-medium">Email</h2>
+            <p className="text-sm text-gray-400">{user?.emailAddresses[0].emailAddress}</p>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-sm font-medium">Name</h2>
+            <p className="text-sm text-gray-400">{user?.fullName || 'Not set'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Brand Management Section */}
+      <div className="bg-[#111111] p-6 rounded-lg">
+        <div className="flex items-center justify-between mb-6">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Brand Management</h2>
+            <p className="text-sm text-gray-400">
+              Select and manage your brands and their integrations
+            </p>
+          </div>
           <Button 
             onClick={() => setShowBrandDialog(true)}
             className="bg-[#222222] hover:bg-[#333333]"
           >
+            <Plus className="h-4 w-4 mr-2" />
             Add Brand
           </Button>
         </div>
-        <BrandSelector onSelect={setSelectedBrandId} />
-      </div>
 
-      {selectedBrandId && (
-        <div className="bg-[#111111] p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-6">Platform Integrations</h2>
+        <div className="mb-8">
+          <BrandSelector onSelect={setSelectedBrandId} />
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-1">
+            <h3 className="text-lg font-medium">Platform Integrations</h3>
+            <p className="text-sm text-gray-400">
+              Connect and manage your marketing platforms
+            </p>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {platforms.map(platform => (
                 <div key={platform.type} className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
                   <div className="flex items-center gap-3">
                     <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
                     <div>
                       <h3 className="font-medium">{platform.name}</h3>
-                      <p className="text-sm text-gray-400">{platform.description}</p>
+                      <p className="text-sm text-gray-400">
+                        {connections.some(c => c.platform_type === platform.type) 
+                          ? 'Connected and ready to use'
+                          : platform.description}
+                      </p>
                     </div>
                   </div>
-                  {connections.some(c => c.platform_type === platform.type) ? (
-                    <div className="flex items-center gap-2">
-                      {platform.type === 'meta' && (
+                  
+                  <div className="flex items-center gap-2">
+                    {connections.some(c => c.platform_type === platform.type) ? (
+                      <>
+                        {platform.type === 'meta' && (
+                          <Button
+                            variant="outline"
+                            className="bg-transparent text-white"
+                            onClick={async () => {
+                              try {
+                                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+                                const response = await fetch(`${baseUrl}/meta/insights?brandId=${selectedBrandId}`)
+                                const data = await response.json()
+                                console.log('Meta API Test Response:', data)
+                                toast.success('Successfully fetched Meta Ads data!')
+                              } catch (error) {
+                                console.error('Meta API test failed:', error)
+                                toast.error('Could not fetch Meta Ads data')
+                              }
+                            }}
+                          >
+                            Test
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
-                          className="bg-transparent text-white"
-                          onClick={async () => {
-                            try {
-                              const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-                              const response = await fetch(`${baseUrl}/meta/insights?brandId=${selectedBrandId}`)
-                              const data = await response.json()
-                              console.log('Meta API Test Response:', data)
-                              toast.success('Successfully fetched Meta Ads data!')
-                            } catch (error) {
-                              console.error('Meta API test failed:', error)
-                              toast.error('Could not fetch Meta Ads data')
-                            }
-                          }}
+                          className="bg-transparent text-red-500"
+                          onClick={() => handleDisconnect(platform.type)}
+                          disabled={connectingPlatform === platform.type || !selectedBrandId}
                         >
-                          Test
+                          {connectingPlatform === platform.type ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            'Disconnect'
+                          )}
                         </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="bg-transparent text-red-500"
-                        onClick={() => handleDisconnect(platform.type)}
-                        disabled={connectingPlatform === platform.type}
+                      </>
+                    ) : (
+                      <Button 
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleConnect(platform.type)}
+                        disabled={connectingPlatform === platform.type || !selectedBrandId}
                       >
                         {connectingPlatform === platform.type ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          'Disconnect'
+                          'Connect'
                         )}
                       </Button>
-                    </div>
-                  ) : (
-                    <Button 
-                      className="bg-blue-600 hover:bg-blue-700"
-                      onClick={() => handleConnect(platform.type)}
-                      disabled={connectingPlatform === platform.type}
-                    >
-                      {connectingPlatform === platform.type ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Connect'
-                      )}
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-      )}
+      </div>
 
       <BrandDialog 
         open={showBrandDialog} 
