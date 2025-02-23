@@ -158,7 +158,7 @@ export default function SettingsPage() {
                           onClick={async () => {
                             try {
                               const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-                              const response = await fetch(`${baseUrl}/api/meta/insights?brandId=${selectedBrandId}`)
+                              const response = await fetch(`${baseUrl}/meta/insights?brandId=${selectedBrandId}`)
                               const data = await response.json()
                               console.log('Meta API Test Response:', data)
                               toast.success('Successfully fetched Meta Ads data!')
