@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import { BrandDialog } from "@/components/settings/BrandDialog"
+import { toast } from "@/components/ui/use-toast"
 
 interface BrandData {
   id: string
@@ -194,11 +195,41 @@ export function SettingsContent() {
                     </p>
                   </div>
                 </div>
-                <MetaConnectButton 
-                  onConnect={(data) => handlePlatformConnect('meta', data)}
-                  isConnected={!!selectedBrandData?.connections.meta}
-                  brandId={selectedBrandData?.id || ''}
-                />
+                <div className="flex items-center gap-2">
+                  {selectedBrandData?.connections.meta && (
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+                          const response = await fetch(`${baseUrl}/api/meta/insights?brandId=${selectedBrandData.id}`)
+                          const data = await response.json()
+                          console.log('Meta API Test Response:', data)
+                          toast({
+                            title: "Connection Test",
+                            description: "Successfully fetched Meta Ads data!",
+                          })
+                        } catch (error) {
+                          console.error('Meta API test failed:', error)
+                          toast({
+                            title: "Connection Test Failed",
+                            description: "Could not fetch Meta Ads data",
+                            variant: "destructive"
+                          })
+                        }
+                      }}
+                      variant="outline" 
+                      size="sm"
+                      className="bg-[#222222] text-white hover:bg-[#333333]"
+                    >
+                      Test Connection
+                    </Button>
+                  )}
+                  <MetaConnectButton 
+                    onConnect={(data) => handlePlatformConnect('meta', data)}
+                    isConnected={!!selectedBrandData?.connections.meta}
+                    brandId={selectedBrandData?.id || ''}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
