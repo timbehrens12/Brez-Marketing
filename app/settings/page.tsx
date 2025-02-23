@@ -21,15 +21,18 @@ export default function SettingsPage() {
   const { refreshBrands } = useBrandContext()
 
   const loadConnections = async () => {
-    if (!selectedBrandId) return
     setLoading(true)
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('platform_connections')
         .select('*')
-        .eq('brand_id', selectedBrandId)
+      
+      if (selectedBrandId) {
+        query = query.eq('brand_id', selectedBrandId)
+      }
 
+      const { data, error } = await query
       if (error) throw error
       setConnections(data || [])
     } catch (error) {
@@ -45,6 +48,11 @@ export default function SettingsPage() {
   }, [selectedBrandId])
 
   const handleConnect = async (platformType: string) => {
+    if (!selectedBrandId) {
+      toast.error('Please select a brand first')
+      return
+    }
+
     if (platformType === 'shopify') {
       const storeUrl = prompt('Enter your Shopify store URL (e.g., my-store.myshopify.com):')
       if (!storeUrl) return
@@ -58,7 +66,6 @@ export default function SettingsPage() {
       }
     } else if (platformType === 'meta') {
       try {
-        // Redirect to Meta OAuth flow
         window.location.href = `/api/auth/meta?brandId=${selectedBrandId}`
       } catch (error) {
         console.error('Error connecting Meta:', error)
@@ -109,12 +116,27 @@ export default function SettingsPage() {
     }
   ]
 
-  const handleBrandAdded = async () => {
-    // Your existing brand creation logic
-    // ...
-    
-    // After successful creation, refresh the brands list
-    await refreshBrands()
+  const handleBrandAdded = async (brandData: { id: string; name: string }) => {
+    try {
+      const { error } = await supabase
+        .from('brands')
+        .insert([
+          {
+            id: brandData.id,
+            name: brandData.name,
+            user_id: user?.id
+          }
+        ])
+
+      if (error) throw error
+      
+      toast.success('Brand added successfully!')
+      await refreshBrands()
+      setShowBrandDialog(false)
+    } catch (error) {
+      console.error('Error adding brand:', error)
+      toast.error('Failed to add brand')
+    }
   }
 
   return (
