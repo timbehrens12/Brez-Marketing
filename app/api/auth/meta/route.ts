@@ -22,7 +22,8 @@ export async function GET(request: Request) {
 
   const clientId = process.env.META_APP_ID
   const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
-  const redirectUri = `${process.env.API_URL}/meta/callback`
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/meta/callback`
+  const state = brandId
 
   console.log('Auth configuration:', {
     redirectUri,
@@ -32,13 +33,17 @@ export async function GET(request: Request) {
 
   console.log('FINAL REDIRECT URI:', redirectUri)
 
-  const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
-    `client_id=${process.env.META_APP_ID}&` +
-    `scope=ads_read,ads_management,business_management,pages_read_engagement&` +
-    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-    `state=${brandId}`
+  // Build Facebook OAuth URL with additional parameters
+  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
+  authUrl.searchParams.append('client_id', process.env.META_CLIENT_ID!)
+  authUrl.searchParams.append('redirect_uri', redirectUri)
+  authUrl.searchParams.append('state', state)
+  authUrl.searchParams.append('scope', 'ads_read ads_management')
+  authUrl.searchParams.append('response_type', 'code')
+  authUrl.searchParams.append('auth_type', 'rerequest')  // Force fresh login
+  authUrl.searchParams.append('display', 'popup')
 
-  console.log('FINAL META AUTH URL:', metaAuthUrl)
+  console.log('FINAL META AUTH URL:', authUrl.toString())
   
-  return NextResponse.redirect(metaAuthUrl)
+  return NextResponse.redirect(authUrl.toString())
 } 

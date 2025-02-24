@@ -66,7 +66,7 @@ export default function SettingsPage() {
       }
     } else if (platformType === 'meta') {
       try {
-        window.location.href = `/api/auth/meta?brandId=${selectedBrandId}`
+        window.location.href = `/api/auth/meta?brandId=${selectedBrandId}&auth_type=rerequest`
       } catch (error) {
         console.error('Error connecting Meta:', error)
         toast.error('Failed to connect to Meta')
