@@ -18,34 +18,9 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // First clear Facebook session in a popup
-      const width = 600
-      const height = 400
-      const left = (window.innerWidth - width) / 2
-      const top = (window.innerHeight - height) / 2
-      
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
       const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
-      
-      // Create the logout URL that redirects to our auth URL
-      const logoutUrl = `https://www.facebook.com/logout.php?` + 
-        `next=${encodeURIComponent(authUrl)}&` +
-        `access_token=&` +
-        `delete_cache=true`
-      
-      const popup = window.open(
-        logoutUrl,
-        'facebook_logout',
-        `width=${width},height=${height},left=${left},top=${top}`
-      )
-
-      // Wait for logout to complete, then close popup
-      setTimeout(() => {
-        if (popup) popup.close()
-        // Redirect to auth URL
-        window.location.href = authUrl
-      }, 2000)
-
+      window.location.href = authUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
       toast({
