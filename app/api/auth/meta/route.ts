@@ -38,25 +38,12 @@ export async function GET(request: Request) {
 
   console.log('FINAL REDIRECT URI:', redirectUri)
 
-  // Build Facebook OAuth URL with additional parameters
-  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
-  authUrl.searchParams.append('client_id', process.env.META_APP_ID)
-  authUrl.searchParams.append('redirect_uri', redirectUri)
-  authUrl.searchParams.append('state', state)
-  authUrl.searchParams.append('scope', scopes)
-  authUrl.searchParams.append('response_type', 'code')
+  // First redirect to Facebook logout
+  const logoutRedirectUri = encodeURIComponent(
+    `https://brezmarketingdashboard.com/api/auth/meta/fresh-login?brandId=${brandId}`
+  )
   
-  // Force new login flow
-  authUrl.searchParams.append('auth_type', 'reauthenticate')
-  authUrl.searchParams.append('auth_nonce', Date.now().toString())
-  authUrl.searchParams.append('display', 'popup')
+  const logoutUrl = `https://www.facebook.com/logout.php?next=${logoutRedirectUri}&access_token=`
   
-  // Clear any existing session
-  authUrl.searchParams.append('sdk', 'joey')
-  authUrl.searchParams.append('seen_revocable_access_grant', 'false')
-  authUrl.searchParams.append('should_popup_login_dialog', 'true')
-
-  console.log('FINAL META AUTH URL:', authUrl.toString())
-  
-  return NextResponse.redirect(authUrl.toString())
+  return NextResponse.redirect(logoutUrl)
 } 
