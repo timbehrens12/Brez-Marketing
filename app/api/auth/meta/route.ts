@@ -22,14 +22,21 @@ export async function GET(request: Request) {
   }
 
   const redirectUri = isReview 
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/review/callback`
+    ? `${process.env.NEXT_PUBLIC_API_URL}/review/callback`
     : `https://api.brezmarketingdashboard.com/meta/callback`
   
   const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
   authUrl.searchParams.append('client_id', process.env.META_APP_ID)
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('state', brandId)
-  authUrl.searchParams.append('scope', 'public_profile,email')
+  
+  // For review mode, only request basic permissions
+  if (isReview) {
+    authUrl.searchParams.append('scope', 'public_profile,email')
+  } else {
+    authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
+  }
+  
   authUrl.searchParams.append('response_type', 'code')
   authUrl.searchParams.append('auth_type', 'rerequest')
   authUrl.searchParams.append('display', 'popup')
