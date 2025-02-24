@@ -18,6 +18,13 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
+      // Clear Facebook cookies
+      document.cookie = "c_user=; domain=.facebook.com; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "xs=; domain=.facebook.com; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "fr=; domain=.facebook.com; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "presence=; domain=.facebook.com; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "wd=; domain=.facebook.com; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
       const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
       window.location.href = authUrl

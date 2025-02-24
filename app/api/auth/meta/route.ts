@@ -20,36 +20,27 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?error=configuration_error')
   }
 
-  const redirectUri = `https://api.brezmarketingdashboard.com/meta/callback`
-  
-  // Build Facebook OAuth URL with forced fresh login parameters
-  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
-  
-  // Add all required parameters
-  const params = {
-    client_id: process.env.META_APP_ID,
-    redirect_uri: redirectUri,
-    state: brandId,
-    scope: 'ads_read,ads_management,business_management,pages_read_engagement',
-    response_type: 'code',
-    auth_type: 'reauthenticate',  // Force fresh login
-    display: 'popup',
-    // Additional parameters to force fresh login
-    auth_nonce: Date.now().toString(),
-    enable_granular_permissions: 'true',
-    ret: 'login',
-    fbapp_pres: '0',
-    cbt: Date.now().toString(),
-    locale: 'en_US',
-    logger_id: Date.now().toString()
-  }
+  // First, redirect to Facebook's permissions removal page
+  const revokeUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
+  revokeUrl.searchParams.append('client_id', process.env.META_APP_ID)
+  revokeUrl.searchParams.append('redirect_uri', 'https://www.facebook.com/connect/login_success.html')
+  revokeUrl.searchParams.append('response_type', 'token')
+  revokeUrl.searchParams.append('auth_type', 'rerequest')
+  revokeUrl.searchParams.append('scope', '')  // Empty scope to remove permissions
+  revokeUrl.searchParams.append('display', 'popup')
+  revokeUrl.searchParams.append('next', encodeURIComponent(
+    `https://www.facebook.com/dialog/oauth?` +
+    `client_id=${process.env.META_APP_ID}&` +
+    `redirect_uri=${encodeURIComponent('https://api.brezmarketingdashboard.com/meta/callback')}&` +
+    `state=${brandId}&` +
+    `scope=ads_read,ads_management,business_management,pages_read_engagement&` +
+    `response_type=code&` +
+    `auth_type=reauthenticate&` +
+    `auth_nonce=${Date.now()}&` +
+    `ret=login&` +
+    `fbapp_pres=0&` +
+    `logger_id=${Date.now()}`
+  ))
 
-  // Add all parameters to URL
-  Object.entries(params).forEach(([key, value]) => {
-    authUrl.searchParams.append(key, value.toString())
-  })
-
-  console.log('FINAL META AUTH URL:', authUrl.toString())
-  
-  return NextResponse.redirect(authUrl.toString())
+  return NextResponse.redirect(revokeUrl.toString())
 } 
