@@ -1,7 +1,11 @@
 import { authMiddleware } from "@clerk/nextjs"
 
 export default authMiddleware({
-  publicRoutes: ["/sign-in"],
+  publicRoutes: [
+    "/review",
+    "/review/callback",
+    "/api/auth/meta/callback"
+  ],
   afterAuth(auth, req) {
     // Redirect to dashboard if signed in and trying to access public routes
     if (auth.userId && req.nextUrl.pathname === "/") {
@@ -18,5 +22,5 @@ export default authMiddleware({
 })
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 }
