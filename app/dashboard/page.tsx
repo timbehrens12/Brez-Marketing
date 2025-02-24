@@ -232,26 +232,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between p-4 bg-[#111111]">
-        <Select
-          value={selectedBrandId || ""}
-          onValueChange={(value) => setSelectedBrandId(value)}
-        >
-          <SelectTrigger className="w-[200px] bg-[#222222] border-[#333333]">
-            <SelectValue placeholder="Select a brand" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#222222] border-[#333333]">
-            {brands.map((brand) => (
-              <SelectItem 
-                key={brand.id} 
-                value={brand.id}
-                className="text-white hover:bg-[#333333]"
-              >
-                {brand.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
+        <BrandSelector onSelect={(value) => setSelectedBrandId(value)} />
+        
         <DateRangePicker 
           date={dateRange}
           onDateChange={setDateRange}

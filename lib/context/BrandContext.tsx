@@ -1,7 +1,8 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { useUser } from "@clerk/nextjs"
+import { supabase } from '@/lib/supabaseClient'
 
 interface Brand {
   id: string
@@ -23,33 +24,39 @@ const BrandContext = createContext<BrandContextType>({
 })
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useUser()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [brands, setBrands] = useState<Brand[]>([])
 
   const loadBrands = async () => {
-    const { data: brandsData, error } = await supabase
-      .from('brands')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name')
+
+      if (error) throw error
+      setBrands(data || [])
+    } catch (error) {
       console.error('Error loading brands:', error)
-      return
     }
-    
-    setBrands(brandsData || [])
   }
 
   useEffect(() => {
     loadBrands()
-  }, [])
+  }, [user])
+
+  const refreshBrands = () => loadBrands()
 
   return (
     <BrandContext.Provider value={{ 
       selectedBrandId, 
       setSelectedBrandId,
       brands,
-      refreshBrands: loadBrands
+      refreshBrands
     }}>
       {children}
     </BrandContext.Provider>

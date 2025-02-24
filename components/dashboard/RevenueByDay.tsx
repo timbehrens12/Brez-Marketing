@@ -1,5 +1,6 @@
 "use client"
 
+import type { JSX } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
 import { formatCurrency } from "@/lib/utils"
