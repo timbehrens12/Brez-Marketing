@@ -20,6 +20,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?error=missing_params')
   }
 
+  if (!process.env.META_APP_ID) {
+    console.error('Missing META_APP_ID environment variable')
+    return NextResponse.redirect('/settings?error=configuration_error')
+  }
+
   const clientId = process.env.META_APP_ID
   const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/meta/callback`
@@ -35,12 +40,12 @@ export async function GET(request: Request) {
 
   // Build Facebook OAuth URL with additional parameters
   const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
-  authUrl.searchParams.append('client_id', process.env.META_CLIENT_ID!)
+  authUrl.searchParams.append('client_id', process.env.META_APP_ID)
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('state', state)
-  authUrl.searchParams.append('scope', 'ads_read ads_management')
+  authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
   authUrl.searchParams.append('response_type', 'code')
-  authUrl.searchParams.append('auth_type', 'rerequest')  // Force fresh login
+  authUrl.searchParams.append('auth_type', 'rerequest')
   authUrl.searchParams.append('display', 'popup')
 
   console.log('FINAL META AUTH URL:', authUrl.toString())
