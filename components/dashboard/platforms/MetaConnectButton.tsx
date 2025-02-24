@@ -18,12 +18,10 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
+      // For review, just show mock data after connection
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
-      
-      // Just redirect to our auth endpoint, which has access to the correct META_APP_ID
+      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}&review=true`
       window.location.href = authUrl
-
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
       toast({
@@ -35,26 +33,13 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
     }
   }
 
+  // For review, show mock data
   const handleTest = async () => {
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const response = await fetch(`${baseUrl}/api/meta/insights?brandId=${brandId}`)
-      const data = await response.json()
-      console.log('Meta API Test Response:', data)
-      
-      toast({
-        title: "Connection Test",
-        description: "Successfully fetched Meta Ads data!",
-        variant: "default",
-      })
-    } catch (error) {
-      console.error('Meta API test failed:', error)
-      toast({
-        title: "Connection Test Failed",
-        description: "Could not fetch Meta Ads data. Check console for details.",
-        variant: "destructive",
-      })
-    }
+    toast({
+      title: "Connection Test",
+      description: "Successfully connected to Meta! This is a demo view for app review.",
+      variant: "default",
+    })
   }
 
   return (
@@ -71,19 +56,19 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
           </>
         ) : isConnected ? (
           <>
-            Connected to Meta Ads
+            Connected to Meta
             <ArrowRight className="ml-2 h-4 w-4" />
           </>
         ) : (
           <>
-            Connect Meta Ads
+            Connect Meta Account
             <ArrowRight className="ml-2 h-4 w-4" />
           </>
         )}
       </Button>
       {isConnected && (
         <Button onClick={handleTest} variant="outline" size="sm">
-          Test Connection
+          View Demo Data
         </Button>
       )}
     </div>

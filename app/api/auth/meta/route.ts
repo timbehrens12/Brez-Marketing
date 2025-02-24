@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   
   const { searchParams } = new URL(request.url)
   const brandId = searchParams.get('brandId')
+  const isReview = searchParams.get('review') === 'true'
   
   console.log('Brand ID:', brandId)
   console.log('Environment variables:', {
@@ -20,22 +21,23 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?error=configuration_error')
   }
 
-  const redirectUri = `https://api.brezmarketingdashboard.com/meta/callback`
+  const redirectUri = isReview 
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/review/callback`
+    : `https://api.brezmarketingdashboard.com/meta/callback`
   
   const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
   authUrl.searchParams.append('client_id', process.env.META_APP_ID)
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('state', brandId)
-  authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
+  authUrl.searchParams.append('scope', 'public_profile,email')
   authUrl.searchParams.append('response_type', 'code')
-  authUrl.searchParams.append('auth_type', 'reauthorize')
-  authUrl.searchParams.append('auth_nonce', Date.now().toString())
-  authUrl.searchParams.append('display', 'page')
-  authUrl.searchParams.append('extras', JSON.stringify({
-    setup: {
-      channel: "IG_API_ONBOARDING"
-    }
-  }))
+  authUrl.searchParams.append('auth_type', 'rerequest')
+  authUrl.searchParams.append('display', 'popup')
+  authUrl.searchParams.append('sdk', 'joey')
+  authUrl.searchParams.append('ret', 'login')
+  authUrl.searchParams.append('fbapp_pres', '0')
+  authUrl.searchParams.append('tp', 'unspecified')
 
+  console.log('FINAL META AUTH URL:', authUrl.toString())
   return NextResponse.redirect(authUrl.toString())
 } 
