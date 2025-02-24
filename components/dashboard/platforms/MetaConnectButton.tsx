@@ -18,24 +18,11 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // First deauthorize the app
-      const deauthorizeUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${process.env.NEXT_PUBLIC_META_APP_ID}&auth_type=rerequest&scope=&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=token&return_scopes=true&extras={"setup":{"channel":"IG_API_ONBOARDING"}}`
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
       
-      // Open deauthorize in a new window
-      const popup = window.open(deauthorizeUrl, 'facebook_deauth', 'width=600,height=400')
-      
-      // After 2 seconds, close popup and start new auth flow
-      setTimeout(() => {
-        if (popup) popup.close()
-        
-        // Now open a new incognito window for the auth
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-        const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
-        
-        window.open(authUrl, '_blank', 'noopener,noreferrer')
-        // Close the current window/tab
-        window.close()
-      }, 2000)
+      // Just redirect to our auth endpoint, which has access to the correct META_APP_ID
+      window.location.href = authUrl
 
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
