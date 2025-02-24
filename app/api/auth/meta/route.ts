@@ -20,27 +20,22 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?error=configuration_error')
   }
 
-  // First, redirect to Facebook's permissions removal page
-  const revokeUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
-  revokeUrl.searchParams.append('client_id', process.env.META_APP_ID)
-  revokeUrl.searchParams.append('redirect_uri', 'https://www.facebook.com/connect/login_success.html')
-  revokeUrl.searchParams.append('response_type', 'token')
-  revokeUrl.searchParams.append('auth_type', 'rerequest')
-  revokeUrl.searchParams.append('scope', '')  // Empty scope to remove permissions
-  revokeUrl.searchParams.append('display', 'popup')
-  revokeUrl.searchParams.append('next', encodeURIComponent(
-    `https://www.facebook.com/dialog/oauth?` +
-    `client_id=${process.env.META_APP_ID}&` +
-    `redirect_uri=${encodeURIComponent('https://api.brezmarketingdashboard.com/meta/callback')}&` +
-    `state=${brandId}&` +
-    `scope=ads_read,ads_management,business_management,pages_read_engagement&` +
-    `response_type=code&` +
-    `auth_type=reauthenticate&` +
-    `auth_nonce=${Date.now()}&` +
-    `ret=login&` +
-    `fbapp_pres=0&` +
-    `logger_id=${Date.now()}`
-  ))
+  const redirectUri = `https://api.brezmarketingdashboard.com/meta/callback`
+  
+  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
+  authUrl.searchParams.append('client_id', process.env.META_APP_ID)
+  authUrl.searchParams.append('redirect_uri', redirectUri)
+  authUrl.searchParams.append('state', brandId)
+  authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
+  authUrl.searchParams.append('response_type', 'code')
+  authUrl.searchParams.append('auth_type', 'reauthorize')
+  authUrl.searchParams.append('auth_nonce', Date.now().toString())
+  authUrl.searchParams.append('display', 'page')
+  authUrl.searchParams.append('extras', JSON.stringify({
+    setup: {
+      channel: "IG_API_ONBOARDING"
+    }
+  }))
 
-  return NextResponse.redirect(revokeUrl.toString())
+  return NextResponse.redirect(authUrl.toString())
 } 
