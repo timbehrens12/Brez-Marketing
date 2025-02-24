@@ -7,26 +7,19 @@ import { ArrowRight, Loader2 } from "lucide-react"
 export default function ReviewPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
-  const brandId = "demo-brand-123"
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search)
-    if (searchParams.get('success') === 'true') {
-      setIsConnected(true)
-      setIsConnecting(false)
-    }
-  }, [])
+  const [showMockData, setShowMockData] = useState(false)
 
   const handleConnect = async () => {
     setIsConnecting(true)
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&review=true`
-      window.location.href = authUrl
-    } catch (error) {
-      console.error("Failed to connect:", error)
+    // Simulate connection delay
+    setTimeout(() => {
+      setIsConnected(true)
       setIsConnecting(false)
-    }
+    }, 1500)
+  }
+
+  const handleViewDemo = () => {
+    setShowMockData(true)
   }
 
   return (
@@ -36,11 +29,11 @@ export default function ReviewPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Meta App Review Demo</h1>
             <p className="text-sm text-gray-400">
-              This demo shows how our app integrates with Meta Ads
+              This demo shows how our app will integrate with Meta Ads once approved
             </p>
           </div>
           
-          <div className="mt-8">
+          <div className="mt-8 space-y-4">
             <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
               <div className="flex items-center gap-3">
                 <img src="/meta-icon.png" alt="Meta" className="w-8 h-8" />
@@ -77,6 +70,29 @@ export default function ReviewPage() {
                 </Button>
               </div>
             </div>
+
+            {isConnected && (
+              <div className="p-4 bg-[#222222] rounded-lg">
+                <h3 className="font-medium mb-4">Sample Data View</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-[#333333] rounded-lg">
+                    <p className="text-sm text-gray-400">Total Ad Spend</p>
+                    <p className="text-2xl font-bold">$1,234.56</p>
+                  </div>
+                  <div className="p-4 bg-[#333333] rounded-lg">
+                    <p className="text-sm text-gray-400">Impressions</p>
+                    <p className="text-2xl font-bold">45,678</p>
+                  </div>
+                  <div className="p-4 bg-[#333333] rounded-lg">
+                    <p className="text-sm text-gray-400">Clicks</p>
+                    <p className="text-2xl font-bold">2,345</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm text-gray-400">
+                  This is example data to demonstrate how the app will display Meta Ads metrics once approved.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -15,13 +15,14 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Exchange code for access token
+    const redirectUri = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/meta/callback`
+    
     const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
       params: {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
         code: code,
-        redirect_uri: `${process.env.API_URL}/meta/callback`
+        redirect_uri: redirectUri
       }
     })
 
