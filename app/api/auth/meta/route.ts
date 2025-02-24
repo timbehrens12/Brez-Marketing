@@ -43,10 +43,18 @@ export async function GET(request: Request) {
   authUrl.searchParams.append('client_id', process.env.META_APP_ID)
   authUrl.searchParams.append('redirect_uri', redirectUri)
   authUrl.searchParams.append('state', state)
-  authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
+  authUrl.searchParams.append('scope', scopes)
   authUrl.searchParams.append('response_type', 'code')
-  authUrl.searchParams.append('auth_type', 'rerequest')
+  
+  // Force new login flow
+  authUrl.searchParams.append('auth_type', 'reauthenticate')
+  authUrl.searchParams.append('auth_nonce', Date.now().toString())
   authUrl.searchParams.append('display', 'popup')
+  
+  // Clear any existing session
+  authUrl.searchParams.append('sdk', 'joey')
+  authUrl.searchParams.append('seen_revocable_access_grant', 'false')
+  authUrl.searchParams.append('should_popup_login_dialog', 'true')
 
   console.log('FINAL META AUTH URL:', authUrl.toString())
   
