@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { Loader2, Plus } from "lucide-react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { Separator } from "@/components/ui/separator"
+import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -219,41 +220,16 @@ export default function SettingsPage() {
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      {connections.some(c => c.platform_type === platform.type) ? (
-                        <>
-                          {platform.type === 'meta' && (
-                            <Button
-                              variant="outline"
-                              className="bg-transparent text-white"
-                              onClick={async () => {
-                                try {
-                                  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-                                  const response = await fetch(`${baseUrl}/meta/insights?brandId=${selectedBrandId}`)
-                                  const data = await response.json()
-                                  console.log('Meta API Test Response:', data)
-                                  toast.success('Successfully fetched Meta Ads data!')
-                                } catch (error) {
-                                  console.error('Meta API test failed:', error)
-                                  toast.error('Could not fetch Meta Ads data')
-                                }
-                              }}
-                            >
-                              Test
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            className="bg-transparent text-red-500"
-                            onClick={() => handleDisconnect(platform.type)}
-                            disabled={connectingPlatform === platform.type}
-                          >
-                            {connectingPlatform === platform.type ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              'Disconnect'
-                            )}
-                          </Button>
-                        </>
+                      {platform.type === 'meta' ? (
+                        <MetaConnectButton
+                          brandId={selectedBrandId}
+                          onConnect={async () => {
+                            setConnectingPlatform('meta')
+                            await handleConnect('meta')
+                            setConnectingPlatform(null)
+                          }}
+                          isConnected={connections.some(c => c.platform_type === 'meta')}
+                        />
                       ) : (
                         <Button 
                           className="bg-blue-600 hover:bg-blue-700"
