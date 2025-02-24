@@ -25,25 +25,26 @@ export async function GET(request: Request) {
     return NextResponse.redirect('/settings?error=configuration_error')
   }
 
-  const clientId = process.env.META_APP_ID
-  const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
   const redirectUri = `https://api.brezmarketingdashboard.com/meta/callback`
-  const state = brandId
-
-  console.log('Auth configuration:', {
-    redirectUri,
-    scopes,
-    hasClientId: !!clientId
-  })
-
-  console.log('FINAL REDIRECT URI:', redirectUri)
-
-  // First redirect to Facebook logout
-  const logoutRedirectUri = encodeURIComponent(
-    `https://brezmarketingdashboard.com/api/auth/meta/fresh-login?brandId=${brandId}`
-  )
   
-  const logoutUrl = `https://www.facebook.com/logout.php?next=${logoutRedirectUri}&access_token=`
+  // Build Facebook OAuth URL with forced login parameters
+  const authUrl = new URL('https://www.facebook.com/v18.0/dialog/oauth')
+  authUrl.searchParams.append('client_id', process.env.META_APP_ID)
+  authUrl.searchParams.append('redirect_uri', redirectUri)
+  authUrl.searchParams.append('state', brandId)
+  authUrl.searchParams.append('scope', 'ads_read,ads_management,business_management,pages_read_engagement')
+  authUrl.searchParams.append('response_type', 'code')
   
-  return NextResponse.redirect(logoutUrl)
+  // Force fresh login parameters
+  authUrl.searchParams.append('auth_type', 'reauthorize')  // Changed from reauthenticate
+  authUrl.searchParams.append('auth_nonce', Date.now().toString())
+  
+  // Additional forced login parameters
+  authUrl.searchParams.append('return_scopes', 'true')
+  authUrl.searchParams.append('enable_granular_permissions', 'true')
+  authUrl.searchParams.append('force_confirmation', 'true')
+  
+  console.log('FINAL META AUTH URL:', authUrl.toString())
+  
+  return NextResponse.redirect(authUrl.toString())
 } 
