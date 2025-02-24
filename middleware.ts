@@ -4,6 +4,8 @@ export default authMiddleware({
   publicRoutes: [
     "/review",
     "/review/callback",
+    "/meta/auth",
+    "/meta/callback",
     "/api/auth/meta/callback"
   ],
   afterAuth(auth, req) {

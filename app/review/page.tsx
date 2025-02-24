@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Loader2 } from "lucide-react"
 
@@ -9,11 +9,19 @@ export default function ReviewPage() {
   const [isConnected, setIsConnected] = useState(false)
   const brandId = "demo-brand-123"
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get('success') === 'true') {
+      setIsConnected(true)
+      setIsConnecting(false)
+    }
+  }, [])
+
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/api/auth/meta?brandId=${brandId}&review=true`
+      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&review=true`
       window.location.href = authUrl
     } catch (error) {
       console.error("Failed to connect:", error)
