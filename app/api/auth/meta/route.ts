@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 
   const clientId = process.env.META_APP_ID
   const scopes = 'ads_read,ads_management,business_management,pages_read_engagement'
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/meta/callback`
+  const redirectUri = `https://brezmarketingdashboard.com/api/auth/meta/callback`
   const state = brandId
 
   console.log('Auth configuration:', {
