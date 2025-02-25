@@ -25,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-slate-50 font-sans antialiased", inter.className)}>
+      <body className="min-h-screen bg-[#0A0A0A] font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider>
             <BrandProvider>

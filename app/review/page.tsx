@@ -31,7 +31,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen">
       <div className="container max-w-6xl mx-auto p-8 space-y-8">
         <div className="bg-[#111111] p-6 rounded-lg">
           <div className="space-y-1">
