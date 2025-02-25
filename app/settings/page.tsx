@@ -193,9 +193,9 @@ export default function SettingsPage() {
         {selectedBrandId ? (
           <div className="space-y-6">
             <div className="space-y-1">
-              <h3 className="text-lg font-medium">Platform Integrations</h3>
+              <h2 className="text-lg font-semibold">Connected Platforms</h2>
               <p className="text-sm text-gray-400">
-                Connect and manage your marketing platforms
+                Manage your platform connections. You can revoke access at any time by disconnecting a platform.
               </p>
             </div>
 
