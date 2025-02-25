@@ -13,7 +13,7 @@ interface TopProductsProps {
   products: Product[]
 }
 
-export function TopProducts({ products = [] as Product[] }) {
+export function TopProducts({ products = [] }) {
   if (!products.length) {
     return (
       <div className="bg-[#111111] p-4 rounded-lg">

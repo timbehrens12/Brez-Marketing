@@ -15,7 +15,7 @@ const COLORS = {
   returningCustomers: "#22c55e",
 }
 
-export function CustomerSegmentsWidget({ segments }: CustomerSegmentsProps) {
+export function CustomerSegmentsWidget({ segments = { newCustomers: 0, returningCustomers: 0 } }) {
   const total = segments.newCustomers + segments.returningCustomers
   if (total === 0) {
     return (

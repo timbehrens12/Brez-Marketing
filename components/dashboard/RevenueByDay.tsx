@@ -15,7 +15,7 @@ interface RevenueByDayProps {
   data: DayData[]
 }
 
-export function RevenueByDay({ data }: RevenueByDayProps) {
+export function RevenueByDay({ data = [] }: RevenueByDayProps) {
   return (
     <Card className="col-span-4 bg-gray-100 border-gray-300">
       <CardHeader>
