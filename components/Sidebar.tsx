@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
 import { SignOutButton } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 
@@ -39,6 +39,13 @@ export function Sidebar() {
                 {item.name}
               </Link>
             ))}
+            <Link
+              href="/review"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition-all hover:text-white"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Review (Meta Devs)</span>
+            </Link>
           </nav>
         </aside>
       </div>
