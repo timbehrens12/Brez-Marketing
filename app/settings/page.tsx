@@ -228,6 +228,9 @@ export default function SettingsPage() {
                             await handleConnect('meta')
                             setConnectingPlatform(null)
                           }}
+                          onDisconnect={async () => {
+                            await handleDisconnect('meta')
+                          }}
                           isConnected={connections.some(c => c.platform_type === 'meta')}
                         />
                       ) : (

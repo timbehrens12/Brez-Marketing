@@ -9,18 +9,18 @@ interface MetaConnectButtonProps {
   onConnect: (data: any) => Promise<void>
   isConnected: boolean
   brandId: string
+  onDisconnect?: () => Promise<void>
 }
 
-export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConnectButtonProps) {
+export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnect }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
   const { toast } = useToast()
 
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // For review, just show mock data after connection
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}&review=true`
+      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
       window.location.href = authUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
@@ -33,42 +33,44 @@ export function MetaConnectButton({ onConnect, isConnected, brandId }: MetaConne
     }
   }
 
-  // For review, show mock data
-  const handleTest = async () => {
-    toast({
-      title: "Connection Test",
-      description: "Successfully connected to Meta! This is a demo view for app review.",
-      variant: "default",
-    })
+  const handleDisconnect = async () => {
+    if (!onDisconnect) return
+    
+    if (confirm('Are you sure you want to disconnect Meta Ads? This will revoke all permissions.')) {
+      await onDisconnect()
+    }
   }
 
   return (
-    <div className="flex gap-2 items-center">
-      <Button 
-        onClick={handleConnect}
-        disabled={isConnecting || isConnected}
-        className={isConnected ? "bg-green-600 hover:bg-green-700" : ""}
-      >
-        {isConnecting ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Connecting...
-          </>
-        ) : isConnected ? (
-          <>
-            Connected to Meta
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </>
-        ) : (
-          <>
-            Connect Meta Account
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </>
-        )}
-      </Button>
-      {isConnected && (
-        <Button onClick={handleTest} variant="outline" size="sm">
-          View Demo Data
+    <div className="flex gap-2">
+      {isConnected ? (
+        <>
+          <Button 
+            variant="outline"
+            className="bg-transparent text-red-500 hover:bg-red-500/10"
+            onClick={handleDisconnect}
+            disabled={isConnecting}
+          >
+            Disconnect
+          </Button>
+        </>
+      ) : (
+        <Button 
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          {isConnecting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              Connect
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
         </Button>
       )}
     </div>
