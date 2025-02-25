@@ -93,6 +93,78 @@ export default function ReviewPage() {
                 </p>
               </div>
             )}
+
+            {isConnected && (
+              <div className="p-4 bg-[#222222] rounded-lg">
+                <h3 className="font-medium mb-4">Campaign Performance</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Spring Sale Campaign</h4>
+                      <p className="text-sm text-gray-400">Active • Last 30 days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-400">Spend / ROAS</p>
+                      <p className="font-medium">$458.32 / 2.4x</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Product Launch</h4>
+                      <p className="text-sm text-gray-400">Active • Last 7 days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-400">Spend / ROAS</p>
+                      <p className="font-medium">$892.15 / 3.1x</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                    <div>
+                      <h4 className="font-medium">Retargeting</h4>
+                      <p className="text-sm text-gray-400">Paused • Last 14 days</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-400">Spend / ROAS</p>
+                      <p className="font-medium">$234.67 / 1.8x</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm text-gray-400">
+                  Sample campaign data showing how we'll display ad performance and ROAS metrics for different campaigns.
+                </p>
+              </div>
+            )}
+
+            {isConnected && (
+              <>
+                <div className="p-4 bg-[#222222] rounded-lg">
+                  <h3 className="font-medium mb-4">How We'll Use the Permissions</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <div className="font-medium">ads_read:</div>
+                      <div className="text-gray-400">Used to fetch and display ad performance metrics shown above</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="font-medium">ads_management:</div>
+                      <div className="text-gray-400">Enables users to view detailed campaign data and performance insights</div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="font-medium">business_management:</div>
+                      <div className="text-gray-400">Required to access business account ad information</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-[#222222] rounded-lg">
+                  <h3 className="font-medium mb-4">Privacy & Data Usage</h3>
+                  <p className="text-sm text-gray-400">
+                    We only access the minimum required data to show ad performance metrics. All data is securely stored and never shared with third parties. Users can revoke access at any time through Facebook or our dashboard.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
