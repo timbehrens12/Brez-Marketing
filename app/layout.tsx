@@ -26,18 +26,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ClerkProvider>
+        <ClerkProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <BrandProvider>
               <WidgetProvider>
-                <AuthProvider>
-                  {children}
-                </AuthProvider>
+                {children}
               </WidgetProvider>
             </BrandProvider>
-          </ClerkProvider>
+          </ThemeProvider>
           <Toaster />
-        </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   )
