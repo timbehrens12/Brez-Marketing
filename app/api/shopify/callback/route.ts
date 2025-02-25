@@ -1,43 +1,42 @@
-import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const shop = searchParams.get('shop')
   const code = searchParams.get('code')
+  const shop = searchParams.get('shop')
   const state = searchParams.get('state')
-  
-  const { brandId, connectionId } = JSON.parse(state || '{}')
 
-  if (!shop || !code || !brandId || !connectionId) {
+  if (!code || !shop || !state) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
   try {
-    const shopify = shopifyApi({
-      apiKey: process.env.SHOPIFY_API_KEY!,
-      apiSecretKey: process.env.SHOPIFY_API_SECRET!,
-      scopes: ['read_products', 'read_orders', 'read_customers', 'read_analytics'],
-      hostName: process.env.SHOPIFY_APP_URL!,
-      apiVersion: LATEST_API_VERSION,
-      isEmbeddedApp: false,
+    // Parse state to get brandId and connectionId
+    const { brandId, connectionId } = JSON.parse(state)
+
+    // Exchange code for access token
+    const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: process.env.SHOPIFY_CLIENT_ID,
+        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+        code,
+      }),
     })
 
-    // Complete OAuth
-    const callbackResponse = await shopify.auth.callback({
-      rawRequest: request
-    })
+    const { access_token } = await tokenResponse.json()
 
-    const accessToken = callbackResponse.session.accessToken
-    
     // Update connection in database
     const { error } = await supabase
       .from('platform_connections')
       .update({
         status: 'active',
         shop,
-        access_token: accessToken,
+        access_token,
         metadata: {
           shop_url: `https://${shop}`
         }
@@ -46,9 +45,10 @@ export async function GET(request: Request) {
 
     if (error) throw error
 
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings`)
+    // Redirect back to settings page
+    return NextResponse.redirect('https://brezmarketingdashboard.com/settings')
   } catch (error) {
-    console.error('Shopify OAuth error:', error)
-    return NextResponse.json({ error: 'OAuth failed' }, { status: 500 })
+    console.error('Shopify callback error:', error)
+    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?error=callback_failed')
   }
 } 
