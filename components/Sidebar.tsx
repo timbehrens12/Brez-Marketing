@@ -23,38 +23,36 @@ export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className={`flex flex-col h-full justify-between ${className || ''}`}>
-      <div>
-        <aside className="w-64 min-h-screen p-4 bg-gradient-to-b from-red-400 to-red-700">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-white">Brez Dashboard</h1>
-          </div>
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-150 ease-in-out",
-                  pathname === item.href ? "bg-red-700 text-white" : "text-white hover:bg-red-500 hover:text-white",
-                )}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Link>
-            ))}
+    <aside className={`${className} bg-gradient-to-b from-red-400 to-red-700 flex flex-col`}>
+      <div className="p-4 flex-1">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white">Brez Dashboard</h1>
+        </div>
+        <nav className="space-y-1">
+          {navItems.map((item) => (
             <Link
-              href="/review"
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition-all hover:text-white"
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-150 ease-in-out",
+                pathname === item.href ? "bg-red-700 text-white" : "text-white hover:bg-red-500 hover:text-white",
+              )}
             >
-              <FileText className="h-4 w-4" />
-              <span>Review (Meta Devs)</span>
+              <item.icon className="mr-3 h-5 w-5" />
+              {item.name}
             </Link>
-          </nav>
-        </aside>
+          ))}
+          <Link
+            href="/review"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-300 transition-all hover:text-white"
+          >
+            <FileText className="h-4 w-4" />
+            <span>Review (Meta Devs)</span>
+          </Link>
+        </nav>
       </div>
       
-      <div className="p-4">
+      <div className="p-4 border-t border-red-500">
         <SignOutButton>
           <Button variant="ghost" className="w-full flex items-center gap-2 text-white">
             <LogOut className="h-4 w-4" />
@@ -62,7 +60,7 @@ export function Sidebar({ className }: SidebarProps) {
           </Button>
         </SignOutButton>
       </div>
-    </div>
+    </aside>
   )
 }
 

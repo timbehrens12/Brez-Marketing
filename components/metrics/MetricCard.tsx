@@ -57,12 +57,18 @@ export function MetricCard({
   const placeholderData = useMemo(() => {
     if (safeData.length > 0) return safeData;
     
-    const days = 30; // Or match your date range
+    const now = new Date();
+    let days = 30; // default
+    
+    if (dateRange?.from && dateRange?.to) {
+      days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    }
+    
     return Array.from({ length: days }, (_, i) => ({
-      date: new Date(Date.now() - (days - i - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      date: new Date(now.getTime() - (days - i - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       value: 0
     }));
-  }, [safeData]);
+  }, [safeData, dateRange]);
 
   if (loading) {
     return (

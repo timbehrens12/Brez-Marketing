@@ -20,12 +20,19 @@ export function RevenueByDay({ data = [] }: RevenueByDayProps) {
   const placeholderData = useMemo(() => {
     if (data.length > 0) return data;
     
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return days.map(day => ({
-      day,
-      date: new Date().toLocaleDateString(),
-      revenue: 0
-    }));
+    const now = new Date();
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const currentDay = now.getDay();
+    
+    return days.map((day, i) => {
+      const date = new Date(now);
+      date.setDate(date.getDate() - currentDay + i);
+      return {
+        day,
+        date: date.toLocaleDateString(),
+        revenue: 0
+      };
+    });
   }, [data]);
 
   return (
