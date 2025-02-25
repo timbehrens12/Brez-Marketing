@@ -20,6 +20,7 @@ import { transformToMetaMetrics } from '@/lib/transforms'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { WidgetManager } from "@/components/dashboard/WidgetManager"
+import { useMetrics } from "@/lib/contexts/MetricsContext"
 
 interface WidgetData {
   shopify?: any;
@@ -38,6 +39,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("shopify")
   const [isLoading, setIsLoading] = useState(false)
+  const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
 
   // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
@@ -218,6 +220,11 @@ export default function DashboardPage() {
 
     fetchData()
   }, [selectedBrandId, dateRange])
+
+  // Fetch metrics when date range changes
+  useEffect(() => {
+    fetchMetrics(dateRange)
+  }, [dateRange, fetchMetrics])
 
   const hasShopify = connections.some(c => c.platform_type === 'shopify')
   const hasMeta = connections.some(c => c.platform_type === 'meta')

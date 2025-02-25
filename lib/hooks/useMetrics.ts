@@ -1,23 +1,35 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { defaultMetrics } from "@/types/metrics"
+import type { DateRange } from "react-day-picker"
+import { supabase } from "@/lib/supabaseClient"
 
 export function useMetrics() {
-  const [metrics] = useState(() => ({
-    ...defaultMetrics,
-    dailyData: [], // Ensure this is initialized as an empty array
-    revenueByDay: [], // Ensure this is initialized as an empty array
-    topProducts: [], // Ensure this is initialized as an empty array
-    customerSegments: {
-      newCustomers: 0,
-      returningCustomers: 0
+  const [metrics, setMetrics] = useState(defaultMetrics)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchMetrics = useCallback(async (dateRange?: DateRange) => {
+    setIsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (dateRange?.from) params.append('from', dateRange.from.toISOString())
+      if (dateRange?.to) params.append('to', dateRange.to.toISOString())
+
+      const response = await fetch(`/api/metrics?${params}`)
+      const data = await response.json()
+      setMetrics(data)
+    } catch (error) {
+      console.error('Error fetching metrics:', error)
+      setMetrics(defaultMetrics)
+    } finally {
+      setIsLoading(false)
     }
-  }))
-  const [isLoading] = useState(false)
+  }, [])
 
   return {
     metrics,
     isLoading,
+    fetchMetrics
   }
 } 

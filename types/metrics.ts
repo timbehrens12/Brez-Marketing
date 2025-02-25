@@ -60,40 +60,40 @@ export interface CustomerSegments {
 export interface Metrics {
   totalSales: number
   salesGrowth: number
-  averageOrderValue: number
-  aovGrowth: number
   ordersPlaced: number
   ordersGrowth: number
   unitsSold: number
   unitsGrowth: number
-  impressions: number
-  impressionGrowth: number
-  clicks: number
-  clickGrowth: number
-  conversions: number
-  conversionGrowth: number
-  adSpend: number
-  adSpendGrowth: number
-  roas: number
-  roasGrowth: number
-  ctr: number
-  ctrGrowth: number
-  cpc: number
-  cpcGrowth: number
-  costPerResult: number
-  cprGrowth: number
+  averageOrderValue: number
+  aovGrowth: number
   customerRetentionRate: number
   retentionGrowth: number
   returnRate: number
   returnGrowth: number
   conversionRate: number
-  inventoryLevels: number
-  inventoryGrowth: number
-  salesData: MetricData[]
-  dailyData: any[]
-  chartData: any[]
-  timeseriesData: any[]
-  topProducts: any[]
+  conversionRateGrowth: number
+  dailyData: MetricData[]
+  revenueByDay: DayData[]
+  customerSegments: {
+    newCustomers: number
+    returningCustomers: number
+  }
+  topProducts: Product[]
+  // Meta-specific metrics
+  adSpend: number
+  adSpendGrowth: number
+  roas: number
+  roasGrowth: number
+  impressions: number
+  impressionGrowth: number
+  ctr: number
+  ctrGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  costPerResult: number
+  cprGrowth: number
 }
 
 export interface ComparisonDates {
@@ -139,42 +139,53 @@ export interface MetaMetrics {
   topProducts: any[]
 }
 
+export interface Product {
+  name: string
+  quantity: number
+  revenue: number
+}
+
+export interface DayData {
+  day: string
+  date: string
+  revenue: number | null
+}
+
 export const defaultMetrics: Metrics = {
   totalSales: 0,
   salesGrowth: 0,
-  averageOrderValue: 0,
-  aovGrowth: 0,
   ordersPlaced: 0,
   ordersGrowth: 0,
   unitsSold: 0,
   unitsGrowth: 0,
-  impressions: 0,
-  impressionGrowth: 0,
-  clicks: 0,
-  clickGrowth: 0,
-  conversions: 0,
-  conversionGrowth: 0,
-  adSpend: 0,
-  adSpendGrowth: 0,
-  roas: 0,
-  roasGrowth: 0,
-  ctr: 0,
-  ctrGrowth: 0,
-  cpc: 0,
-  cpcGrowth: 0,
-  costPerResult: 0,
-  cprGrowth: 0,
+  averageOrderValue: 0,
+  aovGrowth: 0,
   customerRetentionRate: 0,
   retentionGrowth: 0,
   returnRate: 0,
   returnGrowth: 0,
   conversionRate: 0,
-  inventoryLevels: 0,
-  inventoryGrowth: 0,
-  salesData: [],
+  conversionRateGrowth: 0,
   dailyData: [],
-  chartData: [],
-  timeseriesData: [],
-  topProducts: []
+  revenueByDay: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
+  topProducts: [],
+  adSpend: 0,
+  adSpendGrowth: 0,
+  roas: 0,
+  roasGrowth: 0,
+  impressions: 0,
+  impressionGrowth: 0,
+  ctr: 0,
+  ctrGrowth: 0,
+  clicks: 0,
+  clickGrowth: 0,
+  conversions: 0,
+  conversionGrowth: 0,
+  costPerResult: 0,
+  cprGrowth: 0
 }
 

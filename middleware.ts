@@ -8,6 +8,7 @@ export default authMiddleware({
     "/sign-up",
     "/api/webhooks(.*)",
     "/api/auth/(.*)",
+    "/privacy",
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",

@@ -27,6 +27,7 @@ interface MetricCardProps {
   dateRange?: DateRange
   isCustomRange?: boolean
   emptyState?: string
+  icon?: React.ReactNode
 }
 
 export function MetricCard({
@@ -45,6 +46,7 @@ export function MetricCard({
   dateRange,
   isCustomRange = false,
   emptyState,
+  icon,
 }: MetricCardProps) {
   // Force everything to be numbers
   const safeValue = typeof value === 'number' ? value : Number(value) || 0
