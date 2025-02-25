@@ -14,7 +14,7 @@ import { useUser } from "@clerk/nextjs"
 
 export default function SettingsPage() {
   const { user } = useUser()
-  const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
+  const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
