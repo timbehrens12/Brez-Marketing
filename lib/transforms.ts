@@ -28,6 +28,14 @@ export function transformToMetaMetrics(metrics: Metrics): MetaMetrics {
     inventoryLevels: metrics.inventoryLevels || 0,
     inventoryGrowth: 0,
     topProducts: metrics.topProducts || [],
-    returnGrowth: metrics.returnGrowth || 0
+    returnGrowth: metrics.returnGrowth || 0,
+    roas: metrics.roas || 0,
+    roasGrowth: metrics.roasGrowth || 0,
+    ctr: metrics.ctr || 0,
+    ctrGrowth: metrics.ctrGrowth || 0,
+    cpc: metrics.cpc || 0,
+    cpcGrowth: metrics.cpcGrowth || 0,
+    costPerResult: metrics.costPerResult || 0,
+    cprGrowth: metrics.cprGrowth || 0,
   }
 }

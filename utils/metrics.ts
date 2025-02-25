@@ -351,61 +351,16 @@ export function calculateMetrics(
   products: ShopifyProduct[],
   refunds: Order[],
   dateRange: DateRange | undefined,
-  comparisonType: ComparisonType = "none",
-  comparisonDateRange?: DateRange,
 ): Metrics {
   const defaultMetrics: Metrics = {
     totalSales: 0,
     salesGrowth: 0,
     averageOrderValue: 0,
     aovGrowth: 0,
-    salesData: [],
     ordersPlaced: 0,
-    previousOrdersPlaced: 0,
+    ordersGrowth: 0,
     unitsSold: 0,
-    previousUnitsSold: 0,
-    orderCount: 0,
-    previousOrderCount: 0,
-    topProducts: [],
-    customerRetentionRate: 0,
-    revenueByDay: Array(7).fill(0),
-    sessionCount: 0,
-    sessionGrowth: 0,
-    sessionData: [],
-    conversionRate: 0,
-    conversionRateGrowth: 0,
-    conversionData: [],
-    retentionRateGrowth: 0,
-    retentionData: [],
-    currentWeekRevenue: Array(7).fill(0),
-    inventoryLevels: 0,
-    returnRate: 0,
-    inventoryData: [],
-    returnData: [],
-    categoryPerformance: [],
-    customerSegments: {
-      newCustomers: 0,
-      returningCustomers: 0,
-    },
-    customerLifetimeValue: 0,
-    clvData: [],
-    averageTimeToFirstPurchase: 0,
-    timeToFirstPurchaseData: [],
-    categoryData: [],
-    shippingZones: [],
-    shippingData: [],
-    paymentMethods: [],
-    paymentData: [],
-    discountPerformance: [],
-    discountData: [],
-    firstTimeVsReturning: {
-      firstTime: { orders: 0, revenue: 0 },
-      returning: { orders: 0, revenue: 0 },
-    },
-    customerSegmentData: [],
-    dailyData: [],
-    chartData: [],
-    timeseriesData: [],
+    unitsGrowth: 0,
     impressions: 0,
     impressionGrowth: 0,
     clicks: 0,
@@ -414,10 +369,26 @@ export function calculateMetrics(
     conversionGrowth: 0,
     adSpend: 0,
     adSpendGrowth: 0,
-    unitsGrowth: 0,
+    roas: 0,
+    roasGrowth: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    cpc: 0,
+    cpcGrowth: 0,
+    costPerResult: 0,
+    cprGrowth: 0,
+    customerRetentionRate: 0,
     retentionGrowth: 0,
-    ordersGrowth: 0,
-    returnGrowth: 0
+    returnRate: 0,
+    returnGrowth: 0,
+    conversionRate: 0,
+    inventoryLevels: 0,
+    inventoryGrowth: 0,
+    salesData: [],
+    dailyData: [],
+    chartData: [],
+    timeseriesData: [],
+    topProducts: []
   }
 
   if (!Array.isArray(orders) || orders.length === 0 || !dateRange?.from || !dateRange?.to) {
@@ -451,76 +422,6 @@ export function calculateMetrics(
       .reduce((refundSum, refund) => refundSum + Number(refund.total_price || 0), 0)
     return sum + orderTotal - orderRefunds
   }, 0)
-
-  // Generate conversion rate data
-  const intervals = isSingleDay
-    ? Array.from({ length: 24 }, (_, i) => {
-        const date = new Date(currentRange.start)
-        date.setHours(i, 0, 0, 0)
-        return date
-      })
-    : eachDayOfInterval({ start: currentRange.start, end: currentRange.end })
-
-  const conversionData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-    // Simulate session data - replace with real data when available
-    const sessions = Math.floor(Math.random() * 100) + periodOrders.length
-    return {
-      date: key,
-      value: sessions > 0 ? (periodOrders.length / sessions) * 100 : 0,
-    }
-  })
-
-  // Generate retention rate data
-  const retentionData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-
-    const uniqueCustomers = new Set(periodOrders.map((order) => order.customer?.id).filter(Boolean))
-    const returningCustomers = new Set(
-      periodOrders
-        .filter((order) => {
-          const customerOrders = filteredOrders.filter((o) => o.customer?.id === order.customer?.id)
-          return customerOrders.length > 1
-        })
-        .map((order) => order.customer?.id)
-        .filter(Boolean),
-    )
-
-    return {
-      date: key,
-      value: uniqueCustomers.size > 0 ? (returningCustomers.size / uniqueCustomers.size) * 100 : 0,
-    }
-  })
-
-  // Generate inventory levels data
-  const inventoryData = generateInventoryData(products, filteredOrders, filteredRefunds, intervals)
-  const inventoryLevels = inventoryData[inventoryData.length - 1].value
-
-  // Generate return rate data
-  const returnData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-    const periodRefunds = filteredRefunds.filter((refund) => {
-      const refundDate = addDays(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(refundDate, "HH:00") === key : format(refundDate, "yyyy-MM-dd") === key
-    })
-
-    return {
-      date: key,
-      value: periodOrders.length > 0 ? (periodRefunds.length / periodOrders.length) * 100 : 0,
-    }
-  })
 
   // Calculate other metrics
   const ordersPlaced = filteredOrders.length
@@ -568,44 +469,16 @@ export function calculateMetrics(
   const currentWeekRevenue = calculateCurrentWeekRevenue(filteredOrders, filteredRefunds)
 
   // Return updated metrics with all time-series data
-
   return {
     ...defaultMetrics,
     totalSales,
+    salesGrowth: 0,
     averageOrderValue,
-    salesData,
+    aovGrowth: 0,
     ordersPlaced,
+    ordersGrowth: 0,
     unitsSold,
-    orderCount: ordersPlaced,
-    topProducts: calculateTopProducts(filteredOrders, filteredRefunds),
-    customerRetentionRate: calculateCustomerRetentionRate(filteredOrders),
-    revenueByDay: calculateRevenueByDay(filteredOrders, filteredRefunds),
-    conversionRate: calculateOverallConversionRate(filteredOrders),
-    conversionData,
-    retentionData,
-    currentWeekRevenue, // This is now always the current week's data
-    inventoryLevels,
-    returnRate: calculateReturnRate(filteredOrders, filteredRefunds),
-    inventoryData,
-    returnData,
-    // Add placeholder values for the new properties
-    categoryData: [],
-    shippingZones: [],
-    shippingData: [],
-    paymentMethods: [],
-    paymentData: [],
-    discountPerformance: [],
-    discountData: [],
-    firstTimeVsReturning: {
-      firstTime: { orders: 0, revenue: 0 },
-      returning: { orders: 0, revenue: 0 },
-    },
-    customerSegmentData,
-    categoryPerformance,
-    customerSegments,
-    dailyData: [],
-    chartData: [],
-    timeseriesData: [],
+    unitsGrowth: 0,
     impressions: 0,
     impressionGrowth: 0,
     clicks: 0,
@@ -614,10 +487,26 @@ export function calculateMetrics(
     conversionGrowth: 0,
     adSpend: 0,
     adSpendGrowth: 0,
-    unitsGrowth: 0,
+    roas: 0,
+    roasGrowth: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    cpc: 0,
+    cpcGrowth: 0,
+    costPerResult: 0,
+    cprGrowth: 0,
+    customerRetentionRate: calculateCustomerRetentionRate(filteredOrders),
     retentionGrowth: 0,
-    ordersGrowth: 0,
-    returnGrowth: 0
+    returnRate: calculateReturnRate(filteredOrders, filteredRefunds),
+    returnGrowth: 0,
+    conversionRate: calculateOverallConversionRate(filteredOrders),
+    inventoryLevels: calculateInventoryLevels(products, currentRange.end),
+    inventoryGrowth: 0,
+    salesData: salesData,
+    dailyData: [],
+    chartData: [],
+    timeseriesData: [],
+    topProducts: calculateTopProducts(filteredOrders, filteredRefunds)
   }
 }
 

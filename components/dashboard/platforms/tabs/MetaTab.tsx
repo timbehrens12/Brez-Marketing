@@ -10,6 +10,8 @@ interface MetaTabProps {
 }
 
 export function MetaTab({ metrics, dateRange, isLoading }: MetaTabProps) {
+  const hasData = metrics && Object.keys(metrics).length > 0
+
   if (isLoading) {
     return <div>Loading Meta data...</div>
   }
@@ -22,45 +24,86 @@ export function MetaTab({ metrics, dateRange, isLoading }: MetaTabProps) {
             <div className="bg-[#111111] p-4 rounded-lg">
               <MetricCard
                 title="Ad Spend"
-                value={metrics.totalSales}
-                change={metrics.salesGrowth}
+                value={hasData ? metrics.totalSales : "-"}
+                change={hasData ? metrics.salesGrowth : 0}
                 prefix="$"
                 valueFormat="currency"
                 platform="meta"
-                data={metrics.dailyData || []}
+                data={hasData ? metrics.dailyData : []}
               />
             </div>
-
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <MetricCard
+                title="ROAS"
+                value={hasData ? metrics.roas || "-" : "-"}
+                change={hasData ? metrics.roasGrowth || 0 : 0}
+                suffix="x"
+                valueFormat="number"
+                platform="meta"
+                data={hasData ? metrics.dailyData : []}
+              />
+            </div>
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <MetricCard
+                title="CTR"
+                value={hasData ? metrics.ctr || "-" : "-"}
+                change={hasData ? metrics.ctrGrowth || 0 : 0}
+                suffix="%"
+                valueFormat="number"
+                platform="meta"
+                data={hasData ? metrics.dailyData : []}
+              />
+            </div>
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <MetricCard
+                title="CPC"
+                value={hasData ? metrics.cpc || "-" : "-"}
+                change={hasData ? metrics.cpcGrowth || 0 : 0}
+                prefix="$"
+                valueFormat="currency"
+                platform="meta"
+                data={hasData ? metrics.dailyData : []}
+              />
+            </div>
             <div className="bg-[#111111] p-4 rounded-lg">
               <MetricCard
                 title="Impressions"
-                value={metrics.impressions || 0}
-                change={metrics.impressionGrowth || 0}
+                value={hasData ? metrics.impressions || "-" : "-"}
+                change={hasData ? metrics.impressionGrowth || 0 : 0}
                 valueFormat="number"
                 platform="meta"
-                data={metrics.dailyData || []}
+                data={hasData ? metrics.dailyData : []}
               />
             </div>
-
             <div className="bg-[#111111] p-4 rounded-lg">
               <MetricCard
                 title="Clicks"
-                value={metrics.clicks || 0}
-                change={metrics.clickGrowth || 0}
+                value={hasData ? metrics.clicks || "-" : "-"}
+                change={hasData ? metrics.clickGrowth || 0 : 0}
                 valueFormat="number"
                 platform="meta"
-                data={metrics.dailyData || []}
+                data={hasData ? metrics.dailyData : []}
               />
             </div>
-
             <div className="bg-[#111111] p-4 rounded-lg">
               <MetricCard
                 title="Conversions"
-                value={metrics.conversions || 0}
-                change={metrics.conversionGrowth || 0}
+                value={hasData ? metrics.conversions || "-" : "-"}
+                change={hasData ? metrics.conversionGrowth || 0 : 0}
                 valueFormat="number"
                 platform="meta"
-                data={metrics.dailyData || []}
+                data={hasData ? metrics.dailyData : []}
+              />
+            </div>
+            <div className="bg-[#111111] p-4 rounded-lg">
+              <MetricCard
+                title="Cost Per Result"
+                value={hasData ? metrics.costPerResult || "-" : "-"}
+                change={hasData ? metrics.cprGrowth || 0 : 0}
+                prefix="$"
+                valueFormat="currency"
+                platform="meta"
+                data={hasData ? metrics.dailyData : []}
               />
             </div>
           </div>
