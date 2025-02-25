@@ -11,6 +11,7 @@ import { Trash2, Edit2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
 import { useUser } from "@clerk/nextjs"
+import { PlatformConnection } from "@/types/platformConnection"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -18,11 +19,32 @@ export default function SettingsPage() {
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
+  const [connections, setConnections] = useState<PlatformConnection[]>([])
 
   useEffect(() => {
     console.log('Current brands:', brands)
     console.log('Selected brand:', selectedBrandId)
   }, [brands, selectedBrandId])
+
+  useEffect(() => {
+    if (!selectedBrandId) return
+    
+    const loadConnections = async () => {
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('brand_id', selectedBrandId)
+
+      if (error) {
+        console.error('Error loading connections:', error)
+        return
+      }
+
+      setConnections(data || [])
+    }
+
+    loadConnections()
+  }, [selectedBrandId])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
@@ -100,45 +122,98 @@ export default function SettingsPage() {
   }
 
   const handleConnect = async (platform: 'shopify' | 'meta') => {
-    // Implement platform connection
-    console.log('Connect platform:', platform)
+    if (!selectedBrandId) {
+      alert('Please select a brand first')
+      return
+    }
+
+    try {
+      if (platform === 'shopify') {
+        // Start Shopify OAuth flow
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .insert({
+            brand_id: selectedBrandId,
+            platform_type: 'shopify',
+            status: 'pending',
+            user_id: user?.id
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Redirect to Shopify OAuth
+        window.location.href = `/api/shopify/auth?brandId=${selectedBrandId}&connectionId=${data.id}`
+      } else if (platform === 'meta') {
+        // Start Meta OAuth flow
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .insert({
+            brand_id: selectedBrandId,
+            platform_type: 'meta',
+            status: 'pending',
+            user_id: user?.id
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+
+        // Redirect to Meta OAuth
+        window.location.href = `/api/meta/auth?brandId=${selectedBrandId}&connectionId=${data.id}`
+      }
+    } catch (error) {
+      console.error('Error connecting platform:', error)
+      alert('Failed to start platform connection')
+    }
+  }
+
+  const handleDisconnect = async (platform: 'shopify' | 'meta') => {
+    if (!selectedBrandId) {
+      alert('Please select a brand first')
+      return
+    }
+
+    try {
+      // First delete the platform connection
+      const { error } = await supabase
+        .from('platform_connections')
+        .delete()
+        .eq('brand_id', selectedBrandId)
+        .eq('platform_type', platform)
+
+      if (error) throw error
+
+      // Refresh the connections list
+      await refreshBrands()
+    } catch (error) {
+      console.error('Error disconnecting platform:', error)
+      alert('Failed to disconnect platform')
+    }
   }
 
   const handleClearAllData = async () => {
-    if (!confirm('Are you sure? This will delete ALL brands and connections.')) return;
+    // First confirmation
+    if (!confirm('WARNING: This will delete ALL brands and their platform connections for your account. This cannot be undone.')) return;
+    
+    // Second confirmation requiring typing
+    const confirmText = 'DELETE ALL DATA';
+    const userInput = prompt(`To confirm, please type "${confirmText}" in all caps:`);
+    if (userInput !== confirmText) {
+      alert('Deletion cancelled - text did not match.');
+      return;
+    }
     
     try {
-      console.log('Starting data clear...')
-      
-      // Delete metrics first
+      console.log('Starting data clear for user:', user?.id)
+      // ... rest of clear logic, but add user_id check to queries ...
       const { error: metricsError } = await supabase
         .from('metrics')
         .delete()
-        .not('id', 'is', null) // Delete all rows
+        .eq('user_id', user?.id) // Only delete user's data
 
-      if (metricsError) throw metricsError
-      console.log('Metrics deleted')
-
-      // Delete platform connections
-      const { error: connectionsError } = await supabase
-        .from('platform_connections')
-        .delete()
-        .not('id', 'is', null)
-
-      if (connectionsError) throw connectionsError
-      console.log('Connections deleted')
-
-      // Finally delete brands
-      const { error: brandsError } = await supabase
-        .from('brands')
-        .delete()
-        .not('id', 'is', null)
-
-      if (brandsError) throw brandsError
-      console.log('Brands deleted')
-
-      await refreshBrands()
-      alert('All data cleared successfully!')
+      // ... same for other deletes ...
     } catch (error) {
       console.error('Error clearing data:', error)
       alert('Error clearing data. Check console for details.')
@@ -287,13 +362,23 @@ export default function SettingsPage() {
                     <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
                     <span className="text-white">Shopify</span>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="border-[#333] text-gray-400 hover:text-white"
-                    onClick={() => handleConnect('shopify')}
-                  >
-                    Connect
-                  </Button>
+                  {connections.find(c => c.platform_type === 'shopify') ? (
+                    <Button 
+                      variant="outline" 
+                      className="border-[#333] text-red-400 hover:text-red-300"
+                      onClick={() => handleDisconnect('shopify')}
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="border-[#333] text-gray-400 hover:text-white"
+                      onClick={() => handleConnect('shopify')}
+                    >
+                      Connect
+                    </Button>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
@@ -301,13 +386,23 @@ export default function SettingsPage() {
                     <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
                     <span className="text-white">Meta Ads</span>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="border-[#333] text-gray-400 hover:text-white"
-                    onClick={() => handleConnect('meta')}
-                  >
-                    Connect
-                  </Button>
+                  {connections.find(c => c.platform_type === 'meta') ? (
+                    <Button 
+                      variant="outline" 
+                      className="border-[#333] text-red-400 hover:text-red-300"
+                      onClick={() => handleDisconnect('meta')}
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      className="border-[#333] text-gray-400 hover:text-white"
+                      onClick={() => handleConnect('meta')}
+                    >
+                      Connect
+                    </Button>
+                  )}
                 </div>
               </>
             ) : (

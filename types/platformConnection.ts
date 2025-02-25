@@ -3,7 +3,7 @@ export interface PlatformConnection {
   platform_type: 'shopify' | 'meta'
   brand_id: string
   shop?: string  // For Shopify stores
-  status: 'active' | 'inactive' | 'disconnected'
+  status: 'pending' | 'active'
   created_at: string
   updated_at: string
   access_token?: string
@@ -12,4 +12,5 @@ export interface PlatformConnection {
   metadata?: {
     [key: string]: any
   }
+  user_id: string
 } 

@@ -29,8 +29,8 @@ interface WidgetData {
 
 export default function DashboardPage() {
   const { userId } = useAuth()
+  const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const { selectedBrandId, setSelectedBrandId, brands } = useBrandContext()
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
@@ -239,13 +239,33 @@ export default function DashboardPage() {
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          <select
+            value={selectedBrandId || ''}
+            onChange={(e) => setSelectedBrandId(e.target.value || null)}
+            className="bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
+          >
+            <option value="">Select a brand</option>
+            {brands.map(brand => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <DateRangePicker 
           date={dateRange}
           onDateChange={setDateRange}
         />
       </div>
-      <WidgetManager dateRange={dateRange} />
+      {selectedBrandId ? (
+        <WidgetManager dateRange={dateRange} brandId={selectedBrandId} />
+      ) : (
+        <div className="text-center text-gray-400 py-12">
+          Select a brand to view metrics
+        </div>
+      )}
     </div>
   )
 }
