@@ -101,17 +101,43 @@ export default function SettingsPage() {
   }
 
   const handleClearAllData = async () => {
+    if (!confirm('Are you sure? This will delete ALL brands and connections.')) return;
+    
     try {
-      // Delete in correct order due to foreign key constraints
-      await Promise.all([
-        supabase.from('metrics').delete().neq('id', 0),
-        supabase.from('platform_connections').delete().neq('id', 0)
-      ])
-      await supabase.from('brands').delete().neq('id', 0)
+      console.log('Starting data clear...')
       
+      // Delete metrics first
+      const { error: metricsError } = await supabase
+        .from('metrics')
+        .delete()
+        .not('id', 'is', null) // Delete all rows
+
+      if (metricsError) throw metricsError
+      console.log('Metrics deleted')
+
+      // Delete platform connections
+      const { error: connectionsError } = await supabase
+        .from('platform_connections')
+        .delete()
+        .not('id', 'is', null)
+
+      if (connectionsError) throw connectionsError
+      console.log('Connections deleted')
+
+      // Finally delete brands
+      const { error: brandsError } = await supabase
+        .from('brands')
+        .delete()
+        .not('id', 'is', null)
+
+      if (brandsError) throw brandsError
+      console.log('Brands deleted')
+
       await refreshBrands()
+      alert('All data cleared successfully!')
     } catch (error) {
       console.error('Error clearing data:', error)
+      alert('Error clearing data. Check console for details.')
     }
   }
 
@@ -145,12 +171,19 @@ export default function SettingsPage() {
                 </DialogHeader>
                 <form onSubmit={async (e) => {
                   e.preventDefault()
-                  await handleAddBrand()
+                  console.log('Form submitted, brand name:', newBrandName)
+                  try {
+                    await handleAddBrand()
+                    console.log('Brand added successfully')
+                  } catch (error) {
+                    console.error('Error adding brand:', error)
+                  }
                 }}>
                   <div className="space-y-4">
                     <div>
                       <Label>Brand Name</Label>
                       <Input 
+                        required
                         value={newBrandName}
                         onChange={(e) => setNewBrandName(e.target.value)}
                         className="bg-[#333] border-[#444] text-white"
