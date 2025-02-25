@@ -144,48 +144,51 @@ export default function SettingsPage() {
     <div className="container max-w-6xl mx-auto p-8 space-y-8">
       {/* User Section */}
       <div className="bg-[#525151] p-6 rounded-lg">
-        <div className="flex items-center justify-between">
+        {/* Account Settings header */}
+        <div className="bg-[#222222] p-4 rounded-lg mb-4">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Account Settings</h1>
             <p className="text-sm text-gray-400">
               Manage your account and connected platforms
             </p>
           </div>
-          <UserButton afterSignOutUrl="/" />
         </div>
-        
-        <Separator className="my-6 bg-[#222222]" />
-        
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium">Email</h2>
-            <p className="text-sm text-gray-400">{user?.emailAddresses[0].emailAddress}</p>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium">Name</h2>
-            <p className="text-sm text-gray-400">{user?.fullName || 'Not set'}</p>
+
+        {/* Email and Name section */}
+        <div className="bg-[#222222] p-4 rounded-lg">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h2 className="text-sm font-medium">Email</h2>
+              <p className="text-sm text-gray-400">{user?.emailAddresses[0].emailAddress}</p>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-sm font-medium">Name</h2>
+              <p className="text-sm text-gray-400">{user?.fullName || 'Not set'}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Brand Management Section */}
       <div className="bg-[#525151] p-6 rounded-lg">
-        <div className="flex items-center justify-between mb-6">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold">Brand Management</h2>
-            <p className="text-sm text-gray-400">
-              Select and manage your brands and their integrations
-            </p>
+        <div className="bg-[#222222] p-4 rounded-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Brand Management</h2>
+              <p className="text-sm text-gray-400">
+                Select and manage your brands and their integrations
+              </p>
+            </div>
+            <Button 
+              onClick={() => setShowBrandDialog(true)}
+              className="bg-[#333333] hover:bg-[#444444]"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Brand
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowBrandDialog(true)}
-            className="bg-[#222222] hover:bg-[#333333]"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Brand
-          </Button>
         </div>
-
+        
         <div className="mb-8">
           <BrandSelector onSelect={setSelectedBrandId} />
         </div>

@@ -153,7 +153,7 @@ export default function ReviewPage() {
             )}
 
             {isConnected && (
-              <div className="p-4 bg-[#525151] rounded-lg border border-gray-800">
+              <div className="p-4 bg-[#222222] rounded-lg border border-gray-800">
                 <h3 className="font-medium mb-4">Data Access & Privacy</h3>
                 <div className="space-y-2 text-sm text-gray-400">
                   <p>• You can disconnect and revoke access to your Meta data at any time</p>
