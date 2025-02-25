@@ -143,7 +143,7 @@ export default function SettingsPage() {
   return (
     <div className="container max-w-6xl mx-auto p-8 space-y-8">
       {/* User Section */}
-      <div className="bg-[#111111] p-6 rounded-lg">
+      <div className="bg-[#525151] p-6 rounded-lg">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Account Settings</h1>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Brand Management Section */}
-      <div className="bg-[#111111] p-6 rounded-lg">
+      <div className="bg-[#525151] p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">Brand Management</h2>
@@ -206,7 +206,7 @@ export default function SettingsPage() {
             ) : (
               <div className="grid gap-4">
                 {platforms.map(platform => (
-                  <div key={platform.type} className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+                  <div key={platform.type} className="flex items-center justify-between p-4 bg-[#525151] rounded-lg">
                     <div className="flex items-center gap-3">
                       <img src={platform.icon} alt={platform.name} className="w-8 h-8" />
                       <div>

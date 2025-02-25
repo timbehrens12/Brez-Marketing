@@ -138,7 +138,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
   if (isLoading) {
     return (
       <div className="grid gap-4">
-        <div className="bg-[#807e7e] p-4 rounded-lg">
+        <div className="bg-[#525151] p-4 rounded-lg">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i}>
@@ -156,7 +156,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
   if (!isConnected) {
     return (
       <div className="grid gap-4">
-        <div className="bg-[#807e7e] p-4 rounded-lg">
+        <div className="bg-[#525151] p-4 rounded-lg">
           <div className="text-center py-8">
             <Alert>
               <AlertCircle className="h-4 w-4" />
@@ -175,14 +175,14 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
   }
 
   if (!metaData) return <div className="grid gap-4">
-    <div className="bg-[#807e7e] p-4 rounded-lg">
+    <div className="bg-[#525151] p-4 rounded-lg">
       <div className="text-center py-8">No Meta Ads data available</div>
     </div>
   </div>
 
   return (
     <div className="grid gap-4">
-      <div className="bg-[#807e7e] p-4 rounded-lg">
+      <div className="bg-[#525151] p-4 rounded-lg">
         <div className="space-y-6">
           {/* Overview Section */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

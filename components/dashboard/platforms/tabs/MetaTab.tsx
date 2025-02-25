@@ -15,7 +15,7 @@ export function MetaTab({ metrics, dateRange, isLoading }: MetaTabProps) {
   }
 
   return (
-    <div className="bg-[#807e7e] rounded-lg p-4">
+    <div className="bg-[#525151] rounded-lg p-4">
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <MetricCard
