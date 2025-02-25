@@ -146,11 +146,14 @@ export default function SettingsPage() {
       <div className="bg-[#525151] p-6 rounded-lg">
         {/* Account Settings header */}
         <div className="bg-[#222222] p-4 rounded-lg mb-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold">Account Settings</h1>
-            <p className="text-sm text-gray-400">
-              Manage your account and connected platforms
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold">Account Settings</h1>
+              <p className="text-sm text-gray-400">
+                Manage your account and connected platforms
+              </p>
+            </div>
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
 
