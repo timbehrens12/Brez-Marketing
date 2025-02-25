@@ -34,7 +34,7 @@ export default function SettingsPage() {
         }
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('brands')
         .insert([{ 
           name: newBrandName,
@@ -44,6 +44,10 @@ export default function SettingsPage() {
 
       if (error) throw error
       
+      // Refresh the brands list
+      await refreshBrands()
+      
+      // Reset form
       setIsAddingBrand(false)
       setNewBrandName("")
       setNewBrandImage(null)
