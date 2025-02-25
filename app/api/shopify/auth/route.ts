@@ -1,4 +1,3 @@
-import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -16,27 +15,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
-  // Initialize Shopify client with minimal config
-  const shopify = shopifyApi({
-    apiKey: process.env.SHOPIFY_CLIENT_ID!,
-    apiSecretKey: process.env.SHOPIFY_CLIENT_SECRET!,
-    scopes: [
+  try {
+    // Generate OAuth URL directly
+    const scopes = [
       'read_products',
       'read_orders',
       'read_customers',
       'read_analytics'
-    ],
-    hostName: 'brezmarketingdashboard.com',
-    apiVersion: LATEST_API_VERSION,
-    isEmbeddedApp: false,
-  })
+    ].join(',')
 
-  try {
-    // Generate OAuth URL
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
     const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
       client_id: process.env.SHOPIFY_CLIENT_ID!,
-      scope: shopify.config.scopes.toString(),
+      scope: scopes,
       redirect_uri: redirectUrl,
       state: JSON.stringify({ brandId, connectionId })
     })
