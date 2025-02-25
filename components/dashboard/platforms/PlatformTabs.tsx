@@ -7,7 +7,6 @@ import { MetaTab } from "./tabs/MetaTab"
 import type { Metrics, MetaMetrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import type { WidgetData } from "@/types/widget"
-import { ShopifyContent } from "../platforms/ShopifyContent"
 import { MetaContent } from "../platforms/MetaContent"
 
 interface PlatformTabsProps {
@@ -60,9 +59,10 @@ export function PlatformTabs({ platforms, dateRange, metrics, isLoading, data }:
 
       <div className="mt-6">
         <TabsContent value="shopify" className="space-y-4">
-          <ShopifyContent 
+          <ShopifyTab 
             metrics={metrics} 
-            dateRange={dateRange} 
+            dateRange={dateRange}
+            isLoading={isLoading}
           />
         </TabsContent>
         <TabsContent value="meta">

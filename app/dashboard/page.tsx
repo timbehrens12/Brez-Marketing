@@ -5,7 +5,6 @@ import { useAuth } from "@clerk/nextjs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { DateRange } from "react-day-picker"
-import { ShopifyContent } from "@/components/dashboard/platforms/ShopifyContent"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabase"
 import BrandSelector from '@/components/BrandSelector'
@@ -20,7 +19,7 @@ import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
 import { transformToMetaMetrics } from '@/lib/transforms'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/DateRangePicker"
-import { WidgetManager } from "@/components/WidgetManager"
+import { WidgetManager } from "@/components/dashboard/WidgetManager"
 
 interface WidgetData {
   shopify?: any;
@@ -232,7 +231,10 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <DateRangePicker />
+      <DateRangePicker 
+        date={dateRange}
+        onDateChange={setDateRange}
+      />
       <WidgetManager dateRange={dateRange} />
     </div>
   )
