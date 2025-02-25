@@ -25,19 +25,29 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   const [brands, setBrands] = useState<Brand[]>([])
 
   const loadBrands = async () => {
-    if (!user) return
+    if (!user) {
+      console.log('No user, skipping brand load')
+      return
+    }
 
     try {
+      console.log('Loading brands for user:', user.id)
       const { data, error } = await supabase
         .from('brands')
         .select('*')
         .eq('user_id', user.id)
         .order('name')
 
-      if (error) throw error
+      if (error) {
+        console.error('Error loading brands:', error)
+        throw error
+      }
+
+      console.log('Loaded brands:', data)
       setBrands(data || [])
     } catch (error) {
-      console.error('Error loading brands:', error)
+      console.error('Error in loadBrands:', error)
+      setBrands([])
     }
   }
 

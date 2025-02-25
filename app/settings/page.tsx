@@ -28,36 +28,35 @@ export default function SettingsPage() {
     if (!newBrandName || !user) return
 
     try {
-      let imageUrl = null
-      if (newBrandImage) {
-        const { data, error } = await supabase.storage
-          .from('brand-images')
-          .upload(`${Date.now()}-${newBrandImage.name}`, newBrandImage)
-        
-        if (!error && data) {
-          imageUrl = data.path
-        }
+      console.log('Adding brand:', { name: newBrandName, user_id: user.id })
+      
+      const { data, error } = await supabase
+        .from('brands')
+        .insert({
+          name: newBrandName,
+          user_id: user.id
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
       }
 
-      const { error } = await supabase
-        .from('brands')
-        .insert([{ 
-          name: newBrandName,
-          image_url: imageUrl,
-          user_id: user.id
-        }])
-
-      if (error) throw error
-      
-      // Refresh the brands list
+      console.log('Brand added:', data)
       await refreshBrands()
       
+      // Close dialog
+      const closeButton = document.querySelector('[aria-label="Close"]') as HTMLButtonElement
+      closeButton?.click()
+      
       // Reset form
-      setIsAddingBrand(false)
       setNewBrandName("")
       setNewBrandImage(null)
     } catch (error) {
       console.error('Error adding brand:', error)
+      alert('Failed to add brand. Please try again.')
     }
   }
 
