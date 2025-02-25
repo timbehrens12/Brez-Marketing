@@ -27,13 +27,13 @@ export default function SettingsPage() {
   }, [brands, selectedBrandId])
 
   useEffect(() => {
-    if (!selectedBrandId) return
-    
     const loadConnections = async () => {
+      if (!user) return;
+      
       const { data, error } = await supabase
         .from('platform_connections')
         .select('*')
-        .eq('brand_id', selectedBrandId)
+        .eq('user_id', user.id)
 
       if (error) {
         console.error('Error loading connections:', error)
@@ -44,7 +44,7 @@ export default function SettingsPage() {
     }
 
     loadConnections()
-  }, [selectedBrandId])
+  }, [user])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
@@ -121,19 +121,14 @@ export default function SettingsPage() {
     }
   }
 
-  const handleConnect = async (platform: 'shopify' | 'meta') => {
-    if (!selectedBrandId) {
-      alert('Please select a brand first')
-      return
-    }
-
+  const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       if (platform === 'shopify') {
         // Start Shopify OAuth flow
         const { data, error } = await supabase
           .from('platform_connections')
           .insert({
-            brand_id: selectedBrandId,
+            brand_id: brandId,
             platform_type: 'shopify',
             status: 'pending',
             user_id: user?.id
@@ -144,13 +139,13 @@ export default function SettingsPage() {
         if (error) throw error
 
         // Redirect to Shopify OAuth
-        window.location.href = `/api/shopify/auth?brandId=${selectedBrandId}&connectionId=${data.id}`
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${data.id}`
       } else if (platform === 'meta') {
         // Start Meta OAuth flow
         const { data, error } = await supabase
           .from('platform_connections')
           .insert({
-            brand_id: selectedBrandId,
+            brand_id: brandId,
             platform_type: 'meta',
             status: 'pending',
             user_id: user?.id
@@ -161,7 +156,7 @@ export default function SettingsPage() {
         if (error) throw error
 
         // Redirect to Meta OAuth
-        window.location.href = `/api/meta/auth?brandId=${selectedBrandId}&connectionId=${data.id}`
+        window.location.href = `/api/meta/auth?brandId=${brandId}&connectionId=${data.id}`
       }
     } catch (error) {
       console.error('Error connecting platform:', error)
@@ -169,24 +164,24 @@ export default function SettingsPage() {
     }
   }
 
-  const handleDisconnect = async (platform: 'shopify' | 'meta') => {
-    if (!selectedBrandId) {
-      alert('Please select a brand first')
-      return
-    }
-
+  const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
-      // First delete the platform connection
       const { error } = await supabase
         .from('platform_connections')
         .delete()
-        .eq('brand_id', selectedBrandId)
+        .eq('brand_id', brandId)
         .eq('platform_type', platform)
 
       if (error) throw error
 
-      // Refresh the connections list
-      await refreshBrands()
+      // Refresh connections
+      const { data: newConnections, error: loadError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('user_id', user?.id)
+
+      if (loadError) throw loadError
+      setConnections(newConnections || [])
     } catch (error) {
       console.error('Error disconnecting platform:', error)
       alert('Failed to disconnect platform')
@@ -289,23 +284,6 @@ export default function SettingsPage() {
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Brand Selector */}
-            <div className="mb-4">
-              <Label className="text-gray-200">Selected Brand</Label>
-              <select
-                value={selectedBrandId || ''}
-                onChange={(e) => setSelectedBrandId(e.target.value || null)}
-                className="w-full mt-1 bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
-              >
-                <option value="">Select a brand</option>
-                {brands.map(brand => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Current Brands List */}
             {brands.length > 0 ? (
               brands.map(brand => (
@@ -378,7 +356,7 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             className="border-[#333] text-red-400 hover:text-red-300"
-                            onClick={() => handleDisconnect('shopify')}
+                            onClick={() => handleDisconnect('shopify', brand.id)}
                           >
                             Disconnect
                           </Button>
@@ -386,7 +364,7 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('shopify')}
+                            onClick={() => handleConnect('shopify', brand.id)}
                           >
                             Connect
                           </Button>
@@ -402,7 +380,7 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             className="border-[#333] text-red-400 hover:text-red-300"
-                            onClick={() => handleDisconnect('meta')}
+                            onClick={() => handleDisconnect('meta', brand.id)}
                           >
                             Disconnect
                           </Button>
@@ -410,7 +388,7 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('meta')}
+                            onClick={() => handleConnect('meta', brand.id)}
                           >
                             Connect
                           </Button>
