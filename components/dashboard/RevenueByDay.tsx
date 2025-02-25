@@ -28,42 +28,21 @@ export function RevenueByDay({ data = [], dateRange }: RevenueByDayProps) {
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis
-                dataKey="day"
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis 
+                dataKey="date" 
                 stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => {
-                  const [day, date] = value.split("\n")
-                  return `${day}\n${date}`
-                }}
-                height={60}
-                tickSize={20}
+                tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               />
               <YAxis
                 stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
                 tickFormatter={(value) => `$${value}`}
               />
               <RechartsTooltip
-                formatter={(value) => (value !== null ? formatCurrency(value as number) : "No data")}
-                labelFormatter={(label) => label.replace("\n", " - ")}
-                contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "6px",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                }}
+                formatter={(value) => [`$${value}`, 'Revenue']}
+                labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               />
-              <Bar dataKey="revenue" fill="#2563eb" radius={[4, 4, 0, 0]}>
-                {data.map((entry, index) => (
-                  <Bar key={`bar-${index}`} dataKey="revenue" fill={entry.revenue === null ? "#222222" : "#2563eb"} />
-                ))}
-              </Bar>
+              <Bar dataKey="revenue" fill="#2563eb" />
             </BarChart>
           </ResponsiveContainer>
         </div>

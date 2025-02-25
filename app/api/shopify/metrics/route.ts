@@ -32,7 +32,13 @@ export async function GET(request: Request) {
       }
     )
 
-    const { orders } = await ordersResponse.json()
+    const ordersData = await ordersResponse.json()
+    console.log('Shopify Orders Response:', ordersData)
+    const { orders = [] } = ordersData
+
+    if (!orders.length) {
+      console.log('No orders found for date range:', { from, to })
+    }
 
     // Calculate metrics
     const totalSales = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0)

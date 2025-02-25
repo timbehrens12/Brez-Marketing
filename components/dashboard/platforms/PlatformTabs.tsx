@@ -40,8 +40,13 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
 
   useEffect(() => {
     if (selectedConnection?.platform_type === 'shopify' && dateRange?.from && dateRange?.to) {
+      console.log('Fetching with dates:', { from: dateRange.from, to: dateRange.to })
       fetchShopifyData(selectedConnection, dateRange)
-        .then(data => setMetrics(data))
+        .then(data => {
+          console.log('Shopify API Response:', data)
+          setMetrics(data)
+        })
+        .catch(err => console.error('Fetch error:', err))
     }
   }, [selectedConnection, dateRange])
 
