@@ -6,19 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { useBrandContext } from "@/lib/context/BrandContext"
+import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
 import { Trash2, Edit2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
+import { useUser } from "@clerk/nextjs"
 
 export default function SettingsPage() {
+  const { user } = useUser()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
 
   const handleAddBrand = async () => {
-    if (!newBrandName) return
+    if (!newBrandName || !user) return
 
     try {
       let imageUrl = null
@@ -27,7 +29,7 @@ export default function SettingsPage() {
           .from('brand-images')
           .upload(`${Date.now()}-${newBrandImage.name}`, newBrandImage)
         
-        if (!error) {
+        if (!error && data) {
           imageUrl = data.path
         }
       }
@@ -37,7 +39,7 @@ export default function SettingsPage() {
         .insert([{ 
           name: newBrandName,
           image_url: imageUrl,
-          user_id: userId // Get this from Clerk
+          user_id: user.id
         }])
 
       if (error) throw error
@@ -48,6 +50,29 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error adding brand:', error)
     }
+  }
+
+  const handleEditBrand = async (brandId: string) => {
+    // Implement edit functionality
+    console.log('Edit brand:', brandId)
+  }
+
+  const handleDeleteBrand = async (brandId: string) => {
+    try {
+      const { error } = await supabase
+        .from('brands')
+        .delete()
+        .eq('id', brandId)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error deleting brand:', error)
+    }
+  }
+
+  const handleConnect = async (platform: 'shopify' | 'meta') => {
+    // Implement platform connection
+    console.log('Connect platform:', platform)
   }
 
   return (

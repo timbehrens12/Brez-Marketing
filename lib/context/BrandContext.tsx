@@ -4,24 +4,20 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { supabase } from '@/lib/supabaseClient'
 
-interface Brand {
+export interface Brand {
   id: string
   name: string
+  image_url?: string
 }
 
 interface BrandContextType {
+  brands: Brand[]
   selectedBrandId: string | null
   setSelectedBrandId: (id: string | null) => void
-  brands: Brand[]
   refreshBrands: () => Promise<void>
 }
 
-const BrandContext = createContext<BrandContextType>({
-  selectedBrandId: null,
-  setSelectedBrandId: () => {},
-  brands: [],
-  refreshBrands: async () => {}
-})
+const BrandContext = createContext<BrandContextType | undefined>(undefined)
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
   const { user } = useUser()
@@ -63,4 +59,8 @@ export function BrandProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export const useBrandContext = () => useContext(BrandContext)
+export function useBrandContext() {
+  const context = useContext(BrandContext)
+  if (!context) throw new Error('useBrandContext must be used within BrandProvider')
+  return context
+}
