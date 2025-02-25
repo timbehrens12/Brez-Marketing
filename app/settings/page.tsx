@@ -59,12 +59,33 @@ export default function SettingsPage() {
 
   const handleDeleteBrand = async (brandId: string) => {
     try {
+      // First delete all related records
+      await Promise.all([
+        // Delete metrics
+        supabase
+          .from('metrics')
+          .delete()
+          .eq('brand_id', brandId),
+        
+        // Delete platform connections
+        supabase
+          .from('platform_connections')
+          .delete()
+          .eq('brand_id', brandId),
+        
+        // Delete any other related tables...
+      ])
+
+      // Then delete the brand
       const { error } = await supabase
         .from('brands')
         .delete()
         .eq('id', brandId)
 
       if (error) throw error
+
+      // Refresh the brands list
+      refreshBrands()
     } catch (error) {
       console.error('Error deleting brand:', error)
     }
@@ -106,7 +127,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <Label>Brand Logo</Label>
+                    <Label>Brand Logo (optional)</Label>
                     <Input 
                       type="file"
                       onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
