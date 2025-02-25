@@ -1,6 +1,4 @@
 import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api'
-import { restResources } from '@shopify/shopify-api/rest/admin/2024-01'
-import { LogSeverity } from '@shopify/shopify-api'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -18,7 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
-  // Initialize Shopify client with adapter config
+  // Initialize Shopify client with minimal config
   const shopify = shopifyApi({
     apiKey: process.env.SHOPIFY_CLIENT_ID!,
     apiSecretKey: process.env.SHOPIFY_CLIENT_SECRET!,
@@ -31,24 +29,16 @@ export async function GET(request: Request) {
     hostName: 'brezmarketingdashboard.com',
     apiVersion: LATEST_API_VERSION,
     isEmbeddedApp: false,
-    logger: { level: LogSeverity.Debug },
-    restResources,
-    // Add runtime adapter config
-    customShopDomains: [`*.myshopify.com`],
-    future: {
-      v3_webhooks: true,
-      v3_collaborator: true,
-    }
   })
 
   try {
-    console.log('Generating OAuth URL...')
+    // Generate OAuth URL
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
-    const authUrl = await shopify.auth.begin({
-      shop,
-      callbackPath: redirectUrl,
-      isOnline: true,
-      rawRequest: request
+    const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
+      client_id: process.env.SHOPIFY_CLIENT_ID!,
+      scope: shopify.config.scopes.toString(),
+      redirect_uri: redirectUrl,
+      state: JSON.stringify({ brandId, connectionId })
     })
 
     console.log('Redirecting to:', authUrl)
