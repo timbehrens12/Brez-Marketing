@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 export async function GET(request: Request) {
+  console.log('Shopify auth route hit')
   const { searchParams } = new URL(request.url)
   const brandId = searchParams.get('brandId')
   const connectionId = searchParams.get('connectionId')
   const shop = searchParams.get('shop')
 
+  console.log('Params:', { brandId, connectionId, shop })
+
   if (!brandId || !connectionId || !shop) {
+    console.log('Missing parameters')
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
@@ -22,19 +26,25 @@ export async function GET(request: Request) {
       'read_customers',
       'read_analytics'
     ],
-    hostName: process.env.SHOPIFY_API_URL!,
+    hostName: 'brezmarketingdashboard.com',
     apiVersion: LATEST_API_VERSION,
     isEmbeddedApp: false,
   })
 
-  // Generate OAuth URL
-  const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
-  const authUrl = await shopify.auth.begin({
-    shop,
-    callbackPath: redirectUrl,
-    isOnline: true,
-    rawRequest: request
-  })
+  try {
+    console.log('Generating OAuth URL...')
+    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
+    const authUrl = await shopify.auth.begin({
+      shop,
+      callbackPath: redirectUrl,
+      isOnline: true,
+      rawRequest: request
+    })
 
-  return NextResponse.redirect(authUrl)
+    console.log('Redirecting to:', authUrl)
+    return NextResponse.redirect(authUrl)
+  } catch (error) {
+    console.error('Shopify auth error:', error)
+    return NextResponse.json({ error: 'Failed to start OAuth' }, { status: 500 })
+  }
 }

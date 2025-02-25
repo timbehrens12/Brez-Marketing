@@ -124,6 +124,10 @@ export default function SettingsPage() {
   const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       if (platform === 'shopify') {
+        // Prompt for shop URL
+        const shopUrl = prompt('Enter your Shopify store URL (e.g. my-store.myshopify.com):')
+        if (!shopUrl) return
+
         // Start Shopify OAuth flow
         const { data, error } = await supabase
           .from('platform_connections')
@@ -138,8 +142,8 @@ export default function SettingsPage() {
 
         if (error) throw error
 
-        // Redirect to Shopify OAuth
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${data.id}`
+        // Redirect to Shopify OAuth with shop parameter
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${data.id}&shop=${shopUrl}`
       } else if (platform === 'meta') {
         // Start Meta OAuth flow
         const { data, error } = await supabase
