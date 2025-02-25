@@ -16,37 +16,25 @@ const COLORS = {
 }
 
 export function CustomerSegmentsWidget({ segments = { newCustomers: 0, returningCustomers: 0 } }) {
-  const total = segments.newCustomers + segments.returningCustomers
-  if (total === 0) {
-    return (
-      <Card className="col-span-2 bg-gray-100 border-gray-300">
-        <CardHeader>
-          <CardTitle className="text-gray-800">Customer Segments</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-gray-500">No customer data available</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   const data = [
     {
       name: "New Customers",
-      value: segments.newCustomers,
-      color: COLORS.newCustomers,
+      value: segments.newCustomers || 0,
+      color: "#2563eb"
     },
     {
       name: "Returning Customers",
-      value: segments.returningCustomers,
-      color: COLORS.returningCustomers,
-    },
-  ].filter((segment) => segment.value > 0)
+      value: segments.returningCustomers || 0,
+      color: "#16a34a"
+    }
+  ];
+
+  const total = data.reduce((sum, segment) => sum + segment.value, 0);
 
   return (
-    <Card className="col-span-2 bg-gray-300 border-black">
+    <Card className="bg-[#111111] border-[#222222]">
       <CardHeader>
-        <CardTitle className="text-gray-800">Customer Segments</CardTitle>
+        <CardTitle className="text-white">Customer Segments</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">

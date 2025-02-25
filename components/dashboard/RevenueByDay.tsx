@@ -4,6 +4,7 @@ import type { JSX } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
 import { formatCurrency } from "@/lib/utils"
+import { useMemo } from 'react'
 
 interface DayData {
   day: string
@@ -16,15 +17,26 @@ interface RevenueByDayProps {
 }
 
 export function RevenueByDay({ data = [] }: RevenueByDayProps) {
+  const placeholderData = useMemo(() => {
+    if (data.length > 0) return data;
+    
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days.map(day => ({
+      day,
+      date: new Date().toLocaleDateString(),
+      revenue: 0
+    }));
+  }, [data]);
+
   return (
-    <Card className="col-span-4 bg-gray-100 border-gray-300">
+    <Card className="col-span-4 bg-[#111111] border-[#222222]">
       <CardHeader>
-        <CardTitle className="text-gray-800">Revenue by Day of Current Week</CardTitle>
+        <CardTitle className="text-white">Revenue by Day of Current Week</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
+            <BarChart data={placeholderData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
                 dataKey="day"
@@ -56,9 +68,9 @@ export function RevenueByDay({ data = [] }: RevenueByDayProps) {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                 }}
               />
-              <Bar dataKey="revenue" fill="#ef4444" radius={[4, 4, 0, 0]}>
-                {data.map((entry, index) => (
-                  <Bar key={`bar-${index}`} dataKey="revenue" fill={entry.revenue === null ? "#e5e7eb" : "#ef4444"} />
+              <Bar dataKey="revenue" fill="#2563eb" radius={[4, 4, 0, 0]}>
+                {placeholderData.map((entry, index) => (
+                  <Bar key={`bar-${index}`} dataKey="revenue" fill={entry.revenue === null ? "#222222" : "#2563eb"} />
                 ))}
               </Bar>
             </BarChart>

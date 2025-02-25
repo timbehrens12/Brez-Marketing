@@ -15,11 +15,15 @@ const navItems = [
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string
+}
+
+export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className="flex flex-col h-full justify-between">
+    <div className={`flex flex-col h-full justify-between ${className || ''}`}>
       <div>
         <aside className="w-64 min-h-screen p-4 bg-gradient-to-b from-red-400 to-red-700">
           <div className="mb-8">

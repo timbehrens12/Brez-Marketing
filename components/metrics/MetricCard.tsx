@@ -9,6 +9,7 @@ import type { MetricData } from "@/types/metrics"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { DateRange } from "react-day-picker"
+import { useMemo } from "react"
 
 interface MetricCardProps {
   title: string
@@ -51,6 +52,17 @@ export function MetricCard({
   const safeData = Array.isArray(data) ? data : []
   
   const isPositive = safeChange > 0
+
+  // Generate placeholder data if no data provided
+  const placeholderData = useMemo(() => {
+    if (safeData.length > 0) return safeData;
+    
+    const days = 30; // Or match your date range
+    return Array.from({ length: days }, (_, i) => ({
+      date: new Date(Date.now() - (days - i - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      value: 0
+    }));
+  }, [safeData]);
 
   if (loading) {
     return (
@@ -193,7 +205,7 @@ export function MetricCard({
         )}
         <div className="h-[100px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={safeData}>
+            <LineChart data={placeholderData}>
               <XAxis
                 dataKey="date"
                 fontSize={10}
