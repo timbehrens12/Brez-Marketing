@@ -4,11 +4,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
-import { SignOutButton } from "@clerk/nextjs"
+import { SignOutButton, UserButton } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 
 const navItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart2 },
   { name: "Customers", href: "/customers", icon: Users },
@@ -25,8 +25,16 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
       <div className="p-6 flex-1">
-        <div className="mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-white">Brez</h1>
+          <UserButton 
+            appearance={{
+              elements: {
+                userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
+                userButtonTrigger: "rounded-full"
+              }
+            }}
+          />
         </div>
         <nav className="space-y-0.5">
           {navItems.map((item) => (

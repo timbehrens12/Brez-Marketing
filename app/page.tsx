@@ -15,7 +15,13 @@ export default function HomePage() {
               headerSubtitle: "text-gray-400",
               socialButtonsBlockButton: "bg-[#333] border-[#444] text-white hover:bg-[#444]",
               formButtonPrimary: "bg-blue-600 hover:bg-blue-700",
-              footerActionLink: "text-blue-400 hover:text-blue-300"
+              footerActionLink: "text-blue-400 hover:text-blue-300",
+              formFieldLabel: "text-gray-300",
+              formFieldInput: "bg-[#333] border-[#444] text-white",
+              dividerLine: "bg-[#444]",
+              dividerText: "text-gray-400",
+              identityPreviewText: "text-gray-300",
+              identityPreviewEditButton: "text-blue-400 hover:text-blue-300"
             }
           }}
           routing="hash"
