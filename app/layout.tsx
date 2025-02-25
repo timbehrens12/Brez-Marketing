@@ -31,7 +31,12 @@ export default function RootLayout({
             <BrandProvider>
               <WidgetProvider>
                 <AuthProvider>
-                  {children}
+                  <div className="flex min-h-screen">
+                    <Sidebar />
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                  </div>
                 </AuthProvider>
               </WidgetProvider>
             </BrandProvider>
