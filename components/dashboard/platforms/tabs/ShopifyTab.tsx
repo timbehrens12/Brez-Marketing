@@ -11,6 +11,9 @@ import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
+import { DateRangePicker } from "@/components/ui/date-range-picker"
+import { addDays } from "date-fns"
+import { useState } from "react"
 
 interface ShopifyTabProps {
   metrics: Metrics
@@ -21,10 +24,30 @@ interface ShopifyTabProps {
 }
 
 export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection }: ShopifyTabProps) {
+  const [dateRangePicker, setDateRangePicker] = useState<DateRange>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  })
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range?.from && range?.to) {
+      setDateRangePicker(range)
+    }
+  }
+
   const hasData = metrics && Object.keys(metrics).length > 0
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header with Date Range */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold text-white">Shopify Analytics</h2>
+        <DateRangePicker 
+          value={dateRangePicker}
+          onChange={handleDateRangeChange}
+        />
+      </div>
+
       {/* Main metrics grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
@@ -36,6 +59,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="currency"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
         <MetricCard
           title="Orders"
@@ -45,6 +69,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="number"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
         <MetricCard
           title="Average Order Value"
@@ -55,6 +80,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="currency"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
         <MetricCard
           title="Units Sold"
@@ -64,6 +90,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="number"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
       </div>
 
@@ -93,7 +120,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           </CardContent>
         </Card>
 
-        <RevenueByDay data={hasData ? metrics.revenueByDay : []} />
+        <RevenueByDay data={hasData ? metrics.revenueByDay : []} dateRange={dateRangePicker} />
       </div>
 
       {/* Customer insights section */}
@@ -113,6 +140,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="number"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
         <MetricCard
           title="Return Rate"
@@ -123,6 +151,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="number"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
         <MetricCard
           title="Conversion Rate"
@@ -133,6 +162,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           valueFormat="number"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}
+          dateRange={dateRangePicker}
         />
       </div>
     </div>
