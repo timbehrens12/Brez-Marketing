@@ -1,8 +1,6 @@
 "use client"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MetaTab } from "./platforms/tabs/MetaTab"
-import { ShopifyTab } from "./platforms/tabs/ShopifyTab"
+import { PlatformTabs } from "./platforms/PlatformTabs"
 import { useMetrics } from "@/lib/hooks/useMetrics"
 import { DateRange } from "react-day-picker"
 
@@ -13,18 +11,17 @@ interface WidgetManagerProps {
 export function WidgetManager({ dateRange }: WidgetManagerProps) {
   const { metrics, isLoading } = useMetrics()
 
+  const platforms = {
+    shopify: true, // You might want to make this dynamic based on connections
+    meta: true
+  }
+
   return (
-    <Tabs defaultValue="shopify" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="shopify">Shopify</TabsTrigger>
-        <TabsTrigger value="meta">Meta Ads</TabsTrigger>
-      </TabsList>
-      <TabsContent value="shopify">
-        <ShopifyTab metrics={metrics} dateRange={dateRange} isLoading={isLoading} />
-      </TabsContent>
-      <TabsContent value="meta">
-        <MetaTab metrics={metrics} dateRange={dateRange} isLoading={isLoading} />
-      </TabsContent>
-    </Tabs>
+    <PlatformTabs 
+      platforms={platforms}
+      dateRange={dateRange}
+      metrics={metrics}
+      isLoading={isLoading}
+    />
   )
 } 
