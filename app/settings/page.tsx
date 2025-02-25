@@ -100,10 +100,32 @@ export default function SettingsPage() {
     console.log('Connect platform:', platform)
   }
 
+  const handleClearAllData = async () => {
+    try {
+      // Delete in correct order due to foreign key constraints
+      await Promise.all([
+        supabase.from('metrics').delete().neq('id', 0),
+        supabase.from('platform_connections').delete().neq('id', 0)
+      ])
+      await supabase.from('brands').delete().neq('id', 0)
+      
+      await refreshBrands()
+    } catch (error) {
+      console.error('Error clearing data:', error)
+    }
+  }
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold text-white">Settings</h1>
+        <Button 
+          variant="destructive"
+          className="bg-red-600 hover:bg-red-700 text-white"
+          onClick={handleClearAllData}
+        >
+          Clear All Data
+        </Button>
       </div>
 
       <div className="grid gap-6">
@@ -121,31 +143,36 @@ export default function SettingsPage() {
                 <DialogHeader>
                   <DialogTitle>Add New Brand</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Brand Name</Label>
-                    <Input 
-                      value={newBrandName}
-                      onChange={(e) => setNewBrandName(e.target.value)}
-                      className="bg-[#333] border-[#444] text-white"
-                    />
+                <form onSubmit={async (e) => {
+                  e.preventDefault()
+                  await handleAddBrand()
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Brand Name</Label>
+                      <Input 
+                        value={newBrandName}
+                        onChange={(e) => setNewBrandName(e.target.value)}
+                        className="bg-[#333] border-[#444] text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label>Brand Logo (optional)</Label>
+                      <Input 
+                        type="file"
+                        onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
+                        className="bg-[#333] border-[#444] text-white"
+                        accept="image/*"
+                      />
+                    </div>
+                    <Button 
+                      type="submit"
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Brand
+                    </Button>
                   </div>
-                  <div>
-                    <Label>Brand Logo (optional)</Label>
-                    <Input 
-                      type="file"
-                      onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
-                      className="bg-[#333] border-[#444] text-white"
-                      accept="image/*"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAddBrand}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Add Brand
-                  </Button>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
