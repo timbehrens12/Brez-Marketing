@@ -14,27 +14,18 @@ export async function GET(request: Request) {
 
   // Initialize Shopify client
   const shopify = shopifyApi({
-    apiKey: process.env.SHOPIFY_API_KEY!,
-    apiSecretKey: process.env.SHOPIFY_API_SECRET!,
+    apiKey: process.env.SHOPIFY_CLIENT_ID!,
+    apiSecretKey: process.env.SHOPIFY_CLIENT_SECRET!,
     scopes: [
       'read_products',
       'read_orders',
       'read_customers',
       'read_analytics'
     ],
-    hostName: process.env.SHOPIFY_APP_URL!,
+    hostName: process.env.SHOPIFY_API_URL!,
     apiVersion: LATEST_API_VERSION,
     isEmbeddedApp: false,
   })
 
   // Generate OAuth URL
   const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
-  const authUrl = await shopify.auth.begin({
-    shop,
-    callbackPath: redirectUrl,
-    isOnline: true,
-    rawRequest: request
-  })
-
-  return NextResponse.redirect(authUrl)
-} 
