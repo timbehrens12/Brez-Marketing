@@ -16,7 +16,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Generate OAuth URL directly
     const scopes = [
       'read_products',
       'read_orders',
@@ -24,16 +23,18 @@ export async function GET(request: Request) {
       'read_analytics'
     ].join(',')
 
-    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
-    const authUrl = `https://${shop}/admin/oauth/authorize?` + new URLSearchParams({
-      client_id: process.env.SHOPIFY_CLIENT_ID!,
-      scope: scopes,
-      redirect_uri: redirectUrl,
-      state: JSON.stringify({ brandId, connectionId })
-    })
+    // Make sure to use the full callback URL
+    const callbackUrl = 'https://brezmarketingdashboard.com/api/shopify/callback'
+    
+    // Construct auth URL with explicit parameters
+    const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
+    authUrl.searchParams.set('client_id', process.env.SHOPIFY_CLIENT_ID!)
+    authUrl.searchParams.set('scope', scopes)
+    authUrl.searchParams.set('redirect_uri', callbackUrl)
+    authUrl.searchParams.set('state', JSON.stringify({ brandId, connectionId }))
 
-    console.log('Redirecting to:', authUrl)
-    return NextResponse.redirect(authUrl)
+    console.log('Redirecting to:', authUrl.toString())
+    return NextResponse.redirect(authUrl.toString())
   } catch (error) {
     console.error('Shopify auth error:', error)
     return NextResponse.json({ error: 'Failed to start OAuth' }, { status: 500 })
