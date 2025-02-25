@@ -20,6 +20,7 @@ import { MetaTab } from "@/components/dashboard/platforms/tabs/MetaTab"
 import { transformToMetaMetrics } from '@/lib/transforms'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DateRangePicker } from "@/components/DateRangePicker"
+import { WidgetManager } from "@/components/WidgetManager"
 
 interface WidgetData {
   shopify?: any;
@@ -230,80 +231,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between p-4 bg-[#111111]">
-        <BrandSelector onSelect={(value) => setSelectedBrandId(value)} />
-        
-        <DateRangePicker 
-          date={dateRange}
-          onDateChange={setDateRange}
-        />
-      </div>
-
-      {!selectedBrandId ? (
-        <div className="flex items-center justify-center h-[500px] text-gray-500">
-          Please select a brand to view metrics
-        </div>
-      ) : (
-        <div className="p-4">
-          <Tabs defaultValue="shopify" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-[#111111] border-[#222222]">
-              <TabsTrigger 
-                value="shopify" 
-                className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
-              >
-                <img 
-                  src="/shopify-icon.png" 
-                  alt="Shopify" 
-                  className="h-4 w-4" 
-                />
-                Shopify
-              </TabsTrigger>
-              <TabsTrigger 
-                value="meta" 
-                className="flex items-center gap-2 text-white data-[state=active]:bg-[#222222]"
-              >
-                <img 
-                  src="/meta-icon.png" 
-                  alt="Meta" 
-                  className="h-4 w-4" 
-                />
-                Meta Ads
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="shopify" className="mt-6">
-              <div className="grid gap-4">
-                <ShopifyTab 
-                  metrics={metrics}
-                  dateRange={dateRange}
-                  isLoading={isLoading}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="meta" className="mt-6">
-              <div className="grid gap-4">
-                <MetaTab 
-                  metrics={transformToMetaMetrics(metrics)}
-                  dateRange={dateRange}
-                  isLoading={isLoading}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="p-8">
-            <MetricCard
-              title="Total Sales"
-              value={safeMetrics.totalSales}
-              change={safeMetrics.salesGrowth}
-              data={Array.isArray(safeMetrics.salesData) ? safeMetrics.salesData : []}
-              valueFormat="currency"
-            />
-          </div>
-        </div>
-      )}
+    <div className="p-6 space-y-6">
+      <DateRangePicker />
+      <WidgetManager dateRange={dateRange} />
     </div>
   )
 }
