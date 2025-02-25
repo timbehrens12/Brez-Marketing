@@ -25,16 +25,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-[#0A0A0A] font-sans antialiased">
+      <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider>
             <BrandProvider>
               <WidgetProvider>
                 <AuthProvider>
-                  <div className="flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">{children}</div>
-                  </div>
+                  {children}
                 </AuthProvider>
               </WidgetProvider>
             </BrandProvider>
