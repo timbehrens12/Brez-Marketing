@@ -5,22 +5,30 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const from = searchParams.get('from')
   const to = searchParams.get('to')
+  const brandId = searchParams.get('brandId')
 
-  if (!from || !to) {
-    return NextResponse.json({ error: 'Missing date range' }, { status: 400 })
+  if (!from || !to || !brandId) {
+    return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
   try {
-    // Get active Shopify connection
+    // Get active Shopify connection for this brand
     const { data: connection } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('platform_type', 'shopify')
+      .eq('brand_id', brandId)
       .eq('status', 'active')
       .single()
 
     if (!connection?.access_token || !connection.shop) {
-      return NextResponse.json({ error: 'No active Shopify connection' }, { status: 400 })
+      return NextResponse.json({ 
+        totalSales: 0,
+        ordersPlaced: 0,
+        averageOrderValue: 0,
+        unitsSold: 0,
+        revenueByDay: []
+      })
     }
 
     // Fetch orders from Shopify
@@ -31,6 +39,10 @@ export async function GET(request: Request) {
         }
       }
     )
+
+    if (!response.ok) {
+      throw new Error(`Shopify API error: ${response.statusText}`)
+    }
 
     const { orders = [] } = await response.json()
 

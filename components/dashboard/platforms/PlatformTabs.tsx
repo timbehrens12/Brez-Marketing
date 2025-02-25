@@ -26,13 +26,14 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
   )
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
 
-  const fetchShopifyData = async (connection: PlatformConnection, dateRange: DateRange) => {
+  const fetchShopifyData = async (connection: PlatformConnection, dateRange: DateRange, brandId: string) => {
     if (!dateRange.from || !dateRange.to) return null;
     
     const response = await fetch(`/api/shopify/metrics?` + new URLSearchParams({
       shop: connection.shop!,
       from: dateRange.from.toISOString(),
-      to: dateRange.to.toISOString()
+      to: dateRange.to.toISOString(),
+      brandId: brandId
     }))
     
     return response.json()
@@ -40,15 +41,14 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
 
   useEffect(() => {
     if (selectedConnection?.platform_type === 'shopify' && dateRange?.from && dateRange?.to) {
-      console.log('Fetching with dates:', { from: dateRange.from, to: dateRange.to })
-      fetchShopifyData(selectedConnection, dateRange)
+      fetchShopifyData(selectedConnection, dateRange, brandId)
         .then(data => {
           console.log('Shopify API Response:', data)
           setMetrics(data)
         })
         .catch(err => console.error('Fetch error:', err))
     }
-  }, [selectedConnection, dateRange])
+  }, [selectedConnection, dateRange, brandId])
 
   return (
     <Tabs defaultValue="shopify" className="w-full">
