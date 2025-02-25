@@ -1,4 +1,6 @@
 import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api'
+import { restResources } from '@shopify/shopify-api/rest/admin/2024-01'
+import { LogSeverity } from '@shopify/shopify-api'
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
@@ -16,7 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
-  // Initialize Shopify client
+  // Initialize Shopify client with adapter config
   const shopify = shopifyApi({
     apiKey: process.env.SHOPIFY_CLIENT_ID!,
     apiSecretKey: process.env.SHOPIFY_CLIENT_SECRET!,
@@ -29,6 +31,14 @@ export async function GET(request: Request) {
     hostName: 'brezmarketingdashboard.com',
     apiVersion: LATEST_API_VERSION,
     isEmbeddedApp: false,
+    logger: { level: LogSeverity.Debug },
+    restResources,
+    // Add runtime adapter config
+    customShopDomains: [`*.myshopify.com`],
+    future: {
+      v3_webhooks: true,
+      v3_collaborator: true,
+    }
   })
 
   try {
