@@ -23,34 +23,57 @@ export async function GET(request: Request) {
       throw new Error('No access token found')
     }
 
-    // Fetch data from Shopify
-    const response = await fetch(
-      `https://${shop}/admin/api/2024-01/reports.json?` + new URLSearchParams({
-        date_from: from,
-        date_to: to,
-        fields: 'sales,orders,average_order_value,units_sold'
-      }), {
+    // Fetch orders from Shopify
+    const ordersResponse = await fetch(
+      `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${from}&created_at_max=${to}&fields=id,created_at,total_price,line_items`, {
         headers: {
-          'X-Shopify-Access-Token': connection.access_token,
-          'Content-Type': 'application/json'
+          'X-Shopify-Access-Token': connection.access_token
         }
       }
     )
 
-    const data = await response.json()
+    const { orders } = await ordersResponse.json()
 
-    // Transform data into our metrics format
+    // Calculate metrics
+    const totalSales = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0)
+    const orderCount = orders.length
+    const averageOrderValue = orderCount > 0 ? totalSales / orderCount : 0
+    const unitsSold = orders.reduce((sum: number, order: any) => 
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
+    )
+
+    // Group orders by day for revenue chart
+    const dailyRevenue = orders.reduce((acc: any, order: any) => {
+      const date = order.created_at.split('T')[0]
+      acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
+      return acc
+    }, {})
+
+    const revenueByDay = Object.entries(dailyRevenue).map(([date, revenue]) => ({
+      day: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
+      date,
+      revenue
+    }))
+
+    console.log('Metrics calculated:', {
+      totalSales,
+      orderCount,
+      averageOrderValue,
+      unitsSold,
+      revenueByDay
+    })
+
     return NextResponse.json({
-      totalSales: data.sales,
-      ordersPlaced: data.orders,
-      averageOrderValue: data.average_order_value,
-      unitsSold: data.units_sold,
-      // Add other metrics as needed
-      revenueByDay: data.daily_sales.map((day: any) => ({
-        day: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
-        date: day.date,
-        revenue: day.sales
-      }))
+      totalSales,
+      ordersPlaced: orderCount,
+      averageOrderValue,
+      unitsSold,
+      revenueByDay,
+      salesGrowth: 0, // Add growth calculations later
+      ordersGrowth: 0,
+      aovGrowth: 0,
+      unitsGrowth: 0,
+      dailyData: revenueByDay
     })
 
   } catch (error) {
