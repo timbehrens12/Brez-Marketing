@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function ReviewPage() {
   const [isConnecting, setIsConnecting] = useState(false)
@@ -11,11 +12,18 @@ export default function ReviewPage() {
 
   const handleConnect = async () => {
     setIsConnecting(true)
-    // Simulate connection delay
     setTimeout(() => {
       setIsConnected(true)
       setIsConnecting(false)
+      toast.success('Successfully connected to Meta')
     }, 1500)
+  }
+
+  const handleDisconnect = async () => {
+    if (confirm('Are you sure you want to disconnect Meta Ads? This will revoke all permissions and remove access to your ad data.')) {
+      setIsConnected(false)
+      toast.success('Successfully disconnected from Meta. All permissions have been revoked.')
+    }
   }
 
   const handleViewDemo = () => {
@@ -40,34 +48,41 @@ export default function ReviewPage() {
                 <div>
                   <h3 className="font-medium">Meta Integration</h3>
                   <p className="text-sm text-gray-400">
-                    Connect your Meta account to view ad performance
+                    {isConnected 
+                      ? 'Connected - You can revoke access at any time'
+                      : 'Connect your Meta account to view ad performance'}
                   </p>
                 </div>
               </div>
               
               <div className="flex gap-2">
-                <Button 
-                  onClick={handleConnect}
-                  disabled={isConnecting || isConnected}
-                  className={isConnected ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
-                >
-                  {isConnecting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : isConnected ? (
-                    <>
-                      Connected to Meta
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  ) : (
-                    <>
-                      Connect Meta Account
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                {isConnected ? (
+                  <Button 
+                    variant="outline"
+                    className="bg-transparent text-red-500 hover:bg-red-500/10"
+                    onClick={handleDisconnect}
+                  >
+                    Disconnect & Revoke Access
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isConnecting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        Connect Meta Account
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -138,32 +153,15 @@ export default function ReviewPage() {
             )}
 
             {isConnected && (
-              <>
-                <div className="p-4 bg-[#222222] rounded-lg">
-                  <h3 className="font-medium mb-4">How We'll Use the Permissions</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <div className="font-medium">ads_read:</div>
-                      <div className="text-gray-400">Used to fetch and display ad performance metrics shown above</div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="font-medium">ads_management:</div>
-                      <div className="text-gray-400">Enables users to view detailed campaign data and performance insights</div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="font-medium">business_management:</div>
-                      <div className="text-gray-400">Required to access business account ad information</div>
-                    </div>
-                  </div>
+              <div className="p-4 bg-[#222222] rounded-lg border border-gray-800">
+                <h3 className="font-medium mb-4">Data Access & Privacy</h3>
+                <div className="space-y-2 text-sm text-gray-400">
+                  <p>• You can disconnect and revoke access to your Meta data at any time</p>
+                  <p>• Disconnecting will immediately remove our access to your ad accounts</p>
+                  <p>• All permissions are revoked when you disconnect</p>
+                  <p>• You can reconnect at any time to restore access</p>
                 </div>
-
-                <div className="p-4 bg-[#222222] rounded-lg">
-                  <h3 className="font-medium mb-4">Privacy & Data Usage</h3>
-                  <p className="text-sm text-gray-400">
-                    We only access the minimum required data to show ad performance metrics. All data is securely stored and never shared with third parties. Users can revoke access at any time through Facebook or our dashboard.
-                  </p>
-                </div>
-              </>
+              </div>
             )}
           </div>
         </div>
