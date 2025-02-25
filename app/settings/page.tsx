@@ -311,103 +311,118 @@ export default function SettingsPage() {
               brands.map(brand => (
                 <div 
                   key={brand.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]"
+                  className="space-y-2"
                 >
-                  <div className="flex items-center gap-3">
-                    {brand.image_url ? (
-                      <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
-                        {brand.name[0].toUpperCase()}
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
+                    <div className="flex items-center gap-3">
+                      {brand.image_url ? (
+                        <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
+                          {brand.name[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-white">{brand.name}</span>
+                        <div className="flex gap-2 mt-1">
+                          {connections.filter(c => c.brand_id === brand.id).map(connection => (
+                            <div 
+                              key={connection.id}
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300"
+                            >
+                              <img 
+                                src={`/${connection.platform_type}-icon.png`}
+                                alt={connection.platform_type}
+                                className="w-3 h-3"
+                              />
+                              {connection.platform_type === 'shopify' ? connection.shop : connection.platform_type}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    )}
-                    <span className="text-white">{brand.name}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        className="hover:bg-[#333]"
+                        onClick={() => setSelectedBrandId(brand.id)}
+                      >
+                        Manage Connections
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="hover:bg-[#333]"
+                        onClick={() => handleEditBrand(brand.id)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        className="hover:bg-[#333] text-red-400 hover:text-red-300"
+                        onClick={() => handleDeleteBrand(brand.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      className="hover:bg-[#333]"
-                      onClick={() => handleEditBrand(brand.id)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="hover:bg-[#333] text-red-400 hover:text-red-300"
-                      onClick={() => handleDeleteBrand(brand.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  
+                  {/* Platform connections panel that shows when brand is selected */}
+                  {selectedBrandId === brand.id && (
+                    <div className="ml-12 p-4 rounded-lg bg-[#222] space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
+                          <span className="text-white">Shopify</span>
+                        </div>
+                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') ? (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-red-400 hover:text-red-300"
+                            onClick={() => handleDisconnect('shopify')}
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-gray-400 hover:text-white"
+                            onClick={() => handleConnect('shopify')}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
+                          <span className="text-white">Meta Ads</span>
+                        </div>
+                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta') ? (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-red-400 hover:text-red-300"
+                            onClick={() => handleDisconnect('meta')}
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-gray-400 hover:text-white"
+                            onClick={() => handleConnect('meta')}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
               <div className="text-center text-gray-400 py-4">
                 No brands added yet
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Platform Connections Card */}
-        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-white">Platform Connections</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {selectedBrandId ? (
-              <>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
-                  <div className="flex items-center gap-3">
-                    <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
-                    <span className="text-white">Shopify</span>
-                  </div>
-                  {connections.find(c => c.platform_type === 'shopify') ? (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#333] text-red-400 hover:text-red-300"
-                      onClick={() => handleDisconnect('shopify')}
-                    >
-                      Disconnect
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#333] text-gray-400 hover:text-white"
-                      onClick={() => handleConnect('shopify')}
-                    >
-                      Connect
-                    </Button>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
-                  <div className="flex items-center gap-3">
-                    <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
-                    <span className="text-white">Meta Ads</span>
-                  </div>
-                  {connections.find(c => c.platform_type === 'meta') ? (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#333] text-red-400 hover:text-red-300"
-                      onClick={() => handleDisconnect('meta')}
-                    >
-                      Disconnect
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#333] text-gray-400 hover:text-white"
-                      onClick={() => handleConnect('meta')}
-                    >
-                      Connect
-                    </Button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-gray-400 py-4">
-                Select a brand to manage platform connections
               </div>
             )}
           </CardContent>
