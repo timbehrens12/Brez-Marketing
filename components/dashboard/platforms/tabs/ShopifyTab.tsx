@@ -35,7 +35,6 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
           value={hasData ? metrics.totalSales : 0}
           change={hasData ? metrics.salesGrowth : 0}
           icon={<DollarSign className="h-4 w-4" />}
-          prefix="$"
           valueFormat="currency"
           platform="shopify"
           data={hasData ? metrics.dailyData : []}

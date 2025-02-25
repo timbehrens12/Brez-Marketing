@@ -19,33 +19,15 @@ interface RevenueByDayProps {
 }
 
 export function RevenueByDay({ data = [], dateRange }: RevenueByDayProps) {
-  const placeholderData = useMemo(() => {
-    if (data.length > 0) return data;
-    
-    const now = new Date();
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const currentDay = now.getDay();
-    
-    return days.map((day, i) => {
-      const date = new Date(now);
-      date.setDate(date.getDate() - currentDay + i);
-      return {
-        day,
-        date: date.toLocaleDateString(),
-        revenue: 0
-      };
-    });
-  }, [data]);
-
   return (
     <Card className="col-span-4 bg-[#111111] border-[#222222]">
       <CardHeader>
-        <CardTitle className="text-white">Revenue by Day of Current Week</CardTitle>
+        <CardTitle className="text-white">Daily Revenue</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={placeholderData}>
+            <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
                 dataKey="day"
@@ -78,7 +60,7 @@ export function RevenueByDay({ data = [], dateRange }: RevenueByDayProps) {
                 }}
               />
               <Bar dataKey="revenue" fill="#2563eb" radius={[4, 4, 0, 0]}>
-                {placeholderData.map((entry, index) => (
+                {data.map((entry, index) => (
                   <Bar key={`bar-${index}`} dataKey="revenue" fill={entry.revenue === null ? "#222222" : "#2563eb"} />
                 ))}
               </Bar>

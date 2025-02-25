@@ -6,6 +6,7 @@ import { MetaTab } from "./tabs/MetaTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
+import { useEffect, useState } from "react"
 
 interface PlatformTabsProps {
   platforms: {
@@ -19,7 +20,31 @@ interface PlatformTabsProps {
   connections: PlatformConnection[]
 }
 
-export function PlatformTabs({ platforms, dateRange, metrics, isLoading, brandId, connections }: PlatformTabsProps) {
+export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, isLoading, brandId, connections }: PlatformTabsProps) {
+  const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | undefined>(
+    connections.find(c => c.platform_type === 'shopify')
+  )
+  const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
+
+  const fetchShopifyData = async (connection: PlatformConnection, dateRange: DateRange) => {
+    if (!dateRange.from || !dateRange.to) return null;
+    
+    const response = await fetch(`/api/shopify/metrics?` + new URLSearchParams({
+      shop: connection.shop!,
+      from: dateRange.from.toISOString(),
+      to: dateRange.to.toISOString()
+    }))
+    
+    return response.json()
+  }
+
+  useEffect(() => {
+    if (selectedConnection?.platform_type === 'shopify' && dateRange?.from && dateRange?.to) {
+      fetchShopifyData(selectedConnection, dateRange)
+        .then(data => setMetrics(data))
+    }
+  }, [selectedConnection, dateRange])
+
   return (
     <Tabs defaultValue="shopify" className="w-full">
       <TabsList className="grid w-full grid-cols-2 mb-8 bg-[#111111] border-[#222222]">
@@ -59,7 +84,7 @@ export function PlatformTabs({ platforms, dateRange, metrics, isLoading, brandId
               dateRange={dateRange}
               isLoading={isLoading}
               brandId={brandId}
-              connection={connections.find(c => c.platform_type === 'shopify')}
+              connection={selectedConnection}
             />
           </TabsContent>
         )}
