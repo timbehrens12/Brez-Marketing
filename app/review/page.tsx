@@ -33,7 +33,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen">
       <div className="container max-w-6xl mx-auto p-8 space-y-8">
-        <div className="bg-[#111111] p-6 rounded-lg">
+        <div className="bg-[#807e7e] p-6 rounded-lg">
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Meta App Review Demo</h1>
             <p className="text-sm text-gray-400">
@@ -42,7 +42,7 @@ export default function ReviewPage() {
           </div>
           
           <div className="mt-8 space-y-4">
-            <div className="flex items-center justify-between p-4 bg-[#222222] rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-[#807e7e] rounded-lg">
               <div className="flex items-center gap-3">
                 <img src="/meta-icon.png" alt="Meta" className="w-8 h-8" />
                 <div>
@@ -87,18 +87,18 @@ export default function ReviewPage() {
             </div>
 
             {isConnected && (
-              <div className="p-4 bg-[#222222] rounded-lg">
+              <div className="p-4 bg-[#807e7e] rounded-lg">
                 <h3 className="font-medium mb-4">Sample Data View</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-[#333333] rounded-lg">
+                  <div className="p-4 bg-[#807e7e] rounded-lg">
                     <p className="text-sm text-gray-400">Total Ad Spend</p>
                     <p className="text-2xl font-bold">$1,234.56</p>
                   </div>
-                  <div className="p-4 bg-[#333333] rounded-lg">
+                  <div className="p-4 bg-[#807e7e] rounded-lg">
                     <p className="text-sm text-gray-400">Impressions</p>
                     <p className="text-2xl font-bold">45,678</p>
                   </div>
-                  <div className="p-4 bg-[#333333] rounded-lg">
+                  <div className="p-4 bg-[#807e7e] rounded-lg">
                     <p className="text-sm text-gray-400">Clicks</p>
                     <p className="text-2xl font-bold">2,345</p>
                   </div>
@@ -110,10 +110,10 @@ export default function ReviewPage() {
             )}
 
             {isConnected && (
-              <div className="p-4 bg-[#222222] rounded-lg">
+              <div className="p-4 bg-[#807e7e] rounded-lg">
                 <h3 className="font-medium mb-4">Campaign Performance</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#807e7e] rounded-lg">
                     <div>
                       <h4 className="font-medium">Spring Sale Campaign</h4>
                       <p className="text-sm text-gray-400">Active • Last 30 days</p>
@@ -124,7 +124,7 @@ export default function ReviewPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#807e7e] rounded-lg">
                     <div>
                       <h4 className="font-medium">Product Launch</h4>
                       <p className="text-sm text-gray-400">Active • Last 7 days</p>
@@ -135,7 +135,7 @@ export default function ReviewPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-[#333333] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#807e7e] rounded-lg">
                     <div>
                       <h4 className="font-medium">Retargeting</h4>
                       <p className="text-sm text-gray-400">Paused • Last 14 days</p>
@@ -153,7 +153,7 @@ export default function ReviewPage() {
             )}
 
             {isConnected && (
-              <div className="p-4 bg-[#222222] rounded-lg border border-gray-800">
+              <div className="p-4 bg-[#807e7e] rounded-lg border border-gray-800">
                 <h3 className="font-medium mb-4">Data Access & Privacy</h3>
                 <div className="space-y-2 text-sm text-gray-400">
                   <p>• You can disconnect and revoke access to your Meta data at any time</p>

@@ -137,208 +137,224 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <MetricSkeleton />
-            </CardHeader>
-          </Card>
-        ))}
+      <div className="grid gap-4">
+        <div className="bg-[#807e7e] p-4 rounded-lg">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <MetricSkeleton />
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   if (!isConnected) {
     return (
-      <div className="text-center py-8">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Meta Ads is not connected.{" "}
-            <Link href="/settings" className="font-medium underline">
-              Go to settings
-            </Link>
-            {" "}to connect your Meta Ads account.
-          </AlertDescription>
-        </Alert>
+      <div className="grid gap-4">
+        <div className="bg-[#807e7e] p-4 rounded-lg">
+          <div className="text-center py-8">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Meta Ads is not connected.{" "}
+                <Link href="/settings" className="font-medium underline">
+                  Go to settings
+                </Link>
+                {" "}to connect your Meta Ads account.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
       </div>
     )
   }
 
-  if (!metaData) return <div className="text-center py-8">No Meta Ads data available</div>
+  if (!metaData) return <div className="grid gap-4">
+    <div className="bg-[#807e7e] p-4 rounded-lg">
+      <div className="text-center py-8">No Meta Ads data available</div>
+    </div>
+  </div>
 
   return (
-    <div className="space-y-6">
-      {/* Overview Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Ad Spend"
-          value={parseFloat(metaData.insights?.spend || "0")}
-          change={10}
-          prefix="$"
-          valueFormat="currency"
-          platform="meta"
-          data={metaData.insights?.daily_data.map(day => ({
-            date: day.date,
-            value: day.spend,
-            comparisonValue: day.clicks
-          })) || []}
-          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
-        />
-        <MetricCard
-          title="Total Impressions"
-          value={parseFloat(metaData.insights?.impressions || "0")}
-          change={0}
-          valueFormat="number"
-          platform="meta"
-          data={[]}
-          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
-        />
-        <MetricCard
-          title="Total Clicks"
-          value={parseFloat(metaData.insights?.clicks || "0")}
-          change={0}
-          valueFormat="number"
-          platform="meta"
-          data={[]}
-          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
-        />
-        <MetricCard
-          title="Click-Through Rate"
-          value={parseFloat(metaData.insights?.ctr || "0") * 100}
-          change={0}
-          suffix="%"
-          valueFormat="percentage"
-          platform="meta"
-          data={[]}
-          className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
-        />
+    <div className="grid gap-4">
+      <div className="bg-[#807e7e] p-4 rounded-lg">
+        <div className="space-y-6">
+          {/* Overview Section */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              title="Total Ad Spend"
+              value={parseFloat(metaData.insights?.spend || "0")}
+              change={10}
+              prefix="$"
+              valueFormat="currency"
+              platform="meta"
+              data={metaData.insights?.daily_data.map(day => ({
+                date: day.date,
+                value: day.spend,
+                comparisonValue: day.clicks
+              })) || []}
+              className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+            />
+            <MetricCard
+              title="Total Impressions"
+              value={parseFloat(metaData.insights?.impressions || "0")}
+              change={0}
+              valueFormat="number"
+              platform="meta"
+              data={[]}
+              className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+            />
+            <MetricCard
+              title="Total Clicks"
+              value={parseFloat(metaData.insights?.clicks || "0")}
+              change={0}
+              valueFormat="number"
+              platform="meta"
+              data={[]}
+              className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+            />
+            <MetricCard
+              title="Click-Through Rate"
+              value={parseFloat(metaData.insights?.ctr || "0") * 100}
+              change={0}
+              suffix="%"
+              valueFormat="percentage"
+              platform="meta"
+              data={[]}
+              className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+            />
+          </div>
+
+          {/* Performance Trends */}
+          <Card className={darkCardClass}>
+            <CardHeader>
+              <CardTitle>Performance Trends</CardTitle>
+              <CardDescription className="text-white/60">30-day performance metrics</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsLineChart data={metaData.insights?.daily_data || []}>
+                  <XAxis dataKey="date" stroke="#ffffff" />
+                  <YAxis stroke="#ffffff" />
+                  <Tooltip contentStyle={{ backgroundColor: '#111111', border: '1px solid #333333', color: '#ffffff' }} />
+                  <Line type="monotone" dataKey="spend" stroke="#8884d8" />
+                  <Line type="monotone" dataKey="clicks" stroke="#82ca9d" />
+                </RechartsLineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Campaign Performance */}
+          <Card className={darkCardClass}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Megaphone className="h-4 w-4" />
+                Campaign Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {metaData.campaigns?.map((campaign, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{campaign.name}</div>
+                        <div className="text-sm text-white/60">
+                          Objective: {campaign.objective}
+                        </div>
+                      </div>
+                      <div className={`px-2 py-1 rounded text-sm ${
+                        campaign.status === 'ACTIVE' ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
+                      }`}>
+                        {campaign.status}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <div className="text-white/60">Spend</div>
+                        <div className="font-medium">
+                          ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-white/60">Impressions</div>
+                        <div className="font-medium">
+                          {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-white/60">Clicks</div>
+                        <div className="font-medium">
+                          {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-white/60">CTR</div>
+                        <div className="font-medium">
+                          {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Progress 
+                      value={parseFloat(campaign.performance?.ctr || "0")} 
+                      className="h-2"
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Ad Set Performance */}
+          <Card className={darkCardClass}>
+            <CardHeader>
+              <CardTitle>Ad Set Performance</CardTitle>
+              <CardDescription className="text-white/60">Performance metrics by ad set</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {metaData.adsets?.map((adset, index) => (
+                  <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
+                    <div className="space-y-1">
+                      <div className="font-medium text-white">{adset.name}</div>
+                      <div className="text-sm text-white/60">
+                        Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="text-right">
+                        <div className="text-white/60">Impressions</div>
+                        <div className="font-medium">
+                          {parseInt(adset.impressions || "0").toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white/60">Clicks</div>
+                        <div className="font-medium">
+                          {parseInt(adset.clicks || "0").toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-white/60">CTR</div>
+                        <div className="font-medium">
+                          {parseFloat(adset.ctr || "0").toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Performance Trends */}
-      <Card className={darkCardClass}>
-        <CardHeader>
-          <CardTitle>Performance Trends</CardTitle>
-          <CardDescription className="text-white/60">30-day performance metrics</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <RechartsLineChart data={metaData.insights?.daily_data || []}>
-              <XAxis dataKey="date" stroke="#ffffff" />
-              <YAxis stroke="#ffffff" />
-              <Tooltip contentStyle={{ backgroundColor: '#111111', border: '1px solid #333333', color: '#ffffff' }} />
-              <Line type="monotone" dataKey="spend" stroke="#8884d8" />
-              <Line type="monotone" dataKey="clicks" stroke="#82ca9d" />
-            </RechartsLineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Campaign Performance */}
-      <Card className={darkCardClass}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Megaphone className="h-4 w-4" />
-            Campaign Performance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {metaData.campaigns?.map((campaign, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{campaign.name}</div>
-                    <div className="text-sm text-white/60">
-                      Objective: {campaign.objective}
-                    </div>
-                  </div>
-                  <div className={`px-2 py-1 rounded text-sm ${
-                    campaign.status === 'ACTIVE' ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
-                  }`}>
-                    {campaign.status}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <div className="text-white/60">Spend</div>
-                    <div className="font-medium">
-                      ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-white/60">Impressions</div>
-                    <div className="font-medium">
-                      {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-white/60">Clicks</div>
-                    <div className="font-medium">
-                      {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-white/60">CTR</div>
-                    <div className="font-medium">
-                      {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
-                    </div>
-                  </div>
-                </div>
-                
-                <Progress 
-                  value={parseFloat(campaign.performance?.ctr || "0")} 
-                  className="h-2"
-                />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Ad Set Performance */}
-      <Card className={darkCardClass}>
-        <CardHeader>
-          <CardTitle>Ad Set Performance</CardTitle>
-          <CardDescription className="text-white/60">Performance metrics by ad set</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {metaData.adsets?.map((adset, index) => (
-              <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
-                <div className="space-y-1">
-                  <div className="font-medium text-white">{adset.name}</div>
-                  <div className="text-sm text-white/60">
-                    Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="text-right">
-                    <div className="text-white/60">Impressions</div>
-                    <div className="font-medium">
-                      {parseInt(adset.impressions || "0").toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-white/60">Clicks</div>
-                    <div className="font-medium">
-                      {parseInt(adset.clicks || "0").toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-white/60">CTR</div>
-                    <div className="font-medium">
-                      {parseFloat(adset.ctr || "0").toFixed(2)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
