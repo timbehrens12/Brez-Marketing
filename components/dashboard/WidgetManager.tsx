@@ -5,7 +5,7 @@ import { useMetrics } from "@/lib/hooks/useMetrics"
 import { DateRange } from "react-day-picker"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import { PlatformConnection } from "@/types"
+import { PlatformConnection } from "@/types/platformConnection"
 
 interface WidgetManagerProps {
   dateRange?: DateRange

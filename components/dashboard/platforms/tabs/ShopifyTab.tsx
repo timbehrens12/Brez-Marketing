@@ -10,14 +10,17 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw } from "lucide-react"
+import { PlatformConnection } from "@/types/platformConnection"
 
 interface ShopifyTabProps {
   metrics: Metrics
-  dateRange: DateRange | undefined
+  dateRange?: DateRange
   isLoading: boolean
+  brandId: string
+  connection?: PlatformConnection
 }
 
-export function ShopifyTab({ metrics, dateRange, isLoading }: ShopifyTabProps) {
+export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection }: ShopifyTabProps) {
   const hasData = metrics && Object.keys(metrics).length > 0
 
   return (

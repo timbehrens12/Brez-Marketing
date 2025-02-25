@@ -5,7 +5,7 @@ import { ShopifyTab } from "./tabs/ShopifyTab"
 import { MetaTab } from "./tabs/MetaTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
-import { PlatformConnection } from "@/types/platform-connection"
+import { PlatformConnection } from "@/types/platformConnection"
 
 interface PlatformTabsProps {
   platforms: {
