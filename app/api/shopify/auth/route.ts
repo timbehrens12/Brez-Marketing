@@ -29,3 +29,12 @@ export async function GET(request: Request) {
 
   // Generate OAuth URL
   const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`
+  const authUrl = await shopify.auth.begin({
+    shop,
+    callbackPath: redirectUrl,
+    isOnline: true,
+    rawRequest: request
+  })
+
+  return NextResponse.redirect(authUrl)
+}
