@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,11 @@ export default function SettingsPage() {
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
+
+  useEffect(() => {
+    console.log('Current brands:', brands)
+    console.log('Selected brand:', selectedBrandId)
+  }, [brands, selectedBrandId])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
@@ -210,39 +215,63 @@ export default function SettingsPage() {
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-4">
-            {brands.map(brand => (
-              <div 
-                key={brand.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]"
+            {/* Brand Selector */}
+            <div className="mb-4">
+              <Label className="text-gray-200">Selected Brand</Label>
+              <select
+                value={selectedBrandId || ''}
+                onChange={(e) => setSelectedBrandId(e.target.value || null)}
+                className="w-full mt-1 bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
               >
-                <div className="flex items-center gap-3">
-                  {brand.image_url ? (
-                    <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center">
-                      {brand.name[0].toUpperCase()}
-                    </div>
-                  )}
-                  <span className="text-white">{brand.name}</span>
+                <option value="">Select a brand</option>
+                {brands.map(brand => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Current Brands List */}
+            {brands.length > 0 ? (
+              brands.map(brand => (
+                <div 
+                  key={brand.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]"
+                >
+                  <div className="flex items-center gap-3">
+                    {brand.image_url ? (
+                      <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
+                        {brand.name[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="text-white">{brand.name}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      className="hover:bg-[#333]"
+                      onClick={() => handleEditBrand(brand.id)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="hover:bg-[#333] text-red-400 hover:text-red-300"
+                      onClick={() => handleDeleteBrand(brand.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    className="hover:bg-[#333]"
-                    onClick={() => handleEditBrand(brand.id)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="hover:bg-[#333] text-red-400 hover:text-red-300"
-                    onClick={() => handleDeleteBrand(brand.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-400 py-4">
+                No brands added yet
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
 
