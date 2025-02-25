@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
 import { formatCurrency } from "@/lib/utils"
 import { useMemo } from 'react'
+import { DateRange } from "react-day-picker"
 
 interface DayData {
   day: string
@@ -14,9 +15,10 @@ interface DayData {
 
 interface RevenueByDayProps {
   data: DayData[]
+  dateRange?: DateRange
 }
 
-export function RevenueByDay({ data = [] }: RevenueByDayProps) {
+export function RevenueByDay({ data = [], dateRange }: RevenueByDayProps) {
   const placeholderData = useMemo(() => {
     if (data.length > 0) return data;
     
