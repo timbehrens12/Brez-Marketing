@@ -13,20 +13,66 @@ import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshC
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSupabase } from "@/lib/hooks/useSupabase"
+import { calculateMetrics } from "@/utils/metrics"
 
 interface ShopifyTabProps {
-  metrics: Metrics
-  dateRange?: DateRange
-  isLoading: boolean
+  connection: any
+  dateRange: { from: Date; to: Date }
   brandId: string
-  connection?: PlatformConnection
 }
 
-export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection }: ShopifyTabProps) {
-  const hasData = metrics && Object.keys(metrics).length > 0
+export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) {
+  const [metrics, setMetrics] = useState<Metrics>({
+    totalSales: 0,
+    ordersPlaced: 0,
+    averageOrderValue: 0,
+    unitsSold: 0,
+    revenueByDay: [],
+    topProducts: []
+  })
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = useSupabase()
 
-  console.log('ShopifyTab render with metrics:', metrics)
+  useEffect(() => {
+    async function fetchMetrics() {
+      if (!connection?.id || !dateRange || !brandId) {
+        console.log('Missing required data:', { connection, dateRange, brandId })
+        return
+      }
+
+      try {
+        setIsLoading(true)
+        
+        // Fetch orders for the date range
+        const { data: orders, error } = await supabase
+          .from('shopify_orders')
+          .select('*')
+          .eq('connection_id', connection.id)
+          .gte('created_at', dateRange.from.toISOString())
+          .lte('created_at', dateRange.to.toISOString())
+
+        if (error) throw error
+
+        // Calculate metrics from orders
+        const calculatedMetrics = calculateMetrics(orders || [])
+        console.log('Calculated metrics:', calculatedMetrics)
+        
+        setMetrics(calculatedMetrics)
+      } catch (error) {
+        console.error('Error fetching metrics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMetrics()
+  }, [connection?.id, dateRange, brandId, supabase])
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
 
   return (
     <div className="space-y-6">
@@ -34,44 +80,23 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
       <div className="grid grid-cols-4 gap-4">
         <MetricCard
           title="Total Sales"
-          value={hasData ? metrics.totalSales : 0}
-          change={hasData ? metrics.salesGrowth : 0}
-          icon={<DollarSign className="h-4 w-4" />}
-          valueFormat="currency"
-          platform="shopify"
-          data={hasData ? metrics.dailyData : []}
-          dateRange={dateRange}
+          value={metrics.totalSales}
+          format="currency"
         />
         <MetricCard
-          title="Orders"
-          value={hasData ? metrics.ordersPlaced : 0}
-          change={hasData ? metrics.ordersGrowth : 0}
-          icon={<ShoppingBag className="h-4 w-4" />}
-          valueFormat="number"
-          platform="shopify"
-          data={hasData ? metrics.dailyData : []}
-          dateRange={dateRange}
+          title="Orders Placed"
+          value={metrics.ordersPlaced}
+          format="number"
         />
         <MetricCard
           title="Average Order Value"
-          value={hasData ? metrics.averageOrderValue : 0}
-          change={hasData ? metrics.aovGrowth : 0}
-          icon={<TrendingUp className="h-4 w-4" />}
-          prefix="$"
-          valueFormat="currency"
-          platform="shopify"
-          data={hasData ? metrics.dailyData : []}
-          dateRange={dateRange}
+          value={metrics.averageOrderValue}
+          format="currency"
         />
         <MetricCard
           title="Units Sold"
-          value={hasData ? metrics.unitsSold : 0}
-          change={hasData ? metrics.unitsGrowth : 0}
-          icon={<Package className="h-4 w-4" />}
-          valueFormat="number"
-          platform="shopify"
-          data={hasData ? metrics.dailyData : []}
-          dateRange={dateRange}
+          value={metrics.unitsSold}
+          format="number"
         />
       </div>
 
@@ -82,7 +107,7 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
             <CardTitle className="text-white">Revenue Over Time</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            <RevenueByDay data={hasData ? metrics.revenueByDay : []} dateRange={dateRange} />
+            <RevenueByDay data={metrics.revenueByDay} dateRange={dateRange} />
           </CardContent>
         </Card>
 
@@ -114,23 +139,13 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
             <div className="grid grid-cols-2 gap-4">
               <MetricCard
                 title="Customer Retention"
-                value={hasData ? metrics.customerRetentionRate : 0}
-                change={hasData ? metrics.retentionGrowth : 0}
-                icon={<Users className="h-4 w-4" />}
+                value={metrics.customerRetentionRate}
                 suffix="%"
-                platform="shopify"
-                dateRange={dateRange}
-                data={hasData ? metrics.dailyData : []}
               />
               <MetricCard
                 title="Conversion Rate"
-                value={hasData ? metrics.conversionRate : 0}
-                change={hasData ? metrics.conversionRateGrowth : 0}
-                icon={<Activity className="h-4 w-4" />}
+                value={metrics.conversionRate}
                 suffix="%"
-                platform="shopify"
-                dateRange={dateRange}
-                data={hasData ? metrics.dailyData : []}
               />
             </div>
           </CardContent>
