@@ -346,249 +346,58 @@ type ShopifyProduct = {
 }
 
 // Update the calculateMetrics function's total sales calculation
-export function calculateMetrics(
-  orders: Order[],
-  products: ShopifyProduct[],
-  refunds: Order[],
-  dateRange: DateRange | undefined,
-  comparisonType: ComparisonType = "none",
-  comparisonDateRange?: DateRange,
-): Metrics {
-  const defaultMetrics: Metrics = {
-    totalSales: 0,
-    salesGrowth: 0,
-    averageOrderValue: 0,
-    aovGrowth: 0,
-    salesData: [],
-    ordersPlaced: 0,
-    previousOrdersPlaced: 0,
-    unitsSold: 0,
-    previousUnitsSold: 0,
-    orderCount: 0,
-    previousOrderCount: 0,
-    topProducts: [],
-    customerRetentionRate: 0,
-    revenueByDay: Array(7).fill(0),
-    sessionCount: 0,
-    sessionGrowth: 0,
-    sessionData: [],
-    conversionRate: 0,
-    conversionRateGrowth: 0,
-    conversionData: [],
-    retentionRateGrowth: 0,
-    retentionData: [],
-    currentWeekRevenue: Array(7).fill(0),
-    inventoryLevels: 0,
-    returnRate: 0,
-    inventoryData: [],
-    returnData: [],
-    categoryPerformance: [],
-    customerSegments: {
-      newCustomers: 0,
-      returningCustomers: 0,
-    },
-    customerLifetimeValue: 0,
-    clvData: [],
-    averageTimeToFirstPurchase: 0,
-    timeToFirstPurchaseData: [],
-    // Add the missing properties
-    categoryData: [],
-    shippingZones: [],
-    shippingData: [],
-    paymentMethods: [],
-    paymentData: [],
-    discountPerformance: [],
-    discountData: [],
-    firstTimeVsReturning: {
-      firstTime: { orders: 0, revenue: 0 },
-      returning: { orders: 0, revenue: 0 },
-    },
-    customerSegmentData: [],
-  }
-
-  if (!Array.isArray(orders) || orders.length === 0 || !dateRange?.from || !dateRange?.to) {
-    return defaultMetrics
-  }
-
-  const currentRange = ensureValidDateRange(dateRange.from, dateRange.to)
-  const isSingleDay = isSameDay(currentRange.start, currentRange.end)
-
-  // Filter orders and refunds
-  const filteredOrders = orders.filter((order) => {
-    const orderDate = utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE)
-    return isWithinInterval(orderDate, currentRange)
-  })
-
-  const filteredRefunds = refunds.filter((refund) => {
-    const refundDate = utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE)
-    return isWithinInterval(refundDate, currentRange)
-  })
-
-  // Generate appropriate data based on view type
-  const salesData = isSingleDay
-    ? generateHourlyData(filteredOrders, filteredRefunds, currentRange)
-    : generateSalesData(filteredOrders, filteredRefunds, currentRange)
-
-  // Calculate total sales
-  const totalSales = filteredOrders.reduce((sum, order) => {
-    const orderTotal = Number(order.total_price || 0)
-    const orderRefunds = filteredRefunds
-      .filter((refund) => refund.order_id === order.id)
-      .reduce((refundSum, refund) => refundSum + Number(refund.total_price || 0), 0)
-    return sum + orderTotal - orderRefunds
+export function calculateMetrics(orders: Order[]) {
+  const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
+  const ordersPlaced = orders.length
+  const averageOrderValue = ordersPlaced > 0 ? totalSales / ordersPlaced : 0
+  
+  // Calculate units sold
+  const unitsSold = orders.reduce((sum, order) => {
+    return sum + order.line_items.reduce((itemSum, item) => itemSum + (item.quantity || 0), 0)
   }, 0)
 
-  // Generate conversion rate data
-  const intervals = isSingleDay
-    ? Array.from({ length: 24 }, (_, i) => {
-        const date = new Date(currentRange.start)
-        date.setHours(i, 0, 0, 0)
-        return date
-      })
-    : eachDayOfInterval({ start: currentRange.start, end: currentRange.end })
+  // Calculate revenue by day
+  const revenueByDay = orders.reduce((acc, order) => {
+    const date = order.created_at.split('T')[0]
+    acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
+    return acc
+  }, {} as Record<string, number>)
 
-  const conversionData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-    // Simulate session data - replace with real data when available
-    const sessions = Math.floor(Math.random() * 100) + periodOrders.length
-    return {
-      date: key,
-      value: sessions > 0 ? (periodOrders.length / sessions) * 100 : 0,
-    }
-  })
+  // Convert to array format
+  const revenueByDayArray = Object.entries(revenueByDay).map(([date, amount]) => ({
+    date,
+    amount
+  }))
 
-  // Generate retention rate data
-  const retentionData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-
-    const uniqueCustomers = new Set(periodOrders.map((order) => order.customer?.id).filter(Boolean))
-    const returningCustomers = new Set(
-      periodOrders
-        .filter((order) => {
-          const customerOrders = filteredOrders.filter((o) => o.customer?.id === order.customer?.id)
-          return customerOrders.length > 1
-        })
-        .map((order) => order.customer?.id)
-        .filter(Boolean),
-    )
-
-    return {
-      date: key,
-      value: uniqueCustomers.size > 0 ? (returningCustomers.size / uniqueCustomers.size) * 100 : 0,
-    }
-  })
-
-  // Generate inventory levels data
-  const inventoryData = generateInventoryData(products, filteredOrders, filteredRefunds, intervals)
-  const inventoryLevels = inventoryData[inventoryData.length - 1].value
-
-  // Generate return rate data
-  const returnData = intervals.map((interval) => {
-    const key = isSingleDay ? format(interval, "HH:00") : format(interval, "yyyy-MM-dd")
-    const periodOrders = filteredOrders.filter((order) => {
-      const orderDate = addDays(utcToZonedTime(parseISO(order.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(orderDate, "HH:00") === key : format(orderDate, "yyyy-MM-dd") === key
-    })
-    const periodRefunds = filteredRefunds.filter((refund) => {
-      const refundDate = addDays(utcToZonedTime(parseISO(refund.created_at), SHOPIFY_TIMEZONE), 1)
-      return isSingleDay ? format(refundDate, "HH:00") === key : format(refundDate, "yyyy-MM-dd") === key
-    })
-
-    return {
-      date: key,
-      value: periodOrders.length > 0 ? (periodRefunds.length / periodOrders.length) * 100 : 0,
-    }
-  })
-
-  // Calculate other metrics
-  const ordersPlaced = filteredOrders.length
-  const averageOrderValue = ordersPlaced > 0 ? totalSales / ordersPlaced : 0
-  const unitsSold = salesData.reduce((sum, day) => sum + (day.unitsSold || 0), 0)
-
-  // Generate sample data for category performance and customer segments
-  const categoryPerformance = [
-    { name: "Electronics", revenue: 50000, orders: 100, units: 150 },
-    { name: "Clothing", revenue: 30000, orders: 200, units: 300 },
-    { name: "Home & Garden", revenue: 20000, orders: 80, units: 100 },
-  ]
-
-  // Calculate customer segments
-  const customersByID = new Map()
-  filteredOrders.forEach((order) => {
-    if (order.customer?.id) {
-      const customerId = order.customer.id
-      if (!customersByID.has(customerId)) {
-        customersByID.set(customerId, [])
+  // Calculate top products
+  const productSales = orders.reduce((acc, order) => {
+    order.line_items.forEach(item => {
+      const id = item.product_id?.toString() || item.title
+      if (!acc[id]) {
+        acc[id] = {
+          id,
+          title: item.title,
+          quantity: 0,
+          revenue: 0
+        }
       }
-      customersByID.get(customerId).push(order)
-    }
-  })
+      acc[id].quantity += item.quantity || 0
+      acc[id].revenue += (item.price * (item.quantity || 0))
+    })
+    return acc
+  }, {} as Record<string, any>)
 
-  const customerSegments = {
-    newCustomers: Array.from(customersByID.values()).filter((orders) => orders.length === 1).length,
-    returningCustomers: Array.from(customersByID.values()).filter((orders) => orders.length > 1).length,
-  }
-
-  const customerSegmentData: MetricData[] = [
-    {
-      date: format(currentRange.start, "yyyy-MM-dd"),
-      value: customerSegments.newCustomers,
-      segment: "New Customers",
-    },
-    {
-      date: format(currentRange.start, "yyyy-MM-dd"),
-      value: customerSegments.returningCustomers,
-      segment: "Returning Customers",
-    },
-  ]
-
-  // Calculate current week's revenue separately
-  const currentWeekRevenue = calculateCurrentWeekRevenue(filteredOrders, filteredRefunds)
-
-  // Return updated metrics with all time-series data
+  const topProducts = Object.values(productSales)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10)
 
   return {
-    ...defaultMetrics,
     totalSales,
-    averageOrderValue,
-    salesData,
     ordersPlaced,
+    averageOrderValue,
     unitsSold,
-    orderCount: ordersPlaced,
-    topProducts: calculateTopProducts(filteredOrders, filteredRefunds),
-    customerRetentionRate: calculateCustomerRetentionRate(filteredOrders),
-    revenueByDay: calculateRevenueByDay(filteredOrders, filteredRefunds),
-    conversionRate: calculateOverallConversionRate(filteredOrders),
-    conversionData,
-    retentionData,
-    currentWeekRevenue, // This is now always the current week's data
-    inventoryLevels,
-    returnRate: calculateReturnRate(filteredOrders, filteredRefunds),
-    inventoryData,
-    returnData,
-    // Add placeholder values for the new properties
-    categoryData: [],
-    shippingZones: [],
-    shippingData: [],
-    paymentMethods: [],
-    paymentData: [],
-    discountPerformance: [],
-    discountData: [],
-    firstTimeVsReturning: {
-      firstTime: { orders: 0, revenue: 0 },
-      returning: { orders: 0, revenue: 0 },
-    },
-    customerSegmentData,
-    categoryPerformance,
-    customerSegments,
+    revenueByDay: revenueByDayArray,
+    topProducts
   }
 }
 

@@ -4,6 +4,7 @@ import axios from "axios"
 import cors from "cors"
 import crypto from "crypto"
 import cookieParser from "cookie-parser"
+import { createClient } from '@supabase/supabase-js'
 
 dotenv.config()
 
@@ -25,6 +26,11 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Origin", "Accept"],
   }),
+)
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 app.get("/test", (req, res) => {
@@ -54,12 +60,12 @@ function getStoreCredentials(shop) {
 }
 
 app.get("/shopify/auth", (req, res) => {
-  const shop = req.query.shop
+  const { shop, brandId } = req.query
   if (!shop) {
     return res.status(400).send("Missing shop parameter")
   }
 
-  console.log("Auth request for shop:", shop)
+  console.log("Auth request for shop:", shop, "brandId:", brandId)
   const credentials = getStoreCredentials(shop)
 
   if (!credentials) {
@@ -67,19 +73,10 @@ app.get("/shopify/auth", (req, res) => {
     return res.status(400).send("No credentials found for this shop")
   }
 
-  console.log("Initiating OAuth flow for shop:", shop)
   const redirectUri = `${process.env.BACKEND_URL}/shopify/callback`
   const scopes = "read_orders,read_products,read_customers,read_discounts,read_inventory"
-  const nonce = crypto.randomBytes(16).toString("hex")
-  const shopifyAuthUrl = `https://${shop}/admin/oauth/authorize?client_id=${credentials.clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${nonce}`
-
-  // Set cookie with proper options
-  res.cookie("shopify_nonce", nonce, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 1000, // 1 hour
-  })
+  const state = brandId // Use brandId as state instead of random nonce
+  const shopifyAuthUrl = `https://${shop}/admin/oauth/authorize?client_id=${credentials.clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
 
   console.log("Redirecting to Shopify auth URL:", shopifyAuthUrl)
   res.redirect(shopifyAuthUrl)
@@ -91,21 +88,9 @@ app.get("/", (req, res) => {
 
 // Shopify OAuth callback
 app.get("/shopify/callback", async (req, res) => {
-  const { code, shop, state } = req.query
-  const storedNonce = req.cookies.shopify_nonce
+  const { code, shop, state: brandId } = req.query // state is our brandId
 
-  console.log("Callback received:", { shop, state, hasNonce: !!storedNonce })
-
-  // Verify the state matches the stored nonce
-  if (!storedNonce || state !== storedNonce) {
-    console.error("Nonce verification failed:", {
-      receivedState: state,
-      storedNonce: storedNonce,
-    })
-    return res.status(403).send("Invalid state parameter")
-  }
-
-  if (!code || !shop) {
+  if (!code || !shop || !brandId) {
     return res.status(400).send("Missing required parameters")
   }
 
@@ -126,6 +111,22 @@ app.get("/shopify/callback", async (req, res) => {
     stores[shop] = {
       accessToken: tokenResponse.data.access_token,
       lastTokenRefresh: new Date(),
+    }
+
+    // Save to Supabase with the brandId
+    const { error: supabaseError } = await supabase
+      .from('platform_connections')
+      .insert({
+        brand_id: brandId,
+        platform_type: 'shopify',
+        store_url: shop,
+        access_token: tokenResponse.data.access_token
+      })
+
+    if (supabaseError) {
+      console.error("Error saving to Supabase:", supabaseError)
+    } else {
+      console.log("Successfully saved connection to Supabase")
     }
 
     // Clear the nonce cookie
@@ -315,69 +316,70 @@ app.get("/api/shopify/sales", async (req, res) => {
   }
 })
 
-app.get("/api/meta/auth", (req, res) => {
-  console.log("Meta auth route hit")
-  const redirectUri = `${process.env.BACKEND_URL}/api/meta/callback`
-  const scopes = "ads_read,ads_management,read_insights"
-  const state = crypto.randomBytes(16).toString("hex")
+// Meta OAuth routes - match Shopify pattern exactly
+app.get("/meta/auth", (req, res) => {
+  const { brandId } = req.query
+  if (!brandId) {
+    return res.status(400).send("Missing brandId parameter")
+  }
 
-  res.cookie("meta_auth_state", state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 10 * 60 * 1000, // 10 minutes
-  })
+  console.log("Auth request for Meta, brandId:", brandId)
 
-  const authUrl = new URL("https://www.facebook.com/v17.0/dialog/oauth")
-  authUrl.searchParams.append("client_id", process.env.META_APP_ID)
-  authUrl.searchParams.append("redirect_uri", redirectUri)
-  authUrl.searchParams.append("scope", scopes)
-  authUrl.searchParams.append("state", state)
-  authUrl.searchParams.append("response_type", "code")
+  const redirectUri = `${process.env.BACKEND_URL}/meta/callback`
+  const scopes = "ads_read,ads_management,business_management,pages_read_engagement"
+  const state = brandId
 
-  console.log("Initiating Meta Ads authentication. Redirect URL:", redirectUri)
-  console.log("Full Auth URL:", authUrl.toString())
-  res.redirect(authUrl.toString())
+  const metaAuthUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+    `client_id=${process.env.META_APP_ID}&` +
+    `scope=${scopes}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `state=${state}`
+
+  console.log("Redirecting to Meta auth URL:", metaAuthUrl)
+  res.redirect(metaAuthUrl)
 })
 
-// Meta Ads Authentication Callback
-app.get("/api/meta/callback", async (req, res) => {
-  const { code, state } = req.query
-  const storedState = req.cookies.meta_auth_state
-  const redirectUri = `${process.env.BACKEND_URL}/api/meta/callback`
+app.get("/meta/callback", async (req, res) => {
+  const { code, state: brandId } = req.query
 
-  if (state !== storedState) {
-    return res.status(400).send("Invalid state parameter")
+  if (!code || !brandId) {
+    return res.status(400).send("Missing required parameters")
   }
 
   try {
-    const tokenResponse = await axios.get("https://graph.facebook.com/v17.0/oauth/access_token", {
+    console.log("Exchanging code for access token")
+    const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
       params: {
         client_id: process.env.META_APP_ID,
         client_secret: process.env.META_APP_SECRET,
-        redirect_uri: redirectUri,
         code: code,
-      },
+        redirect_uri: `${process.env.BACKEND_URL}/meta/callback`
+      }
     })
 
-    const accessToken = tokenResponse.data.access_token
+    // Save to Supabase
+    const { error: supabaseError } = await supabase
+      .from('platform_connections')
+      .insert({
+        brand_id: brandId,
+        platform_type: 'meta',
+        access_token: tokenResponse.data.access_token,
+        connected_at: new Date().toISOString()
+      })
 
-    // In a real app, store this token securely
-    console.log("Access Token received:", accessToken)
+    if (supabaseError) {
+      console.error("Error saving to Supabase:", supabaseError)
+      return res.status(500).send("Failed to save connection")
+    }
 
-    res.cookie("meta_access_token", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax',
-      domain: process.env.NODE_ENV === "production" ? ".brezmarketingdashboard.com" : "localhost"
-    })
-
-    res.redirect(`${process.env.FRONTEND_URL}/settings?meta_connected=true`)
+    console.log("Successfully saved Meta connection to Supabase")
+    res.redirect(`${process.env.FRONTEND_URL}/settings?success=true`)
   } catch (error) {
-    console.error("Error in Meta callback:", error.response ? error.response.data : error.message)
-    res.redirect(
-      `${process.env.FRONTEND_URL}/settings?meta_connected=false&error=${encodeURIComponent(error.message)}`
-    )
+    console.error("Error in Meta callback:", error.message)
+    if (error.response) {
+      console.error("Error response:", error.response.data)
+    }
+    res.redirect(`${process.env.FRONTEND_URL}/settings?error=connection_failed`)
   }
 })
 
@@ -515,6 +517,45 @@ app.post("/api/meta/disconnect", (req, res) => {
 app.get("/api/meta/status", (req, res) => {
   const accessToken = req.cookies.meta_access_token
   res.json({ isConnected: !!accessToken })
+})
+
+// Meta insights route
+app.get("/meta/insights", async (req, res) => {
+  const { brandId } = req.query
+
+  if (!brandId) {
+    return res.status(400).json({ error: 'Brand ID is required' })
+  }
+
+  try {
+    // Get Meta access token from Supabase
+    const { data: connection, error } = await supabase
+      .from('platform_connections')
+      .select('access_token')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .single()
+
+    if (error || !connection) {
+      console.error('Error fetching Meta connection:', error)
+      return res.status(404).json({ error: 'Meta connection not found' })
+    }
+
+    // Test API call to get ad accounts
+    const accountsResponse = await axios.get('https://graph.facebook.com/v18.0/me/adaccounts', {
+      params: {
+        access_token: connection.access_token,
+        fields: 'account_id,name,account_status,amount_spent,balance,currency'
+      }
+    })
+
+    console.log('Meta Ads API Response:', accountsResponse.data)
+
+    return res.json(accountsResponse.data)
+  } catch (error) {
+    console.error('Error fetching Meta ads data:', error)
+    return res.status(500).json({ error: 'Failed to fetch Meta ads data' })
+  }
 })
 
 app.listen(port, () => {

@@ -95,8 +95,11 @@ export function ComparisonPicker({ comparisonType, customRange, onComparisonChan
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
-            className={cn("w-[280px] justify-start text-left font-normal bg-gray-300 border border-black text-black hover:text-white hover:bg-gray-400", !dateRange && "text-muted-foreground")}
+            variant="outline"
+            className={cn(
+              "w-[280px] justify-start text-left font-normal bg-[#111111] border-[#222222] text-white hover:bg-[#222222]",
+              !comparisonType && "text-white/60"
+            )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {dateRange?.from ? (

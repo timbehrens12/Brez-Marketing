@@ -3,39 +3,69 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
+import { SignOutButton, UserButton } from "@clerk/nextjs"
+import { Button } from "./ui/button"
 
 const navItems = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart2 },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string
+}
+
+export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 min-h-screen p-4 bg-gradient-to-b from-red-400 to-red-700">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Brez Dashboard</h1>
+    <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
+      <div className="p-6 flex-1">
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-white">Brez</h1>
+          <UserButton 
+            appearance={{
+              elements: {
+                userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
+                userButtonTrigger: "rounded-full"
+              }
+            }}
+          />
+        </div>
+        <nav className="space-y-0.5">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                pathname === item.href 
+                  ? "bg-[#2A2A2A] text-white" 
+                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+              )}
+            >
+              <item.icon className="mr-3 h-4 w-4" />
+              {item.name}
+            </Link>
+          ))}
+        </nav>
       </div>
-      <nav className="space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            className={cn(
-              "flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors duration-150 ease-in-out",
-              pathname === item.href ? "bg-red-700 text-white" : "text-white hover:bg-red-500 hover:text-white",
-            )}
+      
+      <div className="p-4 border-t border-[#2A2A2A]">
+        <SignOutButton>
+          <Button 
+            variant="ghost" 
+            className="w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
           >
-            <item.icon className="mr-3 h-5 w-5" />
-            {item.name}
-          </Link>
-        ))}
-      </nav>
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </SignOutButton>
+      </div>
     </aside>
   )
 }

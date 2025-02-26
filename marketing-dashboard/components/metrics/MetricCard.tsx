@@ -9,6 +9,7 @@ import type { MetricData } from "@/types/metrics"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { DateRange } from "react-day-picker"
+import { useMemo } from "react"
 
 interface MetricCardProps {
   title: string
@@ -26,30 +27,54 @@ interface MetricCardProps {
   dateRange?: DateRange
   isCustomRange?: boolean
   emptyState?: string
+  icon?: React.ReactNode
 }
 
 export function MetricCard({
-  title,
-  value,
-  change,
-  data,
+  title = "",
+  value = 0,
+  change = 0,
+  data = [],
   prefix = "",
   suffix = "",
   className,
   loading = false,
   valueFormat = "number",
-  platform,
+  platform = "shopify",
   infoTooltip,
   includesRefunds = false,
   dateRange,
   isCustomRange = false,
   emptyState,
+  icon,
 }: MetricCardProps) {
-  const isPositive = change > 0
+  // Force everything to be numbers
+  const safeValue = typeof value === 'number' ? value : Number(value) || 0
+  const safeChange = typeof change === 'number' ? change : Number(change) || 0
+  const safeData = Array.isArray(data) ? data : []
+  
+  const isPositive = safeChange > 0
+
+  // Generate placeholder data if no data provided
+  const placeholderData = useMemo(() => {
+    if (safeData.length > 0) return safeData;
+    
+    const now = new Date();
+    let days = 30; // default
+    
+    if (dateRange?.from && dateRange?.to) {
+      days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    }
+    
+    return Array.from({ length: days }, (_, i) => ({
+      date: new Date(now.getTime() - (days - i - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      value: 0
+    }));
+  }, [safeData, dateRange]);
 
   if (loading) {
     return (
-      <Card className={className}>
+      <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-4 w-[60px]" />
@@ -63,24 +88,26 @@ export function MetricCard({
   }
 
   const formatValue = (val: number) => {
-    switch (valueFormat) {
-      case "percentage":
-        return `${val.toFixed(2)}`
-      case "currency":
-        return val
-          .toLocaleString("en-US", {
-            style: "currency",
-            currency: "USD",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })
-          .replace(/^\$/, "") // Remove the leading dollar sign
-      default:
-        return val.toLocaleString()
+    try {
+      switch(valueFormat) {
+        case "currency":
+          return `$${val.toFixed(2)}`
+        case "percentage":
+          return `${val.toFixed(1)}%`
+        default:
+          return val.toFixed(0)
+      }
+    } catch {
+      return "0"
     }
   }
 
-  const formattedValue = typeof value === "string" ? value : formatValue(Number(value))
+  const formatChange = (change: number) => {
+    if (!isFinite(change)) return '+0.0%'
+    return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
+  }
+
+  const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
 
   const PlatformIcon = () => {
     switch (platform) {
@@ -130,136 +157,30 @@ export function MetricCard({
   }
 
   return (
-    <Card className={cn("bg-gray-50", className)}>
+    <Card className={cn("bg-[#1A1A1A] border-[#2A2A2A] hover:bg-[#222] transition-colors", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center gap-2">
-          <PlatformIcon />
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium text-gray-900">{title}</CardTitle>
-            {infoTooltip && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-gray-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>{infoTooltip}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-col items-end">
-          <div className="text-2xl font-bold text-gray-900">
-            {prefix}
-            {formattedValue}
-            {suffix}
-          </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    "text-xs font-medium cursor-help",
-                    isCustomRange ? "text-gray-500" : isPositive ? "text-green-600" : "text-red-600"
-                  )}
-                >
-                  {isCustomRange ? (
-                    "--%"
-                  ) : (
-                    <>
-                      {isPositive ? "+" : ""}
-                      {change.toFixed(1)}%
-                    </>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{getComparisonText()}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center space-x-2">
+          {icon && <span className="text-gray-400">{icon}</span>}
+          <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
-        {includesRefunds && (
-          <div className="text-xs text-gray-600 mt-1">Includes adjustments for refunds</div>
-        )}
+        <div className="text-2xl font-bold text-white">
+          {prefix}{formattedValue}{suffix}
+        </div>
+        <div className={cn(
+          "text-xs font-medium mt-1",
+          isPositive ? "text-emerald-500" : "text-red-500"
+        )}>
+          {isPositive ? "+" : ""}{formatChange(safeChange)}
+        </div>
         <div className="h-[100px] mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <XAxis
-                dataKey="date"
-                fontSize={10}
-                tickFormatter={(dateStr) => {
-                  try {
-                    // Check if the date string is in HH:mm format
-                    if (dateStr.includes(":")) {
-                      return format(parse(dateStr, "HH:mm", new Date()), "ha")
-                    }
-                    // Otherwise, assume it's a full date string
-                    return format(new Date(dateStr), "MMM d")
-                  } catch (error) {
-                    console.error("Error formatting date:", error)
-                    return dateStr // Fallback to original string if parsing fails
-                  }
-                }}
-                stroke="#888888"
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                fontSize={10}
-                tickFormatter={(val) => {
-                  switch (valueFormat) {
-                    case "percentage":
-                      return `${val}%`
-                    case "currency":
-                      return `$${val}`
-                    default:
-                      return val.toString()
-                  }
-                }}
-                stroke="#888888"
-                tickLine={false}
-                axisLine={false}
-              />
-              <RechartsTooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length > 0 && payload[0].payload) {
-                    const dateStr = payload[0].payload.date
-                    let formattedDate
-                    try {
-                      if (dateStr.includes(":")) {
-                        formattedDate = format(parse(dateStr, "HH:mm", new Date()), "h:mm a")
-                      } else {
-                        formattedDate = format(new Date(dateStr), "MMM d, yyyy")
-                      }
-                    } catch (error) {
-                      console.error("Error formatting date:", error)
-                      formattedDate = dateStr
-                    }
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[0.70rem] uppercase text-muted-foreground">{formattedDate}</span>
-                            <span className="font-bold text-muted-foreground">
-                              {valueFormat === "currency" ? "$" : ""}
-                              {formatValue(payload[0].value as number)}
-                              {valueFormat === "percentage" ? "%" : ""}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-                  return null
-                }}
-              />
+            <LineChart data={placeholderData}>
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke={isPositive ? "#16a34a" : "#dc2626"}
+                stroke={isPositive ? "#10B981" : "#EF4444"}
                 strokeWidth={2}
                 dot={false}
               />

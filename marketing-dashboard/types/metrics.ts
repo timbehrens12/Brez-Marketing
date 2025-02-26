@@ -59,54 +59,126 @@ export interface CustomerSegments {
 
 export interface Metrics {
   totalSales: number
-  salesGrowth: number
-  averageOrderValue: number
-  aovGrowth: number
-  salesData: MetricData[]
   ordersPlaced: number
-  previousOrdersPlaced: number
+  averageOrderValue: number
   unitsSold: number
-  previousUnitsSold: number
-  orderCount: number
-  previousOrderCount: number
-  topProducts: ProductSales[]
-  customerRetentionRate: number
-  revenueByDay: number[]
-  sessionCount: number
-  sessionGrowth: number
-  sessionData: MetricData[]
+  revenueByDay: Array<{ date: string; amount: number }>
+  topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
+  salesGrowth: number
+  ordersGrowth: number
+  unitsGrowth: number
+  aovGrowth: number
   conversionRate: number
   conversionRateGrowth: number
-  conversionData: MetricData[]
-  retentionRateGrowth: number
-  retentionData: MetricData[]
-  currentWeekRevenue: number[]
-  inventoryLevels: number
+  customerSegments: Array<{ name: string; value: number }>
+  customerRetentionRate: number
+  retentionGrowth: number
   returnRate: number
-  inventoryData: MetricData[]
-  returnData: MetricData[]
-  customerLifetimeValue: number
-  clvData: MetricData[]
-  averageTimeToFirstPurchase: number
-  timeToFirstPurchaseData: MetricData[]
-  categoryPerformance: CategoryPerformance[]
-  categoryData: MetricData[]
-  shippingZones: ShippingZoneMetrics[]
-  shippingData: MetricData[]
-  paymentMethods: PaymentMethodMetrics[]
-  paymentData: MetricData[]
-  discountPerformance: DiscountMetrics[]
-  discountData: MetricData[]
-  customerSegments: CustomerSegments
-  firstTimeVsReturning: {
-    firstTime: { orders: number; revenue: number }
-    returning: { orders: number; revenue: number }
-  }
-  customerSegmentData: MetricData[]
+  returnGrowth: number
+  dailyData: Array<{ date: string; value: number }>
+  adSpend: number
+  adSpendGrowth: number
+  roas: number
+  roasGrowth: number
+  impressions: number
+  impressionGrowth: number
+  ctr: number
+  ctrGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  costPerResult: number
+  cprGrowth: number
 }
 
 export interface ComparisonDates {
   from: Date
   to: Date
+}
+
+export interface MetaMetrics {
+  totalSales: number
+  salesGrowth: number
+  averageOrderValue: number
+  aovGrowth: number
+  ordersPlaced: number
+  ordersGrowth: number
+  unitsSold: number
+  unitsGrowth: number
+  impressions: number
+  impressionGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  adSpend: number
+  adSpendGrowth: number
+  roas: number
+  roasGrowth: number
+  ctr: number
+  ctrGrowth: number
+  cpc: number
+  cpcGrowth: number
+  costPerResult: number
+  cprGrowth: number
+  customerRetentionRate: number
+  retentionGrowth: number
+  returnRate: number
+  returnGrowth: number
+  conversionRate: number
+  inventoryLevels: number
+  inventoryGrowth: number
+  dailyData: any[]
+  chartData: any[]
+  timeseriesData: any[]
+  topProducts: any[]
+}
+
+export interface Product {
+  name: string
+  quantity: number
+  revenue: number
+}
+
+export interface DayData {
+  day: string
+  date: string
+  revenue: number | null
+}
+
+export const defaultMetrics: Metrics = {
+  totalSales: 0,
+  salesGrowth: 0,
+  ordersPlaced: 0,
+  ordersGrowth: 0,
+  unitsSold: 0,
+  unitsGrowth: 0,
+  averageOrderValue: 0,
+  aovGrowth: 0,
+  customerRetentionRate: 0,
+  retentionGrowth: 0,
+  returnRate: 0,
+  returnGrowth: 0,
+  conversionRate: 0,
+  conversionRateGrowth: 0,
+  dailyData: [],
+  revenueByDay: [],
+  customerSegments: [],
+  topProducts: [],
+  adSpend: 0,
+  adSpendGrowth: 0,
+  roas: 0,
+  roasGrowth: 0,
+  impressions: 0,
+  impressionGrowth: 0,
+  ctr: 0,
+  ctrGrowth: 0,
+  clicks: 0,
+  clickGrowth: 0,
+  conversions: 0,
+  conversionGrowth: 0,
+  costPerResult: 0,
+  cprGrowth: 0
 }
 

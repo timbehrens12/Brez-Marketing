@@ -1,25 +1,27 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+interface MetaConnectButtonProps {
+  onConnect: (data: any) => Promise<void>
+  isConnected: boolean
+  brandId: string
+  onDisconnect?: () => Promise<void>
+}
 
-export function MetaConnectButton() {
+export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnect }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
 
   const handleConnect = async () => {
     setIsConnecting(true)
     try {
-      // Use the correct endpoint path that matches your backend
-      window.location.href = `${API_URL}/api/meta/auth`
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
+      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
+      window.location.href = authUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
       toast({
@@ -27,33 +29,50 @@ export function MetaConnectButton() {
         description: "Failed to connect Meta Ads. Please try again.",
         variant: "destructive",
       })
-    } finally {
       setIsConnecting(false)
     }
   }
 
+  const handleDisconnect = async () => {
+    if (!onDisconnect) return
+    
+    if (confirm('Are you sure you want to disconnect Meta Ads? This will revoke all permissions.')) {
+      await onDisconnect()
+    }
+  }
+
   return (
-    <Button 
-      onClick={handleConnect}
-      disabled={isConnecting || isConnected}
-      className={isConnected ? "bg-green-600 hover:bg-green-700" : ""}
-    >
-      {isConnecting ? (
+    <div className="flex gap-2">
+      {isConnected ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Connecting...
-        </>
-      ) : isConnected ? (
-        <>
-          Connected to Meta Ads
-          <ArrowRight className="ml-2 h-4 w-4" />
+          <Button 
+            variant="outline"
+            className="bg-transparent text-red-500 hover:bg-red-500/10"
+            onClick={handleDisconnect}
+            disabled={isConnecting}
+          >
+            Disconnect
+          </Button>
         </>
       ) : (
-        <>
-          Connect Meta Ads
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </>
+        <Button 
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          {isConnecting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              Connect
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </Button>
       )}
-    </Button>
+    </div>
   )
 }

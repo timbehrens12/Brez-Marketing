@@ -7,6 +7,10 @@ import { cn } from "@/lib/utils"
 import type React from "react"
 import { Sidebar } from "@/components/Sidebar"
 import { WidgetProvider } from "@/context/WidgetContext"
+import { AuthProvider } from '@/contexts/AuthContext'
+import { BrandProvider } from '@/lib/context/BrandContext'
+import { ClerkProvider } from '@clerk/nextjs'
+import { MetricsProvider } from '@/lib/contexts/MetricsContext'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -22,14 +26,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-slate-50 font-sans antialiased", inter.className)}>
+      <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <WidgetProvider>
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">{children}</div>
-            </div>
-          </WidgetProvider>
+          <ClerkProvider>
+            <BrandProvider>
+              <MetricsProvider>
+                <WidgetProvider>
+                  <AuthProvider>
+                    <div className="flex h-screen overflow-hidden">
+                      <Sidebar className="w-64 flex-shrink-0" />
+                      <main className="flex-1 overflow-y-auto">
+                        {children}
+                      </main>
+                    </div>
+                  </AuthProvider>
+                </WidgetProvider>
+              </MetricsProvider>
+            </BrandProvider>
+          </ClerkProvider>
           <Toaster />
         </ThemeProvider>
       </body>
