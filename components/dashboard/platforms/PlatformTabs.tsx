@@ -7,7 +7,7 @@ import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { useSupabase } from '@/lib/hooks/useSupabase'
 
 interface PlatformTabsProps {
   platforms: {
@@ -33,6 +33,7 @@ interface ShopifyOrder {
 }
 
 export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, isLoading, brandId, connections }: PlatformTabsProps) {
+  const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | undefined>(
     connections.find(c => c.platform_type === 'shopify')
   )

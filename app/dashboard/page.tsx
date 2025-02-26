@@ -24,6 +24,7 @@ import { useMetrics } from "@/lib/contexts/MetricsContext"
 import { addDays } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
+import { useSupabase } from '@/lib/hooks/useSupabase'
 
 interface WidgetData {
   shopify?: any;
@@ -73,6 +74,7 @@ export default function DashboardPage() {
 
   const { selectedBrandId: brandStoreSelectedBrandId } = useBrandStore()
   const { connections: connectionStoreConnections } = useConnectionStore()
+  const supabase = useSupabase()
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -174,7 +176,7 @@ export default function DashboardPage() {
         try {
           console.log('Fetching Shopify data for connection:', shopifyConnection.id)
           const { data: shopifyData } = await supabase
-            .from('shopify_data')
+            .from('shopify_orders')
             .select('*')
             .eq('connection_id', shopifyConnection.id)
             .single()

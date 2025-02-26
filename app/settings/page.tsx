@@ -9,10 +9,10 @@ import { Switch } from "@/components/ui/switch"
 import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
 import { Trash2, Edit2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { supabase } from "@/lib/supabase"
 import { useUser } from "@clerk/nextjs"
 import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
+import { useSupabase } from '@/lib/hooks/useSupabase'
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
+  const supabase = useSupabase()
 
   useEffect(() => {
     console.log('Current brands:', brands)
@@ -30,7 +31,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const loadConnections = async () => {
-      if (!user) return;
+      if (!user) return
       
       const { data, error } = await supabase
         .from('platform_connections')
@@ -47,7 +48,7 @@ export default function SettingsPage() {
     }
 
     loadConnections()
-  }, [user])
+  }, [user, supabase])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
