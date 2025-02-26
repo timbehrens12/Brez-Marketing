@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw } from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, ShoppingCart } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
@@ -109,31 +109,76 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
 
   return (
     <div className="space-y-6">
-      {/* Main metrics grid */}
+      {/* Key Metrics Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Sales"
           value={metrics.totalSales}
+          change={metrics.salesGrowth}
+          icon={<DollarSign className="h-4 w-4" />}
           format="currency"
+          prefix="$"
         />
         <MetricCard
-          title="Orders Placed"
+          title="Orders"
           value={metrics.ordersPlaced}
+          change={metrics.ordersGrowth}
+          icon={<ShoppingCart className="h-4 w-4" />}
           format="number"
         />
         <MetricCard
           title="Average Order Value"
           value={metrics.averageOrderValue}
+          change={metrics.aovGrowth}
+          icon={<TrendingUp className="h-4 w-4" />}
           format="currency"
+          prefix="$"
         />
         <MetricCard
           title="Units Sold"
           value={metrics.unitsSold}
+          change={metrics.unitsGrowth}
+          icon={<Package className="h-4 w-4" />}
           format="number"
         />
       </div>
 
-      {/* Charts section */}
+      {/* Customer Metrics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Conversion Rate"
+          value={metrics.conversionRate}
+          change={metrics.conversionRateGrowth}
+          icon={<Activity className="h-4 w-4" />}
+          format="percentage"
+          suffix="%"
+        />
+        <MetricCard
+          title="Customer Retention"
+          value={metrics.customerRetentionRate}
+          change={metrics.retentionGrowth}
+          icon={<RefreshCcw className="h-4 w-4" />}
+          format="percentage"
+          suffix="%"
+        />
+        <MetricCard
+          title="Return Rate"
+          value={metrics.returnRate}
+          change={metrics.returnGrowth}
+          icon={<ShoppingBag className="h-4 w-4" />}
+          format="percentage"
+          suffix="%"
+        />
+        <MetricCard
+          title="Active Customers"
+          value={metrics.customerSegments.newCustomers + metrics.customerSegments.returningCustomers}
+          change={0}
+          icon={<Users className="h-4 w-4" />}
+          format="number"
+        />
+      </div>
+
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
@@ -144,6 +189,18 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
           </CardContent>
         </Card>
 
+        <Card className="bg-[#111111] border-[#222222]">
+          <CardHeader>
+            <CardTitle className="text-white">Customer Segments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CustomerSegmentsWidget segments={metrics.customerSegments} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Products Section */}
+      <div className="grid grid-cols-1 gap-6">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
             <CardTitle className="text-white">Top Products</CardTitle>
