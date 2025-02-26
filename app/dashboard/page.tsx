@@ -21,40 +21,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { WidgetManager } from "@/components/dashboard/WidgetManager"
 import { useMetrics } from "@/lib/contexts/MetricsContext"
+import { addDays } from "date-fns"
+import { useBrandStore } from "@/stores/brandStore"
+import { useConnectionStore } from "@/stores/connectionStore"
 
 interface WidgetData {
   shopify?: any;
   meta?: any;
 }
 
+const initialMetrics: Metrics = {
+  totalSales: 0,
+  ordersPlaced: 0,
+  averageOrderValue: 0,
+  unitsSold: 0,
+  revenueByDay: []
+}
+
 export default function DashboardPage() {
   const { userId } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [dateRange, setDateRange] = useState({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
-  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
+  const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
   const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("shopify")
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
+
+  const { selectedBrandId: brandStoreSelectedBrandId } = useBrandStore()
+  const { connections: connectionStoreConnections } = useConnectionStore()
 
   // Load initial connections when component mounts with selectedBrandId
   useEffect(() => {
     async function loadConnections() {
-      if (!selectedBrandId) {
+      if (!brandStoreSelectedBrandId) {
         console.log('No brand selected yet')
         return
       }
       
-      console.log('Loading connections for brand:', selectedBrandId)
+      console.log('Loading connections for brand:', brandStoreSelectedBrandId)
       try {
         const { data, error } = await supabase
           .from('platform_connections')
           .select('*')
-          .eq('brand_id', selectedBrandId)
+          .eq('brand_id', brandStoreSelectedBrandId)
 
         if (error) throw error
 
@@ -72,16 +89,16 @@ export default function DashboardPage() {
     }
 
     loadConnections()
-  }, [selectedBrandId, supabase])
+  }, [brandStoreSelectedBrandId, supabase])
 
   // Debug logging
   useEffect(() => {
     console.log('Current state:', {
-      selectedBrandId,
+      brandStoreSelectedBrandId,
       connections,
       platforms
     })
-  }, [selectedBrandId, connections, platforms])
+  }, [brandStoreSelectedBrandId, connections, platforms])
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
@@ -132,7 +149,7 @@ export default function DashboardPage() {
   // Load widget data when connections change
   useEffect(() => {
     async function loadWidgetData() {
-      if (!selectedBrandId || !connections.length) return
+      if (!brandStoreSelectedBrandId || !connections.length) return
 
       const shopifyConnection = connections.find(c => 
         c.platform_type === 'shopify' && c.status === 'active'
@@ -182,58 +199,40 @@ export default function DashboardPage() {
     }
 
     loadWidgetData()
-  }, [selectedBrandId, connections, supabase])
+  }, [brandStoreSelectedBrandId, connections, supabase])
 
-  useEffect(() => {
-    if (!selectedBrandId) {
-      setMetrics(defaultMetrics)
-      return
-    }
+  const fetchMetrics = async () => {
+    if (!brandStoreSelectedBrandId || !dateRange.from || !dateRange.to) return
 
-    async function fetchData() {
-      setIsLoading(true)
-      try {
-        const [shopifyResponse, metaResponse] = await Promise.all([
-          fetch(`/api/shopify/sales?brandId=${selectedBrandId}`),
-          fetch(`/api/meta/analytics?brandId=${selectedBrandId}`)
-        ])
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/metrics?` + new URLSearchParams({
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString(),
+        brandId: brandStoreSelectedBrandId
+      }))
 
-        const shopifyData = await shopifyResponse.json()
-        const metaData = await metaResponse.json()
-
-        const calculatedMetrics = calculateMetrics(
-          shopifyData.orders || [],
-          shopifyData.products || [],
-          shopifyData.refunds || [],
-          dateRange?.from && dateRange?.to ? { from: dateRange.from, to: dateRange.to } : undefined,
-          metaData // Pass Meta data to metrics calculation
-        )
-
-        setMetrics(calculatedMetrics)
-      } catch (error) {
-        console.error('Error:', error)
-        setMetrics(defaultMetrics)
-      } finally {
-        setIsLoading(false)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
+
+      const data = await response.json()
+      console.log('Fetched metrics:', data)
+      setMetrics(data)
+    } catch (error) {
+      console.error('Error fetching metrics:', error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
-    fetchData()
-  }, [selectedBrandId, dateRange])
-
-  // Fetch metrics when date range changes
   useEffect(() => {
-    fetchMetrics(dateRange)
-  }, [dateRange, fetchMetrics])
+    fetchMetrics()
+  }, [brandStoreSelectedBrandId, dateRange])
 
-  const hasShopify = connections.some(c => c.platform_type === 'shopify')
-  const hasMeta = connections.some(c => c.platform_type === 'meta')
-
-  // Before mapping over data, ensure it's safe
-  const safeMetrics = metrics || {
-    totalSales: 0,
-    salesGrowth: 0,
-    // ... all default values
+  const platforms = {
+    shopify: connectionStoreConnections.some(c => c.platform_type === 'shopify'),
+    meta: connectionStoreConnections.some(c => c.platform_type === 'meta')
   }
 
   return (
@@ -242,7 +241,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
           <select
-            value={selectedBrandId || ''}
+            value={brandStoreSelectedBrandId || ''}
             onChange={(e) => setSelectedBrandId(e.target.value || null)}
             className="bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
           >
@@ -255,12 +254,12 @@ export default function DashboardPage() {
           </select>
         </div>
         <DateRangePicker 
-          date={dateRange}
-          onDateChange={setDateRange}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
         />
       </div>
-      {selectedBrandId ? (
-        <WidgetManager dateRange={dateRange} brandId={selectedBrandId} />
+      {brandStoreSelectedBrandId ? (
+        <WidgetManager dateRange={dateRange} brandId={brandStoreSelectedBrandId} />
       ) : (
         <div className="text-center text-gray-400 py-12">
           Select a brand to view metrics

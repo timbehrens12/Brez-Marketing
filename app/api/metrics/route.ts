@@ -7,13 +7,16 @@ export async function GET(request: Request) {
   const to = searchParams.get('to')
   const brandId = searchParams.get('brandId')
 
+  console.log('Received request with params:', { from, to, brandId })
+
   if (!from || !to || !brandId) {
+    console.log('Missing required parameters')
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
 
   try {
     // Get active Shopify connection for this brand
-    const { data: connection } = await supabase
+    const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('platform_type', 'shopify')
@@ -21,7 +24,10 @@ export async function GET(request: Request) {
       .eq('status', 'active')
       .single()
 
+    console.log('Found connection:', connection, 'Error:', connectionError)
+
     if (!connection?.access_token || !connection.shop) {
+      console.log('No active connection found')
       return NextResponse.json({ 
         totalSales: 0,
         ordersPlaced: 0,

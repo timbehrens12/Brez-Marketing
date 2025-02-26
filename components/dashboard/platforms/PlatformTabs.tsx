@@ -26,28 +26,41 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
   )
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
 
-  const fetchShopifyData = async (connection: PlatformConnection, dateRange: DateRange, brandId: string) => {
-    if (!dateRange.from || !dateRange.to) return null;
-    
-    const response = await fetch(`/api/shopify/metrics?` + new URLSearchParams({
-      shop: connection.shop!,
-      from: dateRange.from.toISOString(),
-      to: dateRange.to.toISOString(),
-      brandId: brandId
-    }))
-    
-    return response.json()
-  }
-
   useEffect(() => {
-    if (selectedConnection?.platform_type === 'shopify' && dateRange?.from && dateRange?.to) {
-      fetchShopifyData(selectedConnection, dateRange, brandId)
-        .then(data => {
-          console.log('Shopify API Response:', data)
-          setMetrics(data)
+    const fetchData = async () => {
+      if (!selectedConnection?.platform_type === 'shopify' || !dateRange?.from || !dateRange?.to || !brandId) {
+        console.log('Missing required data:', { connection: selectedConnection, dateRange, brandId })
+        return
+      }
+
+      try {
+        console.log('Fetching Shopify data with:', {
+          shop: selectedConnection.shop,
+          from: dateRange.from,
+          to: dateRange.to,
+          brandId
         })
-        .catch(err => console.error('Fetch error:', err))
+
+        const response = await fetch(`/api/shopify/metrics?` + new URLSearchParams({
+          shop: selectedConnection.shop!,
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString(),
+          brandId
+        }))
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('Shopify API Response:', data)
+        setMetrics(data)
+      } catch (err) {
+        console.error('Fetch error:', err)
+      }
     }
+
+    fetchData()
   }, [selectedConnection, dateRange, brandId])
 
   return (
