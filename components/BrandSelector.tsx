@@ -3,6 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useUser } from "@clerk/nextjs"
+import { Building2 } from "lucide-react"
 
 interface BrandSelectorProps {
   onSelect: (brandId: string) => void
@@ -17,17 +18,44 @@ export default function BrandSelector({ onSelect }: BrandSelectorProps) {
 
   return (
     <Select onValueChange={onSelect}>
-      <SelectTrigger className="w-full bg-[#222222] border-[#333333] text-white">
-        <SelectValue placeholder="Select a brand" />
+      <SelectTrigger 
+        className="w-[200px] bg-[#1A1A1A] border-[#333333] text-white hover:bg-[#222222] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-gray-400" />
+          <SelectValue placeholder="Select brand" />
+        </div>
       </SelectTrigger>
-      <SelectContent className="bg-[#111111] border-[#222222]">
+      <SelectContent 
+        className="bg-[#1A1A1A] border-[#333333] min-w-[200px]"
+      >
         {userBrands.map((brand: any) => (
           <SelectItem 
             key={brand.id} 
             value={brand.id}
-            className="text-white hover:bg-[#222222] focus:bg-[#222222]"
+            className="text-white hover:bg-[#2A2A2A] focus:bg-[#2A2A2A] cursor-pointer py-2 px-3"
           >
-            {brand.name}
+            <div className="flex items-center gap-3">
+              {brand.image_url ? (
+                <img 
+                  src={brand.image_url} 
+                  alt={brand.name}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-[#2563eb] flex items-center justify-center">
+                  <span className="text-xs font-medium text-white">
+                    {brand.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="font-medium">{brand.name}</span>
+                {brand.description && (
+                  <span className="text-xs text-gray-400">{brand.description}</span>
+                )}
+              </div>
+            </div>
           </SelectItem>
         ))}
       </SelectContent>
