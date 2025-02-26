@@ -9,10 +9,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { Metrics } from "@/types/metrics"
 
 interface WidgetManagerProps {
-  dateRange: {
-    from: Date;
-    to: Date;
-  };
+  dateRange: DateRange;
   brandId: string;
   metrics: Metrics;
   isLoading: boolean;

@@ -2,13 +2,20 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { format, parseISO, differenceInDays, isSameDay, startOfDay, endOfDay } from "date-fns"
+import type { RevenueData } from "@/types/metrics"
+import type { DateRange } from "react-day-picker"
 
 interface RevenueByDayProps {
   data: RevenueData[];
-  dateRange: DateRange | undefined;  // Make dateRange optional
+  dateRange?: DateRange;  // Make dateRange optional
 }
 
 export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
+  // Add null checks when using dateRange
+  const daysDiff = dateRange?.from && dateRange?.to 
+    ? differenceInDays(dateRange.to, dateRange.from)
+    : 30; // Default to 30 days
+
   // Ensure data is properly formatted with actual values
   const formattedData = data.map(item => ({
     date: format(parseISO(item.date), 'yyyy-MM-dd'),
@@ -26,7 +33,9 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   // Format X-axis ticks based on date range
   const formatXAxis = (dateStr: string) => {
     const date = parseISO(dateStr)
-    const daysDiff = differenceInDays(dateRange?.to, dateRange?.from)
+    const daysDiff = dateRange?.from && dateRange?.to 
+      ? differenceInDays(dateRange.to, dateRange.from)
+      : 30 // Default to 30 days
     
     if (daysDiff <= 1) {
       return format(date, 'ha') // 1PM, 2PM, etc.

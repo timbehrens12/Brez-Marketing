@@ -31,6 +31,11 @@ interface WidgetData {
   meta?: any;
 }
 
+interface DefinedDateRange {
+  from: Date;
+  to: Date;
+}
+
 const initialMetrics: Metrics = {
   totalSales: 0,
   ordersPlaced: 0,
@@ -69,13 +74,17 @@ const initialMetrics: Metrics = {
   cprGrowth: 0
 }
 
+const getDefaultDateRange = () => {
+  const to = new Date()
+  const from = new Date()
+  from.setDate(from.getDate() - 30) // Last 30 days
+  return { from, to }
+}
+
 export default function DashboardPage() {
   const { userId } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
-  const [dateRange, setDateRange] = useState({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  })
+  const [dateRange, setDateRange] = useState<DefinedDateRange>(getDefaultDateRange())
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
@@ -305,13 +314,13 @@ export default function DashboardPage() {
         </div>
         <DateRangePicker 
           dateRange={dateRange}
-          setDateRange={setDateRange}
+          setDateRange={(range) => setDateRange(range as DefinedDateRange)}
         />
       </div>
 
       {selectedBrandId ? (
         <WidgetManager 
-          dateRange={dateRange} 
+          dateRange={dateRange?.from && dateRange?.to ? dateRange : getDefaultDateRange()}
           brandId={selectedBrandId}
           metrics={metrics}
           isLoading={isLoading}
@@ -327,10 +336,7 @@ export default function DashboardPage() {
       {shopifyConnection && selectedBrandId && (
         <ShopifyTab
           connection={shopifyConnection}
-          dateRange={{
-            from: dateRange.from || addDays(new Date(), -30),
-            to: dateRange.to || new Date()
-          }}
+          dateRange={dateRange?.from && dateRange?.to ? dateRange : getDefaultDateRange()}
           brandId={selectedBrandId}
         />
       )}

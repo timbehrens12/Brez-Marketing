@@ -13,17 +13,24 @@ import {
 } from "@/components/ui/popover"
 import { format } from "date-fns"
 
+interface DefinedDateRange {
+  from: Date;
+  to: Date;
+}
+
 interface DateRangePickerProps {
-  value?: DateRange;
-  onChange: (range: DateRange | undefined) => void;
+  dateRange: DefinedDateRange;
+  setDateRange: (date: DateRange | undefined) => void;
   className?: string;
 }
 
-export function DateRangePicker({
-  value,
-  onChange,
-  className,
-}: DateRangePickerProps) {
+export function DateRangePicker({ dateRange, setDateRange, className }: DateRangePickerProps) {
+  const handleSelect = (range: DateRange | undefined) => {
+    if (range?.from && range?.to) {
+      setDateRange(range);
+    }
+  };
+
   return (
     <div className={cn("grid gap-2", className)}>
       <Popover>
@@ -33,18 +40,18 @@ export function DateRangePicker({
             variant={"outline"}
             className={cn(
               "w-[300px] justify-start text-left font-normal",
-              !value && "text-muted-foreground"
+              !dateRange && "text-muted-foreground"
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {value?.from ? (
-              value.to ? (
+            {dateRange?.from ? (
+              dateRange.to ? (
                 <>
-                  {format(value.from, "LLL dd, y")} -{" "}
-                  {format(value.to, "LLL dd, y")}
+                  {format(dateRange.from, "LLL dd, y")} -{" "}
+                  {format(dateRange.to, "LLL dd, y")}
                 </>
               ) : (
-                format(value.from, "LLL dd, y")
+                format(dateRange.from, "LLL dd, y")
               )
             ) : (
               <span>Pick a date</span>
@@ -55,9 +62,9 @@ export function DateRangePicker({
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={value?.from}
-            selected={value}
-            onSelect={onChange}
+            defaultMonth={dateRange.from}
+            selected={dateRange}
+            onSelect={handleSelect}
             numberOfMonths={2}
             className="bg-[#2A2A2A]"
           />

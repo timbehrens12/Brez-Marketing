@@ -58,21 +58,24 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
       try {
         setIsLoading(true)
         const now = new Date()
-        const to = new Date(Math.min(dateRange.to.getTime(), now.getTime()))
-        const from = new Date(Math.min(dateRange.from.getTime(), to.getTime()))
+        const to = dateRange.to > now ? now : dateRange.to
+        const from = dateRange.from > now ? new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)) : dateRange.from
 
-        const url = `/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${from.toISOString()}&to=${to.toISOString()}`
-        console.log('Fetching from:', url)
+        const url = new URL('/api/shopify/metrics', window.location.origin)
+        url.searchParams.append('brandId', brandId)
+        url.searchParams.append('connectionId', connection.id)
+        url.searchParams.append('from', from.toISOString())
+        url.searchParams.append('to', to.toISOString())
+
+        console.log('Fetching from:', url.toString())
         
         const response = await fetch(url)
         const data = await response.json()
         
         if (!response.ok) {
-          console.error('API Error Details:', data)
           throw new Error(data.message || 'Failed to fetch metrics')
         }
 
-        console.log('Fetched metrics:', data)
         setMetrics(data)
       } catch (error) {
         console.error('Error fetching Shopify data:', error)
