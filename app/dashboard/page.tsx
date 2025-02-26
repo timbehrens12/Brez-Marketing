@@ -39,7 +39,11 @@ const initialMetrics: Metrics = {
   salesGrowth: 0,
   ordersGrowth: 0,
   unitsGrowth: 0,
-  aovGrowth: 0
+  aovGrowth: 0,
+  customerRetentionRate: 0,
+  retentionGrowth: 0,
+  returnRate: 0,
+  returnGrowth: 0,
 }
 
 export default function DashboardPage() {
@@ -52,39 +56,42 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
-  const [platforms, setPlatforms] = useState({ shopify: false, meta: false })
+  const [isLoading, setIsLoading] = useState(true)
+  const [activePlatforms, setPlatformStatus] = useState({
+    shopify: false,
+    meta: false
+  })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("shopify")
-  const [isLoading, setIsLoading] = useState(true)
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
 
   const { selectedBrandId: brandStoreSelectedBrandId } = useBrandStore()
   const { connections: connectionStoreConnections } = useConnectionStore()
 
-  // Load initial connections when component mounts with selectedBrandId
+  // Load initial connections when component mounts
   useEffect(() => {
     async function loadConnections() {
-      if (!brandStoreSelectedBrandId) {
+      if (!selectedBrandId) {
         console.log('No brand selected yet')
         return
       }
       
-      console.log('Loading connections for brand:', brandStoreSelectedBrandId)
+      console.log('Loading connections for brand:', selectedBrandId)
       try {
         const { data, error } = await supabase
           .from('platform_connections')
           .select('*')
-          .eq('brand_id', brandStoreSelectedBrandId)
+          .eq('brand_id', selectedBrandId)
 
         if (error) throw error
 
         console.log('Loaded connections:', data)
-        if (data && data.length > 0) {
+        if (data) {
           setConnections(data)
-          setPlatforms({
-            shopify: data.some(c => c.platform_type === 'shopify' && c.status === 'active'),
-            meta: data.some(c => c.platform_type === 'meta' && c.status === 'active')
+          setPlatformStatus({
+            shopify: data.some((c: PlatformConnection) => c.platform_type === 'shopify' && c.status === 'active'),
+            meta: data.some((c: PlatformConnection) => c.platform_type === 'meta' && c.status === 'active')
           })
         }
       } catch (error) {
@@ -93,16 +100,16 @@ export default function DashboardPage() {
     }
 
     loadConnections()
-  }, [brandStoreSelectedBrandId, supabase])
+  }, [selectedBrandId])
 
   // Debug logging
   useEffect(() => {
     console.log('Current state:', {
-      brandStoreSelectedBrandId,
+      selectedBrandId,
       connections,
-      platforms
+      activePlatforms
     })
-  }, [brandStoreSelectedBrandId, connections, platforms])
+  }, [selectedBrandId, connections, activePlatforms])
 
   useEffect(() => {
     const handleBrandSelected = async (event: CustomEvent) => {
@@ -130,7 +137,7 @@ export default function DashboardPage() {
         c.platform_type === 'meta' && c.status === 'active'
       )
 
-      setPlatforms({
+      setPlatformStatus({
         shopify: hasShopify,
         meta: hasMeta
       })
@@ -153,7 +160,7 @@ export default function DashboardPage() {
   // Load widget data when connections change
   useEffect(() => {
     async function loadWidgetData() {
-      if (!brandStoreSelectedBrandId || !connections.length) return
+      if (!selectedBrandId || !connections.length) return
 
       const shopifyConnection = connections.find(c => 
         c.platform_type === 'shopify' && c.status === 'active'
@@ -203,19 +210,19 @@ export default function DashboardPage() {
     }
 
     loadWidgetData()
-  }, [brandStoreSelectedBrandId, connections, supabase])
+  }, [selectedBrandId, connections, supabase])
 
   // Fetch metrics when date range or brand changes
   useEffect(() => {
     async function fetchMetrics() {
-      if (!brandStoreSelectedBrandId || !dateRange.from || !dateRange.to) return
+      if (!selectedBrandId || !dateRange.from || !dateRange.to) return
 
       setIsLoading(true)
       try {
         const response = await fetch(`/api/metrics?` + new URLSearchParams({
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString(),
-          brandId: brandStoreSelectedBrandId
+          brandId: selectedBrandId
         }))
 
         if (!response.ok) {
@@ -233,7 +240,7 @@ export default function DashboardPage() {
     }
 
     fetchMetrics()
-  }, [brandStoreSelectedBrandId, dateRange])
+  }, [selectedBrandId, dateRange])
 
   const platforms = {
     shopify: connectionStoreConnections.some(c => c.platform_type === 'shopify'),
@@ -246,7 +253,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
           <select
-            value={brandStoreSelectedBrandId || ''}
+            value={selectedBrandId || ''}
             onChange={(e) => setSelectedBrandId(e.target.value || null)}
             className="bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
           >
@@ -263,13 +270,14 @@ export default function DashboardPage() {
           setDateRange={setDateRange}
         />
       </div>
-      {brandStoreSelectedBrandId ? (
+
+      {selectedBrandId ? (
         <WidgetManager 
           dateRange={dateRange} 
-          brandId={brandStoreSelectedBrandId}
+          brandId={selectedBrandId}
           metrics={metrics}
           isLoading={isLoading}
-          platforms={platforms}
+          platforms={activePlatforms}
           connections={connections}
         />
       ) : (

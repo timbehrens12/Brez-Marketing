@@ -28,7 +28,7 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!selectedConnection?.platform_type === 'shopify' || !dateRange?.from || !dateRange?.to || !brandId) {
+      if (!selectedConnection || selectedConnection.platform_type !== 'shopify' || !dateRange?.from || !dateRange?.to || !brandId) {
         console.log('Missing required data:', { connection: selectedConnection, dateRange, brandId })
         return
       }
