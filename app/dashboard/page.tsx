@@ -248,8 +248,8 @@ export default function DashboardPage() {
   }, [selectedBrandId, dateRange])
 
   const platforms = {
-    shopify: connectionStoreConnections.some(c => c.platform_type === 'shopify'),
-    meta: connectionStoreConnections.some(c => c.platform_type === 'meta')
+    shopify: connectionStoreConnections.some((c: PlatformConnection) => c.platform_type === 'shopify'),
+    meta: connectionStoreConnections.some((c: PlatformConnection) => c.platform_type === 'meta')
   }
 
   return (
@@ -282,8 +282,8 @@ export default function DashboardPage() {
           brandId={selectedBrandId}
           metrics={metrics}
           isLoading={isLoading}
-          platforms={activePlatforms}
-          connections={connections}
+          platformStatus={activePlatforms}
+          existingConnections={connections}
         />
       ) : (
         <div className="text-center text-gray-400 py-12">

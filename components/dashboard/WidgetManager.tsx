@@ -6,15 +6,33 @@ import { DateRange } from "react-day-picker"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { PlatformConnection } from "@/types/platformConnection"
+import { Metrics } from "@/types/metrics"
 
 interface WidgetManagerProps {
-  dateRange?: DateRange
-  brandId: string
+  dateRange: {
+    from: Date;
+    to: Date;
+  };
+  brandId: string;
+  metrics: Metrics;
+  isLoading: boolean;
+  platformStatus: {
+    shopify: boolean;
+    meta: boolean;
+  };
+  existingConnections: PlatformConnection[];
 }
 
-export function WidgetManager({ dateRange, brandId }: WidgetManagerProps) {
-  const { metrics, isLoading } = useMetrics()
-  const [connections, setConnections] = useState<PlatformConnection[]>([])
+export function WidgetManager({ 
+  dateRange, 
+  brandId, 
+  metrics, 
+  isLoading, 
+  platformStatus,
+  existingConnections 
+}: WidgetManagerProps) {
+  const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
+  const [localConnections, setLocalConnections] = useState<PlatformConnection[]>(existingConnections)
 
   // Load platform connections for this brand
   useEffect(() => {
@@ -29,25 +47,25 @@ export function WidgetManager({ dateRange, brandId }: WidgetManagerProps) {
         return
       }
 
-      setConnections(data || [])
+      setLocalConnections(data || [])
     }
 
     loadConnections()
   }, [brandId])
 
-  const platforms = {
-    shopify: connections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
-    meta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
+  const localPlatformStatus = {
+    shopify: localConnections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
+    meta: localConnections.some(c => c.platform_type === 'meta' && c.status === 'active')
   }
 
   return (
     <PlatformTabs 
-      platforms={platforms}
+      platforms={localPlatformStatus}
       dateRange={dateRange}
       metrics={metrics}
       isLoading={isLoading}
       brandId={brandId}
-      connections={connections}
+      connections={localConnections}
     />
   )
 } 

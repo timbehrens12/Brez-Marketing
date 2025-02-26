@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 
-interface CustomerSegmentsProps {
+interface CustomerSegmentsWidgetProps {
   segments: {
-    newCustomers: number
-    returningCustomers: number
-  }
+    newCustomers: number;
+    returningCustomers: number;
+  };
 }
 
 const COLORS = {
@@ -15,7 +15,7 @@ const COLORS = {
   returningCustomers: "#22c55e",
 }
 
-export function CustomerSegmentsWidget({ segments = { newCustomers: 0, returningCustomers: 0 } }) {
+export function CustomerSegmentsWidget({ segments }: CustomerSegmentsWidgetProps) {
   const data = [
     {
       name: "New Customers",

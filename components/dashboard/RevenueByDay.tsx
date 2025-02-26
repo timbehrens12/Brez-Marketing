@@ -7,18 +7,15 @@ import { formatCurrency } from "@/lib/utils"
 import { useMemo } from 'react'
 import { DateRange } from "react-day-picker"
 
-interface DayData {
-  day: string
-  date: string
-  revenue: number | null
-}
-
 interface RevenueByDayProps {
-  data: DayData[]
-  dateRange?: DateRange
+  data: Array<{
+    date: string;
+    revenue: number;
+  }>;
+  dateRange?: DateRange;
 }
 
-export function RevenueByDay({ data = [], dateRange }: RevenueByDayProps) {
+export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   return (
     <Card className="col-span-4 bg-[#111111] border-[#222222]">
       <CardHeader>

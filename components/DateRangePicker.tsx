@@ -10,8 +10,11 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface DateRangePickerProps {
-  date: DateRange | undefined;
-  onDateChange: (newDateRange: DateRange | undefined) => void;
+  dateRange: {
+    from: Date;
+    to: Date;
+  };
+  setDateRange: (range: { from: Date; to: Date }) => void;
 }
 
 const presets = [
@@ -71,7 +74,7 @@ const presets = [
   },
 ]
 
-export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
+export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
@@ -102,13 +105,13 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
             className="w-[260px] justify-start text-left font-normal bg-[#111111] text-white border-[#222222] hover:bg-[#222222]"
           >
             <CalendarIcon className="mr-2 h-4 w-4 text-white" />
-            {date?.from ? (
-              date.to ? (
+            {dateRange?.from ? (
+              dateRange.to ? (
                 <>
-                  {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
                 </>
               ) : (
-                format(date.from, "LLL dd, y")
+                format(dateRange.from, "LLL dd, y")
               )
             ) : (
               <span>Pick a date range</span>
@@ -124,7 +127,7 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
                   variant="ghost"
                   className="w-full justify-start text-white hover:bg-[#222222]"
                   onClick={() => {
-                    onDateChange(preset.getDate())
+                    setDateRange(preset.getDate())
                     setIsOpen(false)
                   }}
                 >
@@ -135,9 +138,12 @@ export function DateRangePicker({ date, onDateChange }: DateRangePickerProps) {
             <Calendar
               initialFocus
               mode="range"
-              defaultMonth={date?.from}
-              selected={date}
-              onSelect={onDateChange}
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={(newDateRange) => {
+                setDateRange(newDateRange)
+                setIsOpen(false)
+              }}
               numberOfMonths={2}
               className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
             />

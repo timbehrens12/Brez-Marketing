@@ -89,14 +89,21 @@ export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection 
             <CardTitle className="text-white">Top Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <TopProducts products={hasData ? metrics.topProducts : []} />
+            <div className="text-gray-400">
+              No product data available
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Customer insights section */}
       <div className="grid grid-cols-2 gap-6">
-        <CustomerSegmentsWidget segments={metrics.customerSegments} />
+        <CustomerSegmentsWidget 
+          segments={{
+            newCustomers: metrics.customerSegments.find(s => s.name === 'new')?.value || 0,
+            returningCustomers: metrics.customerSegments.find(s => s.name === 'returning')?.value || 0
+          }} 
+        />
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
             <CardTitle className="text-white">Customer Metrics</CardTitle>
