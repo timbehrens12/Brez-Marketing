@@ -39,7 +39,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <LineChart 
         data={filledData}
         margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
@@ -50,9 +50,10 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           stroke="#888888"
           tickFormatter={formatXAxis}
           tick={{ fill: '#888888' }}
-          interval="preserveEnd"
-          minTickGap={40}
-          padding={{ left: 10, right: 10 }}
+          interval={0} // Show all ticks
+          angle={-45} // Angle the labels
+          textAnchor="end" // Align the rotated text
+          height={60} // Make room for angled labels
         />
         <YAxis
           stroke="#888888"
@@ -66,17 +67,14 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           contentStyle={{ backgroundColor: '#222', border: '1px solid #333', borderRadius: '4px' }}
           labelStyle={{ color: '#888' }}
           formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
-          labelFormatter={(dateStr) => {
-            const date = parseISO(dateStr as string)
-            return format(date, 'MMMM d, yyyy')
-          }}
+          labelFormatter={(dateStr) => format(parseISO(dateStr as string), 'MMMM d, yyyy')}
         />
         <Line
           type="monotone"
           dataKey="revenue"
           stroke="#2563eb"
           strokeWidth={2}
-          dot={true}
+          dot={{ r: 3, fill: '#2563eb' }}
           activeDot={{ r: 6, fill: '#2563eb' }}
         />
       </LineChart>
