@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from "@/lib/supabase"
 import { useUser } from "@clerk/nextjs"
 import { PlatformConnection } from "@/types/platformConnection"
+import { toast } from "react-hot-toast"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -20,6 +21,7 @@ export default function SettingsPage() {
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
+  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     console.log('Current brands:', brands)
@@ -219,6 +221,28 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSync(connectionId: string) {
+    setIsSyncing(true)
+    try {
+      const response = await fetch('/api/shopify/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ connectionId })
+      })
+
+      if (!response.ok) throw new Error('Sync failed')
+      
+      const data = await response.json()
+      toast.success(`Successfully synced ${data.totalOrders} orders`)
+    } catch (error) {
+      toast.error('Failed to sync orders')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -398,6 +422,20 @@ export default function SettingsPage() {
                           </Button>
                         )}
                       </div>
+
+                      {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') && (
+                        <Button 
+                          variant="outline" 
+                          className="border-[#333] text-blue-400 hover:text-blue-300"
+                          onClick={() => handleSync(connections.find(c => 
+                            c.brand_id === brand.id && 
+                            c.platform_type === 'shopify'
+                          )?.id!)}
+                          disabled={isSyncing}
+                        >
+                          {isSyncing ? 'Syncing...' : 'Sync Data'}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

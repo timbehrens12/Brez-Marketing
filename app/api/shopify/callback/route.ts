@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const { access_token } = await tokenResponse.json()
 
     // Update connection in database
-    const { error } = await supabase
+    const { data: connection, error: updateError } = await supabase
       .from('platform_connections')
       .update({
         status: 'active',
@@ -42,8 +42,23 @@ export async function GET(request: Request) {
         }
       })
       .eq('id', connectionId)
+      .select()
+      .single()
 
-    if (error) throw error
+    if (updateError || !connection) throw new Error('Failed to update connection')
+
+    // Trigger initial sync
+    const syncResponse = await fetch(new URL('/api/shopify/sync', request.url).toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ connectionId: connection.id })
+    })
+
+    if (!syncResponse.ok) {
+      console.error('Failed to trigger initial sync')
+    }
 
     // Redirect back to settings page
     return NextResponse.redirect('https://brezmarketingdashboard.com/settings')

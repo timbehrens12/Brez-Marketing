@@ -26,6 +26,8 @@ interface ShopifyTabProps {
 export function ShopifyTab({ metrics, dateRange, isLoading, brandId, connection }: ShopifyTabProps) {
   const hasData = metrics && Object.keys(metrics).length > 0
 
+  console.log('ShopifyTab render with metrics:', metrics)
+
   return (
     <div className="space-y-6">
       {/* Main metrics grid */}

@@ -43,38 +43,29 @@ export async function GET(request: Request) {
       })
     }
 
+    console.log('Found connection:', connection)
+
     // Fetch orders from Supabase
-    const { data: orders, error } = await supabase
+    const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
-      .select(`
-        id,
-        created_at,
-        total_price,
-        customer_id,
-        line_items
-      `)
+      .select('*')
       .eq('connection_id', connection.id)
       .gte('created_at', from)
       .lte('created_at', to)
 
-    if (error) {
-      console.error('Supabase error:', error)
-      throw error
-    }
+    if (ordersError) throw ordersError
 
-    console.log(`Fetched ${orders?.length || 0} orders from Supabase`)
+    console.log(`Found ${orders?.length || 0} orders for date range`)
 
-    // Calculate metrics
-    const totalSales = (orders || []).reduce((sum, order) => sum + parseFloat(order.total_price), 0)
-    const uniqueCustomers = new Set((orders || []).map(order => order.customer_id)).size
-
+    // Calculate metrics from orders
     const metrics = {
-      totalSales,
+      totalSales: orders?.reduce((sum, order) => sum + parseFloat(order.total_price), 0) || 0,
       ordersPlaced: orders?.length || 0,
-      averageOrderValue: orders?.length ? totalSales / orders.length : 0,
-      unitsSold: (orders || []).reduce((sum, order) => 
+      averageOrderValue: orders?.length ? 
+        orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0) / orders.length : 0,
+      unitsSold: orders?.reduce((sum, order) => 
         sum + order.line_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-      ),
+      ) || 0,
       revenueByDay: Object.entries((orders || []).reduce((acc, order) => {
         const date = new Date(order.created_at).toISOString().split('T')[0]
         acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
@@ -82,18 +73,19 @@ export async function GET(request: Request) {
       }, {})).map(([date, revenue]) => ({
         date,
         revenue
-      })),
-      salesGrowth: 0, // TODO: Calculate growth
-      ordersGrowth: 0,
-      unitsGrowth: 0,
-      aovGrowth: 0,
+      })).sort((a, b) => a.date.localeCompare(b.date)),
       customerSegments: [
-        { name: 'new', value: uniqueCustomers },
-        { name: 'returning', value: (orders?.length || 0) - uniqueCustomers }
+        { 
+          name: 'new', 
+          value: new Set(orders?.map(o => o.customer_id) || []).size 
+        },
+        { 
+          name: 'returning', 
+          value: (orders?.length || 0) - new Set(orders?.map(o => o.customer_id) || []).size 
+        }
       ]
     }
 
-    console.log('Calculated metrics:', metrics)
     return NextResponse.json(metrics)
 
   } catch (error) {
