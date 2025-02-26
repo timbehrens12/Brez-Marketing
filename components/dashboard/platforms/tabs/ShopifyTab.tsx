@@ -43,26 +43,31 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
 
   useEffect(() => {
     async function fetchShopifyData() {
-      console.log('Connection state:', connection)
-      console.log('Brand ID:', brandId)
-      console.log('Date range:', dateRange)
+      console.log('Connection:', {
+        id: connection?.id,
+        status: connection?.status,
+        platform: connection?.platform
+      })
 
-      if (!connection) {
-        console.log('No connection found')
+      if (!connection?.id || !brandId || !dateRange?.from || !dateRange?.to) {
+        console.log('Missing required data:', { connection, brandId, dateRange })
+        setIsLoading(false)
         return
       }
 
       try {
         setIsLoading(true)
-        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange?.from?.toISOString()}&to=${dateRange?.to?.toISOString()}`)
+        const url = `/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`
+        console.log('Fetching from:', url)
+        
+        const response = await fetch(url)
+        const data = await response.json()
         
         if (!response.ok) {
-          const errorData = await response.json()
-          console.error('API Error:', errorData)
-          throw new Error(errorData.message || 'Failed to fetch metrics')
+          console.error('API Error Details:', data)
+          throw new Error(data.message || 'Failed to fetch metrics')
         }
-        
-        const data = await response.json()
+
         console.log('Fetched metrics:', data)
         setMetrics(data)
       } catch (error) {
@@ -73,9 +78,9 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     }
 
     fetchShopifyData()
-  }, [connection, brandId, dateRange])
+  }, [connection?.id, brandId, dateRange])
 
-  if (!connection) {
+  if (!connection?.id) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-[#1A1A1A] rounded-lg border border-[#333333]">
         <Store className="h-12 w-12 text-gray-400 mb-4" />
