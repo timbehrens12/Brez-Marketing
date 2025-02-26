@@ -46,7 +46,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
       console.log('Connection:', {
         id: connection?.id,
         status: connection?.status,
-        platform: connection?.platform
+        platform_type: connection?.platform_type
       })
 
       if (!connection?.id || !brandId || !dateRange?.from || !dateRange?.to) {
@@ -57,7 +57,11 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
 
       try {
         setIsLoading(true)
-        const url = `/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`
+        const now = new Date()
+        const to = new Date(Math.min(dateRange.to.getTime(), now.getTime()))
+        const from = new Date(Math.min(dateRange.from.getTime(), to.getTime()))
+
+        const url = `/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${from.toISOString()}&to=${to.toISOString()}`
         console.log('Fetching from:', url)
         
         const response = await fetch(url)
@@ -72,6 +76,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
         setMetrics(data)
       } catch (error) {
         console.error('Error fetching Shopify data:', error)
+        setMetrics(defaultMetrics)
       } finally {
         setIsLoading(false)
       }
