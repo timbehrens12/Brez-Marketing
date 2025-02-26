@@ -133,7 +133,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
         />
       </div>
 
-      {/* Charts section - make it symmetrical */}
+      {/* Charts section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
@@ -154,35 +154,6 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
             ) : (
               <div className="text-gray-400">No product data available</div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Customer insights section */}
-      <div className="grid grid-cols-2 gap-6">
-        <CustomerSegmentsWidget 
-          segments={{
-            newCustomers: metrics.customerSegments.find(s => s.name === 'new')?.value || 0,
-            returningCustomers: metrics.customerSegments.find(s => s.name === 'returning')?.value || 0
-          }} 
-        />
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader>
-            <CardTitle className="text-white">Customer Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <MetricCard
-                title="Customer Retention"
-                value={metrics.customerRetentionRate}
-                suffix="%"
-              />
-              <MetricCard
-                title="Conversion Rate"
-                value={metrics.conversionRate}
-                suffix="%"
-              />
-            </div>
           </CardContent>
         </Card>
       </div>
