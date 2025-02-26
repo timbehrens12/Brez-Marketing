@@ -37,7 +37,10 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     aovGrowth: 0,
     conversionRate: 0,
     conversionRateGrowth: 0,
-    customerSegments: [],
+    customerSegments: {
+      newCustomers: 0,
+      returningCustomers: 0
+    },
     customerRetentionRate: 0,
     retentionGrowth: 0,
     returnRate: 0,
@@ -171,7 +174,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
         />
         <MetricCard
           title="Active Customers"
-          value={metrics.customerSegments.newCustomers + metrics.customerSegments.returningCustomers}
+          value={metrics.customerSegments?.newCustomers + metrics.customerSegments?.returningCustomers || 0}
           change={0}
           icon={<Users className="h-4 w-4" />}
           format="number"
@@ -194,7 +197,12 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
             <CardTitle className="text-white">Customer Segments</CardTitle>
           </CardHeader>
           <CardContent>
-            <CustomerSegmentsWidget segments={metrics.customerSegments} />
+            <CustomerSegmentsWidget 
+              segments={[
+                { name: 'New Customers', value: metrics.customerSegments?.newCustomers || 0 },
+                { name: 'Returning Customers', value: metrics.customerSegments?.returningCustomers || 0 }
+              ]} 
+            />
           </CardContent>
         </Card>
       </div>
