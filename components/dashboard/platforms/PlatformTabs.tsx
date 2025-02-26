@@ -7,6 +7,7 @@ import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 interface PlatformTabsProps {
   platforms: {
@@ -41,27 +42,68 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
           brandId
         })
 
-        const response = await fetch(`/api/metrics?` + new URLSearchParams({
-          from: dateRange.from.toISOString(),
-          to: dateRange.to.toISOString(),
-          brandId,
-          platform: 'shopify'
-        }))
+        const { data: orders, error } = await supabase
+          .from('shopify_orders')
+          .select('*')
+          .eq('connection_id', selectedConnection.id)
+          .gte('created_at', dateRange.from.toISOString())
+          .lte('created_at', dateRange.to.toISOString())
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        if (error) {
+          throw new Error(`Supabase error: ${error.message}`)
         }
 
-        const data = await response.json()
-        console.log('Shopify API Response:', data)
-        setMetrics(data)
+        if (!orders || orders.length === 0) {
+          console.log('No orders found for the given date range')
+          setMetrics(initialMetrics)
+          return
+        }
+
+        // Transform orders into metrics format
+        const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
+        const uniqueCustomers = new Set(orders.map(order => order.customer_id)).size
+
+        const transformedMetrics: Metrics = {
+          totalSales,
+          ordersPlaced: orders.length,
+          averageOrderValue: orders.length > 0 ? totalSales / orders.length : 0,
+          unitsSold: orders.reduce((sum, order) => 
+            sum + order.line_items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0), 0
+          ),
+          revenueByDay: Object.entries(orders.reduce((acc, order) => {
+            const date = new Date(order.created_at).toISOString().split('T')[0]
+            acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
+            return acc
+          }, {} as Record<string, number>)).map(([date, revenue]) => ({
+            date,
+            revenue
+          })).sort((a, b) => a.date.localeCompare(b.date)),
+          salesGrowth: 0, // TODO: Calculate growth rates
+          ordersGrowth: 0,
+          unitsGrowth: 0,
+          aovGrowth: 0,
+          customerSegments: [
+            { name: 'new', value: uniqueCustomers },
+            { name: 'returning', value: orders.length - uniqueCustomers }
+          ],
+          customerRetentionRate: 0,
+          retentionGrowth: 0,
+          returnRate: 0,
+          returnGrowth: 0,
+          conversionRate: 0,
+          conversionRateGrowth: 0,
+          dailyData: []
+        }
+
+        console.log('Transformed metrics:', transformedMetrics)
+        setMetrics(transformedMetrics)
       } catch (err) {
         console.error('Fetch error:', err)
       }
     }
 
     fetchData()
-  }, [selectedConnection, dateRange, brandId])
+  }, [selectedConnection, dateRange, brandId, initialMetrics])
 
   return (
     <Tabs defaultValue="shopify" className="w-full">
