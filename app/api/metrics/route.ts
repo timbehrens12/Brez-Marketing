@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       .eq('status', 'active')
       .single()
 
-    if (!connection?.access_token || !connection.shop) {
+    if (!connection) {
       console.log('No active connection found')
       return NextResponse.json({
         totalSales: 0,
@@ -43,49 +43,53 @@ export async function GET(request: Request) {
       })
     }
 
-    // Fetch orders from Shopify API
-    const response = await fetch(
-      `https://${connection.shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${from}&created_at_max=${to}&fields=id,created_at,total_price,customer,line_items`, {
-        headers: {
-          'X-Shopify-Access-Token': connection.access_token
-        }
-      }
-    )
+    // Fetch orders from Supabase
+    const { data: orders, error } = await supabase
+      .from('shopify_orders')
+      .select(`
+        id,
+        created_at,
+        total_price,
+        customer_id,
+        line_items
+      `)
+      .eq('connection_id', connection.id)
+      .gte('created_at', from)
+      .lte('created_at', to)
 
-    if (!response.ok) {
-      console.error('Shopify API error:', await response.text())
-      throw new Error(`Shopify API error: ${response.statusText}`)
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
     }
 
-    const { orders = [] } = await response.json()
-    console.log(`Fetched ${orders.length} orders from Shopify`)
+    console.log(`Fetched ${orders?.length || 0} orders from Supabase`)
 
     // Calculate metrics
-    const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
-    const uniqueCustomers = new Set(orders.map(order => order.customer?.id)).size
+    const totalSales = (orders || []).reduce((sum, order) => sum + parseFloat(order.total_price), 0)
+    const uniqueCustomers = new Set((orders || []).map(order => order.customer_id)).size
 
     const metrics = {
       totalSales,
-      ordersPlaced: orders.length,
-      averageOrderValue: orders.length > 0 ? totalSales / orders.length : 0,
-      unitsSold: orders.reduce((sum, order) => 
+      ordersPlaced: orders?.length || 0,
+      averageOrderValue: orders?.length ? totalSales / orders.length : 0,
+      unitsSold: (orders || []).reduce((sum, order) => 
         sum + order.line_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
       ),
-      revenueByDay: Object.entries(orders.reduce((acc, order) => {
-        const date = order.created_at.split('T')[0]
+      revenueByDay: Object.entries((orders || []).reduce((acc, order) => {
+        const date = new Date(order.created_at).toISOString().split('T')[0]
         acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
         return acc
       }, {})).map(([date, revenue]) => ({
         date,
         revenue
       })),
-      salesGrowth: 0, // Calculate growth if needed
+      salesGrowth: 0, // TODO: Calculate growth
       ordersGrowth: 0,
       unitsGrowth: 0,
       aovGrowth: 0,
       customerSegments: [
         { name: 'new', value: uniqueCustomers },
-        { name: 'returning', value: orders.length - uniqueCustomers }
+        { name: 'returning', value: (orders?.length || 0) - uniqueCustomers }
       ]
     }
 
