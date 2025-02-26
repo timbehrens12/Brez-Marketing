@@ -42,20 +42,24 @@ export async function POST(request: Request) {
     while (hasMore) {
       try {
         const response = await fetch(
-          `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&page=${page}&status=any`,
+          `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&page=${page}&status=any&fields=id,created_at,total_price,customer,line_items`,
           {
             headers: {
-              'X-Shopify-Access-Token': connection.access_token
+              'X-Shopify-Access-Token': connection.access_token,
+              'Content-Type': 'application/json'
             }
           }
         )
 
         if (!response.ok) {
-          throw new Error(`Shopify API error: ${response.statusText}`)
+          const errorText = await response.text()
+          console.error('Shopify API error response:', errorText)
+          throw new Error(`Shopify API error: ${response.statusText} - ${errorText}`)
         }
 
-        const { orders } = await response.json()
-        
+        const data = await response.json()
+        const orders = data.orders
+
         if (!orders?.length) {
           hasMore = false
           continue

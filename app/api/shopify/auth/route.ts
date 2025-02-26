@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   console.log('Params:', { brandId, connectionId, shop })
 
-  if (!brandId || !connectionId || !shop) {
+  if (!shop || !brandId || !connectionId) {
     console.log('Missing parameters')
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
   }
@@ -20,7 +20,10 @@ export async function GET(request: Request) {
       'read_products',
       'read_orders',
       'read_customers',
-      'read_analytics'
+      'read_analytics',
+      'read_inventory',
+      'read_price_rules',
+      'read_discounts'
     ].join(',')
 
     // Make sure to use the full callback URL

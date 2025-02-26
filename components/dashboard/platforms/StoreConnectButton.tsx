@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "react-hot-toast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -30,6 +31,7 @@ export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButto
   const [storeUrl, setStoreUrl] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,6 +68,34 @@ export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButto
     } catch (error) {
       console.error("Error disconnecting store:", error)
       setError("Failed to disconnect store. Please try again.")
+    }
+  }
+
+  const handleSync = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/shopify/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ connectionId })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Sync error:', errorData)
+        throw new Error(errorData.error || 'Failed to sync')
+      }
+
+      const data = await response.json()
+      console.log('Sync successful:', data)
+      toast.success('Store synced successfully')
+    } catch (error) {
+      console.error('Sync failed:', error)
+      toast.error('Failed to sync store')
+    } finally {
+      setLoading(false)
     }
   }
 

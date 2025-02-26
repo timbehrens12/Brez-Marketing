@@ -7,6 +7,9 @@ export default authMiddleware({
     "/api/webhooks(.*)",
     "/api/auth/(.*)",
     "/privacy",
+    "/api/shopify/sync",
+    "/api/shopify/callback",
+    "/api/shopify/auth"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",
