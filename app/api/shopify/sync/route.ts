@@ -35,21 +35,23 @@ export async function POST(request: Request) {
       .eq('id', connectionId)
 
     // Start sync process
-    let page = 1
     let totalOrders = 0
-    let hasMore = true
+    let nextCursor = null
 
-    while (hasMore) {
+    do {
       try {
-        const response = await fetch(
-          `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&page=${page}&status=any&fields=id,created_at,total_price,customer,line_items`,
-          {
-            headers: {
-              'X-Shopify-Access-Token': connection.access_token,
-              'Content-Type': 'application/json'
-            }
+        // Build the URL with cursor-based pagination
+        let url = `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
+        if (nextCursor) {
+          url += `&page_info=${nextCursor}`
+        }
+
+        const response = await fetch(url, {
+          headers: {
+            'X-Shopify-Access-Token': connection.access_token,
+            'Content-Type': 'application/json'
           }
-        )
+        })
 
         if (!response.ok) {
           const errorText = await response.text()
@@ -57,12 +59,21 @@ export async function POST(request: Request) {
           throw new Error(`Shopify API error: ${response.statusText} - ${errorText}`)
         }
 
+        // Get the next page cursor from the Link header
+        const linkHeader = response.headers.get('Link')
+        nextCursor = null
+        if (linkHeader) {
+          const match = linkHeader.match(/<[^>]*page_info=([^>&"]*)[^>]*>; rel="next"/)
+          if (match) {
+            nextCursor = match[1]
+          }
+        }
+
         const data = await response.json()
         const orders = data.orders
 
         if (!orders?.length) {
-          hasMore = false
-          continue
+          break
         }
 
         // Format orders for database
@@ -86,7 +97,6 @@ export async function POST(request: Request) {
         if (insertError) throw insertError
 
         totalOrders += orders.length
-        page++
 
         // Respect API rate limits
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -94,7 +104,7 @@ export async function POST(request: Request) {
         console.error('Error during sync:', error)
         throw error
       }
-    }
+    } while (nextCursor)
 
     // Update sync status to completed
     await supabase
