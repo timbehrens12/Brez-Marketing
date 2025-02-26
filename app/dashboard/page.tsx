@@ -35,7 +35,11 @@ const initialMetrics: Metrics = {
   ordersPlaced: 0,
   averageOrderValue: 0,
   unitsSold: 0,
-  revenueByDay: []
+  revenueByDay: [],
+  salesGrowth: 0,
+  ordersGrowth: 0,
+  unitsGrowth: 0,
+  aovGrowth: 0
 }
 
 export default function DashboardPage() {
@@ -201,32 +205,33 @@ export default function DashboardPage() {
     loadWidgetData()
   }, [brandStoreSelectedBrandId, connections, supabase])
 
-  const fetchMetrics = async () => {
-    if (!brandStoreSelectedBrandId || !dateRange.from || !dateRange.to) return
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/metrics?` + new URLSearchParams({
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString(),
-        brandId: brandStoreSelectedBrandId
-      }))
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('Fetched metrics:', data)
-      setMetrics(data)
-    } catch (error) {
-      console.error('Error fetching metrics:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Fetch metrics when date range or brand changes
   useEffect(() => {
+    async function fetchMetrics() {
+      if (!brandStoreSelectedBrandId || !dateRange.from || !dateRange.to) return
+
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/metrics?` + new URLSearchParams({
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString(),
+          brandId: brandStoreSelectedBrandId
+        }))
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('Fetched metrics:', data)
+        setMetrics(data)
+      } catch (error) {
+        console.error('Error fetching metrics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     fetchMetrics()
   }, [brandStoreSelectedBrandId, dateRange])
 
@@ -259,7 +264,14 @@ export default function DashboardPage() {
         />
       </div>
       {brandStoreSelectedBrandId ? (
-        <WidgetManager dateRange={dateRange} brandId={brandStoreSelectedBrandId} />
+        <WidgetManager 
+          dateRange={dateRange} 
+          brandId={brandStoreSelectedBrandId}
+          metrics={metrics}
+          isLoading={isLoading}
+          platforms={platforms}
+          connections={connections}
+        />
       ) : (
         <div className="text-center text-gray-400 py-12">
           Select a brand to view metrics
