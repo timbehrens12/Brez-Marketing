@@ -17,6 +17,7 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import { StoreConnectButton } from "../StoreConnectButton"
+import { defaultMetrics } from "@/types/metrics"
 
 interface RevenueData {
   date: string;
@@ -38,78 +39,43 @@ interface ShopifyTabProps {
 
 export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const [metrics, setMetrics] = useState<Metrics>({
-    totalSales: 0,
-    salesGrowth: 0,
-    ordersPlaced: 0,
-    ordersGrowth: 0,
-    unitsSold: 0,
-    unitsGrowth: 0,
-    averageOrderValue: 0,
-    aovGrowth: 0,
-    conversionRate: 0,
-    conversionRateGrowth: 0,
-    customerSegments: {
-      newCustomers: 0,
-      returningCustomers: 0
-    },
-    customerRetentionRate: 0,
-    retentionGrowth: 0,
-    returnRate: 0,
-    returnGrowth: 0,
-    revenueByDay: [],
-    topProducts: [],
-    dailyData: [],
-    adSpend: 0,
-    adSpendGrowth: 0,
-    roas: 0,
-    roasGrowth: 0,
-    impressions: 0,
-    impressionGrowth: 0,
-    ctr: 0,
-    ctrGrowth: 0,
-    clicks: 0,
-    clickGrowth: 0,
-    conversions: 0,
-    conversionGrowth: 0,
-    costPerResult: 0,
-    cprGrowth: 0
-  })
+  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
 
   useEffect(() => {
     async function fetchShopifyData() {
-      if (!connection?.id || !brandId || !dateRange?.from || !dateRange?.to) return;
+      console.log('Connection state:', connection)
+      console.log('Brand ID:', brandId)
+      console.log('Date range:', dateRange)
+
+      if (!connection) {
+        console.log('No connection found')
+        return
+      }
 
       try {
-        setIsLoading(true);
-        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        setIsLoading(true)
+        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange?.from?.toISOString()}&to=${dateRange?.to?.toISOString()}`)
         
         if (!response.ok) {
-          const errorData = await response.json();
-          console.error('API Error:', errorData);
-          throw new Error(errorData.message || 'Failed to fetch metrics');
+          const errorData = await response.json()
+          console.error('API Error:', errorData)
+          throw new Error(errorData.message || 'Failed to fetch metrics')
         }
         
-        const data = await response.json();
-        console.log('Fetched metrics:', data);
-        setMetrics(prev => ({
-          ...prev,
-          ...data,
-          revenueByDay: data.revenueByDay || [],
-          topProducts: data.topProducts || [],
-          customerSegments: data.customerSegments || { newCustomers: 0, returningCustomers: 0 }
-        }));
+        const data = await response.json()
+        console.log('Fetched metrics:', data)
+        setMetrics(data)
       } catch (error) {
-        console.error('Error fetching Shopify data:', error);
+        console.error('Error fetching Shopify data:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    fetchShopifyData();
-  }, [connection, brandId, dateRange]);
+    fetchShopifyData()
+  }, [connection, brandId, dateRange])
 
-  if (!connection?.id) {
+  if (!connection) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-[#1A1A1A] rounded-lg border border-[#333333]">
         <Store className="h-12 w-12 text-gray-400 mb-4" />
