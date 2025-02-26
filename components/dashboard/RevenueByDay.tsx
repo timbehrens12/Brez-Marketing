@@ -15,12 +15,19 @@ interface RevenueByDayProps {
 }
 
 export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
-  // Fill missing dates and prepare data
-  const filledData = fillMissingDates(data, dateRange)
+  // Ensure data is properly formatted with actual values
+  const formattedData = data.map(item => ({
+    date: format(parseISO(item.date), 'yyyy-MM-dd'),
+    revenue: Number(item.revenue)
+  }))
 
-  // Calculate Y-axis domain based on actual data
+  // Fill in missing dates
+  const filledData = fillMissingDates(formattedData, dateRange)
+
+  // Calculate proper Y-axis domain
   const maxRevenue = Math.max(...filledData.map(d => d.revenue))
-  const yAxisDomain = [0, Math.ceil(maxRevenue * 1.1)] // Add 10% padding to top
+  const yAxisMax = Math.ceil(maxRevenue * 1.1)
+  const yAxisTicks = generateYAxisTicks(0, yAxisMax, 5) // Generate 5 evenly spaced ticks
 
   // Format X-axis ticks based on date range
   const formatXAxis = (dateStr: string) => {
@@ -42,7 +49,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
     <ResponsiveContainer width="100%" height={300}>
       <LineChart 
         data={filledData}
-        margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
+        margin={{ top: 20, right: 30, left: 60, bottom: 40 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
         <XAxis
@@ -50,22 +57,28 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           stroke="#888888"
           tickFormatter={formatXAxis}
           tick={{ fill: '#888888' }}
-          interval={0} // Show all ticks
-          angle={-45} // Angle the labels
-          textAnchor="end" // Align the rotated text
-          height={60} // Make room for angled labels
+          interval="preserveEnd"
+          minTickGap={30}
+          angle={-45}
+          textAnchor="end"
+          height={60}
         />
         <YAxis
           stroke="#888888"
           tickFormatter={(value) => `$${value.toLocaleString()}`}
           tick={{ fill: '#888888' }}
-          domain={yAxisDomain}
-          allowDecimals={false}
+          ticks={yAxisTicks}
+          domain={[0, yAxisMax]}
           width={80}
         />
         <Tooltip
-          contentStyle={{ backgroundColor: '#222', border: '1px solid #333', borderRadius: '4px' }}
-          labelStyle={{ color: '#888' }}
+          contentStyle={{ 
+            backgroundColor: '#222', 
+            border: '1px solid #333',
+            borderRadius: '4px',
+            padding: '8px'
+          }}
+          labelStyle={{ color: '#888', marginBottom: '4px' }}
           formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
           labelFormatter={(dateStr) => format(parseISO(dateStr as string), 'MMMM d, yyyy')}
         />
@@ -74,7 +87,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           dataKey="revenue"
           stroke="#2563eb"
           strokeWidth={2}
-          dot={{ r: 3, fill: '#2563eb' }}
+          dot={{ r: 3, fill: '#2563eb', strokeWidth: 0 }}
           activeDot={{ r: 6, fill: '#2563eb' }}
         />
       </LineChart>
@@ -102,5 +115,11 @@ function fillMissingDates(data: any[], dateRange: { from: Date; to: Date }) {
   }
   
   return filledData
+}
+
+// Helper function to generate nice Y-axis ticks
+function generateYAxisTicks(min: number, max: number, count: number) {
+  const step = (max - min) / (count - 1)
+  return Array.from({ length: count }, (_, i) => Math.round(min + step * i))
 }
 

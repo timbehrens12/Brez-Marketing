@@ -9,13 +9,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, ShoppingCart } from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, ShoppingCart, Store } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
 import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
+import { StoreConnectButton } from "@/components/ui/store-connect-button"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -62,48 +63,36 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     cprGrowth: 0
   })
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = useSupabase()
 
   useEffect(() => {
-    async function fetchMetrics() {
-      if (!connection?.id || !dateRange || !brandId) {
-        console.log('Missing required data:', { connection, dateRange, brandId })
-        return
-      }
+    async function fetchShopifyData() {
+      if (!connection || !brandId) return
 
       try {
-        setIsLoading(true)
-        
-        // Fetch orders for the date range
-        const { data: orders, error } = await supabase
-          .from('shopify_orders')
-          .select('*')
-          .eq('connection_id', connection.id)
-          .gte('created_at', dateRange.from.toISOString())
-          .lte('created_at', dateRange.to.toISOString())
-
-        if (error) {
-          console.error('Error fetching orders:', error)
-          return
-        }
-
-        // Calculate metrics from orders
-        const calculatedMetrics = calculateMetrics(orders || [])
-        console.log('Calculated metrics:', calculatedMetrics)
-        
-        setMetrics(calculatedMetrics)
+        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        const data = await response.json()
+        setMetrics(data)
       } catch (error) {
-        console.error('Error fetching metrics:', error)
+        console.error('Error fetching Shopify data:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchMetrics()
-  }, [connection?.id, dateRange?.from, dateRange?.to, brandId, supabase])
+    fetchShopifyData()
+  }, [connection, brandId, dateRange])
 
   if (!connection) {
-    return <div>No Shopify connection found</div>
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-[#1A1A1A] rounded-lg border border-[#333333]">
+        <Store className="h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-white mb-2">Connect your Shopify store</h3>
+        <p className="text-gray-400 text-sm mb-4 text-center max-w-md">
+          Connect your Shopify store to see your sales data, orders, and customer insights.
+        </p>
+        <StoreConnectButton brandId={brandId} />
+      </div>
+    )
   }
 
   if (isLoading) {
