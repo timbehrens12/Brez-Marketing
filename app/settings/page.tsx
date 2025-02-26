@@ -42,7 +42,8 @@ export default function SettingsPage() {
         return
       }
 
-      setConnections(data || [])
+      const typedData = data as PlatformConnection[] | null
+      setConnections(typedData || [])
     }
 
     loadConnections()

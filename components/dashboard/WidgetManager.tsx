@@ -47,7 +47,8 @@ export function WidgetManager({
         return
       }
 
-      setLocalConnections(data || [])
+      const typedData = data as PlatformConnection[] | null
+      setLocalConnections(typedData || [])
     }
 
     loadConnections()

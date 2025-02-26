@@ -21,6 +21,17 @@ interface PlatformTabsProps {
   connections: PlatformConnection[]
 }
 
+// Add type for Supabase order
+interface ShopifyOrder {
+  id: string;
+  created_at: string;
+  total_price: string;
+  customer_id: string;
+  line_items: Array<{
+    quantity: number;
+  }>;
+}
+
 export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, isLoading, brandId, connections }: PlatformTabsProps) {
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | undefined>(
     connections.find(c => c.platform_type === 'shopify')
@@ -59,24 +70,32 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
           return
         }
 
+        // Safe type assertion with runtime check
+        const typedOrders = (orders || []).map(order => {
+          if (!order.id || !order.created_at || !order.total_price || !order.customer_id || !Array.isArray(order.line_items)) {
+            throw new Error('Invalid order data structure')
+          }
+          return order as ShopifyOrder
+        })
+
         // Transform orders into metrics format
-        const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
-        const uniqueCustomers = new Set(orders.map(order => order.customer_id)).size
+        const totalSales = typedOrders.reduce((sum, order) => sum + parseFloat(order.total_price), 0)
+        const uniqueCustomers = new Set(typedOrders.map(order => order.customer_id)).size
 
         const transformedMetrics: Metrics = {
           totalSales,
-          ordersPlaced: orders.length,
-          averageOrderValue: orders.length > 0 ? totalSales / orders.length : 0,
-          unitsSold: orders.reduce((sum, order) => 
-            sum + order.line_items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0), 0
+          ordersPlaced: typedOrders.length,
+          averageOrderValue: typedOrders.length > 0 ? totalSales / typedOrders.length : 0,
+          unitsSold: typedOrders.reduce((sum, order) => 
+            sum + order.line_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
           ),
-          revenueByDay: Object.entries(orders.reduce((acc, order) => {
+          revenueByDay: Object.entries(typedOrders.reduce((acc: Record<string, number>, order) => {
             const date = new Date(order.created_at).toISOString().split('T')[0]
             acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
             return acc
-          }, {} as Record<string, number>)).map(([date, revenue]) => ({
+          }, {})).map(([date, revenue]) => ({
             date,
-            revenue
+            revenue: revenue as number
           })).sort((a, b) => a.date.localeCompare(b.date)),
           salesGrowth: 0, // TODO: Calculate growth rates
           ordersGrowth: 0,
@@ -84,7 +103,7 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
           aovGrowth: 0,
           customerSegments: [
             { name: 'new', value: uniqueCustomers },
-            { name: 'returning', value: orders.length - uniqueCustomers }
+            { name: 'returning', value: typedOrders.length - uniqueCustomers }
           ],
           customerRetentionRate: 0,
           retentionGrowth: 0,

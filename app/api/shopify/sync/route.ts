@@ -2,18 +2,24 @@ import { supabase } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const { connectionId } = await request.json()
-
   try {
-    // Get connection details
-    const { data: connection } = await supabase
+    const { connectionId } = await request.json()
+    console.log('Starting sync for connection:', connectionId)
+
+    // Get connection details with error handling
+    const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('id', connectionId)
       .single()
 
+    if (connectionError) {
+      console.error('Connection error:', connectionError)
+      throw new Error('Failed to get connection')
+    }
+
     if (!connection?.access_token || !connection.shop) {
-      throw new Error('Invalid connection')
+      throw new Error('Invalid connection: missing access token or shop')
     }
 
     console.log('Starting sync for shop:', connection.shop)

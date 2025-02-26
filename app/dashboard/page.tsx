@@ -92,13 +92,12 @@ export default function DashboardPage() {
         if (error) throw error
 
         console.log('Loaded connections:', data)
-        if (data) {
-          setConnections(data)
-          setPlatformStatus({
-            shopify: data.some((c: PlatformConnection) => c.platform_type === 'shopify' && c.status === 'active'),
-            meta: data.some((c: PlatformConnection) => c.platform_type === 'meta' && c.status === 'active')
-          })
-        }
+        const typedData = data as PlatformConnection[] | null
+        setConnections(typedData || [])
+        setPlatformStatus({
+          shopify: (typedData || []).some(c => c.platform_type === 'shopify' && c.status === 'active'),
+          meta: (typedData || []).some(c => c.platform_type === 'meta' && c.status === 'active')
+        })
       } catch (error) {
         console.error('Error loading connections:', error)
       }
