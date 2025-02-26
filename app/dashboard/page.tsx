@@ -37,6 +37,7 @@ const initialMetrics: Metrics = {
   averageOrderValue: 0,
   unitsSold: 0,
   revenueByDay: [],
+  topProducts: [],
   salesGrowth: 0,
   ordersGrowth: 0,
   unitsGrowth: 0,
@@ -49,7 +50,20 @@ const initialMetrics: Metrics = {
   returnRate: 0,
   returnGrowth: 0,
   dailyData: [],
-  // Add any other required metrics
+  adSpend: 0,
+  adSpendGrowth: 0,
+  roas: 0,
+  roasGrowth: 0,
+  impressions: 0,
+  impressionGrowth: 0,
+  ctr: 0,
+  ctrGrowth: 0,
+  clicks: 0,
+  clickGrowth: 0,
+  conversions: 0,
+  conversionGrowth: 0,
+  costPerResult: 0,
+  cprGrowth: 0
 }
 
 export default function DashboardPage() {
@@ -264,6 +278,10 @@ export default function DashboardPage() {
     meta: connectionStoreConnections.some((c: PlatformConnection) => c.platform_type === 'meta')
   }
 
+  const shopifyConnection = connections.find(c => 
+    c.platform_type === 'shopify' && c.status === 'active'
+  )
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -301,6 +319,17 @@ export default function DashboardPage() {
         <div className="text-center text-gray-400 py-12">
           Select a brand to view metrics
         </div>
+      )}
+
+      {shopifyConnection && selectedBrandId && (
+        <ShopifyTab
+          connection={shopifyConnection}
+          dateRange={{
+            from: dateRange.from || addDays(new Date(), -30),
+            to: dateRange.to || new Date()
+          }}
+          brandId={selectedBrandId}
+        />
       )}
     </div>
   )

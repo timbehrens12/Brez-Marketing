@@ -62,7 +62,8 @@ export interface Metrics {
   ordersPlaced: number
   averageOrderValue: number
   unitsSold: number
-  revenueByDay: Array<{ date: string; revenue: number }>
+  revenueByDay: Array<{ date: string; amount: number }>
+  topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
   salesGrowth: number
   ordersGrowth: number
   unitsGrowth: number
@@ -75,7 +76,20 @@ export interface Metrics {
   returnRate: number
   returnGrowth: number
   dailyData: Array<{ date: string; value: number }>
-  // Add any other required metrics
+  adSpend: number
+  adSpendGrowth: number
+  roas: number
+  roasGrowth: number
+  impressions: number
+  impressionGrowth: number
+  ctr: number
+  ctrGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  costPerResult: number
+  cprGrowth: number
 }
 
 export interface ComparisonDates {

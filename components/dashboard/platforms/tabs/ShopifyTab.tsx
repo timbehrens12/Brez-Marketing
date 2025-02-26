@@ -18,7 +18,7 @@ import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 
 interface ShopifyTabProps {
-  connection: any
+  connection: PlatformConnection
   dateRange: { from: Date; to: Date }
   brandId: string
 }
@@ -30,7 +30,33 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     averageOrderValue: 0,
     unitsSold: 0,
     revenueByDay: [],
-    topProducts: []
+    topProducts: [],
+    salesGrowth: 0,
+    ordersGrowth: 0,
+    unitsGrowth: 0,
+    aovGrowth: 0,
+    conversionRate: 0,
+    conversionRateGrowth: 0,
+    customerSegments: [],
+    customerRetentionRate: 0,
+    retentionGrowth: 0,
+    returnRate: 0,
+    returnGrowth: 0,
+    dailyData: [],
+    adSpend: 0,
+    adSpendGrowth: 0,
+    roas: 0,
+    roasGrowth: 0,
+    impressions: 0,
+    impressionGrowth: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    clicks: 0,
+    clickGrowth: 0,
+    conversions: 0,
+    conversionGrowth: 0,
+    costPerResult: 0,
+    cprGrowth: 0
   })
   const [isLoading, setIsLoading] = useState(true)
   const supabase = useSupabase()
@@ -53,7 +79,10 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
           .gte('created_at', dateRange.from.toISOString())
           .lte('created_at', dateRange.to.toISOString())
 
-        if (error) throw error
+        if (error) {
+          console.error('Error fetching orders:', error)
+          return
+        }
 
         // Calculate metrics from orders
         const calculatedMetrics = calculateMetrics(orders || [])
@@ -68,16 +97,20 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     }
 
     fetchMetrics()
-  }, [connection?.id, dateRange, brandId, supabase])
+  }, [connection?.id, dateRange?.from, dateRange?.to, brandId, supabase])
+
+  if (!connection) {
+    return <div>No Shopify connection found</div>
+  }
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center p-6">Loading metrics...</div>
   }
 
   return (
     <div className="space-y-6">
       {/* Main metrics grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total Sales"
           value={metrics.totalSales}
@@ -101,7 +134,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
       </div>
 
       {/* Charts section - make it symmetrical */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
             <CardTitle className="text-white">Revenue Over Time</CardTitle>
@@ -116,9 +149,11 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
             <CardTitle className="text-white">Top Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-gray-400">
-              No product data available
-            </div>
+            {metrics.topProducts.length > 0 ? (
+              <TopProducts products={metrics.topProducts} />
+            ) : (
+              <div className="text-gray-400">No product data available</div>
+            )}
           </CardContent>
         </Card>
       </div>
