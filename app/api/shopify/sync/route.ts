@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
     }
 
+    // Get connection details
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
@@ -20,85 +21,99 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
 
-    // Add more detailed logging
-    console.log('Starting sync for connection:', {
-      id: connection.id,
-      shop: connection.shop,
-      hasAccessToken: !!connection.access_token
-    })
-
-    if (!connection?.access_token || !connection.shop) {
-      throw new Error('Invalid connection: missing access token or shop')
+    // Validate connection data
+    if (!connection.access_token || !connection.shop) {
+      return NextResponse.json({ 
+        error: 'Invalid connection: missing access token or shop' 
+      }, { status: 400 })
     }
 
-    console.log('Starting sync for shop:', connection.shop)
-    let hasMore = true
+    // Update sync status to in_progress
+    await supabase
+      .from('platform_connections')
+      .update({ sync_status: 'in_progress' })
+      .eq('id', connectionId)
+
+    // Start sync process
     let page = 1
     let totalOrders = 0
+    let hasMore = true
 
     while (hasMore) {
-      // Fetch orders from Shopify with pagination
-      const response = await fetch(
-        `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&page=${page}&status=any`, {
-          headers: {
-            'X-Shopify-Access-Token': connection.access_token
+      try {
+        const response = await fetch(
+          `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&page=${page}&status=any`,
+          {
+            headers: {
+              'X-Shopify-Access-Token': connection.access_token
+            }
           }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Shopify API error: ${response.statusText}`)
         }
-      )
 
-      if (!response.ok) {
-        throw new Error(`Shopify API error: ${response.statusText}`)
+        const { orders } = await response.json()
+        
+        if (!orders?.length) {
+          hasMore = false
+          continue
+        }
+
+        // Format orders for database
+        const formattedOrders = orders.map(order => ({
+          id: order.id.toString(),
+          connection_id: connectionId,
+          created_at: order.created_at,
+          total_price: order.total_price,
+          customer_id: order.customer?.id?.toString(),
+          line_items: order.line_items
+        }))
+
+        // Batch insert orders
+        const { error: insertError } = await supabase
+          .from('shopify_orders')
+          .upsert(formattedOrders, {
+            onConflict: 'id',
+            ignoreDuplicates: true
+          })
+
+        if (insertError) throw insertError
+
+        totalOrders += orders.length
+        page++
+
+        // Respect API rate limits
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        console.error('Error during sync:', error)
+        throw error
       }
-
-      const { orders } = await response.json()
-      
-      if (!orders.length) {
-        hasMore = false
-        continue
-      }
-
-      // Prepare orders for bulk insert
-      const formattedOrders = orders.map(order => ({
-        id: order.id,
-        created_at: order.created_at,
-        total_price: order.total_price,
-        customer_id: order.customer?.id,
-        line_items: order.line_items,
-        connection_id: connectionId
-      }))
-
-      // Bulk insert orders
-      const { error } = await supabase
-        .from('shopify_orders')
-        .upsert(formattedOrders, { 
-          onConflict: 'id',
-          ignoreDuplicates: true 
-        })
-
-      if (error) throw error
-
-      totalOrders += orders.length
-      console.log(`Synced ${orders.length} orders (page ${page})`)
-      page++
-
-      // Respect Shopify's API rate limits
-      await new Promise(resolve => setTimeout(resolve, 500))
     }
 
-    // Update connection status
+    // Update sync status to completed
     await supabase
       .from('platform_connections')
       .update({ 
-        last_synced_at: new Date().toISOString(),
-        sync_status: 'completed'
+        sync_status: 'completed',
+        last_synced_at: new Date().toISOString()
       })
       .eq('id', connectionId)
 
-    console.log(`Sync completed. Total orders: ${totalOrders}`)
     return NextResponse.json({ success: true, totalOrders })
 
   } catch (error) {
     console.error('Sync error:', error)
+    
+    // Update sync status to failed
+    if (request.body?.connectionId) {
+      await supabase
+        .from('platform_connections')
+        .update({ sync_status: 'failed' })
+        .eq('id', request.body.connectionId)
+    }
+
     return NextResponse.json({ 
       error: 'Sync failed',
       details: error instanceof Error ? error.message : 'Unknown error'

@@ -79,34 +79,32 @@ export default function DashboardPage() {
   // Load initial connections when component mounts
   useEffect(() => {
     async function loadConnections() {
-      if (!selectedBrandId) {
-        console.log('No brand selected yet')
-        return
-      }
-      
-      console.log('Loading connections for brand:', selectedBrandId)
+      if (!selectedBrandId) return
+
       try {
-        const { data, error } = await supabase
+        const { data: connections, error } = await supabase
           .from('platform_connections')
           .select('*')
           .eq('brand_id', selectedBrandId)
+          .eq('status', 'active')
 
         if (error) throw error
 
-        console.log('Loaded connections:', data)
-        const typedData = data as PlatformConnection[] | null
-        setConnections(typedData || [])
+        setConnections(connections || [])
+        
+        // Update active platforms
         setPlatformStatus({
-          shopify: (typedData || []).some(c => c.platform_type === 'shopify' && c.status === 'active'),
-          meta: (typedData || []).some(c => c.platform_type === 'meta' && c.status === 'active')
+          shopify: connections?.some(c => c.platform_type === 'shopify') || false,
+          meta: connections?.some(c => c.platform_type === 'meta') || false
         })
+
       } catch (error) {
         console.error('Error loading connections:', error)
       }
     }
 
     loadConnections()
-  }, [selectedBrandId])
+  }, [selectedBrandId, supabase])
 
   // Debug logging
   useEffect(() => {
