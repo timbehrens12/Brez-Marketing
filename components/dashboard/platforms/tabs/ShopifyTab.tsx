@@ -16,7 +16,7 @@ import { addDays } from "date-fns"
 import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
-import { StoreConnectButton } from "@/components/ui/store-connect-button"
+import { StoreConnectButton } from "../StoreConnectButton"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
