@@ -40,10 +40,15 @@ const initialMetrics: Metrics = {
   ordersGrowth: 0,
   unitsGrowth: 0,
   aovGrowth: 0,
+  conversionRate: 0,
+  conversionRateGrowth: 0,
+  customerSegments: [],
   customerRetentionRate: 0,
   retentionGrowth: 0,
   returnRate: 0,
   returnGrowth: 0,
+  dailyData: [],
+  // Add any other required metrics
 }
 
 export default function DashboardPage() {
