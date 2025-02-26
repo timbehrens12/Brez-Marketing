@@ -4,14 +4,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format, parseISO, differenceInDays, isSameDay, startOfDay, endOfDay } from "date-fns"
 
 interface RevenueByDayProps {
-  data: Array<{
-    date: string
-    revenue: number
-  }>
-  dateRange: {
-    from: Date
-    to: Date
-  }
+  data: RevenueData[];
+  dateRange: DateRange | undefined;  // Make dateRange optional
 }
 
 export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
@@ -32,7 +26,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   // Format X-axis ticks based on date range
   const formatXAxis = (dateStr: string) => {
     const date = parseISO(dateStr)
-    const daysDiff = differenceInDays(dateRange.to, dateRange.from)
+    const daysDiff = differenceInDays(dateRange?.to, dateRange?.from)
     
     if (daysDiff <= 1) {
       return format(date, 'ha') // 1PM, 2PM, etc.
@@ -95,10 +89,10 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   )
 }
 
-function fillMissingDates(data: any[], dateRange: { from: Date; to: Date }) {
+function fillMissingDates(data: any[], dateRange: DateRange | undefined) {
   const filledData = []
-  const currentDate = startOfDay(new Date(dateRange.from))
-  const endDate = endOfDay(new Date(dateRange.to))
+  const currentDate = startOfDay(new Date(dateRange?.from || new Date()))
+  const endDate = endOfDay(new Date(dateRange?.to || new Date()))
   
   while (currentDate <= endDate) {
     const dateStr = format(currentDate, 'yyyy-MM-dd')

@@ -4,10 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 
 interface CustomerSegmentsWidgetProps {
-  segments: {
-    newCustomers: number;
-    returningCustomers: number;
-  };
+  segments: CustomerSegment[];
 }
 
 const COLORS = {

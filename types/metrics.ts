@@ -57,39 +57,59 @@ export interface CustomerSegments {
   returningCustomers: number
 }
 
+export interface CustomerSegment {
+  name: string;
+  value: number;
+}
+
+export interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+export interface Product {
+  id: string;
+  title: string;
+  quantity: number;
+  revenue: number;
+}
+
 export interface Metrics {
-  totalSales: number
-  ordersPlaced: number
-  averageOrderValue: number
-  unitsSold: number
-  revenueByDay: Array<{ date: string; amount: number }>
-  topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
-  salesGrowth: number
-  ordersGrowth: number
-  unitsGrowth: number
-  aovGrowth: number
-  conversionRate: number
-  conversionRateGrowth: number
-  customerSegments: Array<{ name: string; value: number }>
-  customerRetentionRate: number
-  retentionGrowth: number
-  returnRate: number
-  returnGrowth: number
-  dailyData: Array<{ date: string; value: number }>
-  adSpend: number
-  adSpendGrowth: number
-  roas: number
-  roasGrowth: number
-  impressions: number
-  impressionGrowth: number
-  ctr: number
-  ctrGrowth: number
-  clicks: number
-  clickGrowth: number
-  conversions: number
-  conversionGrowth: number
-  costPerResult: number
-  cprGrowth: number
+  totalSales: number;
+  ordersPlaced: number;
+  averageOrderValue: number;
+  unitsSold: number;
+  revenueByDay: RevenueData[];
+  topProducts: Product[];
+  salesGrowth: number;
+  ordersGrowth: number;
+  unitsGrowth: number;
+  aovGrowth: number;
+  conversionRate: number;
+  conversionRateGrowth: number;
+  customerSegments: {
+    newCustomers: number;
+    returningCustomers: number;
+  };
+  customerRetentionRate: number;
+  retentionGrowth: number;
+  returnRate: number;
+  returnGrowth: number;
+  dailyData: any[]; // Define proper type if needed
+  adSpend: number;
+  adSpendGrowth: number;
+  roas: number;
+  roasGrowth: number;
+  impressions: number;
+  impressionGrowth: number;
+  ctr: number;
+  ctrGrowth: number;
+  clicks: number;
+  clickGrowth: number;
+  conversions: number;
+  conversionGrowth: number;
+  costPerResult: number;
+  cprGrowth: number;
 }
 
 export interface ComparisonDates {
@@ -135,12 +155,6 @@ export interface MetaMetrics {
   topProducts: any[]
 }
 
-export interface Product {
-  name: string
-  quantity: number
-  revenue: number
-}
-
 export interface DayData {
   day: string
   date: string
@@ -164,7 +178,10 @@ export const defaultMetrics: Metrics = {
   conversionRateGrowth: 0,
   dailyData: [],
   revenueByDay: [],
-  customerSegments: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
   topProducts: [],
   adSpend: 0,
   adSpendGrowth: 0,
@@ -180,5 +197,15 @@ export const defaultMetrics: Metrics = {
   conversionGrowth: 0,
   costPerResult: 0,
   cprGrowth: 0
+}
+
+export interface MetricCardProps {
+  title: string;
+  value: number;
+  change: number;
+  icon: React.ReactNode;
+  format: "currency" | "number" | "percentage";
+  prefix?: string;
+  suffix?: string;
 }
 

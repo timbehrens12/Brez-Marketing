@@ -13,21 +13,21 @@ import { useMemo } from "react"
 
 interface MetricCardProps {
   title: string
-  value: string | number
+  value: number
   change: number
-  data: MetricData[]
+  data?: MetricData[]
   prefix?: string
   suffix?: string
   className?: string
   loading?: boolean
-  valueFormat?: "number" | "percentage" | "currency"
+  format: "currency" | "number" | "percentage"
   platform?: string
   infoTooltip?: string
   includesRefunds?: boolean
   dateRange?: DateRange
   isCustomRange?: boolean
   emptyState?: string
-  icon?: React.ReactNode
+  icon: React.ReactNode
 }
 
 export function MetricCard({
@@ -39,7 +39,7 @@ export function MetricCard({
   suffix = "",
   className,
   loading = false,
-  valueFormat = "number",
+  format = "number",
   platform = "shopify",
   infoTooltip,
   includesRefunds = false,
@@ -89,7 +89,7 @@ export function MetricCard({
 
   const formatValue = (val: number) => {
     try {
-      switch(valueFormat) {
+      switch(format) {
         case "currency":
           return `$${val.toFixed(2)}`
         case "percentage":

@@ -2,18 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-
-interface Product {
-  name: string
-  quantity: number
-  revenue: number
-}
+import type { Product } from "@/types/metrics"
 
 interface TopProductsProps {
-  products: Product[]
+  products: Product[];
 }
 
-export function TopProducts({ products = [] }) {
+export function TopProducts({ products }: TopProductsProps) {
   if (!products?.length) {
     return <div className="text-gray-400">No product data available</div>;
   }

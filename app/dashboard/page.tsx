@@ -44,7 +44,10 @@ const initialMetrics: Metrics = {
   aovGrowth: 0,
   conversionRate: 0,
   conversionRateGrowth: 0,
-  customerSegments: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
   customerRetentionRate: 0,
   retentionGrowth: 0,
   returnRate: 0,

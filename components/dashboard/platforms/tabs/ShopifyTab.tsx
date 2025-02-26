@@ -7,10 +7,10 @@ import { CustomerSegmentsWidget } from "@/components/widgets/CustomerSegments"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import type { Metrics } from "@/types/metrics"
+import type { Metrics, CustomerSegment, MetricCardProps } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, ShoppingCart, Store } from "lucide-react"
-import { PlatformConnection } from "@/types/platformConnection"
+import type { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
 import { useState, useEffect } from "react"
@@ -18,23 +18,34 @@ import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import { StoreConnectButton } from "../StoreConnectButton"
 
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+interface Product {
+  id: string;
+  title: string;
+  quantity: number;
+  revenue: number;
+}
+
 interface ShopifyTabProps {
-  connection: PlatformConnection
-  dateRange: { from: Date; to: Date }
+  connection: PlatformConnection | null
+  dateRange: DateRange
   brandId: string
 }
 
 export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) {
+  const [isLoading, setIsLoading] = useState(true)
   const [metrics, setMetrics] = useState<Metrics>({
     totalSales: 0,
-    ordersPlaced: 0,
-    averageOrderValue: 0,
-    unitsSold: 0,
-    revenueByDay: [],
-    topProducts: [],
     salesGrowth: 0,
+    ordersPlaced: 0,
     ordersGrowth: 0,
+    unitsSold: 0,
     unitsGrowth: 0,
+    averageOrderValue: 0,
     aovGrowth: 0,
     conversionRate: 0,
     conversionRateGrowth: 0,
@@ -46,6 +57,8 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     retentionGrowth: 0,
     returnRate: 0,
     returnGrowth: 0,
+    revenueByDay: [],
+    topProducts: [],
     dailyData: [],
     adSpend: 0,
     adSpendGrowth: 0,
@@ -62,22 +75,23 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     costPerResult: 0,
     cprGrowth: 0
   })
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchShopifyData() {
-      if (!connection || !brandId || !dateRange?.from || !dateRange?.to) return;
+      if (!connection?.id || !brandId || !dateRange?.from || !dateRange?.to) return;
 
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&connectionId=${connection.id}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
         
         if (!response.ok) {
-          throw new Error('Failed to fetch metrics');
+          const errorData = await response.json();
+          console.error('API Error:', errorData);
+          throw new Error(errorData.message || 'Failed to fetch metrics');
         }
         
         const data = await response.json();
-        // Ensure we have default values if data is missing
+        console.log('Fetched metrics:', data);
         setMetrics(prev => ({
           ...prev,
           ...data,
@@ -95,7 +109,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
     fetchShopifyData();
   }, [connection, brandId, dateRange]);
 
-  if (!connection) {
+  if (!connection?.id) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-[#1A1A1A] rounded-lg border border-[#333333]">
         <Store className="h-12 w-12 text-gray-400 mb-4" />
@@ -111,6 +125,11 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
   if (isLoading) {
     return <div className="flex items-center justify-center p-6">Loading metrics...</div>
   }
+
+  const customerSegments: CustomerSegment[] = [
+    { name: 'New Customers', value: metrics.customerSegments.newCustomers },
+    { name: 'Returning Customers', value: metrics.customerSegments.returningCustomers }
+  ]
 
   return (
     <div className="space-y-6">
@@ -176,7 +195,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
         />
         <MetricCard
           title="Active Customers"
-          value={metrics.customerSegments?.newCustomers + metrics.customerSegments?.returningCustomers || 0}
+          value={metrics.customerSegments.newCustomers + metrics.customerSegments.returningCustomers || 0}
           change={0}
           icon={<Users className="h-4 w-4" />}
           format="number"
@@ -199,12 +218,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
             <CardTitle className="text-white">Customer Segments</CardTitle>
           </CardHeader>
           <CardContent>
-            <CustomerSegmentsWidget 
-              segments={[
-                { name: 'New Customers', value: metrics.customerSegments?.newCustomers || 0 },
-                { name: 'Returning Customers', value: metrics.customerSegments?.returningCustomers || 0 }
-              ]} 
-            />
+            <CustomerSegmentsWidget segments={customerSegments} />
           </CardContent>
         </Card>
       </div>
@@ -217,7 +231,7 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
           </CardHeader>
           <CardContent>
             {metrics.topProducts.length > 0 ? (
-              <TopProducts products={metrics.topProducts} />
+              <TopProducts products={metrics.topProducts || []} />
             ) : (
               <div className="text-gray-400">No product data available</div>
             )}
