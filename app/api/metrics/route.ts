@@ -6,8 +6,9 @@ export async function GET(request: Request) {
   const from = searchParams.get('from')
   const to = searchParams.get('to')
   const brandId = searchParams.get('brandId')
+  const platform = searchParams.get('platform')
 
-  console.log('Received request with params:', { from, to, brandId })
+  console.log('Received request with params:', { from, to, brandId, platform })
 
   if (!from || !to || !brandId) {
     console.log('Missing required parameters')
@@ -15,25 +16,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get active Shopify connection for this brand
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connection } = await supabase
       .from('platform_connections')
       .select('*')
-      .eq('platform_type', 'shopify')
+      .eq('platform_type', platform || 'shopify')
       .eq('brand_id', brandId)
       .eq('status', 'active')
       .single()
 
-    console.log('Found connection:', connection, 'Error:', connectionError)
-
-    if (!connection?.access_token || !connection.shop) {
-      console.log('No active connection found')
-      return NextResponse.json({ 
+    if (!connection) {
+      return NextResponse.json({
         totalSales: 0,
         ordersPlaced: 0,
         averageOrderValue: 0,
         unitsSold: 0,
-        revenueByDay: []
+        revenueByDay: [],
+        customerSegments: [
+          { name: 'new', value: 0 },
+          { name: 'returning', value: 0 }
+        ],
+        // ... other metrics with 0 values
       })
     }
 
@@ -68,7 +70,11 @@ export async function GET(request: Request) {
       }, {})).map(([date, revenue]) => ({
         date,
         revenue
-      }))
+      })),
+      customerSegments: [
+        { name: 'new', value: 0 },
+        { name: 'returning', value: 0 }
+      ]
     }
 
     return NextResponse.json(metrics)

@@ -41,11 +41,11 @@ export function PlatformTabs({ platforms, dateRange, metrics: initialMetrics, is
           brandId
         })
 
-        const response = await fetch(`/api/shopify/metrics?` + new URLSearchParams({
-          shop: selectedConnection.shop!,
+        const response = await fetch(`/api/metrics?` + new URLSearchParams({
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString(),
-          brandId
+          brandId,
+          platform: 'shopify'
         }))
 
         if (!response.ok) {
