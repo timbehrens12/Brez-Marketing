@@ -13,17 +13,11 @@ interface TopProductsProps {
   products: Product[]
 }
 
-export function TopProducts({ products = [] as Product[] }) {
-  if (!products.length) {
-    return (
-      <div className="bg-[#111111] p-4 rounded-lg">
-        <h3 className="text-sm font-medium mb-4">Top Products</h3>
-        <div className="text-center text-gray-500 py-4">
-          No products data available
-        </div>
-      </div>
-    )
+export function TopProducts({ products = [] }) {
+  if (!products?.length) {
+    return <div className="text-gray-400">No product data available</div>;
   }
+
   return (
     <Card className="bg-[#111111] border-[#222222]">
       <CardHeader>

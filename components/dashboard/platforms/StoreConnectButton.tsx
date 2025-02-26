@@ -22,11 +22,12 @@ if (!API_URL) {
 }
 
 interface StoreConnectButtonProps {
-  onConnect: (data: any) => Promise<void>
-  isConnected: boolean
+  onConnect?: () => void
+  isConnected?: boolean
+  brandId: string
 }
 
-export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButtonProps) {
+export function StoreConnectButton({ onConnect, isConnected, brandId }: StoreConnectButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [storeUrl, setStoreUrl] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
@@ -79,7 +80,7 @@ export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButto
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ connectionId })
+        body: JSON.stringify({ brandId })
       })
 
       if (!response.ok) {

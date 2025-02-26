@@ -66,21 +66,34 @@ export function ShopifyTab({ connection, dateRange, brandId }: ShopifyTabProps) 
 
   useEffect(() => {
     async function fetchShopifyData() {
-      if (!connection || !brandId) return
+      if (!connection || !brandId || !dateRange?.from || !dateRange?.to) return;
 
       try {
+        setIsLoading(true);
         const response = await fetch(`/api/shopify/metrics?brandId=${brandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
-        const data = await response.json()
-        setMetrics(data)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch metrics');
+        }
+        
+        const data = await response.json();
+        // Ensure we have default values if data is missing
+        setMetrics(prev => ({
+          ...prev,
+          ...data,
+          revenueByDay: data.revenueByDay || [],
+          topProducts: data.topProducts || [],
+          customerSegments: data.customerSegments || { newCustomers: 0, returningCustomers: 0 }
+        }));
       } catch (error) {
-        console.error('Error fetching Shopify data:', error)
+        console.error('Error fetching Shopify data:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchShopifyData()
-  }, [connection, brandId, dateRange])
+    fetchShopifyData();
+  }, [connection, brandId, dateRange]);
 
   if (!connection) {
     return (
