@@ -4,19 +4,28 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   try {
     const { connectionId } = await request.json()
-    console.log('Starting sync for connection:', connectionId)
+    
+    if (!connectionId) {
+      return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
+    }
 
-    // Get connection details with error handling
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
       .eq('id', connectionId)
       .single()
 
-    if (connectionError) {
-      console.error('Connection error:', connectionError)
-      throw new Error('Failed to get connection')
+    if (connectionError || !connection) {
+      console.error('Error fetching connection:', connectionError)
+      return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
+
+    // Add more detailed logging
+    console.log('Starting sync for connection:', {
+      id: connection.id,
+      shop: connection.shop,
+      hasAccessToken: !!connection.access_token
+    })
 
     if (!connection?.access_token || !connection.shop) {
       throw new Error('Invalid connection: missing access token or shop')
@@ -89,9 +98,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, totalOrders })
 
   } catch (error) {
-    console.error('Detailed sync error:', error)
+    console.error('Sync error:', error)
     return NextResponse.json({ 
-      error: 'Sync failed', 
+      error: 'Sync failed',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }

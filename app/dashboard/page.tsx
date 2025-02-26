@@ -175,16 +175,29 @@ export default function DashboardPage() {
       if (shopifyConnection) {
         try {
           console.log('Fetching Shopify data for connection:', shopifyConnection.id)
-          const { data: shopifyData } = await supabase
+          const { data: orders, error: ordersError } = await supabase
             .from('shopify_orders')
             .select('*')
             .eq('connection_id', shopifyConnection.id)
-            .single()
+            .order('created_at', { ascending: false })
 
-          console.log('Loaded Shopify data:', shopifyData)
+          if (ordersError) {
+            console.error('Error loading Shopify orders:', ordersError)
+            return null
+          }
+
+          // Process orders data
+          const processedData = orders?.map(order => ({
+            id: order.id,
+            created_at: order.created_at,
+            total_price: parseFloat(order.total_price),
+            customer_id: order.customer_id,
+            line_items: order.line_items
+          })) || []
+
           setWidgetData(current => ({
             ...current,
-            shopify: shopifyData
+            shopify: processedData
           }))
         } catch (error) {
           console.error('Error loading Shopify data:', error)

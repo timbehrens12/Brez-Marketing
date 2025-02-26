@@ -7,16 +7,23 @@ export type Database = {
         Update: Partial<PlatformConnection>;
       };
       shopify_orders: {
-        Row: ShopifyOrder;
-        Insert: Omit<ShopifyOrder, 'id'>;
-        Update: Partial<ShopifyOrder>;
+        Row: {
+          id: string;
+          connection_id: string;
+          created_at: string;
+          total_price: string;
+          customer_id: string;
+          line_items: any[];
+        };
+        Insert: Omit<Row, 'id'>;
+        Update: Partial<Row>;
       };
       shopify_data: {
-        Row: any
-      }
+        Row: any;
+      };
       meta_data: {
-        Row: any
-      }
-    }
-  }
-} 
+        Row: any;
+      };
+    };
+  };
+}; 
