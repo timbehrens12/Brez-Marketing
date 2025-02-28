@@ -142,8 +142,14 @@ export default function SettingsPage() {
 
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
+      console.log(`Disconnecting ${platform} for brand ${brandId}`)
+      
+      // Use the full URL to ensure it works in production
+      const apiUrl = `${window.location.origin}/api/disconnect-platform`
+      console.log('Using API URL:', apiUrl)
+      
       // Use the existing API route
-      const response = await fetch('/api/disconnect-platform', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +160,9 @@ export default function SettingsPage() {
         }),
       });
       
+      console.log('Disconnect response status:', response.status)
       const responseData = await response.json();
+      console.log('Disconnect response data:', responseData)
       
       if (!response.ok) {
         // Check if it's a foreign key constraint error
@@ -166,6 +174,7 @@ export default function SettingsPage() {
           );
           
           if (forceDelete) {
+            console.log('User confirmed force delete')
             // Try direct deletion from the database
             const { error } = await supabase
               .from('platform_connections')
@@ -174,13 +183,16 @@ export default function SettingsPage() {
               .eq('platform_type', platform);
               
             if (error) {
+              console.error('Force delete failed:', error)
               throw new Error(`Force delete failed: ${error.message}`);
             }
             
+            console.log('Force delete successful')
             await loadConnections();
             toast.success(`${platform} disconnected successfully (forced)`);
             return;
           } else {
+            console.log('User cancelled force delete')
             toast.error(`Disconnect cancelled. Please delete related data first.`);
             return;
           }
@@ -189,6 +201,7 @@ export default function SettingsPage() {
         throw new Error(responseData.error || 'Failed to disconnect platform');
       }
       
+      console.log('Disconnect successful, reloading connections')
       await loadConnections();
       toast.success(`${platform} disconnected successfully`);
     } catch (error) {

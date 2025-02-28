@@ -9,67 +9,79 @@ export async function POST(request: Request) {
   try {
     console.log('Disconnecting platform:', { brandId, platformType })
     
-    // First, check if the connection exists
-    const { data: connection, error: connectionQueryError } = await supabase
+    // First, check if the connection exists - but don't use .single() since there might be multiple
+    const { data: connections, error: connectionQueryError } = await supabase
       .from('platform_connections')
       .select('id')
       .eq('brand_id', brandId)
       .eq('platform_type', platformType)
-      .single()
 
     if (connectionQueryError) {
-      console.error('Error finding connection:', connectionQueryError)
+      console.error('Error finding connections:', connectionQueryError)
+      return NextResponse.json(
+        { error: 'Error querying connections' },
+        { status: 500 }
+      )
+    }
+
+    if (!connections || connections.length === 0) {
+      console.error('No connections found for:', { brandId, platformType })
       return NextResponse.json(
         { error: 'Connection not found' },
         { status: 404 }
       )
     }
 
-    console.log('Found connection:', connection)
+    console.log(`Found ${connections.length} connections to disconnect`)
 
-    // For Shopify, we need to handle orders first
-    if (platformType === 'shopify') {
-      // Check for possible related tables and delete data from them
-      const possibleTables = [
-        'shopify_orders',
-        'shopify_products',
-        'shopify_customers',
-        'shopify_metrics',
-        'shopify_data'
-      ]
+    // For each connection, handle related data
+    for (const connection of connections) {
+      console.log('Processing connection:', connection.id)
+      
+      // For Shopify, we need to handle related data first
+      if (platformType === 'shopify') {
+        // Check for possible related tables and delete data from them
+        const possibleTables = [
+          'shopify_orders',
+          'shopify_products',
+          'shopify_customers',
+          'shopify_metrics',
+          'shopify_data'
+        ]
 
-      for (const table of possibleTables) {
-        try {
-          // Check if the table exists
-          const { count, error: countError } = await supabase
-            .from(table)
-            .select('*', { count: 'exact', head: true })
-            .eq('connection_id', connection.id)
-
-          if (countError) {
-            // Table probably doesn't exist, skip it
-            console.log(`Table ${table} doesn't exist or has no connection_id column`)
-            continue
-          }
-
-          if (count && count > 0) {
-            console.log(`Deleting ${count} records from ${table}`)
-            const { error: deleteError } = await supabase
+        for (const table of possibleTables) {
+          try {
+            // Check if the table exists
+            const { count, error: countError } = await supabase
               .from(table)
-              .delete()
+              .select('*', { count: 'exact', head: true })
               .eq('connection_id', connection.id)
 
-            if (deleteError) {
-              console.error(`Error deleting from ${table}:`, deleteError)
+            if (countError) {
+              // Table probably doesn't exist, skip it
+              console.log(`Table ${table} doesn't exist or has no connection_id column`)
+              continue
             }
+
+            if (count && count > 0) {
+              console.log(`Deleting ${count} records from ${table}`)
+              const { error: deleteError } = await supabase
+                .from(table)
+                .delete()
+                .eq('connection_id', connection.id)
+
+              if (deleteError) {
+                console.error(`Error deleting from ${table}:`, deleteError)
+              }
+            }
+          } catch (error) {
+            console.error(`Error handling table ${table}:`, error)
           }
-        } catch (error) {
-          console.error(`Error handling table ${table}:`, error)
         }
       }
     }
 
-    // Now try to delete the connection
+    // Now delete all matching connections
     const { error: connectionError } = await supabase
       .from('platform_connections')
       .delete()
@@ -77,7 +89,7 @@ export async function POST(request: Request) {
       .eq('platform_type', platformType)
 
     if (connectionError) {
-      console.error('Error deleting connection:', connectionError)
+      console.error('Error deleting connections:', connectionError)
       
       // Check if it's a foreign key constraint error
       if (connectionError.message && connectionError.message.includes('foreign key constraint')) {
