@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 import { useMemo, useState } from 'react'
 import { DateRange } from "react-day-picker"
-import { startOfWeek, addDays, format, isSameDay, parseISO, isValid } from "date-fns"
+import { startOfWeek, addDays, format, isSameDay, parseISO, isValid, startOfMonth, getDaysInMonth, getMonth, getYear } from "date-fns"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 interface RevenueByDayProps {
   data: Array<{
@@ -16,6 +19,7 @@ interface RevenueByDayProps {
 
 export function RevenueByDay({ data }: RevenueByDayProps) {
   const [showDebug, setShowDebug] = useState(false);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
   
   // Get the current week's days (Monday-Sunday)
   const weekDays = useMemo(() => {
@@ -33,12 +37,76 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
     })
   }, [])
 
-  // Map revenue data to the current week days
-  const weeklyData = useMemo(() => {
+  // Get the current month's days
+  const monthDays = useMemo(() => {
+    const today = new Date()
+    const startOfCurrentMonth = startOfMonth(today)
+    const daysInMonth = getDaysInMonth(today)
+    
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const date = addDays(startOfCurrentMonth, i)
+      return {
+        date,
+        dayName: format(date, "EEE"),
+        dayNumber: format(date, "d"),
+        formattedDate: format(date, "yyyy-MM-dd")
+      }
+    })
+  }, [])
+
+  // Get the current year's months
+  const yearMonths = useMemo(() => {
+    const today = new Date()
+    const currentYear = getYear(today)
+    
+    return Array.from({ length: 12 }, (_, i) => {
+      const date = new Date(currentYear, i, 1)
+      return {
+        date,
+        dayName: format(date, "MMM"),
+        dayNumber: (i + 1).toString(),
+        formattedDate: format(date, "yyyy-MM")
+      }
+    })
+  }, [])
+
+  // Get the last 7 days
+  const lastSevenDays = useMemo(() => {
+    const today = new Date()
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(today, -6 + i)
+      return {
+        date,
+        dayName: format(date, "EEE"),
+        dayNumber: format(date, "d"),
+        formattedDate: format(date, "yyyy-MM-dd")
+      }
+    })
+  }, [])
+
+  // Get the appropriate days based on the selected time frame
+  const daysToDisplay = useMemo(() => {
+    switch (timeFrame) {
+      case 'daily':
+        return lastSevenDays;
+      case 'weekly':
+        return weekDays;
+      case 'monthly':
+        return monthDays;
+      case 'yearly':
+        return yearMonths;
+      default:
+        return weekDays;
+    }
+  }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays]);
+
+  // Map revenue data to the days to display
+  const displayData = useMemo(() => {
     // Log the incoming data for debugging
     console.log("Revenue data received:", data);
     
-    return weekDays.map(day => {
+    return daysToDisplay.map(day => {
       // Find matching revenue data for this day
       const matchingData = data.find(item => {
         // Handle different date formats
@@ -72,6 +140,13 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           // Check if the dates match
           if (!isValid(itemDate)) return false;
           
+          // For yearly view, match by month and year
+          if (timeFrame === 'yearly') {
+            return getMonth(itemDate) === getMonth(day.date) && 
+                   getYear(itemDate) === getYear(day.date);
+          }
+          
+          // For other views, match by exact day
           const matches = isSameDay(itemDate, day.date);
           if (matches) {
             console.log(`Match found for ${day.formattedDate}: ${item.revenue}`);
@@ -83,6 +158,28 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         }
       });
       
+      // For yearly view, sum all revenues for the month
+      if (timeFrame === 'yearly') {
+        const monthRevenue = data.reduce((sum, item) => {
+          try {
+            const itemDate = typeof item.date === 'string' ? parseISO(item.date) : new Date(item.date);
+            if (isValid(itemDate) && 
+                getMonth(itemDate) === getMonth(day.date) && 
+                getYear(itemDate) === getYear(day.date)) {
+              return sum + (item.revenue || 0);
+            }
+          } catch (error) {
+            console.error("Error processing date for yearly view:", item.date, error);
+          }
+          return sum;
+        }, 0);
+        
+        return {
+          ...day,
+          revenue: monthRevenue
+        };
+      }
+      
       console.log(`Day ${day.formattedDate}: ${matchingData ? matchingData.revenue : 'No data'}`);
       
       return {
@@ -90,16 +187,47 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         revenue: matchingData?.revenue || 0
       }
     });
-  }, [weekDays, data]);
+  }, [daysToDisplay, data, timeFrame]);
 
   // Find the maximum revenue for scaling
   const maxRevenue = useMemo(() => {
-    const revenues = weeklyData.map(day => day.revenue)
+    const revenues = displayData.map(day => day.revenue)
     return Math.max(...revenues, 1) // Ensure we don't divide by zero
-  }, [weeklyData])
+  }, [displayData])
+
+  // Get the title based on the selected time frame
+  const getTitle = () => {
+    switch (timeFrame) {
+      case 'daily':
+        return 'Last 7 Days';
+      case 'weekly':
+        return 'Current Week (Mon-Sun)';
+      case 'monthly':
+        return `${format(new Date(), 'MMMM yyyy')}`;
+      case 'yearly':
+        return `${format(new Date(), 'yyyy')} by Month`;
+      default:
+        return 'Revenue Calendar';
+    }
+  }
 
   return (
     <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
+        <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+          <SelectTrigger className="w-[140px] h-8 text-xs bg-[#222] border-[#333]">
+            <SelectValue placeholder="Select view" />
+          </SelectTrigger>
+          <SelectContent className="bg-[#222] border-[#333] text-white">
+            <SelectItem value="daily" className="text-xs">Last 7 Days</SelectItem>
+            <SelectItem value="weekly" className="text-xs">Weekly (Mon-Sun)</SelectItem>
+            <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+            <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
       {/* Debug toggle */}
       {process.env.NODE_ENV === 'development' && (
         <button 
@@ -115,8 +243,8 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-4 overflow-auto max-h-32">
           <div>Raw Data ({data.length} points):</div>
           <pre>{JSON.stringify(data.slice(0, 5), null, 2)}</pre>
-          <div className="mt-2">Weekly Data:</div>
-          <pre>{JSON.stringify(weeklyData.map(d => ({ 
+          <div className="mt-2">Display Data ({timeFrame}):</div>
+          <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 
             day: d.dayName, 
             date: d.formattedDate, 
             revenue: d.revenue 
@@ -124,8 +252,12 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         </div>
       )}
       
-      <div className="grid grid-cols-7 gap-2 h-full">
-        {weeklyData.map((day, index) => {
+      <div className={`grid gap-2 h-full ${
+        timeFrame === 'monthly' ? 'grid-cols-7 grid-rows-5' : 
+        timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 
+        'grid-cols-7'
+      }`}>
+        {displayData.map((day, index) => {
           // Calculate candle height as percentage of max revenue
           const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5)
           
