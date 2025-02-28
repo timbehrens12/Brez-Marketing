@@ -147,12 +147,11 @@ export function ShopifyTab({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
-            <CardTitle className="text-white">Revenue Over Time</CardTitle>
+            <CardTitle className="text-white">Weekly Revenue Calendar</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
             <RevenueByDay 
               data={safeMetrics.revenueByDay} 
-              dateRange={dateRange} 
             />
           </CardContent>
         </Card>
