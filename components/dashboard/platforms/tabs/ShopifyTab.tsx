@@ -45,10 +45,25 @@ export function ShopifyTab({
 
   const safeMetrics: SafeMetrics = {
     ...metrics,
-    revenueByDay: (metrics.revenueByDay || []).map(d => ({
-      date: d.date,
-      revenue: d.amount || 0
-    })),
+    revenueByDay: (metrics.revenueByDay || []).map(d => {
+      // Ensure we have a proper date string in ISO format
+      let dateStr = d.date;
+      if (typeof dateStr === 'object' && dateStr !== null) {
+        // If it's a Date object, convert to ISO string
+        dateStr = (dateStr as Date).toISOString();
+      } else if (typeof dateStr !== 'string') {
+        // If it's neither a string nor a Date, use current date
+        dateStr = new Date().toISOString();
+      }
+      
+      // Log for debugging
+      console.log(`Processing revenue data: ${dateStr} = $${d.amount || 0}`);
+      
+      return {
+        date: dateStr,
+        revenue: d.amount || 0
+      };
+    }),
     topProducts: (metrics.topProducts || []).map(product => ({
       id: product.id,
       name: product.title || '',
@@ -69,6 +84,14 @@ export function ShopifyTab({
 
   return (
     <div className="space-y-8">
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded">
+          <div>Date Range: {dateRange.from.toDateString()} to {dateRange.to.toDateString()}</div>
+          <div>Revenue Data Points: {safeMetrics.revenueByDay.length}</div>
+        </div>
+      )}
+      
       {/* Key Metrics Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard

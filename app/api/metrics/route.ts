@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       averageOrderValue: orders?.length ? 
         orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0) / orders.length : 0,
       unitsSold: orders?.reduce((sum, order) => 
-        sum + order.line_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+        sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
       ) || 0,
       revenueByDay: Object.entries((orders || []).reduce((acc, order) => {
         const date = new Date(order.created_at).toISOString().split('T')[0]
@@ -72,7 +72,8 @@ export async function GET(request: Request) {
         return acc
       }, {})).map(([date, revenue]) => ({
         date,
-        revenue
+        revenue,
+        amount: revenue
       })).sort((a, b) => a.date.localeCompare(b.date)),
       customerSegments: [
         { 
