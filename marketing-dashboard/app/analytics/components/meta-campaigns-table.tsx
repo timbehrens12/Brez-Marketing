@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -144,7 +144,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
   }, [brandId])
 
   // Sort function
-  const sortedCampaigns = useMemo(() => {
+  const sortedCampaigns = React.useMemo(() => {
     let sortableCampaigns = [...campaigns]
     
     if (sortConfig !== null) {
@@ -163,7 +163,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
   }, [campaigns, sortConfig])
 
   // Filter function
-  const filteredCampaigns = useMemo(() => {
+  const filteredCampaigns = React.useMemo(() => {
     return sortedCampaigns.filter(campaign => {
       const matchesSearch = campaign.campaign_name.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === 'all' || campaign.status.toLowerCase() === statusFilter.toLowerCase()

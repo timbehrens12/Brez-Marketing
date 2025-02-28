@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
-import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -47,9 +46,6 @@ export async function GET(request: Request) {
       }])
 
     if (error) throw error
-
-    // Register the webhook
-    await registerShopifyWebhooks(shop, access_token)
 
     // Redirect back to settings with success
     return NextResponse.redirect('/settings?success=true')

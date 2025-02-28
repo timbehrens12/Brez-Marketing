@@ -1,92 +1,136 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { NextResponse } from 'next/server'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { userId } = auth()
+    const { connectionId } = await request.json()
     
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    if (!connectionId) {
+      return NextResponse.json({ error: 'Missing connectionId' }, { status: 400 })
     }
 
-    const url = new URL(request.url)
-    const brandId = url.searchParams.get('brandId')
-    
-    if (!brandId) {
-      return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
-    }
-
-    // Get the Shopify connection
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } }
-    )
-
+    // Get connection details
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'shopify')
-      .eq('status', 'active')
+      .eq('id', connectionId)
       .single()
 
     if (connectionError || !connection) {
-      return NextResponse.json({ error: 'No active Shopify connection found' }, { status: 404 })
+      console.error('Error fetching connection:', connectionError)
+      return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
 
-    // Fetch orders from Shopify
-    const ordersResponse = await fetch(
-      `https://${connection.store_url}/admin/api/2023-04/orders.json?status=any&limit=250`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': connection.access_token
+    // Validate connection data
+    if (!connection.access_token || !connection.shop) {
+      return NextResponse.json({ 
+        error: 'Invalid connection: missing access token or shop' 
+      }, { status: 400 })
+    }
+
+    // Update sync status to in_progress
+    await supabase
+      .from('platform_connections')
+      .update({ sync_status: 'in_progress' })
+      .eq('id', connectionId)
+
+    // Start sync process
+    let totalOrders = 0
+    let nextCursor = null
+
+    do {
+      try {
+        // Build the URL with cursor-based pagination
+        let url = `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
+        if (nextCursor) {
+          url += `&page_info=${nextCursor}`
         }
-      }
-    )
 
-    if (!ordersResponse.ok) {
-      throw new Error(`Failed to fetch orders: ${ordersResponse.status}`)
-    }
+        const response = await fetch(url, {
+          headers: {
+            'X-Shopify-Access-Token': connection.access_token,
+            'Content-Type': 'application/json'
+          }
+        })
 
-    const { orders } = await ordersResponse.json()
-    
-    // Store orders in database
-    for (const order of orders) {
-      const { error: orderError } = await supabase
-        .from('shopify_orders')
-        .upsert({
-          connection_id: connection.id,
-          brand_id: brandId,
-          user_id: userId,
-          order_id: order.id.toString(),
-          order_number: order.order_number,
-          total_price: parseFloat(order.total_price),
-          subtotal_price: parseFloat(order.subtotal_price),
-          total_tax: parseFloat(order.total_tax),
-          total_discounts: parseFloat(order.total_discounts),
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Shopify API error response:', errorText)
+          throw new Error(`Shopify API error: ${response.statusText} - ${errorText}`)
+        }
+
+        // Get the next page cursor from the Link header
+        const linkHeader = response.headers.get('Link')
+        nextCursor = null
+        if (linkHeader) {
+          const match = linkHeader.match(/<[^>]*page_info=([^>&"]*)[^>]*>; rel="next"/)
+          if (match) {
+            nextCursor = match[1]
+          }
+        }
+
+        const data = await response.json()
+        const orders = data.orders
+
+        if (!orders?.length) {
+          break
+        }
+
+        // Format orders for database
+        const formattedOrders = orders.map(order => ({
+          id: order.id.toString(),
+          connection_id: connectionId,
           created_at: order.created_at,
-          customer: order.customer,
+          total_price: order.total_price,
+          customer_id: order.customer?.id?.toString(),
           line_items: order.line_items
-        }, { onConflict: 'order_id' })
+        }))
 
-      if (orderError) {
-        console.error(`Error storing order ${order.id}:`, orderError)
+        // Batch insert orders
+        const { error: insertError } = await supabase
+          .from('shopify_orders')
+          .upsert(formattedOrders, {
+            onConflict: 'id',
+            ignoreDuplicates: true
+          })
+
+        if (insertError) throw insertError
+
+        totalOrders += orders.length
+
+        // Respect API rate limits
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        console.error('Error during sync:', error)
+        throw error
       }
+    } while (nextCursor)
+
+    // Update sync status to completed
+    await supabase
+      .from('platform_connections')
+      .update({ 
+        sync_status: 'completed',
+        last_synced_at: new Date().toISOString()
+      })
+      .eq('id', connectionId)
+
+    return NextResponse.json({ success: true, totalOrders })
+
+  } catch (error) {
+    console.error('Sync error:', error)
+    
+    // Update sync status to failed
+    if (request.body?.connectionId) {
+      await supabase
+        .from('platform_connections')
+        .update({ sync_status: 'failed' })
+        .eq('id', request.body.connectionId)
     }
 
     return NextResponse.json({ 
-      success: true, 
-      message: `Synced ${orders.length} orders` 
-    })
-  } catch (error) {
-    console.error('Error in Shopify sync endpoint:', error)
-    return NextResponse.json({ 
-      error: 'Server error', 
-      details: typeof error === 'object' && error !== null && 'message' in error 
-        ? (error.message as string) 
-        : 'Unknown error'
+      error: 'Sync failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 } 

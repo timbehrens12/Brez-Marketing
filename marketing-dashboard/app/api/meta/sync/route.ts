@@ -1,32 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth()
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    // Get all brands with active Meta connections
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    )
+
+    const { data: connections, error: connectionsError } = await supabase
+      .from('platform_connections')
+      .select('brand_id')
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+
+    if (connectionsError) {
+      console.error('Error fetching connections:', connectionsError)
+      return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 })
     }
 
-    const url = new URL(request.url)
-    const brandId = url.searchParams.get('brandId')
+    // Get unique brand IDs
+    const brandIds = [...new Set(connections.map(c => c.brand_id))]
     
-    if (!brandId) {
-      return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
+    if (brandIds.length === 0) {
+      return NextResponse.json({ message: 'No brands with active Meta connections' })
     }
 
     // Calculate date range (last 30 days)
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-    // Fetch insights
-    const result = await fetchMetaAdInsights(brandId, startDate, endDate)
+    // Fetch insights for each brand
+    const results = []
     
-    return NextResponse.json(result)
+    for (const brandId of brandIds) {
+      const result = await fetchMetaAdInsights(brandId, startDate, endDate)
+      results.push({ brandId, ...result })
+    }
+
+    return NextResponse.json({ success: true, results })
   } catch (error) {
-    console.error('Error in Meta sync endpoint:', error)
+    console.error('Error in sync endpoint:', error)
     return NextResponse.json({ 
       error: 'Server error', 
       details: typeof error === 'object' && error !== null && 'message' in error 

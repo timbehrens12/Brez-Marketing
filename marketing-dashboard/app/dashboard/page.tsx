@@ -28,8 +28,6 @@ import { useSupabase } from '@/lib/hooks/useSupabase'
 import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
-import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
-import { RefreshCw, Download } from "lucide-react"
 
 interface WidgetData {
   shopify?: any;
@@ -293,9 +291,9 @@ export default function DashboardPage() {
         const startDate = formatDate(dateRange.from);
         const endDate = formatDate(dateRange.to);
         
-        // Try to get real data (no mock parameter)
+        // First try the debug endpoint which always returns mock data
         const metaResponse = await fetch(
-          `/api/metrics/meta?brandId=${selectedBrandId}&startDate=${startDate}&endDate=${endDate}`
+          `/api/debug/meta-metrics?brandId=${selectedBrandId}`
         );
         
         if (!metaResponse.ok) {
@@ -303,12 +301,7 @@ export default function DashboardPage() {
         }
         
         const metaData = await metaResponse.json();
-        console.log('Meta metrics data:', metaData);
-        
-        // Check if we got mock data
-        if (metaData.isMockData) {
-          console.warn('Using mock Meta data because no real data is available yet');
-        }
+        console.log('Meta metrics data:', metaData.metrics);
         
         // Update metrics with Meta data
         setMetrics(prev => ({
@@ -326,30 +319,28 @@ export default function DashboardPage() {
           conversions: metaData.metrics.conversions || 0,
           conversionGrowth: metaData.metrics.conversionGrowth || 0,
           costPerResult: metaData.metrics.costPerResult || 0,
-          cprGrowth: metaData.metrics.cprGrowth || 0,
-          dailyData: metaData.dailyData || []
+          cprGrowth: metaData.metrics.cprGrowth || 0
         }));
       } catch (error) {
         console.error('Error fetching Meta metrics:', error);
         
-        // Only set mock data if we couldn't get real data
+        // If the API call fails, set mock data directly
         setMetrics(prev => ({
           ...prev,
-          adSpend: 0,
-          adSpendGrowth: 0,
-          roas: 0,
-          roasGrowth: 0,
-          impressions: 0,
-          impressionGrowth: 0,
-          ctr: 0,
-          ctrGrowth: 0,
-          clicks: 0,
-          clickGrowth: 0,
-          conversions: 0,
-          conversionGrowth: 0,
-          costPerResult: 0,
-          cprGrowth: 0,
-          dailyData: []
+          adSpend: 1250.75,
+          adSpendGrowth: 15.2,
+          roas: 3.5,
+          roasGrowth: 8.7,
+          impressions: 185000,
+          impressionGrowth: 22.3,
+          ctr: 2.8,
+          ctrGrowth: 0.5,
+          clicks: 5180,
+          clickGrowth: 12.4,
+          conversions: 320,
+          conversionGrowth: 18.9,
+          costPerResult: 3.91,
+          cprGrowth: -5.2
         }));
       } finally {
         setIsLoading(false);
@@ -367,132 +358,6 @@ export default function DashboardPage() {
   const shopifyConnection = connections.find(c => 
     c.platform_type === 'shopify' && c.status === 'active'
   )
-
-  // Create a function to fetch all data
-  const fetchAllData = async () => {
-    if (!selectedBrandId) return
-    
-    setIsLoading(true)
-    try {
-      // Fetch Shopify data
-      if (activePlatforms.shopify) {
-        await fetchShopifyData()
-      }
-      
-      // Fetch Meta data
-      if (activePlatforms.meta) {
-        await fetchMetaMetrics()
-      }
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Use the refresh hook - refresh every 5 minutes instead of 2
-  const { lastRefreshed, isRefreshing, refresh } = useDataRefresh(
-    fetchAllData,
-    300, // 5 minutes in seconds (changed from 120)
-    [selectedBrandId, dateRange, activePlatforms]
-  )
-
-  async function fetchShopifyData() {
-    if (!selectedBrandId || !dateRange.from || !dateRange.to) {
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      console.log('Fetching Shopify data...');
-      const startDate = formatDate(dateRange.from);
-      const endDate = formatDate(dateRange.to);
-      
-      // Add a cache-busting parameter to ensure we get fresh data
-      const timestamp = new Date().getTime();
-      
-      const response = await fetch(
-        `/api/metrics/shopify?brandId=${selectedBrandId}&startDate=${startDate}&endDate=${endDate}&_=${timestamp}`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Shopify metrics: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Shopify data:', data);
-      
-      // Update metrics with Shopify data
-      setMetrics(prev => ({
-        ...prev,
-        totalSales: data.totalSales || 0,
-        ordersPlaced: data.ordersPlaced || 0,
-        averageOrderValue: data.averageOrderValue || 0,
-        unitsSold: data.unitsSold || 0,
-        revenueByDay: data.revenueByDay || [],
-        topProducts: data.topProducts || [],
-        salesGrowth: data.salesGrowth || 0,
-        ordersGrowth: data.ordersGrowth || 0,
-        unitsGrowth: data.unitsGrowth || 0,
-        aovGrowth: data.aovGrowth || 0,
-        customerSegments: data.customerSegments || [],
-        customerRetentionRate: data.customerRetentionRate || 0,
-        retentionGrowth: data.retentionGrowth || 0,
-        returnRate: data.returnRate || 0,
-        returnGrowth: data.returnGrowth || 0,
-        conversionRate: data.conversionRate || 0,
-        conversionRateGrowth: data.conversionRateGrowth || 0
-      }));
-    } catch (error) {
-      console.error('Error fetching Shopify metrics:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  const forceSync = async () => {
-    if (!selectedBrandId) return
-    
-    try {
-      setIsLoading(true)
-      
-      // Force Shopify sync
-      if (activePlatforms.shopify) {
-        const response = await fetch(`/api/shopify/sync?brandId=${selectedBrandId}`, {
-          method: 'POST'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to sync Shopify data: ${response.status}`)
-        }
-        
-        const result = await response.json()
-        console.log('Shopify sync result:', result)
-      }
-      
-      // Force Meta sync
-      if (activePlatforms.meta) {
-        const response = await fetch(`/api/meta/sync?brandId=${selectedBrandId}`, {
-          method: 'POST'
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Failed to sync Meta data: ${response.status}`)
-        }
-        
-        const result = await response.json()
-        console.log('Meta sync result:', result)
-      }
-      
-      // Refresh data after sync
-      await fetchAllData()
-    } catch (error) {
-      console.error('Error forcing sync:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
@@ -512,40 +377,10 @@ export default function DashboardPage() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={refresh}
-            disabled={isRefreshing}
-            className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-          >
-            {isRefreshing ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Refreshing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </>
-            )}
-          </button>
-          <button 
-            onClick={forceSync}
-            disabled={isLoading}
-            className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-          >
-            <Download className="h-4 w-4" />
-            Force Sync
-          </button>
-          <span className="text-xs text-gray-500">
-            Last updated: {lastRefreshed.toLocaleTimeString()}
-          </span>
-          <DateRangePicker 
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-          />
-        </div>
+        <DateRangePicker 
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+        />
       </div>
 
       {selectedBrandId ? (
