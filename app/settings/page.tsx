@@ -329,6 +329,7 @@ export default function SettingsPage() {
           .insert({
             platform_type: 'shopify',
             brand_id: brandId,
+            user_id: user?.id,
             status: 'pending',
             created_at: new Date().toISOString()
           })
