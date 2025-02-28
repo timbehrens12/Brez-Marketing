@@ -16,6 +16,20 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Verify the connection exists
+    const { data: connection, error: connectionError } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('id', connectionId)
+      .single()
+
+    if (connectionError || !connection) {
+      console.error('Connection not found:', connectionError)
+      return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
+    }
+
+    console.log('Found connection:', connection)
+
     const scopes = [
       'read_products',
       'read_orders',

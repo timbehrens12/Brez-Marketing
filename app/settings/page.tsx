@@ -142,8 +142,8 @@ export default function SettingsPage() {
 
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
-      // Use the new API route
-      const response = await fetch('/api/platforms/disconnect', {
+      // Use the existing API route
+      const response = await fetch('/api/disconnect-platform', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
