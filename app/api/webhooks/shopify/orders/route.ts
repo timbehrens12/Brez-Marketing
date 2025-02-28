@@ -3,38 +3,82 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
+  console.log('Shopify webhook received at /api/webhooks/shopify/orders')
+  
   try {
     // Verify Shopify webhook
     const hmacHeader = request.headers.get('x-shopify-hmac-sha256')
     const shopHeader = request.headers.get('x-shopify-shop-domain')
     
+    console.log('Webhook headers:', {
+      shop: shopHeader || 'missing',
+      hmac: hmacHeader ? 'present' : 'missing'
+    })
+    
     if (!hmacHeader || !shopHeader) {
+      console.error('Missing required headers:', { 
+        hasHmac: !!hmacHeader, 
+        hasShop: !!shopHeader 
+      })
       return NextResponse.json({ error: 'Missing headers' }, { status: 401 })
     }
     
     // Get the raw body
-    const rawBody = await request.text()
+    let rawBody
+    try {
+      rawBody = await request.text()
+      console.log('Received webhook body length:', rawBody.length)
+    } catch (error) {
+      console.error('Error reading request body:', error)
+      return NextResponse.json({ error: 'Failed to read request body' }, { status: 400 })
+    }
     
     // Verify the webhook is from Shopify
-    const calculatedHmac = crypto
-      .createHmac('sha256', process.env.SHOPIFY_WEBHOOK_SECRET!)
-      .update(rawBody, 'utf8')
-      .digest('base64')
+    if (!process.env.SHOPIFY_WEBHOOK_SECRET) {
+      console.error('SHOPIFY_WEBHOOK_SECRET environment variable is not set')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
     
-    if (calculatedHmac !== hmacHeader) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    try {
+      const calculatedHmac = crypto
+        .createHmac('sha256', process.env.SHOPIFY_WEBHOOK_SECRET)
+        .update(rawBody, 'utf8')
+        .digest('base64')
+      
+      if (calculatedHmac !== hmacHeader) {
+        console.error('HMAC verification failed')
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      }
+      
+      console.log('HMAC verification successful')
+    } catch (error) {
+      console.error('Error verifying HMAC:', error)
+      return NextResponse.json({ error: 'HMAC verification failed' }, { status: 500 })
     }
     
     // Parse the body
-    const order = JSON.parse(rawBody)
+    let order
+    try {
+      order = JSON.parse(rawBody)
+      console.log('Parsed order:', { 
+        id: order.id, 
+        order_number: order.order_number,
+        shop: shopHeader
+      })
+    } catch (error) {
+      console.error('Error parsing JSON body:', error)
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
     
     // Get the connection for this shop
+    console.log('Creating Supabase client')
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     )
     
+    console.log('Looking up connection for shop:', shopHeader)
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('id, brand_id, user_id')
@@ -43,13 +87,20 @@ export async function POST(request: NextRequest) {
       .single()
     
     if (connectionError || !connection) {
+      console.error('Connection not found:', connectionError)
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
     
+    console.log('Found connection:', { 
+      id: connection.id, 
+      brand_id: connection.brand_id 
+    })
+    
     // Store the order
+    console.log('Storing order in database:', order.id)
     const { error: orderError } = await supabase
       .from('shopify_orders')
-      .insert([{
+      .upsert([{
         connection_id: connection.id,
         brand_id: connection.brand_id,
         user_id: connection.user_id,
@@ -67,7 +118,7 @@ export async function POST(request: NextRequest) {
           last_name: order.customer?.last_name,
           orders_count: order.customer?.orders_count
         },
-        line_items: order.line_items.map(item => ({
+        line_items: order.line_items.map((item: any) => ({
           id: item.id,
           title: item.title,
           quantity: item.quantity,
@@ -76,16 +127,20 @@ export async function POST(request: NextRequest) {
           product_id: item.product_id,
           variant_id: item.variant_id
         }))
-      }])
+      }], { onConflict: 'order_id' })
     
     if (orderError) {
       console.error('Error storing order:', orderError)
-      return NextResponse.json({ error: 'Failed to store order' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to store order', details: orderError.message }, { status: 500 })
     }
     
+    console.log('Successfully stored order:', order.id)
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in Shopify webhook:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    console.error('Unhandled error in Shopify webhook:', error)
+    return NextResponse.json({ 
+      error: 'Server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
