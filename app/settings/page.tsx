@@ -140,19 +140,28 @@ export default function SettingsPage() {
 
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
-      const { error } = await supabase
-        .from('platform_connections')
-        .delete()
-        .eq('brand_id', brandId)
-        .eq('platform_type', platform)
-
-      if (error) throw error
+      // Use the disconnect-platform API route instead of direct Supabase deletion
+      const response = await fetch('/api/disconnect-platform', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          platformType: platform
+        }),
+      });
       
-      await loadConnections()
-      toast.success(`${platform} disconnected successfully`)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to disconnect platform');
+      }
+      
+      await loadConnections();
+      toast.success(`${platform} disconnected successfully`);
     } catch (error) {
-      console.error(`Error disconnecting ${platform}:`, error)
-      toast.error(`Failed to disconnect ${platform}`)
+      console.error(`Error disconnecting ${platform}:`, error);
+      toast.error(`Failed to disconnect ${platform}`);
     }
   }
 
