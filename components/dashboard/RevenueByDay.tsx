@@ -365,18 +365,18 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           })()}
         </div>
       ) : timeFrame === 'hourly' ? (
-        // Hourly view (24 hours) - now in a single row like the 7-day view
-        <div className="grid grid-cols-24 gap-1 h-full">
+        // Hourly view (24 hours) - in a single row like the 7-day view
+        <div className="flex flex-row justify-between h-full">
           {displayData.map((hour, index) => {
             // Calculate candle height as percentage of max revenue
             const heightPercentage = Math.max((hour.revenue / maxRevenue) * 100, 5);
             
             return (
-              <div key={index} className="flex flex-col items-center">
+              <div key={index} className="flex flex-col items-center flex-1">
                 <div className="text-xs text-gray-400 mb-1">{hour.dayName}</div>
                 <div className="flex-1 w-full flex items-end justify-center">
                   <div 
-                    className="w-3 bg-blue-600 rounded-t-sm"
+                    className="w-5 bg-blue-600 rounded-t-sm"
                     style={{ 
                       height: `${heightPercentage}%`,
                       minHeight: '4px'
