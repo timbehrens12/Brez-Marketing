@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 
-interface CustomerSegmentsWidgetProps {
+interface CustomerSegmentsProps {
   segments: {
     newCustomers: number;
     returningCustomers: number;
-  };
+  }
 }
 
 const COLORS = {
@@ -15,21 +15,21 @@ const COLORS = {
   returningCustomers: "#22c55e",
 }
 
-export function CustomerSegmentsWidget({ segments }: CustomerSegmentsWidgetProps) {
+export function CustomerSegmentsWidget({ 
+  segments = { newCustomers: 0, returningCustomers: 0 } 
+}: CustomerSegmentsProps) {
   const data = [
     {
       name: "New Customers",
-      value: segments.newCustomers || 0,
+      value: segments.newCustomers,
       color: "#2563eb"
     },
     {
       name: "Returning Customers",
-      value: segments.returningCustomers || 0,
+      value: segments.returningCustomers,
       color: "#16a34a"
     }
-  ];
-
-  const total = data.reduce((sum, segment) => sum + segment.value, 0);
+  ]
 
   return (
     <Card className="bg-[#111111] border-[#222222]">
@@ -57,8 +57,10 @@ export function CustomerSegmentsWidget({ segments }: CustomerSegmentsWidgetProps
               </Pie>
               <Legend verticalAlign="bottom" height={36} />
               <Tooltip
-                formatter={(value: number) => [`${value} (${((value / total) * 100).toFixed(1)}%)`, "Customers"]}
-                contentStyle={{ backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "6px" }}
+                formatter={(value: number) => [
+                  `${value} (${((value / (segments.newCustomers + segments.returningCustomers)) * 100).toFixed(1)}%)`,
+                  "Customers"
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>

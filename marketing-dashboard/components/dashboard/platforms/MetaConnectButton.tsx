@@ -20,8 +20,10 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
     setIsConnecting(true)
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://brezmarketingdashboard.com'
-      const authUrl = `${baseUrl}/meta/auth?brandId=${brandId}&t=${Date.now()}`
-      window.location.href = authUrl
+      const authUrl = `${baseUrl}/api/auth/meta?brandId=${brandId}`
+      const finalUrl = `${authUrl}&t=${Date.now()}`
+      console.log('Redirecting to:', finalUrl)
+      window.location.href = finalUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
       toast({
@@ -67,7 +69,7 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
             </>
           ) : (
             <>
-              Connect
+              Connect Meta Ads
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}

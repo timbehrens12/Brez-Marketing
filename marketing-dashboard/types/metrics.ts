@@ -57,39 +57,32 @@ export interface CustomerSegments {
   returningCustomers: number
 }
 
+export interface DailyData {
+  date: string
+  orders: number
+  revenue: number
+  value: number // For MetricCard compatibility
+}
+
 export interface Metrics {
   totalSales: number
   ordersPlaced: number
   averageOrderValue: number
   unitsSold: number
-  revenueByDay: Array<{ date: string; amount: number }>
-  topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
   salesGrowth: number
   ordersGrowth: number
   unitsGrowth: number
   aovGrowth: number
-  conversionRate: number
-  conversionRateGrowth: number
-  customerSegments: Array<{ name: string; value: number }>
   customerRetentionRate: number
   retentionGrowth: number
   returnRate: number
   returnGrowth: number
-  dailyData: Array<{ date: string; value: number }>
-  adSpend: number
-  adSpendGrowth: number
-  roas: number
-  roasGrowth: number
-  impressions: number
-  impressionGrowth: number
-  ctr: number
-  ctrGrowth: number
-  clicks: number
-  clickGrowth: number
-  conversions: number
-  conversionGrowth: number
-  costPerResult: number
-  cprGrowth: number
+  conversionRate: number
+  conversionRateGrowth: number
+  revenueByDay: Array<{ date: string; amount: number }>
+  topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
+  customerSegments: CustomerSegments
+  dailyData: Array<DailyData>
 }
 
 export interface ComparisonDates {
@@ -136,6 +129,7 @@ export interface MetaMetrics {
 }
 
 export interface Product {
+  id: string
   name: string
   quantity: number
   revenue: number
@@ -164,7 +158,10 @@ export const defaultMetrics: Metrics = {
   conversionRateGrowth: 0,
   dailyData: [],
   revenueByDay: [],
-  customerSegments: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
   topProducts: [],
   adSpend: 0,
   adSpendGrowth: 0,

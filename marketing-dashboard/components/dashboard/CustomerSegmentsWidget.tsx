@@ -1,3 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
 interface CustomerSegmentsWidgetProps {
   segments: Array<{
     name: string;

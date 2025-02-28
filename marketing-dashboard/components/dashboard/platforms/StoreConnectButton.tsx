@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "react-hot-toast"
+import { useSupabase } from "@/lib/hooks/useSupabase"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -24,9 +25,10 @@ if (!API_URL) {
 interface StoreConnectButtonProps {
   onConnect: (data: any) => Promise<void>
   isConnected: boolean
+  connectionId?: string
 }
 
-export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButtonProps) {
+export function StoreConnectButton({ onConnect, isConnected, connectionId }: StoreConnectButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [storeUrl, setStoreUrl] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
@@ -39,35 +41,76 @@ export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButto
     setIsConnecting(true)
 
     try {
-      // Direct OAuth redirect - this was working before
-      window.location.href = `${API_URL}/shopify/auth?shop=${encodeURIComponent(storeUrl)}`
+      const newConnectionId = crypto.randomUUID() // Rename to avoid confusion
+      const response = await fetch('/api/shopify/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          connectionId: newConnectionId,  // Use the renamed variable
+          storeUrl: storeUrl
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to connect store")
+      }
+
+      const data = await response.json()
+      console.log('Connection successful:', data)
+      toast.success('Store connected successfully')
+      onConnect(data)
     } catch (error) {
-      console.error("Connection error:", error)
+      console.error('Connection error:', error)
       setError("Failed to connect store. Please try again.")
     } finally {
       setIsConnecting(false)
     }
   }
 
-  const handleDisconnect = async (store: string) => {
+  const handleDisconnect = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/disconnect-store`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ shop: store }),
-      })
+      const supabase = useSupabase()
+      
+      // First delete orders
+      const { error: ordersError } = await supabase
+        .from('shopify_orders')
+        .delete()
+        .match({ connection_id: connectionId })
 
-      if (!response.ok) {
-        throw new Error("Failed to disconnect store")
+      if (ordersError) {
+        console.error('Error deleting orders:', ordersError)
+        throw ordersError
       }
 
-      // Refresh the page or update state as needed
-      window.location.reload()
+      // Then delete metrics
+      const { error: metricsError } = await supabase
+        .from('metrics')
+        .delete()
+        .match({ connection_id: connectionId })
+
+      if (metricsError) {
+        console.error('Error deleting metrics:', metricsError)
+        throw metricsError
+      }
+
+      // Finally delete connection
+      const { error: connectionError } = await supabase
+        .from('platform_connections')
+        .delete()
+        .match({ id: connectionId })
+
+      if (connectionError) {
+        console.error('Error deleting connection:', connectionError)
+        throw connectionError
+      }
+
+      toast.success('Store disconnected successfully')
+      window.location.reload() // Refresh to update UI
     } catch (error) {
-      console.error("Error disconnecting store:", error)
-      setError("Failed to disconnect store. Please try again.")
+      console.error('Error disconnecting store:', error)
+      toast.error('Failed to disconnect store')
     }
   }
 
@@ -79,7 +122,7 @@ export function StoreConnectButton({ onConnect, isConnected }: StoreConnectButto
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ connectionId })
+        body: JSON.stringify({ storeUrl })
       })
 
       if (!response.ok) {

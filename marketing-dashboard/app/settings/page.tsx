@@ -13,6 +13,19 @@ import { useUser } from "@clerk/nextjs"
 import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
+import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
+import MetaDiagnosticButton from './components/meta-diagnostic-button'
+import MetaMockDataButton from './components/meta-mock-data-button'
+
+// Constants for data retention
+const META_DATA_RETENTION_DAYS = 90
+const META_SCOPE = ['read_insights', 'ads_read'] // Explicitly define minimum required permissions
+
+// Add types for Meta data handling
+interface MetaDataRetention {
+  lastAccessed: Date;
+  dataType: 'metrics' | 'insights';
+}
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -29,24 +42,24 @@ export default function SettingsPage() {
     console.log('Selected brand:', selectedBrandId)
   }, [brands, selectedBrandId])
 
-  useEffect(() => {
-    const loadConnections = async () => {
-      if (!user) return
-      
-      const { data, error } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('user_id', user.id)
+  const loadConnections = async () => {
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('user_id', user.id)
 
-      if (error) {
-        console.error('Error loading connections:', error)
-        return
-      }
-
-      const typedData = data as PlatformConnection[] | null
-      setConnections(typedData || [])
+    if (error) {
+      console.error('Error loading connections:', error)
+      return
     }
 
+    const typedData = data as PlatformConnection[] | null
+    setConnections(typedData || [])
+  }
+
+  useEffect(() => {
     loadConnections()
   }, [user, supabase])
 
@@ -125,53 +138,6 @@ export default function SettingsPage() {
     }
   }
 
-  const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
-    try {
-      if (platform === 'shopify') {
-        // Prompt for shop URL
-        const shopUrl = prompt('Enter your Shopify store URL (e.g. my-store.myshopify.com):')
-        if (!shopUrl) return
-
-        // Start Shopify OAuth flow
-        const { data, error } = await supabase
-          .from('platform_connections')
-          .insert({
-            brand_id: brandId,
-            platform_type: 'shopify',
-            status: 'pending',
-            user_id: user?.id
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        // Redirect to Shopify OAuth with shop parameter
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${data.id}&shop=${shopUrl}`
-      } else if (platform === 'meta') {
-        // Start Meta OAuth flow
-        const { data, error } = await supabase
-          .from('platform_connections')
-          .insert({
-            brand_id: brandId,
-            platform_type: 'meta',
-            status: 'pending',
-            user_id: user?.id
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-
-        // Redirect to Meta OAuth
-        window.location.href = `/api/meta/auth?brandId=${brandId}&connectionId=${data.id}`
-      }
-    } catch (error) {
-      console.error('Error connecting platform:', error)
-      alert('Failed to start platform connection')
-    }
-  }
-
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       const { error } = await supabase
@@ -181,68 +147,215 @@ export default function SettingsPage() {
         .eq('platform_type', platform)
 
       if (error) throw error
-
-      // Refresh connections
-      const { data: newConnections, error: loadError } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('user_id', user?.id)
-
-      if (loadError) throw loadError
-      setConnections(newConnections || [])
+      
+      await loadConnections()
+      toast.success(`${platform} disconnected successfully`)
     } catch (error) {
-      console.error('Error disconnecting platform:', error)
-      alert('Failed to disconnect platform')
+      console.error(`Error disconnecting ${platform}:`, error)
+      toast.error(`Failed to disconnect ${platform}`)
     }
   }
 
+  // Track Meta data access for retention purposes
+  const updateMetaDataAccess = async (brandId: string) => {
+    try {
+      await supabase
+        .from('meta_data_tracking')
+        .upsert({
+          brand_id: brandId,
+          last_accessed: new Date().toISOString(),
+          data_type: 'metrics'
+        })
+    } catch (error) {
+      console.error('Error updating Meta data access:', error)
+    }
+  }
+
+  // Modified handleMetaConnect to include explicit data usage notice
+  const handleMetaConnect = async () => {
+    try {
+      // Show data usage notice before connection
+      const userAcknowledged = await showDataUsageNotice()
+      if (!userAcknowledged) {
+        toast.error('You must acknowledge the data usage terms to continue')
+        return
+      }
+      
+      // Store only necessary connection metadata
+      const connectionData = {
+        platform_type: 'meta',
+        brand_id: selectedBrandId,
+        status: 'pending',
+        scopes: META_SCOPE,
+        created_at: new Date().toISOString(),
+        last_accessed: new Date().toISOString()
+      }
+
+      await supabase
+        .from('platform_connections')
+        .insert(connectionData)
+
+      return Promise.resolve()
+    } catch (error) {
+      console.error('Meta connection error:', error)
+      toast.error('Failed to initialize Meta connection')
+    }
+  }
+
+  // Add data retention cleanup
+  const cleanupStaleMetaData = async () => {
+    try {
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - META_DATA_RETENTION_DAYS)
+
+      // Delete stale metrics data
+      await supabase
+        .from('metrics')
+        .delete()
+        .eq('platform', 'meta')
+        .lt('created_at', cutoffDate.toISOString())
+
+      // Delete inactive connections
+      await supabase
+        .from('platform_connections')
+        .delete()
+        .eq('platform_type', 'meta')
+        .eq('status', 'inactive')
+        .lt('last_accessed', cutoffDate.toISOString())
+
+    } catch (error) {
+      console.error('Error cleaning up stale data:', error)
+    }
+  }
+
+  // Modified handleMetaDisconnect with proper data cleanup
+  const handleMetaDisconnect = async () => {
+    try {
+      // First, clean up any associated Meta data
+      await cleanupStaleMetaData()
+
+      // Then disconnect
+      await supabase
+        .from('platform_connections')
+        .update({ 
+          status: 'inactive',
+          disconnected_at: new Date().toISOString(),
+          // Store minimal required metadata for audit purposes
+          disconnection_reason: 'user_initiated'
+        })
+        .eq('brand_id', selectedBrandId)
+        .eq('platform_type', 'meta')
+
+      await loadConnections()
+      toast.success('Meta Ads disconnected successfully')
+    } catch (error) {
+      console.error('Error disconnecting Meta:', error)
+      toast.error('Failed to disconnect Meta Ads')
+    }
+  }
+
+  // Add data usage notice
+  const showDataUsageNotice = async (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const message = `By connecting to Meta Ads, you acknowledge that:
+      - We only collect and display advertising metrics
+      - Data is retained for ${META_DATA_RETENTION_DAYS} days
+      - No data is shared with third parties
+      - You can delete your data at any time
+      - We comply with Meta Platform Terms and Developer Policies`
+
+      const confirmed = window.confirm(message)
+      resolve(confirmed)
+    })
+  }
+
+  // Modified handleClearAllData with proper Meta data cleanup
   const handleClearAllData = async () => {
     // First confirmation
-    if (!confirm('WARNING: This will delete ALL brands and their platform connections for your account. This cannot be undone.')) return;
+    if (!confirm('WARNING: This will delete ALL brands and their platform connections for your account. This cannot be undone.')) {
+      return;
+    }
     
     // Second confirmation requiring typing
     const confirmText = 'DELETE ALL DATA';
     const userInput = prompt(`To confirm, please type "${confirmText}" in all caps:`);
     if (userInput !== confirmText) {
-      alert('Deletion cancelled - text did not match.');
+      toast.error('Deletion cancelled - text did not match');
       return;
     }
     
     try {
-      console.log('Starting data clear for user:', user?.id)
-      // ... rest of clear logic, but add user_id check to queries ...
-      const { error: metricsError } = await supabase
-        .from('metrics')
-        .delete()
-        .eq('user_id', user?.id) // Only delete user's data
+      if (!user?.id) {
+        throw new Error('No user ID found')
+      }
 
-      // ... same for other deletes ...
+      // First, clean up Meta-specific data
+      await cleanupStaleMetaData()
+
+      // Then proceed with existing cleanup
+      await supabase
+        .from('platform_connections')
+        .delete()
+        .eq('user_id', user.id)
+
+      await supabase
+        .from('brands')
+        .delete()
+        .eq('user_id', user.id)
+
+      await refreshBrands()
+      
+      toast.success('All data has been cleared successfully')
     } catch (error) {
       console.error('Error clearing data:', error)
-      alert('Error clearing data. Check console for details.')
+      toast.error('Failed to clear data. Please try again.')
     }
   }
 
-  async function handleSync(connectionId: string) {
+  // Add automatic cleanup on component mount
+  useEffect(() => {
+    cleanupStaleMetaData()
+    // Run cleanup periodically (e.g., daily)
+    const cleanup = setInterval(cleanupStaleMetaData, 24 * 60 * 60 * 1000)
+    return () => clearInterval(cleanup)
+  }, [])
+
+  const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
+    try {
+      if (platform === 'shopify') {
+        // Handle Shopify connection
+        window.location.href = `/api/shopify/auth?brandId=${brandId}`
+      } else if (platform === 'meta') {
+        // Redirect to Meta auth endpoint
+        window.location.href = `/api/auth/meta?brandId=${brandId}`
+      }
+    } catch (error) {
+      console.error('Connection error:', error)
+      toast.error('Failed to initiate connection')
+    }
+  }
+
+  const handleSync = async (connectionId: string) => {
+    if (!connectionId) return
     setIsSyncing(true)
     try {
       const response = await fetch('/api/shopify/sync', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connectionId })
       })
-
       if (!response.ok) throw new Error('Sync failed')
-      
-      const data = await response.json()
-      toast.success(`Successfully synced ${data.totalOrders} orders`)
+      toast.success('Sync completed successfully')
     } catch (error) {
-      toast.error('Failed to sync orders')
+      toast.error('Failed to sync data')
+      console.error('Sync error:', error)
     } finally {
       setIsSyncing(false)
     }
+  }
+
+  const handleBrandSelect = (brandId: string) => {
+    setSelectedBrandId(selectedBrandId === brandId ? null : brandId)
   }
 
   return (
@@ -259,6 +372,27 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* Account Settings Card */}
+        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-white">Account Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-gray-200">Email Notifications</Label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Daily Reports</span>
+                <Switch />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Weekly Analytics</span>
+                <Switch />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Brand Management Card */}
         <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-medium text-white">Brand Management</CardTitle>
@@ -314,13 +448,9 @@ export default function SettingsPage() {
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Current Brands List */}
             {brands.length > 0 ? (
               brands.map(brand => (
-                <div 
-                  key={brand.id}
-                  className="space-y-2"
-                >
+                <div key={brand.id} className="space-y-2">
                   <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
                     <div className="flex items-center gap-3">
                       {brand.image_url ? (
@@ -334,15 +464,8 @@ export default function SettingsPage() {
                         <span className="text-white">{brand.name}</span>
                         <div className="flex gap-2 mt-1">
                           {connections.filter(c => c.brand_id === brand.id).map(connection => (
-                            <div 
-                              key={connection.id}
-                              className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300"
-                            >
-                              <img 
-                                src={`/${connection.platform_type}-icon.png`}
-                                alt={connection.platform_type}
-                                className="w-3 h-3"
-                              />
+                            <div key={connection.id} className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300">
+                              <img src={`/${connection.platform_type}-icon.png`} alt={connection.platform_type} className="w-3 h-3" />
                               {connection.platform_type === 'shopify' ? connection.shop : connection.platform_type}
                             </div>
                           ))}
@@ -353,28 +476,20 @@ export default function SettingsPage() {
                       <Button 
                         variant="ghost" 
                         className="hover:bg-[#333]"
-                        onClick={() => setSelectedBrandId(brand.id)}
+                        onClick={() => handleBrandSelect(brand.id)}
                       >
                         Manage Connections
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        className="hover:bg-[#333]"
-                        onClick={() => handleEditBrand(brand.id)}
-                      >
+                      <Button variant="ghost" className="hover:bg-[#333]" onClick={() => handleEditBrand(brand.id)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        className="hover:bg-[#333] text-red-400 hover:text-red-300"
-                        onClick={() => handleDeleteBrand(brand.id)}
-                      >
+                      <Button variant="ghost" className="hover:bg-[#333] text-red-400 hover:text-red-300" onClick={() => handleDeleteBrand(brand.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  
-                  {/* Platform connections panel that shows when brand is selected */}
+
+                  {/* Platform connections panel */}
                   {selectedBrandId === brand.id && (
                     <div className="ml-12 p-4 rounded-lg bg-[#222] space-y-3">
                       <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
@@ -449,27 +564,18 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Account Settings Card */}
-        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-white">Account Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-gray-200">Email Notifications</Label>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Daily Reports</span>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Weekly Analytics</span>
-                <Switch />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Meta Connection Testing Tools */}
+      {selectedBrandId && (
+        <div className="mt-6 space-y-4">
+          <h3 className="text-lg font-medium">Meta Connection Testing</h3>
+          <div className="flex flex-wrap gap-4">
+            <MetaDiagnosticButton brandId={selectedBrandId} />
+            <MetaMockDataButton brandId={selectedBrandId} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

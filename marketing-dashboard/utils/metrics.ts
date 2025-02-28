@@ -370,22 +370,23 @@ export function calculateMetrics(orders: Order[]) {
   }))
 
   // Calculate top products
-  const productSales = orders.reduce((acc, order) => {
+  const productSales = orders.reduce((acc: Record<string, ProductSales>, order) => {
     order.line_items.forEach(item => {
       const id = item.product_id?.toString() || item.title
       if (!acc[id]) {
         acc[id] = {
-          id,
-          title: item.title,
+          name: item.title,
           quantity: 0,
           revenue: 0
         }
       }
-      acc[id].quantity += item.quantity || 0
-      acc[id].revenue += (item.price * (item.quantity || 0))
+      const quantity = Number(item.quantity) || 0
+      const price = Number(item.price) || 0
+      acc[id].quantity += quantity
+      acc[id].revenue += price * quantity
     })
     return acc
-  }, {} as Record<string, any>)
+  }, {})
 
   const topProducts = Object.values(productSales)
     .sort((a, b) => b.revenue - a.revenue)

@@ -25,6 +25,11 @@ import { addDays } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
+import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
+import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
+import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
+import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
+import { RefreshCw } from "lucide-react"
 
 interface WidgetData {
   shopify?: any;
@@ -66,6 +71,12 @@ const initialMetrics: Metrics = {
   cprGrowth: 0
 }
 
+// Add this function at the top of your file, outside the component
+function formatDate(date: Date | undefined): string {
+  if (!date) return '';
+  return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+}
+
 export default function DashboardPage() {
   const { userId } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
@@ -75,7 +86,7 @@ export default function DashboardPage() {
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
-  const [metrics, setMetrics] = useState<Metrics>(initialMetrics)
+  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [isLoading, setIsLoading] = useState(true)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
@@ -243,35 +254,110 @@ export default function DashboardPage() {
     loadWidgetData()
   }, [selectedBrandId, connections, supabase])
 
-  // Fetch metrics when date range or brand changes
+  // Add this effect to handle metrics loading
   useEffect(() => {
-    async function fetchMetrics() {
-      if (!selectedBrandId || !dateRange.from || !dateRange.to) return
+    if (!selectedBrandId || !dateRange) {
+      setMetrics(defaultMetrics)
+      return
+    }
 
+    const loadMetrics = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch(`/api/metrics?` + new URLSearchParams({
-          from: dateRange.from.toISOString(),
-          to: dateRange.to.toISOString(),
-          brandId: selectedBrandId
-        }))
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
+        const response = await fetch(`/api/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        if (!response.ok) throw new Error('Failed to fetch metrics')
         const data = await response.json()
-        console.log('Fetched metrics:', data)
         setMetrics(data)
       } catch (error) {
-        console.error('Error fetching metrics:', error)
+        console.error('Error loading metrics:', error)
+        setMetrics(defaultMetrics)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchMetrics()
+    loadMetrics()
   }, [selectedBrandId, dateRange])
+
+  // Update your Meta metrics fetch useEffect
+  useEffect(() => {
+    async function fetchMetaMetrics() {
+      if (!selectedBrandId || !dateRange.from || !dateRange.to || !activePlatforms.meta) {
+        return;
+      }
+      
+      setIsLoading(true);
+      
+      try {
+        console.log('Fetching Meta metrics...');
+        const startDate = formatDate(dateRange.from);
+        const endDate = formatDate(dateRange.to);
+        
+        // Try to get real data (no mock parameter)
+        const metaResponse = await fetch(
+          `/api/metrics/meta?brandId=${selectedBrandId}&startDate=${startDate}&endDate=${endDate}`
+        );
+        
+        if (!metaResponse.ok) {
+          throw new Error(`Failed to fetch Meta metrics: ${metaResponse.status}`);
+        }
+        
+        const metaData = await metaResponse.json();
+        console.log('Meta metrics data:', metaData);
+        
+        // Check if we got mock data
+        if (metaData.isMockData) {
+          console.warn('Using mock Meta data because no real data is available yet');
+        }
+        
+        // Update metrics with Meta data
+        setMetrics(prev => ({
+          ...prev,
+          adSpend: metaData.metrics.adSpend || 0,
+          adSpendGrowth: metaData.metrics.adSpendGrowth || 0,
+          roas: metaData.metrics.roas || 0,
+          roasGrowth: metaData.metrics.roasGrowth || 0,
+          impressions: metaData.metrics.impressions || 0,
+          impressionGrowth: metaData.metrics.impressionGrowth || 0,
+          ctr: metaData.metrics.ctr || 0,
+          ctrGrowth: metaData.metrics.ctrGrowth || 0,
+          clicks: metaData.metrics.clicks || 0,
+          clickGrowth: metaData.metrics.clickGrowth || 0,
+          conversions: metaData.metrics.conversions || 0,
+          conversionGrowth: metaData.metrics.conversionGrowth || 0,
+          costPerResult: metaData.metrics.costPerResult || 0,
+          cprGrowth: metaData.metrics.cprGrowth || 0,
+          dailyData: metaData.dailyData || []
+        }));
+      } catch (error) {
+        console.error('Error fetching Meta metrics:', error);
+        
+        // Only set mock data if we couldn't get real data
+        setMetrics(prev => ({
+          ...prev,
+          adSpend: 0,
+          adSpendGrowth: 0,
+          roas: 0,
+          roasGrowth: 0,
+          impressions: 0,
+          impressionGrowth: 0,
+          ctr: 0,
+          ctrGrowth: 0,
+          clicks: 0,
+          clickGrowth: 0,
+          conversions: 0,
+          conversionGrowth: 0,
+          costPerResult: 0,
+          cprGrowth: 0,
+          dailyData: []
+        }));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchMetaMetrics();
+  }, [selectedBrandId, dateRange, activePlatforms.meta]);
 
   const platforms = {
     shopify: connectionStoreConnections.some((c: PlatformConnection) => c.platform_type === 'shopify'),
@@ -280,6 +366,35 @@ export default function DashboardPage() {
 
   const shopifyConnection = connections.find(c => 
     c.platform_type === 'shopify' && c.status === 'active'
+  )
+
+  // Create a function to fetch all data
+  const fetchAllData = async () => {
+    if (!selectedBrandId) return
+    
+    setIsLoading(true)
+    try {
+      // Fetch Shopify data
+      if (activePlatforms.shopify) {
+        await fetchShopifyData()
+      }
+      
+      // Fetch Meta data
+      if (activePlatforms.meta) {
+        await fetchMetaMetrics()
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Use the refresh hook - refresh every 2 minutes
+  const { lastRefreshed, isRefreshing, refresh } = useDataRefresh(
+    fetchAllData,
+    120, // 2 minutes in seconds
+    [selectedBrandId, dateRange, activePlatforms]
   )
 
   return (
@@ -300,36 +415,58 @@ export default function DashboardPage() {
             ))}
           </select>
         </div>
-        <DateRangePicker 
-          dateRange={dateRange}
-          setDateRange={setDateRange}
-        />
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+          >
+            {isRefreshing ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </>
+            )}
+          </button>
+          <span className="text-xs text-gray-500">
+            Last updated: {lastRefreshed.toLocaleTimeString()}
+          </span>
+          <DateRangePicker 
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+          />
+        </div>
       </div>
 
       {selectedBrandId ? (
-        <WidgetManager 
-          dateRange={dateRange} 
-          brandId={selectedBrandId}
-          metrics={metrics}
-          isLoading={isLoading}
-          platformStatus={activePlatforms}
-          existingConnections={connections}
-        />
+        <>
+          <WidgetManager 
+            dateRange={dateRange} 
+            brandId={selectedBrandId}
+            metrics={metrics}
+            isLoading={isLoading}
+            platformStatus={activePlatforms}
+            existingConnections={connections}
+          >
+            <div className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MetaSpendTrends brandId={selectedBrandId} />
+                <MetaAdPerformance brandId={selectedBrandId} />
+              </div>
+              
+              <MetaCampaignsTable brandId={selectedBrandId} />
+            </div>
+          </WidgetManager>
+        </>
       ) : (
         <div className="text-center text-gray-400 py-12">
           Select a brand to view metrics
         </div>
-      )}
-
-      {shopifyConnection && selectedBrandId && (
-        <ShopifyTab
-          connection={shopifyConnection}
-          dateRange={{
-            from: dateRange.from || addDays(new Date(), -30),
-            to: dateRange.to || new Date()
-          }}
-          brandId={selectedBrandId}
-        />
       )}
     </div>
   )

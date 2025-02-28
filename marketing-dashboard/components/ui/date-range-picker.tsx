@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 
 interface DateRangePickerProps {
-  value: DateRange | undefined
-  onChange: (range: DateRange | undefined) => void
+  value: DateRange
+  onChange: (range: DateRange) => void
   className?: string
 }
 
@@ -49,7 +49,11 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
             mode="range"
             defaultMonth={value?.from}
             selected={value}
-            onSelect={onChange}
+            onSelect={(range: DateRange | undefined) => {
+              if (range) {
+                onChange(range)
+              }
+            }}
             numberOfMonths={2}
             className="bg-[#2A2A2A]"
           />
