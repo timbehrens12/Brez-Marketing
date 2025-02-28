@@ -106,42 +106,44 @@ export default function SettingsPage() {
 
   const handleDeleteBrand = async (brandId: string) => {
     try {
-      // First delete all related records
-      await Promise.all([
-        // Delete metrics
-        supabase
-          .from('metrics')
-          .delete()
-          .eq('brand_id', brandId),
-        
-        // Delete platform connections
-        supabase
-          .from('platform_connections')
-          .delete()
-          .eq('brand_id', brandId),
-        
-        // Delete any other related tables...
-      ])
+      // First, disconnect all platforms for this brand
+      const { data: connections } = await supabase
+        .from('platform_connections')
+        .select('platform_type')
+        .eq('brand_id', brandId);
+      
+      if (connections && connections.length > 0) {
+        // Disconnect each platform
+        for (const connection of connections) {
+          await handleDisconnect(connection.platform_type as 'shopify' | 'meta', brandId);
+        }
+      }
 
       // Then delete the brand
       const { error } = await supabase
         .from('brands')
         .delete()
-        .eq('id', brandId)
+        .eq('id', brandId);
 
-      if (error) throw error
+      if (error) {
+        console.error('Error deleting brand:', error);
+        toast.error('Failed to delete brand');
+        return;
+      }
 
       // Refresh the brands list
-      refreshBrands()
+      refreshBrands();
+      toast.success('Brand deleted successfully');
     } catch (error) {
-      console.error('Error deleting brand:', error)
+      console.error('Error deleting brand:', error);
+      toast.error('Failed to delete brand');
     }
   }
 
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
-      // Use the disconnect-platform API route instead of direct Supabase deletion
-      const response = await fetch('/api/disconnect-platform', {
+      // Use the new API route
+      const response = await fetch('/api/platforms/disconnect', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,16 +154,46 @@ export default function SettingsPage() {
         }),
       });
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to disconnect platform');
+        // Check if it's a foreign key constraint error
+        if (response.status === 409) {
+          // Ask the user if they want to force delete
+          const forceDelete = confirm(
+            `There are still related records for this ${platform} connection. ` +
+            `Would you like to force delete it? This may result in orphaned data.`
+          );
+          
+          if (forceDelete) {
+            // Try direct deletion from the database
+            const { error } = await supabase
+              .from('platform_connections')
+              .delete()
+              .eq('brand_id', brandId)
+              .eq('platform_type', platform);
+              
+            if (error) {
+              throw new Error(`Force delete failed: ${error.message}`);
+            }
+            
+            await loadConnections();
+            toast.success(`${platform} disconnected successfully (forced)`);
+            return;
+          } else {
+            toast.error(`Disconnect cancelled. Please delete related data first.`);
+            return;
+          }
+        }
+        
+        throw new Error(responseData.error || 'Failed to disconnect platform');
       }
       
       await loadConnections();
       toast.success(`${platform} disconnected successfully`);
     } catch (error) {
       console.error(`Error disconnecting ${platform}:`, error);
-      toast.error(`Failed to disconnect ${platform}`);
+      toast.error(`Failed to disconnect ${platform}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
