@@ -323,15 +323,39 @@ export default function SettingsPage() {
   const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       if (platform === 'shopify') {
-        // Handle Shopify connection
-        window.location.href = `/api/shopify/auth?brandId=${brandId}`
+        // First create a connection record
+        const { data: connection, error } = await supabase
+          .from('platform_connections')
+          .insert({
+            platform_type: 'shopify',
+            brand_id: brandId,
+            status: 'pending',
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Error creating Shopify connection:', error);
+          toast.error('Failed to create Shopify connection');
+          return;
+        }
+        
+        // Now redirect with both brandId and connectionId
+        const shop = prompt('Enter your Shopify store URL (e.g., your-store.myshopify.com):');
+        if (!shop) {
+          toast.error('Shop URL is required');
+          return;
+        }
+        
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
       } else if (platform === 'meta') {
         // Redirect to Meta auth endpoint
-        window.location.href = `/api/auth/meta?brandId=${brandId}`
+        window.location.href = `/api/auth/meta?brandId=${brandId}`;
       }
     } catch (error) {
-      console.error('Connection error:', error)
-      toast.error('Failed to initiate connection')
+      console.error('Connection error:', error);
+      toast.error('Failed to initiate connection');
     }
   }
 
