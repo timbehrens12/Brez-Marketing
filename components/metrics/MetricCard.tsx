@@ -1,13 +1,10 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { format, parse, subDays } from "date-fns"
+import { format, subDays } from "date-fns"
 import type { MetricData } from "@/types/metrics"
-import { Info } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 
@@ -173,19 +170,6 @@ export function MetricCard({
           isPositive ? "text-emerald-500" : "text-red-500"
         )}>
           {isPositive ? "+" : ""}{formatChange(safeChange)}
-        </div>
-        <div className="h-[100px] mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={placeholderData}>
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={isPositive ? "#10B981" : "#EF4444"}
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>
