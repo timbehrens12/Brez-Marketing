@@ -17,8 +17,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
     }
 
-    const forceRefresh = url.searchParams.get('forceRefresh') === 'true'
-
     // Get the Shopify connection
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch orders from Shopify
     const ordersResponse = await fetch(
-      `https://${connection.store_url}/admin/api/2023-04/orders.json?status=any&limit=250${forceRefresh ? '&updated_at_min=' + new Date(Date.now() - 24*60*60*1000).toISOString() : ''}`,
+      `https://${connection.store_url}/admin/api/2023-04/orders.json?status=any&limit=250`,
       {
         headers: {
           'X-Shopify-Access-Token': connection.access_token
@@ -54,18 +52,8 @@ export async function POST(request: NextRequest) {
 
     const { orders } = await ordersResponse.json()
     
-    console.log(`Fetched ${orders.length} orders from Shopify for store ${connection.store_url}`)
-    console.log('First few orders:', orders.slice(0, 3).map(o => ({
-      id: o.id,
-      order_number: o.order_number,
-      created_at: o.created_at,
-      total_price: o.total_price
-    })))
-
     // Store orders in database
     for (const order of orders) {
-      console.log(`Processing order #${order.order_number} (${order.id}) from ${order.created_at}`)
-      
       const { error: orderError } = await supabase
         .from('shopify_orders')
         .upsert({
@@ -85,8 +73,6 @@ export async function POST(request: NextRequest) {
 
       if (orderError) {
         console.error(`Error storing order ${order.id}:`, orderError)
-      } else {
-        console.log(`Successfully stored/updated order ${order.id}`)
       }
     }
 

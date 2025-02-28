@@ -29,8 +29,7 @@ import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
-import { RefreshCw, Download, Calendar } from "lucide-react"
-import { format } from 'date-fns'
+import { RefreshCw, Download } from "lucide-react"
 
 interface WidgetData {
   shopify?: any;
@@ -458,24 +457,33 @@ export default function DashboardPage() {
     try {
       setIsLoading(true)
       
-      // Force Shopify sync with status=any to get all orders
+      // Force Shopify sync
       if (activePlatforms.shopify) {
-        console.log('Forcing Shopify sync...')
-        const response = await fetch(`/api/shopify/sync?brandId=${selectedBrandId}&forceRefresh=true`, {
+        const response = await fetch(`/api/shopify/sync?brandId=${selectedBrandId}`, {
           method: 'POST'
         })
         
         if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(`Failed to sync Shopify data: ${response.status} - ${errorText}`)
+          throw new Error(`Failed to sync Shopify data: ${response.status}`)
         }
         
         const result = await response.json()
         console.log('Shopify sync result:', result)
       }
       
-      // Wait a moment for the database to update
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Force Meta sync
+      if (activePlatforms.meta) {
+        const response = await fetch(`/api/meta/sync?brandId=${selectedBrandId}`, {
+          method: 'POST'
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to sync Meta data: ${response.status}`)
+        }
+        
+        const result = await response.json()
+        console.log('Meta sync result:', result)
+      }
       
       // Refresh data after sync
       await fetchAllData()
@@ -485,50 +493,6 @@ export default function DashboardPage() {
       setIsLoading(false)
     }
   }
-
-  const refreshTodayOrders = async () => {
-    if (!selectedBrandId) return
-    
-    try {
-      setIsLoading(true)
-      
-      // Get today's date
-      const today = new Date().toISOString().split('T')[0]
-      
-      // Call the direct API endpoint
-      const response = await fetch(`/api/debug/shopify-direct?brandId=${selectedBrandId}`)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to check today's orders: ${response.status}`)
-      }
-      
-      const result = await response.json()
-      console.log(`Found ${result.orders_count} orders for today (${today}):`, result.orders)
-      
-      // Force a sync if we found orders
-      if (result.orders_count > 0) {
-        await forceSync()
-      } else {
-        console.log('No orders found for today')
-        await fetchAllData()
-      }
-    } catch (error) {
-      console.error('Error checking today\'s orders:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    // Log timezone information to help debug date issues
-    console.log('Browser timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone)
-    console.log('Current time:', new Date().toISOString())
-    console.log('Local time:', format(new Date(), 'yyyy-MM-dd HH:mm:ss'))
-    console.log('Date range:', {
-      from: dateRange.from ? dateRange.from.toISOString() : null,
-      to: dateRange.to ? dateRange.to.toISOString() : null
-    })
-  }, [dateRange])
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
@@ -573,14 +537,6 @@ export default function DashboardPage() {
           >
             <Download className="h-4 w-4" />
             Force Sync
-          </button>
-          <button 
-            onClick={refreshTodayOrders}
-            disabled={isLoading}
-            className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-          >
-            <Calendar className="h-4 w-4" />
-            Check Today's Orders
           </button>
           <span className="text-xs text-gray-500">
             Last updated: {lastRefreshed.toLocaleTimeString()}

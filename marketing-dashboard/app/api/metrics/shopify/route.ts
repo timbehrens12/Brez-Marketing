@@ -38,16 +38,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No active Shopify connection found' }, { status: 404 })
     }
 
-    console.log(`Fetching orders for date range: ${startDate} to ${endDate}`)
-
     // Get orders for this connection within the date range
     // Add ORDER BY created_at DESC to get the most recent orders first
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('created_at', `${startDate}T00:00:00Z`)
-      .lte('created_at', `${endDate}T23:59:59Z`)
+      .gte('created_at', startDate)
+      .lte('created_at', endDate + 'T23:59:59Z')
       .order('created_at', { ascending: false })
 
     if (ordersError) {
@@ -56,14 +54,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`Found ${orders?.length || 0} orders for connection ${connection.id}`)
-    if (orders && orders.length > 0) {
-      console.log('Most recent order:', {
-        id: orders[0].order_id,
-        number: orders[0].order_number,
-        date: orders[0].created_at,
-        total: orders[0].total_price
-      })
-    }
 
     // Calculate metrics
     const metrics = calculateShopifyMetrics(orders || [])
