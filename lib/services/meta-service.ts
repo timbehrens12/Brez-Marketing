@@ -123,4 +123,23 @@ export async function fetchMetaAdInsights(brandId: string, startDate: string, en
         : 'Unknown error'
     }
   }
+}
+
+/**
+ * Fetch Meta Ads metrics from the API
+ */
+export async function fetchMetaMetrics(brandId: string) {
+  try {
+    const response = await fetch(`/api/metrics/meta?brandId=${brandId}`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Meta metrics: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching Meta metrics:', error)
+    throw error
+  }
 } 
