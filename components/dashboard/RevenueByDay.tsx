@@ -42,9 +42,32 @@ interface RevenueByDayProps {
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
   const [showDebug, setShowDebug] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
-  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number}>>([]);
+  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number}>>(initialData || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Log initial data on mount
+  useEffect(() => {
+    console.log('Revenue Calendar: Component mounted with initial data:', {
+      initialDataProvided: !!initialData,
+      initialDataLength: initialData?.length || 0,
+      initialDataSample: initialData?.slice(0, 3) || [],
+      brandId
+    });
+    
+    // Check if initial data is valid
+    if (initialData) {
+      const isValid = Array.isArray(initialData) && initialData.every(item => 
+        item && typeof item === 'object' && 'date' in item && 'revenue' in item
+      );
+      
+      console.log('Revenue Calendar: Initial data is valid:', isValid);
+      
+      if (!isValid) {
+        console.error('Revenue Calendar: Invalid initial data format:', initialData);
+      }
+    }
+  }, []);
   
   // Define fetchSalesData outside of useEffect so it can be called from the retry button
   const fetchSalesData = async () => {
@@ -64,6 +87,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
       
       console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
+      console.log('Revenue Calendar: Initial data available:', initialData?.length || 0, 'records');
       
       const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
       
@@ -134,9 +158,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Fetch sales data directly from the API
   useEffect(() => {
+    console.log('Revenue Calendar: useEffect triggered', { 
+      initialDataLength: initialData?.length || 0,
+      brandId
+    });
+    
     // Always use initial data if provided, regardless of whether we fetch or not
     if (initialData && initialData.length > 0) {
-      console.log('Revenue Calendar: Using provided initial data');
+      console.log('Revenue Calendar: Using provided initial data in useEffect');
       setSalesData(initialData);
       
       // If we want to refresh in the background, we can still fetch but not show loading state
@@ -431,6 +460,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               <h4 className="font-bold mb-1">Component State:</h4>
               <div>Brand ID: {brandId || 'Not provided'}</div>
               <div>Initial data: {initialData ? `${initialData.length} records` : 'None'}</div>
+              <div>Initial data valid: {initialData && Array.isArray(initialData) && initialData.every(item => item && typeof item === 'object' && 'date' in item && 'revenue' in item) ? 'Yes' : 'No'}</div>
               <div>Sales data: {salesData ? `${salesData.length} records` : 'None'}</div>
               <div>Using initial data: {salesData && initialData && salesData === initialData ? 'Yes' : 'No'}</div>
               <div>Time frame: {timeFrame}</div>
@@ -476,28 +506,40 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-gray-400">Loading sales data...</div>
         </div>
-      ) : error && salesData.length === 0 ? (
+      ) : salesData.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
           <div className="text-red-500 mb-4">
-            {error.includes('Database schema has changed') ? (
-              <>
-                <p>Database update in progress.</p>
-                <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
-              </>
+            {error ? (
+              error.includes('Database schema has changed') ? (
+                <>
+                  <p>Database update in progress.</p>
+                  <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
+                </>
+              ) : (
+                error
+              )
             ) : (
-              error
+              'No sales data available to display.'
             )}
           </div>
-          <button 
-            onClick={() => {
-              setIsLoading(true);
-              setError(null);
-              fetchSalesData();
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => {
+                setIsLoading(true);
+                setError(null);
+                fetchSalesData();
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            >
+              {showDebug ? 'Hide Debug' : 'Debug Info'}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="h-full flex flex-col">
