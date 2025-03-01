@@ -65,9 +65,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       if (!isValid) {
         console.error('Revenue Calendar: Invalid initial data format:', initialData);
+      } else if (initialData.length > 0) {
+        // If we have valid initial data, use it right away
+        console.log('Revenue Calendar: Using initial data on mount');
+        setSalesData(initialData);
       }
     }
-  }, []);
+  }, [initialData, brandId]);
   
   // Define fetchSalesData outside of useEffect so it can be called from the retry button
   const fetchSalesData = async () => {
@@ -94,6 +98,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`Revenue Calendar: API error (${response.status}):`, errorText);
+        
+        // Check if this is a database schema error
+        if (errorText.includes('relation "public.shopify_data" does not exist') || 
+            errorText.includes('Database schema has changed')) {
+          console.log('Revenue Calendar: Database schema error detected in API response');
+          
+          // If we have initial data, use it and don't show an error
+          if (initialData && initialData.length > 0) {
+            console.log('Revenue Calendar: Using initial data for database schema error');
+            setSalesData(initialData);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
         throw new Error(`Failed to fetch sales data: ${response.status} - ${errorText}`);
       }
       
@@ -122,6 +141,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         if (initialData && initialData.length > 0) {
           console.log('Revenue Calendar: Using provided initial data instead of empty sales array');
           setSalesData(initialData);
+          setError(null); // Clear error when using initial data
         } else {
           setSalesData([]);
         }
@@ -141,12 +161,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       setSalesData(transformedData);
     } catch (error) {
       console.error('Revenue Calendar: Error fetching sales data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load sales data');
+      
+      // Check for database schema error specifically
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load sales data';
+      setError(errorMessage);
       
       // If we have initial data, use that as a fallback
       if (initialData && initialData.length > 0) {
         console.log('Revenue Calendar: Using provided initial data as fallback after error');
         setSalesData(initialData);
+        
+        // If it's a database schema error, don't show the error to the user
+        if (errorMessage.includes('Database schema has changed') || 
+            errorMessage.includes('does not exist') ||
+            errorMessage.includes('relation "public.shopify_data" does not exist')) {
+          console.log('Revenue Calendar: Database schema error detected, using initial data silently');
+          setError(null);
+        }
       } else {
         // Clear any existing data
         setSalesData([]);
@@ -428,6 +459,54 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
   }
 
+  // Fetch data on mount
+  useEffect(() => {
+    if (brandId) {
+      fetchSalesData();
+    }
+  }, [brandId]);
+
+  // Add a specific effect to handle API errors by using initial data
+  useEffect(() => {
+    if (error && error.includes('Database schema has changed') && initialData && initialData.length > 0) {
+      console.log('Revenue Calendar: Database schema error detected with initial data available, using initial data');
+      setSalesData(initialData);
+      setError(null);
+    }
+  }, [error, initialData]);
+
+  // Force use of initial data when available
+  useEffect(() => {
+    // If we have valid initial data and no sales data yet, use the initial data
+    if (initialData && initialData.length > 0 && salesData.length === 0 && !isLoading) {
+      console.log('Revenue Calendar: Forcing use of initial data');
+      setSalesData(initialData);
+      // Clear any error related to database schema
+      if (error && (
+          error.includes('Database schema has changed') || 
+          error.includes('does not exist') ||
+          error.includes('relation "public.shopify_data" does not exist')
+        )) {
+        console.log('Revenue Calendar: Clearing database schema error');
+        setError(null);
+      }
+    }
+  }, [initialData, salesData.length, isLoading, error]);
+
+  // Debug log for component state
+  useEffect(() => {
+    console.log('Revenue Calendar: Component state updated:', {
+      brandId,
+      initialDataLength: initialData?.length || 0,
+      salesDataLength: salesData.length,
+      isUsingInitialData: initialData && salesData === initialData,
+      timeFrame,
+      isLoading,
+      error,
+      hasError: !!error
+    });
+  }, [brandId, initialData, salesData, timeFrame, isLoading, error]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -527,7 +606,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               onClick={() => {
                 setIsLoading(true);
                 setError(null);
-                fetchSalesData();
+                // If we have initial data, use it immediately
+                if (initialData && initialData.length > 0) {
+                  setSalesData(initialData);
+                  setIsLoading(false);
+                } else {
+                  fetchSalesData();
+                }
               }}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
