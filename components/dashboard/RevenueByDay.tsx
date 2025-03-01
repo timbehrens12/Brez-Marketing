@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { DateRange } from "react-day-picker"
 import { 
   startOfWeek, 
@@ -24,7 +24,8 @@ import {
   setHours,
   getDate,
   getDay,
-  parse
+  parse,
+  endOfDay
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -38,9 +39,19 @@ interface RevenueByDayProps {
   dateRange?: DateRange;
 }
 
-export function RevenueByDay({ data }: RevenueByDayProps) {
+export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
   const [showDebug, setShowDebug] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
+  
+  // Log the incoming date range for debugging
+  useEffect(() => {
+    if (dateRange) {
+      console.log("Date range received:", {
+        from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
+        to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : null
+      });
+    }
+  }, [dateRange]);
   
   // Get hours of the day (12am to 11pm)
   const hoursOfDay = useMemo(() => {
@@ -139,14 +150,86 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
     }
   }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays]);
 
+  // Filter data based on date range if provided
+  const filteredData = useMemo(() => {
+    if (!dateRange || !dateRange.from) {
+      console.log("No date range filter applied");
+      return data;
+    }
+
+    const from = startOfDay(dateRange.from);
+    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+    
+    console.log(`Filtering data from ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}`);
+    
+    return data.filter(item => {
+      try {
+        if (!item || !item.date) return false;
+        
+        let itemDate: Date | undefined = undefined;
+        
+        // Parse the date based on its type
+        if (typeof item.date === 'string') {
+          // Try parsing as ISO string
+          itemDate = parseISO(item.date);
+          
+          // If invalid, try as timestamp
+          if (!isValid(itemDate)) {
+            const timestamp = parseInt(item.date);
+            if (!isNaN(timestamp)) {
+              itemDate = new Date(timestamp);
+            }
+          }
+          
+          // If still invalid, try custom format
+          if (!isValid(itemDate)) {
+            try {
+              itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
+            } catch (e) {
+              // Try other formats
+              try {
+                itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
+              } catch (e2) {
+                // Parsing failed
+              }
+            }
+          }
+        } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
+          itemDate = item.date as Date;
+        } else if (typeof item.date === 'number') {
+          itemDate = new Date(item.date);
+        }
+        
+        if (!itemDate || !isValid(itemDate)) {
+          console.log(`Invalid date found: ${JSON.stringify(item.date)}`);
+          return false;
+        }
+        
+        const isInRange = itemDate >= from && itemDate <= to;
+        
+        if (isInRange && item.revenue > 1000) {
+          console.log(`Found significant sale in range: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+        }
+        
+        return isInRange;
+      } catch (error) {
+        console.error('Error filtering date:', error);
+        return false;
+      }
+    });
+  }, [data, dateRange]);
+
   // Map revenue data to the days to display
   const displayData = useMemo(() => {
     // Log the incoming data for debugging
-    console.log("Revenue data received:", data);
+    console.log("Revenue data after filtering:", filteredData.length, "items");
+    if (filteredData.length > 0) {
+      console.log("Sample data:", filteredData.slice(0, 3));
+    }
     
     return daysToDisplay.map(day => {
       // Find matching revenue data for this day
-      const matchingData = data.filter(item => {
+      const matchingData = filteredData.filter(item => {
         try {
           if (!item || !item.date) return false;
           
@@ -170,7 +253,12 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
               try {
                 itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
               } catch (e) {
-                // Parsing failed, continue with other methods
+                // Try other formats
+                try {
+                  itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
+                } catch (e2) {
+                  // Parsing failed
+                }
               }
             }
           } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
@@ -183,11 +271,19 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           
           // Match based on timeframe
           if (timeFrame === 'daily') {
-            return format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+            const matches = format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+            if (matches && item.revenue > 1000) {
+              console.log(`Found significant sale for daily view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+            }
+            return matches;
           } else if (timeFrame === 'weekly') {
             return getDay(itemDate) === getDay(day.date);
           } else if (timeFrame === 'monthly') {
-            return getDate(itemDate) === getDate(day.date);
+            const matches = getDate(itemDate) === getDate(day.date);
+            if (matches && item.revenue > 1000) {
+              console.log(`Found significant sale for monthly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} (day ${getDate(itemDate)})`);
+            }
+            return matches;
           } else if (timeFrame === 'yearly') {
             return getMonth(itemDate) === getMonth(day.date);
           }
@@ -201,6 +297,10 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
 
       // Sum up the revenue for matching data
       const revenue = matchingData.reduce((sum, item) => sum + (item.revenue || 0), 0);
+      
+      if (revenue > 1000) {
+        console.log(`Total revenue for ${format(day.date, 'yyyy-MM-dd')}: $${revenue}`);
+      }
 
       return {
         ...day,
@@ -208,7 +308,7 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         formattedDate: format(day.date, 'yyyy-MM-dd')
       };
     });
-  }, [data, daysToDisplay, timeFrame]);
+  }, [filteredData, daysToDisplay, timeFrame]);
 
   // Find the maximum revenue for scaling
   const maxRevenue = useMemo(() => {
@@ -264,6 +364,8 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-2 overflow-auto max-h-32">
           <div>Raw Data ({data.length} points):</div>
           <pre>{JSON.stringify(data.slice(0, 5), null, 2)}</pre>
+          <div className="mt-2">Filtered Data ({filteredData.length} points):</div>
+          <pre>{JSON.stringify(filteredData.slice(0, 5), null, 2)}</pre>
           <div className="mt-2">Display Data ({timeFrame}):</div>
           <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 
             day: d.dayName, 
@@ -297,26 +399,16 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
             return [
               ...emptyCells,
               ...displayData.map((day, index) => {
-                // Calculate candle height as percentage of max revenue
-                const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5);
+                // Check if this is today
+                const isToday = isSameDay(day.date, new Date());
                 
                 return (
                   <div key={index} className="flex flex-col items-center h-8">
-                    <div className="text-[8px] text-white">{day.dayNumber}</div>
-                    <div className="w-full flex-1 flex items-end justify-center">
-                      {day.revenue > 0 && (
-                        <div 
-                          className="w-4 bg-blue-600 rounded-t-sm"
-                          style={{ 
-                            height: `${heightPercentage}%`,
-                            minHeight: '2px'
-                          }}
-                          title={`$${day.revenue.toFixed(2)}`}
-                        ></div>
-                      )}
+                    <div className={`text-[9px] ${isToday ? 'text-blue-400 font-medium' : 'text-white'}`}>
+                      {day.dayNumber}
                     </div>
-                    <div className="text-[7px] text-gray-400">
-                      {day.revenue > 0 ? `$${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}` : ''}
+                    <div className="text-[8px] text-gray-400">
+                      ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                     </div>
                   </div>
                 );
