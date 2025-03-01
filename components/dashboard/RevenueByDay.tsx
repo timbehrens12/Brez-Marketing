@@ -202,11 +202,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       if (brandId) {
         const quietFetch = async () => {
           try {
+            // Get data for the last 90 days by default
             const endDate = new Date().toISOString().split('T')[0];
             const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
             
             console.log('Revenue Calendar: Quiet background fetch', { startDate, endDate, brandId });
             
+            // Use a direct query to Supabase for sales data, independent of date range picker
             const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
             
             if (!response.ok) {
@@ -405,7 +407,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           } else if (timeFrame === 'weekly') {
             return getDay(itemDate) === getDay(day.date);
           } else if (timeFrame === 'monthly') {
-            const matches = getDate(itemDate) === getDate(day.date);
+            // Match by day of month AND month/year to ensure we're looking at the current month
+            const dayMatches = getDate(itemDate) === getDate(day.date);
+            const monthYearMatches = 
+              getMonth(itemDate) === getMonth(day.date) && 
+              getYear(itemDate) === getYear(day.date);
+            
+            const matches = dayMatches && monthYearMatches;
+            
             if (matches && item.revenue > 1000) {
               console.log(`Found significant sale for monthly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} (day ${getDate(itemDate)})`);
             }
@@ -653,8 +662,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 
                 return (
                   <div key={index} className="flex flex-col items-center">
-                    <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
-                    {day.dayNumber && <div className="text-xs text-white mb-1">{day.dayNumber}</div>}
+                    {timeFrame !== 'yearly' && (
+                      <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
+                    )}
+                    {timeFrame !== 'yearly' && day.dayNumber && (
+                      <div className="text-xs text-white mb-1">{day.dayNumber}</div>
+                    )}
                     <div className="flex-1 w-full flex items-end justify-center">
                       <div 
                         className="w-6 bg-blue-600 rounded-t-sm"
@@ -668,6 +681,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     <div className="text-[9px] text-gray-400 mt-1">
                       ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                     </div>
+                    {timeFrame === 'yearly' && (
+                      <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
+                    )}
                   </div>
                 )
               })}
