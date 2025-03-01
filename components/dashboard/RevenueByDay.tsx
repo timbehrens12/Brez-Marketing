@@ -40,7 +40,6 @@ interface RevenueByDayProps {
 }
 
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
-  const [showDebug, setShowDebug] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
   const [salesData, setSalesData] = useState<Array<{date: string; revenue: number}>>(initialData || []);
   const [isLoading, setIsLoading] = useState(false);
@@ -509,55 +508,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   return (
     <div className="h-full flex flex-col">
-      {showDebug && (
-        <div className="mb-4 p-3 bg-gray-800 text-gray-300 rounded text-xs overflow-auto">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-bold mb-1">Component State:</h4>
-              <div>Brand ID: {brandId || 'Not provided'}</div>
-              <div>Initial data: {initialData ? `${initialData.length} records` : 'None'}</div>
-              <div>Initial data valid: {initialData && Array.isArray(initialData) && initialData.every(item => item && typeof item === 'object' && 'date' in item && 'revenue' in item) ? 'Yes' : 'No'}</div>
-              <div>Sales data: {salesData ? `${salesData.length} records` : 'None'}</div>
-              <div>Using initial data: {salesData && initialData && salesData === initialData ? 'Yes' : 'No'}</div>
-              <div>Time frame: {timeFrame}</div>
-              <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
-              <div>Error: {error || 'None'}</div>
-              
-              <h4 className="font-bold mt-2 mb-1">Actions:</h4>
-              <div className="flex gap-2">
-                <button
-                  onClick={fetchSalesData}
-                  className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Refresh Data
-                </button>
-                <button
-                  onClick={() => {
-                    console.clear();
-                    console.log('Debug logs cleared');
-                  }}
-                  className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                >
-                  Clear Console
-                </button>
-              </div>
-            </div>
-            
-            <div>
-              <h4 className="font-bold mb-1">Raw Data Sample:</h4>
-              <pre className="text-xs overflow-auto max-h-20 bg-gray-900 p-1 rounded">
-                {JSON.stringify(salesData.slice(0, 3), null, 2) || 'No data'}
-              </pre>
-              
-              <h4 className="font-bold mt-2 mb-1">Display Data Sample:</h4>
-              <pre className="text-xs overflow-auto max-h-20 bg-gray-900 p-1 rounded">
-                {JSON.stringify(displayData?.slice(0, 3), null, 2) || 'No data'}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
-
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-gray-400">Loading sales data...</div>
@@ -595,36 +545,22 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             >
               Retry
             </button>
-            <button
-              onClick={() => setShowDebug(!showDebug)}
-              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-            >
-              {showDebug ? 'Hide Debug' : 'Debug Info'}
-            </button>
           </div>
         </div>
       ) : (
         <div className="h-full flex flex-col">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
-              >
-                {showDebug ? 'Hide' : 'Debug'}
-              </button>
-              <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
-                <SelectTrigger className="w-[100px] h-8 text-xs bg-[#222] border-[#333]">
-                  <SelectValue placeholder="Select view" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#222] border-[#333] text-white">
-                  <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                  <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                  <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+              <SelectTrigger className="w-[100px] h-8 text-xs bg-[#222] border-[#333]">
+                <SelectValue placeholder="Select view" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#222] border-[#333] text-white">
+                <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
+                <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+                <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           {/* Loading indicator */}
