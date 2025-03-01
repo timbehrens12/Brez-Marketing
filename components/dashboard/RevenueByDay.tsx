@@ -449,7 +449,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       case 'daily':
         return 'Last 7 Days';
       case 'weekly':
-        return 'Current Week (Mon-Sun)';
+        return 'Weekly';
       case 'monthly':
         return `${format(new Date(), 'MMMM yyyy')}`;
       case 'yearly':
@@ -509,29 +509,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">{getTitle()}</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
-          >
-            {showDebug ? 'Hide Debug' : 'Debug'}
-          </button>
-          <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Daily View</SelectItem>
-              <SelectItem value="weekly">Weekly View</SelectItem>
-              <SelectItem value="monthly">Monthly View</SelectItem>
-              <SelectItem value="yearly">Yearly View</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {showDebug && (
         <div className="mb-4 p-3 bg-gray-800 text-gray-300 rounded text-xs overflow-auto">
           <div className="grid grid-cols-2 gap-4">
@@ -630,17 +607,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         <div className="h-full flex flex-col">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
-            <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
-              <SelectTrigger className="w-[140px] h-8 text-xs bg-[#222] border-[#333]">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#222] border-[#333] text-white">
-                <SelectItem value="daily" className="text-xs">Last 7 Days</SelectItem>
-                <SelectItem value="weekly" className="text-xs">Weekly (Mon-Sun)</SelectItem>
-                <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
+              >
+                {showDebug ? 'Hide' : 'Debug'}
+              </button>
+              <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+                <SelectTrigger className="w-[100px] h-8 text-xs bg-[#222] border-[#333]">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#222] border-[#333] text-white">
+                  <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
+                  <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+                  <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           {/* Loading indicator */}
@@ -671,7 +655,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             <div className="grid grid-cols-7 gap-1 h-full">
               {/* Day headers (Mon, Tue, etc.) */}
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
-                <div key={day} className="text-[11px] text-gray-300 text-center font-medium mb-2">
+                <div key={day} className="text-[10px] text-gray-300 text-center font-medium mb-1">
                   {day}
                 </div>
               ))}
@@ -684,7 +668,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 
                 // Create empty cells for days before the first of the month
                 const emptyCells = Array(firstDayWeekday).fill(null).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-10"></div>
+                  <div key={`empty-${i}`} className="h-8"></div>
                 ));
                 
                 return [
@@ -696,21 +680,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     const hasRevenue = day.revenue > 0;
                     
                     return (
-                      <div key={index} className="flex flex-col items-center h-10 mb-1">
+                      <div key={index} className="flex flex-col items-center h-8 mb-1">
                         <div 
                           className={`
-                            w-7 h-7 flex items-center justify-center rounded-full mb-1
+                            w-6 h-6 flex items-center justify-center rounded-full mb-0.5
                             ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
                           `}
                         >
-                          <span className="text-[12px] font-medium">{day.dayNumber}</span>
+                          <span className="text-[10px] font-medium">{day.dayNumber}</span>
                         </div>
                         {hasRevenue ? (
-                          <div className="text-[11px] font-medium text-green-400">
+                          <div className="text-[9px] font-medium text-green-400">
                             ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-gray-600">$0</div>
+                          <div className="text-[9px] text-gray-600">$0</div>
                         )}
                       </div>
                     );
