@@ -563,6 +563,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             </Select>
           </div>
           
+          {/* Dividing line */}
+          <div className="w-full h-px bg-gray-700 mb-3"></div>
+          
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex-1 flex items-center justify-center">
