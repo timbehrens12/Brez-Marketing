@@ -160,10 +160,22 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
     const from = startOfDay(dateRange.from);
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
     
-    console.log(`Filtering data from ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}`);
+    console.log(`Filtering data with EXACT date range:`);
+    console.log(`From: ${format(from, 'yyyy-MM-dd HH:mm:ss')} (${from.toISOString()})`);
+    console.log(`To: ${format(to, 'yyyy-MM-dd HH:mm:ss')} (${to.toISOString()})`);
     console.log(`Total data points before filtering: ${data.length}`);
     
-    return data.filter(item => {
+    // Debug: Log all dates in the data
+    if (data.length > 0) {
+      console.log("All dates in data:");
+      data.forEach((item, index) => {
+        if (item && item.date) {
+          console.log(`Item ${index}: ${JSON.stringify(item.date)} - Revenue: $${item.revenue}`);
+        }
+      });
+    }
+    
+    const filtered = data.filter(item => {
       try {
         if (!item || !item.date) return false;
         
@@ -215,12 +227,20 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           return false;
         }
         
-        // Add a small buffer to the end date to ensure today's data is included
-        // This helps with timezone issues where the date might be just outside the range
-        const adjustedTo = new Date(to);
-        adjustedTo.setHours(to.getHours() + 1);
+        // REMOVED: No longer adding buffer to end date
+        // Instead, strictly compare with the date range
+        const isInRange = itemDate >= from && itemDate <= to;
         
-        const isInRange = itemDate >= from && itemDate <= adjustedTo;
+        // Debug: Log the comparison results
+        if (item.revenue > 500) {
+          console.log(`Date comparison for $${item.revenue} sale:`, {
+            itemDate: format(itemDate, 'yyyy-MM-dd HH:mm:ss'),
+            itemISO: itemDate.toISOString(),
+            isAfterFrom: itemDate >= from,
+            isBeforeTo: itemDate <= to,
+            isInRange
+          });
+        }
         
         if (isInRange && item.revenue > 1000) {
           console.log(`Found significant sale in range: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd HH:mm:ss')}`);
@@ -232,6 +252,9 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
         return false;
       }
     });
+    
+    console.log(`Filtered data: ${filtered.length} items remain after date filtering`);
+    return filtered;
   }, [data, dateRange]);
 
   // Map revenue data to the days to display
@@ -388,8 +411,12 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           <pre>{JSON.stringify(filteredData.slice(0, 5), null, 2)}</pre>
           <div className="mt-2">Date Range:</div>
           <pre>{JSON.stringify({
-            from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
-            to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null
+            from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd HH:mm:ss') : null,
+            to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd HH:mm:ss') : null,
+            fromISO: dateRange?.from ? dateRange.from.toISOString() : null,
+            toISO: dateRange?.to ? dateRange.to.toISOString() : null,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            browserTime: new Date().toLocaleString()
           }, null, 2)}</pre>
           <div className="mt-2">Display Data ({timeFrame}):</div>
           <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 

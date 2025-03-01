@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon, ChevronDown } from "lucide-react"
-import { format, subDays, isSameDay, isYesterday, isToday } from "date-fns"
+import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -23,9 +23,11 @@ const presets = [
     value: "today",
     getDate: () => {
       const today = new Date()
+      const startOfToday = startOfDay(today)
+      const endOfToday = endOfDay(today)
       return {
-        from: today,
-        to: today,
+        from: startOfToday,
+        to: endOfToday,
       }
     },
   },
@@ -34,9 +36,11 @@ const presets = [
     value: "yesterday",
     getDate: () => {
       const yesterday = subDays(new Date(), 1)
+      const startOfYesterday = startOfDay(yesterday)
+      const endOfYesterday = endOfDay(yesterday)
       return {
-        from: yesterday,
-        to: yesterday,
+        from: startOfYesterday,
+        to: endOfYesterday,
       }
     },
   },
@@ -44,32 +48,32 @@ const presets = [
     label: "Last 7 days",
     value: "last7",
     getDate: () => ({
-      from: subDays(new Date(), 7),
-      to: new Date(),
+      from: startOfDay(subDays(new Date(), 7)),
+      to: endOfDay(new Date()),
     }),
   },
   {
     label: "Last 30 days",
     value: "last30",
     getDate: () => ({
-      from: subDays(new Date(), 30),
-      to: new Date(),
+      from: startOfDay(subDays(new Date(), 30)),
+      to: endOfDay(new Date()),
     }),
   },
   {
     label: "Last 90 days",
     value: "last90",
     getDate: () => ({
-      from: subDays(new Date(), 90),
-      to: new Date(),
+      from: startOfDay(subDays(new Date(), 90)),
+      to: endOfDay(new Date()),
     }),
   },
   {
     label: "Last 365 days",
     value: "last365",
     getDate: () => ({
-      from: subDays(new Date(), 365),
-      to: new Date(),
+      from: startOfDay(subDays(new Date(), 365)),
+      to: endOfDay(new Date()),
     }),
   },
 ]
@@ -141,7 +145,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
               defaultMonth={dateRange?.from}
               selected={dateRange}
               onSelect={(newDateRange) => {
-                setDateRange(newDateRange)
+                if (newDateRange) {
+                  setDateRange(newDateRange as { from: Date; to: Date })
+                }
                 setIsOpen(false)
               }}
               numberOfMonths={2}
