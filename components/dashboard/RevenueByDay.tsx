@@ -93,7 +93,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         } else {
           setError('No sales data found for the selected period');
         }
-        setSalesData([]);
+        
+        // If we have initial data, use that instead of empty array
+        if (initialData && initialData.length > 0) {
+          console.log('Revenue Calendar: Using provided initial data instead of empty sales array');
+          setSalesData(initialData);
+        } else {
+          setSalesData([]);
+        }
+        
         setIsLoading(false);
         return;
       }
@@ -113,7 +121,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       // If we have initial data, use that as a fallback
       if (initialData && initialData.length > 0) {
-        console.log('Revenue Calendar: Using provided initial data as fallback');
+        console.log('Revenue Calendar: Using provided initial data as fallback after error');
         setSalesData(initialData);
       } else {
         // Clear any existing data
@@ -126,10 +134,51 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Fetch sales data directly from the API
   useEffect(() => {
-    // Use initial data if provided, otherwise fetch
+    // Always use initial data if provided, regardless of whether we fetch or not
     if (initialData && initialData.length > 0) {
       console.log('Revenue Calendar: Using provided initial data');
       setSalesData(initialData);
+      
+      // If we want to refresh in the background, we can still fetch but not show loading state
+      if (brandId) {
+        const quietFetch = async () => {
+          try {
+            const endDate = new Date().toISOString().split('T')[0];
+            const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
+            
+            console.log('Revenue Calendar: Quiet background fetch', { startDate, endDate, brandId });
+            
+            const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+            
+            if (!response.ok) {
+              console.error(`Revenue Calendar: Background API error (${response.status})`);
+              return; // Keep using initial data
+            }
+            
+            const result = await response.json();
+            
+            if (!result.sales || result.sales.length === 0) {
+              console.log('Revenue Calendar: No sales data from background fetch, keeping initial data');
+              return; // Keep using initial data
+            }
+            
+            // Only update if we got valid data
+            const transformedData = result.sales.map((sale: any) => ({
+              date: sale.created_at,
+              revenue: parseFloat(sale.total_price || '0')
+            }));
+            
+            console.log('Revenue Calendar: Background fetch successful, updating data');
+            setSalesData(transformedData);
+            setError(null);
+          } catch (error) {
+            console.error('Revenue Calendar: Background fetch error:', error);
+            // Keep using initial data, don't update error state
+          }
+        };
+        
+        quietFetch();
+      }
     } else {
       fetchSalesData();
     }
@@ -383,6 +432,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               <div>Brand ID: {brandId || 'Not provided'}</div>
               <div>Initial data: {initialData ? `${initialData.length} records` : 'None'}</div>
               <div>Sales data: {salesData ? `${salesData.length} records` : 'None'}</div>
+              <div>Using initial data: {salesData && initialData && salesData === initialData ? 'Yes' : 'No'}</div>
               <div>Time frame: {timeFrame}</div>
               <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
               <div>Error: {error || 'None'}</div>
@@ -426,9 +476,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-gray-400">Loading sales data...</div>
         </div>
-      ) : error ? (
+      ) : error && salesData.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="text-red-500 mb-4">{error}</div>
+          <div className="text-red-500 mb-4">
+            {error.includes('Database schema has changed') ? (
+              <>
+                <p>Database update in progress.</p>
+                <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
+              </>
+            ) : (
+              error
+            )}
+          </div>
           <button 
             onClick={() => {
               setIsLoading(true);
@@ -465,19 +524,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {/* Error message */}
-          {error && !isLoading && (
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="text-red-400 mb-3">{error}</div>
-              <button 
-                onClick={() => {
-                  setIsLoading(true);
-                  setError(null);
-                  fetchSalesData();
-                }}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-              >
-                Retry
-              </button>
+          {error && !isLoading && salesData.length > 0 && (
+            <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-md p-2 mb-4">
+              <div className="text-yellow-500 text-sm">
+                {error.includes('Database schema has changed') ? (
+                  <>
+                    <p className="font-medium">Database update in progress</p>
+                    <p className="text-xs text-yellow-400/70 mt-1">Showing historical data. Recent sales may not be reflected.</p>
+                  </>
+                ) : (
+                  error
+                )}
+              </div>
             </div>
           )}
           
