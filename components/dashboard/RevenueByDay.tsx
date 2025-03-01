@@ -596,49 +596,34 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with calendar-style layout - more compact
-            <div className="grid grid-cols-7 gap-1 h-full">
-              {/* Calendar grid with proper day positioning */}
-              {(() => {
-                const today = new Date();
-                const firstDayOfMonth = startOfMonth(today);
-                const firstDayWeekday = (firstDayOfMonth.getDay() || 7) - 1; // 0-6 where 0 is Sunday, convert to 0-6 where 0 is Monday
+            // Monthly view with flex layout - compact without day alignment
+            <div className="flex flex-wrap h-full content-start">
+              {displayData.map((day, index) => {
+                // Check if this is today
+                const isToday = isSameDay(day.date, new Date());
+                // Check if there's revenue for this day
+                const hasRevenue = day.revenue > 0;
                 
-                // Create empty cells for days before the first of the month
-                const emptyCells = Array(firstDayWeekday).fill(null).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-8"></div>
-                ));
-                
-                return [
-                  ...emptyCells,
-                  ...displayData.map((day, index) => {
-                    // Check if this is today
-                    const isToday = isSameDay(day.date, new Date());
-                    // Check if there's revenue for this day
-                    const hasRevenue = day.revenue > 0;
-                    
-                    return (
-                      <div key={index} className="flex flex-col items-center h-10 mb-1">
-                        <div 
-                          className={`
-                            w-7 h-7 flex items-center justify-center rounded-full mb-0.5
-                            ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
-                          `}
-                        >
-                          <span className="text-xs font-medium">{day.dayNumber}</span>
-                        </div>
-                        {hasRevenue ? (
-                          <div className="text-xs font-medium text-green-400">
-                            ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-gray-600">$0</div>
-                        )}
+                return (
+                  <div key={index} className="flex flex-col items-center w-[14.28%] h-7">
+                    <div 
+                      className={`
+                        w-6 h-6 flex items-center justify-center rounded-full
+                        ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
+                      `}
+                    >
+                      <span className="text-xs font-medium">{day.dayNumber}</span>
+                    </div>
+                    {hasRevenue ? (
+                      <div className="text-xs font-medium text-green-400 -mt-1 leading-tight">
+                        ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                       </div>
-                    );
-                  })
-                ];
-              })()}
+                    ) : (
+                      <div className="text-xs text-gray-600 -mt-1 leading-tight">$0</div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : !isLoading && !error && (
             // Other views (weekly, daily, yearly)
