@@ -46,56 +46,112 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch sales data directly from the API
-  useEffect(() => {
-    async function fetchSalesData() {
-      if (!brandId) return;
-      
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        // Get data for the last 90 days by default
-        const endDate = new Date().toISOString().split('T')[0];
-        const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
-        
-        console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
-        
-        const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch sales data: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (!result.sales) {
-          throw new Error('No sales data returned');
-        }
-        
-        console.log(`Revenue Calendar: Fetched ${result.sales.length} sales records directly`);
-        
-        // Transform the sales data into the format we need
-        const transformedData = result.sales.map((sale: any) => ({
-          date: sale.created_at,
-          revenue: parseFloat(sale.total_price || '0')
-        }));
-        
-        setSalesData(transformedData);
-      } catch (error) {
-        console.error('Error fetching sales data:', error);
-        setError('Failed to load sales data');
-        
-        // If we have initial data, use that as a fallback
-        if (initialData && initialData.length > 0) {
-          console.log('Revenue Calendar: Using initial data as fallback');
-          setSalesData(initialData);
-        }
-      } finally {
-        setIsLoading(false);
-      }
+  // Define fetchSalesData outside of useEffect so it can be called from the retry button
+  const fetchSalesData = async () => {
+    if (!brandId) {
+      console.error('Revenue Calendar: No brandId provided');
+      setError('No brand ID provided');
+      setIsLoading(false);
+      return;
     }
     
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Get data for the last 90 days by default
+      const endDate = new Date().toISOString().split('T')[0];
+      const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
+      
+      console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
+      
+      const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Revenue Calendar: API error (${response.status}):`, errorText);
+        throw new Error(`Failed to fetch sales data: ${response.status} - ${errorText}`);
+      }
+      
+      const result = await response.json();
+      
+      console.log('Revenue Calendar: API response:', result);
+      
+      if (!result.sales) {
+        console.error('Revenue Calendar: No sales array in response', result);
+        throw new Error('No sales data returned');
+      }
+      
+      console.log(`Revenue Calendar: Fetched ${result.sales.length} sales records directly`);
+      
+      if (result.sales.length === 0) {
+        console.warn('Revenue Calendar: Empty sales array returned');
+        setError('No sales data found for the selected period');
+        
+        // Use mock data as fallback
+        const mockData = generateMockSalesData();
+        console.log('Revenue Calendar: Using mock data as fallback');
+        setSalesData(mockData);
+        return;
+      }
+      
+      // Transform the sales data into the format we need
+      const transformedData = result.sales.map((sale: any) => ({
+        date: sale.created_at,
+        revenue: parseFloat(sale.total_price || '0')
+      }));
+      
+      console.log('Revenue Calendar: Transformed data sample:', transformedData.slice(0, 3));
+      
+      setSalesData(transformedData);
+    } catch (error) {
+      console.error('Revenue Calendar: Error fetching sales data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load sales data');
+      
+      // If we have initial data, use that as a fallback
+      if (initialData && initialData.length > 0) {
+        console.log('Revenue Calendar: Using provided initial data as fallback');
+        setSalesData(initialData);
+      } else {
+        // Use mock data as fallback
+        const mockData = generateMockSalesData();
+        console.log('Revenue Calendar: Using mock data as fallback');
+        setSalesData(mockData);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Generate mock sales data for fallback
+  const generateMockSalesData = () => {
+    console.log('Revenue Calendar: Generating mock sales data');
+    const mockData = [];
+    const today = new Date();
+    
+    // Generate 90 days of mock data
+    for (let i = 0; i < 90; i++) {
+      const date = subDays(today, i);
+      
+      // Generate random revenue between $50 and $500
+      const revenue = Math.floor(Math.random() * 450) + 50;
+      
+      // Add more sales on weekends
+      const dayOfWeek = getDay(date);
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const multiplier = isWeekend ? 1.5 : 1;
+      
+      mockData.push({
+        date: date.toISOString(),
+        revenue: revenue * multiplier
+      });
+    }
+    
+    return mockData;
+  };
+  
+  // Fetch sales data directly from the API
+  useEffect(() => {
     // Use initial data if provided, otherwise fetch
     if (initialData && initialData.length > 0) {
       console.log('Revenue Calendar: Using provided initial data');
@@ -322,141 +378,209 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
-        <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
-          <SelectTrigger className="w-[140px] h-8 text-xs bg-[#222] border-[#333]">
-            <SelectValue placeholder="Select view" />
-          </SelectTrigger>
-          <SelectContent className="bg-[#222] border-[#333] text-white">
-            <SelectItem value="daily" className="text-xs">Last 7 Days</SelectItem>
-            <SelectItem value="weekly" className="text-xs">Weekly (Mon-Sun)</SelectItem>
-            <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-            <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">{getTitle()}</h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
+          >
+            {showDebug ? 'Hide Debug' : 'Debug'}
+          </button>
+          <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select view" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Daily View</SelectItem>
+              <SelectItem value="weekly">Weekly View</SelectItem>
+              <SelectItem value="monthly">Monthly View</SelectItem>
+              <SelectItem value="yearly">Yearly View</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      
-      {/* Loading indicator */}
-      {isLoading && (
+
+      {showDebug && (
+        <div className="mb-4 p-3 bg-gray-800 text-gray-300 rounded text-xs overflow-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-bold mb-1">Component State:</h4>
+              <div>Brand ID: {brandId || 'Not provided'}</div>
+              <div>Initial data: {initialData ? `${initialData.length} records` : 'None'}</div>
+              <div>Sales data: {salesData ? `${salesData.length} records` : 'None'}</div>
+              <div>Time frame: {timeFrame}</div>
+              <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+              <div>Error: {error || 'None'}</div>
+              
+              <h4 className="font-bold mt-2 mb-1">Actions:</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchSalesData}
+                  className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  Refresh Data
+                </button>
+                <button
+                  onClick={() => {
+                    console.clear();
+                    console.log('Debug logs cleared');
+                  }}
+                  className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                >
+                  Clear Console
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-bold mb-1">Raw Data Sample:</h4>
+              <pre className="text-xs overflow-auto max-h-20 bg-gray-900 p-1 rounded">
+                {JSON.stringify(salesData.slice(0, 3), null, 2) || 'No data'}
+              </pre>
+              
+              <h4 className="font-bold mt-2 mb-1">Display Data Sample:</h4>
+              <pre className="text-xs overflow-auto max-h-20 bg-gray-900 p-1 rounded">
+                {JSON.stringify(displayData?.slice(0, 3), null, 2) || 'No data'}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-gray-400">Loading sales data...</div>
         </div>
-      )}
-      
-      {/* Error message */}
-      {error && !isLoading && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-red-400">{error}</div>
+      ) : error ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="text-red-500 mb-4">{error}</div>
+          <button 
+            onClick={() => {
+              setIsLoading(true);
+              setError(null);
+              fetchSalesData();
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
         </div>
-      )}
-      
-      {/* Debug toggle */}
-      {process.env.NODE_ENV === 'development' && (
-        <button 
-          onClick={() => setShowDebug(!showDebug)} 
-          className="text-xs text-gray-400 mb-1 underline self-end"
-        >
-          {showDebug ? 'Hide Debug' : 'Show Debug'}
-        </button>
-      )}
-      
-      {/* Debug info */}
-      {showDebug && (
-        <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-2 overflow-auto max-h-32">
-          <div>Raw Data ({salesData.length} points):</div>
-          <pre>{JSON.stringify(salesData.slice(0, 5), null, 2)}</pre>
-          <div className="mt-2">Display Data ({timeFrame}):</div>
-          <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 
-            day: d.dayName, 
-            date: d.formattedDate, 
-            revenue: d.revenue 
-          })), null, 2)}</pre>
-        </div>
-      )}
-      
-      {!isLoading && !error && timeFrame === 'monthly' ? (
-        // Monthly view with calendar-style layout - more compact
-        <div className="grid grid-cols-7 gap-1 h-full">
-          {/* Day headers (Mon, Tue, etc.) */}
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
-            <div key={day} className="text-[11px] text-gray-300 text-center font-medium mb-2">
-              {day}
-            </div>
-          ))}
+      ) : (
+        <div className="h-full flex flex-col">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
+            <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-[#222] border-[#333]">
+                <SelectValue placeholder="Select view" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#222] border-[#333] text-white">
+                <SelectItem value="daily" className="text-xs">Last 7 Days</SelectItem>
+                <SelectItem value="weekly" className="text-xs">Weekly (Mon-Sun)</SelectItem>
+                <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+                <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          {/* Calendar grid with proper day positioning */}
-          {(() => {
-            const today = new Date();
-            const firstDayOfMonth = startOfMonth(today);
-            const firstDayWeekday = (firstDayOfMonth.getDay() || 7) - 1; // 0-6 where 0 is Sunday, convert to 0-6 where 0 is Monday
-            
-            // Create empty cells for days before the first of the month
-            const emptyCells = Array(firstDayWeekday).fill(null).map((_, i) => (
-              <div key={`empty-${i}`} className="h-10"></div>
-            ));
-            
-            return [
-              ...emptyCells,
-              ...displayData.map((day, index) => {
-                // Check if this is today
-                const isToday = isSameDay(day.date, new Date());
-                // Check if there's revenue for this day
-                const hasRevenue = day.revenue > 0;
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-pulse text-gray-400">Loading sales data...</div>
+            </div>
+          )}
+          
+          {/* Error message */}
+          {error && !isLoading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-red-400">{error}</div>
+            </div>
+          )}
+          
+          {!isLoading && !error && timeFrame === 'monthly' ? (
+            // Monthly view with calendar-style layout - more compact
+            <div className="grid grid-cols-7 gap-1 h-full">
+              {/* Day headers (Mon, Tue, etc.) */}
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
+                <div key={day} className="text-[11px] text-gray-300 text-center font-medium mb-2">
+                  {day}
+                </div>
+              ))}
+              
+              {/* Calendar grid with proper day positioning */}
+              {(() => {
+                const today = new Date();
+                const firstDayOfMonth = startOfMonth(today);
+                const firstDayWeekday = (firstDayOfMonth.getDay() || 7) - 1; // 0-6 where 0 is Sunday, convert to 0-6 where 0 is Monday
+                
+                // Create empty cells for days before the first of the month
+                const emptyCells = Array(firstDayWeekday).fill(null).map((_, i) => (
+                  <div key={`empty-${i}`} className="h-10"></div>
+                ));
+                
+                return [
+                  ...emptyCells,
+                  ...displayData.map((day, index) => {
+                    // Check if this is today
+                    const isToday = isSameDay(day.date, new Date());
+                    // Check if there's revenue for this day
+                    const hasRevenue = day.revenue > 0;
+                    
+                    return (
+                      <div key={index} className="flex flex-col items-center h-10 mb-1">
+                        <div 
+                          className={`
+                            w-7 h-7 flex items-center justify-center rounded-full mb-1
+                            ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
+                          `}
+                        >
+                          <span className="text-[12px] font-medium">{day.dayNumber}</span>
+                        </div>
+                        {hasRevenue ? (
+                          <div className="text-[11px] font-medium text-green-400">
+                            ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-gray-600">$0</div>
+                        )}
+                      </div>
+                    );
+                  })
+                ];
+              })()}
+            </div>
+          ) : !isLoading && !error && (
+            // Other views (weekly, daily, yearly)
+            <div className={`grid gap-1 h-full ${
+              timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 
+              'grid-cols-7'
+            }`}>
+              {displayData.map((day, index) => {
+                // Calculate candle height as percentage of max revenue
+                const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5)
                 
                 return (
-                  <div key={index} className="flex flex-col items-center h-10 mb-1">
-                    <div 
-                      className={`
-                        w-7 h-7 flex items-center justify-center rounded-full mb-1
-                        ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
-                      `}
-                    >
-                      <span className="text-[12px] font-medium">{day.dayNumber}</span>
+                  <div key={index} className="flex flex-col items-center">
+                    <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
+                    {day.dayNumber && <div className="text-xs text-white mb-1">{day.dayNumber}</div>}
+                    <div className="flex-1 w-full flex items-end justify-center">
+                      <div 
+                        className="w-6 bg-blue-600 rounded-t-sm"
+                        style={{ 
+                          height: `${heightPercentage}%`,
+                          minHeight: '3px'
+                        }}
+                        title={`$${day.revenue.toFixed(2)}`}
+                      ></div>
                     </div>
-                    {hasRevenue ? (
-                      <div className="text-[11px] font-medium text-green-400">
-                        ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-gray-600">$0</div>
-                    )}
+                    <div className="text-[9px] text-gray-400 mt-1">
+                      ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
+                    </div>
                   </div>
-                );
-              })
-            ];
-          })()}
-        </div>
-      ) : !isLoading && !error && (
-        // Other views (weekly, daily, yearly)
-        <div className={`grid gap-1 h-full ${
-          timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 
-          'grid-cols-7'
-        }`}>
-          {displayData.map((day, index) => {
-            // Calculate candle height as percentage of max revenue
-            const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5)
-            
-            return (
-              <div key={index} className="flex flex-col items-center">
-                <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
-                {day.dayNumber && <div className="text-xs text-white mb-1">{day.dayNumber}</div>}
-                <div className="flex-1 w-full flex items-end justify-center">
-                  <div 
-                    className="w-6 bg-blue-600 rounded-t-sm"
-                    style={{ 
-                      height: `${heightPercentage}%`,
-                      minHeight: '3px'
-                    }}
-                    title={`$${day.revenue.toFixed(2)}`}
-                  ></div>
-                </div>
-                <div className="text-[9px] text-gray-400 mt-1">
-                  ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                </div>
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

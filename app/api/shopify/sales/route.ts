@@ -18,6 +18,25 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Verify Supabase connection
+    try {
+      const { data: testData, error: testError } = await supabase.from('platform_connections').select('count').limit(1)
+      if (testError) {
+        console.error('Supabase connection test failed:', testError)
+        return NextResponse.json({ 
+          error: 'Database connection error', 
+          details: testError.message 
+        }, { status: 500 })
+      }
+      console.log('Supabase connection test successful')
+    } catch (testError) {
+      console.error('Supabase connection test exception:', testError)
+      return NextResponse.json({ 
+        error: 'Database connection exception', 
+        details: testError instanceof Error ? testError.message : String(testError)
+      }, { status: 500 })
+    }
+
     // Get Shopify connection for this brand
     console.log('Fetching Shopify connection for brand:', brandId)
     const { data: connection, error: connectionError } = await supabase
@@ -32,7 +51,10 @@ export async function GET(request: Request) {
       if (connectionError.code === 'PGRST116') {
         // No connection found (not an error)
         console.log('No active Shopify connection found for brand:', brandId)
-        return NextResponse.json({ sales: [] })
+        return NextResponse.json({ 
+          sales: [],
+          message: 'No active Shopify connection found'
+        })
       }
       
       // Other database error
@@ -45,14 +67,40 @@ export async function GET(request: Request) {
 
     if (!connection) {
       console.log('No active Shopify connection found for brand:', brandId)
-      return NextResponse.json({ sales: [] })
+      return NextResponse.json({ 
+        sales: [],
+        message: 'No active Shopify connection found'
+      })
     }
 
     console.log('Found Shopify connection:', { 
       id: connection.id, 
-      shop: connection.shop,
       status: connection.status
     })
+
+    // Check if shopify_data table exists and has the expected structure
+    try {
+      const { count, error: tableCheckError } = await supabase
+        .from('shopify_data')
+        .select('*', { count: 'exact', head: true })
+        .limit(1)
+      
+      if (tableCheckError) {
+        console.error('Error checking shopify_data table:', tableCheckError)
+        return NextResponse.json({ 
+          error: 'Database schema error', 
+          details: tableCheckError.message 
+        }, { status: 500 })
+      }
+      
+      console.log('shopify_data table check successful, count:', count)
+    } catch (tableCheckError) {
+      console.error('Exception checking shopify_data table:', tableCheckError)
+      return NextResponse.json({ 
+        error: 'Database schema exception', 
+        details: tableCheckError instanceof Error ? tableCheckError.message : String(tableCheckError)
+      }, { status: 500 })
+    }
 
     // Build query for sales data
     let query = supabase
@@ -106,9 +154,14 @@ export async function GET(request: Request) {
         created_at: sale.created_at,
         total_price: sale.total_price
       })));
+    } else {
+      console.log('No sales data found for the query')
     }
     
-    return NextResponse.json({ sales: sales || [] })
+    return NextResponse.json({ 
+      sales: sales || [],
+      message: sales && sales.length > 0 ? `Found ${sales.length} sales records` : 'No sales data found'
+    })
     
   } catch (error) {
     console.error('Unhandled error fetching Shopify sales:', error)
