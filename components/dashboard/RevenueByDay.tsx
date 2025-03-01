@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 import { useMemo, useState, useEffect } from 'react'
-import { DateRange } from "react-day-picker"
 import { 
   startOfWeek, 
   addDays, 
@@ -25,33 +24,86 @@ import {
   getDate,
   getDay,
   parse,
-  endOfDay
+  endOfDay,
+  subDays
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
 interface RevenueByDayProps {
-  data: Array<{
+  data?: Array<{
     date: string;
     revenue: number;
   }>;
-  dateRange?: DateRange;
+  brandId: string;
 }
 
-export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
+export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
   const [showDebug, setShowDebug] = useState(false);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
+  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number}>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Log the incoming date range for debugging
+  // Fetch sales data directly from the API
   useEffect(() => {
-    if (dateRange) {
-      console.log("Date range received:", {
-        from: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
-        to: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : null
-      });
+    async function fetchSalesData() {
+      if (!brandId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Get data for the last 90 days by default
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
+        
+        console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
+        
+        const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch sales data: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (!result.sales) {
+          throw new Error('No sales data returned');
+        }
+        
+        console.log(`Revenue Calendar: Fetched ${result.sales.length} sales records directly`);
+        
+        // Transform the sales data into the format we need
+        const transformedData = result.sales.map((sale: any) => ({
+          date: sale.created_at,
+          revenue: parseFloat(sale.total_price || '0')
+        }));
+        
+        setSalesData(transformedData);
+      } catch (error) {
+        console.error('Error fetching sales data:', error);
+        setError('Failed to load sales data');
+        
+        // If we have initial data, use that as a fallback
+        if (initialData && initialData.length > 0) {
+          console.log('Revenue Calendar: Using initial data as fallback');
+          setSalesData(initialData);
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [dateRange]);
+    
+    // Use initial data if provided, otherwise fetch
+    if (initialData && initialData.length > 0) {
+      console.log('Revenue Calendar: Using provided initial data');
+      setSalesData(initialData);
+    } else {
+      fetchSalesData();
+    }
+  }, [brandId, initialData]);
   
   // Get hours of the day (12am to 11pm)
   const hoursOfDay = useMemo(() => {
@@ -150,124 +202,17 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
     }
   }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays]);
 
-  // Filter data based on date range if provided
-  const filteredData = useMemo(() => {
-    if (!dateRange || !dateRange.from) {
-      console.log("No date range filter applied");
-      return data;
-    }
-
-    const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    
-    console.log(`Filtering data with EXACT date range:`);
-    console.log(`From: ${format(from, 'yyyy-MM-dd HH:mm:ss')} (${from.toISOString()})`);
-    console.log(`To: ${format(to, 'yyyy-MM-dd HH:mm:ss')} (${to.toISOString()})`);
-    console.log(`Total data points before filtering: ${data.length}`);
-    
-    // Debug: Log all dates in the data
-    if (data.length > 0) {
-      console.log("All dates in data:");
-      data.forEach((item, index) => {
-        if (item && item.date) {
-          console.log(`Item ${index}: ${JSON.stringify(item.date)} - Revenue: $${item.revenue}`);
-        }
-      });
-    }
-    
-    const filtered = data.filter(item => {
-      try {
-        if (!item || !item.date) return false;
-        
-        let itemDate: Date | undefined = undefined;
-        
-        // Parse the date based on its type
-        if (typeof item.date === 'string') {
-          // Log the raw date string for debugging
-          console.log(`Processing date string: ${item.date}`);
-          
-          // Try parsing as ISO string
-          itemDate = parseISO(item.date);
-          
-          // If invalid, try as timestamp
-          if (!isValid(itemDate)) {
-            const timestamp = parseInt(item.date);
-            if (!isNaN(timestamp)) {
-              itemDate = new Date(timestamp);
-            }
-          }
-          
-          // If still invalid, try custom format
-          if (!isValid(itemDate)) {
-            try {
-              itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
-            } catch (e) {
-              // Try other formats
-              try {
-                itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
-              } catch (e2) {
-                // Try one more format that might be used
-                try {
-                  itemDate = parse(item.date, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSX', new Date());
-                } catch (e3) {
-                  // Parsing failed
-                  console.error(`Failed to parse date: ${item.date}`);
-                }
-              }
-            }
-          }
-        } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
-          itemDate = item.date as Date;
-        } else if (typeof item.date === 'number') {
-          itemDate = new Date(item.date);
-        }
-        
-        if (!itemDate || !isValid(itemDate)) {
-          console.log(`Invalid date found: ${JSON.stringify(item.date)}`);
-          return false;
-        }
-        
-        // REMOVED: No longer adding buffer to end date
-        // Instead, strictly compare with the date range
-        const isInRange = itemDate >= from && itemDate <= to;
-        
-        // Debug: Log the comparison results
-        if (item.revenue > 500) {
-          console.log(`Date comparison for $${item.revenue} sale:`, {
-            itemDate: format(itemDate, 'yyyy-MM-dd HH:mm:ss'),
-            itemISO: itemDate.toISOString(),
-            isAfterFrom: itemDate >= from,
-            isBeforeTo: itemDate <= to,
-            isInRange
-          });
-        }
-        
-        if (isInRange && item.revenue > 1000) {
-          console.log(`Found significant sale in range: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd HH:mm:ss')}`);
-        }
-        
-        return isInRange;
-      } catch (error) {
-        console.error('Error filtering date:', error);
-        return false;
-      }
-    });
-    
-    console.log(`Filtered data: ${filtered.length} items remain after date filtering`);
-    return filtered;
-  }, [data, dateRange]);
-
   // Map revenue data to the days to display
   const displayData = useMemo(() => {
     // Log the incoming data for debugging
-    console.log("Revenue data after filtering:", filteredData.length, "items");
-    if (filteredData.length > 0) {
-      console.log("Sample data:", filteredData.slice(0, 3));
+    console.log("Revenue Calendar: Processing sales data", salesData.length, "items");
+    if (salesData.length > 0) {
+      console.log("Sample data:", salesData.slice(0, 3));
     }
     
     return daysToDisplay.map(day => {
       // Find matching revenue data for this day
-      const matchingData = filteredData.filter(item => {
+      const matchingData = salesData.filter(item => {
         try {
           if (!item || !item.date) return false;
           
@@ -351,7 +296,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
         formattedDate: format(day.date, 'yyyy-MM-dd')
       };
     });
-  }, [filteredData, daysToDisplay, timeFrame]);
+  }, [salesData, daysToDisplay, timeFrame]);
 
   // Find the maximum revenue for scaling
   const maxRevenue = useMemo(() => {
@@ -392,6 +337,20 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
         </Select>
       </div>
       
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse text-gray-400">Loading sales data...</div>
+        </div>
+      )}
+      
+      {/* Error message */}
+      {error && !isLoading && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-400">{error}</div>
+        </div>
+      )}
+      
       {/* Debug toggle */}
       {process.env.NODE_ENV === 'development' && (
         <button 
@@ -405,19 +364,8 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
       {/* Debug info */}
       {showDebug && (
         <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-2 overflow-auto max-h-32">
-          <div>Raw Data ({data.length} points):</div>
-          <pre>{JSON.stringify(data.slice(0, 5), null, 2)}</pre>
-          <div className="mt-2">Filtered Data ({filteredData.length} points):</div>
-          <pre>{JSON.stringify(filteredData.slice(0, 5), null, 2)}</pre>
-          <div className="mt-2">Date Range:</div>
-          <pre>{JSON.stringify({
-            from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd HH:mm:ss') : null,
-            to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd HH:mm:ss') : null,
-            fromISO: dateRange?.from ? dateRange.from.toISOString() : null,
-            toISO: dateRange?.to ? dateRange.to.toISOString() : null,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            browserTime: new Date().toLocaleString()
-          }, null, 2)}</pre>
+          <div>Raw Data ({salesData.length} points):</div>
+          <pre>{JSON.stringify(salesData.slice(0, 5), null, 2)}</pre>
           <div className="mt-2">Display Data ({timeFrame}):</div>
           <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 
             day: d.dayName, 
@@ -427,12 +375,12 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
         </div>
       )}
       
-      {timeFrame === 'monthly' ? (
+      {!isLoading && !error && timeFrame === 'monthly' ? (
         // Monthly view with calendar-style layout - more compact
-        <div className="grid grid-cols-7 gap-0.5 h-full">
+        <div className="grid grid-cols-7 gap-1 h-full">
           {/* Day headers (Mon, Tue, etc.) */}
           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
-            <div key={day} className="text-[9px] text-gray-400 text-center font-medium mb-1">
+            <div key={day} className="text-[11px] text-gray-300 text-center font-medium mb-2">
               {day}
             </div>
           ))}
@@ -445,7 +393,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
             
             // Create empty cells for days before the first of the month
             const emptyCells = Array(firstDayWeekday).fill(null).map((_, i) => (
-              <div key={`empty-${i}`} className="h-8"></div>
+              <div key={`empty-${i}`} className="h-10"></div>
             ));
             
             return [
@@ -453,22 +401,33 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
               ...displayData.map((day, index) => {
                 // Check if this is today
                 const isToday = isSameDay(day.date, new Date());
+                // Check if there's revenue for this day
+                const hasRevenue = day.revenue > 0;
                 
                 return (
-                  <div key={index} className="flex flex-col items-center h-8">
-                    <div className={`text-[9px] ${isToday ? 'text-blue-400 font-medium' : 'text-white'}`}>
-                      {day.dayNumber}
+                  <div key={index} className="flex flex-col items-center h-10 mb-1">
+                    <div 
+                      className={`
+                        w-7 h-7 flex items-center justify-center rounded-full mb-1
+                        ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
+                      `}
+                    >
+                      <span className="text-[12px] font-medium">{day.dayNumber}</span>
                     </div>
-                    <div className="text-[8px] text-gray-400">
-                      ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                    </div>
+                    {hasRevenue ? (
+                      <div className="text-[11px] font-medium text-green-400">
+                        ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-gray-600">$0</div>
+                    )}
                   </div>
                 );
               })
             ];
           })()}
         </div>
-      ) : (
+      ) : !isLoading && !error && (
         // Other views (weekly, daily, yearly)
         <div className={`grid gap-1 h-full ${
           timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 

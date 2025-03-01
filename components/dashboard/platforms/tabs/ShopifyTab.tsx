@@ -175,6 +175,7 @@ export function ShopifyTab({
           <CardContent className="h-[300px]">
             <RevenueByDay 
               data={safeMetrics.revenueByDay} 
+              brandId={brandId}
             />
           </CardContent>
         </Card>
