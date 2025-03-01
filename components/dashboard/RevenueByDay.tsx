@@ -572,9 +572,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             </Select>
           </div>
           
-          {/* Dividing line */}
-          <div className="w-full h-px bg-gray-700 mb-3"></div>
-          
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex-1 flex items-center justify-center">
@@ -601,13 +598,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           {!isLoading && !error && timeFrame === 'monthly' ? (
             // Monthly view with calendar-style layout - more compact
             <div className="grid grid-cols-7 gap-1 h-full">
-              {/* Day headers (Mon, Tue, etc.) */}
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(day => (
-                <div key={day} className="text-[10px] text-gray-300 text-center font-medium mb-1">
-                  {day}
-                </div>
-              ))}
-              
               {/* Calendar grid with proper day positioning */}
               {(() => {
                 const today = new Date();
@@ -628,21 +618,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     const hasRevenue = day.revenue > 0;
                     
                     return (
-                      <div key={index} className="flex flex-col items-center h-8 mb-1">
+                      <div key={index} className="flex flex-col items-center h-10 mb-1">
                         <div 
                           className={`
-                            w-6 h-6 flex items-center justify-center rounded-full mb-0.5
+                            w-7 h-7 flex items-center justify-center rounded-full mb-0.5
                             ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
                           `}
                         >
-                          <span className="text-[10px] font-medium">{day.dayNumber}</span>
+                          <span className="text-xs font-medium">{day.dayNumber}</span>
                         </div>
                         {hasRevenue ? (
-                          <div className="text-[9px] font-medium text-green-400">
+                          <div className="text-xs font-medium text-green-400">
                             ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                           </div>
                         ) : (
-                          <div className="text-[9px] text-gray-600">$0</div>
+                          <div className="text-xs text-gray-600">$0</div>
                         )}
                       </div>
                     );
@@ -666,11 +656,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                       <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
                     )}
                     {timeFrame !== 'yearly' && day.dayNumber && (
-                      <div className="text-xs text-white mb-1">{day.dayNumber}</div>
+                      <div className="text-sm text-white mb-1">{day.dayNumber}</div>
                     )}
                     <div className="flex-1 w-full flex items-end justify-center">
                       <div 
-                        className="w-6 bg-blue-600 rounded-t-sm"
+                        className="w-7 bg-blue-600 rounded-t-sm"
                         style={{ 
                           height: `${heightPercentage}%`,
                           minHeight: '3px'
@@ -678,7 +668,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                         title={`$${day.revenue.toFixed(2)}`}
                       ></div>
                     </div>
-                    <div className="text-[9px] text-gray-400 mt-1">
+                    <div className="text-xs text-gray-400 mt-1">
                       ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                     </div>
                     {timeFrame === 'yearly' && (
