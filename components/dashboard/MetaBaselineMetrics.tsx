@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect } from 'react'
 import { formatCurrency, formatNumber, formatPercentage } from '@/lib/utils/formatters'
 import { fetchMetaMetrics } from '@/lib/services/meta-service'
