@@ -144,45 +144,94 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
     console.log("Revenue data received:", data);
     
     return daysToDisplay.map(day => {
-      // Find matching revenue data for this day
+      // For hourly view, sum all revenues for the hour (only for today)
+      if (timeFrame === 'hourly') {
+        const today = startOfDay(new Date());
+        let hourRevenue = 0;
+        
+        data.forEach(item => {
+          try {
+            if (!item || !item.date) return;
+            
+            let itemDate: Date | null = null;
+            
+            // Parse the date based on its type
+            if (typeof item.date === 'string') {
+              // Try parsing as ISO string
+              itemDate = parseISO(item.date);
+              
+              // If parsing failed, try other formats
+              if (!isValid(itemDate)) {
+                // Try as timestamp
+                if (!isNaN(Number(item.date))) {
+                  itemDate = new Date(Number(item.date));
+                } else {
+                  // Try as YYYY-MM-DD HH:mm:ss
+                  const parts = item.date.split(/[-T: ]/);
+                  if (parts.length >= 3) {
+                    itemDate = new Date(
+                      parseInt(parts[0]), 
+                      parseInt(parts[1]) - 1,
+                      parseInt(parts[2]),
+                      parts.length > 3 ? parseInt(parts[3]) : 0,
+                      parts.length > 4 ? parseInt(parts[4]) : 0
+                    );
+                  }
+                }
+              }
+            } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
+              itemDate = item.date as Date;
+            } else if (typeof item.date === 'number') {
+              itemDate = new Date(item.date);
+            }
+            
+            // If we have a valid date, check if it matches the current hour and day
+            if (itemDate && isValid(itemDate)) {
+              if (getHours(itemDate) === getHours(day.date) && isSameDay(itemDate, today)) {
+                console.log(`Found sale at hour ${getHours(itemDate)}: $${item.revenue}`);
+                hourRevenue += (item.revenue || 0);
+              }
+            }
+          } catch (error) {
+            console.error("Error processing date:", item.date, error);
+          }
+        });
+        
+        return {
+          ...day,
+          revenue: hourRevenue
+        };
+      }
+      
+      // For other views, find matching revenue data
       const matchingData = data.find(item => {
         // Handle different date formats
-        let itemDate;
         try {
           if (!item || !item.date) return false;
           
+          let itemDate: Date | null = null;
+          
           // Try different date parsing approaches
           if (typeof item.date === 'string') {
-            // Try parsing as ISO string
             itemDate = parseISO(item.date);
             
-            // If parsing failed or resulted in an invalid date, try another approach
             if (!isValid(itemDate)) {
-              // Try parsing as YYYY-MM-DD
               const parts = item.date.split('-');
               if (parts.length === 3) {
                 itemDate = new Date(
                   parseInt(parts[0]), 
-                  parseInt(parts[1]) - 1, // Month is 0-indexed
+                  parseInt(parts[1]) - 1,
                   parseInt(parts[2])
                 );
               }
             }
           } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
             itemDate = item.date as Date;
-          } else {
-            return false;
+          } else if (typeof item.date === 'number') {
+            itemDate = new Date(item.date);
           }
           
-          // Check if the dates match
-          if (!isValid(itemDate)) return false;
-          
-          // For hourly view, match by hour of the day AND today's date
-          if (timeFrame === 'hourly') {
-            const today = startOfDay(new Date());
-            return getHours(itemDate) === getHours(day.date) && 
-                   isSameDay(itemDate, today);
-          }
+          if (!itemDate || !isValid(itemDate)) return false;
           
           // For yearly view, match by month and year
           if (timeFrame === 'yearly') {
@@ -191,46 +240,30 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           }
           
           // For other views, match by exact day
-          const matches = isSameDay(itemDate, day.date);
-          if (matches) {
-            console.log(`Match found for ${day.formattedDate}: ${item.revenue}`);
-          }
-          return matches;
+          return isSameDay(itemDate, day.date);
         } catch (error) {
           console.error("Error parsing date:", item.date, error);
           return false;
         }
       });
       
-      // For hourly view, sum all revenues for the hour (only for today)
-      if (timeFrame === 'hourly') {
-        const today = startOfDay(new Date());
-        const hourRevenue = data.reduce((sum, item) => {
-          try {
-            const itemDate = typeof item.date === 'string' ? parseISO(item.date) : new Date(item.date);
-            if (isValid(itemDate) && 
-                getHours(itemDate) === getHours(day.date) && 
-                isSameDay(itemDate, today)) {
-              return sum + (item.revenue || 0);
-            }
-          } catch (error) {
-            console.error("Error processing date for hourly view:", item.date, error);
-          }
-          return sum;
-        }, 0);
-        
-        return {
-          ...day,
-          revenue: hourRevenue
-        };
-      }
-      
       // For yearly view, sum all revenues for the month
       if (timeFrame === 'yearly') {
         const monthRevenue = data.reduce((sum, item) => {
           try {
-            const itemDate = typeof item.date === 'string' ? parseISO(item.date) : new Date(item.date);
-            if (isValid(itemDate) && 
+            if (!item || !item.date) return sum;
+            
+            let itemDate: Date | null = null;
+            
+            if (typeof item.date === 'string') {
+              itemDate = parseISO(item.date);
+            } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
+              itemDate = item.date as Date;
+            } else if (typeof item.date === 'number') {
+              itemDate = new Date(item.date);
+            }
+            
+            if (itemDate && isValid(itemDate) && 
                 getMonth(itemDate) === getMonth(day.date) && 
                 getYear(itemDate) === getYear(day.date)) {
               return sum + (item.revenue || 0);
@@ -246,8 +279,6 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           revenue: monthRevenue
         };
       }
-      
-      console.log(`Day ${day.formattedDate}: ${matchingData ? matchingData.revenue : 'No data'}`);
       
       return {
         ...day,
@@ -372,30 +403,30 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           })()}
         </div>
       ) : timeFrame === 'hourly' ? (
-        // Hourly view - simplified to show 6-hour blocks
+        // Hourly view - more compact layout
         <div className="flex flex-col h-full">
-          <div className="text-xs text-gray-400 mb-2">Today's sales by hour</div>
-          
           {/* Morning (12am-11am) */}
-          <div className="mb-4">
-            <div className="text-xs font-medium text-gray-400 mb-2">Morning</div>
+          <div className="mb-1">
+            <div className="text-[10px] font-medium text-gray-400 mb-1">Morning</div>
             <div className="flex justify-between">
               {displayData.slice(0, 12).map((hour, index) => {
                 const heightPercentage = Math.max((hour.revenue / maxRevenue) * 100, 5);
                 return (
-                  <div key={index} className="flex flex-col items-center w-8">
-                    <div className="text-[10px] text-gray-400">{hour.dayName}</div>
-                    <div className="h-16 w-full flex items-end justify-center">
-                      <div 
-                        className="w-6 bg-blue-600 rounded-t-sm"
-                        style={{ 
-                          height: `${heightPercentage}%`,
-                          minHeight: hour.revenue > 0 ? '4px' : '0px'
-                        }}
-                        title={`$${hour.revenue.toFixed(2)}`}
-                      ></div>
+                  <div key={index} className="flex flex-col items-center w-5">
+                    <div className="text-[7px] text-gray-400">{hour.dayName}</div>
+                    <div className="h-10 w-full flex items-end justify-center">
+                      {hour.revenue > 0 && (
+                        <div 
+                          className="w-3 bg-blue-600 rounded-t-sm"
+                          style={{ 
+                            height: `${heightPercentage}%`,
+                            minHeight: '3px'
+                          }}
+                          title={`$${hour.revenue.toFixed(2)}`}
+                        ></div>
+                      )}
                     </div>
-                    <div className="text-[8px] text-gray-400 mt-1">
+                    <div className="text-[6px] text-gray-400 mt-1">
                       {hour.revenue > 0 ? `$${hour.revenue > 999 ? (hour.revenue/1000).toFixed(1) + 'k' : hour.revenue.toFixed(0)}` : ''}
                     </div>
                   </div>
@@ -406,24 +437,26 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
           
           {/* Afternoon/Evening (12pm-11pm) */}
           <div>
-            <div className="text-xs font-medium text-gray-400 mb-2">Afternoon/Evening</div>
+            <div className="text-[10px] font-medium text-gray-400 mb-1">Afternoon/Evening</div>
             <div className="flex justify-between">
               {displayData.slice(12, 24).map((hour, index) => {
                 const heightPercentage = Math.max((hour.revenue / maxRevenue) * 100, 5);
                 return (
-                  <div key={index} className="flex flex-col items-center w-8">
-                    <div className="text-[10px] text-gray-400">{hour.dayName}</div>
-                    <div className="h-16 w-full flex items-end justify-center">
-                      <div 
-                        className="w-6 bg-blue-600 rounded-t-sm"
-                        style={{ 
-                          height: `${heightPercentage}%`,
-                          minHeight: hour.revenue > 0 ? '4px' : '0px'
-                        }}
-                        title={`$${hour.revenue.toFixed(2)}`}
-                      ></div>
+                  <div key={index} className="flex flex-col items-center w-5">
+                    <div className="text-[7px] text-gray-400">{hour.dayName}</div>
+                    <div className="h-10 w-full flex items-end justify-center">
+                      {hour.revenue > 0 && (
+                        <div 
+                          className="w-3 bg-blue-600 rounded-t-sm"
+                          style={{ 
+                            height: `${heightPercentage}%`,
+                            minHeight: '3px'
+                          }}
+                          title={`$${hour.revenue.toFixed(2)}`}
+                        ></div>
+                      )}
                     </div>
-                    <div className="text-[8px] text-gray-400 mt-1">
+                    <div className="text-[6px] text-gray-400 mt-1">
                       {hour.revenue > 0 ? `$${hour.revenue > 999 ? (hour.revenue/1000).toFixed(1) + 'k' : hour.revenue.toFixed(0)}` : ''}
                     </div>
                   </div>
@@ -431,6 +464,13 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
               })}
             </div>
           </div>
+          
+          {/* Debug info for hourly view */}
+          {showDebug && (
+            <div className="mt-1 text-[7px] text-gray-400">
+              <div>Hours with revenue: {displayData.filter(d => d.revenue > 0).map(d => d.dayName).join(', ')}</div>
+            </div>
+          )}
         </div>
       ) : (
         // Other views (weekly, daily, yearly)
