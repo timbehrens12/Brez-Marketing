@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       status: connection.status
     })
 
-    // Check if shopify_data table exists and has the expected structure
+    // Check if shopify_data table exists
     try {
       const { count, error: tableCheckError } = await supabase
         .from('shopify_data')
@@ -86,20 +86,99 @@ export async function GET(request: Request) {
         .limit(1)
       
       if (tableCheckError) {
+        // If the table doesn't exist, check for alternative tables
+        if (tableCheckError.message && tableCheckError.message.includes('does not exist')) {
+          console.log('shopify_data table does not exist, checking for alternative tables')
+          
+          // Try shopify_orders table
+          try {
+            const { count: ordersCount, error: ordersError } = await supabase
+              .from('shopify_orders')
+              .select('*', { count: 'exact', head: true })
+              .limit(1)
+            
+            if (!ordersError) {
+              console.log('Found shopify_orders table, using it instead')
+              
+              // Build query for orders data
+              let query = supabase
+                .from('shopify_orders')
+                .select('*')
+                .eq('connection_id', connection.id)
+              
+              // Add date filters if provided
+              if (startDate) {
+                console.log('Filtering by start date:', startDate)
+                query = query.gte('created_at', startDate)
+              }
+              
+              if (endDate) {
+                try {
+                  const parsedEndDate = parseISO(endDate);
+                  const adjustedEndDate = endOfDay(parsedEndDate);
+                  const formattedEndDate = format(adjustedEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+                  
+                  console.log('Filtering by end date:', endDate);
+                  console.log('Adjusted end date to include full day:', formattedEndDate);
+                  
+                  query = query.lte('created_at', formattedEndDate);
+                } catch (error) {
+                  console.error('Error adjusting end date:', error);
+                  query = query.lte('created_at', endDate);
+                }
+              }
+              
+              // Execute query
+              const { data: orders, error: ordersQueryError } = await query.order('created_at', { ascending: false })
+              
+              if (ordersQueryError) {
+                console.error('Error fetching shopify_orders data:', ordersQueryError)
+                return NextResponse.json({ 
+                  sales: [],
+                  message: 'Database schema has changed. Please contact support to update your database.'
+                })
+              }
+              
+              console.log(`Found ${orders?.length || 0} Shopify orders records`)
+              
+              // Transform orders to match expected sales format
+              const sales = orders?.map((order: any) => ({
+                id: order.id,
+                created_at: order.created_at,
+                total_price: order.total_price || '0',
+                // Add other fields as needed
+              })) || []
+              
+              return NextResponse.json({ 
+                sales,
+                message: sales.length > 0 ? `Found ${sales.length} sales records` : 'No sales data found'
+              })
+            }
+          } catch (ordersError) {
+            console.error('Error checking shopify_orders table:', ordersError)
+          }
+          
+          // If we get here, neither table exists
+          return NextResponse.json({ 
+            sales: [],
+            message: 'Database schema has changed. Please contact support to update your database.'
+          })
+        }
+        
         console.error('Error checking shopify_data table:', tableCheckError)
         return NextResponse.json({ 
-          error: 'Database schema error', 
-          details: tableCheckError.message 
-        }, { status: 500 })
+          sales: [],
+          message: 'Database schema has changed. Please contact support to update your database.'
+        })
       }
       
       console.log('shopify_data table check successful, count:', count)
     } catch (tableCheckError) {
       console.error('Exception checking shopify_data table:', tableCheckError)
       return NextResponse.json({ 
-        error: 'Database schema exception', 
-        details: tableCheckError instanceof Error ? tableCheckError.message : String(tableCheckError)
-      }, { status: 500 })
+        sales: [],
+        message: 'Database schema has changed. Please contact support to update your database.'
+      })
     }
 
     // Build query for sales data
@@ -140,16 +219,16 @@ export async function GET(request: Request) {
     if (salesError) {
       console.error('Error fetching Shopify sales data:', salesError)
       return NextResponse.json({ 
-        error: 'Failed to fetch sales data', 
-        details: salesError.message 
-      }, { status: 500 })
+        sales: [],
+        message: 'Database schema has changed. Please contact support to update your database.'
+      })
     }
 
     console.log(`Found ${sales?.length || 0} Shopify sales records`)
     
     // Log a sample of the sales data for debugging
     if (sales && sales.length > 0) {
-      console.log('Sample sales data:', sales.slice(0, 2).map(sale => ({
+      console.log('Sample sales data:', sales.slice(0, 2).map((sale: any) => ({
         id: sale.id,
         created_at: sale.created_at,
         total_price: sale.total_price
@@ -166,8 +245,8 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Unhandled error fetching Shopify sales:', error)
     return NextResponse.json({ 
-      error: 'Failed to fetch sales',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+      sales: [],
+      message: 'An error occurred while fetching sales data. Please try again later.'
+    })
   }
 } 

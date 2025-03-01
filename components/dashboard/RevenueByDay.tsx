@@ -86,12 +86,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       if (result.sales.length === 0) {
         console.warn('Revenue Calendar: Empty sales array returned');
-        setError('No sales data found for the selected period');
-        
-        // Use mock data as fallback
-        const mockData = generateMockSalesData();
-        console.log('Revenue Calendar: Using mock data as fallback');
-        setSalesData(mockData);
+        // Use the message from the API if available
+        if (result.message) {
+          console.log('Revenue Calendar: API message:', result.message);
+          setError(result.message);
+        } else {
+          setError('No sales data found for the selected period');
+        }
+        setSalesData([]);
+        setIsLoading(false);
         return;
       }
       
@@ -113,41 +116,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         console.log('Revenue Calendar: Using provided initial data as fallback');
         setSalesData(initialData);
       } else {
-        // Use mock data as fallback
-        const mockData = generateMockSalesData();
-        console.log('Revenue Calendar: Using mock data as fallback');
-        setSalesData(mockData);
+        // Clear any existing data
+        setSalesData([]);
       }
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  // Generate mock sales data for fallback
-  const generateMockSalesData = () => {
-    console.log('Revenue Calendar: Generating mock sales data');
-    const mockData = [];
-    const today = new Date();
-    
-    // Generate 90 days of mock data
-    for (let i = 0; i < 90; i++) {
-      const date = subDays(today, i);
-      
-      // Generate random revenue between $50 and $500
-      const revenue = Math.floor(Math.random() * 450) + 50;
-      
-      // Add more sales on weekends
-      const dayOfWeek = getDay(date);
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const multiplier = isWeekend ? 1.5 : 1;
-      
-      mockData.push({
-        date: date.toISOString(),
-        revenue: revenue * multiplier
-      });
-    }
-    
-    return mockData;
   };
   
   // Fetch sales data directly from the API
@@ -492,8 +466,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           
           {/* Error message */}
           {error && !isLoading && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-red-400">{error}</div>
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="text-red-400 mb-3">{error}</div>
+              <button 
+                onClick={() => {
+                  setIsLoading(true);
+                  setError(null);
+                  fetchSalesData();
+                }}
+                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+              >
+                Retry
+              </button>
             </div>
           )}
           
