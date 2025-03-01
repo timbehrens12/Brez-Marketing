@@ -149,9 +149,15 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
         const today = startOfDay(new Date());
         let hourRevenue = 0;
         
+        // Log the current hour we're processing
+        console.log(`Processing hour: ${format(day.date, "ha")} (${getHours(day.date)})`);
+        
         data.forEach(item => {
           try {
             if (!item || !item.date) return;
+            
+            // Log the raw date from the data
+            console.log(`Raw date from data: ${JSON.stringify(item.date)}`);
             
             let itemDate: Date | null = null;
             
@@ -159,12 +165,14 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
             if (typeof item.date === 'string') {
               // Try parsing as ISO string
               itemDate = parseISO(item.date);
+              console.log(`Parsed ISO date: ${itemDate.toString()}, valid: ${isValid(itemDate)}`);
               
               // If parsing failed, try other formats
               if (!isValid(itemDate)) {
                 // Try as timestamp
                 if (!isNaN(Number(item.date))) {
                   itemDate = new Date(Number(item.date));
+                  console.log(`Parsed timestamp: ${itemDate.toString()}`);
                 } else {
                   // Try as YYYY-MM-DD HH:mm:ss
                   const parts = item.date.split(/[-T: ]/);
@@ -176,19 +184,27 @@ export function RevenueByDay({ data }: RevenueByDayProps) {
                       parts.length > 3 ? parseInt(parts[3]) : 0,
                       parts.length > 4 ? parseInt(parts[4]) : 0
                     );
+                    console.log(`Parsed from parts: ${itemDate.toString()}, parts: ${parts.join(',')}`);
                   }
                 }
               }
             } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
               itemDate = item.date as Date;
+              console.log(`Date object: ${itemDate.toString()}`);
             } else if (typeof item.date === 'number') {
               itemDate = new Date(item.date);
+              console.log(`Numeric date: ${itemDate.toString()}`);
             }
             
             // If we have a valid date, check if it matches the current hour and day
             if (itemDate && isValid(itemDate)) {
-              if (getHours(itemDate) === getHours(day.date) && isSameDay(itemDate, today)) {
-                console.log(`Found sale at hour ${getHours(itemDate)}: $${item.revenue}`);
+              // For debugging, log all hours
+              console.log(`Item hour: ${getHours(itemDate)}, Day hour: ${getHours(day.date)}, Same day: ${isSameDay(itemDate, today)}`);
+              
+              // IMPORTANT: For hourly view, we want to show all sales for today, grouped by hour
+              // We don't need to check if it's the same day as today - we want to show all data
+              if (getHours(itemDate) === getHours(day.date)) {
+                console.log(`✅ Found sale at hour ${getHours(itemDate)}: $${item.revenue}`);
                 hourRevenue += (item.revenue || 0);
               }
             }
