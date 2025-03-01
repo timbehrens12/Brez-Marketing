@@ -46,7 +46,6 @@ interface ProcessedMetaData {
   budget: number;
   reach: number;
   dailyData: DailyDataItem[];
-  isMockData?: boolean;
 }
 
 export async function GET(request: NextRequest) {
@@ -94,14 +93,13 @@ export async function GET(request: NextRequest) {
     }
     
     // Process and return the data
-    let processedData
+    let processedData: ProcessedMetaData;
     
     if (metaData && metaData.length > 0) {
       processedData = processMetaData(metaData)
     } else {
-      // If no real data, return mock data
-      processedData = generateMockMetaData()
-      processedData.isMockData = true
+      // If no real data, return empty data structure
+      processedData = createEmptyDataStructure()
     }
     
     return new Response(JSON.stringify(processedData), {
@@ -115,6 +113,32 @@ export async function GET(request: NextRequest) {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     })
+  }
+}
+
+// Create an empty data structure for when no data is available
+function createEmptyDataStructure(): ProcessedMetaData {
+  return {
+    adSpend: 0,
+    adSpendGrowth: 0,
+    impressions: 0,
+    impressionGrowth: 0,
+    clicks: 0,
+    clickGrowth: 0,
+    conversions: 0,
+    conversionGrowth: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    cpc: 0,
+    cpcLink: 0,
+    costPerResult: 0,
+    cprGrowth: 0,
+    roas: 0,
+    roasGrowth: 0,
+    frequency: 0,
+    budget: 0,
+    reach: 0,
+    dailyData: []
   }
 }
 
@@ -200,7 +224,6 @@ function processMetaData(data: MetaDataItem[]): ProcessedMetaData {
     budget: budget, // Added estimated budget
     reach: totalReach, // Added reach
     dailyData: dailyData,
-    isMockData: false
   }
 }
 
@@ -230,55 +253,4 @@ function calculateGrowth(dailyData: DailyDataItem[], metric: string): number {
   if (firstTotal === 0) return secondTotal > 0 ? 100 : 0
   
   return ((secondTotal - firstTotal) / firstTotal) * 100
-}
-
-// Generate mock data (keep this for fallback)
-function generateMockMetaData(): ProcessedMetaData {
-  return {
-    adSpend: 1250.75,
-    adSpendGrowth: 15.2,
-    impressions: 185000,
-    impressionGrowth: 22.3,
-    clicks: 5180,
-    clickGrowth: 12.4,
-    conversions: 320,
-    conversionGrowth: 18.9,
-    ctr: 2.8,
-    ctrGrowth: 0.5,
-    cpc: 0.24,
-    cpcLink: 0.32, // Added link click CPC
-    costPerResult: 3.91,
-    cprGrowth: -5.2,
-    roas: 3.5,
-    roasGrowth: 8.7,
-    frequency: 2.4, // Added frequency
-    budget: 2500, // Added budget
-    reach: 77000, // Added reach
-    dailyData: generateMockDailyData(),
-    isMockData: true
-  }
-}
-
-// Generate mock daily data for testing
-function generateMockDailyData(): DailyDataItem[] {
-  const dailyData: DailyDataItem[] = []
-  const today = new Date()
-  
-  for (let i = 30; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    const dateStr = date.toISOString().split('T')[0]
-    
-    dailyData.push({
-      date: dateStr,
-      spend: Math.random() * 100 + 20,
-      impressions: Math.floor(Math.random() * 10000 + 2000),
-      clicks: Math.floor(Math.random() * 300 + 50),
-      conversions: Math.floor(Math.random() * 20 + 5),
-      ctr: Math.random() * 5 + 1,
-      roas: Math.random() * 5 + 1
-    })
-  }
-  
-  return dailyData
 } 

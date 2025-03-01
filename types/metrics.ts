@@ -83,6 +83,20 @@ export interface Metrics {
   topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
   customerSegments: CustomerSegments
   dailyData: Array<DailyData>
+  adSpend: number
+  adSpendGrowth: number
+  roas: number
+  roasGrowth: number
+  impressions: number
+  impressionGrowth: number
+  ctr: number
+  ctrGrowth: number
+  clicks: number
+  clickGrowth: number
+  conversions: number
+  conversionGrowth: number
+  costPerResult: number
+  cprGrowth: number
 }
 
 export interface ComparisonDates {

@@ -14,8 +14,6 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
-import MetaDiagnosticButton from './components/meta-diagnostic-button'
-import MetaMockDataButton from './components/meta-mock-data-button'
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -644,17 +642,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Meta Connection Testing Tools */}
-      {selectedBrandId && (
-        <div className="mt-6 space-y-4">
-          <h3 className="text-lg font-medium">Meta Connection Testing</h3>
-          <div className="flex flex-wrap gap-4">
-            <MetaDiagnosticButton brandId={selectedBrandId} />
-            <MetaMockDataButton brandId={selectedBrandId} />
-          </div>
-        </div>
-      )}
     </div>
   )
 }

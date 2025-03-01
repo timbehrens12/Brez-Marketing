@@ -9,7 +9,7 @@ import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabase"
 import BrandSelector from '@/components/BrandSelector'
 import { useBrandContext } from '@/lib/context/BrandContext'
-import { defaultMetrics, type Metrics } from '@/types/metrics'
+import { defaultMetrics, type Metrics, type CustomerSegments } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
@@ -49,7 +49,10 @@ const initialMetrics: Metrics = {
   aovGrowth: 0,
   conversionRate: 0,
   conversionRateGrowth: 0,
-  customerSegments: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
   customerRetentionRate: 0,
   retentionGrowth: 0,
   returnRate: 0,
@@ -305,11 +308,6 @@ export default function DashboardPage() {
         const metaData = await metaResponse.json();
         console.log('Meta metrics data:', metaData);
         
-        // Check if we got mock data
-        if (metaData.isMockData) {
-          console.warn('Using mock Meta data because no real data is available yet');
-        }
-        
         // Update metrics with Meta data
         setMetrics(prev => ({
           ...prev,
@@ -376,12 +374,49 @@ export default function DashboardPage() {
     try {
       // Fetch Shopify data
       if (activePlatforms.shopify) {
-        await fetchShopifyData()
+        // Fetch Shopify data
+        const response = await fetch(`/api/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
+        const data = await response.json()
+        setMetrics(prevMetrics => ({
+          ...prevMetrics,
+          ...data
+        }))
       }
       
       // Fetch Meta data
       if (activePlatforms.meta) {
-        await fetchMetaMetrics()
+        const startDate = formatDate(dateRange.from);
+        const endDate = formatDate(dateRange.to);
+        
+        const metaResponse = await fetch(
+          `/api/metrics/meta?brandId=${selectedBrandId}&startDate=${startDate}&endDate=${endDate}`
+        );
+        
+        if (!metaResponse.ok) {
+          throw new Error(`Failed to fetch Meta metrics: ${metaResponse.status}`);
+        }
+        
+        const metaData = await metaResponse.json();
+        
+        setMetrics(prev => ({
+          ...prev,
+          adSpend: metaData.metrics.adSpend || 0,
+          adSpendGrowth: metaData.metrics.adSpendGrowth || 0,
+          roas: metaData.metrics.roas || 0,
+          roasGrowth: metaData.metrics.roasGrowth || 0,
+          impressions: metaData.metrics.impressions || 0,
+          impressionGrowth: metaData.metrics.impressionGrowth || 0,
+          ctr: metaData.metrics.ctr || 0,
+          ctrGrowth: metaData.metrics.ctrGrowth || 0,
+          clicks: metaData.metrics.clicks || 0,
+          clickGrowth: metaData.metrics.clickGrowth || 0,
+          conversions: metaData.metrics.conversions || 0,
+          conversionGrowth: metaData.metrics.conversionGrowth || 0,
+          costPerResult: metaData.metrics.costPerResult || 0,
+          cprGrowth: metaData.metrics.cprGrowth || 0,
+          dailyData: metaData.dailyData || []
+        }));
       }
     } catch (error) {
       console.error('Error refreshing data:', error)
