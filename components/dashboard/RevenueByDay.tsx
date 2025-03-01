@@ -161,6 +161,7 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
     
     console.log(`Filtering data from ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}`);
+    console.log(`Total data points before filtering: ${data.length}`);
     
     return data.filter(item => {
       try {
@@ -170,6 +171,9 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
         
         // Parse the date based on its type
         if (typeof item.date === 'string') {
+          // Log the raw date string for debugging
+          console.log(`Processing date string: ${item.date}`);
+          
           // Try parsing as ISO string
           itemDate = parseISO(item.date);
           
@@ -190,7 +194,13 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
               try {
                 itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
               } catch (e2) {
-                // Parsing failed
+                // Try one more format that might be used
+                try {
+                  itemDate = parse(item.date, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSX', new Date());
+                } catch (e3) {
+                  // Parsing failed
+                  console.error(`Failed to parse date: ${item.date}`);
+                }
               }
             }
           }
@@ -205,10 +215,15 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           return false;
         }
         
-        const isInRange = itemDate >= from && itemDate <= to;
+        // Add a small buffer to the end date to ensure today's data is included
+        // This helps with timezone issues where the date might be just outside the range
+        const adjustedTo = new Date(to);
+        adjustedTo.setHours(to.getHours() + 1);
+        
+        const isInRange = itemDate >= from && itemDate <= adjustedTo;
         
         if (isInRange && item.revenue > 1000) {
-          console.log(`Found significant sale in range: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+          console.log(`Found significant sale in range: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd HH:mm:ss')}`);
         }
         
         return isInRange;
@@ -257,7 +272,12 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
                 try {
                   itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
                 } catch (e2) {
-                  // Parsing failed
+                  // Try one more format that might be used
+                  try {
+                    itemDate = parse(item.date, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSX', new Date());
+                  } catch (e3) {
+                    // Parsing failed
+                  }
                 }
               }
             }
@@ -366,6 +386,11 @@ export function RevenueByDay({ data, dateRange }: RevenueByDayProps) {
           <pre>{JSON.stringify(data.slice(0, 5), null, 2)}</pre>
           <div className="mt-2">Filtered Data ({filteredData.length} points):</div>
           <pre>{JSON.stringify(filteredData.slice(0, 5), null, 2)}</pre>
+          <div className="mt-2">Date Range:</div>
+          <pre>{JSON.stringify({
+            from: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : null,
+            to: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : null
+          }, null, 2)}</pre>
           <div className="mt-2">Display Data ({timeFrame}):</div>
           <pre>{JSON.stringify(displayData.slice(0, 5).map(d => ({ 
             day: d.dayName, 

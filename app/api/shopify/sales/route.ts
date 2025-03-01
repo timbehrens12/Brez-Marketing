@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { endOfDay, parseISO, format } from 'date-fns'
 
 export async function GET(request: Request) {
   console.log('Shopify sales route hit')
@@ -66,8 +67,22 @@ export async function GET(request: Request) {
     }
     
     if (endDate) {
-      console.log('Filtering by end date:', endDate)
-      query = query.lte('created_at', endDate)
+      // Adjust the end date to include the full day (up to 23:59:59)
+      try {
+        const parsedEndDate = parseISO(endDate);
+        const adjustedEndDate = endOfDay(parsedEndDate);
+        const formattedEndDate = format(adjustedEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+        
+        console.log('Filtering by end date:', endDate);
+        console.log('Adjusted end date to include full day:', formattedEndDate);
+        
+        query = query.lte('created_at', formattedEndDate);
+      } catch (error) {
+        // If date parsing fails, use the original end date
+        console.error('Error adjusting end date:', error);
+        console.log('Using original end date:', endDate);
+        query = query.lte('created_at', endDate);
+      }
     }
     
     // Execute query
@@ -83,6 +98,16 @@ export async function GET(request: Request) {
     }
 
     console.log(`Found ${sales?.length || 0} Shopify sales records`)
+    
+    // Log a sample of the sales data for debugging
+    if (sales && sales.length > 0) {
+      console.log('Sample sales data:', sales.slice(0, 2).map(sale => ({
+        id: sale.id,
+        created_at: sale.created_at,
+        total_price: sale.total_price
+      })));
+    }
+    
     return NextResponse.json({ sales: sales || [] })
     
   } catch (error) {

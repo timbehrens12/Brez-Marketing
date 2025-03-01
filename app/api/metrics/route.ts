@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { parseISO, endOfDay, format, isValid } from 'date-fns'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -15,6 +16,29 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Parse and validate date parameters
+    let fromDate, toDate, adjustedToDate;
+    
+    try {
+      fromDate = parseISO(from);
+      toDate = parseISO(to);
+      
+      if (!isValid(fromDate) || !isValid(toDate)) {
+        throw new Error('Invalid date format');
+      }
+      
+      // Adjust the end date to include the full day (up to 23:59:59)
+      adjustedToDate = endOfDay(toDate);
+      
+      console.log('Date range parsed successfully:');
+      console.log(`From: ${format(fromDate, 'yyyy-MM-dd HH:mm:ss')}`);
+      console.log(`To (original): ${format(toDate, 'yyyy-MM-dd HH:mm:ss')}`);
+      console.log(`To (adjusted): ${format(adjustedToDate, 'yyyy-MM-dd HH:mm:ss')}`);
+    } catch (error) {
+      console.error('Error parsing date parameters:', error);
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
+    }
+    
     // Get active platform connection
     const { data: connection } = await supabase
       .from('platform_connections')
@@ -45,17 +69,37 @@ export async function GET(request: Request) {
 
     console.log('Found connection:', connection)
 
+    // Format dates for database query
+    const formattedFromDate = format(fromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    const formattedToDate = format(adjustedToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    
+    console.log('Querying orders with date range:');
+    console.log(`From: ${formattedFromDate}`);
+    console.log(`To: ${formattedToDate}`);
+
     // Fetch orders from Supabase
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('created_at', from)
-      .lte('created_at', to)
+      .gte('created_at', formattedFromDate)
+      .lte('created_at', formattedToDate)
 
-    if (ordersError) throw ordersError
+    if (ordersError) {
+      console.error('Error fetching orders:', ordersError);
+      throw ordersError;
+    }
 
     console.log(`Found ${orders?.length || 0} orders for date range`)
+    
+    // Log a sample of the orders for debugging
+    if (orders && orders.length > 0) {
+      console.log('Sample order data:', orders.slice(0, 2).map(order => ({
+        id: order.id,
+        created_at: order.created_at,
+        total_price: order.total_price
+      })));
+    }
 
     // Calculate metrics from orders
     const metrics = {
@@ -87,10 +131,21 @@ export async function GET(request: Request) {
       ]
     }
 
+    console.log('Calculated metrics:', {
+      totalSales: metrics.totalSales,
+      ordersPlaced: metrics.ordersPlaced,
+      averageOrderValue: metrics.averageOrderValue,
+      unitsSold: metrics.unitsSold,
+      revenueByDayCount: metrics.revenueByDay.length
+    });
+
     return NextResponse.json(metrics)
 
   } catch (error) {
     console.error('Error fetching metrics:', error)
-    return NextResponse.json({ error: 'Failed to fetch metrics' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Failed to fetch metrics',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
