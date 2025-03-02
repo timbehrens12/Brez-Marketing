@@ -882,6 +882,22 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     return Math.max(...revenues, 1) // Ensure we don't divide by zero
   }, [displayData])
 
+  // Calculate total revenue for the current timeframe
+  const totalRevenue = useMemo(() => {
+    return displayData.reduce((sum, day) => sum + day.revenue, 0);
+  }, [displayData]);
+
+  // Format the total revenue for display
+  const formattedTotalRevenue = useMemo(() => {
+    if (totalRevenue >= 1000000) {
+      return `$${(totalRevenue / 1000000).toFixed(2)}M`;
+    } else if (totalRevenue >= 1000) {
+      return `$${(totalRevenue / 1000).toFixed(2)}K`;
+    } else {
+      return `$${totalRevenue.toFixed(2)}`;
+    }
+  }, [totalRevenue]);
+
   // Get the title based on the selected time frame
   const getTitle = () => {
     switch (timeFrame) {
@@ -990,7 +1006,10 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       ) : (
         <div className="h-full flex flex-col">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
+            <div className="flex flex-col">
+              <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
+              <div className="text-xs font-semibold text-green-500">Total: {formattedTotalRevenue}</div>
+            </div>
             <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
               <SelectTrigger className="w-[100px] h-8 text-xs bg-[#222] border-[#333]">
                 <SelectValue placeholder="Select view" />
@@ -1027,8 +1046,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with flex layout - compact without day alignment
-            <div className="flex flex-wrap h-full content-start">
+            // Monthly view with grid layout to better fill the widget
+            <div className="grid grid-cols-7 gap-1 h-full auto-rows-fr">
+              {/* Day headers (Sun-Sat) */}
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                <div key={`header-${i}`} className="text-xs text-gray-400 text-center">
+                  {day}
+                </div>
+              ))}
+              
+              {/* Empty cells for days before the 1st of the month */}
+              {Array.from({ length: getDay(startOfMonth(new Date())) }).map((_, i) => (
+                <div key={`empty-start-${i}`}></div>
+              ))}
+              
+              {/* Actual days of the month */}
               {displayData.map((day, index) => {
                 // Check if this is today
                 const isToday = isSameDay(day.date, new Date());
@@ -1036,7 +1068,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 const hasRevenue = day.revenue > 0;
                 
                 return (
-                  <div key={index} className="flex flex-col items-center w-[14.28%] h-7">
+                  <div key={index} className="flex flex-col items-center justify-start">
                     <div 
                       className={`
                         w-6 h-6 flex items-center justify-center rounded-full
@@ -1055,6 +1087,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   </div>
                 );
               })}
+              
+              {/* Empty cells for days after the end of the month to complete the grid */}
+              {(() => {
+                const startDayOfMonth = getDay(startOfMonth(new Date()));
+                const daysInCurrentMonth = getDaysInMonth(new Date());
+                
+                // Calculate how many rows we need (5 or 6)
+                const totalDaysToShow = startDayOfMonth + daysInCurrentMonth;
+                const rowsNeeded = Math.ceil(totalDaysToShow / 7);
+                const totalCells = rowsNeeded * 7;
+                
+                const emptyCellsAtEnd = totalCells - startDayOfMonth - daysInCurrentMonth;
+                
+                return Array.from({ length: Math.max(0, emptyCellsAtEnd) }).map((_, i) => (
+                  <div key={`empty-end-${i}`}></div>
+                ));
+              })()}
             </div>
           ) : !isLoading && !error && (
             // Other views (weekly, daily, yearly)
