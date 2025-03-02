@@ -372,11 +372,26 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     // Log the current date for debugging
     console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'), 'Day:', format(today, 'EEEE'));
     
-    // Make sure we're using the current week that includes today
-    const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
+    // IMPORTANT: We need to make sure we're showing the correct week that includes recent sales
+    // If today is Sunday, we want to show the week that just ended (previous week)
+    // This ensures that Saturday's sales are visible in the weekly view
+    
+    let startOfCurrentWeek;
+    const dayOfWeek = getDay(today);
+    
+    // If today is Sunday (0), show the previous week
+    if (dayOfWeek === 0) {
+      // Go back to previous week
+      const previousWeekDay = subDays(today, 7);
+      startOfCurrentWeek = startOfWeek(previousWeekDay, { weekStartsOn: 1 }); // 1 represents Monday
+      console.log('Revenue Calendar: Today is Sunday, showing previous week');
+    } else {
+      // Otherwise show the current week
+      startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
+    }
     
     // Log the start of the week for debugging
-    console.log('Revenue Calendar: Start of current week:', format(startOfCurrentWeek, 'yyyy-MM-dd'), 'Day:', format(startOfCurrentWeek, 'EEEE'));
+    console.log('Revenue Calendar: Start of week to display:', format(startOfCurrentWeek, 'yyyy-MM-dd'), 'Day:', format(startOfCurrentWeek, 'EEEE'));
     
     const days = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(startOfCurrentWeek, i);
