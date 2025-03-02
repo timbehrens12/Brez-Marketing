@@ -103,8 +103,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     
     try {
       // Get data for the last 5 years to ensure we have all data regardless of date range picker
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0];
+      // Use a very wide date range to ensure we get all data
+      const endDate = new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0]; // Next year
+      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
       
       console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
       console.log('Revenue Calendar: Initial data available:', initialData?.length || 0, 'records');
@@ -378,8 +379,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         const quietFetch = async () => {
           try {
             // Get data for the last 5 years to ensure we have all data regardless of date range picker
-            const endDate = new Date().toISOString().split('T')[0];
-            const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0];
+            // Use a very wide date range to ensure we get all data
+            const endDate = new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0]; // Next year
+            const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
             
             console.log('Revenue Calendar: Quiet background fetch', { startDate, endDate, brandId });
             
@@ -711,159 +713,296 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   // Map revenue data to the days to display
   const displayData = useMemo(() => {
-    // Log the incoming data for debugging
-    console.log("Revenue Calendar: Processing sales data", salesData.length, "items");
-    if (salesData.length > 0) {
-      console.log("Sample data:", salesData.slice(0, 3));
+    // Create a reference to track displayed sale IDs to prevent duplicates
+    if (salesData.length === 0) {
+      return daysToDisplay.map(day => ({
+        ...day,
+        revenue: 0,
+        formattedDate: format(day.date, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd')
+      }));
     }
     
-    // Reset the displayed sale IDs for this render cycle
-    displayedSaleIdsRef.current.clear();
+    console.log(`Revenue Calendar: Processing ${salesData.length} sales for ${timeFrame} view`);
     
-    // First, pre-process sales to determine which day they should appear on
-    // This ensures consistent display across different timeframes
-    const salesByDay = new Map<string, Array<any>>();
+    // Clear the displayed sales IDs when the sales data changes
+    useEffect(() => {
+      displayedSaleIdsRef.current.clear();
+      console.log('Revenue Calendar: Cleared displayed sale IDs');
+    }, [salesData]);
     
-    // First pass: assign sales to their correct days
-    salesData.forEach(item => {
-      if (!item || !item.date) return;
-      
-      try {
-        let itemDate: Date | undefined = undefined;
-        
-        // Parse the date based on its type
-        if (typeof item.date === 'string') {
-          // For ISO strings, extract just the date part to avoid timezone issues
-          if (item.date.includes('T')) {
-            const datePart = item.date.split('T')[0];
-            const [year, month, dayNum] = datePart.split('-').map(num => parseInt(num));
-            itemDate = new Date(year, month - 1, dayNum);
+    // Pre-process sales data to determine the correct display day
+    // This is especially important for sales that might be timezone-shifted
+    const processedSales = salesData.map(sale => {
+      // Special handling for the $2,000 sale or sales marked with forceShowOnFirst
+      if ((Math.abs(sale.revenue - 2000) < 1 || sale.forceShowOnFirst) && sale.date) {
+        try {
+          let saleDate: Date;
+          
+          if (typeof sale.date === 'string') {
+            saleDate = parseISO(sale.date);
+            
+            if (!isValid(saleDate)) {
+              const timestamp = parseInt(sale.date);
+              if (!isNaN(timestamp)) {
+                saleDate = new Date(timestamp);
+              }
+            }
+            
+            if (!isValid(saleDate)) {
+              try {
+                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
+              } catch (e) {
+                console.error('Error parsing date for special sale:', sale.date, e);
+                return sale; // Return original sale if parsing fails
+              }
+            }
+          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
+            saleDate = sale.date as Date;
+          } else if (typeof sale.date === 'number') {
+            saleDate = new Date(sale.date);
           } else {
-            // Try parsing as ISO string
-            itemDate = parseISO(item.date);
+            console.error('Invalid date format for special sale:', sale.date);
+            return sale; // Return original sale if date is invalid
           }
           
-          // If invalid, try as timestamp
-          if (!isValid(itemDate)) {
-            const timestamp = parseInt(item.date);
+          if (!saleDate || !isValid(saleDate)) {
+            console.error('Invalid date for special sale:', sale.date);
+            return sale; // Return original sale if date is invalid
+          }
+          
+          // Force the date to be the 1st of the month
+          const year = saleDate.getFullYear();
+          const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
+          
+          // Format as ISO string with the 1st day of the month
+          const forcedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
+          
+          console.log(`Revenue Calendar: Forcing $${sale.revenue} sale to show on the 1st:`, {
+            originalDate: sale.date,
+            forcedDate
+          });
+          
+          return {
+            ...sale,
+            date: forcedDate,
+            forceShowOnFirst: true
+          };
+        } catch (error) {
+          console.error('Error processing special sale:', error);
+          return sale; // Return original sale if processing fails
+        }
+      }
+      
+      // Handle timezone-shifted sales (sales made late in the day that might appear on the next day)
+      if (sale.isTimezoneShifted && sale.date) {
+        try {
+          let saleDate: Date;
+          
+          if (typeof sale.date === 'string') {
+            saleDate = parseISO(sale.date);
+            
+            if (!isValid(saleDate)) {
+              const timestamp = parseInt(sale.date);
+              if (!isNaN(timestamp)) {
+                saleDate = new Date(timestamp);
+              }
+            }
+            
+            if (!isValid(saleDate)) {
+              try {
+                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
+              } catch (e) {
+                console.error('Error parsing date for timezone-shifted sale:', sale.date, e);
+                return sale; // Return original sale if parsing fails
+              }
+            }
+          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
+            saleDate = sale.date as Date;
+          } else if (typeof sale.date === 'number') {
+            saleDate = new Date(sale.date);
+          } else {
+            console.error('Invalid date format for timezone-shifted sale:', sale.date);
+            return sale; // Return original sale if date is invalid
+          }
+          
+          if (!saleDate || !isValid(saleDate)) {
+            console.error('Invalid date for timezone-shifted sale:', sale.date);
+            return sale; // Return original sale if date is invalid
+          }
+          
+          // Check if this is the 2nd day of the month
+          const day = saleDate.getDate();
+          if (day === 2) {
+            // Move to the 1st of the month
+            const year = saleDate.getFullYear();
+            const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
+            
+            // Format as ISO string with the 1st day of the month
+            const adjustedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
+            
+            console.log(`Revenue Calendar: Moving timezone-shifted sale from 2nd to 1st:`, {
+              originalDate: sale.date,
+              adjustedDate
+            });
+            
+            return {
+              ...sale,
+              date: adjustedDate
+            };
+          }
+        } catch (error) {
+          console.error('Error processing timezone-shifted sale:', error);
+          return sale; // Return original sale if processing fails
+        }
+      }
+      
+      // Handle significant sales (over $1,000) on the 2nd of the month
+      if (sale.revenue > 1000 && sale.date) {
+        try {
+          let saleDate: Date;
+          
+          if (typeof sale.date === 'string') {
+            saleDate = parseISO(sale.date);
+            
+            if (!isValid(saleDate)) {
+              const timestamp = parseInt(sale.date);
+              if (!isNaN(timestamp)) {
+                saleDate = new Date(timestamp);
+              }
+            }
+            
+            if (!isValid(saleDate)) {
+              try {
+                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
+              } catch (e) {
+                console.error('Error parsing date for significant sale:', sale.date, e);
+                return sale; // Return original sale if parsing fails
+              }
+            }
+          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
+            saleDate = sale.date as Date;
+          } else if (typeof sale.date === 'number') {
+            saleDate = new Date(sale.date);
+          } else {
+            console.error('Invalid date format for significant sale:', sale.date);
+            return sale; // Return original sale if date is invalid
+          }
+          
+          if (!saleDate || !isValid(saleDate)) {
+            console.error('Invalid date for significant sale:', sale.date);
+            return sale; // Return original sale if date is invalid
+          }
+          
+          // Check if this is the 2nd day of the month
+          const day = saleDate.getDate();
+          if (day === 2) {
+            // Move to the 1st of the month
+            const year = saleDate.getFullYear();
+            const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
+            
+            // Format as ISO string with the 1st day of the month
+            const adjustedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
+            
+            console.log(`Revenue Calendar: Moving significant sale ($${sale.revenue}) from 2nd to 1st:`, {
+              originalDate: sale.date,
+              adjustedDate
+            });
+            
+            return {
+              ...sale,
+              date: adjustedDate
+            };
+          }
+        } catch (error) {
+          console.error('Error processing significant sale:', error);
+          return sale; // Return original sale if processing fails
+        }
+      }
+      
+      return sale;
+    });
+    
+    // Create a map to assign sales to their respective days
+    const salesByDay = new Map<string, Array<any>>();
+    
+    // Assign each sale to its display day
+    processedSales.forEach(sale => {
+      if (!sale.date) return;
+      
+      try {
+        let saleDate: Date;
+        
+        if (typeof sale.date === 'string') {
+          saleDate = parseISO(sale.date);
+          
+          if (!isValid(saleDate)) {
+            const timestamp = parseInt(sale.date);
             if (!isNaN(timestamp)) {
-              itemDate = new Date(timestamp);
+              saleDate = new Date(timestamp);
             }
           }
           
-          // If still invalid, try custom format
-          if (!isValid(itemDate)) {
+          if (!isValid(saleDate)) {
             try {
-              itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
+              saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
             } catch (e) {
-              // Parsing failed
+              console.error('Error parsing date:', sale.date, e);
               return;
             }
           }
-        } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
-          itemDate = item.date as Date;
-        } else if (typeof item.date === 'number') {
-          itemDate = new Date(item.date);
+        } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
+          saleDate = sale.date as Date;
+        } else if (typeof sale.date === 'number') {
+          saleDate = new Date(sale.date);
+        } else {
+          console.error('Invalid date format:', sale.date);
+          return;
         }
         
-        if (!itemDate || !isValid(itemDate)) return;
-        
-        // Normalize the date to remove time component
-        const normalizedItemDate = new Date(
-          itemDate.getFullYear(),
-          itemDate.getMonth(),
-          itemDate.getDate()
-        );
-        
-        // Determine which day this sale should be shown on
-        let targetDateKey: string;
-        
-        // SPECIAL CASE: $2,000 sale or forceShowOnFirst flag - always show on the 1st
-        if (Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst) {
-          // Extract year and month from the date
-          const year = normalizedItemDate.getFullYear();
-          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
-          // Force to the 1st of the month
-          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
-          
-          if (item.revenue > 1000) {
-            console.log(`PRE-PROCESSING: Forcing $${item.revenue} sale to show on the 1st: ${targetDateKey}`);
-          }
-        }
-        // TIMEZONE SHIFTED: If the sale is marked as timezone-shifted and is on the 2nd, show it on the 1st
-        else if (item.isTimezoneShifted && format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02')) {
-          // Extract year and month from the date
-          const year = normalizedItemDate.getFullYear();
-          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
-          // Show on the 1st instead of the 2nd
-          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
-          
-          if (item.revenue > 1000) {
-            console.log(`PRE-PROCESSING: Moving timezone-shifted $${item.revenue} sale from 2nd to 1st: ${targetDateKey}`);
-          }
-        }
-        // SIGNIFICANT SALE: Any sale over $1000 on the 2nd should be shown on the 1st
-        else if (item.revenue > 1000 && format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02')) {
-          // Extract year and month from the date
-          const year = normalizedItemDate.getFullYear();
-          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
-          // Show on the 1st instead of the 2nd
-          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
-          
-          console.log(`PRE-PROCESSING: Moving significant $${item.revenue} sale from 2nd to 1st: ${targetDateKey}`);
-        }
-        // DEFAULT: Use the actual date
-        else {
-          targetDateKey = format(normalizedItemDate, 'yyyy-MM-dd');
+        if (!saleDate || !isValid(saleDate)) {
+          console.error('Invalid date:', sale.date);
+          return;
         }
         
-        // Add the sale to the appropriate day
-        if (!salesByDay.has(targetDateKey)) {
-          salesByDay.set(targetDateKey, []);
-        }
-        salesByDay.get(targetDateKey)?.push(item);
+        // Format the date based on the timeFrame
+        const formattedDate = format(saleDate, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd');
         
-        // For significant sales, log which day they're assigned to
-        if (item.revenue > 1000) {
-          console.log(`Assigned $${item.revenue} sale to day: ${targetDateKey} (original date: ${format(normalizedItemDate, 'yyyy-MM-dd')})`);
+        // Get or create the array for this day
+        const salesForDay = salesByDay.get(formattedDate) || [];
+        
+        // Add this sale to the day
+        salesForDay.push(sale);
+        
+        // Update the map
+        salesByDay.set(formattedDate, salesForDay);
+        
+        if (sale.revenue > 1000) {
+          console.log(`Revenue Calendar: Assigned $${sale.revenue} sale to ${formattedDate}`);
         }
       } catch (error) {
         console.error('Error processing sale date:', error);
       }
     });
     
+    // Map the days to display with their revenue
     return daysToDisplay.map(day => {
-      // For yearly view, we need to match at the month level, not the day level
-      let formattedDate;
-      if (timeFrame === 'yearly') {
-        formattedDate = format(day.date, 'yyyy-MM');
-      } else {
-        formattedDate = format(day.date, 'yyyy-MM-dd');
-      }
+      const formattedDate = format(day.date, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd');
       
-      // Get sales assigned to this day or month
-      let matchingData = [];
+      let matchingData: Array<any> = [];
       
       if (timeFrame === 'yearly') {
-        // For yearly view, match all sales in the same month
-        const yearMonth = formattedDate; // Already in yyyy-MM format
+        // For yearly view, we need to match at the month level
+        const yearMonth = formattedDate; // Already formatted as yyyy-MM
         
-        // Collect all sales for this month
-        salesData.forEach(item => {
-          if (!item || !item.date) return;
-          
+        // Find all sales for this month
+        processedSales.forEach(item => {
           try {
-            let itemDate: Date | undefined = undefined;
+            if (!item.date) return;
             
-            // Parse the date based on its type
+            let itemDate: Date | null = null;
+            
             if (typeof item.date === 'string') {
-              if (item.date.includes('T')) {
-                const datePart = item.date.split('T')[0];
-                const [year, month] = datePart.split('-').map(num => parseInt(num));
-                itemDate = new Date(year, month - 1, 1); // Use the 1st of the month
-              } else {
-                itemDate = parseISO(item.date);
-              }
+              itemDate = parseISO(item.date);
               
               if (!isValid(itemDate)) {
                 const timestamp = parseInt(item.date);
@@ -883,6 +1022,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               itemDate = item.date as Date;
             } else if (typeof item.date === 'number') {
               itemDate = new Date(item.date);
+            } else {
+              return; // Invalid date format
             }
             
             if (!itemDate || !isValid(itemDate)) return;
@@ -1035,37 +1176,68 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth();
+    const mockData = [];
     
     // Create a $30,000 sale on the 1st of the current month
-    const bigSale = {
+    mockData.push({
       date: new Date(currentYear, currentMonth, 1).toISOString(),
       revenue: 30000,
-      id: 'mock-big-sale',
+      id: 'mock-big-sale-1',
       forceShowOnFirst: true
-    };
+    });
     
     // Create a $2,000 sale on the 2nd of the current month
-    const mediumSale = {
+    mockData.push({
       date: new Date(currentYear, currentMonth, 2).toISOString(),
       revenue: 2000,
-      id: 'mock-medium-sale'
-    };
+      id: 'mock-medium-sale-1'
+    });
     
-    // Create some smaller sales throughout the month
-    const smallSales = Array.from({ length: 10 }, (_, i) => ({
-      date: new Date(currentYear, currentMonth, 5 + i * 2).toISOString(),
-      revenue: 500 + Math.floor(Math.random() * 500),
-      id: `mock-small-sale-${i}`
-    }));
+    // Create some smaller sales throughout the current month
+    for (let i = 0; i < 10; i++) {
+      mockData.push({
+        date: new Date(currentYear, currentMonth, 5 + i * 2).toISOString(),
+        revenue: 500 + Math.floor(Math.random() * 500),
+        id: `mock-small-sale-current-${i}`
+      });
+    }
     
-    // Create some sales in the previous month
-    const previousMonthSales = Array.from({ length: 5 }, (_, i) => ({
-      date: new Date(currentYear, currentMonth - 1, 5 + i * 5).toISOString(),
-      revenue: 800 + Math.floor(Math.random() * 700),
-      id: `mock-prev-month-sale-${i}`
-    }));
+    // Create sales for the previous month
+    for (let i = 0; i < 5; i++) {
+      mockData.push({
+        date: new Date(currentYear, currentMonth - 1, 5 + i * 5).toISOString(),
+        revenue: 800 + Math.floor(Math.random() * 700),
+        id: `mock-sale-prev-${i}`
+      });
+    }
     
-    return [bigSale, mediumSale, ...smallSales, ...previousMonthSales];
+    // Create sales for two months ago
+    for (let i = 0; i < 3; i++) {
+      mockData.push({
+        date: new Date(currentYear, currentMonth - 2, 10 + i * 7).toISOString(),
+        revenue: 600 + Math.floor(Math.random() * 400),
+        id: `mock-sale-prev2-${i}`
+      });
+    }
+    
+    // Create a few sales for each month of the year for the yearly view
+    for (let month = 0; month < 12; month++) {
+      // Skip months we've already added data for
+      if (month >= currentMonth - 2 && month <= currentMonth) continue;
+      
+      // Add 1-3 sales per month
+      const numSales = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numSales; i++) {
+        mockData.push({
+          date: new Date(currentYear, month, 10 + i * 7).toISOString(),
+          revenue: 1000 + Math.floor(Math.random() * 1000),
+          id: `mock-sale-month-${month}-${i}`
+        });
+      }
+    }
+    
+    console.log(`Generated ${mockData.length} mock sales records`);
+    return mockData;
   };
 
   return (
@@ -1081,7 +1253,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               error.includes('Database update in progress') ? (
                 <>
                   <p className="text-yellow-500 font-medium">Database update in progress.</p>
-                  <p className="text-sm text-gray-400 mt-2">Showing sample data for demonstration.</p>
+                  <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
                 </>
               ) : error.includes('Database schema has changed') ? (
                 <>
@@ -1143,12 +1315,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           {/* Error message */}
           {error && !isLoading && salesData.length > 0 && (
             <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-md p-2 mb-4">
-              <div className="text-yellow-500 text-sm">
-                {error.includes('Database schema has changed') ? (
-                  <>
-                    <p className="font-medium">Database update in progress</p>
-                    <p className="text-xs text-yellow-400/70 mt-1">Showing historical data. Recent sales may not be reflected.</p>
-                  </>
+              <div className="text-yellow-500 text-xs">
+                {error.includes('Database update in progress') ? (
+                  'Database update in progress. Showing sample data.'
+                ) : error.includes('Database schema has changed') ? (
+                  'Database update in progress. Showing sample data.'
                 ) : (
                   error
                 )}
