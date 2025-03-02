@@ -405,7 +405,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             }
             return matches;
           } else if (timeFrame === 'weekly') {
-            // Fix: Compare the actual date, not just the day of week
             const matches = format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
             if (matches && item.revenue > 1000) {
               console.log(`Found significant sale for weekly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
