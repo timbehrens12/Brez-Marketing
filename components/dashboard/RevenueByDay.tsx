@@ -1046,64 +1046,67 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with grid layout to better fill the widget
-            <div className="grid grid-cols-7 gap-1 h-full auto-rows-fr">
-              {/* Day headers (Sun-Sat) */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-                <div key={`header-${i}`} className="text-xs text-gray-400 text-center">
-                  {day}
-                </div>
-              ))}
-              
-              {/* Empty cells for days before the 1st of the month */}
-              {Array.from({ length: getDay(startOfMonth(new Date())) }).map((_, i) => (
-                <div key={`empty-start-${i}`}></div>
-              ))}
-              
-              {/* Actual days of the month */}
-              {displayData.map((day, index) => {
-                // Check if this is today
-                const isToday = isSameDay(day.date, new Date());
-                // Check if there's revenue for this day
-                const hasRevenue = day.revenue > 0;
-                
-                return (
-                  <div key={index} className="flex flex-col items-center justify-start">
-                    <div 
-                      className={`
-                        w-6 h-6 flex items-center justify-center rounded-full
-                        ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
-                      `}
-                    >
-                      <span className="text-xs font-medium">{day.dayNumber}</span>
-                    </div>
-                    {hasRevenue ? (
-                      <div className="text-xs font-medium text-green-400 -mt-1 leading-tight">
-                        ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-600 -mt-1 leading-tight">$0</div>
-                    )}
+            // Monthly view with compact grid layout
+            <div className="flex flex-col h-full">
+              <div className="grid grid-cols-7 mb-1">
+                {/* Day headers (Sun-Sat) */}
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                  <div key={`header-${i}`} className="text-[9px] text-gray-400 text-center">
+                    {day}
                   </div>
-                );
-              })}
+                ))}
+              </div>
               
-              {/* Empty cells for days after the end of the month to complete the grid */}
-              {(() => {
-                const startDayOfMonth = getDay(startOfMonth(new Date()));
-                const daysInCurrentMonth = getDaysInMonth(new Date());
+              <div className="grid grid-cols-7 gap-x-0.5 gap-y-1 flex-1">
+                {/* Empty cells for days before the 1st of the month */}
+                {Array.from({ length: getDay(startOfMonth(new Date())) }).map((_, i) => (
+                  <div key={`empty-start-${i}`}></div>
+                ))}
                 
-                // Calculate how many rows we need (5 or 6)
-                const totalDaysToShow = startDayOfMonth + daysInCurrentMonth;
-                const rowsNeeded = Math.ceil(totalDaysToShow / 7);
-                const totalCells = rowsNeeded * 7;
+                {/* Actual days of the month */}
+                {displayData.map((day, index) => {
+                  // Check if this is today
+                  const isToday = isSameDay(day.date, new Date());
+                  // Check if there's revenue for this day
+                  const hasRevenue = day.revenue > 0;
+                  
+                  return (
+                    <div key={index} className="relative">
+                      <div 
+                        className={`
+                          w-4 h-4 flex items-center justify-center rounded-full text-[9px]
+                          ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
+                          mx-auto
+                        `}
+                      >
+                        <span className="font-medium">{day.dayNumber}</span>
+                      </div>
+                      {hasRevenue && (
+                        <div className="text-[8px] font-medium text-green-400 text-center mt-0.5">
+                          ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 
-                const emptyCellsAtEnd = totalCells - startDayOfMonth - daysInCurrentMonth;
-                
-                return Array.from({ length: Math.max(0, emptyCellsAtEnd) }).map((_, i) => (
-                  <div key={`empty-end-${i}`}></div>
-                ));
-              })()}
+                {/* Empty cells for days after the end of the month to complete the grid */}
+                {(() => {
+                  const startDayOfMonth = getDay(startOfMonth(new Date()));
+                  const daysInCurrentMonth = getDaysInMonth(new Date());
+                  
+                  // Try to use 5 rows when possible
+                  const totalDaysToShow = startDayOfMonth + daysInCurrentMonth;
+                  const rowsNeeded = Math.min(5, Math.ceil(totalDaysToShow / 7));
+                  const totalCells = rowsNeeded * 7;
+                  
+                  const emptyCellsAtEnd = totalCells - startDayOfMonth - daysInCurrentMonth;
+                  
+                  return Array.from({ length: Math.max(0, emptyCellsAtEnd) }).map((_, i) => (
+                    <div key={`empty-end-${i}`}></div>
+                  ));
+                })()}
+              </div>
             </div>
           ) : !isLoading && !error && (
             // Other views (weekly, daily, yearly)
