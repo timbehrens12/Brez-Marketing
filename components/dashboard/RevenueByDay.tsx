@@ -577,7 +577,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     return days;
   }, [])
 
-  // Get the current month's days
+  // Get the current month's days - linear layout without day of week alignment
   const monthDays = useMemo(() => {
     const today = new Date()
     const startOfCurrentMonth = startOfMonth(today)
@@ -625,21 +625,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     })
   }, [])
 
-  // Get the appropriate days based on the selected time frame
+  // Determine which days to display based on the selected time frame
   const daysToDisplay = useMemo(() => {
     switch (timeFrame) {
       case 'daily':
-        return lastSevenDays;
+        return lastSevenDays
       case 'weekly':
-        return weekDays;
+        return weekDays
       case 'monthly':
-        return monthDays;
+        return monthDays
       case 'yearly':
-        return yearMonths;
+        return yearMonths
       default:
-        return weekDays;
+        return monthDays
     }
-  }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays]);
+  }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays])
 
   // Map revenue data to the days to display
   const displayData = useMemo(() => {
@@ -1046,24 +1046,10 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with maximized text size and optimal spacing
-            <div className="flex flex-col h-full">
-              <div className="grid grid-cols-7 mb-2">
-                {/* Day headers (Sun-Sat) */}
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                  <div key={`header-${i}`} className="text-sm text-gray-400 text-center font-medium">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-x-1 gap-y-4 flex-1">
-                {/* Empty cells for days before the 1st of the month */}
-                {Array.from({ length: getDay(startOfMonth(new Date())) }).map((_, i) => (
-                  <div key={`empty-start-${i}`} className="min-h-[3rem]"></div>
-                ))}
-                
-                {/* Actual days of the month */}
+            // Monthly view with optimized grid layout
+            <div className="h-full">
+              <div className="grid grid-cols-7 gap-x-1 gap-y-2 h-full content-between">
+                {/* Actual days of the month - starting with 1st on the left */}
                 {displayData.map((day, index) => {
                   // Check if this is today
                   const isToday = isSameDay(day.date, new Date());
@@ -1071,40 +1057,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   const hasRevenue = day.revenue > 0;
                   
                   return (
-                    <div key={index} className="flex flex-col items-center min-h-[3rem]">
+                    <div key={index} className="flex flex-col items-center">
                       <div 
                         className={`
-                          w-8 h-8 flex items-center justify-center rounded-full text-base
+                          w-7 h-7 flex items-center justify-center rounded-full text-base
                           ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
                         `}
                       >
                         <span className="font-medium">{day.dayNumber}</span>
                       </div>
                       {hasRevenue && (
-                        <div className="text-sm font-medium text-green-400 mt-1">
+                        <div className="text-sm font-medium text-green-400">
                           ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                         </div>
                       )}
                     </div>
                   );
                 })}
-                
-                {/* Empty cells for days after the end of the month to complete the grid */}
-                {(() => {
-                  const startDayOfMonth = getDay(startOfMonth(new Date()));
-                  const daysInCurrentMonth = getDaysInMonth(new Date());
-                  
-                  // Calculate rows needed based on the month
-                  const totalDaysToShow = startDayOfMonth + daysInCurrentMonth;
-                  const rowsNeeded = Math.ceil(totalDaysToShow / 7);
-                  const totalCells = rowsNeeded * 7;
-                  
-                  const emptyCellsAtEnd = totalCells - startDayOfMonth - daysInCurrentMonth;
-                  
-                  return Array.from({ length: Math.max(0, emptyCellsAtEnd) }).map((_, i) => (
-                    <div key={`empty-end-${i}`} className="min-h-[3rem]"></div>
-                  ));
-                })()}
               </div>
             </div>
           ) : !isLoading && !error && (
