@@ -373,22 +373,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'), 'Day:', format(today, 'EEEE'));
     
     // IMPORTANT: We need to make sure we're showing the correct week that includes recent sales
-    // If today is Sunday, we want to show the week that just ended (previous week)
-    // This ensures that Saturday's sales are visible in the weekly view
+    // The issue is that sales made late in the day (e.g., 8 PM) might be recorded with the next day's date in UTC
+    // So we need to ensure our weekly view always includes yesterday's date to catch these sales
     
     let startOfCurrentWeek;
-    const dayOfWeek = getDay(today);
     
-    // If today is Sunday (0), show the previous week
-    if (dayOfWeek === 0) {
-      // Go back to previous week
-      const previousWeekDay = subDays(today, 7);
-      startOfCurrentWeek = startOfWeek(previousWeekDay, { weekStartsOn: 1 }); // 1 represents Monday
-      console.log('Revenue Calendar: Today is Sunday, showing previous week');
-    } else {
-      // Otherwise show the current week
-      startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
-    }
+    // Always include yesterday in our view to catch any sales that might have been recorded with tomorrow's date
+    // This ensures that a sale made at 8 PM on the 1st that shows as the 2nd will still be visible
+    startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
     
     // Log the start of the week for debugging
     console.log('Revenue Calendar: Start of week to display:', format(startOfCurrentWeek, 'yyyy-MM-dd'), 'Day:', format(startOfCurrentWeek, 'EEEE'));
@@ -517,6 +509,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             if (item.revenue > 1000) {
               console.log(`Parsing date for significant sale: Original="${item.date}", Parsed=${format(itemDate, 'yyyy-MM-dd')}`);
               console.log(`  Day of week: ${getDay(itemDate)} (${format(itemDate, 'EEEE')})`);
+              console.log(`  Checking against day: ${format(day.date, 'yyyy-MM-dd')} (${format(day.date, 'EEEE')})`);
             }
             
             // If invalid, try as timestamp
@@ -558,14 +551,25 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             day.date.getDate()
           );
           
-          // Match based on normalized dates (ignoring time component)
-          const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
+          // IMPORTANT: For sales that might be recorded with the next day's date due to timezone issues,
+          // we also check if the sale date is one day ahead of the display date
+          // This ensures that a sale made at 8 PM on the 1st that shows as the 2nd will still be visible on the 1st
+          const exactMatch = normalizedItemDate.getTime() === normalizedDayDate.getTime();
+          
+          // Check if the item date is one day ahead (for timezone adjustment)
+          const nextDayDate = new Date(normalizedDayDate);
+          nextDayDate.setDate(nextDayDate.getDate() + 1);
+          const isNextDay = normalizedItemDate.getTime() === nextDayDate.getTime();
+          
+          // Match if either exact match or next day (for timezone adjustment)
+          const matches = exactMatch || isNextDay;
           
           // Add detailed debugging for significant sales
           if (item.revenue > 1000) {
             console.log(`Checking significant sale: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} against day ${format(day.date, 'yyyy-MM-dd')}`);
             console.log(`  Normalized dates: ${format(normalizedItemDate, 'yyyy-MM-dd')} vs ${format(normalizedDayDate, 'yyyy-MM-dd')}`);
-            console.log(`  Match result: ${matches ? 'YES' : 'NO'}`);
+            console.log(`  Next day check: ${format(nextDayDate, 'yyyy-MM-dd')}, isNextDay: ${isNextDay}`);
+            console.log(`  Match result: ${matches ? 'YES' : 'NO'} (exactMatch: ${exactMatch}, isNextDay: ${isNextDay})`);
           }
           
           if (matches && item.revenue > 1000) {
