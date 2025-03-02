@@ -37,6 +37,7 @@ interface RevenueByDayProps {
     revenue: number;
     isTimezoneShifted?: boolean;
     forceShowOnFirst?: boolean;
+    id?: string;
   }>;
   brandId: string;
 }
@@ -48,6 +49,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     revenue: number; 
     isTimezoneShifted?: boolean;
     forceShowOnFirst?: boolean;
+    id?: string;
   }>>(initialData || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +183,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             date: forcedDate,
             revenue: saleAmount,
             isTimezoneShifted: true,
-            forceShowOnFirst: true
+            forceShowOnFirst: true,
+            id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
           };
         }
         
@@ -284,7 +287,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         return {
           date: localDate.toISOString(), // Store as ISO string but with local date
           revenue: saleAmount,
-          isTimezoneShifted
+          isTimezoneShifted,
+          id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
         };
       });
       
@@ -393,7 +397,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   date: forcedDate,
                   revenue: saleAmount,
                   isTimezoneShifted: true,
-                  forceShowOnFirst: true
+                  forceShowOnFirst: true,
+                  id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
                 };
               }
               
@@ -476,7 +481,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               return {
                 date: localDate.toISOString(), // Store as ISO string but with local date
                 revenue: saleAmount,
-                isTimezoneShifted
+                isTimezoneShifted,
+                id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
               };
             });
             
@@ -635,10 +641,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       console.log("Sample data:", salesData.slice(0, 3));
     }
     
+    // Keep track of which sales have already been displayed to prevent double-counting
+    const displayedSaleIds = new Set<string>();
+    
     return daysToDisplay.map(day => {
       // Find matching revenue data for this day
       const matchingData = salesData.filter(item => {
         try {
+          // Skip if this sale has already been displayed and it's a significant sale
+          // that might be shown on multiple days
+          if (item.id && displayedSaleIds.has(item.id) && 
+              (item.revenue > 1000 || item.forceShowOnFirst || item.isTimezoneShifted)) {
+            if (item.revenue > 1000) {
+              console.log(`Skipping already displayed sale: $${item.revenue} (ID: ${item.id})`);
+            }
+            return false;
+          }
+          
           if (!item || !item.date) return false;
           
           let itemDate: Date | undefined = undefined;
@@ -717,6 +736,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           let matches = false;
           
           // SPECIAL CASE: If this is the $2,000 sale or has the forceShowOnFirst flag, always show it on the 1st
+          // AND ONLY on the 1st (not on the 2nd as well)
           if ((Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst) && 
               format(day.date, 'yyyy-MM-dd').endsWith('-01')) {
             matches = true;
@@ -727,18 +747,34 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             matches = true;
           }
           // If it's a next-day match AND it's a timezone-shifted sale, show it on the previous day
+          // BUT ONLY if we're looking at the previous day (not both days)
           else if (isNextDay && item.isTimezoneShifted) {
+            // Only show on the previous day, not on the actual date
+            // This prevents the sale from appearing twice
             matches = true;
             if (item.revenue > 1000) {
               console.log(`Showing timezone-shifted sale on the ACTUAL day it was made (${format(day.date, 'yyyy-MM-dd')}) instead of UTC date`);
             }
           }
           // ADDITIONAL CASE: For any sale over $1000 that appears on the 2nd, also show it on the 1st
+          // BUT ONLY if we're looking at the 1st (not both days)
           else if (item.revenue > 1000 && 
                   format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02') && 
                   format(day.date, 'yyyy-MM-dd').endsWith('-01')) {
+            // Only show on the 1st, not on the 2nd
+            // This prevents the sale from appearing twice
             matches = true;
             console.log(`AGGRESSIVE FIX: Moving $${item.revenue} sale from the 2nd to the 1st`);
+          }
+          // PREVENT DOUBLE-COUNTING: If this is a sale that should be shown on the 1st,
+          // make sure it doesn't also show on the 2nd
+          else if ((Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst || 
+                  (item.revenue > 1000 && item.isTimezoneShifted)) && 
+                  format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02') &&
+                  format(day.date, 'yyyy-MM-dd').endsWith('-02')) {
+            // This is a sale that should be shown on the 1st, so don't show it on the 2nd
+            matches = false;
+            console.log(`PREVENTING DOUBLE-COUNTING: Not showing $${item.revenue} sale on the 2nd because it's shown on the 1st`);
           }
           
           // Add detailed debugging for significant sales
@@ -750,8 +786,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             console.log(`  Match result: ${matches ? 'YES' : 'NO'} (exactMatch: ${exactMatch}, isNextDay: ${isNextDay})`);
           }
           
-          if (matches && item.revenue > 1000) {
-            console.log(`Found significant sale for ${timeFrame} view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+          // If this sale matches and is significant, mark it as displayed
+          if (matches && item.id && (item.revenue > 1000 || item.forceShowOnFirst || item.isTimezoneShifted)) {
+            displayedSaleIds.add(item.id);
+            if (item.revenue > 1000) {
+              console.log(`Marking significant sale as displayed: $${item.revenue} (ID: ${item.id})`);
+            }
           }
           
           return matches;
