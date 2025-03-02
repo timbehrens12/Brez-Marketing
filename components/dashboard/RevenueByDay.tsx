@@ -150,10 +150,34 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       }
       
       // Transform the sales data into the format we need
-      const transformedData = result.sales.map((sale: any) => ({
-        date: sale.created_at,
-        revenue: parseFloat(sale.total_price || '0')
-      }));
+      const transformedData = result.sales.map((sale: any) => {
+        // Parse the date and adjust for timezone
+        const rawDate = sale.created_at;
+        let saleDate = parseISO(rawDate);
+        
+        // Force the date to be interpreted in local timezone by creating a new date
+        // with just the year, month, and day components
+        const localDate = new Date(
+          saleDate.getFullYear(),
+          saleDate.getMonth(),
+          saleDate.getDate()
+        );
+        
+        // For significant sales, log the date transformation
+        if (parseFloat(sale.total_price || '0') > 1000) {
+          console.log(`Revenue Calendar: Significant sale date transformation:`, {
+            rawDate,
+            parsedISODate: format(saleDate, 'yyyy-MM-dd'),
+            localDate: format(localDate, 'yyyy-MM-dd'),
+            revenue: parseFloat(sale.total_price || '0')
+          });
+        }
+        
+        return {
+          date: localDate.toISOString(), // Store as ISO string but with local date
+          revenue: parseFloat(sale.total_price || '0')
+        };
+      });
       
       console.log('Revenue Calendar: Transformed data sample:', transformedData.slice(0, 3));
       
@@ -236,10 +260,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             }
             
             // Only update if we got valid data
-            const transformedData = result.sales.map((sale: any) => ({
-              date: sale.created_at,
-              revenue: parseFloat(sale.total_price || '0')
-            }));
+            const transformedData = result.sales.map((sale: any) => {
+              // Parse the date and adjust for timezone
+              const rawDate = sale.created_at;
+              let saleDate = parseISO(rawDate);
+              
+              // Force the date to be interpreted in local timezone by creating a new date
+              // with just the year, month, and day components
+              const localDate = new Date(
+                saleDate.getFullYear(),
+                saleDate.getMonth(),
+                saleDate.getDate()
+              );
+              
+              return {
+                date: localDate.toISOString(), // Store as ISO string but with local date
+                revenue: parseFloat(sale.total_price || '0')
+              };
+            });
             
             console.log('Revenue Calendar: Background fetch successful, updating data');
             setSalesData(transformedData);
@@ -276,28 +314,43 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Get the current week's days (Monday-Sunday)
   const weekDays = useMemo(() => {
-    const today = new Date()
+    // Create a new date object for today to ensure we're working with the local date
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
     // Log the current date for debugging
-    console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'));
+    console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'), 'Day:', format(today, 'EEEE'));
     
     // Make sure we're using the current week that includes today
-    const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }) // 1 represents Monday
+    const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
     
     // Log the start of the week for debugging
-    console.log('Revenue Calendar: Start of current week:', format(startOfCurrentWeek, 'yyyy-MM-dd'));
+    console.log('Revenue Calendar: Start of current week:', format(startOfCurrentWeek, 'yyyy-MM-dd'), 'Day:', format(startOfCurrentWeek, 'EEEE'));
     
     const days = Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(startOfCurrentWeek, i)
+      const date = addDays(startOfCurrentWeek, i);
+      
+      // Check if this day is today
+      const isToday = isSameDay(date, today);
+      if (isToday) {
+        console.log('Revenue Calendar: Today is in this week at position', i, format(date, 'EEEE'));
+      }
+      
       return {
         date,
         dayName: format(date, "EEE"),
         dayNumber: format(date, "d"),
-        formattedDate: format(date, "yyyy-MM-dd")
-      }
+        formattedDate: format(date, "yyyy-MM-dd"),
+        isToday
+      };
     });
     
     // Log all days in the week for debugging
-    console.log('Revenue Calendar: Week days:', days.map(d => format(d.date, 'yyyy-MM-dd')));
+    console.log('Revenue Calendar: Week days:', days.map(d => ({
+      date: format(d.date, 'yyyy-MM-dd'),
+      day: format(d.date, 'EEEE'),
+      isToday: d.isToday
+    })));
     
     return days;
   }, [])
@@ -390,6 +443,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             // Log the parsed date for significant sales
             if (item.revenue > 1000) {
               console.log(`Parsing date for significant sale: Original="${item.date}", Parsed=${format(itemDate, 'yyyy-MM-dd')}`);
+              
+              // Also log the day of week to help debug timezone issues
+              console.log(`  Day of week: ${getDay(itemDate)} (${format(itemDate, 'EEEE')})`);
+              console.log(`  Full ISO date: ${itemDate.toISOString()}`);
+              
+              // Create a date with just the date part to check for timezone issues
+              const dateOnly = new Date(
+                itemDate.getFullYear(),
+                itemDate.getMonth(),
+                itemDate.getDate()
+              );
+              console.log(`  Date only: ${format(dateOnly, 'yyyy-MM-dd')} (${format(dateOnly, 'EEEE')})`);
             }
             
             // If invalid, try as timestamp
@@ -427,6 +492,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           if (!itemDate || !isValid(itemDate)) return false;
           
           // Normalize the date to remove time component for consistent comparison
+          // This ensures we're comparing just the date part, regardless of timezone
           const normalizedItemDate = new Date(
             itemDate.getFullYear(),
             itemDate.getMonth(),
