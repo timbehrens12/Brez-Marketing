@@ -765,10 +765,79 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     });
     
     return daysToDisplay.map(day => {
-      const formattedDate = format(day.date, 'yyyy-MM-dd');
+      // For yearly view, we need to match at the month level, not the day level
+      let formattedDate;
+      if (timeFrame === 'yearly') {
+        formattedDate = format(day.date, 'yyyy-MM');
+      } else {
+        formattedDate = format(day.date, 'yyyy-MM-dd');
+      }
       
-      // Get sales assigned to this day
-      const matchingData = salesByDay.get(formattedDate) || [];
+      // Get sales assigned to this day or month
+      let matchingData = [];
+      
+      if (timeFrame === 'yearly') {
+        // For yearly view, match all sales in the same month
+        const yearMonth = formattedDate; // Already in yyyy-MM format
+        
+        // Collect all sales for this month
+        salesData.forEach(item => {
+          if (!item || !item.date) return;
+          
+          try {
+            let itemDate: Date | undefined = undefined;
+            
+            // Parse the date based on its type
+            if (typeof item.date === 'string') {
+              if (item.date.includes('T')) {
+                const datePart = item.date.split('T')[0];
+                const [year, month] = datePart.split('-').map(num => parseInt(num));
+                itemDate = new Date(year, month - 1, 1); // Use the 1st of the month
+              } else {
+                itemDate = parseISO(item.date);
+              }
+              
+              if (!isValid(itemDate)) {
+                const timestamp = parseInt(item.date);
+                if (!isNaN(timestamp)) {
+                  itemDate = new Date(timestamp);
+                }
+              }
+              
+              if (!isValid(itemDate)) {
+                try {
+                  itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
+                } catch (e) {
+                  return;
+                }
+              }
+            } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
+              itemDate = item.date as Date;
+            } else if (typeof item.date === 'number') {
+              itemDate = new Date(item.date);
+            }
+            
+            if (!itemDate || !isValid(itemDate)) return;
+            
+            // Check if this sale belongs to the current month
+            const itemYearMonth = format(itemDate, 'yyyy-MM');
+            
+            if (itemYearMonth === yearMonth) {
+              // This sale belongs to this month
+              matchingData.push(item);
+              
+              if (item.revenue > 1000) {
+                console.log(`Yearly view: Matched $${item.revenue} sale to month: ${yearMonth}`);
+              }
+            }
+          } catch (error) {
+            console.error('Error processing sale date for yearly view:', error);
+          }
+        });
+      } else {
+        // For daily/weekly/monthly views, use the pre-processed sales by day
+        matchingData = salesByDay.get(formattedDate) || [];
+      }
       
       // Filter out sales that have already been displayed
       const uniqueMatchingData = matchingData.filter(item => {
