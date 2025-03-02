@@ -118,11 +118,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         
         // Check if this is a database schema error
         if (errorText.includes('relation "public.shopify_data" does not exist') || 
-            errorText.includes('Database schema has changed')) {
+            errorText.includes('Database schema has changed') ||
+            errorText.includes('database schema') ||
+            errorText.includes('no such table') ||
+            errorText.includes('does not exist')) {
           console.log('Revenue Calendar: Database schema error detected in API response');
           
           // If we have initial data, use it and don't show an error
-          if (initialData && initialData.length > 0) {
+          if (initialData && Array.isArray(initialData) && initialData.length > 0) {
             console.log('Revenue Calendar: Using initial data for database schema error');
             setSalesData(initialData);
             setIsLoading(false);
@@ -724,12 +727,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     
     console.log(`Revenue Calendar: Processing ${salesData.length} sales for ${timeFrame} view`);
     
-    // Clear the displayed sales IDs when the sales data changes
-    useEffect(() => {
-      displayedSaleIdsRef.current.clear();
-      console.log('Revenue Calendar: Cleared displayed sale IDs');
-    }, [salesData]);
-    
     // Pre-process sales data to determine the correct display day
     // This is especially important for sales that might be timezone-shifted
     const processedSales = salesData.map(sale => {
@@ -1087,13 +1084,19 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   // Find the maximum revenue for scaling
   const maxRevenue = useMemo(() => {
-    const revenues = displayData.map(day => day.revenue)
-    return Math.max(...revenues, 1) // Ensure we don't divide by zero
-  }, [displayData])
+    if (!displayData || !Array.isArray(displayData) || displayData.length === 0) {
+      return 1; // Default value if displayData is invalid
+    }
+    const revenues = displayData.map(day => day?.revenue || 0);
+    return Math.max(...revenues, 1); // Ensure we don't divide by zero
+  }, [displayData]);
 
   // Calculate total revenue for the current timeframe
   const totalRevenue = useMemo(() => {
-    return displayData.reduce((sum, day) => sum + day.revenue, 0);
+    if (!displayData || !Array.isArray(displayData)) {
+      return 0;
+    }
+    return displayData.reduce((sum, day) => sum + (day?.revenue || 0), 0);
   }, [displayData]);
 
   // Format the total revenue for display
@@ -1130,9 +1133,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
   }, [brandId]);
 
+  // Clear the displayed sales IDs when the sales data changes
+  useEffect(() => {
+    displayedSaleIdsRef.current.clear();
+    console.log('Revenue Calendar: Cleared displayed sale IDs');
+  }, [salesData]);
+
   // Add a specific effect to handle API errors by using initial data
   useEffect(() => {
-    if (error && error.includes('Database schema has changed') && initialData && initialData.length > 0) {
+    if (error && (
+        error.includes('Database schema has changed') || 
+        error.includes('database schema') ||
+        error.includes('no such table') ||
+        error.includes('does not exist') ||
+        error.includes('relation "public.shopify_data" does not exist')
+      ) && initialData && Array.isArray(initialData) && initialData.length > 0) {
       console.log('Revenue Calendar: Database schema error detected with initial data available, using initial data');
       setSalesData(initialData);
       setError(null);
@@ -1142,12 +1157,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Force use of initial data when available
   useEffect(() => {
     // If we have valid initial data and no sales data yet, use the initial data
-    if (initialData && initialData.length > 0 && salesData.length === 0 && !isLoading) {
+    if (initialData && Array.isArray(initialData) && initialData.length > 0 && 
+        (!salesData || !Array.isArray(salesData) || salesData.length === 0) && !isLoading) {
       console.log('Revenue Calendar: Forcing use of initial data');
       setSalesData(initialData);
       // Clear any error related to database schema
       if (error && (
           error.includes('Database schema has changed') || 
+          error.includes('database schema') ||
+          error.includes('no such table') ||
           error.includes('does not exist') ||
           error.includes('relation "public.shopify_data" does not exist')
         )) {
@@ -1155,15 +1173,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         setError(null);
       }
     }
-  }, [initialData, salesData.length, isLoading, error]);
+  }, [initialData, salesData, isLoading, error]);
 
   // Debug log for component state
   useEffect(() => {
     console.log('Revenue Calendar: Component state updated:', {
       brandId,
       initialDataLength: initialData?.length || 0,
-      salesDataLength: salesData.length,
-      isUsingInitialData: initialData && salesData === initialData,
+      salesDataLength: Array.isArray(salesData) ? salesData.length : 0,
+      isUsingInitialData: initialData && Array.isArray(initialData) && Array.isArray(salesData) && salesData === initialData,
       timeFrame,
       isLoading,
       error,
@@ -1273,7 +1291,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 setIsLoading(true);
                 setError(null);
                 // If we have initial data, use it immediately
-                if (initialData && initialData.length > 0) {
+                if (initialData && Array.isArray(initialData) && initialData.length > 0) {
                   setSalesData(initialData);
                   setIsLoading(false);
                 } else {
@@ -1332,7 +1350,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             <div className="h-full">
               <div className="grid grid-cols-7 gap-x-1 gap-y-2 h-full content-between">
                 {/* Actual days of the month - starting with 1st on the left */}
-                {displayData.map((day, index) => {
+                {Array.isArray(displayData) && displayData.map((day, index) => {
+                  if (!day) return null;
                   // Check if this is today
                   const isToday = isSameDay(day.date, new Date());
                   // Check if there's revenue for this day
@@ -1364,7 +1383,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 
               'grid-cols-7'
             }`}>
-              {displayData.map((day, index) => {
+              {Array.isArray(displayData) && displayData.map((day, index) => {
+                if (!day) return null;
                 // Calculate candle height as percentage of max revenue
                 const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5)
                 
