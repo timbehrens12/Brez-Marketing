@@ -157,6 +157,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       console.log('Revenue Calendar: Transformed data sample:', transformedData.slice(0, 3));
       
+      // Add debugging for significant sales
+      const significantSales = transformedData.filter((sale: {date: string; revenue: number}) => sale.revenue > 1000);
+      if (significantSales.length > 0) {
+        console.log('Revenue Calendar: Significant sales found:', 
+          significantSales.map((sale: {date: string; revenue: number}) => ({
+            date: sale.date,
+            parsedDate: format(parseISO(sale.date), 'yyyy-MM-dd'),
+            revenue: sale.revenue
+          }))
+        );
+      }
+      
       setSalesData(transformedData);
     } catch (error) {
       console.error('Revenue Calendar: Error fetching sales data:', error);
@@ -265,9 +277,16 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Get the current week's days (Monday-Sunday)
   const weekDays = useMemo(() => {
     const today = new Date()
+    // Log the current date for debugging
+    console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'));
+    
+    // Make sure we're using the current week that includes today
     const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }) // 1 represents Monday
     
-    return Array.from({ length: 7 }, (_, i) => {
+    // Log the start of the week for debugging
+    console.log('Revenue Calendar: Start of current week:', format(startOfCurrentWeek, 'yyyy-MM-dd'));
+    
+    const days = Array.from({ length: 7 }, (_, i) => {
       const date = addDays(startOfCurrentWeek, i)
       return {
         date,
@@ -275,7 +294,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         dayNumber: format(date, "d"),
         formattedDate: format(date, "yyyy-MM-dd")
       }
-    })
+    });
+    
+    // Log all days in the week for debugging
+    console.log('Revenue Calendar: Week days:', days.map(d => format(d.date, 'yyyy-MM-dd')));
+    
+    return days;
   }, [])
 
   // Get the current month's days
@@ -363,6 +387,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             // Try parsing as ISO string
             itemDate = parseISO(item.date);
             
+            // Log the parsed date for significant sales
+            if (item.revenue > 1000) {
+              console.log(`Parsing date for significant sale: Original="${item.date}", Parsed=${format(itemDate, 'yyyy-MM-dd')}`);
+            }
+            
             // If invalid, try as timestamp
             if (!isValid(itemDate)) {
               const timestamp = parseInt(item.date);
@@ -397,27 +426,57 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           
           if (!itemDate || !isValid(itemDate)) return false;
           
+          // Normalize the date to remove time component for consistent comparison
+          const normalizedItemDate = new Date(
+            itemDate.getFullYear(),
+            itemDate.getMonth(),
+            itemDate.getDate()
+          );
+          
           // Match based on timeframe
           if (timeFrame === 'daily') {
-            const matches = format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+            const normalizedDayDate = new Date(
+              day.date.getFullYear(),
+              day.date.getMonth(),
+              day.date.getDate()
+            );
+            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
+            
             if (matches && item.revenue > 1000) {
               console.log(`Found significant sale for daily view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
             }
             return matches;
           } else if (timeFrame === 'weekly') {
-            const matches = format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+            const normalizedDayDate = new Date(
+              day.date.getFullYear(),
+              day.date.getMonth(),
+              day.date.getDate()
+            );
+            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
+            
+            // Add detailed debugging for weekly view
+            if (item.revenue > 1000) {
+              console.log(`Weekly view checking: Sale $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} against day ${format(day.date, 'yyyy-MM-dd')}`);
+              console.log(`  Normalized dates: ${normalizedItemDate.toISOString().split('T')[0]} vs ${normalizedDayDate.toISOString().split('T')[0]}`);
+              console.log(`  Match result: ${matches ? 'YES' : 'NO'}`);
+              
+              // Also check if the day of week matches (old logic)
+              const dayOfWeekMatches = getDay(itemDate) === getDay(day.date);
+              console.log(`  Day of week match: ${dayOfWeekMatches ? 'YES' : 'NO'} (${getDay(itemDate)} vs ${getDay(day.date)})`);
+            }
+            
             if (matches && item.revenue > 1000) {
               console.log(`Found significant sale for weekly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
             }
             return matches;
           } else if (timeFrame === 'monthly') {
             // Match by day of month AND month/year to ensure we're looking at the current month
-            const dayMatches = getDate(itemDate) === getDate(day.date);
-            const monthYearMatches = 
-              getMonth(itemDate) === getMonth(day.date) && 
-              getYear(itemDate) === getYear(day.date);
-            
-            const matches = dayMatches && monthYearMatches;
+            const normalizedDayDate = new Date(
+              day.date.getFullYear(),
+              day.date.getMonth(),
+              day.date.getDate()
+            );
+            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
             
             if (matches && item.revenue > 1000) {
               console.log(`Found significant sale for monthly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} (day ${getDate(itemDate)})`);
