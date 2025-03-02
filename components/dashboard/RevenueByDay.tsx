@@ -35,13 +35,14 @@ interface RevenueByDayProps {
   data?: Array<{
     date: string;
     revenue: number;
+    isTimezoneShifted?: boolean;
   }>;
   brandId: string;
 }
 
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('weekly');
-  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number}>>(initialData || []);
+  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number; isTimezoneShifted?: boolean}>>(initialData || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -182,6 +183,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         // Extract the date components from the raw string to avoid timezone shifts
         // This is critical for ensuring the date shown matches what Shopify shows
         let localDate: Date;
+        let isTimezoneShifted = false;
         
         if (typeof rawDate === 'string' && rawDate.includes('T')) {
           // Extract just the date part from the ISO string (yyyy-MM-dd)
@@ -190,6 +192,22 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           
           // Create a date using local timezone interpretation
           localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+          
+          // Check if this sale might be timezone-shifted
+          // If the sale was made late in the day (after 8 PM), it might appear on the next day in UTC
+          if (rawDate.includes('T')) {
+            const timePart = rawDate.split('T')[1];
+            if (timePart) {
+              const hourPart = timePart.split(':')[0];
+              const hour = parseInt(hourPart);
+              if (hour >= 20) { // 8 PM or later
+                isTimezoneShifted = true;
+                if (parseFloat(sale.total_price || '0') > 1000) {
+                  console.log(`Marking significant sale as timezone-shifted (made at ${hour}:00)`);
+                }
+              }
+            }
+          }
         } else {
           // Fallback to using the parsed date's components
           localDate = new Date(
@@ -206,13 +224,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             rawDateSplit: typeof rawDate === 'string' ? rawDate.split('T')[0] : 'not a string',
             parsedISODate: format(saleDate, 'yyyy-MM-dd'),
             localDate: format(localDate, 'yyyy-MM-dd'),
-            revenue: parseFloat(sale.total_price || '0')
+            revenue: parseFloat(sale.total_price || '0'),
+            isTimezoneShifted
           });
         }
         
         return {
           date: localDate.toISOString(), // Store as ISO string but with local date
-          revenue: parseFloat(sale.total_price || '0')
+          revenue: parseFloat(sale.total_price || '0'),
+          isTimezoneShifted
         };
       });
       
@@ -306,6 +326,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               
               // Extract the date components from the raw string to avoid timezone shifts
               let localDate: Date;
+              let isTimezoneShifted = false;
               
               if (typeof rawDate === 'string' && rawDate.includes('T')) {
                 // Extract just the date part from the ISO string (yyyy-MM-dd)
@@ -314,6 +335,22 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 
                 // Create a date using local timezone interpretation
                 localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+                
+                // Check if this sale might be timezone-shifted
+                // If the sale was made late in the day (after 8 PM), it might appear on the next day in UTC
+                if (rawDate.includes('T')) {
+                  const timePart = rawDate.split('T')[1];
+                  if (timePart) {
+                    const hourPart = timePart.split(':')[0];
+                    const hour = parseInt(hourPart);
+                    if (hour >= 20) { // 8 PM or later
+                      isTimezoneShifted = true;
+                      if (parseFloat(sale.total_price || '0') > 1000) {
+                        console.log(`Background fetch: Marking significant sale as timezone-shifted (made at ${hour}:00)`);
+                      }
+                    }
+                  }
+                }
               } else {
                 // Fallback to using the parsed date
                 let saleDate = parseISO(rawDate);
@@ -326,7 +363,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               
               return {
                 date: localDate.toISOString(), // Store as ISO string but with local date
-                revenue: parseFloat(sale.total_price || '0')
+                revenue: parseFloat(sale.total_price || '0'),
+                isTimezoneShifted
               };
             });
             
@@ -561,8 +599,44 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           nextDayDate.setDate(nextDayDate.getDate() + 1);
           const isNextDay = normalizedItemDate.getTime() === nextDayDate.getTime();
           
-          // Match if either exact match or next day (for timezone adjustment)
-          const matches = exactMatch || isNextDay;
+          // FIXED: Only use nextDay match if we're looking at the ACTUAL day the sale should appear on
+          // This prevents the sale from showing on both days
+          let matches = false;
+          
+          // If it's an exact match, always show it
+          if (exactMatch) {
+            matches = true;
+          } 
+          // If it's a next day match due to timezone, only show it on the ACTUAL day (not the UTC day)
+          // We determine this by checking if we're in the weekly view and if the day we're checking is Saturday (day 6)
+          else if (isNextDay) {
+            // Only show timezone-shifted sales on the ACTUAL day they were made
+            // This prevents the sale from showing on both days
+            if (item.isTimezoneShifted) {
+              // For weekly view, we want to show timezone-shifted sales on the correct day
+              // This means Saturday sales that appear as Sunday in UTC should show on Saturday
+              if (timeFrame === 'weekly' && format(day.date, 'EEEE') === 'Saturday') {
+                matches = true;
+                if (item.revenue > 1000) {
+                  console.log(`Showing timezone-shifted sale on Saturday instead of Sunday`);
+                }
+              }
+              // For monthly view, apply the same logic for end-of-day sales
+              else if (timeFrame === 'monthly') {
+                // Get the day of month for the current day and the next day
+                const dayOfMonth = getDate(normalizedDayDate);
+                const nextDayOfMonth = getDate(nextDayDate);
+                
+                // If they're different days of the month, show on the earlier day
+                if (dayOfMonth !== nextDayOfMonth) {
+                  matches = true;
+                  if (item.revenue > 1000) {
+                    console.log(`Showing timezone-shifted sale on day ${dayOfMonth} instead of ${nextDayOfMonth}`);
+                  }
+                }
+              }
+            }
+          }
           
           // Add detailed debugging for significant sales
           if (item.revenue > 1000) {
@@ -593,7 +667,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       return {
         ...day,
         revenue,
-        formattedDate: format(day.date, 'yyyy-MM-dd')
+        formattedDate: format(day.date, 'yyyy-MM-dd'),
+        isTimezoneShifted: matchingData.some(item => item.isTimezoneShifted)
       };
     });
   }, [salesData, daysToDisplay, timeFrame]);
