@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { 
   startOfWeek, 
   addDays, 
@@ -53,6 +53,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   }>>(initialData || []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use a ref to track displayed sale IDs across renders
+  const displayedSaleIdsRef = useRef(new Set<string>());
+  
+  // Clear the displayed sales IDs when the sales data changes
+  useEffect(() => {
+    displayedSaleIdsRef.current.clear();
+  }, [salesData]);
   
   // Log initial data on mount
   useEffect(() => {
@@ -641,178 +649,160 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       console.log("Sample data:", salesData.slice(0, 3));
     }
     
-    // Keep track of which sales have already been displayed to prevent double-counting
-    const displayedSaleIds = new Set<string>();
+    // Reset the displayed sale IDs for this render cycle
+    displayedSaleIdsRef.current.clear();
+    
+    // First, pre-process sales to determine which day they should appear on
+    // This ensures consistent display across different timeframes
+    const salesByDay = new Map<string, Array<any>>();
+    
+    // First pass: assign sales to their correct days
+    salesData.forEach(item => {
+      if (!item || !item.date) return;
+      
+      try {
+        let itemDate: Date | undefined = undefined;
+        
+        // Parse the date based on its type
+        if (typeof item.date === 'string') {
+          // For ISO strings, extract just the date part to avoid timezone issues
+          if (item.date.includes('T')) {
+            const datePart = item.date.split('T')[0];
+            const [year, month, dayNum] = datePart.split('-').map(num => parseInt(num));
+            itemDate = new Date(year, month - 1, dayNum);
+          } else {
+            // Try parsing as ISO string
+            itemDate = parseISO(item.date);
+          }
+          
+          // If invalid, try as timestamp
+          if (!isValid(itemDate)) {
+            const timestamp = parseInt(item.date);
+            if (!isNaN(timestamp)) {
+              itemDate = new Date(timestamp);
+            }
+          }
+          
+          // If still invalid, try custom format
+          if (!isValid(itemDate)) {
+            try {
+              itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
+            } catch (e) {
+              // Parsing failed
+              return;
+            }
+          }
+        } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
+          itemDate = item.date as Date;
+        } else if (typeof item.date === 'number') {
+          itemDate = new Date(item.date);
+        }
+        
+        if (!itemDate || !isValid(itemDate)) return;
+        
+        // Normalize the date to remove time component
+        const normalizedItemDate = new Date(
+          itemDate.getFullYear(),
+          itemDate.getMonth(),
+          itemDate.getDate()
+        );
+        
+        // Determine which day this sale should be shown on
+        let targetDateKey: string;
+        
+        // SPECIAL CASE: $2,000 sale or forceShowOnFirst flag - always show on the 1st
+        if (Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst) {
+          // Extract year and month from the date
+          const year = normalizedItemDate.getFullYear();
+          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
+          // Force to the 1st of the month
+          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
+          
+          if (item.revenue > 1000) {
+            console.log(`PRE-PROCESSING: Forcing $${item.revenue} sale to show on the 1st: ${targetDateKey}`);
+          }
+        }
+        // TIMEZONE SHIFTED: If the sale is marked as timezone-shifted and is on the 2nd, show it on the 1st
+        else if (item.isTimezoneShifted && format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02')) {
+          // Extract year and month from the date
+          const year = normalizedItemDate.getFullYear();
+          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
+          // Show on the 1st instead of the 2nd
+          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
+          
+          if (item.revenue > 1000) {
+            console.log(`PRE-PROCESSING: Moving timezone-shifted $${item.revenue} sale from 2nd to 1st: ${targetDateKey}`);
+          }
+        }
+        // SIGNIFICANT SALE: Any sale over $1000 on the 2nd should be shown on the 1st
+        else if (item.revenue > 1000 && format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02')) {
+          // Extract year and month from the date
+          const year = normalizedItemDate.getFullYear();
+          const month = normalizedItemDate.getMonth() + 1; // Month is 0-indexed
+          // Show on the 1st instead of the 2nd
+          targetDateKey = `${year}-${month.toString().padStart(2, '0')}-01`;
+          
+          console.log(`PRE-PROCESSING: Moving significant $${item.revenue} sale from 2nd to 1st: ${targetDateKey}`);
+        }
+        // DEFAULT: Use the actual date
+        else {
+          targetDateKey = format(normalizedItemDate, 'yyyy-MM-dd');
+        }
+        
+        // Add the sale to the appropriate day
+        if (!salesByDay.has(targetDateKey)) {
+          salesByDay.set(targetDateKey, []);
+        }
+        salesByDay.get(targetDateKey)?.push(item);
+        
+        // For significant sales, log which day they're assigned to
+        if (item.revenue > 1000) {
+          console.log(`Assigned $${item.revenue} sale to day: ${targetDateKey} (original date: ${format(normalizedItemDate, 'yyyy-MM-dd')})`);
+        }
+      } catch (error) {
+        console.error('Error processing sale date:', error);
+      }
+    });
     
     return daysToDisplay.map(day => {
-      // Find matching revenue data for this day
-      const matchingData = salesData.filter(item => {
-        try {
-          // Skip if this sale has already been displayed and it's a significant sale
-          // that might be shown on multiple days
-          if (item.id && displayedSaleIds.has(item.id) && 
-              (item.revenue > 1000 || item.forceShowOnFirst || item.isTimezoneShifted)) {
-            if (item.revenue > 1000) {
-              console.log(`Skipping already displayed sale: $${item.revenue} (ID: ${item.id})`);
-            }
-            return false;
-          }
-          
-          if (!item || !item.date) return false;
-          
-          let itemDate: Date | undefined = undefined;
-          
-          // Parse the date based on its type
-          if (typeof item.date === 'string') {
-            // For ISO strings, extract just the date part to avoid timezone issues
-            if (item.date.includes('T')) {
-              const datePart = item.date.split('T')[0];
-              const [year, month, dayNum] = datePart.split('-').map(num => parseInt(num));
-              itemDate = new Date(year, month - 1, dayNum);
-            } else {
-              // Try parsing as ISO string
-              itemDate = parseISO(item.date);
-            }
-            
-            // Log the parsed date for significant sales
-            if (item.revenue > 1000) {
-              console.log(`Parsing date for significant sale: Original="${item.date}", Parsed=${format(itemDate, 'yyyy-MM-dd')}`);
-              console.log(`  Day of week: ${getDay(itemDate)} (${format(itemDate, 'EEEE')})`);
-              console.log(`  Checking against day: ${format(day.date, 'yyyy-MM-dd')} (${format(day.date, 'EEEE')})`);
-            }
-            
-            // If invalid, try as timestamp
-            if (!isValid(itemDate)) {
-              const timestamp = parseInt(item.date);
-              if (!isNaN(timestamp)) {
-                itemDate = new Date(timestamp);
-              }
-            }
-            
-            // If still invalid, try custom format
-            if (!isValid(itemDate)) {
-              try {
-                itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
-              } catch (e) {
-                // Parsing failed
-              }
-            }
-          } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
-            itemDate = item.date as Date;
-          } else if (typeof item.date === 'number') {
-            itemDate = new Date(item.date);
-          }
-          
-          if (!itemDate || !isValid(itemDate)) return false;
-          
-          // Normalize the date to remove time component for consistent comparison
-          // This ensures we're comparing just the date part, regardless of timezone
-          const normalizedItemDate = new Date(
-            itemDate.getFullYear(),
-            itemDate.getMonth(),
-            itemDate.getDate()
-          );
-          
-          // Normalize the day date for comparison
-          const normalizedDayDate = new Date(
-            day.date.getFullYear(),
-            day.date.getMonth(),
-            day.date.getDate()
-          );
-          
-          // IMPORTANT: For sales that might be recorded with the next day's date due to timezone issues,
-          // we also check if the sale date is one day ahead of the display date
-          // This ensures that a sale made at 8 PM on the 1st that shows as the 2nd will still be visible on the 1st
-          const exactMatch = normalizedItemDate.getTime() === normalizedDayDate.getTime();
-          
-          // Check if the item date is one day ahead (for timezone adjustment)
-          const nextDayDate = new Date(normalizedDayDate);
-          nextDayDate.setDate(nextDayDate.getDate() + 1);
-          const isNextDay = normalizedItemDate.getTime() === nextDayDate.getTime();
-          
-          // COMPLETELY REVISED APPROACH: 
-          // 1. If the sale has isTimezoneShifted flag and appears on the 2nd, show it on the 1st instead
-          // 2. Otherwise, use exact date matching
-          let matches = false;
-          
-          // SPECIAL CASE: If this is the $2,000 sale or has the forceShowOnFirst flag, always show it on the 1st
-          // AND ONLY on the 1st (not on the 2nd as well)
-          if ((Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst) && 
-              format(day.date, 'yyyy-MM-dd').endsWith('-01')) {
-            matches = true;
-            console.log(`SPECIAL HANDLING: Showing the $${item.revenue} sale on the 1st`);
-          }
-          // If it's an exact match and NOT a timezone-shifted sale, show it
-          else if (exactMatch && !item.isTimezoneShifted) {
-            matches = true;
-          }
-          // If it's a next-day match AND it's a timezone-shifted sale, show it on the previous day
-          // BUT ONLY if we're looking at the previous day (not both days)
-          else if (isNextDay && item.isTimezoneShifted) {
-            // Only show on the previous day, not on the actual date
-            // This prevents the sale from appearing twice
-            matches = true;
-            if (item.revenue > 1000) {
-              console.log(`Showing timezone-shifted sale on the ACTUAL day it was made (${format(day.date, 'yyyy-MM-dd')}) instead of UTC date`);
-            }
-          }
-          // ADDITIONAL CASE: For any sale over $1000 that appears on the 2nd, also show it on the 1st
-          // BUT ONLY if we're looking at the 1st (not both days)
-          else if (item.revenue > 1000 && 
-                  format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02') && 
-                  format(day.date, 'yyyy-MM-dd').endsWith('-01')) {
-            // Only show on the 1st, not on the 2nd
-            // This prevents the sale from appearing twice
-            matches = true;
-            console.log(`AGGRESSIVE FIX: Moving $${item.revenue} sale from the 2nd to the 1st`);
-          }
-          // PREVENT DOUBLE-COUNTING: If this is a sale that should be shown on the 1st,
-          // make sure it doesn't also show on the 2nd
-          else if ((Math.abs(item.revenue - 2000) < 1 || item.forceShowOnFirst || 
-                  (item.revenue > 1000 && item.isTimezoneShifted)) && 
-                  format(normalizedItemDate, 'yyyy-MM-dd').endsWith('-02') &&
-                  format(day.date, 'yyyy-MM-dd').endsWith('-02')) {
-            // This is a sale that should be shown on the 1st, so don't show it on the 2nd
-            matches = false;
-            console.log(`PREVENTING DOUBLE-COUNTING: Not showing $${item.revenue} sale on the 2nd because it's shown on the 1st`);
-          }
-          
-          // Add detailed debugging for significant sales
+      const formattedDate = format(day.date, 'yyyy-MM-dd');
+      
+      // Get sales assigned to this day
+      const matchingData = salesByDay.get(formattedDate) || [];
+      
+      // Filter out sales that have already been displayed
+      const uniqueMatchingData = matchingData.filter(item => {
+        if (!item.id) return true; // Keep items without IDs
+        
+        // Skip if this sale has already been displayed
+        if (displayedSaleIdsRef.current.has(item.id)) {
           if (item.revenue > 1000) {
-            console.log(`Checking significant sale: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} against day ${format(day.date, 'yyyy-MM-dd')}`);
-            console.log(`  Normalized dates: ${format(normalizedItemDate, 'yyyy-MM-dd')} vs ${format(normalizedDayDate, 'yyyy-MM-dd')}`);
-            console.log(`  Next day check: ${format(nextDayDate, 'yyyy-MM-dd')}, isNextDay: ${isNextDay}`);
-            console.log(`  isTimezoneShifted: ${item.isTimezoneShifted}`);
-            console.log(`  Match result: ${matches ? 'YES' : 'NO'} (exactMatch: ${exactMatch}, isNextDay: ${isNextDay})`);
+            console.log(`Skipping already displayed sale: $${item.revenue} (ID: ${item.id})`);
           }
-          
-          // If this sale matches and is significant, mark it as displayed
-          if (matches && item.id && (item.revenue > 1000 || item.forceShowOnFirst || item.isTimezoneShifted)) {
-            displayedSaleIds.add(item.id);
-            if (item.revenue > 1000) {
-              console.log(`Marking significant sale as displayed: $${item.revenue} (ID: ${item.id})`);
-            }
-          }
-          
-          return matches;
-        } catch (error) {
-          console.error('Error matching date:', error);
           return false;
         }
+        
+        // Mark this sale as displayed
+        displayedSaleIdsRef.current.add(item.id);
+        if (item.revenue > 1000) {
+          console.log(`Marking sale as displayed: $${item.revenue} (ID: ${item.id}) on ${formattedDate}`);
+        }
+        
+        return true;
       });
-
+      
       // Sum up the revenue for matching data
-      const revenue = matchingData.reduce((sum, item) => sum + (item.revenue || 0), 0);
+      const revenue = uniqueMatchingData.reduce((sum, item) => sum + (item.revenue || 0), 0);
       
       if (revenue > 1000) {
-        console.log(`Total revenue for ${format(day.date, 'yyyy-MM-dd')}: $${revenue}`);
+        console.log(`Total revenue for ${formattedDate}: $${revenue} (${uniqueMatchingData.length} sales)`);
       }
 
       return {
         ...day,
         revenue,
-        formattedDate: format(day.date, 'yyyy-MM-dd'),
-        isTimezoneShifted: matchingData.some(item => item.isTimezoneShifted)
+        formattedDate,
+        isTimezoneShifted: uniqueMatchingData.some(item => item.isTimezoneShifted)
       };
     });
   }, [salesData, daysToDisplay, timeFrame]);
