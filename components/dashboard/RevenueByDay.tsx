@@ -405,7 +405,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             }
             return matches;
           } else if (timeFrame === 'weekly') {
-            return getDay(itemDate) === getDay(day.date);
+            // Fix: Compare the actual date, not just the day of week
+            const matches = format(itemDate, 'yyyy-MM-dd') === format(day.date, 'yyyy-MM-dd');
+            if (matches && item.revenue > 1000) {
+              console.log(`Found significant sale for weekly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+            }
+            return matches;
           } else if (timeFrame === 'monthly') {
             // Match by day of month AND month/year to ensure we're looking at the current month
             const dayMatches = getDate(itemDate) === getDate(day.date);
