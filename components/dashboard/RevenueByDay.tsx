@@ -153,20 +153,57 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       const transformedData = result.sales.map((sale: any) => {
         // Parse the date and adjust for timezone
         const rawDate = sale.created_at;
-        let saleDate = parseISO(rawDate);
         
-        // Force the date to be interpreted in local timezone by creating a new date
-        // with just the year, month, and day components
-        const localDate = new Date(
-          saleDate.getFullYear(),
-          saleDate.getMonth(),
-          saleDate.getDate()
-        );
+        // IMPORTANT: For Shopify dates, we need to preserve the exact date regardless of timezone
+        // This ensures that a sale made at 8pm on the 1st stays on the 1st
+        
+        // First try to parse the date
+        let saleDate: Date;
+        try {
+          saleDate = parseISO(rawDate);
+          
+          // If the date is invalid, try alternative parsing
+          if (!isValid(saleDate)) {
+            // Try as timestamp
+            const timestamp = parseInt(rawDate);
+            if (!isNaN(timestamp)) {
+              saleDate = new Date(timestamp);
+            } else {
+              // Try other formats as fallback
+              saleDate = parse(rawDate, 'yyyy-MM-dd', new Date());
+            }
+          }
+        } catch (e) {
+          // If parsing fails, create a new date object
+          console.error('Error parsing date:', rawDate, e);
+          saleDate = new Date();
+        }
+        
+        // Extract the date components from the raw string to avoid timezone shifts
+        // This is critical for ensuring the date shown matches what Shopify shows
+        let localDate: Date;
+        
+        if (typeof rawDate === 'string' && rawDate.includes('T')) {
+          // Extract just the date part from the ISO string (yyyy-MM-dd)
+          const datePart = rawDate.split('T')[0];
+          const [year, month, day] = datePart.split('-').map(num => parseInt(num));
+          
+          // Create a date using local timezone interpretation
+          localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+        } else {
+          // Fallback to using the parsed date's components
+          localDate = new Date(
+            saleDate.getFullYear(),
+            saleDate.getMonth(),
+            saleDate.getDate()
+          );
+        }
         
         // For significant sales, log the date transformation
         if (parseFloat(sale.total_price || '0') > 1000) {
           console.log(`Revenue Calendar: Significant sale date transformation:`, {
             rawDate,
+            rawDateSplit: typeof rawDate === 'string' ? rawDate.split('T')[0] : 'not a string',
             parsedISODate: format(saleDate, 'yyyy-MM-dd'),
             localDate: format(localDate, 'yyyy-MM-dd'),
             revenue: parseFloat(sale.total_price || '0')
@@ -263,15 +300,29 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             const transformedData = result.sales.map((sale: any) => {
               // Parse the date and adjust for timezone
               const rawDate = sale.created_at;
-              let saleDate = parseISO(rawDate);
               
-              // Force the date to be interpreted in local timezone by creating a new date
-              // with just the year, month, and day components
-              const localDate = new Date(
-                saleDate.getFullYear(),
-                saleDate.getMonth(),
-                saleDate.getDate()
-              );
+              // IMPORTANT: For Shopify dates, we need to preserve the exact date regardless of timezone
+              // This ensures that a sale made at 8pm on the 1st stays on the 1st
+              
+              // Extract the date components from the raw string to avoid timezone shifts
+              let localDate: Date;
+              
+              if (typeof rawDate === 'string' && rawDate.includes('T')) {
+                // Extract just the date part from the ISO string (yyyy-MM-dd)
+                const datePart = rawDate.split('T')[0];
+                const [year, month, day] = datePart.split('-').map(num => parseInt(num));
+                
+                // Create a date using local timezone interpretation
+                localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+              } else {
+                // Fallback to using the parsed date
+                let saleDate = parseISO(rawDate);
+                localDate = new Date(
+                  saleDate.getFullYear(),
+                  saleDate.getMonth(),
+                  saleDate.getDate()
+                );
+              }
               
               return {
                 date: localDate.toISOString(), // Store as ISO string but with local date
@@ -437,24 +488,20 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           
           // Parse the date based on its type
           if (typeof item.date === 'string') {
-            // Try parsing as ISO string
-            itemDate = parseISO(item.date);
+            // For ISO strings, extract just the date part to avoid timezone issues
+            if (item.date.includes('T')) {
+              const datePart = item.date.split('T')[0];
+              const [year, month, dayNum] = datePart.split('-').map(num => parseInt(num));
+              itemDate = new Date(year, month - 1, dayNum);
+            } else {
+              // Try parsing as ISO string
+              itemDate = parseISO(item.date);
+            }
             
             // Log the parsed date for significant sales
             if (item.revenue > 1000) {
               console.log(`Parsing date for significant sale: Original="${item.date}", Parsed=${format(itemDate, 'yyyy-MM-dd')}`);
-              
-              // Also log the day of week to help debug timezone issues
               console.log(`  Day of week: ${getDay(itemDate)} (${format(itemDate, 'EEEE')})`);
-              console.log(`  Full ISO date: ${itemDate.toISOString()}`);
-              
-              // Create a date with just the date part to check for timezone issues
-              const dateOnly = new Date(
-                itemDate.getFullYear(),
-                itemDate.getMonth(),
-                itemDate.getDate()
-              );
-              console.log(`  Date only: ${format(dateOnly, 'yyyy-MM-dd')} (${format(dateOnly, 'EEEE')})`);
             }
             
             // If invalid, try as timestamp
@@ -470,17 +517,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               try {
                 itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
               } catch (e) {
-                // Try other formats
-                try {
-                  itemDate = parse(item.date, 'MM/dd/yyyy', new Date());
-                } catch (e2) {
-                  // Try one more format that might be used
-                  try {
-                    itemDate = parse(item.date, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSX', new Date());
-                  } catch (e3) {
-                    // Parsing failed
-                  }
-                }
+                // Parsing failed
               }
             }
           } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
@@ -499,60 +536,28 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             itemDate.getDate()
           );
           
-          // Match based on timeframe
-          if (timeFrame === 'daily') {
-            const normalizedDayDate = new Date(
-              day.date.getFullYear(),
-              day.date.getMonth(),
-              day.date.getDate()
-            );
-            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
-            
-            if (matches && item.revenue > 1000) {
-              console.log(`Found significant sale for daily view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
-            }
-            return matches;
-          } else if (timeFrame === 'weekly') {
-            const normalizedDayDate = new Date(
-              day.date.getFullYear(),
-              day.date.getMonth(),
-              day.date.getDate()
-            );
-            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
-            
-            // Add detailed debugging for weekly view
-            if (item.revenue > 1000) {
-              console.log(`Weekly view checking: Sale $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} against day ${format(day.date, 'yyyy-MM-dd')}`);
-              console.log(`  Normalized dates: ${normalizedItemDate.toISOString().split('T')[0]} vs ${normalizedDayDate.toISOString().split('T')[0]}`);
-              console.log(`  Match result: ${matches ? 'YES' : 'NO'}`);
-              
-              // Also check if the day of week matches (old logic)
-              const dayOfWeekMatches = getDay(itemDate) === getDay(day.date);
-              console.log(`  Day of week match: ${dayOfWeekMatches ? 'YES' : 'NO'} (${getDay(itemDate)} vs ${getDay(day.date)})`);
-            }
-            
-            if (matches && item.revenue > 1000) {
-              console.log(`Found significant sale for weekly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
-            }
-            return matches;
-          } else if (timeFrame === 'monthly') {
-            // Match by day of month AND month/year to ensure we're looking at the current month
-            const normalizedDayDate = new Date(
-              day.date.getFullYear(),
-              day.date.getMonth(),
-              day.date.getDate()
-            );
-            const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
-            
-            if (matches && item.revenue > 1000) {
-              console.log(`Found significant sale for monthly view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} (day ${getDate(itemDate)})`);
-            }
-            return matches;
-          } else if (timeFrame === 'yearly') {
-            return getMonth(itemDate) === getMonth(day.date);
+          // Normalize the day date for comparison
+          const normalizedDayDate = new Date(
+            day.date.getFullYear(),
+            day.date.getMonth(),
+            day.date.getDate()
+          );
+          
+          // Match based on normalized dates (ignoring time component)
+          const matches = normalizedItemDate.getTime() === normalizedDayDate.getTime();
+          
+          // Add detailed debugging for significant sales
+          if (item.revenue > 1000) {
+            console.log(`Checking significant sale: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')} against day ${format(day.date, 'yyyy-MM-dd')}`);
+            console.log(`  Normalized dates: ${format(normalizedItemDate, 'yyyy-MM-dd')} vs ${format(normalizedDayDate, 'yyyy-MM-dd')}`);
+            console.log(`  Match result: ${matches ? 'YES' : 'NO'}`);
           }
           
-          return false;
+          if (matches && item.revenue > 1000) {
+            console.log(`Found significant sale for ${timeFrame} view: $${item.revenue} on ${format(itemDate, 'yyyy-MM-dd')}`);
+          }
+          
+          return matches;
         } catch (error) {
           console.error('Error matching date:', error);
           return false;
