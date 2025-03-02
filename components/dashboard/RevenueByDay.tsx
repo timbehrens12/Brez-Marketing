@@ -102,9 +102,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     setError(null);
     
     try {
-      // Get data for the last 90 days by default
+      // Get data for the last 5 years to ensure we have all data regardless of date range picker
       const endDate = new Date().toISOString().split('T')[0];
-      const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
+      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0];
       
       console.log('Revenue Calendar: Fetching sales data directly', { startDate, endDate, brandId });
       console.log('Revenue Calendar: Initial data available:', initialData?.length || 0, 'records');
@@ -359,9 +359,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       if (brandId) {
         const quietFetch = async () => {
           try {
-            // Get data for the last 90 days by default
+            // Get data for the last 5 years to ensure we have all data regardless of date range picker
             const endDate = new Date().toISOString().split('T')[0];
-            const startDate = subDays(new Date(), 90).toISOString().split('T')[0];
+            const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0];
             
             console.log('Revenue Calendar: Quiet background fetch', { startDate, endDate, brandId });
             
