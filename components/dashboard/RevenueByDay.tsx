@@ -1046,21 +1046,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with compact grid layout
+            // Monthly view with maximized text size and optimal spacing
             <div className="flex flex-col h-full">
-              <div className="grid grid-cols-7 mb-1">
+              <div className="grid grid-cols-7 mb-2">
                 {/* Day headers (Sun-Sat) */}
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                  <div key={`header-${i}`} className="text-[9px] text-gray-400 text-center">
+                  <div key={`header-${i}`} className="text-sm text-gray-400 text-center font-medium">
                     {day}
                   </div>
                 ))}
               </div>
               
-              <div className="grid grid-cols-7 gap-x-0.5 gap-y-1 flex-1">
+              <div className="grid grid-cols-7 gap-x-1 gap-y-4 flex-1">
                 {/* Empty cells for days before the 1st of the month */}
                 {Array.from({ length: getDay(startOfMonth(new Date())) }).map((_, i) => (
-                  <div key={`empty-start-${i}`}></div>
+                  <div key={`empty-start-${i}`} className="min-h-[3rem]"></div>
                 ))}
                 
                 {/* Actual days of the month */}
@@ -1071,18 +1071,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   const hasRevenue = day.revenue > 0;
                   
                   return (
-                    <div key={index} className="relative">
+                    <div key={index} className="flex flex-col items-center min-h-[3rem]">
                       <div 
                         className={`
-                          w-4 h-4 flex items-center justify-center rounded-full text-[9px]
+                          w-8 h-8 flex items-center justify-center rounded-full text-base
                           ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
-                          mx-auto
                         `}
                       >
                         <span className="font-medium">{day.dayNumber}</span>
                       </div>
                       {hasRevenue && (
-                        <div className="text-[8px] font-medium text-green-400 text-center mt-0.5">
+                        <div className="text-sm font-medium text-green-400 mt-1">
                           ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
                         </div>
                       )}
@@ -1095,15 +1094,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   const startDayOfMonth = getDay(startOfMonth(new Date()));
                   const daysInCurrentMonth = getDaysInMonth(new Date());
                   
-                  // Try to use 5 rows when possible
+                  // Calculate rows needed based on the month
                   const totalDaysToShow = startDayOfMonth + daysInCurrentMonth;
-                  const rowsNeeded = Math.min(5, Math.ceil(totalDaysToShow / 7));
+                  const rowsNeeded = Math.ceil(totalDaysToShow / 7);
                   const totalCells = rowsNeeded * 7;
                   
                   const emptyCellsAtEnd = totalCells - startDayOfMonth - daysInCurrentMonth;
                   
                   return Array.from({ length: Math.max(0, emptyCellsAtEnd) }).map((_, i) => (
-                    <div key={`empty-end-${i}`}></div>
+                    <div key={`empty-end-${i}`} className="min-h-[3rem]"></div>
                   ));
                 })()}
               </div>
