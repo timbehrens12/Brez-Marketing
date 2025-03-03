@@ -457,7 +457,7 @@ export default function DashboardPage() {
           <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
             <div className="mb-8 text-center">
               <img 
-                src="https://i.imgur.com/Yx9Iy0I.png" 
+                src="https://imgur.com/IW2OcJ0" 
                 alt="Brez Logo" 
                 className="h-16 mx-auto mb-4" 
               />
