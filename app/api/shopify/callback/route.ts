@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
@@ -92,7 +94,7 @@ export async function GET(request: Request) {
     }
 
     // Return a success page that will close the popup window
-    return new Response(`
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -143,14 +145,16 @@ export async function GET(request: Request) {
           </div>
         </body>
       </html>
-    `, {
+    `;
+
+    return new Response(htmlContent, {
       headers: {
-        'Content-Type': 'text/html',
+        'Content-Type': 'text/html; charset=utf-8',
       },
-    })
+    });
   } catch (error) {
     console.error('Error in Shopify callback:', error)
-    return new Response(`
+    const errorHtml = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -209,10 +213,12 @@ export async function GET(request: Request) {
           </div>
         </body>
       </html>
-    `, {
+    `;
+
+    return new Response(errorHtml, {
       headers: {
-        'Content-Type': 'text/html',
+        'Content-Type': 'text/html; charset=utf-8',
       },
-    })
+    });
   }
 } 

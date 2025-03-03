@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,14 +27,23 @@ export function PlatformConnectionModal({
   const [isLoading, setIsLoading] = useState(false)
   const [shopUrl, setShopUrl] = useState('')
   const [metaCheckInterval, setMetaCheckInterval] = useState<NodeJS.Timeout | null>(null)
+  const shopifyCheckIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const authWindowRef = useRef<Window | null>(null)
   const supabase = useSupabase()
   const { user } = useUser()
 
-  // Clean up interval on unmount
+  // Clean up intervals on unmount
   useEffect(() => {
     return () => {
       if (metaCheckInterval) {
         clearInterval(metaCheckInterval)
+      }
+      if (shopifyCheckIntervalRef.current) {
+        clearInterval(shopifyCheckIntervalRef.current)
+      }
+      // Close any open auth windows
+      if (authWindowRef.current && !authWindowRef.current.closed) {
+        authWindowRef.current.close()
       }
     }
   }, [metaCheckInterval])
@@ -75,9 +84,42 @@ export function PlatformConnectionModal({
       // Open the Shopify auth URL in a new window
       const authUrl = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${formattedShopUrl}`
       const authWindow = window.open(authUrl, 'shopify-auth', 'width=600,height=700')
+      authWindowRef.current = authWindow
+      
+      if (!authWindow) {
+        toast.error('Popup blocked. Please allow popups for this site.')
+        setIsLoading(false)
+        return
+      }
       
       // Check periodically if the connection is successful
       const checkInterval = setInterval(async () => {
+        // First check if the window is still open
+        if (authWindow && authWindow.closed) {
+          // Window was closed, check if connection was successful
+          const { data, error } = await supabase
+            .from('platform_connections')
+            .select('status')
+            .eq('id', connection.id)
+            .single()
+            
+          if (data && data.status === 'active') {
+            clearInterval(checkInterval)
+            shopifyCheckIntervalRef.current = null
+            setIsOpen(false)
+            toast.success('Shopify connected successfully')
+            if (onSuccess) onSuccess()
+          } else {
+            // Window closed but connection not active
+            clearInterval(checkInterval)
+            shopifyCheckIntervalRef.current = null
+            setIsLoading(false)
+            toast.error('Connection process was interrupted. Please try again.')
+          }
+          return
+        }
+        
+        // If window is still open, check connection status
         const { data, error } = await supabase
           .from('platform_connections')
           .select('status')
@@ -86,16 +128,28 @@ export function PlatformConnectionModal({
           
         if (data && data.status === 'active') {
           clearInterval(checkInterval)
-          if (authWindow) authWindow.close()
+          shopifyCheckIntervalRef.current = null
+          if (authWindow && !authWindow.closed) authWindow.close()
+          authWindowRef.current = null
           setIsOpen(false)
           toast.success('Shopify connected successfully')
           if (onSuccess) onSuccess()
         }
       }, 2000)
       
+      shopifyCheckIntervalRef.current = checkInterval
+      
       // Clear interval after 2 minutes (timeout)
       setTimeout(() => {
-        clearInterval(checkInterval)
+        if (shopifyCheckIntervalRef.current) {
+          clearInterval(shopifyCheckIntervalRef.current)
+          shopifyCheckIntervalRef.current = null
+        }
+        // If still loading after timeout, show error
+        if (isLoading) {
+          setIsLoading(false)
+          toast.error('Connection timed out. Please try again.')
+        }
       }, 120000)
       
     } catch (error) {
@@ -131,9 +185,43 @@ export function PlatformConnectionModal({
       // Open the Meta auth URL in a new window
       const authUrl = `/api/auth/meta?brandId=${brandId}`
       const authWindow = window.open(authUrl, 'meta-auth', 'width=600,height=700')
+      authWindowRef.current = authWindow
+      
+      if (!authWindow) {
+        toast.error('Popup blocked. Please allow popups for this site.')
+        setIsLoading(false)
+        return
+      }
       
       // Check periodically if the connection is successful
       const interval = setInterval(async () => {
+        // First check if the window is still open
+        if (authWindow && authWindow.closed) {
+          // Window was closed, check if connection was successful
+          const { data, error } = await supabase
+            .from('platform_connections')
+            .select('status')
+            .eq('brand_id', brandId)
+            .eq('platform_type', 'meta')
+            .eq('status', 'active')
+            
+          if (data && data.length > 0) {
+            clearInterval(interval)
+            setMetaCheckInterval(null)
+            setIsOpen(false)
+            toast.success('Meta connected successfully')
+            if (onSuccess) onSuccess()
+          } else {
+            // Window closed but connection not active
+            clearInterval(interval)
+            setMetaCheckInterval(null)
+            setIsLoading(false)
+            toast.error('Connection process was interrupted. Please try again.')
+          }
+          return
+        }
+        
+        // If window is still open, check connection status
         const { data, error } = await supabase
           .from('platform_connections')
           .select('status')
@@ -145,6 +233,7 @@ export function PlatformConnectionModal({
           clearInterval(interval)
           setMetaCheckInterval(null)
           if (authWindow && !authWindow.closed) authWindow.close()
+          authWindowRef.current = null
           setIsOpen(false)
           toast.success('Meta connected successfully')
           if (onSuccess) onSuccess()
@@ -180,7 +269,25 @@ export function PlatformConnectionModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // If closing the dialog while loading, clean up
+      if (!open && isLoading) {
+        setIsLoading(false)
+        if (metaCheckInterval) {
+          clearInterval(metaCheckInterval)
+          setMetaCheckInterval(null)
+        }
+        if (shopifyCheckIntervalRef.current) {
+          clearInterval(shopifyCheckIntervalRef.current)
+          shopifyCheckIntervalRef.current = null
+        }
+        if (authWindowRef.current && !authWindowRef.current.closed) {
+          authWindowRef.current.close()
+          authWindowRef.current = null
+        }
+      }
+      setIsOpen(open)
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
