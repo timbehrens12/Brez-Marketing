@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
-import { SignOutButton, UserButton } from "@clerk/nextjs"
+import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 
 const navItems = [
@@ -21,6 +21,34 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
+  const { userId, isLoaded } = useAuth()
+  
+  // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
+  if (!isLoaded || !userId) {
+    return (
+      <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
+        <div className="p-6 flex-1">
+          <div className="mb-8">
+            <h1 className="text-xl font-semibold text-white">Brez</h1>
+          </div>
+          <nav className="space-y-0.5">
+            <Link
+              href="/dashboard"
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                pathname === "/dashboard" 
+                  ? "bg-[#2A2A2A] text-white" 
+                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+              )}
+            >
+              <LayoutDashboard className="mr-3 h-4 w-4" />
+              Dashboard
+            </Link>
+          </nav>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>

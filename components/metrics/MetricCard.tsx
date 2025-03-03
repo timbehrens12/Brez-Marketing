@@ -88,7 +88,7 @@ export function MetricCard({
     try {
       switch(valueFormat) {
         case "currency":
-          return `$${val.toFixed(2)}`
+          return prefix === "$" ? val.toFixed(2) : `$${val.toFixed(2)}`
         case "percentage":
           return `${val.toFixed(1)}%`
         default:

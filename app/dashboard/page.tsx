@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@clerk/nextjs"
+import { useAuth, SignIn } from "@clerk/nextjs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { DateRange } from "react-day-picker"
@@ -81,7 +81,7 @@ function formatDate(date: Date | undefined): string {
 }
 
 export default function DashboardPage() {
-  const { userId } = useAuth()
+  const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
   const [dateRange, setDateRange] = useState({
     from: addDays(new Date(), -30),
@@ -431,6 +431,57 @@ export default function DashboardPage() {
     120, // 2 minutes in seconds
     [selectedBrandId, dateRange, activePlatforms]
   )
+
+  // If auth is loaded and user is not signed in, show sign-in overlay
+  if (isLoaded && !userId) {
+    return (
+      <div className="relative w-full h-full">
+        {/* Semi-transparent dashboard background */}
+        <div className="absolute inset-0 filter blur-sm opacity-30">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
+            {/* Placeholder content to show blurred in background */}
+            <div className="grid gap-4 grid-cols-4 mb-6">
+              <div className="bg-[#1A1A1A] h-32 rounded-lg"></div>
+              <div className="bg-[#1A1A1A] h-32 rounded-lg"></div>
+              <div className="bg-[#1A1A1A] h-32 rounded-lg"></div>
+              <div className="bg-[#1A1A1A] h-32 rounded-lg"></div>
+            </div>
+            <div className="bg-[#1A1A1A] h-64 rounded-lg mb-6"></div>
+            <div className="bg-[#1A1A1A] h-64 rounded-lg"></div>
+          </div>
+        </div>
+        
+        {/* Sign-in overlay */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="bg-[#2A2A2A] p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-center">Sign in to access your dashboard</h2>
+            <SignIn 
+              appearance={{
+                elements: {
+                  rootBox: "mx-auto",
+                  card: "bg-[#2A2A2A] border-[#333]",
+                  headerTitle: "text-white",
+                  headerSubtitle: "text-gray-400",
+                  socialButtonsBlockButton: "bg-[#333] border-[#444] text-white hover:bg-[#444]",
+                  formButtonPrimary: "bg-blue-600 hover:bg-blue-700",
+                  footerActionLink: "text-blue-400 hover:text-blue-300",
+                  formFieldLabel: "text-gray-300",
+                  formFieldInput: "bg-[#333] border-[#444] text-white",
+                  dividerLine: "bg-[#444]",
+                  dividerText: "text-gray-400",
+                  identityPreviewText: "text-gray-300",
+                  identityPreviewEditButton: "text-blue-400 hover:text-blue-300"
+                }
+              }}
+              routing="hash"
+              redirectUrl="/dashboard"
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto">

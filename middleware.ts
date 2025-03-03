@@ -6,6 +6,7 @@ export default authMiddleware({
     "/review",
     "/api/webhooks(.*)",
     "/privacy",
+    "/dashboard",
     "/api/shopify/sync",
     "/api/shopify/callback",
     "/api/shopify/auth",
