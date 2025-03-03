@@ -26,6 +26,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <style>{`
+          /* Minimize Clerk branding */
+          .cl-internal-b3fm6y {
+            opacity: 0.3;
+            font-size: 0.7rem;
+            transition: opacity 0.2s;
+          }
+          .cl-internal-b3fm6y:hover {
+            opacity: 0.7;
+          }
+          
+          /* Hide Clerk logo in footer */
+          .cl-internal-uyu30o {
+            display: none !important;
+          }
+        `}</style>
+      </head>
       <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider>

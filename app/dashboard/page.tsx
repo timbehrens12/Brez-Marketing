@@ -477,7 +477,9 @@ export default function DashboardPage() {
                   identityPreviewEditButton: "text-blue-400 hover:text-blue-300 transition-colors",
                   formFieldAction: "text-blue-400 hover:text-blue-300 transition-colors",
                   alert: "bg-[#333] border-[#444] text-white",
-                  logoBox: "hidden"
+                  logoBox: "hidden",
+                  footer: "opacity-30 hover:opacity-100 transition-opacity",
+                  footerAction: "opacity-30 hover:opacity-100 transition-opacity"
                 }
               }}
               routing="hash"
