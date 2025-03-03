@@ -456,7 +456,11 @@ export default function DashboardPage() {
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
             <div className="mb-8 text-center">
-              <h1 className="text-3xl font-bold text-white mb-2">Brez</h1>
+              <img 
+                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/brez-logo-white-7Yx9Iy0Iy8Iy8Iy8Iy.png" 
+                alt="Brez Logo" 
+                className="h-12 mx-auto mb-4" 
+              />
               <p className="text-gray-400">Sign in to access your dashboard</p>
             </div>
             <SignIn 
@@ -479,7 +483,13 @@ export default function DashboardPage() {
                   alert: "bg-[#333] border-[#444] text-white",
                   logoBox: "hidden",
                   footer: "opacity-30 hover:opacity-100 transition-opacity",
-                  footerAction: "opacity-30 hover:opacity-100 transition-opacity"
+                  footerAction: "opacity-30 hover:opacity-100 transition-opacity",
+                  footerActionText: "text-white font-medium",
+                  otpCodeFieldInput: "bg-[#333] border-[#444] text-white",
+                  formHeaderTitle: "text-white text-xl",
+                  formHeaderSubtitle: "text-gray-300",
+                  phoneNumberInput: "bg-[#333] border-[#444] text-white",
+                  alternativeMethodsBlockButton: "text-blue-400 hover:text-blue-300"
                 }
               }}
               routing="hash"

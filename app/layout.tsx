@@ -42,6 +42,45 @@ export default function RootLayout({
           .cl-internal-uyu30o {
             display: none !important;
           }
+          
+          /* Make "Sign up" link more visible */
+          .cl-footerActionText {
+            color: white !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+          }
+          
+          .cl-footerActionLink {
+            opacity: 1 !important;
+          }
+          
+          /* Improve verification code section */
+          .cl-formHeaderTitle {
+            color: white !important;
+            font-size: 1.25rem !important;
+            font-weight: 600 !important;
+          }
+          
+          .cl-formHeaderSubtitle {
+            color: #d1d5db !important;
+            font-size: 0.875rem !important;
+          }
+          
+          .cl-otpCodeFieldInput {
+            background-color: #333 !important;
+            border-color: #444 !important;
+            color: white !important;
+          }
+          
+          .cl-alternativeMethodsBlockButton {
+            color: #60a5fa !important;
+          }
+          
+          /* Make "No account? Sign up" more visible */
+          .cl-footerAction {
+            opacity: 1 !important;
+            margin-top: 1rem !important;
+          }
         `}</style>
       </head>
       <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
