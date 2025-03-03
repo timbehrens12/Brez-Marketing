@@ -789,45 +789,45 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   }
 
   return (
-    <div className="h-full">
-      {error && (
-        <div className="text-sm text-gray-400 mb-4">
-          {timeFrame === 'daily' && displayData && displayData.length > 2 ? (
-            // If we're showing all days with data, make the error less prominent
-            <span className="text-xs text-gray-300">
-              {error} (Showing all days with sales)
-            </span>
-          ) : (
-            // Regular error display
-            error
-          )}
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">{getTitle()}</h3>
+        <div className="flex gap-2">
+          <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
+            <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
+              <SelectValue placeholder="Select view" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
+      </div>
+
       {isLoading ? (
-        <div className="animate-pulse">
-          <div className="h-[200px] bg-gray-800 rounded"></div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse w-full">
+            <div className="h-[250px] bg-gray-800 rounded-md"></div>
+          </div>
         </div>
       ) : (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">{getTitle()}</h3>
-            <div className="flex gap-2">
-              <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Select view" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+        <div className="flex-1 flex flex-col">
+          {error && (
+            <div className="text-sm text-gray-400 mb-2 px-1">
+              {timeFrame === 'daily' && displayData && displayData.length > 2 ? (
+                <span className="text-xs text-gray-400">
+                  {error} (Showing all days with sales)
+                </span>
+              ) : (
+                error
+              )}
             </div>
-          </div>
-
-          {/* Restore the previous layout with a more compact design */}
-          <div className="grid grid-cols-7 gap-1">
+          )}
+          
+          <div className="flex-1 grid grid-cols-7 gap-1 overflow-hidden">
             {daysToDisplay.map((day, index) => {
               const dayData = displayData.find(d => d.formattedDate === day.formattedDate) || {
                 ...day,
@@ -838,46 +838,76 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               const heightPercentage = dayData.revenue > 0 
                 ? Math.max(5, Math.min(100, (dayData.revenue / maxRevenue) * 100)) 
                 : 2;
+                
+              // Format the revenue display
+              const formattedRevenue = dayData.revenue > 0 
+                ? dayData.revenue >= 1000
+                  ? `$${(dayData.revenue/1000).toFixed(1)}k`
+                  : `$${dayData.revenue.toFixed(0)}`
+                : '$0';
 
               return (
                 <div
                   key={day.formattedDate}
                   className={cn(
-                    "flex flex-col items-center p-1 rounded border border-gray-800",
-                    day.isToday && "bg-blue-950 border-blue-800"
+                    "flex flex-col h-full rounded-md overflow-hidden",
+                    day.isToday 
+                      ? "bg-blue-900/20 border border-blue-700" 
+                      : "bg-gray-900/50 border border-gray-800"
                   )}
                 >
-                  <div className="text-xs text-gray-400">
-                    {timeFrame !== 'yearly' && day.dayName}
+                  <div className={cn(
+                    "text-center py-1 text-xs font-medium",
+                    day.isToday ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                  )}>
+                    {timeFrame !== 'yearly' ? day.dayName : ''}
+                    {timeFrame !== 'yearly' && day.dayNumber ? ` ${day.dayNumber}` : ''}
+                    {timeFrame === 'yearly' ? day.dayName : ''}
                   </div>
-                  <div className="text-sm font-medium">
-                    {timeFrame !== 'yearly' && day.dayNumber}
-                  </div>
-                  <div className="w-full mt-1">
-                    <div className="relative h-16">
+                  
+                  <div className="flex-1 flex flex-col justify-end p-1 relative">
+                    <div className="absolute inset-x-1 bottom-7 top-1 flex items-end">
                       <div
                         className={cn(
-                          "absolute bottom-0 w-full rounded-t",
-                          dayData.revenue > 0 ? "bg-blue-500" : "bg-gray-700"
+                          "w-full rounded-t transition-all duration-500 ease-in-out",
+                          dayData.revenue > 0 
+                            ? day.isToday 
+                              ? "bg-blue-500" 
+                              : "bg-blue-600"
+                            : "bg-gray-700"
                         )}
                         style={{
                           height: `${heightPercentage}%`
                         }}
-                        title={`$${dayData.revenue.toFixed(2)}`}
-                      ></div>
+                      />
                     </div>
-                    <div className="text-xs text-gray-400 mt-1 text-center">
-                      ${dayData.revenue > 999 
-                        ? (dayData.revenue/1000).toFixed(1) + 'k' 
-                        : dayData.revenue.toFixed(0)}
+                    <div className={cn(
+                      "text-center text-xs mt-1 font-medium",
+                      dayData.revenue > 0 
+                        ? day.isToday 
+                          ? "text-blue-300" 
+                          : "text-blue-400"
+                        : "text-gray-500"
+                    )}>
+                      {formattedRevenue}
                     </div>
-                    {timeFrame === 'yearly' && (
-                      <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
-                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+          
+          <div className="mt-2 flex justify-between items-center text-xs text-gray-500">
+            <div>
+              {timeFrame === 'daily' && (
+                <span>Total: ${totalRevenue.toLocaleString()}</span>
+              )}
+            </div>
+            <div>
+              {!isLoading && (
+                <span>Last updated: {new Date().toLocaleTimeString()}</span>
+              )}
+            </div>
           </div>
         </div>
       )}
