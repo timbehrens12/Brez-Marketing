@@ -78,24 +78,45 @@ export function PlatformConnectionModal({
       if (error) {
         console.error('Error creating Shopify connection:', error)
         toast.error('Failed to create Shopify connection')
+        setIsLoading(false)
         return
       }
       
       // Open the Shopify auth URL in a new window
       const authUrl = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${formattedShopUrl}`
-      const authWindow = window.open(authUrl, 'shopify-auth', 'width=600,height=700')
+      console.log('Opening auth window with URL:', authUrl)
+      
+      // Use a more reliable way to open the popup
+      const width = 600;
+      const height = 700;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      const features = `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`;
+      
+      const authWindow = window.open(authUrl, 'shopify-auth', features)
       authWindowRef.current = authWindow
       
       if (!authWindow) {
-        toast.error('Popup blocked. Please allow popups for this site.')
+        toast.error('Popup blocked. Please allow popups for this site and try again.')
+        
+        // Clean up the pending connection
+        await supabase
+          .from('platform_connections')
+          .delete()
+          .eq('id', connection.id)
+          
         setIsLoading(false)
         return
       }
       
+      // Focus the popup window
+      authWindow.focus()
+      
       // Check periodically if the connection is successful
       const checkInterval = setInterval(async () => {
         // First check if the window is still open
-        if (authWindow && authWindow.closed) {
+        if (authWindow.closed) {
+          console.log('Auth window was closed')
           // Window was closed, check if connection was successful
           const { data, error } = await supabase
             .from('platform_connections')
@@ -104,58 +125,97 @@ export function PlatformConnectionModal({
             .single()
             
           if (data && data.status === 'active') {
+            console.log('Connection is active')
             clearInterval(checkInterval)
             shopifyCheckIntervalRef.current = null
+            setIsLoading(false)
             setIsOpen(false)
             toast.success('Shopify connected successfully')
             if (onSuccess) onSuccess()
           } else {
             // Window closed but connection not active
+            console.log('Window closed but connection not active')
             clearInterval(checkInterval)
             shopifyCheckIntervalRef.current = null
             setIsLoading(false)
             toast.error('Connection process was interrupted. Please try again.')
+            
+            // Clean up the pending connection
+            await supabase
+              .from('platform_connections')
+              .delete()
+              .eq('id', connection.id)
+              .eq('status', 'pending')
           }
           return
         }
         
         // If window is still open, check connection status
-        const { data, error } = await supabase
-          .from('platform_connections')
-          .select('status')
-          .eq('id', connection.id)
-          .single()
-          
-        if (data && data.status === 'active') {
-          clearInterval(checkInterval)
-          shopifyCheckIntervalRef.current = null
-          if (authWindow && !authWindow.closed) authWindow.close()
-          authWindowRef.current = null
-          setIsOpen(false)
-          toast.success('Shopify connected successfully')
-          if (onSuccess) onSuccess()
+        try {
+          const { data, error } = await supabase
+            .from('platform_connections')
+            .select('status')
+            .eq('id', connection.id)
+            .single()
+            
+          if (error) {
+            console.error('Error checking connection status:', error)
+            return
+          }
+            
+          if (data && data.status === 'active') {
+            console.log('Connection is active')
+            clearInterval(checkInterval)
+            shopifyCheckIntervalRef.current = null
+            if (authWindow && !authWindow.closed) authWindow.close()
+            authWindowRef.current = null
+            setIsLoading(false)
+            setIsOpen(false)
+            toast.success('Shopify connected successfully')
+            if (onSuccess) onSuccess()
+          }
+        } catch (err) {
+          console.error('Error in check interval:', err)
         }
       }, 2000)
       
       shopifyCheckIntervalRef.current = checkInterval
       
       // Clear interval after 2 minutes (timeout)
-      setTimeout(() => {
+      setTimeout(async () => {
         if (shopifyCheckIntervalRef.current) {
           clearInterval(shopifyCheckIntervalRef.current)
           shopifyCheckIntervalRef.current = null
         }
-        // If still loading after timeout, show error
+        
+        // If still loading after timeout, show error and clean up
         if (isLoading) {
           setIsLoading(false)
           toast.error('Connection timed out. Please try again.')
+          
+          // Close the auth window if it's still open
+          if (authWindowRef.current && !authWindowRef.current.closed) {
+            authWindowRef.current.close()
+            authWindowRef.current = null
+          }
+          
+          // Clean up the pending connection
+          try {
+            await supabase
+              .from('platform_connections')
+              .delete()
+              .eq('id', connection.id)
+              .eq('status', 'pending')
+            console.log('Cleaned up pending connection after timeout')
+          } catch (err: unknown) {
+            console.error('Error cleaning up connection:', err)
+          }
         }
       }, 120000)
       
     } catch (error) {
       console.error('Connection error:', error)
       toast.error('Failed to initiate connection')
-    } finally {
       setIsLoading(false)
     }
   }

@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 
+// Force dynamic rendering to ensure the route is not cached
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  console.log('Shopify callback route hit', request.url)
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const shop = searchParams.get('shop')
@@ -13,6 +15,8 @@ export async function GET(request: Request) {
   let brandId: string | null = null
   let connectionId: string | null = null
   
+  console.log('Received params:', { code, shop, stateParam })
+  
   // Parse state parameter
   try {
     // Check if state is a JSON string
@@ -20,9 +24,11 @@ export async function GET(request: Request) {
       const stateObj = JSON.parse(stateParam)
       brandId = stateObj.brandId
       connectionId = stateObj.connectionId
+      console.log('Parsed state object:', stateObj)
     } else {
       // Otherwise, assume it's just the brandId
       brandId = stateParam
+      console.log('Using state as brandId:', brandId)
     }
   } catch (e) {
     console.error('Error parsing state parameter:', e)
@@ -33,10 +39,77 @@ export async function GET(request: Request) {
 
   if (!shop || !code || !brandId) {
     console.error('Missing required params:', { shop, code, brandId })
-    return NextResponse.redirect('/settings?error=missing_params')
+    
+    const errorHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Connection Failed</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background-color: #1A1A1A;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              text-align: center;
+            }
+            .error {
+              background-color: #2A2A2A;
+              border-radius: 8px;
+              padding: 2rem;
+              max-width: 400px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+              color: #ef4444;
+              margin-bottom: 1rem;
+            }
+            p {
+              margin-bottom: 2rem;
+              color: #d1d5db;
+            }
+            button {
+              background-color: #3b82f6;
+              color: white;
+              border: none;
+              padding: 0.5rem 1rem;
+              border-radius: 0.25rem;
+              cursor: pointer;
+            }
+            button:hover {
+              background-color: #2563eb;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>Connection Failed</h1>
+            <p>Missing required parameters. Please try again.</p>
+            <button onclick="window.close()">Close</button>
+            <script>
+              // If window doesn't close (e.g., not opened as popup), redirect
+              setTimeout(() => {
+                window.location.href = '/settings?error=missing_params';
+              }, 3000);
+            </script>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return new Response(errorHtml, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+      },
+    });
   }
 
   try {
+    console.log('Exchanging code for access token...')
     // Exchange code for access token
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
@@ -51,13 +124,18 @@ export async function GET(request: Request) {
     })
 
     if (!tokenResponse.ok) {
-      throw new Error('Failed to get access token')
+      const errorText = await tokenResponse.text()
+      console.error('Token response not OK:', tokenResponse.status, errorText)
+      throw new Error(`Failed to get access token: ${tokenResponse.status} ${errorText}`)
     }
 
-    const { access_token } = await tokenResponse.json()
+    const tokenData = await tokenResponse.json()
+    console.log('Received access token')
+    const { access_token } = tokenData
 
     // If we have a connectionId, update the existing connection
     if (connectionId) {
+      console.log('Updating existing connection:', connectionId)
       const { error } = await supabase
         .from('platform_connections')
         .update({
@@ -68,9 +146,14 @@ export async function GET(request: Request) {
         })
         .eq('id', connectionId)
       
-      if (error) throw error
+      if (error) {
+        console.error('Error updating connection:', error)
+        throw error
+      }
+      console.log('Connection updated successfully')
     } else {
       // Otherwise, create a new connection
+      console.log('Creating new connection for brand:', brandId)
       const { error } = await supabase
         .from('platform_connections')
         .insert([{
@@ -82,18 +165,24 @@ export async function GET(request: Request) {
           created_at: new Date().toISOString()
         }])
 
-      if (error) throw error
+      if (error) {
+        console.error('Error creating connection:', error)
+        throw error
+      }
+      console.log('New connection created successfully')
     }
 
     // Register the webhook
     try {
+      console.log('Registering webhooks...')
       await registerShopifyWebhooks(shop, access_token)
+      console.log('Webhooks registered successfully')
     } catch (webhookError) {
       console.error('Error registering webhooks:', webhookError)
       // Continue anyway, as this shouldn't block the connection process
     }
 
-    // Return a success page that will close the popup window
+    // Prepare the HTML content for success page
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -147,6 +236,8 @@ export async function GET(request: Request) {
       </html>
     `;
 
+    console.log('Returning success HTML response')
+    // Return the HTML content with proper content type
     return new Response(htmlContent, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
@@ -154,6 +245,8 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error in Shopify callback:', error)
+    
+    // Prepare error HTML
     const errorHtml = `
       <!DOCTYPE html>
       <html>
@@ -215,6 +308,7 @@ export async function GET(request: Request) {
       </html>
     `;
 
+    console.log('Returning error HTML response')
     return new Response(errorHtml, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',

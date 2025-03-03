@@ -40,8 +40,8 @@ export async function GET(request: Request) {
       'read_discounts'
     ].join(',')
 
-    // Make sure to use the full callback URL
-    const callbackUrl = 'https://brezmarketingdashboard.com/api/shopify/callback'
+    // Make sure to use the full callback URL with www prefix
+    const callbackUrl = 'https://www.brezmarketingdashboard.com/api/shopify/callback'
     
     // Construct auth URL with explicit parameters
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
