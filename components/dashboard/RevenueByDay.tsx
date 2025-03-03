@@ -373,21 +373,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         } as WeeklyOrMonthlyDisplayItem;
       });
     } else if (timeFrame === 'yearly') {
-      // For yearly view, show months of current year (Jan-Dec)
-      const yearStart = startOfYear(today);
-      const yearEnd = endOfYear(today);
-      const monthsOfYear = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+      // For yearly view, show all months of the current year (Jan-Dec)
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
       
-      return monthsOfYear.map(month => {
-        const monthKey = format(month, 'yyyy-MM');
+      return months.map((month, index) => {
+        const monthDate = new Date(today.getFullYear(), index, 1);
+        const monthKey = format(monthDate, 'yyyy-MM');
         const existingData = groupedSalesData[monthKey];
         
         return {
           date: monthKey,
-          displayDate: format(month, 'MMM'), // Jan, Feb, etc.
+          displayDate: month,
           revenue: existingData ? existingData.revenue : 0,
           count: existingData ? existingData.count : 0,
-          isCurrentMonth: isSameMonth(month, today)
+          isCurrentMonth: index === today.getMonth()
         } as YearlyDisplayItem;
       });
     }
@@ -425,9 +427,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   };
   
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
+    <div className="h-full w-full flex flex-col bg-gray-950 rounded-lg p-4 border border-gray-800">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-semibold text-white">Revenue Calendar</h3>
+          <div className="text-lg font-medium text-gray-400">
+            {getTitle()}
+          </div>
+        </div>
         <div className="flex gap-2">
           <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
             <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
@@ -443,14 +450,10 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       </div>
       
-      <div className="text-lg font-medium text-white mb-2">
-        {getTitle()}
-      </div>
-      
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse w-full">
-            <div className="h-[200px] bg-gray-800 rounded-md"></div>
+            <div className="h-[300px] bg-gray-800 rounded-md"></div>
           </div>
         </div>
       ) : error ? (
@@ -458,84 +461,137 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="text-gray-400">{error}</div>
         </div>
       ) : (
-        <div className={cn(
-          "flex-1 grid gap-2",
-          timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
-          timeFrame === 'weekly' ? "grid-cols-7" :
-          timeFrame === 'monthly' ? "grid-cols-7 md:grid-cols-7" :
-          "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12"
-        )}>
-          {displayData.map((item) => {
-            // Calculate the height percentage based on revenue
-            const heightPercentage = item.revenue > 0 
-              ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
-              : 0;
-              
-            // Format the revenue display
-            const formattedRevenue = item.revenue > 0 
-              ? item.revenue >= 1000
-                ? `$${(item.revenue/1000).toFixed(1)}k`
-                : `$${item.revenue.toFixed(0)}`
-              : '$0';
-              
-            // Check if this is the current period
-            const isCurrentPeriod = 
-              (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
-              (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
-              (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
-              (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
-
-            return (
-              <div
-                key={item.date}
-                className={cn(
-                  "flex flex-col h-[120px] rounded-md overflow-hidden border",
-                  isCurrentPeriod 
-                    ? "bg-blue-900/20 border-blue-700" 
-                    : "bg-gray-900 border-gray-800"
-                )}
-              >
-                <div className={cn(
-                  "text-center py-1 text-sm font-medium",
-                  isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
-                )}>
-                  {formatDisplayLabel(item)}
-                </div>
-                
-                <div className="flex-1 flex flex-col justify-end p-2 relative">
-                  <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                    <div
-                      className={cn(
-                        "w-full rounded-t transition-all duration-300",
-                        item.revenue > 0 
-                          ? isCurrentPeriod 
-                            ? "bg-blue-500" 
-                            : "bg-blue-600"
-                          : "bg-gray-700 h-0.5"
-                      )}
-                      style={{
-                        height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
-                      }}
-                    />
-                  </div>
-                  <div className="text-center text-sm font-medium text-white">
-                    {formattedRevenue}
-                  </div>
-                </div>
+        <div className="flex-1 flex flex-col">
+          {timeFrame === 'yearly' ? (
+            <div className="flex-1 flex flex-col">
+              <div className="text-lg font-medium text-white mb-4">
+                {new Date().getFullYear()}
               </div>
-            );
-          })}
+              <div className="grid grid-cols-12 gap-2">
+                {displayData.map((item) => {
+                  const isCurrentMonth = 'isCurrentMonth' in item && item.isCurrentMonth;
+                  
+                  return (
+                    <div key={item.date} className="flex flex-col">
+                      <div className={cn(
+                        "text-center py-1 text-sm font-medium",
+                        isCurrentMonth ? "text-blue-300" : "text-gray-400"
+                      )}>
+                        {item.displayDate}
+                      </div>
+                      <div className={cn(
+                        "flex-1 flex flex-col justify-end p-2 relative bg-gray-900 rounded-md border",
+                        isCurrentMonth ? "border-blue-700" : "border-gray-800"
+                      )}>
+                        <div className="h-24 flex items-end justify-center">
+                          <div
+                            className={cn(
+                              "w-full rounded-t",
+                              item.revenue > 0 
+                                ? isCurrentMonth 
+                                  ? "bg-blue-500" 
+                                  : "bg-blue-600"
+                                : "bg-gray-700 h-0.5"
+                            )}
+                            style={{
+                              height: item.revenue > 0 
+                                ? `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` 
+                                : '2px'
+                            }}
+                          />
+                        </div>
+                        <div className="text-center text-sm font-medium text-white mt-2">
+                          {item.revenue > 0 
+                            ? item.revenue >= 1000
+                              ? `$${(item.revenue/1000).toFixed(1)}k`
+                              : `$${item.revenue.toFixed(0)}`
+                            : '$0'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className={cn(
+              "flex-1 grid gap-3",
+              timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
+              timeFrame === 'weekly' ? "grid-cols-7" :
+              "grid-cols-7"
+            )}>
+              {displayData.map((item) => {
+                // Calculate the height percentage based on revenue
+                const heightPercentage = item.revenue > 0 
+                  ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
+                  : 0;
+                  
+                // Format the revenue display
+                const formattedRevenue = item.revenue > 0 
+                  ? item.revenue >= 1000
+                    ? `$${(item.revenue/1000).toFixed(1)}k`
+                    : `$${item.revenue.toFixed(0)}`
+                  : '$0';
+                  
+                // Check if this is the current period
+                const isCurrentPeriod = 
+                  (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
+                  (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
+                  (timeFrame === 'monthly' && 'isToday' in item && item.isToday);
+
+                return (
+                  <div
+                    key={item.date}
+                    className={cn(
+                      "flex flex-col aspect-square rounded-md overflow-hidden border",
+                      isCurrentPeriod 
+                        ? "bg-blue-900/20 border-blue-700" 
+                        : "bg-gray-900 border-gray-800"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-center py-1 text-sm font-medium",
+                      isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                    )}>
+                      {formatDisplayLabel(item)}
+                    </div>
+                    
+                    <div className="flex-1 flex flex-col justify-end p-2 relative">
+                      <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                        <div
+                          className={cn(
+                            "w-full rounded-t transition-all duration-300",
+                            item.revenue > 0 
+                              ? isCurrentPeriod 
+                                ? "bg-blue-500" 
+                                : "bg-blue-600"
+                              : "bg-gray-700 h-0.5"
+                          )}
+                          style={{
+                            height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
+                          }}
+                        />
+                      </div>
+                      <div className="text-center text-sm font-medium text-white">
+                        {formattedRevenue}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
+            <div>
+              <span className="font-medium">Total:</span> ${totalRevenue.toLocaleString()}
+            </div>
+            <div>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          </div>
         </div>
       )}
-      
-      <div className="mt-2 flex justify-between items-center text-xs text-gray-500">
-        <div>
-          Total: ${totalRevenue.toLocaleString()}
-        </div>
-        <div>
-          Last updated: {lastUpdated.toLocaleTimeString()}
-        </div>
-      </div>
     </div>
   )
 }
