@@ -106,60 +106,45 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     try {
       const response = await fetch(`/api/shopify/sales?brandId=${brandId}`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch sales data');
       }
 
-      if (!data || !Array.isArray(data)) {
-        console.warn('Revenue Calendar: No data received from API');
-        // Use initial data if available
-        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-          setSalesData(initialData);
-          setError(null);
-          return;
-        }
-        throw new Error('No sales data available');
-      }
-
-      const transformedData = data.map((sale: any) => ({
-        date: sale.date,
-        revenue: parseFloat(sale.revenue) || 0,
-        id: sale.id
-      }));
-      
-      console.log('Revenue Calendar: Transformed data sample:', transformedData.slice(0, 3));
-      
-      setSalesData(transformedData);
-      setError(null);
-    } catch (error) {
-      console.error('Revenue Calendar: Error fetching sales data:', error);
-      
-      // If we have initial data, use that as a fallback
-      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-        console.log('Revenue Calendar: Using provided initial data as fallback after error');
-        setSalesData(initialData);
+      // Only update the data if we got valid sales data back
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('Received valid sales data:', data.length, 'records');
+        setSalesData(data);
         setError(null);
       } else {
-        // Generate mock data for database schema errors
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load sales data';
-        const isDatabaseError = typeof errorMessage === 'string' && (
-          errorMessage.includes('Database schema has changed') || 
-          errorMessage.includes('database schema') ||
-          errorMessage.includes('no such table') ||
-          errorMessage.includes('does not exist') ||
-          errorMessage.includes('relation "public.shopify_data" does not exist')
-        );
-
-        if (isDatabaseError) {
-          console.log('Revenue Calendar: Generating mock data for database error');
+        console.log('No new sales data received, keeping existing data');
+        // If we have initial data, keep using it
+        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+          console.log('Using initial data:', initialData.length, 'records');
+          setSalesData(initialData);
+          setError(null);
+        } else if (!salesData || salesData.length === 0) {
+          // Only generate mock data if we have no data at all
+          console.log('Generating mock data as fallback');
           const mockData = generateMockSalesData();
           setSalesData(mockData);
           setError('Showing sample data while database updates.');
-        } else {
-          setSalesData([]);
-          setError(errorMessage);
         }
+      }
+    } catch (error) {
+      console.error('Error fetching sales data:', error);
+      
+      // If we have initial data, use it as fallback
+      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+        console.log('Using initial data as fallback:', initialData.length, 'records');
+        setSalesData(initialData);
+        setError(null);
+      } else if (!salesData || salesData.length === 0) {
+        // Only generate mock data if we have no data at all
+        console.log('Generating mock data as error fallback');
+        const mockData = generateMockSalesData();
+        setSalesData(mockData);
+        setError('Showing sample data while database updates.');
       }
     } finally {
       setIsLoading(false);
@@ -578,13 +563,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Modify the useEffect for initial data
   useEffect(() => {
     if (!isLoading && initialData && Array.isArray(initialData) && initialData.length > 0) {
-      if (!salesData || !Array.isArray(salesData) || salesData.length === 0) {
-        console.log('Revenue Calendar: Using initial data');
-        setSalesData(initialData);
-        setError(null);
-      }
+      console.log('Setting initial data:', initialData.length, 'records');
+      setSalesData(initialData);
+      setError(null);
     }
-  }, [initialData, salesData, isLoading]);
+  }, [initialData, isLoading]);
 
   // Debug log for component state
   useEffect(() => {
@@ -668,6 +651,68 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     console.log(`Generated ${mockData.length} mock sales records`);
     return mockData;
   };
+
+  // Modify the quiet fetch to prevent overwriting valid data
+  const quietFetch = async () => {
+    try {
+      const response = await fetch(`/api/shopify/sales?brandId=${brandId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch sales data');
+      }
+
+      // Only update if we got valid new data
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('Quiet fetch received valid data:', data.length, 'records');
+        setSalesData(data);
+        setError(null);
+      } else {
+        console.log('Quiet fetch: No new data, keeping existing data');
+      }
+    } catch (error) {
+      console.error('Error in quiet fetch:', error);
+      // Don't update state or show error for quiet fetches
+    }
+  };
+
+  // Set up the refresh interval with proper cleanup
+  useEffect(() => {
+    let isSubscribed = true;
+
+    const fetchData = async () => {
+      if (!isSubscribed) return;
+      await fetchSalesData();
+    };
+
+    const quietFetchData = async () => {
+      if (!isSubscribed) return;
+      await quietFetch();
+    };
+
+    // Initial fetch
+    if (brandId) {
+      fetchData();
+    }
+
+    // Set up interval for quiet fetches
+    const intervalId = setInterval(quietFetchData, 30000); // Every 30 seconds
+
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
+      clearInterval(intervalId);
+    };
+  }, [brandId]);
+
+  // Handle initial data
+  useEffect(() => {
+    if (initialData && Array.isArray(initialData) && initialData.length > 0 && !isLoading) {
+      console.log('Setting initial data:', initialData.length, 'records');
+      setSalesData(initialData);
+      setError(null);
+    }
+  }, [initialData, isLoading]);
 
   return (
     <div className="w-full">
