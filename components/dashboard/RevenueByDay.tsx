@@ -19,7 +19,10 @@ import {
   eachMonthOfInterval,
   getDay,
   getDate,
-  addDays
+  addDays,
+  startOfDay,
+  setHours,
+  getHours
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
@@ -37,6 +40,7 @@ interface RevenueByDayProps {
   brandId: string;
 }
 
+// Define types for our display items
 interface BaseDisplayItem {
   date: string;
   displayDate: string;
@@ -233,134 +237,87 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     ]
   }
   
-  // Generate display data based on timeFrame
+  // Generate display data based on time frame
   const generateDisplayData = (): DisplayItem[] => {
-    const today = new Date()
+    const today = new Date();
     
-    if (timeFrame === 'monthly') {
-      // Get the current month
-      const currentMonth = startOfMonth(today)
-      const monthEnd = endOfMonth(today)
-      
-      // Get all days in the month
-      const daysInMonth = eachDayOfInterval({ start: currentMonth, end: monthEnd })
-      
-      // Create display data for each day
-      return daysInMonth.map(day => {
-        const dayStr = format(day, 'yyyy-MM-dd')
-        
-        // Find matching sales data
-        const matchingSales = salesData.filter(sale => {
-          const saleDate = sale.date.substring(0, 10)
-          return saleDate === dayStr
-        })
-        
-        // Calculate total revenue for the day
-        const totalRevenue = matchingSales.reduce((sum, sale) => sum + sale.revenue, 0)
+    if (timeFrame === 'daily') {
+      // For daily view, show hours of today (12am-11pm)
+      const hoursOfDay = Array.from({ length: 24 }, (_, i) => {
+        const hourDate = setHours(startOfDay(today), i);
+        const key = `hour-${i}`;
+        const existingData = groupedSalesData[key];
         
         return {
-          date: dayStr,
-          displayDate: getDate(day).toString(), // Day of month (1-31)
-          revenue: totalRevenue,
-          count: matchingSales.length,
-          isToday: isSameDay(day, today)
-        }
-      })
+          date: key,
+          displayDate: format(hourDate, 'ha').toLowerCase(), // 12am, 1am, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isCurrentHour: getHours(new Date()) === i
+        } as DailyDisplayItem;
+      });
+      
+      return hoursOfDay;
     } else if (timeFrame === 'weekly') {
-      // Get the current week
-      const weekStart = startOfWeek(today, { weekStartsOn: 1 }) // Start on Monday
-      const weekEnd = endOfWeek(today, { weekStartsOn: 1 })
+      // For weekly view, show days of current week (Monday-Sunday)
+      const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+      const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+      const daysOfWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
       
-      // Get all days in the week
-      const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd })
-      
-      // Create display data for each day
-      return daysInWeek.map(day => {
-        const dayStr = format(day, 'yyyy-MM-dd')
-        
-        // Find matching sales data
-        const matchingSales = salesData.filter(sale => {
-          const saleDate = sale.date.substring(0, 10)
-          return saleDate === dayStr
-        })
-        
-        // Calculate total revenue for the day
-        const totalRevenue = matchingSales.reduce((sum, sale) => sum + sale.revenue, 0)
+      return daysOfWeek.map(day => {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        const existingData = groupedSalesData[dayKey];
         
         return {
-          date: dayStr,
-          displayDate: format(day, 'EEE'), // Day name (Mon, Tue, etc.)
-          revenue: totalRevenue,
-          count: matchingSales.length,
+          date: dayKey,
+          displayDate: format(day, 'EEE'), // Mon, Tue, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
           isToday: isSameDay(day, today)
-        }
-      })
-    } else if (timeFrame === 'daily') {
-      // For daily view, show hours of the current day
-      const hours = Array.from({ length: 24 }, (_, i) => i)
+        } as WeeklyOrMonthlyDisplayItem;
+      });
+    } else if (timeFrame === 'monthly') {
+      // For monthly view, show days of current month (1-31)
+      const monthStart = startOfMonth(today);
+      const monthEnd = endOfMonth(today);
+      const daysOfMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
       
-      return hours.map(hour => {
-        const hourDate = new Date(today)
-        hourDate.setHours(hour, 0, 0, 0)
-        
-        // Format for display and matching
-        const hourStr = format(hourDate, 'yyyy-MM-dd\'T\'HH:00:00')
-        const displayHour = format(hourDate, 'ha') // 1am, 2pm, etc.
-        
-        // Find matching sales data for this hour
-        const matchingSales = salesData.filter(sale => {
-          if (!sale.date) return false
-          
-          try {
-            const saleDate = new Date(sale.date)
-            return saleDate.getHours() === hour && isSameDay(saleDate, today)
-          } catch (e) {
-            return false
-          }
-        })
-        
-        // Calculate total revenue for the hour
-        const totalRevenue = matchingSales.reduce((sum, sale) => sum + sale.revenue, 0)
+      return daysOfMonth.map(day => {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        const existingData = groupedSalesData[dayKey];
         
         return {
-          date: hourStr,
-          displayDate: displayHour,
-          revenue: totalRevenue,
-          count: matchingSales.length,
-          isCurrentHour: new Date().getHours() === hour
-        }
-      })
-    } else {
-      // Yearly view - show months
-      const yearStart = startOfYear(today)
-      const yearEnd = endOfYear(today)
+          date: dayKey,
+          displayDate: format(day, 'd'), // 1, 2, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isToday: isSameDay(day, today)
+        } as WeeklyOrMonthlyDisplayItem;
+      });
+    } else if (timeFrame === 'yearly') {
+      // For yearly view, show months of current year (Jan-Dec)
+      const yearStart = startOfYear(today);
+      const yearEnd = endOfYear(today);
+      const monthsOfYear = eachMonthOfInterval({ start: yearStart, end: yearEnd });
       
-      // Get all months in the year
-      const monthsInYear = eachMonthOfInterval({ start: yearStart, end: yearEnd })
-      
-      // Create display data for each month
-      return monthsInYear.map(month => {
-        const monthStr = format(month, 'yyyy-MM')
-        
-        // Find matching sales data for this month
-        const matchingSales = salesData.filter(sale => {
-          const saleMonth = sale.date.substring(0, 7)
-          return saleMonth === monthStr
-        })
-        
-        // Calculate total revenue for the month
-        const totalRevenue = matchingSales.reduce((sum, sale) => sum + sale.revenue, 0)
+      return monthsOfYear.map(month => {
+        const monthKey = format(month, 'yyyy-MM');
+        const existingData = groupedSalesData[monthKey];
         
         return {
-          date: monthStr,
-          displayDate: format(month, 'MMM'), // Month name (Jan, Feb, etc.)
-          revenue: totalRevenue,
-          count: matchingSales.length,
-          isCurrentMonth: month.getMonth() === today.getMonth()
-        }
-      })
+          date: monthKey,
+          displayDate: format(month, 'MMM'), // Jan, Feb, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isCurrentMonth: isSameMonth(month, today)
+        } as YearlyDisplayItem;
+      });
     }
-  }
+    
+    return [];
+  };
+  
+  const displayData = generateDisplayData();
   
   // Format revenue for display
   const formatRevenue = (revenue: number): string => {
