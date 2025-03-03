@@ -72,14 +72,36 @@ export default function RootLayout({
             color: white !important;
           }
           
+          /* Make "Use another method" more visible */
           .cl-alternativeMethodsBlockButton {
             color: #60a5fa !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+            text-decoration: underline !important;
+          }
+          
+          /* Make "Didn't receive a code" more visible */
+          .cl-resendCodeLink {
+            color: #60a5fa !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+            text-decoration: underline !important;
           }
           
           /* Make "No account? Sign up" more visible */
           .cl-footerAction {
             opacity: 1 !important;
             margin-top: 1rem !important;
+          }
+          
+          /* Make all action links more visible */
+          .cl-formButtonReset, 
+          .cl-formButtonPrimary,
+          .cl-formResendCodeLink,
+          .cl-formFieldAction {
+            color: #60a5fa !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
           }
         `}</style>
       </head>
