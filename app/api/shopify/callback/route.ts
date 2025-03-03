@@ -1,35 +1,41 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 
 export async function GET(request: Request) {
-  console.log('Shopify callback route hit')
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const shop = searchParams.get('shop')
-  const state = searchParams.get('state')
+  const stateParam = searchParams.get('state') // This could be a JSON string or just brandId
+  
+  let brandId: string | null = null
+  let connectionId: string | null = null
+  
+  // Parse state parameter
+  try {
+    // Check if state is a JSON string
+    if (stateParam && stateParam.includes('{')) {
+      const stateObj = JSON.parse(stateParam)
+      brandId = stateObj.brandId
+      connectionId = stateObj.connectionId
+    } else {
+      // Otherwise, assume it's just the brandId
+      brandId = stateParam
+    }
+  } catch (e) {
+    console.error('Error parsing state parameter:', e)
+    brandId = stateParam // Fallback to using the raw state as brandId
+  }
 
-  console.log('Callback params:', { code: code?.substring(0, 5) + '...', shop, state })
+  console.log('Shopify callback received:', { shop, code, brandId, connectionId })
 
-  if (!code || !shop || !state) {
-    console.error('Missing required params:', { code: !!code, shop: !!shop, state: !!state })
-    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?error=missing_params')
+  if (!shop || !code || !brandId) {
+    console.error('Missing required params:', { shop, code, brandId })
+    return NextResponse.redirect('/settings?error=missing_params')
   }
 
   try {
-    // Parse state to get brandId and connectionId
-    let brandId, connectionId;
-    try {
-      const stateObj = JSON.parse(state);
-      brandId = stateObj.brandId;
-      connectionId = stateObj.connectionId;
-      console.log('Parsed state:', { brandId, connectionId })
-    } catch (parseError) {
-      console.error('Error parsing state:', parseError)
-      return NextResponse.redirect('https://brezmarketingdashboard.com/settings?error=invalid_state')
-    }
-
     // Exchange code for access token
-    console.log('Exchanging code for access token')
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
       headers: {
@@ -43,58 +49,98 @@ export async function GET(request: Request) {
     })
 
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text()
-      console.error('Token exchange failed:', errorText)
-      throw new Error(`Failed to get access token: ${tokenResponse.status} - ${errorText}`)
+      throw new Error('Failed to get access token')
     }
 
-    const tokenData = await tokenResponse.json()
-    console.log('Got access token')
+    const { access_token } = await tokenResponse.json()
 
-    // Update connection in database
-    console.log('Updating connection in database')
-    const { data: connection, error: updateError } = await supabase
-      .from('platform_connections')
-      .update({
-        status: 'active',
-        shop,
-        access_token: tokenData.access_token,
-        metadata: {
-          shop_url: `https://${shop}`
-        }
-      })
-      .eq('id', connectionId)
-      .select()
-      .single()
-
-    if (updateError || !connection) {
-      console.error('Failed to update connection:', updateError)
-      throw new Error('Failed to update connection')
-    }
-
-    console.log('Connection updated successfully')
-
-    // Trigger initial sync
-    console.log('Triggering initial sync')
-    const syncResponse = await fetch(new URL('/api/shopify/sync', request.url).toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ connectionId: connection.id })
-    })
-
-    if (!syncResponse.ok) {
-      console.error('Failed to trigger initial sync')
+    // If we have a connectionId, update the existing connection
+    if (connectionId) {
+      const { error } = await supabase
+        .from('platform_connections')
+        .update({
+          shop: shop,
+          access_token: access_token,
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', connectionId)
+      
+      if (error) throw error
     } else {
-      console.log('Initial sync triggered successfully')
+      // Otherwise, create a new connection
+      const { error } = await supabase
+        .from('platform_connections')
+        .insert([{
+          brand_id: brandId,
+          platform_type: 'shopify',
+          shop: shop,
+          access_token: access_token,
+          status: 'active',
+          created_at: new Date().toISOString()
+        }])
+
+      if (error) throw error
     }
 
-    // Redirect back to settings page
-    console.log('Redirecting to settings page')
-    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?success=true')
+    // Register the webhook
+    await registerShopifyWebhooks(shop, access_token)
+
+    // Return a success page that will close the popup window
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Connection Successful</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background-color: #1A1A1A;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              text-align: center;
+            }
+            .success {
+              background-color: #2A2A2A;
+              border-radius: 8px;
+              padding: 2rem;
+              max-width: 400px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+              color: #4ade80;
+              margin-bottom: 1rem;
+            }
+            p {
+              margin-bottom: 2rem;
+              color: #d1d5db;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="success">
+            <h1>Connection Successful!</h1>
+            <p>Your Shopify store has been connected successfully. This window will close automatically.</p>
+            <script>
+              // Close the window after a short delay
+              setTimeout(() => {
+                window.close();
+              }, 2000);
+            </script>
+          </div>
+        </body>
+      </html>
+    `, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    })
   } catch (error) {
-    console.error('Shopify callback error:', error)
-    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?error=callback_failed')
+    console.error('Error in Shopify callback:', error)
+    return NextResponse.redirect('/settings?error=connection_failed')
   }
 } 

@@ -14,6 +14,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
+import { PlatformConnectionModal } from "@/components/settings/PlatformConnectionModal"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -372,46 +373,6 @@ export default function SettingsPage() {
     return () => clearInterval(cleanup)
   }, [])
 
-  const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
-    try {
-      if (platform === 'shopify') {
-        // First create a connection record
-        const { data: connection, error } = await supabase
-          .from('platform_connections')
-          .insert({
-            platform_type: 'shopify',
-            brand_id: brandId,
-            user_id: user?.id,
-            status: 'pending',
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-          
-        if (error) {
-          console.error('Error creating Shopify connection:', error);
-          toast.error('Failed to create Shopify connection');
-          return;
-        }
-        
-        // Now redirect with both brandId and connectionId
-        const shop = prompt('Enter your Shopify store URL (e.g., your-store.myshopify.com):');
-        if (!shop) {
-          toast.error('Shop URL is required');
-          return;
-        }
-        
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
-      } else if (platform === 'meta') {
-        // Redirect to Meta auth endpoint
-        window.location.href = `/api/auth/meta?brandId=${brandId}`;
-      }
-    } catch (error) {
-      console.error('Connection error:', error);
-      toast.error('Failed to initiate connection');
-    }
-  }
-
   const handleSync = async (connectionId: string) => {
     if (!connectionId) return
     setIsSyncing(true)
@@ -583,13 +544,18 @@ export default function SettingsPage() {
                             Disconnect
                           </Button>
                         ) : (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('shopify', brand.id)}
+                          <PlatformConnectionModal 
+                            platform="shopify" 
+                            brandId={brand.id}
+                            onSuccess={loadConnections}
                           >
-                            Connect
-                          </Button>
+                            <Button 
+                              variant="outline" 
+                              className="border-[#333] text-gray-400 hover:text-white"
+                            >
+                              Connect
+                            </Button>
+                          </PlatformConnectionModal>
                         )}
                       </div>
 
@@ -607,13 +573,18 @@ export default function SettingsPage() {
                             Disconnect
                           </Button>
                         ) : (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('meta', brand.id)}
+                          <PlatformConnectionModal 
+                            platform="meta" 
+                            brandId={brand.id}
+                            onSuccess={loadConnections}
                           >
-                            Connect
-                          </Button>
+                            <Button 
+                              variant="outline" 
+                              className="border-[#333] text-gray-400 hover:text-white"
+                            >
+                              Connect
+                            </Button>
+                          </PlatformConnectionModal>
                         )}
                       </div>
 
