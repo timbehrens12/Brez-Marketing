@@ -358,9 +358,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       // For monthly view, show days of current month (1-31)
       const monthStart = startOfMonth(today);
       const monthEnd = endOfMonth(today);
-      const daysOfMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
       
-      return daysOfMonth.map(day => {
+      // Get the first day of the month
+      const firstDayOfMonth = getDay(monthStart);
+      // Adjust for Monday as first day (0 = Monday, 6 = Sunday in our grid)
+      const firstDayAdjusted = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+      
+      // Create empty cells for days before the 1st of the month
+      const emptyCells = Array.from({ length: firstDayAdjusted }, (_, i) => ({
+        date: `empty-${i}`,
+        displayDate: '',
+        revenue: 0,
+        count: 0,
+        isToday: false
+      } as WeeklyOrMonthlyDisplayItem));
+      
+      // Get all days of the month
+      const daysOfMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      const daysData = daysOfMonth.map(day => {
         const dayKey = format(day, 'yyyy-MM-dd');
         const existingData = groupedSalesData[dayKey];
         
@@ -372,6 +387,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           isToday: isSameDay(day, today)
         } as WeeklyOrMonthlyDisplayItem;
       });
+      
+      // Combine empty cells and days data
+      return [...emptyCells, ...daysData];
     } else if (timeFrame === 'yearly') {
       // For yearly view, show months of current year (Jan-Dec)
       const yearStart = startOfYear(today);
@@ -450,7 +468,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse w-full">
-            <div className="h-[200px] bg-gray-800 rounded-md"></div>
+            <div className="h-[300px] bg-gray-800 rounded-md"></div>
           </div>
         </div>
       ) : error ? (
@@ -458,73 +476,105 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="text-gray-400">{error}</div>
         </div>
       ) : (
-        <div className={cn(
-          "flex-1 grid gap-2",
-          timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
-          timeFrame === 'weekly' ? "grid-cols-7" :
-          timeFrame === 'monthly' ? "grid-cols-7 md:grid-cols-7" :
-          "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12"
-        )}>
-          {displayData.map((item) => {
-            // Calculate the height percentage based on revenue
-            const heightPercentage = item.revenue > 0 
-              ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
-              : 0;
-              
-            // Format the revenue display
-            const formattedRevenue = item.revenue > 0 
-              ? item.revenue >= 1000
-                ? `$${(item.revenue/1000).toFixed(1)}k`
-                : `$${item.revenue.toFixed(0)}`
-              : '$0';
-              
-            // Check if this is the current period
-            const isCurrentPeriod = 
-              (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
-              (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
-              (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
-              (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
-
-            return (
-              <div
-                key={item.date}
-                className={cn(
-                  "flex flex-col h-[120px] rounded-md overflow-hidden border",
-                  isCurrentPeriod 
-                    ? "bg-blue-900/20 border-blue-700" 
-                    : "bg-gray-900 border-gray-800"
-                )}
-              >
-                <div className={cn(
-                  "text-center py-1 text-sm font-medium",
-                  isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
-                )}>
-                  {formatDisplayLabel(item)}
+        <div className="flex-1 flex flex-col">
+          {timeFrame === 'monthly' && (
+            <div className="grid grid-cols-7 gap-2 mb-1">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
+                  {day}
                 </div>
+              ))}
+            </div>
+          )}
+          
+          <div className={cn(
+            "flex-1 grid gap-2 auto-rows-fr",
+            timeFrame === 'daily' 
+              ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" 
+              : timeFrame === 'weekly' 
+                ? "grid-cols-7" 
+                : timeFrame === 'monthly' 
+                  ? "grid-cols-7"
+                  : "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12" // yearly
+          )}>
+            {displayData.map((item) => {
+              // Skip rendering empty cells with no display date (for monthly view alignment)
+              if (item.displayDate === '') {
+                return (
+                  <div 
+                    key={item.date} 
+                    className="bg-transparent"
+                  />
+                );
+              }
+              
+              // Calculate the height percentage based on revenue
+              const heightPercentage = item.revenue > 0 
+                ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
+                : 0;
                 
-                <div className="flex-1 flex flex-col justify-end p-2 relative">
-                  <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                    <div
-                      className={cn(
-                        "w-full rounded-t transition-all duration-300",
-                        item.revenue > 0 
-                          ? isCurrentPeriod 
-                            ? "bg-blue-500" 
-                            : "bg-blue-600"
-                          : "bg-gray-700 h-0.5"
-                      )}
-                      style={{
-                        height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
-                      }}
-                    />
+              // Format the revenue display
+              const formattedRevenue = item.revenue > 0 
+                ? item.revenue >= 1000
+                  ? `$${(item.revenue/1000).toFixed(1)}k`
+                  : `$${item.revenue.toFixed(0)}`
+                : '$0';
+                
+              // Check if this is the current period
+              const isCurrentPeriod = 
+                (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
+                (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
+                (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
+                (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
+
+              // Determine the height based on the timeframe
+              const cellHeight = timeFrame === 'monthly' 
+                ? "h-[70px]" // Smaller for monthly since there are more cells
+                : timeFrame === 'daily'
+                  ? "h-[90px]" // Medium for daily (24 hours)
+                  : "h-[110px]"; // Taller for weekly and yearly
+
+              return (
+                <div
+                  key={item.date}
+                  className={cn(
+                    `flex flex-col ${cellHeight} rounded-md overflow-hidden border`,
+                    isCurrentPeriod 
+                      ? "bg-blue-900/20 border-blue-700" 
+                      : "bg-gray-900 border-gray-800"
+                  )}
+                >
+                  <div className={cn(
+                    "text-center py-1 text-sm font-medium",
+                    isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                  )}>
+                    {formatDisplayLabel(item)}
                   </div>
-                  <div className="text-center text-sm font-medium text-white">
-                    {formattedRevenue}
+                  
+                  <div className="flex-1 flex flex-col justify-end p-2 relative">
+                    <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                      <div
+                        className={cn(
+                          "w-full rounded-t transition-all duration-300",
+                          item.revenue > 0 
+                            ? isCurrentPeriod 
+                              ? "bg-blue-500" 
+                              : "bg-blue-600"
+                            : "bg-gray-700 h-0.5"
+                        )}
+                        style={{
+                          height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
+                        }}
+                      />
+                    </div>
+                    <div className="text-center text-sm font-medium text-white">
+                      {formattedRevenue}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
       
