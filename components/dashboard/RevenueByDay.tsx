@@ -9,6 +9,7 @@ import {
   isSameDay, 
   subYears, 
   addYears, 
+  addHours, 
   startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
@@ -17,12 +18,12 @@ import {
   startOfYear, 
   endOfYear, 
   eachMonthOfInterval,
-  getDay,
-  getDate,
-  addDays,
-  startOfDay,
+  getHours,
   setHours,
-  getHours
+  startOfDay,
+  isSameMonth,
+  isSameWeek,
+  getDay
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
@@ -63,179 +64,256 @@ interface YearlyDisplayItem extends BaseDisplayItem {
 type DisplayItem = DailyDisplayItem | WeeklyOrMonthlyDisplayItem | YearlyDisplayItem;
 
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [salesData, setSalesData] = useState<Array<{date: string; revenue: number; id?: string}>>([])
-  const [displayData, setDisplayData] = useState<DisplayItem[]>([])
-  const [maxRevenue, setMaxRevenue] = useState(0)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly');
+  const [salesData, setSalesData] = useState<Array<{
+    date: string; 
+    revenue: number; 
+    id?: string;
+  }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
-  // Fetch sales data on component mount and when brandId changes
+  // Track component subscription status to prevent state updates after unmount
+  const isSubscribedRef = useRef(true);
+  
+  // Set up subscription tracking
   useEffect(() => {
-    if (brandId) {
-      fetchSalesData()
-    }
-  }, [brandId])
-  
-  // Update display data when timeFrame or salesData changes
-  useEffect(() => {
-    if (salesData.length > 0) {
-      const newDisplayData = generateDisplayData()
-      setDisplayData(newDisplayData)
-      
-      // Calculate max revenue for scaling bars
-      const max = Math.max(...newDisplayData.map(item => item.revenue))
-      setMaxRevenue(max > 0 ? max : 1000) // Default to 1000 if all zeros
-      
-      // Calculate total revenue
-      const total = newDisplayData.reduce((sum, item) => sum + item.revenue, 0)
-      setTotalRevenue(total)
-    }
-  }, [timeFrame, salesData])
-  
+    isSubscribedRef.current = true;
+    return () => {
+      isSubscribedRef.current = false;
+    };
+  }, []);
+
+  // Fetch data directly from Supabase
   const fetchSalesData = async () => {
-    setIsLoading(true)
-    setError(null)
+    if (!isSubscribedRef.current) return;
+    setIsLoading(true);
     
     try {
-      // Fetch data from the last 5 years to 2 years in the future to ensure we have enough data
-      const startDate = format(subYears(new Date(), 5), 'yyyy-MM-dd')
-      const endDate = format(addYears(new Date(), 2), 'yyyy-MM-dd')
+      console.log('Revenue Calendar: Fetching sales data for brand:', brandId);
       
-      console.log(`Fetching sales data for brand ${brandId} from ${startDate} to ${endDate}`)
+      // Get Shopify connection for this brand
+      const { data: connection, error: connectionError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('platform_type', 'shopify')
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+        .single();
       
-      const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`)
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+      if (connectionError) {
+        console.error('Error fetching connection:', connectionError);
+        setError('Could not find Shopify connection');
+        setIsLoading(false);
+        return;
       }
       
-      const data = await response.json()
+      if (!connection) {
+        setError('No active Shopify connection found');
+        setIsLoading(false);
+        return;
+      }
       
-      if (!data.sales || !Array.isArray(data.sales)) {
-        console.error('No sales array returned:', data)
+      // Fetch all orders for this connection
+      const { data: orders, error: ordersError } = await supabase
+        .from('shopify_orders')
+        .select('*')
+        .eq('connection_id', connection.id);
+      
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+        setError('Error loading sales data');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!orders || orders.length === 0) {
+        setError('No sales data available');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Process the orders into sales data
+      const processedData = orders.map((order: { created_at: string; total_price: string; id: string }) => {
+        // Apply timezone adjustment to ensure dates are displayed correctly
+        let orderDate = parseISO(order.created_at);
         
-        // Check for database schema error
-        if (data.error && data.error.includes('database schema')) {
-          setError('Database schema error. Please contact support.')
-          
-          // Use initial data if available
-          if (initialData && initialData.length > 0) {
-            const processedData = ensureTodayAndYesterday(initialData)
-            setSalesData(processedData)
-          } else {
-            // Create empty data with today and yesterday
-            const emptyData = createEmptyDataWithTodayAndYesterday()
-            setSalesData(emptyData)
-          }
-        } else {
-          setError('Failed to load sales data')
-          setSalesData([])
+        // Check if the date needs timezone adjustment
+        // This handles cases where the date might be shifted due to timezone differences
+        const needsAdjustment = orderDate.getHours() === 0 && 
+                                orderDate.getMinutes() === 0 && 
+                                orderDate.getSeconds() === 0;
+        
+        if (needsAdjustment) {
+          // Add hours to adjust for timezone if needed
+          orderDate = addHours(orderDate, 12);
         }
-      } else {
-        console.log(`Received ${data.sales.length} sales records`)
         
-        // Ensure today and yesterday are in the data
-        const processedData = ensureTodayAndYesterday(data.sales)
-        setSalesData(processedData)
-        setLastUpdated(new Date())
-      }
-    } catch (err) {
-      console.error('Error fetching sales data:', err)
-      setError('Failed to load sales data')
+        return {
+          date: format(orderDate, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+          revenue: parseFloat(order.total_price || '0'),
+          id: order.id,
+          isTimezoneShifted: needsAdjustment
+        };
+      });
       
-      // Use initial data if available
-      if (initialData && initialData.length > 0) {
-        const processedData = ensureTodayAndYesterday(initialData)
-        setSalesData(processedData)
-      } else {
-        // Create empty data with today and yesterday
-        const emptyData = createEmptyDataWithTodayAndYesterday()
-        setSalesData(emptyData)
-      }
+      setSalesData(processedData);
+      setError(null);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Error in fetchSalesData:', error);
+      setError('Error loading sales data');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
   
-  // Ensure today and yesterday are in the data
+  // Fetch data on mount and set up refresh interval
+  useEffect(() => {
+    if (!brandId) return;
+    
+    fetchSalesData();
+    
+    // Set up interval for background refresh
+    const intervalId = setInterval(() => {
+      if (isSubscribedRef.current) {
+        fetchSalesData();
+      }
+    }, 300000); // Refresh every 5 minutes
+    
+    return () => {
+      clearInterval(intervalId);
+      isSubscribedRef.current = false;
+    };
+  }, [brandId]);
+  
+  // Ensure today and yesterday are included in the data
   const ensureTodayAndYesterday = (data: Array<{date: string; revenue: number; id?: string; isTimezoneShifted?: boolean}>) => {
-    const today = new Date()
-    const yesterday = subDays(today, 1)
+    const today = new Date();
+    const yesterday = subDays(today, 1);
     
-    // Format dates to match API response format (with time component)
-    const todayStr = format(today, 'yyyy-MM-dd\'T\'00:00:00')
-    const yesterdayStr = format(yesterday, 'yyyy-MM-dd\'T\'00:00:00')
-    
-    console.log(`Ensuring today (${todayStr}) and yesterday (${yesterdayStr}) are in the data`)
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
     
     // Check if today and yesterday are in the data
-    const hasToday = data.some(item => {
-      const itemDate = item.date.substring(0, 10)
-      const todayDate = todayStr.substring(0, 10)
-      return itemDate === todayDate
-    })
+    const hasTodaySale = data.some(sale => {
+      if (!sale || !sale.date) return false;
+      try {
+        const saleDate = parseISO(sale.date);
+        return format(saleDate, 'yyyy-MM-dd') === todayFormatted;
+      } catch (error) {
+        return false;
+      }
+    });
     
-    const hasYesterday = data.some(item => {
-      const itemDate = item.date.substring(0, 10)
-      const yesterdayDate = yesterdayStr.substring(0, 10)
-      return itemDate === yesterdayDate
-    })
-    
-    console.log(`Has today: ${hasToday}, Has yesterday: ${hasYesterday}`)
+    const hasYesterdaySale = data.some(sale => {
+      if (!sale || !sale.date) return false;
+      try {
+        const saleDate = parseISO(sale.date);
+        return format(saleDate, 'yyyy-MM-dd') === yesterdayFormatted;
+      } catch (error) {
+        return false;
+      }
+    });
     
     // Create a copy of the data
-    const newData = [...data]
+    const enhancedData = [...data];
     
     // Add today if not present
-    if (!hasToday) {
-      newData.push({
-        date: todayStr,
+    if (!hasTodaySale) {
+      enhancedData.push({
+        date: format(today, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
         revenue: 0,
         id: `generated-today-${Date.now()}`,
         isTimezoneShifted: false
-      })
+      });
     }
     
     // Add yesterday if not present
-    if (!hasYesterday) {
-      newData.push({
-        date: yesterdayStr,
+    if (!hasYesterdaySale) {
+      enhancedData.push({
+        date: format(yesterday, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
         revenue: 0,
         id: `generated-yesterday-${Date.now()}`,
         isTimezoneShifted: false
-      })
+      });
     }
     
-    return newData
-  }
+    return enhancedData;
+  };
   
-  // Create empty data with today and yesterday
-  const createEmptyDataWithTodayAndYesterday = () => {
-    const today = new Date()
-    const yesterday = subDays(today, 1)
+  // Apply the today/yesterday enhancement to the sales data
+  const enhancedSalesData = ensureTodayAndYesterday(salesData);
+  
+  // Group sales data by time frame
+  const groupedSalesData = enhancedSalesData.reduce((acc, sale) => {
+    if (!sale.date) return acc;
     
-    // Format dates to match API response format
-    const todayStr = format(today, 'yyyy-MM-dd\'T\'00:00:00')
-    const yesterdayStr = format(yesterday, 'yyyy-MM-dd\'T\'00:00:00')
-    
-    return [
-      {
-        date: todayStr,
-        revenue: 0,
-        id: `generated-today-${Date.now()}`,
-        isTimezoneShifted: false
-      },
-      {
-        date: yesterdayStr,
-        revenue: 0,
-        id: `generated-yesterday-${Date.now()}`,
-        isTimezoneShifted: false
+    try {
+      // Parse the date with timezone consideration
+      const saleDate = parseISO(sale.date);
+      let key = '';
+      
+      // Group by different time frames
+      if (timeFrame === 'daily') {
+        // For daily view, group by hour of today
+        if (isSameDay(saleDate, new Date())) {
+          // Get the hour and format as 12am, 1am, etc.
+          const hour = getHours(saleDate);
+          key = `hour-${hour}`;
+        } else {
+          // Skip sales not from today
+          return acc;
+        }
+      } else if (timeFrame === 'weekly') {
+        // For weekly view, group by day of current week
+        const today = new Date();
+        if (isSameWeek(saleDate, today)) {
+          key = format(saleDate, 'yyyy-MM-dd');
+        } else {
+          // Skip sales not from current week
+          return acc;
+        }
+      } else if (timeFrame === 'monthly') {
+        // For monthly view, group by day of current month
+        const today = new Date();
+        if (isSameMonth(saleDate, today)) {
+          key = format(saleDate, 'yyyy-MM-dd');
+        } else {
+          // Skip sales not from current month
+          return acc;
+        }
+      } else if (timeFrame === 'yearly') {
+        // For yearly view, group by month of current year
+        const today = new Date();
+        if (saleDate.getFullYear() === today.getFullYear()) {
+          key = format(saleDate, 'yyyy-MM');
+        } else {
+          // Skip sales not from current year
+          return acc;
+        }
       }
-    ]
-  }
+      
+      // Skip if we couldn't determine a key
+      if (!key) return acc;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          date: key,
+          revenue: 0,
+          count: 0
+        };
+      }
+      
+      acc[key].revenue += sale.revenue;
+      acc[key].count += 1;
+    } catch (error) {
+      console.error('Error processing sale date:', sale.date, error);
+    }
+    
+    return acc;
+  }, {} as Record<string, { date: string; revenue: number; count: number }>);
   
   // Generate display data based on time frame
   const generateDisplayData = (): DisplayItem[] => {
@@ -319,115 +397,143 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   const displayData = generateDisplayData();
   
-  // Format revenue for display
-  const formatRevenue = (revenue: number): string => {
-    if (revenue === 0) return '$0'
-    if (revenue >= 1000000) return `$${(revenue / 1000000).toFixed(1)}M`
-    if (revenue >= 1000) return `$${(revenue / 1000).toFixed(1)}k`
-    return `$${revenue.toFixed(0)}`
-  }
+  // Get the maximum revenue for scaling
+  const maxRevenue = Math.max(...displayData.map(item => item.revenue), 1);
   
-  // Generate calendar data for the current month
-  const generateMonthCalendar = () => {
-    // Hard-coded for the screenshot match
-    const daysInMonth = 31
-    const firstDayOfWeek = 4 // Friday (0-based, 0 = Sunday, so 4 = Friday)
-    
-    // Adjust for Monday start (0 = Monday, 6 = Sunday)
-    const adjustedFirstDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
-    
-    // Create empty cells for days before the 1st
-    const emptyCells = Array(adjustedFirstDay).fill(null)
-    
-    // Create cells for each day of the month
-    const days = Array.from(
-      { length: daysInMonth },
-      (_, i) => {
-        const day = i + 1
-        return { day, revenue: 0 }
-      }
-    )
-    
-    return { emptyCells, days }
-  }
+  // Calculate total revenue
+  const totalRevenue = displayData.reduce((sum, item) => sum + item.revenue, 0);
   
-  // Get the month calendar
-  const { emptyCells, days } = generateMonthCalendar()
+  // Format the display label based on time frame
+  const formatDisplayLabel = (item: any): string => {
+    return item.displayDate || '';
+  };
+  
+  // Get the current month and year for the title
+  const currentDate = new Date();
+  const getTitle = () => {
+    if (timeFrame === 'daily') {
+      return `Today (${format(currentDate, 'MMMM d, yyyy')})`;
+    } else if (timeFrame === 'weekly') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+    } else if (timeFrame === 'monthly') {
+      return format(currentDate, 'MMMM yyyy');
+    } else {
+      return format(currentDate, 'yyyy');
+    }
+  };
   
   return (
-    <div className="w-full h-full bg-black rounded-lg p-4">
-      <h2 className="text-xl font-semibold text-white mb-4">Revenue Calendar</h2>
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
+        <div className="flex gap-2">
+          <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
+            <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
+              <SelectValue placeholder="Select view" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Today</SelectItem>
+              <SelectItem value="weekly">This Week</SelectItem>
+              <SelectItem value="monthly">This Month</SelectItem>
+              <SelectItem value="yearly">This Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       
-      <div className="bg-[#111] rounded-lg p-4">
-        <div className="flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-white">March 2025</h3>
-            <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
-              <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
-                <SelectValue>This Month</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Today</SelectItem>
-                <SelectItem value="weekly">This Week</SelectItem>
-                <SelectItem value="monthly">This Month</SelectItem>
-                <SelectItem value="yearly">This Year</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="text-lg font-medium text-white mb-2">
+        {getTitle()}
+      </div>
+      
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse w-full">
+            <div className="h-[200px] bg-gray-800 rounded-md"></div>
           </div>
-          
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            <div className="text-center text-xs font-medium text-gray-400">Mon</div>
-            <div className="text-center text-xs font-medium text-gray-400">Tue</div>
-            <div className="text-center text-xs font-medium text-gray-400">Wed</div>
-            <div className="text-center text-xs font-medium text-gray-400">Thu</div>
-            <div className="text-center text-xs font-medium text-gray-400">Fri</div>
-            <div className="text-center text-xs font-medium text-gray-400">Sat</div>
-            <div className="text-center text-xs font-medium text-gray-400">Sun</div>
-          </div>
-          
-          <div className="grid grid-cols-7 gap-1">
-            {/* Empty cells for days before the 1st */}
-            {emptyCells.map((_, index) => (
-              <div key={`empty-${index}`} className="bg-transparent h-[36px]"></div>
-            ))}
-            
-            {/* Day 1 */}
-            <div className="flex flex-col h-[36px] rounded-md overflow-hidden bg-gray-900 border border-gray-800">
-              <div className="text-center py-1 text-xs font-medium bg-gray-800 text-gray-300">1</div>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-xs font-medium text-white">$0</div>
-              </div>
-            </div>
-            
-            {/* Day 2 */}
-            <div className="flex flex-col h-[36px] rounded-md overflow-hidden bg-gray-900 border border-gray-800">
-              <div className="text-center py-1 text-xs font-medium bg-gray-800 text-gray-300">2</div>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-xs font-medium text-white">$0</div>
-              </div>
-            </div>
-            
-            {/* Day 3 (highlighted) */}
-            <div className="flex flex-col h-[36px] rounded-md overflow-hidden bg-blue-900/20 border border-blue-700">
-              <div className="text-center py-1 text-xs font-medium bg-blue-900/50 text-blue-100">3</div>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-xs font-medium text-white">$0</div>
-              </div>
-            </div>
-            
-            {/* Days 4-31 */}
-            {days.slice(3).map(({ day }) => (
-              <div 
-                key={`day-${day}`} 
-                className="flex flex-col h-[36px] rounded-md overflow-hidden bg-gray-900 border border-gray-800"
+        </div>
+      ) : error ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-400">{error}</div>
+        </div>
+      ) : (
+        <div className={cn(
+          "flex-1 grid gap-2",
+          timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
+          timeFrame === 'weekly' ? "grid-cols-7" :
+          timeFrame === 'monthly' ? "grid-cols-7 md:grid-cols-7" :
+          "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12"
+        )}>
+          {displayData.map((item) => {
+            // Calculate the height percentage based on revenue
+            const heightPercentage = item.revenue > 0 
+              ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
+              : 0;
+              
+            // Format the revenue display
+            const formattedRevenue = item.revenue > 0 
+              ? item.revenue >= 1000
+                ? `$${(item.revenue/1000).toFixed(1)}k`
+                : `$${item.revenue.toFixed(0)}`
+              : '$0';
+              
+            // Check if this is the current period
+            const isCurrentPeriod = 
+              (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
+              (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
+              (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
+              (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
+
+            return (
+              <div
+                key={item.date}
+                className={cn(
+                  "flex flex-col h-[120px] rounded-md overflow-hidden border",
+                  isCurrentPeriod 
+                    ? "bg-blue-900/20 border-blue-700" 
+                    : "bg-gray-900 border-gray-800"
+                )}
               >
-                <div className="text-center py-1 text-xs font-medium bg-gray-800 text-gray-300">{day}</div>
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center text-xs font-medium text-white">$0</div>
+                <div className={cn(
+                  "text-center py-1 text-sm font-medium",
+                  isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                )}>
+                  {formatDisplayLabel(item)}
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-end p-2 relative">
+                  <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                    <div
+                      className={cn(
+                        "w-full rounded-t transition-all duration-300",
+                        item.revenue > 0 
+                          ? isCurrentPeriod 
+                            ? "bg-blue-500" 
+                            : "bg-blue-600"
+                          : "bg-gray-700 h-0.5"
+                      )}
+                      style={{
+                        height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
+                      }}
+                    />
+                  </div>
+                  <div className="text-center text-sm font-medium text-white">
+                    {formattedRevenue}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      )}
+      
+      <div className="mt-2 flex justify-between items-center text-xs text-gray-500">
+        <div>
+          Total: ${totalRevenue.toLocaleString()}
+        </div>
+        <div>
+          Last updated: {lastUpdated.toLocaleTimeString()}
         </div>
       </div>
     </div>
