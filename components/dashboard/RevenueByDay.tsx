@@ -129,7 +129,10 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       }
       
       if (!orders || orders.length === 0) {
-        setError('No sales data available');
+        console.log('No sales data available');
+        setSalesData([]);
+        setError(null);
+        setLastUpdated(new Date());
         setIsLoading(false);
         return;
       }
@@ -158,6 +161,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         };
       });
       
+      console.log('Processed sales data:', processedData);
       setSalesData(processedData);
       setError(null);
       setLastUpdated(new Date());
@@ -382,6 +386,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Calculate total revenue
   const totalRevenue = displayData.reduce((sum, item) => sum + item.revenue, 0);
   
+  // Check if there's any revenue data
+  const hasRevenueData = totalRevenue > 0;
+  
   // Format the display label based on time frame
   const formatDisplayLabel = (item: any): string => {
     return item.displayDate || '';
@@ -415,23 +422,25 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               className={cn(
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as DailyDisplayItem).isCurrentHour 
-                  ? "bg-[#1a1f2b] border-gray-700" 
-                  : "bg-[#1e293b] border-gray-800"
+                  ? "bg-[#1a1a1a] border-gray-700" 
+                  : "bg-[#1e1e1e] border-gray-800"
               )}
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as DailyDisplayItem).isCurrentHour ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+                (item as DailyDisplayItem).isCurrentHour ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
               )}>
                 {item.displayDate}
               </div>
               
               <div className="flex-1 flex flex-col justify-end p-1">
                 <div className="relative h-12 w-full flex flex-col justify-end">
-                  <div 
-                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                    className="w-full rounded-t bg-gray-600"
-                  ></div>
+                  {item.revenue > 0 && (
+                    <div 
+                      style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                      className="w-full rounded-t bg-gray-600"
+                    ></div>
+                  )}
                 </div>
                 
                 <div className="text-center text-xs mt-1 text-gray-400">
@@ -452,23 +461,25 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               className={cn(
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as WeeklyOrMonthlyDisplayItem).isToday 
-                  ? "bg-[#1a1f2b] border-gray-700" 
-                  : "bg-[#1e293b] border-gray-800"
+                  ? "bg-[#1a1a1a] border-gray-700" 
+                  : "bg-[#1e1e1e] border-gray-800"
               )}
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
               )}>
                 {item.displayDate}
               </div>
               
               <div className="flex-1 flex flex-col justify-end p-1">
                 <div className="relative h-16 w-full flex flex-col justify-end">
-                  <div 
-                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                    className="w-full rounded-t bg-gray-600"
-                  ></div>
+                  {item.revenue > 0 && (
+                    <div 
+                      style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                      className="w-full rounded-t bg-gray-600"
+                    ></div>
+                  )}
                 </div>
                 
                 <div className="text-center text-xs mt-1 text-gray-400">
@@ -515,23 +526,25 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   className={cn(
                     "flex flex-col rounded-md overflow-hidden border",
                     isToday 
-                      ? "bg-[#1a1f2b] border-gray-700" 
-                      : "bg-[#1e293b] border-gray-800"
+                      ? "bg-[#1a1a1a] border-gray-700" 
+                      : "bg-[#1e1e1e] border-gray-800"
                   )}
                 >
                   <div className={cn(
                     "text-center py-1 text-xs font-medium",
-                    isToday ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+                    isToday ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
                   )}>
                     {day}
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-end p-1">
                     <div className="relative h-10 w-full flex flex-col justify-end">
-                      <div 
-                        style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                        className="w-full rounded-t bg-gray-600"
-                      ></div>
+                      {item.revenue > 0 && (
+                        <div 
+                          style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                          className="w-full rounded-t bg-gray-600"
+                        ></div>
+                      )}
                     </div>
                     
                     <div className="text-center text-xs mt-1 text-gray-400">
@@ -554,23 +567,25 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               className={cn(
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as YearlyDisplayItem).isCurrentMonth 
-                  ? "bg-[#1a1f2b] border-gray-700" 
-                  : "bg-[#1e293b] border-gray-800"
+                  ? "bg-[#1a1a1a] border-gray-700" 
+                  : "bg-[#1e1e1e] border-gray-800"
               )}
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as YearlyDisplayItem).isCurrentMonth ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+                (item as YearlyDisplayItem).isCurrentMonth ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
               )}>
                 {item.displayDate}
               </div>
               
               <div className="flex-1 flex flex-col justify-end p-1">
                 <div className="relative h-16 w-full flex flex-col justify-end">
-                  <div 
-                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                    className="w-full rounded-t bg-gray-600"
-                  ></div>
+                  {item.revenue > 0 && (
+                    <div 
+                      style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                      className="w-full rounded-t bg-gray-600"
+                    ></div>
+                  )}
                 </div>
                 
                 <div className="text-center text-xs mt-1 text-gray-400">
@@ -585,7 +600,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   };
   
   return (
-    <div className="h-full w-full flex flex-col bg-[#111827] rounded-lg border border-gray-800 overflow-hidden">
+    <div className="h-full w-full flex flex-col bg-[#111111] rounded-lg border border-gray-800 overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
           <svg
@@ -635,12 +650,16 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="h-full flex items-center justify-center text-gray-400">
             {error}
           </div>
+        ) : !hasRevenueData ? (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            No sales data available for this period
+          </div>
         ) : (
           renderCalendarContent()
         )}
       </div>
       
-      <div className="p-3 border-t border-gray-800 bg-[#0f1623] text-xs text-gray-400 flex justify-between">
+      <div className="p-3 border-t border-gray-800 bg-[#0f0f0f] text-xs text-gray-400 flex justify-between">
         <div>Total Revenue: ${totalRevenue.toLocaleString()}</div>
         <div>Last updated: {format(lastUpdated, 'h:mm a')}</div>
       </div>
