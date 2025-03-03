@@ -139,6 +139,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       console.log('Revenue Calendar: Fetching ALL sales data', { startDate, endDate, brandId });
       
+      // CRITICAL: We're using a direct fetch here instead of going through any context or state
+      // that might be affected by the date range picker
       const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
       
       if (!response.ok) {
@@ -341,109 +343,179 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     ];
   };
   
-  // Fetch sales data directly from the API
+  // Fetch data on mount
   useEffect(() => {
-    console.log('Revenue Calendar: useEffect triggered', { 
-      initialDataLength: initialData?.length || 0,
-      brandId
-    });
+    console.log('Revenue Calendar: Component mounted, fetching data immediately');
     
-    // Always use initial data if provided, regardless of whether we fetch or not
-    if (initialData && initialData.length > 0) {
-      console.log('Revenue Calendar: Using provided initial data in useEffect');
-      setSalesData(initialData);
-      
-      // If we want to refresh in the background, we can still fetch but not show loading state
-      if (brandId) {
-        const quietFetch = async () => {
-          try {
-            // IMPORTANT: Always use a very wide date range to ensure we get ALL sales data
-            // regardless of what date range is selected in the date picker
-            // This ensures the revenue calendar always shows all data
-            const endDate = new Date(new Date().getFullYear() + 2, 0, 1).toISOString().split('T')[0]; // 2 years in the future
-            const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
-            
-            console.log('Revenue Calendar: Quiet background fetch for ALL sales data', { startDate, endDate, brandId });
-            
-            const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
-            
-            if (!response.ok) {
-              const errorText = await response.text();
-              console.error(`Revenue Calendar: Background fetch API error (${response.status}):`, errorText);
-              
-              // Don't update state or show error for background fetches with errors
-              // This ensures we keep showing whatever data we already have
-              console.log('Revenue Calendar: Background fetch error, keeping existing data');
-              return;
-            }
-            
-            const result = await response.json();
-            
-            if (!result.sales) {
-              console.error('Revenue Calendar: No sales array in background fetch response', result);
-              // Keep existing data
-              console.log('Revenue Calendar: No sales array in response, keeping existing data');
-              return;
-            }
-            
-            if (result.sales.length === 0) {
-              console.warn('Revenue Calendar: Empty sales array returned in background fetch');
-              
-              // Check if this is a database schema error
-              if (result.message && result.message.includes('Database schema has changed')) {
-                console.log('Revenue Calendar: Database schema error detected in background fetch message');
-                // Keep existing data
-                console.log('Revenue Calendar: Database schema error, keeping existing data');
-                return;
-              }
-              
-              // CRITICAL: If we have existing data, don't overwrite it with empty data
-              if (Array.isArray(salesData) && salesData.length > 0) {
-                console.log('Revenue Calendar: Empty sales array but we have existing data, keeping it');
-                return;
-              }
-              
-              // Only set empty array if we don't already have data
-              console.log('Revenue Calendar: Empty sales array and no existing data');
-              return;
-            }
-            
-            // Transform the sales data
-            const transformedData = result.sales.map((sale: any) => {
-              const rawDate = sale.created_at;
-              const saleAmount = parseFloat(sale.total_price || '0');
-              
-              return {
-                date: rawDate,
-                revenue: saleAmount,
-                id: sale.id
-              };
-            });
-            
-            // Only update if we got valid data AND it's different from what we have
-            if (transformedData.length > 0) {
-              console.log('Revenue Calendar: Background fetch successful, updating data');
-              setSalesData(transformedData);
-              setError(null);
-            } else {
-              console.log('Revenue Calendar: Background fetch returned no valid data, keeping existing data');
-            }
-            
-          } catch (error) {
-            console.error('Revenue Calendar: Error in background fetch:', error);
-            // Don't update state or show error for background fetches
-            console.log('Revenue Calendar: Background fetch exception, keeping existing data');
-          }
-        };
-        
+    // If we have initial data, use it first
+    if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+      console.log('Revenue Calendar: Using initial data first', initialData.length, 'records');
+      const enhancedInitialData = ensureTodayAndYesterdayInData(initialData);
+      setSalesData(enhancedInitialData);
+    }
+    
+    // Then fetch fresh data
+    fetchSalesData();
+    
+    // Set up interval for background refresh
+    const intervalId = setInterval(() => {
+      if (isSubscribedRef.current) {
+        console.log('Revenue Calendar: Background refresh triggered');
         quietFetch();
       }
-    } else if (brandId) {
-      // No initial data, need to fetch
-      fetchSalesData();
-    }
-  }, [brandId, initialData]);
+    }, 60000); // Refresh every minute
+    
+    // Clean up interval on unmount
+    return () => {
+      clearInterval(intervalId);
+      isSubscribedRef.current = false;
+    };
+  }, [brandId]); // Only re-run if brandId changes
   
+  // Prevent any other useEffects from triggering refreshes based on other props
+  
+  // Debug log for component state
+  useEffect(() => {
+    console.log('Revenue Calendar: Component state updated:', {
+      brandId,
+      initialDataLength: initialData?.length || 0,
+      salesDataLength: Array.isArray(salesData) ? salesData.length : 0,
+      isUsingInitialData: initialData && Array.isArray(initialData) && Array.isArray(salesData) && salesData === initialData,
+      timeFrame,
+      isLoading,
+      error,
+      hasError: !!error
+    });
+  }, [brandId, initialData, salesData, timeFrame, isLoading, error]);
+
+  // Modify the quiet fetch to prevent overwriting valid data
+  const quietFetch = async () => {
+    if (!isSubscribedRef.current) return;
+    
+    try {
+      console.log('Revenue Calendar: Performing quiet background fetch');
+      
+      // Use a wider date range for the quiet fetch to ensure we get all data
+      const startDate = format(subYears(new Date(), 5), 'yyyy-MM-dd');
+      const endDate = format(addYears(new Date(), 2), 'yyyy-MM-dd');
+      
+      // Fix: Use the correct API endpoint that matches the one in fetchSalesData
+      // CRITICAL: We're using a direct fetch here instead of going through any context or state
+      // that might be affected by the date range picker
+      const result = await fetchFromAPI(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      
+      console.log('Revenue Calendar: Background fetch result:', {
+        hasResult: !!result,
+        hasSales: result && !!result.sales,
+        salesCount: result && result.sales ? result.sales.length : 0
+      });
+      
+      if (!result || !result.sales || !Array.isArray(result.sales)) {
+        console.log('Revenue Calendar: No sales data in background fetch, keeping existing data');
+        return;
+      }
+      
+      // Transform the sales data
+      const transformedData = result.sales.map((sale: any) => {
+        const rawDate = sale.created_at;
+        const saleAmount = parseFloat(sale.total_price || '0');
+        
+        return {
+          date: rawDate,
+          revenue: saleAmount,
+          id: sale.id || `generated-${rawDate}-${Math.random()}`
+        };
+      });
+      
+      // CRITICAL: If we're in daily mode, we need to merge the new data with existing data
+      // This ensures we don't lose days with sales when refreshing
+      if (timeFrame === 'daily' && Array.isArray(salesData) && salesData.length > 0) {
+        console.log('Revenue Calendar: In daily mode, merging new data with existing data to preserve all days with sales');
+        
+        // Create a map of existing sales by date
+        const existingSalesByDate = new Map<string, Array<{date: string; revenue: number; id: string}>>();
+        salesData.forEach((sale: {date: string; revenue: number; id?: string}) => {
+          if (!sale || !sale.date) return;
+          
+          try {
+            const saleDate = parseISO(sale.date);
+            const formattedDate = format(saleDate, 'yyyy-MM-dd');
+            
+            // Skip empty sales (revenue = 0) for today and yesterday
+            // These were likely added by our helper functions
+            const isToday = format(new Date(), 'yyyy-MM-dd') === formattedDate;
+            const isYesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd') === formattedDate;
+            
+            if ((isToday || isYesterday) && sale.revenue === 0) {
+              return;
+            }
+            
+            // Store by date for easy lookup
+            if (!existingSalesByDate.has(formattedDate)) {
+              existingSalesByDate.set(formattedDate, []);
+            }
+            existingSalesByDate.get(formattedDate)?.push({
+              date: sale.date,
+              revenue: sale.revenue,
+              id: sale.id || `generated-${sale.date}-${Math.random()}`
+            });
+          } catch (error) {
+            console.error('Error processing existing sale date:', sale.date, error);
+          }
+        });
+        
+        // Create a map of new sales by date
+        const newSalesByDate = new Map<string, Array<{date: string; revenue: number; id: string}>>();
+        transformedData.forEach((sale: {date: string; revenue: number; id: string}) => {
+          if (!sale || !sale.date) return;
+          
+          try {
+            const saleDate = parseISO(sale.date);
+            const formattedDate = format(saleDate, 'yyyy-MM-dd');
+            
+            // Store by date for easy lookup
+            if (!newSalesByDate.has(formattedDate)) {
+              newSalesByDate.set(formattedDate, []);
+            }
+            newSalesByDate.get(formattedDate)?.push(sale);
+          } catch (error) {
+            console.error('Error processing new sale date:', sale.date, error);
+          }
+        });
+        
+        // Merge the data, preferring new data for dates that exist in both
+        const mergedData: Array<{date: string; revenue: number; id: string}> = [];
+        
+        // Add all new sales
+        transformedData.forEach((sale: {date: string; revenue: number; id: string}) => mergedData.push(sale));
+        
+        // Add existing sales for dates not in new data
+        existingSalesByDate.forEach((sales, date) => {
+          if (!newSalesByDate.has(date)) {
+            sales.forEach(sale => mergedData.push(sale));
+          }
+        });
+        
+        // Ensure today and yesterday are included
+        const enhancedData = ensureTodayAndYesterdayInData(mergedData);
+        
+        // Update the state with the merged data
+        console.log('Revenue Calendar: Setting merged data with', enhancedData.length, 'records');
+        setSalesData(enhancedData);
+        return;
+      }
+      
+      // For other time frames, just use the new data
+      // But ensure today and yesterday are included
+      const enhancedData = ensureTodayAndYesterdayInData(transformedData);
+      console.log('Revenue Calendar: Setting new data with', enhancedData.length, 'records');
+      setSalesData(enhancedData);
+    } catch (error) {
+      console.error('Revenue Calendar: Background fetch exception', error);
+      console.log('Revenue Calendar: Background fetch exception, keeping existing data');
+    }
+  };
+
   // Get hours of the day (12am to 11pm)
   const hoursOfDay = useMemo(() => {
     const today = new Date()
@@ -715,228 +787,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         return 'Revenue Calendar';
     }
   }
-
-  // Fetch data on mount
-  useEffect(() => {
-    if (brandId) {
-      fetchSalesData();
-    }
-  }, [brandId]);
-
-  // Clear the displayed sales IDs when the sales data changes
-  useEffect(() => {
-    displayedSaleIdsRef.current.clear();
-    console.log('Revenue Calendar: Cleared displayed sale IDs');
-  }, [salesData]);
-
-  // Modify the useEffect for error handling
-  useEffect(() => {
-    if (error) {
-      // If we have initial data, use it
-      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-        // Ensure today and yesterday are in the initial data
-        const enhancedInitialData = ensureTodayAndYesterdayInData(initialData);
-        setSalesData(enhancedInitialData);
-        setError(null);
-      } else {
-        // No data available, set empty array with today and yesterday
-        const emptyData = createEmptyDataWithTodayAndYesterday();
-        setSalesData(emptyData);
-        setError('No sales data available.');
-      }
-    }
-  }, [error, initialData]);
-
-  // Modify the useEffect for initial data
-  useEffect(() => {
-    if (!isLoading && initialData && Array.isArray(initialData) && initialData.length > 0) {
-      console.log('Setting initial data:', initialData.length, 'records');
-      // Ensure today and yesterday are in the initial data
-      const enhancedInitialData = ensureTodayAndYesterdayInData(initialData);
-      setSalesData(enhancedInitialData);
-      setError(null);
-    }
-  }, [initialData, isLoading]);
-
-  // Debug log for component state
-  useEffect(() => {
-    console.log('Revenue Calendar: Component state updated:', {
-      brandId,
-      initialDataLength: initialData?.length || 0,
-      salesDataLength: Array.isArray(salesData) ? salesData.length : 0,
-      isUsingInitialData: initialData && Array.isArray(initialData) && Array.isArray(salesData) && salesData === initialData,
-      timeFrame,
-      isLoading,
-      error,
-      hasError: !!error
-    });
-  }, [brandId, initialData, salesData, timeFrame, isLoading, error]);
-
-  // Modify the quiet fetch to prevent overwriting valid data
-  const quietFetch = async () => {
-    if (!isSubscribedRef.current) return;
-    
-    try {
-      console.log('Revenue Calendar: Performing quiet background fetch');
-      
-      // Use a wider date range for the quiet fetch to ensure we get all data
-      const startDate = format(subYears(new Date(), 5), 'yyyy-MM-dd');
-      const endDate = format(addYears(new Date(), 2), 'yyyy-MM-dd');
-      
-      // Fix: Use the correct API endpoint that matches the one in fetchSalesData
-      const result = await fetchFromAPI(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
-      
-      console.log('Revenue Calendar: Background fetch result:', {
-        hasResult: !!result,
-        hasSales: result && !!result.sales,
-        salesCount: result && result.sales ? result.sales.length : 0
-      });
-      
-      if (!result || !result.sales || !Array.isArray(result.sales)) {
-        console.log('Revenue Calendar: No sales data in background fetch, keeping existing data');
-        return;
-      }
-      
-      // Transform the sales data
-      const transformedData = result.sales.map((sale: any) => {
-        const rawDate = sale.created_at;
-        const saleAmount = parseFloat(sale.total_price || '0');
-        
-        return {
-          date: rawDate,
-          revenue: saleAmount,
-          id: sale.id || `generated-${rawDate}-${Math.random()}`
-        };
-      });
-      
-      // CRITICAL: If we're in daily mode, we need to merge the new data with existing data
-      // This ensures we don't lose days with sales when refreshing
-      if (timeFrame === 'daily' && Array.isArray(salesData) && salesData.length > 0) {
-        console.log('Revenue Calendar: In daily mode, merging new data with existing data to preserve all days with sales');
-        
-        // Create a map of existing sales by date
-        const existingSalesByDate = new Map<string, Array<{date: string; revenue: number; id: string}>>();
-        salesData.forEach((sale: {date: string; revenue: number; id?: string}) => {
-          if (!sale || !sale.date) return;
-          
-          try {
-            const saleDate = parseISO(sale.date);
-            const formattedDate = format(saleDate, 'yyyy-MM-dd');
-            
-            // Skip empty sales (revenue = 0) for today and yesterday
-            // These were likely added by our helper functions
-            const isToday = format(new Date(), 'yyyy-MM-dd') === formattedDate;
-            const isYesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd') === formattedDate;
-            
-            if ((isToday || isYesterday) && sale.revenue === 0) {
-              return;
-            }
-            
-            // Store by date for easy lookup
-            if (!existingSalesByDate.has(formattedDate)) {
-              existingSalesByDate.set(formattedDate, []);
-            }
-            existingSalesByDate.get(formattedDate)?.push({
-              date: sale.date,
-              revenue: sale.revenue,
-              id: sale.id || `generated-${sale.date}-${Math.random()}`
-            });
-          } catch (error) {
-            console.error('Error processing existing sale date:', sale.date, error);
-          }
-        });
-        
-        // Create a map of new sales by date
-        const newSalesByDate = new Map<string, Array<{date: string; revenue: number; id: string}>>();
-        transformedData.forEach((sale: {date: string; revenue: number; id: string}) => {
-          if (!sale || !sale.date) return;
-          
-          try {
-            const saleDate = parseISO(sale.date);
-            const formattedDate = format(saleDate, 'yyyy-MM-dd');
-            
-            // Store by date for easy lookup
-            if (!newSalesByDate.has(formattedDate)) {
-              newSalesByDate.set(formattedDate, []);
-            }
-            newSalesByDate.get(formattedDate)?.push(sale);
-          } catch (error) {
-            console.error('Error processing new sale date:', sale.date, error);
-          }
-        });
-        
-        // Merge the data, preferring new data for dates that exist in both
-        const mergedData: Array<{date: string; revenue: number; id: string}> = [];
-        
-        // Add all new sales
-        transformedData.forEach((sale: {date: string; revenue: number; id: string}) => mergedData.push(sale));
-        
-        // Add existing sales for dates not in new data
-        existingSalesByDate.forEach((sales, date) => {
-          if (!newSalesByDate.has(date)) {
-            sales.forEach(sale => mergedData.push(sale));
-          }
-        });
-        
-        // Ensure today and yesterday are included
-        const enhancedData = ensureTodayAndYesterdayInData(mergedData);
-        
-        // Update the state with the merged data
-        console.log('Revenue Calendar: Setting merged data with', enhancedData.length, 'records');
-        setSalesData(enhancedData);
-        return;
-      }
-      
-      // For other time frames, just use the new data
-      // But ensure today and yesterday are included
-      const enhancedData = ensureTodayAndYesterdayInData(transformedData);
-      console.log('Revenue Calendar: Setting new data with', enhancedData.length, 'records');
-      setSalesData(enhancedData);
-    } catch (error) {
-      console.error('Revenue Calendar: Background fetch exception', error);
-      console.log('Revenue Calendar: Background fetch exception, keeping existing data');
-    }
-  };
-  
-  // Set up the refresh interval with proper cleanup
-  useEffect(() => {
-    let isSubscribed = true;
-
-    const fetchData = async () => {
-      if (!isSubscribed) return;
-      await fetchSalesData();
-    };
-
-    const quietFetchData = async () => {
-      if (!isSubscribed) return;
-      await quietFetch();
-    };
-
-    // Initial fetch
-    if (brandId) {
-      fetchData();
-    }
-
-    // Set up interval for quiet fetches
-    const intervalId = setInterval(quietFetchData, 30000); // Every 30 seconds
-
-    // Cleanup function
-    return () => {
-      isSubscribed = false;
-      clearInterval(intervalId);
-    };
-  }, [brandId]);
-
-  // Handle initial data
-  useEffect(() => {
-    if (initialData && Array.isArray(initialData) && initialData.length > 0 && !isLoading) {
-      console.log('Setting initial data:', initialData.length, 'records');
-      // Ensure today and yesterday are in the initial data
-      const enhancedInitialData = ensureTodayAndYesterdayInData(initialData);
-      setSalesData(enhancedInitialData);
-      setError(null);
-    }
-  }, [initialData, isLoading]);
 
   return (
     <div className="w-full">
