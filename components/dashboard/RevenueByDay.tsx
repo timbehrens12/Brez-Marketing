@@ -427,17 +427,29 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   };
   
   return (
-    <div className="h-full w-full flex flex-col bg-gray-950 rounded-lg p-4 border border-gray-800">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xl font-semibold text-white">Revenue Calendar</h3>
-          <div className="text-lg font-medium text-gray-400">
-            {getTitle()}
-          </div>
+    <div className="h-full w-full flex flex-col bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-5 w-5 text-gray-400"
+          >
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <line x1="16" x2="16" y1="2" y2="6" />
+            <line x1="8" x2="8" y1="2" y2="6" />
+            <line x1="3" x2="21" y1="10" y2="10" />
+          </svg>
+          <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
         </div>
         <div className="flex gap-2">
           <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
-            <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
+            <SelectTrigger className="w-[120px] bg-gray-800 border-gray-700 h-8">
               <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
@@ -450,40 +462,41 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       </div>
       
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse w-full">
-            <div className="h-[300px] bg-gray-800 rounded-md"></div>
+      <div className="flex-1 p-4">
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="animate-pulse w-full">
+              <div className="h-[200px] bg-gray-800 rounded-md"></div>
+            </div>
           </div>
-        </div>
-      ) : error ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-400">{error}</div>
-        </div>
-      ) : (
-        <div className="flex-1 flex flex-col">
-          {timeFrame === 'yearly' ? (
-            <div className="flex-1 flex flex-col">
-              <div className="text-lg font-medium text-white mb-4">
-                {new Date().getFullYear()}
-              </div>
-              <div className="grid grid-cols-12 gap-2">
+        ) : error ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-gray-400">{error}</div>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col">
+            <div className="text-base font-medium text-gray-400 mb-3">
+              {getTitle()}
+            </div>
+            
+            {timeFrame === 'yearly' ? (
+              <div className="flex-1 grid grid-cols-12 gap-2">
                 {displayData.map((item) => {
                   const isCurrentMonth = 'isCurrentMonth' in item && item.isCurrentMonth;
                   
                   return (
                     <div key={item.date} className="flex flex-col">
                       <div className={cn(
-                        "text-center py-1 text-sm font-medium",
+                        "text-center py-1 text-xs font-medium",
                         isCurrentMonth ? "text-blue-300" : "text-gray-400"
                       )}>
                         {item.displayDate}
                       </div>
                       <div className={cn(
-                        "flex-1 flex flex-col justify-end p-2 relative bg-gray-900 rounded-md border",
-                        isCurrentMonth ? "border-blue-700" : "border-gray-800"
+                        "flex-1 flex flex-col justify-end p-1 relative bg-gray-800 rounded-md border",
+                        isCurrentMonth ? "border-blue-700" : "border-gray-700"
                       )}>
-                        <div className="h-24 flex items-end justify-center">
+                        <div className="h-16 flex items-end justify-center">
                           <div
                             className={cn(
                               "w-full rounded-t",
@@ -500,7 +513,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                             }}
                           />
                         </div>
-                        <div className="text-center text-sm font-medium text-white mt-2">
+                        <div className="text-center text-xs font-medium text-white mt-1">
                           {item.revenue > 0 
                             ? item.revenue >= 1000
                               ? `$${(item.revenue/1000).toFixed(1)}k`
@@ -512,86 +525,86 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   );
                 })}
               </div>
-            </div>
-          ) : (
-            <div className={cn(
-              "flex-1 grid gap-3",
-              timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
-              timeFrame === 'weekly' ? "grid-cols-7" :
-              "grid-cols-7"
-            )}>
-              {displayData.map((item) => {
-                // Calculate the height percentage based on revenue
-                const heightPercentage = item.revenue > 0 
-                  ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
-                  : 0;
-                  
-                // Format the revenue display
-                const formattedRevenue = item.revenue > 0 
-                  ? item.revenue >= 1000
-                    ? `$${(item.revenue/1000).toFixed(1)}k`
-                    : `$${item.revenue.toFixed(0)}`
-                  : '$0';
-                  
-                // Check if this is the current period
-                const isCurrentPeriod = 
-                  (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
-                  (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
-                  (timeFrame === 'monthly' && 'isToday' in item && item.isToday);
-
-                return (
-                  <div
-                    key={item.date}
-                    className={cn(
-                      "flex flex-col aspect-square rounded-md overflow-hidden border",
-                      isCurrentPeriod 
-                        ? "bg-blue-900/20 border-blue-700" 
-                        : "bg-gray-900 border-gray-800"
-                    )}
-                  >
-                    <div className={cn(
-                      "text-center py-1 text-sm font-medium",
-                      isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
-                    )}>
-                      {formatDisplayLabel(item)}
-                    </div>
+            ) : (
+              <div className={cn(
+                "flex-1 grid gap-2",
+                timeFrame === 'daily' ? "grid-cols-6 md:grid-cols-8 lg:grid-cols-12" :
+                timeFrame === 'weekly' ? "grid-cols-7" :
+                "grid-cols-7"
+              )}>
+                {displayData.map((item) => {
+                  // Calculate the height percentage based on revenue
+                  const heightPercentage = item.revenue > 0 
+                    ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
+                    : 0;
                     
-                    <div className="flex-1 flex flex-col justify-end p-2 relative">
-                      <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                        <div
-                          className={cn(
-                            "w-full rounded-t transition-all duration-300",
-                            item.revenue > 0 
-                              ? isCurrentPeriod 
-                                ? "bg-blue-500" 
-                                : "bg-blue-600"
-                              : "bg-gray-700 h-0.5"
-                          )}
-                          style={{
-                            height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
-                          }}
-                        />
+                  // Format the revenue display
+                  const formattedRevenue = item.revenue > 0 
+                    ? item.revenue >= 1000
+                      ? `$${(item.revenue/1000).toFixed(1)}k`
+                      : `$${item.revenue.toFixed(0)}`
+                    : '$0';
+                    
+                  // Check if this is the current period
+                  const isCurrentPeriod = 
+                    (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
+                    (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
+                    (timeFrame === 'monthly' && 'isToday' in item && item.isToday);
+
+                  return (
+                    <div
+                      key={item.date}
+                      className={cn(
+                        "flex flex-col aspect-square rounded-md overflow-hidden border",
+                        isCurrentPeriod 
+                          ? "bg-gray-800 border-blue-700" 
+                          : "bg-gray-800 border-gray-700"
+                      )}
+                    >
+                      <div className={cn(
+                        "text-center py-1 text-xs font-medium",
+                        isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-700 text-gray-300"
+                      )}>
+                        {formatDisplayLabel(item)}
                       </div>
-                      <div className="text-center text-sm font-medium text-white">
-                        {formattedRevenue}
+                      
+                      <div className="flex-1 flex flex-col justify-end p-1 relative">
+                        <div className="absolute inset-x-1 bottom-6 top-1 flex items-end">
+                          <div
+                            className={cn(
+                              "w-full rounded-t transition-all duration-300",
+                              item.revenue > 0 
+                                ? isCurrentPeriod 
+                                  ? "bg-blue-500" 
+                                  : "bg-blue-600"
+                                : "bg-gray-700 h-0.5"
+                            )}
+                            style={{
+                              height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
+                            }}
+                          />
+                        </div>
+                        <div className="text-center text-xs font-medium text-white">
+                          {formattedRevenue}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          
-          <div className="mt-6 flex justify-between items-center text-sm text-gray-400">
-            <div>
-              <span className="font-medium">Total:</span> ${totalRevenue.toLocaleString()}
-            </div>
-            <div>
-              Last updated: {lastUpdated.toLocaleTimeString()}
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="mt-3 flex justify-between items-center text-xs text-gray-500">
+              <div>
+                <span className="font-medium">Total:</span> ${totalRevenue.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500">
+                <span className="text-red-500">0.0%</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
