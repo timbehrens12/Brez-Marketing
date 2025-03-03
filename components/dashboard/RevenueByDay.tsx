@@ -418,7 +418,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 </div>
                 
                 <div className="text-center text-xs mt-1 text-gray-400">
-                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '-'}
+                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '$0'}
                 </div>
               </div>
             </div>
@@ -473,7 +473,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-end p-1">
-                    <div className="relative h-8 w-full flex flex-col justify-end">
+                    <div className="relative h-6 w-full flex flex-col justify-end">
                       {item.revenue > 0 && (
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
@@ -483,7 +483,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     </div>
                     
                     <div className="text-center text-xs mt-1 text-gray-400">
-                      {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '-'}
+                      {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '$0'}
                     </div>
                   </div>
                 </div>
@@ -524,7 +524,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 </div>
                 
                 <div className="text-center text-xs mt-1 text-gray-400">
-                  {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '-'}
+                  {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '$0'}
                 </div>
               </div>
             </div>
@@ -583,10 +583,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         ) : error ? (
           <div className="h-full flex items-center justify-center text-gray-400">
             {error}
-          </div>
-        ) : !hasRevenueData ? (
-          <div className="h-full flex items-center justify-center text-gray-400">
-            No sales data available for this period
           </div>
         ) : (
           renderCalendarContent()
