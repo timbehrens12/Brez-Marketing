@@ -30,6 +30,7 @@ import {
   endOfDay
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly'
 
@@ -660,143 +661,61 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-gray-400">Loading sales data...</div>
+    <div className="w-full">
+      {error && (
+        <div className="text-sm text-gray-400 mb-4">
+          {error}
         </div>
-      ) : salesData.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="text-red-500 mb-4">
-            {error ? (
-              error.includes('Database update in progress') ? (
-                <>
-                  <p className="text-yellow-500 font-medium">Database update in progress.</p>
-                  <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
-                </>
-              ) : error.includes('Database schema has changed') ? (
-                <>
-                  <p className="text-yellow-500 font-medium">Database update in progress.</p>
-                  <p className="text-sm text-gray-400 mt-2">No historical data available to display.</p>
-                </>
-              ) : (
-                error
-              )
-            ) : (
-              'No sales data available to display.'
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => {
-                setIsLoading(true);
-                setError(null);
-                // If we have initial data, use it immediately
-                if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-                  setSalesData(initialData);
-                  setIsLoading(false);
-                } else {
-                  fetchSalesData();
-                }
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+      )}
+      {isLoading ? (
+        <div className="animate-pulse">
+          <div className="h-[200px] bg-gray-800 rounded"></div>
         </div>
       ) : (
-        <div className="h-full flex flex-col">
-          <div className="flex justify-between items-center mb-2">
-            <div className="flex flex-col">
-              <h3 className="text-sm font-medium text-gray-300">{getTitle()}</h3>
-              <div className="text-xs font-semibold text-green-500">Total: {formattedTotalRevenue}</div>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">{getTitle()}</h3>
+            <div className="flex gap-2">
+              <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select view" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={timeFrame} onValueChange={(value) => setTimeFrame(value as TimeFrame)}>
-              <SelectTrigger className="w-[100px] h-8 text-xs bg-[#222] border-[#333]">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#222] border-[#333] text-white">
-                <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-          
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-pulse text-gray-400">Loading sales data...</div>
-            </div>
-          )}
-          
-          {/* Error message */}
-          {error && !isLoading && salesData.length > 0 && (
-            <div className="bg-yellow-900/30 border border-yellow-700/50 rounded-md p-2 mb-4">
-              <div className="text-yellow-500 text-xs">
-                Showing sample data while database updates.
-              </div>
-            </div>
-          )}
-          
-          {!isLoading && !error && timeFrame === 'monthly' ? (
-            // Monthly view with optimized grid layout
-            <div className="h-full">
-              <div className="grid grid-cols-7 gap-x-1 gap-y-2 h-full content-between">
-                {/* Actual days of the month - starting with 1st on the left */}
-                {Array.isArray(displayData) && displayData.map((day, index) => {
-                  if (!day) return null;
-                  // Check if this is today
-                  const isToday = isSameDay(day.date, new Date());
-                  // Check if there's revenue for this day
-                  const hasRevenue = day.revenue > 0;
-                  
-                  return (
-                    <div key={index} className="flex flex-col items-center">
-                      <div 
-                        className={`
-                          w-7 h-7 flex items-center justify-center rounded-full text-base
-                          ${isToday ? 'bg-blue-600 text-white' : hasRevenue ? 'bg-gray-800 text-white' : 'text-gray-400'}
-                        `}
-                      >
-                        <span className="font-medium">{day.dayNumber}</span>
-                      </div>
-                      {hasRevenue && (
-                        <div className="text-sm font-medium text-green-400">
-                          ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : !isLoading && !error && (
-            // Other views (weekly, daily, yearly)
-            <div className={`grid gap-1 h-full ${
-              timeFrame === 'yearly' ? 'grid-cols-6 grid-rows-2' : 
-              'grid-cols-7'
-            }`}>
-              {Array.isArray(displayData) && displayData.map((day, index) => {
-                if (!day) return null;
-                // Calculate candle height as percentage of max revenue
-                const heightPercentage = Math.max((day.revenue / maxRevenue) * 100, 5)
-                
-                return (
-                  <div key={index} className="flex flex-col items-center">
-                    {timeFrame !== 'yearly' && (
-                      <div className="text-xs text-gray-400 mb-1">{day.dayName}</div>
-                    )}
-                    {timeFrame !== 'yearly' && day.dayNumber && (
-                      <div className="text-sm text-white mb-1">{day.dayNumber}</div>
-                    )}
-                    <div className="flex-1 w-full flex items-end justify-center">
-                      <div 
-                        className="w-7 bg-blue-600 rounded-t-sm"
-                        style={{ 
-                          height: `${heightPercentage}%`,
-                          minHeight: '3px'
+
+          {displayData && displayData.length > 0 ? (
+            <div className="grid grid-cols-7 gap-2">
+              {displayData.map((day, index) => (
+                <div
+                  key={day.formattedDate}
+                  className={cn(
+                    "flex flex-col items-center p-2 rounded border border-gray-800",
+                    day.isToday && "bg-blue-950 border-blue-800"
+                  )}
+                >
+                  <div className="text-xs text-gray-400">
+                    {timeFrame !== 'yearly' && day.dayName}
+                  </div>
+                  <div className="text-sm font-medium">
+                    {timeFrame !== 'yearly' && day.dayNumber}
+                  </div>
+                  <div className="w-full mt-2">
+                    <div className="relative h-24">
+                      <div
+                        className={cn(
+                          "absolute bottom-0 w-full bg-blue-500",
+                          day.revenue === 0 && "bg-gray-700"
+                        )}
+                        style={{
+                          height: `${(day.revenue / maxRevenue) * 100}%`,
+                          minHeight: '2px'
                         }}
                         title={`$${day.revenue.toFixed(2)}`}
                       ></div>
@@ -808,8 +727,42 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                       <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
                     )}
                   </div>
-                )
-              })}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-7 gap-2">
+              {daysToDisplay.map((day, index) => (
+                <div
+                  key={day.formattedDate}
+                  className={cn(
+                    "flex flex-col items-center p-2 rounded border border-gray-800",
+                    day.isToday && "bg-blue-950 border-blue-800"
+                  )}
+                >
+                  <div className="text-xs text-gray-400">
+                    {timeFrame !== 'yearly' && day.dayName}
+                  </div>
+                  <div className="text-sm font-medium">
+                    {timeFrame !== 'yearly' && day.dayNumber}
+                  </div>
+                  <div className="w-full mt-2">
+                    <div className="relative h-24">
+                      <div
+                        className="absolute bottom-0 w-full bg-gray-700"
+                        style={{
+                          height: '2px'
+                        }}
+                        title="$0.00"
+                      ></div>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">$0</div>
+                    {timeFrame === 'yearly' && (
+                      <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
