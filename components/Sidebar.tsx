@@ -31,19 +31,16 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="mb-8">
             <h1 className="text-xl font-semibold text-white">Brez</h1>
           </div>
-          <nav className="space-y-0.5">
-            <Link
-              href="/dashboard"
+          <nav className="space-y-0.5 opacity-50">
+            <div
               className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                pathname === "/dashboard" 
-                  ? "bg-[#2A2A2A] text-white" 
-                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+                "flex items-center px-3 py-2 text-sm font-medium rounded-lg",
+                "bg-[#2A2A2A] text-white"
               )}
             >
               <LayoutDashboard className="mr-3 h-4 w-4" />
               Dashboard
-            </Link>
+            </div>
           </nav>
         </div>
       </aside>

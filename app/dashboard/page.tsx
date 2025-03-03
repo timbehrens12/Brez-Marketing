@@ -435,9 +435,9 @@ export default function DashboardPage() {
   // If auth is loaded and user is not signed in, show sign-in overlay
   if (isLoaded && !userId) {
     return (
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-screen bg-[#0A0A0A]">
         {/* Semi-transparent dashboard background */}
-        <div className="absolute inset-0 filter blur-sm opacity-30">
+        <div className="absolute inset-0 filter blur-sm opacity-20">
           <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
             {/* Placeholder content to show blurred in background */}
@@ -454,24 +454,30 @@ export default function DashboardPage() {
         
         {/* Sign-in overlay */}
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="bg-[#2A2A2A] p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4 text-center">Sign in to access your dashboard</h2>
+          <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
+            <div className="mb-8 text-center">
+              <h1 className="text-3xl font-bold text-white mb-2">Brez</h1>
+              <p className="text-gray-400">Sign in to access your dashboard</p>
+            </div>
             <SignIn 
               appearance={{
                 elements: {
                   rootBox: "mx-auto",
-                  card: "bg-[#2A2A2A] border-[#333]",
-                  headerTitle: "text-white",
-                  headerSubtitle: "text-gray-400",
-                  socialButtonsBlockButton: "bg-[#333] border-[#444] text-white hover:bg-[#444]",
-                  formButtonPrimary: "bg-blue-600 hover:bg-blue-700",
-                  footerActionLink: "text-blue-400 hover:text-blue-300",
+                  card: "bg-transparent shadow-none border-0",
+                  headerTitle: "hidden",
+                  headerSubtitle: "hidden",
+                  socialButtonsBlockButton: "bg-[#333] border-[#444] text-white hover:bg-[#444] transition-colors",
+                  formButtonPrimary: "bg-blue-600 hover:bg-blue-700 transition-colors",
+                  footerActionLink: "text-blue-400 hover:text-blue-300 transition-colors",
                   formFieldLabel: "text-gray-300",
-                  formFieldInput: "bg-[#333] border-[#444] text-white",
+                  formFieldInput: "bg-[#333] border-[#444] text-white focus:border-blue-500 transition-colors",
                   dividerLine: "bg-[#444]",
                   dividerText: "text-gray-400",
                   identityPreviewText: "text-gray-300",
-                  identityPreviewEditButton: "text-blue-400 hover:text-blue-300"
+                  identityPreviewEditButton: "text-blue-400 hover:text-blue-300 transition-colors",
+                  formFieldAction: "text-blue-400 hover:text-blue-300 transition-colors",
+                  alert: "bg-[#333] border-[#444] text-white",
+                  logoBox: "hidden"
                 }
               }}
               routing="hash"
