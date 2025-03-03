@@ -188,6 +188,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     };
   }, [brandId]);
   
+  // Handle timeframe change
+  const handleTimeFrameChange = (value: TimeFrame) => {
+    console.log('Changing timeframe to:', value);
+    setTimeFrame(value);
+  };
+  
   // Ensure today and yesterday are included in the data
   const ensureTodayAndYesterday = (data: Array<{date: string; revenue: number; id?: string; isTimezoneShifted?: boolean}>) => {
     const today = new Date();
@@ -248,55 +254,26 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Group sales data by time frame
   const groupedSalesData = enhancedSalesData.reduce((acc, sale) => {
-    if (!sale.date) return acc;
-    
     try {
-      // Parse the date with timezone consideration
+      if (!sale || !sale.date) return acc;
+      
       const saleDate = parseISO(sale.date);
       let key = '';
       
       // Group by different time frames
       if (timeFrame === 'daily') {
-        // For daily view, group by hour of today
-        if (isSameDay(saleDate, new Date())) {
-          // Get the hour and format as 12am, 1am, etc.
-          const hour = getHours(saleDate);
-          key = `hour-${hour}`;
-        } else {
-          // Skip sales not from today
-          return acc;
-        }
+        // Group by hour for daily view
+        key = `hour-${getHours(saleDate)}`;
       } else if (timeFrame === 'weekly') {
-        // For weekly view, group by day of current week
-        const today = new Date();
-        if (isSameWeek(saleDate, today)) {
-          key = format(saleDate, 'yyyy-MM-dd');
-        } else {
-          // Skip sales not from current week
-          return acc;
-        }
+        // Group by day for weekly view
+        key = format(saleDate, 'yyyy-MM-dd');
       } else if (timeFrame === 'monthly') {
-        // For monthly view, group by day of current month
-        const today = new Date();
-        if (isSameMonth(saleDate, today)) {
-          key = format(saleDate, 'yyyy-MM-dd');
-        } else {
-          // Skip sales not from current month
-          return acc;
-        }
+        // Group by day for monthly view
+        key = format(saleDate, 'yyyy-MM-dd');
       } else if (timeFrame === 'yearly') {
-        // For yearly view, group by month of current year
-        const today = new Date();
-        if (saleDate.getFullYear() === today.getFullYear()) {
-          key = format(saleDate, 'yyyy-MM');
-        } else {
-          // Skip sales not from current year
-          return acc;
-        }
+        // Group by month for yearly view
+        key = format(saleDate, 'yyyy-MM');
       }
-      
-      // Skip if we couldn't determine a key
-      if (!key) return acc;
       
       if (!acc[key]) {
         acc[key] = {
@@ -426,6 +403,187 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
   };
   
+  // Render different layouts based on timeFrame
+  const renderCalendarContent = () => {
+    if (timeFrame === 'daily') {
+      // Daily view - 24 hours in a grid
+      return (
+        <div className="grid grid-cols-6 gap-2 h-full">
+          {displayData.map((item, index) => (
+            <div 
+              key={index}
+              className={cn(
+                "flex flex-col rounded-md overflow-hidden border h-full",
+                (item as DailyDisplayItem).isCurrentHour 
+                  ? "bg-[#1a1f2b] border-gray-700" 
+                  : "bg-[#1e293b] border-gray-800"
+              )}
+            >
+              <div className={cn(
+                "text-center py-1 text-xs font-medium",
+                (item as DailyDisplayItem).isCurrentHour ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+              )}>
+                {item.displayDate}
+              </div>
+              
+              <div className="flex-1 flex flex-col justify-end p-1">
+                <div className="relative h-12 w-full flex flex-col justify-end">
+                  <div 
+                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                    className="w-full rounded-t bg-gray-600"
+                  ></div>
+                </div>
+                
+                <div className="text-center text-xs mt-1 text-gray-400">
+                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '-'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } else if (timeFrame === 'weekly') {
+      // Weekly view - 7 days in a row
+      return (
+        <div className="grid grid-cols-7 gap-2 h-full">
+          {displayData.map((item, index) => (
+            <div 
+              key={index}
+              className={cn(
+                "flex flex-col rounded-md overflow-hidden border h-full",
+                (item as WeeklyOrMonthlyDisplayItem).isToday 
+                  ? "bg-[#1a1f2b] border-gray-700" 
+                  : "bg-[#1e293b] border-gray-800"
+              )}
+            >
+              <div className={cn(
+                "text-center py-1 text-xs font-medium",
+                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+              )}>
+                {item.displayDate}
+              </div>
+              
+              <div className="flex-1 flex flex-col justify-end p-1">
+                <div className="relative h-16 w-full flex flex-col justify-end">
+                  <div 
+                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                    className="w-full rounded-t bg-gray-600"
+                  ></div>
+                </div>
+                
+                <div className="text-center text-xs mt-1 text-gray-400">
+                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '-'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    } else if (timeFrame === 'monthly') {
+      // Monthly view - Calendar grid
+      const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      const firstDayOfMonth = startOfMonth(currentDate);
+      const startDayOfWeek = getDay(firstDayOfMonth);
+      
+      // Create array for empty cells before the first day of the month
+      const emptyCells = Array.from({ length: startDayOfWeek }, (_, i) => ({ isEmpty: true, index: i }));
+      
+      return (
+        <div className="h-full flex flex-col">
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {daysOfWeek.map((day, index) => (
+              <div key={index} className="text-center text-xs font-medium text-gray-400 py-1">
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 flex-1">
+            {/* Empty cells for days before the first of the month */}
+            {emptyCells.map(({ index }) => (
+              <div key={`empty-${index}`} className="bg-transparent"></div>
+            ))}
+            
+            {/* Actual days of the month */}
+            {displayData.map((item, index) => {
+              const day = parseInt(item.displayDate);
+              const isToday = (item as WeeklyOrMonthlyDisplayItem).isToday;
+              
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex flex-col rounded-md overflow-hidden border",
+                    isToday 
+                      ? "bg-[#1a1f2b] border-gray-700" 
+                      : "bg-[#1e293b] border-gray-800"
+                  )}
+                >
+                  <div className={cn(
+                    "text-center py-1 text-xs font-medium",
+                    isToday ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+                  )}>
+                    {day}
+                  </div>
+                  
+                  <div className="flex-1 flex flex-col justify-end p-1">
+                    <div className="relative h-10 w-full flex flex-col justify-end">
+                      <div 
+                        style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                        className="w-full rounded-t bg-gray-600"
+                      ></div>
+                    </div>
+                    
+                    <div className="text-center text-xs mt-1 text-gray-400">
+                      {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '-'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    } else {
+      // Yearly view - 12 months in a grid
+      return (
+        <div className="grid grid-cols-4 gap-3 h-full">
+          {displayData.map((item, index) => (
+            <div 
+              key={index}
+              className={cn(
+                "flex flex-col rounded-md overflow-hidden border h-full",
+                (item as YearlyDisplayItem).isCurrentMonth 
+                  ? "bg-[#1a1f2b] border-gray-700" 
+                  : "bg-[#1e293b] border-gray-800"
+              )}
+            >
+              <div className={cn(
+                "text-center py-1 text-xs font-medium",
+                (item as YearlyDisplayItem).isCurrentMonth ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
+              )}>
+                {item.displayDate}
+              </div>
+              
+              <div className="flex-1 flex flex-col justify-end p-1">
+                <div className="relative h-16 w-full flex flex-col justify-end">
+                  <div 
+                    style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                    className="w-full rounded-t bg-gray-600"
+                  ></div>
+                </div>
+                
+                <div className="text-center text-xs mt-1 text-gray-400">
+                  {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '-'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  };
+  
   return (
     <div className="h-full w-full flex flex-col bg-[#111827] rounded-lg border border-gray-800 overflow-hidden">
       <div className="flex items-center justify-between p-4">
@@ -447,19 +605,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           </svg>
           <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
         </div>
-        <div className="flex justify-between items-center mb-4 px-4 pt-4">
-          <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
-              <line x1="16" x2="16" y1="2" y2="6"></line>
-              <line x1="8" x2="8" y1="2" y2="6"></line>
-              <line x1="3" x2="21" y1="10" y2="10"></line>
-            </svg>
-            <div className="text-base font-medium text-gray-400 mr-2">
-              March 2025
-            </div>
+        <div className="flex items-center gap-2">
+          <div className="text-base font-medium text-gray-400 mr-2">
+            {getTitle()}
           </div>
-          <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value as TimeFrame)}>
+          <Select 
+            value={timeFrame} 
+            onValueChange={handleTimeFrameChange}
+          >
             <SelectTrigger className="w-[120px] bg-gray-800 border-gray-700 h-8">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
@@ -473,73 +626,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       </div>
       
-      <div className="flex-1 px-4 pb-4">
-        <div className="h-full flex flex-col">
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-gray-400 py-1">
-                {day}
-              </div>
-            ))}
+      <div className="flex-1 px-4 pb-4 overflow-hidden">
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
           </div>
-          
-          <div className="grid grid-cols-7 gap-1 flex-1">
-            {[
-              ...Array.from({ length: 3 }, (_, i) => ({ day: i + 1, week: 1 })),
-              ...Array.from({ length: 7 }, (_, i) => ({ day: i + 4, week: 2 })),
-              ...Array.from({ length: 7 }, (_, i) => ({ day: i + 11, week: 3 })),
-              ...Array.from({ length: 7 }, (_, i) => ({ day: i + 18, week: 4 })),
-              ...Array.from({ length: 7 }, (_, i) => ({ day: i + 25, week: 5 }))
-            ].map(({ day, week }) => {
-              const isFirstDay = day === 1;
-              // Sample revenue data for demonstration
-              const revenue = isFirstDay ? 30000 : 0;
-              const maxRevenue = 30000;
-              
-              // Format revenue for display
-              const formatRevenue = (value: number) => {
-                if (value >= 1000) {
-                  return `${(value / 1000).toFixed(1)}k`;
-                }
-                return value.toString();
-              };
-              
-              return (
-                <div
-                  key={day}
-                  className={cn(
-                    "flex flex-col rounded-md overflow-hidden border",
-                    isFirstDay 
-                      ? "bg-[#1a1f2b] border-gray-700" 
-                      : "bg-[#1e293b] border-gray-800"
-                  )}
-                >
-                  <div className={cn(
-                    "text-center py-1 text-xs font-medium",
-                    isFirstDay ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
-                  )}>
-                    {day}
-                  </div>
-                  
-                  <div className="flex-1 flex flex-col justify-end p-1">
-                    {/* Revenue bar */}
-                    <div className="relative h-12 w-full flex flex-col justify-end">
-                      <div 
-                        style={{ height: `${Math.max(5, Math.min(100, (revenue / maxRevenue) * 100))}%` }}
-                        className="w-full rounded-t bg-gray-600"
-                      ></div>
-                    </div>
-                    
-                    {/* Revenue amount */}
-                    <div className="text-center text-xs mt-1 text-gray-400">
-                      {revenue > 0 ? `$${formatRevenue(revenue)}` : '-'}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        ) : error ? (
+          <div className="h-full flex items-center justify-center text-gray-400">
+            {error}
           </div>
-        </div>
+        ) : (
+          renderCalendarContent()
+        )}
+      </div>
+      
+      <div className="p-3 border-t border-gray-800 bg-[#0f1623] text-xs text-gray-400 flex justify-between">
+        <div>Total Revenue: ${totalRevenue.toLocaleString()}</div>
+        <div>Last updated: {format(lastUpdated, 'h:mm a')}</div>
       </div>
     </div>
   )
