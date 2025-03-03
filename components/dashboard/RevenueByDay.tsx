@@ -2,7 +2,29 @@
 
 import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { format, parseISO, subDays, isSameDay, subYears, addYears } from "date-fns"
+import { 
+  format, 
+  parseISO, 
+  subDays, 
+  isSameDay, 
+  subYears, 
+  addYears, 
+  addHours, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfYear, 
+  endOfYear, 
+  eachMonthOfInterval,
+  getHours,
+  setHours,
+  startOfDay,
+  isSameMonth,
+  isSameWeek,
+  getDay
+} from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
 
@@ -18,6 +40,28 @@ interface RevenueByDayProps {
   }>;
   brandId: string;
 }
+
+// Define types for our display items
+interface BaseDisplayItem {
+  date: string;
+  displayDate: string;
+  revenue: number;
+  count: number;
+}
+
+interface DailyDisplayItem extends BaseDisplayItem {
+  isCurrentHour: boolean;
+}
+
+interface WeeklyOrMonthlyDisplayItem extends BaseDisplayItem {
+  isToday: boolean;
+}
+
+interface YearlyDisplayItem extends BaseDisplayItem {
+  isCurrentMonth: boolean;
+}
+
+type DisplayItem = DailyDisplayItem | WeeklyOrMonthlyDisplayItem | YearlyDisplayItem;
 
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly');
@@ -91,11 +135,28 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       }
       
       // Process the orders into sales data
-      const processedData = orders.map((order: { created_at: string; total_price: string; id: string }) => ({
-        date: order.created_at,
-        revenue: parseFloat(order.total_price || '0'),
-        id: order.id
-      }));
+      const processedData = orders.map((order: { created_at: string; total_price: string; id: string }) => {
+        // Apply timezone adjustment to ensure dates are displayed correctly
+        let orderDate = parseISO(order.created_at);
+        
+        // Check if the date needs timezone adjustment
+        // This handles cases where the date might be shifted due to timezone differences
+        const needsAdjustment = orderDate.getHours() === 0 && 
+                                orderDate.getMinutes() === 0 && 
+                                orderDate.getSeconds() === 0;
+        
+        if (needsAdjustment) {
+          // Add hours to adjust for timezone if needed
+          orderDate = addHours(orderDate, 12);
+        }
+        
+        return {
+          date: format(orderDate, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+          revenue: parseFloat(order.total_price || '0'),
+          id: order.id,
+          isTimezoneShifted: needsAdjustment
+        };
+      });
       
       setSalesData(processedData);
       setError(null);
@@ -127,26 +188,115 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     };
   }, [brandId]);
   
+  // Ensure today and yesterday are included in the data
+  const ensureTodayAndYesterday = (data: Array<{date: string; revenue: number; id?: string; isTimezoneShifted?: boolean}>) => {
+    const today = new Date();
+    const yesterday = subDays(today, 1);
+    
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+    
+    // Check if today and yesterday are in the data
+    const hasTodaySale = data.some(sale => {
+      if (!sale || !sale.date) return false;
+      try {
+        const saleDate = parseISO(sale.date);
+        return format(saleDate, 'yyyy-MM-dd') === todayFormatted;
+      } catch (error) {
+        return false;
+      }
+    });
+    
+    const hasYesterdaySale = data.some(sale => {
+      if (!sale || !sale.date) return false;
+      try {
+        const saleDate = parseISO(sale.date);
+        return format(saleDate, 'yyyy-MM-dd') === yesterdayFormatted;
+      } catch (error) {
+        return false;
+      }
+    });
+    
+    // Create a copy of the data
+    const enhancedData = [...data];
+    
+    // Add today if not present
+    if (!hasTodaySale) {
+      enhancedData.push({
+        date: format(today, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+        revenue: 0,
+        id: `generated-today-${Date.now()}`,
+        isTimezoneShifted: false
+      });
+    }
+    
+    // Add yesterday if not present
+    if (!hasYesterdaySale) {
+      enhancedData.push({
+        date: format(yesterday, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+        revenue: 0,
+        id: `generated-yesterday-${Date.now()}`,
+        isTimezoneShifted: false
+      });
+    }
+    
+    return enhancedData;
+  };
+  
+  // Apply the today/yesterday enhancement to the sales data
+  const enhancedSalesData = ensureTodayAndYesterday(salesData);
+  
   // Group sales data by time frame
-  const groupedSalesData = salesData.reduce((acc, sale) => {
+  const groupedSalesData = enhancedSalesData.reduce((acc, sale) => {
     if (!sale.date) return acc;
     
     try {
+      // Parse the date with timezone consideration
       const saleDate = parseISO(sale.date);
       let key = '';
       
       // Group by different time frames
       if (timeFrame === 'daily') {
-        key = format(saleDate, 'yyyy-MM-dd');
+        // For daily view, group by hour of today
+        if (isSameDay(saleDate, new Date())) {
+          // Get the hour and format as 12am, 1am, etc.
+          const hour = getHours(saleDate);
+          key = `hour-${hour}`;
+        } else {
+          // Skip sales not from today
+          return acc;
+        }
       } else if (timeFrame === 'weekly') {
-        // Get the week number and year
-        const weekNumber = Math.ceil(saleDate.getDate() / 7);
-        key = `${format(saleDate, 'yyyy-MM')}-W${weekNumber}`;
+        // For weekly view, group by day of current week
+        const today = new Date();
+        if (isSameWeek(saleDate, today)) {
+          key = format(saleDate, 'yyyy-MM-dd');
+        } else {
+          // Skip sales not from current week
+          return acc;
+        }
       } else if (timeFrame === 'monthly') {
-        key = format(saleDate, 'yyyy-MM');
+        // For monthly view, group by day of current month
+        const today = new Date();
+        if (isSameMonth(saleDate, today)) {
+          key = format(saleDate, 'yyyy-MM-dd');
+        } else {
+          // Skip sales not from current month
+          return acc;
+        }
       } else if (timeFrame === 'yearly') {
-        key = format(saleDate, 'yyyy');
+        // For yearly view, group by month of current year
+        const today = new Date();
+        if (saleDate.getFullYear() === today.getFullYear()) {
+          key = format(saleDate, 'yyyy-MM');
+        } else {
+          // Skip sales not from current year
+          return acc;
+        }
       }
+      
+      // Skip if we couldn't determine a key
+      if (!key) return acc;
       
       if (!acc[key]) {
         acc[key] = {
@@ -165,35 +315,87 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     return acc;
   }, {} as Record<string, { date: string; revenue: number; count: number }>);
   
-  // Convert grouped data to array and sort
-  const displayData = Object.values(groupedSalesData).sort((a, b) => {
-    return a.date.localeCompare(b.date);
-  });
-  
-  // Get the current month and year for the title
-  const currentDate = new Date();
-  const currentMonthYear = format(currentDate, 'MMMM yyyy');
-  
-  // Format the display label based on time frame
-  const formatDisplayLabel = (dateStr: string): string => {
-    try {
-      if (timeFrame === 'daily') {
-        const date = parseISO(dateStr);
-        return format(date, 'd');
-      } else if (timeFrame === 'weekly') {
-        // Extract week number from our custom format
-        const weekMatch = dateStr.match(/-W(\d+)$/);
-        return weekMatch ? `Week ${weekMatch[1]}` : dateStr;
-      } else if (timeFrame === 'monthly') {
-        const date = parseISO(`${dateStr}-01`);
-        return format(date, 'MMM yyyy');
-      } else {
-        return dateStr;
-      }
-    } catch (error) {
-      return dateStr;
+  // Generate display data based on time frame
+  const generateDisplayData = (): DisplayItem[] => {
+    const today = new Date();
+    
+    if (timeFrame === 'daily') {
+      // For daily view, show hours of today (12am-11pm)
+      const hoursOfDay = Array.from({ length: 24 }, (_, i) => {
+        const hourDate = setHours(startOfDay(today), i);
+        const key = `hour-${i}`;
+        const existingData = groupedSalesData[key];
+        
+        return {
+          date: key,
+          displayDate: format(hourDate, 'ha').toLowerCase(), // 12am, 1am, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isCurrentHour: getHours(new Date()) === i
+        } as DailyDisplayItem;
+      });
+      
+      return hoursOfDay;
+    } else if (timeFrame === 'weekly') {
+      // For weekly view, show days of current week (Monday-Sunday)
+      const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+      const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+      const daysOfWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+      
+      return daysOfWeek.map(day => {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        const existingData = groupedSalesData[dayKey];
+        
+        return {
+          date: dayKey,
+          displayDate: format(day, 'EEE'), // Mon, Tue, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isToday: isSameDay(day, today)
+        } as WeeklyOrMonthlyDisplayItem;
+      });
+    } else if (timeFrame === 'monthly') {
+      // For monthly view, show days of current month (1-31)
+      const monthStart = startOfMonth(today);
+      const monthEnd = endOfMonth(today);
+      const daysOfMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      
+      return daysOfMonth.map(day => {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        const existingData = groupedSalesData[dayKey];
+        
+        return {
+          date: dayKey,
+          displayDate: format(day, 'd'), // 1, 2, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isToday: isSameDay(day, today)
+        } as WeeklyOrMonthlyDisplayItem;
+      });
+    } else if (timeFrame === 'yearly') {
+      // For yearly view, show months of current year (Jan-Dec)
+      const yearStart = startOfYear(today);
+      const yearEnd = endOfYear(today);
+      const monthsOfYear = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+      
+      return monthsOfYear.map(month => {
+        const monthKey = format(month, 'yyyy-MM');
+        const existingData = groupedSalesData[monthKey];
+        
+        return {
+          date: monthKey,
+          displayDate: format(month, 'MMM'), // Jan, Feb, etc.
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isCurrentMonth: isSameMonth(month, today)
+        } as YearlyDisplayItem;
+      });
     }
+    
+    return [];
   };
+  
+  const displayData = generateDisplayData();
   
   // Get the maximum revenue for scaling
   const maxRevenue = Math.max(...displayData.map(item => item.revenue), 1);
@@ -201,21 +403,26 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Calculate total revenue
   const totalRevenue = displayData.reduce((sum, item) => sum + item.revenue, 0);
   
-  // Get the last 7 items based on time frame
-  const getDisplayItems = () => {
-    // For monthly view, show the last 12 months
-    if (timeFrame === 'monthly') {
-      return displayData.slice(-12);
-    }
-    // For yearly view, show all years
-    if (timeFrame === 'yearly') {
-      return displayData;
-    }
-    // For daily and weekly, show the last 7
-    return displayData.slice(-7);
+  // Format the display label based on time frame
+  const formatDisplayLabel = (item: any): string => {
+    return item.displayDate || '';
   };
   
-  const itemsToDisplay = getDisplayItems();
+  // Get the current month and year for the title
+  const currentDate = new Date();
+  const getTitle = () => {
+    if (timeFrame === 'daily') {
+      return `Today (${format(currentDate, 'MMMM d, yyyy')})`;
+    } else if (timeFrame === 'weekly') {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+    } else if (timeFrame === 'monthly') {
+      return format(currentDate, 'MMMM yyyy');
+    } else {
+      return format(currentDate, 'yyyy');
+    }
+  };
   
   return (
     <div className="h-full flex flex-col">
@@ -227,17 +434,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               <SelectValue placeholder="Select view" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
+              <SelectItem value="daily">Today</SelectItem>
+              <SelectItem value="weekly">This Week</SelectItem>
+              <SelectItem value="monthly">This Month</SelectItem>
+              <SelectItem value="yearly">This Year</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       
       <div className="text-lg font-medium text-white mb-2">
-        {currentMonthYear}
+        {getTitle()}
       </div>
       
       {isLoading ? (
@@ -251,8 +458,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="text-gray-400">{error}</div>
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-          {itemsToDisplay.map((item) => {
+        <div className={cn(
+          "flex-1 grid gap-2",
+          timeFrame === 'daily' ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" :
+          timeFrame === 'weekly' ? "grid-cols-7" :
+          timeFrame === 'monthly' ? "grid-cols-7 md:grid-cols-7" :
+          "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12"
+        )}>
+          {displayData.map((item) => {
             // Calculate the height percentage based on revenue
             const heightPercentage = item.revenue > 0 
               ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
@@ -266,11 +479,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               : '$0';
               
             // Check if this is the current period
-            const isCurrentPeriod = timeFrame === 'daily' 
-              ? item.date === format(new Date(), 'yyyy-MM-dd')
-              : timeFrame === 'monthly'
-                ? item.date === format(new Date(), 'yyyy-MM')
-                : false;
+            const isCurrentPeriod = 
+              (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
+              (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
+              (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
+              (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
 
             return (
               <div
@@ -286,7 +499,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   "text-center py-1 text-sm font-medium",
                   isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
                 )}>
-                  {formatDisplayLabel(item.date)}
+                  {formatDisplayLabel(item)}
                 </div>
                 
                 <div className="flex-1 flex flex-col justify-end p-2 relative">
