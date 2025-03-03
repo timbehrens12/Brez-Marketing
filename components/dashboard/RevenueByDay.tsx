@@ -358,12 +358,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         console.log('Revenue Calendar: Using provided initial data as fallback after error');
         setSalesData(initialData);
         
-        // If it's a database schema error, don't show the error to the user
-        if (errorMessage.includes('Database schema has changed') || 
-            errorMessage.includes('no such table') ||
-            errorMessage.includes('does not exist') ||
-            errorMessage.includes('relation "public.shopify_data" does not exist')) {
-          console.log('Revenue Calendar: Database schema error detected, using initial data silently');
+        // Clear any error related to database schema
+        const isDatabaseError = typeof error === 'string' && (
+          error.includes('Database schema has changed') || 
+          error.includes('database schema') ||
+          error.includes('no such table') ||
+          error.includes('does not exist') ||
+          error.includes('relation "public.shopify_data" does not exist')
+        );
+        
+        if (isDatabaseError) {
+          console.log('Revenue Calendar: Clearing database schema error');
           setError(null);
         }
       } else {
@@ -1153,13 +1158,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Add a specific effect to handle API errors by using initial data
   useEffect(() => {
     // For database schema errors, always try to use initial data if available
-    const isDatabaseError = error ? (
-        error.includes('Database schema has changed') || 
-        error.includes('database schema') ||
-        error.includes('no such table') ||
-        error.includes('does not exist') ||
-        error.includes('relation "public.shopify_data" does not exist')) : false;
-        
+    const isDatabaseError = typeof error === 'string' && (
+      error.includes('Database schema has changed') || 
+      error.includes('database schema') ||
+      error.includes('no such table') ||
+      error.includes('does not exist') ||
+      error.includes('relation "public.shopify_data" does not exist')
+    );
+    
     if (error && isDatabaseError) {
       console.log('Revenue Calendar: Database schema error detected:', error);
       
@@ -1186,13 +1192,16 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       console.log('Revenue Calendar: Forcing use of initial data');
       setSalesData(initialData);
       // Clear any error related to database schema
-      if (error && (
-          error.includes('Database schema has changed') || 
-          error.includes('database schema') ||
-          error.includes('no such table') ||
-          error.includes('does not exist') ||
-          error.includes('relation "public.shopify_data" does not exist')) {
-          console.log('Revenue Calendar: Clearing database schema error');
+      const isDatabaseError = typeof error === 'string' && (
+        error.includes('Database schema has changed') || 
+        error.includes('database schema') ||
+        error.includes('no such table') ||
+        error.includes('does not exist') ||
+        error.includes('relation "public.shopify_data" does not exist')
+      );
+      
+      if (isDatabaseError) {
+        console.log('Revenue Calendar: Clearing database schema error');
         setError(null);
       }
     }
