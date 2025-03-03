@@ -28,7 +28,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
 
-type TimeFrame = 'daily' | 'weekly' | 'monthly' | 'yearly'
+type TimeFrame = 'weekly' | 'monthly' | 'yearly'
 
 interface RevenueByDayProps {
   data?: Array<{
@@ -49,10 +49,6 @@ interface BaseDisplayItem {
   count: number;
 }
 
-interface DailyDisplayItem extends BaseDisplayItem {
-  isCurrentHour: boolean;
-}
-
 interface WeeklyOrMonthlyDisplayItem extends BaseDisplayItem {
   isToday: boolean;
 }
@@ -61,7 +57,7 @@ interface YearlyDisplayItem extends BaseDisplayItem {
   isCurrentMonth: boolean;
 }
 
-type DisplayItem = DailyDisplayItem | WeeklyOrMonthlyDisplayItem | YearlyDisplayItem;
+type DisplayItem = WeeklyOrMonthlyDisplayItem | YearlyDisplayItem;
 
 export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly');
@@ -265,10 +261,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       let key = '';
       
       // Group by different time frames
-      if (timeFrame === 'daily') {
-        // Group by hour for daily view
-        key = `hour-${getHours(saleDate)}`;
-      } else if (timeFrame === 'weekly') {
+      if (timeFrame === 'weekly') {
         // Group by day for weekly view
         key = format(saleDate, 'yyyy-MM-dd');
       } else if (timeFrame === 'monthly') {
@@ -300,24 +293,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   const generateDisplayData = (): DisplayItem[] => {
     const today = new Date();
     
-    if (timeFrame === 'daily') {
-      // For daily view, show hours of today (12am-11pm)
-      const hoursOfDay = Array.from({ length: 24 }, (_, i) => {
-        const hourDate = setHours(startOfDay(today), i);
-        const key = `hour-${i}`;
-        const existingData = groupedSalesData[key];
-        
-        return {
-          date: key,
-          displayDate: format(hourDate, 'ha').toLowerCase(), // 12am, 1am, etc.
-          revenue: existingData ? existingData.revenue : 0,
-          count: existingData ? existingData.count : 0,
-          isCurrentHour: getHours(new Date()) === i
-        } as DailyDisplayItem;
-      });
-      
-      return hoursOfDay;
-    } else if (timeFrame === 'weekly') {
+    if (timeFrame === 'weekly') {
       // For weekly view, show days of current week (Monday-Sunday)
       const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
       const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
@@ -397,9 +373,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Get the current month and year for the title
   const currentDate = new Date();
   const getTitle = () => {
-    if (timeFrame === 'daily') {
-      return `Today (${format(currentDate, 'MMMM d, yyyy')})`;
-    } else if (timeFrame === 'weekly') {
+    if (timeFrame === 'weekly') {
       const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
       return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
@@ -412,46 +386,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Render different layouts based on timeFrame
   const renderCalendarContent = () => {
-    if (timeFrame === 'daily') {
-      // Daily view - 24 hours in a grid
-      return (
-        <div className="grid grid-cols-6 gap-2 h-full">
-          {displayData.map((item, index) => (
-            <div 
-              key={index}
-              className={cn(
-                "flex flex-col rounded-md overflow-hidden border h-full",
-                (item as DailyDisplayItem).isCurrentHour 
-                  ? "bg-[#1a1a1a] border-gray-700" 
-                  : "bg-[#1e1e1e] border-gray-800"
-              )}
-            >
-              <div className={cn(
-                "text-center py-1 text-xs font-medium",
-                (item as DailyDisplayItem).isCurrentHour ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
-              )}>
-                {item.displayDate}
-              </div>
-              
-              <div className="flex-1 flex flex-col justify-end p-1">
-                <div className="relative h-12 w-full flex flex-col justify-end">
-                  {item.revenue > 0 && (
-                    <div 
-                      style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                      className="w-full rounded-t bg-gray-600"
-                    ></div>
-                  )}
-                </div>
-                
-                <div className="text-center text-xs mt-1 text-gray-400">
-                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '-'}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    } else if (timeFrame === 'weekly') {
+    if (timeFrame === 'weekly') {
       // Weekly view - 7 days in a row
       return (
         <div className="grid grid-cols-7 gap-2 h-full">
@@ -538,7 +473,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-end p-1">
-                    <div className="relative h-10 w-full flex flex-col justify-end">
+                    <div className="relative h-8 w-full flex flex-col justify-end">
                       {item.revenue > 0 && (
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
@@ -632,7 +567,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="daily">Today</SelectItem>
               <SelectItem value="weekly">This Week</SelectItem>
               <SelectItem value="monthly">This Month</SelectItem>
               <SelectItem value="yearly">This Year</SelectItem>
