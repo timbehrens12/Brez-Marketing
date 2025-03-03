@@ -4,28 +4,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { 
-  startOfWeek, 
-  addDays, 
-  format, 
-  isSameDay, 
-  parseISO, 
-  isValid, 
-  startOfMonth, 
-  getDaysInMonth, 
-  getMonth, 
+  format,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  addDays,
+  addMonths,
+  isSameDay,
+  isSameMonth,
+  subDays,
+  isValid,
+  parse,
+  setHours,
+  getDaysInMonth,
+  getMonth,
   getYear,
   getWeek,
   getWeeksInMonth,
-  endOfMonth,
-  startOfDay,
   eachWeekOfInterval,
   getHours,
-  setHours,
   getDate,
   getDay,
-  parse,
-  endOfDay,
-  subDays
+  endOfDay
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -99,281 +101,64 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Define fetchSalesData outside of useEffect so it can be called from the retry button
   const fetchSalesData = async () => {
-    if (!brandId) {
-      console.error('Revenue Calendar: No brandId provided');
-      setError('No brand ID provided');
-      setIsLoading(false);
-      return;
-    }
-    
     setIsLoading(true);
-    setError(null);
-    
     try {
-      // IMPORTANT: Always use a very wide date range to ensure we get ALL sales data
-      // regardless of what date range is selected in the date picker
-      // This ensures the revenue calendar always shows all data
-      const endDate = new Date(new Date().getFullYear() + 2, 0, 1).toISOString().split('T')[0]; // 2 years in the future
-      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
-      
-      console.log('Revenue Calendar: Fetching ALL sales data regardless of date picker', { startDate, endDate, brandId });
-      console.log('Revenue Calendar: Initial data available:', initialData?.length || 0, 'records');
-      
-      const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      const response = await fetch(`/api/shopify/sales?brandId=${brandId}`);
+      const data = await response.json();
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Revenue Calendar: API error (${response.status}):`, errorText);
-        
-        // Check if this is a database schema error
-        if (errorText.includes('relation "public.shopify_data" does not exist') || 
-            errorText.includes('Database schema has changed') ||
-            errorText.includes('database schema') ||
-            errorText.includes('no such table') ||
-            errorText.includes('does not exist')) {
-          console.log('Revenue Calendar: Database schema error detected in API response');
-          
-          // If we have initial data, use it and don't show an error
-          if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-            console.log('Revenue Calendar: Using initial data for database schema error');
-            setSalesData(initialData);
-            setIsLoading(false);
-            return;
-          } else {
-            // Generate mock data for demonstration purposes
-            console.log('Revenue Calendar: Generating mock data for demonstration');
-            const mockData = generateMockSalesData();
-            setSalesData(mockData);
-            setError('Database update in progress. Showing sample data.');
-            setIsLoading(false);
-            return;
-          }
-        }
-        
-        throw new Error(`Failed to fetch sales data: ${response.status} - ${errorText}`);
+        throw new Error(data.error || 'Failed to fetch sales data');
       }
-      
-      const result = await response.json();
-      
-      console.log('Revenue Calendar: API response:', result);
-      
-      if (!result.sales) {
-        console.error('Revenue Calendar: No sales array in response', result);
-        throw new Error('No sales data returned');
+
+      if (!data || !Array.isArray(data)) {
+        console.warn('Revenue Calendar: No data received from API');
+        // Use initial data if available
+        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+          setSalesData(initialData);
+          setError(null);
+          return;
+        }
+        throw new Error('No sales data available');
       }
-      
-      console.log(`Revenue Calendar: Fetched ${result.sales.length} sales records directly`);
-      
-      if (result.sales.length === 0) {
-        console.warn('Revenue Calendar: Empty sales array returned');
-        // Use the message from the API if available
-        if (result.message) {
-          console.log('Revenue Calendar: API message:', result.message);
-          
-          // Check if this is a database schema error
-          if (result.message.includes('Database schema has changed')) {
-            console.log('Revenue Calendar: Database schema error detected in message');
-            
-            // If we have initial data, use it and don't show an error
-            if (initialData && initialData.length > 0) {
-              console.log('Revenue Calendar: Using initial data for database schema error');
-              setSalesData(initialData);
-              setIsLoading(false);
-              return;
-            } else {
-              // Generate mock data for demonstration purposes
-              console.log('Revenue Calendar: Generating mock data for demonstration');
-              const mockData = generateMockSalesData();
-              setSalesData(mockData);
-              setError('Database update in progress. Showing sample data.');
-              setIsLoading(false);
-              return;
-            }
-          }
-        }
-        
-        setError('No sales data available');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Transform the sales data into the format we need
-      const transformedData = result.sales.map((sale: any) => {
-        // Parse the date and adjust for timezone
-        const rawDate = sale.created_at;
-        const saleAmount = parseFloat(sale.total_price || '0');
-        
-        // CRITICAL FIX: For the $2000 sale specifically, force it to show on the 1st
-        if (Math.abs(saleAmount - 2000) < 1) {
-          console.log('FOUND THE $2,000 SALE - FORCING TO SHOW ON THE 1ST!', {
-            rawDate,
-            originalDate: rawDate.split('T')[0]
-          });
-          
-          // Extract the year and month from the original date
-          const dateParts = rawDate.split('T')[0].split('-');
-          const year = dateParts[0];
-          const month = dateParts[1];
-          
-          // Force the day to be the 1st
-          const forcedDate = `${year}-${month}-01T12:00:00.000Z`;
-          
-          return {
-            date: forcedDate,
-            revenue: saleAmount,
-            isTimezoneShifted: true,
-            forceShowOnFirst: true,
-            id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
-          };
-        }
-        
-        // IMPORTANT: For Shopify dates, we need to preserve the exact date regardless of timezone
-        // This ensures that a sale made at 8pm on the 1st stays on the 1st
-        
-        // First try to parse the date
-        let saleDate: Date;
-        try {
-          saleDate = parseISO(rawDate);
-          
-          // If the date is invalid, try alternative parsing
-          if (!isValid(saleDate)) {
-            // Try as timestamp
-            const timestamp = parseInt(rawDate);
-            if (!isNaN(timestamp)) {
-              saleDate = new Date(timestamp);
-            } else {
-              // Try other formats as fallback
-              saleDate = parse(rawDate, 'yyyy-MM-dd', new Date());
-            }
-          }
-        } catch (e) {
-          // If parsing fails, create a new date object
-          console.error('Error parsing date:', rawDate, e);
-          saleDate = new Date();
-        }
-        
-        // Extract the date components from the raw string to avoid timezone shifts
-        // This is critical for ensuring the date shown matches what Shopify shows
-        let localDate: Date;
-        let isTimezoneShifted = false;
-        
-        if (typeof rawDate === 'string' && rawDate.includes('T')) {
-          // Extract just the date part from the ISO string (yyyy-MM-dd)
-          const datePart = rawDate.split('T')[0];
-          const [year, month, day] = datePart.split('-').map(num => parseInt(num));
-          
-          // Create a date using local timezone interpretation
-          localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
-          
-          // Check if this sale might be timezone-shifted
-          // If the sale was made late in the day (after 8 PM), it might appear on the next day in UTC
-          if (rawDate.includes('T')) {
-            const timePart = rawDate.split('T')[1];
-            if (timePart) {
-              const hourPart = timePart.split(':')[0];
-              const hour = parseInt(hourPart);
-              
-              // IMPORTANT: Be more aggressive in detecting timezone-shifted sales
-              // Any sale after 5 PM could potentially be shifted to the next day in UTC
-              if (hour >= 17) { // 5 PM or later (was 8 PM)
-                isTimezoneShifted = true;
-                if (saleAmount > 1000) {
-                  console.log(`Marking significant sale as timezone-shifted (made at ${hour}:00)`);
-                  
-                  // Add extra debugging for the $2,000 sale
-                  if (Math.abs(saleAmount - 2000) < 1) {
-                    console.log('FOUND THE $2,000 SALE!', {
-                      rawDate,
-                      hour,
-                      isTimezoneShifted: true,
-                      datePart: rawDate.split('T')[0],
-                      shouldShowOn: datePart
-                    });
-                  }
-                }
-              }
-              
-              // SPECIAL CASE: If this is a sale on the 1st that's showing on the 2nd, mark it as timezone-shifted
-              if (datePart.endsWith('-02') && saleAmount > 1000) {
-                // Check if this might actually be a sale from the 1st
-                const prevDay = datePart.substring(0, 8) + '01';
-                console.log(`Checking if sale on the 2nd (${datePart}) might actually be from the 1st (${prevDay})`);
-                isTimezoneShifted = true;
-              }
-            }
-          }
-        } else {
-          // Fallback to using the parsed date's components
-          localDate = new Date(
-            saleDate.getFullYear(),
-            saleDate.getMonth(),
-            saleDate.getDate()
-          );
-        }
-        
-        // For significant sales, log the date transformation
-        if (saleAmount > 1000) {
-          console.log(`Revenue Calendar: Significant sale date transformation:`, {
-            rawDate,
-            rawDateSplit: typeof rawDate === 'string' ? rawDate.split('T')[0] : 'not a string',
-            parsedISODate: format(saleDate, 'yyyy-MM-dd'),
-            localDate: format(localDate, 'yyyy-MM-dd'),
-            revenue: saleAmount,
-            isTimezoneShifted
-          });
-        }
-        
-        return {
-          date: localDate.toISOString(), // Store as ISO string but with local date
-          revenue: saleAmount,
-          isTimezoneShifted,
-          id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
-        };
-      });
+
+      const transformedData = data.map((sale: any) => ({
+        date: sale.date,
+        revenue: parseFloat(sale.revenue) || 0,
+        id: sale.id
+      }));
       
       console.log('Revenue Calendar: Transformed data sample:', transformedData.slice(0, 3));
       
-      // Add debugging for significant sales
-      const significantSales = transformedData.filter((sale: {date: string; revenue: number}) => sale.revenue > 1000);
-      if (significantSales.length > 0) {
-        console.log('Revenue Calendar: Significant sales found:', 
-          significantSales.map((sale: {date: string; revenue: number}) => ({
-            date: sale.date,
-            parsedDate: format(parseISO(sale.date), 'yyyy-MM-dd'),
-            revenue: sale.revenue
-          }))
-        );
-      }
-      
       setSalesData(transformedData);
+      setError(null);
     } catch (error) {
       console.error('Revenue Calendar: Error fetching sales data:', error);
       
-      // Check for database schema error specifically
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load sales data';
-      setError(errorMessage);
-      
       // If we have initial data, use that as a fallback
-      if (initialData && initialData.length > 0) {
+      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
         console.log('Revenue Calendar: Using provided initial data as fallback after error');
         setSalesData(initialData);
-        
-        // Clear any error related to database schema
-        const isDatabaseError = typeof error === 'string' && (
-          error.includes('Database schema has changed') || 
-          error.includes('database schema') ||
-          error.includes('no such table') ||
-          error.includes('does not exist') ||
-          error.includes('relation "public.shopify_data" does not exist')
-        );
-        
-        if (isDatabaseError) {
-          console.log('Revenue Calendar: Clearing database schema error');
-          setError(null);
-        }
+        setError(null);
       } else {
-        // Clear any existing data
-        setSalesData([]);
+        // Generate mock data for database schema errors
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load sales data';
+        const isDatabaseError = typeof errorMessage === 'string' && (
+          errorMessage.includes('Database schema has changed') || 
+          errorMessage.includes('database schema') ||
+          errorMessage.includes('no such table') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('relation "public.shopify_data" does not exist')
+        );
+
+        if (isDatabaseError) {
+          console.log('Revenue Calendar: Generating mock data for database error');
+          const mockData = generateMockSalesData();
+          setSalesData(mockData);
+          setError('Showing sample data while database updates.');
+        } else {
+          setSalesData([]);
+          setError(errorMessage);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -616,484 +401,83 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     })
   }, [])
   
-  // Get the current week's days (Monday-Sunday)
-  const weekDays = useMemo(() => {
-    // Create a new date object for today to ensure we're working with the local date
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    // Log the current date for debugging
-    console.log('Revenue Calendar: Current date for weekly view:', format(today, 'yyyy-MM-dd'), 'Day:', format(today, 'EEEE'));
-    
-    // IMPORTANT: We need to make sure we're showing the correct week that includes recent sales
-    // The issue is that sales made late in the day (e.g., 8 PM) might be recorded with the next day's date in UTC
-    // So we need to ensure our weekly view always includes yesterday's date to catch these sales
-    
-    let startOfCurrentWeek;
-    
-    // Always include yesterday in our view to catch any sales that might have been recorded with tomorrow's date
-    // This ensures that a sale made at 8 PM on the 1st that shows as the 2nd will still be visible
-    startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 }); // 1 represents Monday
-    
-    // Log the start of the week for debugging
-    console.log('Revenue Calendar: Start of week to display:', format(startOfCurrentWeek, 'yyyy-MM-dd'), 'Day:', format(startOfCurrentWeek, 'EEEE'));
-    
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(startOfCurrentWeek, i);
-      
-      // Check if this day is today
-      const isToday = isSameDay(date, today);
-      if (isToday) {
-        console.log('Revenue Calendar: Today is in this week at position', i, format(date, 'EEEE'));
-      }
-      
-      return {
-        date,
-        dayName: format(date, "EEE"),
-        dayNumber: format(date, "d"),
-        formattedDate: format(date, "yyyy-MM-dd"),
-        isToday
-      };
-    });
-    
-    // Log all days in the week for debugging
-    console.log('Revenue Calendar: Week days:', days.map(d => ({
-      date: format(d.date, 'yyyy-MM-dd'),
-      day: format(d.date, 'EEEE'),
-      isToday: d.isToday
-    })));
-    
-    return days;
-  }, [])
-
-  // Get the current month's days - linear layout without day of week alignment
-  const monthDays = useMemo(() => {
-    const today = new Date()
-    const startOfCurrentMonth = startOfMonth(today)
-    const daysInMonth = getDaysInMonth(today)
-    
-    return Array.from({ length: daysInMonth }, (_, i) => {
-      const date = addDays(startOfCurrentMonth, i)
-      return {
-        date,
-        dayName: format(date, "EEE"),
-        dayNumber: format(date, "d"),
-        formattedDate: format(date, "yyyy-MM-dd")
-      }
-    })
-  }, [])
-
-  // Get the current year's months
-  const yearMonths = useMemo(() => {
-    const today = new Date()
-    const currentYear = getYear(today)
-    
-    return Array.from({ length: 12 }, (_, i) => {
-      const date = new Date(currentYear, i, 1)
-      return {
-        date,
-        dayName: format(date, "MMM"),
-        dayNumber: "", // Remove month number
-        formattedDate: format(date, "yyyy-MM")
-      }
-    })
-  }, [])
-
-  // Get the last 7 days
-  const lastSevenDays = useMemo(() => {
-    const today = new Date()
-    
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(today, -6 + i)
-      return {
-        date,
-        dayName: format(date, "EEE"),
-        dayNumber: format(date, "d"),
-        formattedDate: format(date, "yyyy-MM-dd")
-      }
-    })
-  }, [])
-
-  // Determine which days to display based on the selected time frame
+  // Get days to display based on timeFrame
   const daysToDisplay = useMemo(() => {
-    switch (timeFrame) {
-      case 'daily':
-        return lastSevenDays
-      case 'weekly':
-        return weekDays
-      case 'monthly':
-        return monthDays
-      case 'yearly':
-        return yearMonths
-      default:
-        return monthDays
-    }
-  }, [timeFrame, weekDays, monthDays, yearMonths, lastSevenDays])
+    const now = new Date();
+    const days = [];
 
-  // Map revenue data to the days to display
-  const displayData = useMemo(() => {
-    // Create a reference to track displayed sale IDs to prevent duplicates
-    if (salesData.length === 0) {
-      return daysToDisplay.map(day => ({
-        ...day,
-        revenue: 0,
-        formattedDate: format(day.date, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd')
-      }));
-    }
-    
-    console.log(`Revenue Calendar: Processing ${salesData.length} sales for ${timeFrame} view`);
-    
-    // Pre-process sales data to determine the correct display day
-    // This is especially important for sales that might be timezone-shifted
-    const processedSales = salesData.map(sale => {
-      // Special handling for the $2,000 sale or sales marked with forceShowOnFirst
-      if ((Math.abs(sale.revenue - 2000) < 1 || sale.forceShowOnFirst) && sale.date) {
-        try {
-          let saleDate: Date;
-          
-          if (typeof sale.date === 'string') {
-            saleDate = parseISO(sale.date);
-            
-            if (!isValid(saleDate)) {
-              const timestamp = parseInt(sale.date);
-              if (!isNaN(timestamp)) {
-                saleDate = new Date(timestamp);
-              }
-            }
-            
-            if (!isValid(saleDate)) {
-              try {
-                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
-              } catch (e) {
-                console.error('Error parsing date for special sale:', sale.date, e);
-                return sale; // Return original sale if parsing fails
-              }
-            }
-          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
-            saleDate = sale.date as Date;
-          } else if (typeof sale.date === 'number') {
-            saleDate = new Date(sale.date);
-          } else {
-            console.error('Invalid date format for special sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          if (!saleDate || !isValid(saleDate)) {
-            console.error('Invalid date for special sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          // Force the date to be the 1st of the month
-          const year = saleDate.getFullYear();
-          const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
-          
-          // Format as ISO string with the 1st day of the month
-          const forcedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
-          
-          console.log(`Revenue Calendar: Forcing $${sale.revenue} sale to show on the 1st:`, {
-            originalDate: sale.date,
-            forcedDate
+    switch (timeFrame) {
+      case 'yearly': {
+        // Get all months of the current year
+        const yearStart = startOfYear(now);
+        for (let month = 0; month < 12; month++) {
+          const date = addMonths(yearStart, month);
+          days.push({
+            date,
+            dayName: format(date, 'MMM'),
+            dayNumber: format(date, 'M'),
+            formattedDate: format(date, 'yyyy-MM'),
+            isToday: isSameMonth(date, now)
           });
-          
-          return {
-            ...sale,
-            date: forcedDate,
-            forceShowOnFirst: true
-          };
-        } catch (error) {
-          console.error('Error processing special sale:', error);
-          return sale; // Return original sale if processing fails
+        }
+        break;
+      }
+
+      case 'monthly': {
+        // Get all days of the current month
+        const monthStart = startOfMonth(now);
+        const monthEnd = endOfMonth(now);
+        let currentDay = monthStart;
+        while (currentDay <= monthEnd) {
+          days.push({
+            date: currentDay,
+            dayName: format(currentDay, 'EEE'),
+            dayNumber: format(currentDay, 'd'),
+            formattedDate: format(currentDay, 'yyyy-MM-dd'),
+            isToday: isSameDay(currentDay, now)
+          });
+          currentDay = addDays(currentDay, 1);
+        }
+        break;
+      }
+
+      default: {
+        // Weekly view - show last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const date = subDays(now, i);
+          days.push({
+            date,
+            dayName: format(date, 'EEE'),
+            dayNumber: format(date, 'd'),
+            formattedDate: format(date, 'yyyy-MM-dd'),
+            isToday: isSameDay(date, now)
+          });
         }
       }
-      
-      // Handle timezone-shifted sales (sales made late in the day that might appear on the next day)
-      if (sale.isTimezoneShifted && sale.date) {
-        try {
-          let saleDate: Date;
-          
-          if (typeof sale.date === 'string') {
-            saleDate = parseISO(sale.date);
-            
-            if (!isValid(saleDate)) {
-              const timestamp = parseInt(sale.date);
-              if (!isNaN(timestamp)) {
-                saleDate = new Date(timestamp);
-              }
-            }
-            
-            if (!isValid(saleDate)) {
-              try {
-                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
-              } catch (e) {
-                console.error('Error parsing date for timezone-shifted sale:', sale.date, e);
-                return sale; // Return original sale if parsing fails
-              }
-            }
-          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
-            saleDate = sale.date as Date;
-          } else if (typeof sale.date === 'number') {
-            saleDate = new Date(sale.date);
-          } else {
-            console.error('Invalid date format for timezone-shifted sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          if (!saleDate || !isValid(saleDate)) {
-            console.error('Invalid date for timezone-shifted sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          // Check if this is the 2nd day of the month
-          const day = saleDate.getDate();
-          if (day === 2) {
-            // Move to the 1st of the month
-            const year = saleDate.getFullYear();
-            const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
-            
-            // Format as ISO string with the 1st day of the month
-            const adjustedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
-            
-            console.log(`Revenue Calendar: Moving timezone-shifted sale from 2nd to 1st:`, {
-              originalDate: sale.date,
-              adjustedDate
-            });
-            
-            return {
-              ...sale,
-              date: adjustedDate
-            };
-          }
-        } catch (error) {
-          console.error('Error processing timezone-shifted sale:', error);
-          return sale; // Return original sale if processing fails
-        }
-      }
-      
-      // Handle significant sales (over $1,000) on the 2nd of the month
-      if (sale.revenue > 1000 && sale.date) {
-        try {
-          let saleDate: Date;
-          
-          if (typeof sale.date === 'string') {
-            saleDate = parseISO(sale.date);
-            
-            if (!isValid(saleDate)) {
-              const timestamp = parseInt(sale.date);
-              if (!isNaN(timestamp)) {
-                saleDate = new Date(timestamp);
-              }
-            }
-            
-            if (!isValid(saleDate)) {
-              try {
-                saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
-              } catch (e) {
-                console.error('Error parsing date for significant sale:', sale.date, e);
-                return sale; // Return original sale if parsing fails
-              }
-            }
-          } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
-            saleDate = sale.date as Date;
-          } else if (typeof sale.date === 'number') {
-            saleDate = new Date(sale.date);
-          } else {
-            console.error('Invalid date format for significant sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          if (!saleDate || !isValid(saleDate)) {
-            console.error('Invalid date for significant sale:', sale.date);
-            return sale; // Return original sale if date is invalid
-          }
-          
-          // Check if this is the 2nd day of the month
-          const day = saleDate.getDate();
-          if (day === 2) {
-            // Move to the 1st of the month
-            const year = saleDate.getFullYear();
-            const month = saleDate.getMonth() + 1; // getMonth() is 0-indexed
-            
-            // Format as ISO string with the 1st day of the month
-            const adjustedDate = `${year}-${month.toString().padStart(2, '0')}-01T12:00:00.000Z`;
-            
-            console.log(`Revenue Calendar: Moving significant sale ($${sale.revenue}) from 2nd to 1st:`, {
-              originalDate: sale.date,
-              adjustedDate
-            });
-            
-            return {
-              ...sale,
-              date: adjustedDate
-            };
-          }
-        } catch (error) {
-          console.error('Error processing significant sale:', error);
-          return sale; // Return original sale if processing fails
-        }
-      }
-      
-      return sale;
-    });
-    
-    // Create a map to assign sales to their respective days
-    const salesByDay = new Map<string, Array<any>>();
-    
-    // Assign each sale to its display day
-    processedSales.forEach(sale => {
-      if (!sale.date) return;
-      
-      try {
-        let saleDate: Date;
-        
-        if (typeof sale.date === 'string') {
-          saleDate = parseISO(sale.date);
-          
-          if (!isValid(saleDate)) {
-            const timestamp = parseInt(sale.date);
-            if (!isNaN(timestamp)) {
-              saleDate = new Date(timestamp);
-            }
-          }
-          
-          if (!isValid(saleDate)) {
-            try {
-              saleDate = parse(sale.date, 'yyyy-MM-dd', new Date());
-            } catch (e) {
-              console.error('Error parsing date:', sale.date, e);
-              return;
-            }
-          }
-        } else if (typeof sale.date === 'object' && sale.date !== null && 'getTime' in sale.date) {
-          saleDate = sale.date as Date;
-        } else if (typeof sale.date === 'number') {
-          saleDate = new Date(sale.date);
-        } else {
-          console.error('Invalid date format:', sale.date);
-          return;
-        }
-        
-        if (!saleDate || !isValid(saleDate)) {
-          console.error('Invalid date:', sale.date);
-          return;
-        }
-        
-        // Format the date based on the timeFrame
-        const formattedDate = format(saleDate, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd');
-        
-        // Get or create the array for this day
-        const salesForDay = salesByDay.get(formattedDate) || [];
-        
-        // Add this sale to the day
-        salesForDay.push(sale);
-        
-        // Update the map
-        salesByDay.set(formattedDate, salesForDay);
-        
-        if (sale.revenue > 1000) {
-          console.log(`Revenue Calendar: Assigned $${sale.revenue} sale to ${formattedDate}`);
-        }
-      } catch (error) {
-        console.error('Error processing sale date:', error);
-      }
-    });
-    
-    // Map the days to display with their revenue
+    }
+
+    return days;
+  }, [timeFrame]);
+
+  // Process sales data for display
+  const displayData = useMemo(() => {
+    if (!salesData || !Array.isArray(salesData)) {
+      return [];
+    }
+
     return daysToDisplay.map(day => {
-      const formattedDate = format(day.date, timeFrame === 'yearly' ? 'yyyy-MM' : 'yyyy-MM-dd');
-      
-      let matchingData: Array<any> = [];
-      
-      if (timeFrame === 'yearly') {
-        // For yearly view, we need to match at the month level
-        const yearMonth = formattedDate; // Already formatted as yyyy-MM
-        
-        // Find all sales for this month
-        processedSales.forEach(item => {
-          try {
-            if (!item.date) return;
-            
-            let itemDate: Date | null = null;
-            
-            if (typeof item.date === 'string') {
-              itemDate = parseISO(item.date);
-              
-              if (!isValid(itemDate)) {
-                const timestamp = parseInt(item.date);
-                if (!isNaN(timestamp)) {
-                  itemDate = new Date(timestamp);
-                }
-              }
-              
-              if (!isValid(itemDate)) {
-                try {
-                  itemDate = parse(item.date, 'yyyy-MM-dd', new Date());
-                } catch (e) {
-                  return;
-                }
-              }
-            } else if (typeof item.date === 'object' && item.date !== null && 'getTime' in item.date) {
-              itemDate = item.date as Date;
-            } else if (typeof item.date === 'number') {
-              itemDate = new Date(item.date);
-            } else {
-              return; // Invalid date format
-            }
-            
-            if (!itemDate || !isValid(itemDate)) return;
-            
-            // Check if this sale belongs to the current month
-            const itemYearMonth = format(itemDate, 'yyyy-MM');
-            
-            if (itemYearMonth === yearMonth) {
-              // This sale belongs to this month
-              matchingData.push(item);
-              
-              if (item.revenue > 1000) {
-                console.log(`Yearly view: Matched $${item.revenue} sale to month: ${yearMonth}`);
-              }
-            }
-          } catch (error) {
-            console.error('Error processing sale date for yearly view:', error);
-          }
-        });
-      } else {
-        // For daily/weekly/monthly views, use the pre-processed sales by day
-        matchingData = salesByDay.get(formattedDate) || [];
-      }
-      
-      // Filter out sales that have already been displayed
-      const uniqueMatchingData = matchingData.filter(item => {
-        if (!item.id) return true; // Keep items without IDs
-        
-        // Skip if this sale has already been displayed
-        if (displayedSaleIdsRef.current.has(item.id)) {
-          if (item.revenue > 1000) {
-            console.log(`Skipping already displayed sale: $${item.revenue} (ID: ${item.id})`);
-          }
-          return false;
-        }
-        
-        // Mark this sale as displayed
-        displayedSaleIdsRef.current.add(item.id);
-        if (item.revenue > 1000) {
-          console.log(`Marking sale as displayed: $${item.revenue} (ID: ${item.id}) on ${formattedDate}`);
-        }
-        
-        return true;
-      });
-      
-      // Sum up the revenue for matching data
-      const revenue = uniqueMatchingData.reduce((sum, item) => sum + (item.revenue || 0), 0);
-      
-      if (revenue > 1000) {
-        console.log(`Total revenue for ${formattedDate}: $${revenue} (${uniqueMatchingData.length} sales)`);
-      }
+      const dayRevenue = salesData
+        .filter(sale => {
+          if (!sale || !sale.date) return false;
+          return timeFrame === 'yearly'
+            ? sale.date.startsWith(day.formattedDate) // Match by year-month for yearly view
+            : sale.date.startsWith(day.formattedDate); // Match by full date for other views
+        })
+        .reduce((sum, sale) => sum + (sale.revenue || 0), 0);
 
       return {
         ...day,
-        revenue,
-        formattedDate,
-        isTimezoneShifted: uniqueMatchingData.some(item => item.isTimezoneShifted)
+        revenue: dayRevenue
       };
     });
   }, [salesData, daysToDisplay, timeFrame]);
@@ -1155,43 +539,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     console.log('Revenue Calendar: Cleared displayed sale IDs');
   }, [salesData]);
 
-  // Add a specific effect to handle API errors by using initial data
+  // Modify the useEffect for error handling
   useEffect(() => {
-    // For database schema errors, always try to use initial data if available
-    const isDatabaseError = typeof error === 'string' && (
-      error.includes('Database schema has changed') || 
-      error.includes('database schema') ||
-      error.includes('no such table') ||
-      error.includes('does not exist') ||
-      error.includes('relation "public.shopify_data" does not exist')
-    );
-    
-    if (error && isDatabaseError) {
-      console.log('Revenue Calendar: Database schema error detected:', error);
-      
-      // If we have initial data, use it and clear the error
-      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-        console.log('Revenue Calendar: Using initial data for database schema error');
-        setSalesData(initialData);
-        setError(null);
-      } else {
-        // If no initial data, generate mock data but keep a more user-friendly error message
-        console.log('Revenue Calendar: No initial data available, generating mock data');
-        const mockData = generateMockSalesData();
-        setSalesData(mockData);
-        setError('Showing sample data while database updates.');
-      }
-    }
-  }, [error, initialData]);
-
-  // Force use of initial data when available
-  useEffect(() => {
-    // If we have valid initial data and no sales data yet, use the initial data
-    if (initialData && Array.isArray(initialData) && initialData.length > 0 && 
-        (!salesData || !Array.isArray(salesData) || salesData.length === 0) && !isLoading) {
-      console.log('Revenue Calendar: Forcing use of initial data');
-      setSalesData(initialData);
-      // Clear any error related to database schema
+    if (error) {
       const isDatabaseError = typeof error === 'string' && (
         error.includes('Database schema has changed') || 
         error.includes('database schema') ||
@@ -1201,11 +551,30 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       );
       
       if (isDatabaseError) {
-        console.log('Revenue Calendar: Clearing database schema error');
+        // If we have initial data, use it
+        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+          setSalesData(initialData);
+          setError(null);
+        } else {
+          // Only generate mock data if we don't have initial data
+          const mockData = generateMockSalesData();
+          setSalesData(mockData);
+          setError('Showing sample data while database updates.');
+        }
+      }
+    }
+  }, [error, initialData]);
+
+  // Modify the useEffect for initial data
+  useEffect(() => {
+    if (!isLoading && initialData && Array.isArray(initialData) && initialData.length > 0) {
+      if (!salesData || !Array.isArray(salesData) || salesData.length === 0) {
+        console.log('Revenue Calendar: Using initial data');
+        setSalesData(initialData);
         setError(null);
       }
     }
-  }, [initialData, salesData, isLoading, error]);
+  }, [initialData, salesData, isLoading]);
 
   // Debug log for component state
   useEffect(() => {
