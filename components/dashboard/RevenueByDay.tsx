@@ -447,13 +447,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           </svg>
           <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
         </div>
-        <div className="flex gap-2 items-center">
-          <div className="text-base font-medium text-gray-400 mr-2">
-            March 2025
+        <div className="flex justify-between items-center mb-4 px-4 pt-4">
+          <div className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+              <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+              <line x1="16" x2="16" y1="2" y2="6"></line>
+              <line x1="8" x2="8" y1="2" y2="6"></line>
+              <line x1="3" x2="21" y1="10" y2="10"></line>
+            </svg>
+            <div className="text-base font-medium text-gray-400 mr-2">
+              March 2025
+            </div>
           </div>
-          <Select value="monthly" onValueChange={(value: TimeFrame) => setTimeFrame(value as TimeFrame)}>
+          <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value as TimeFrame)}>
             <SelectTrigger className="w-[120px] bg-gray-800 border-gray-700 h-8">
-              <SelectValue placeholder="This Month" />
+              <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="daily">Today</SelectItem>
@@ -484,6 +492,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               ...Array.from({ length: 7 }, (_, i) => ({ day: i + 25, week: 5 }))
             ].map(({ day, week }) => {
               const isFirstDay = day === 1;
+              // Sample revenue data for demonstration
+              const revenue = isFirstDay ? 30000 : 0;
+              const maxRevenue = 30000;
+              
+              // Format revenue for display
+              const formatRevenue = (value: number) => {
+                if (value >= 1000) {
+                  return `${(value / 1000).toFixed(1)}k`;
+                }
+                return value.toString();
+              };
               
               return (
                 <div
@@ -491,35 +510,30 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   className={cn(
                     "flex flex-col rounded-md overflow-hidden border",
                     isFirstDay 
-                      ? "bg-blue-900/20 border-blue-700" 
+                      ? "bg-[#1a1f2b] border-gray-700" 
                       : "bg-[#1e293b] border-gray-800"
                   )}
                 >
                   <div className={cn(
                     "text-center py-1 text-xs font-medium",
-                    isFirstDay ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                    isFirstDay ? "bg-[#1a1f2b] text-gray-300" : "bg-gray-800 text-gray-300"
                   )}>
                     {day}
                   </div>
                   
-                  <div className="flex-1 flex flex-col justify-end p-1 relative">
-                    {isFirstDay ? (
-                      <>
-                        <div className="absolute inset-x-0 bottom-6 top-0 flex items-end px-1">
-                          <div
-                            className="w-full rounded-t bg-blue-500"
-                            style={{ height: '80%' }}
-                          />
-                        </div>
-                        <div className="text-center text-xs font-medium text-white">
-                          $30.0k
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center text-xs font-medium text-white">
-                        $0
-                      </div>
-                    )}
+                  <div className="flex-1 flex flex-col justify-end p-1">
+                    {/* Revenue bar */}
+                    <div className="relative h-12 w-full flex flex-col justify-end">
+                      <div 
+                        style={{ height: `${Math.max(5, Math.min(100, (revenue / maxRevenue) * 100))}%` }}
+                        className="w-full rounded-t bg-gray-600"
+                      ></div>
+                    </div>
+                    
+                    {/* Revenue amount */}
+                    <div className="text-center text-xs mt-1 text-gray-400">
+                      {revenue > 0 ? `$${formatRevenue(revenue)}` : '-'}
+                    </div>
                   </div>
                 </div>
               );
