@@ -1152,14 +1152,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Add a specific effect to handle API errors by using initial data
   useEffect(() => {
     // For database schema errors, always try to use initial data if available
-    if (error && (
+    const isDatabaseError = error ? (
         error.includes('Database schema has changed') || 
         error.includes('database schema') ||
         error.includes('no such table') ||
         error.includes('does not exist') ||
-        error.includes('relation "public.shopify_data" does not exist') ||
-        error.includes('Database update in progress')
-      )) {
+        error.includes('relation "public.shopify_data" does not exist')
+    ) : false;
+        
+    if (error && isDatabaseError) {
       console.log('Revenue Calendar: Database schema error detected:', error);
       
       // If we have initial data, use it and clear the error
