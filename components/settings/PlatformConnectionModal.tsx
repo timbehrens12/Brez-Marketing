@@ -48,6 +48,85 @@ export function PlatformConnectionModal({
     }
   }, [metaCheckInterval])
 
+  // Add message event listener for direct communication from popup windows
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Handle Shopify connection success message
+      if (event.data && event.data.type === 'SHOPIFY_CONNECTION_SUCCESS') {
+        console.log('Received success message from Shopify popup:', event.data);
+        
+        // Clear any existing check intervals
+        if (shopifyCheckIntervalRef.current) {
+          clearInterval(shopifyCheckIntervalRef.current);
+          shopifyCheckIntervalRef.current = null;
+        }
+        
+        // Close the auth window if it's still open
+        try {
+          if (authWindowRef.current && !authWindowRef.current.closed) {
+            authWindowRef.current.close();
+          }
+        } catch (e) {
+          console.error('Error closing auth window:', e);
+        }
+        
+        authWindowRef.current = null;
+        setIsLoading(false);
+        setIsOpen(false);
+        toast.success('Shopify connected successfully');
+        if (onSuccess) onSuccess();
+      }
+      
+      // Handle Shopify connection error message
+      if (event.data && event.data.type === 'SHOPIFY_CONNECTION_ERROR') {
+        console.log('Received error message from Shopify popup:', event.data);
+        
+        // Clear any existing check intervals
+        if (shopifyCheckIntervalRef.current) {
+          clearInterval(shopifyCheckIntervalRef.current);
+          shopifyCheckIntervalRef.current = null;
+        }
+        
+        // Close the auth window if it's still open
+        try {
+          if (authWindowRef.current && !authWindowRef.current.closed) {
+            authWindowRef.current.close();
+          }
+        } catch (e) {
+          console.error('Error closing auth window:', e);
+        }
+        
+        authWindowRef.current = null;
+        setIsLoading(false);
+        toast.error('Shopify connection failed. Please try again.');
+        
+        // Clean up the pending connection if we have a connectionId
+        if (event.data.connectionId) {
+          (async () => {
+            try {
+              await supabase
+                .from('platform_connections')
+                .delete()
+                .eq('id', event.data.connectionId)
+                .eq('status', 'pending');
+              console.log('Cleaned up pending connection after error');
+            } catch (err: unknown) {
+              console.error('Error cleaning up connection:', err);
+            }
+          })();
+        }
+      }
+    };
+    
+    // Add the event listener
+    window.addEventListener('message', handleMessage);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [onSuccess, supabase]);
+
   const handleShopifyConnect = async () => {
     if (!shopUrl) {
       toast.error('Shop URL is required')

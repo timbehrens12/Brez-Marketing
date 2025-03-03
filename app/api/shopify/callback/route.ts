@@ -251,6 +251,19 @@ export async function GET(request: Request) {
             <h1>Connection Successful!</h1>
             <p>Your Shopify store has been connected successfully. This window will close automatically.</p>
             <script>
+              // Try to notify the parent window
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.opener.postMessage({ 
+                    type: 'SHOPIFY_CONNECTION_SUCCESS',
+                    connectionId: '${connectionId}',
+                    shop: '${shop}'
+                  }, '*');
+                }
+              } catch (e) {
+                console.error('Error posting message to parent:', e);
+              }
+              
               // Close the window after a short delay
               setTimeout(() => {
                 window.close();
@@ -332,6 +345,19 @@ export async function GET(request: Request) {
             <p>There was an error connecting your Shopify store. Please try again.</p>
             <button onclick="window.close()">Close</button>
             <script>
+              // Try to notify the parent window about the error
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.opener.postMessage({ 
+                    type: 'SHOPIFY_CONNECTION_ERROR',
+                    connectionId: '${connectionId}',
+                    error: 'Connection failed'
+                  }, '*');
+                }
+              } catch (e) {
+                console.error('Error posting message to parent:', e);
+              }
+              
               // If window doesn't close (e.g., not opened as popup), redirect
               setTimeout(() => {
                 window.location.href = '/settings?error=connection_failed';
