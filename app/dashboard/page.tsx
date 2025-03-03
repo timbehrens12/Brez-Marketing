@@ -457,9 +457,17 @@ export default function DashboardPage() {
           <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
             <div className="mb-8 text-center">
               <img 
-                src="https://imgur.com/IW2OcJ0" 
+                src="https://i.imgur.com/IW2OcJ0.png" 
                 alt="Brez Logo" 
                 className="h-16 mx-auto mb-4" 
+                onError={(e) => {
+                  console.error('Logo failed to load');
+                  e.currentTarget.style.display = 'none';
+                  const fallback = document.createElement('h1');
+                  fallback.innerText = 'Brez';
+                  fallback.className = 'text-3xl font-bold text-white mb-2';
+                  e.currentTarget.parentNode?.insertBefore(fallback, e.currentTarget.nextSibling);
+                }}
               />
               <p className="text-gray-400">Sign in to access your dashboard</p>
             </div>
