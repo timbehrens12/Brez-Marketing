@@ -103,48 +103,110 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Define fetchSalesData outside of useEffect so it can be called from the retry button
   const fetchSalesData = async () => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch(`/api/shopify/sales?brandId=${brandId}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch sales data');
-      }
-
-      // Only update the data if we got valid sales data back
-      if (Array.isArray(data) && data.length > 0) {
-        console.log('Received valid sales data:', data.length, 'records');
-        setSalesData(data);
-        setError(null);
-      } else {
-        console.log('No new sales data received, keeping existing data');
-        // If we have initial data, keep using it
-        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-          console.log('Using initial data:', initialData.length, 'records');
-          setSalesData(initialData);
-          setError(null);
-        } else if (!salesData || salesData.length === 0) {
-          // Only generate mock data if we have no data at all
-          console.log('Generating mock data as fallback');
-          const mockData = generateMockSalesData();
-          setSalesData(mockData);
-          setError('Showing sample data while database updates.');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching sales data:', error);
+      // IMPORTANT: Always use a very wide date range to ensure we get ALL sales data
+      // regardless of what date range is selected in the date picker
+      // This ensures the revenue calendar always shows all data
+      const endDate = new Date(new Date().getFullYear() + 2, 0, 1).toISOString().split('T')[0]; // 2 years in the future
+      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
       
-      // If we have initial data, use it as fallback
-      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-        console.log('Using initial data as fallback:', initialData.length, 'records');
+      console.log('Revenue Calendar: Fetching ALL sales data', { startDate, endDate, brandId });
+      
+      const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Revenue Calendar: API error (${response.status}):`, errorText);
+        
+        // Check if this is a database schema error
+        if (errorText.includes('relation "public.shopify_data" does not exist') || 
+            errorText.includes('Database schema has changed')) {
+          console.log('Revenue Calendar: Database schema error detected');
+          
+          // If we have initial data, use it and don't show an error
+          if (initialData && initialData.length > 0) {
+            console.log('Revenue Calendar: Using initial data for database schema error');
+            setSalesData(initialData);
+            setError(null);
+          } else {
+            // No data available, set empty array
+            setSalesData([]);
+            setError('Database update in progress.');
+          }
+          setIsLoading(false);
+          return;
+        }
+        
+        throw new Error(errorText);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.sales) {
+        console.error('Revenue Calendar: No sales array in response', result);
+        setSalesData([]);
+        setError('No sales data available.');
+        setIsLoading(false);
+        return;
+      }
+      
+      if (result.sales.length === 0) {
+        console.warn('Revenue Calendar: Empty sales array returned');
+        
+        // Check if this is a database schema error
+        if (result.message && result.message.includes('Database schema has changed')) {
+          console.log('Revenue Calendar: Database schema error detected in message');
+          
+          // If we have initial data, use it and don't show an error
+          if (initialData && initialData.length > 0) {
+            console.log('Revenue Calendar: Using initial data for database schema error');
+            setSalesData(initialData);
+            setError(null);
+          } else {
+            // No data available, set empty array
+            setSalesData([]);
+            setError('Database update in progress.');
+          }
+          setIsLoading(false);
+          return;
+        }
+        
+        setSalesData([]);
+        setError('No sales data available.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Transform the sales data
+      const transformedData = result.sales.map((sale: any) => {
+        const rawDate = sale.created_at;
+        const saleAmount = parseFloat(sale.total_price || '0');
+        
+        return {
+          date: rawDate,
+          revenue: saleAmount,
+          id: sale.id
+        };
+      });
+      
+      console.log('Revenue Calendar: Fetch successful, updating data');
+      setSalesData(transformedData);
+      setError(null);
+      
+    } catch (error) {
+      console.error('Revenue Calendar: Error fetching sales data:', error);
+      
+      // If we have initial data, use it and don't show an error
+      if (initialData && initialData.length > 0) {
+        console.log('Revenue Calendar: Using initial data after fetch error');
         setSalesData(initialData);
         setError(null);
-      } else if (!salesData || salesData.length === 0) {
-        // Only generate mock data if we have no data at all
-        console.log('Generating mock data as error fallback');
-        const mockData = generateMockSalesData();
-        setSalesData(mockData);
-        setError('Showing sample data while database updates.');
+      } else {
+        // No data available, set empty array
+        setSalesData([]);
+        setError('Error loading sales data.');
       }
     } finally {
       setIsLoading(false);
@@ -191,15 +253,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   console.log('Revenue Calendar: Using initial data for database schema error in background fetch');
                   setSalesData(initialData);
                   setError(null);
-                  return;
                 } else {
-                  // Generate mock data for demonstration purposes
-                  console.log('Revenue Calendar: Generating mock data for demonstration in background fetch');
-                  const mockData = generateMockSalesData();
-                  setSalesData(mockData);
-                  setError('Database update in progress. Showing sample data.');
-                  return;
+                  // No data available, set empty array
+                  setSalesData([]);
+                  setError('Database update in progress.');
                 }
+                return;
               }
               
               // For other errors, just log and continue using current data
@@ -226,15 +285,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   console.log('Revenue Calendar: Using initial data for database schema error in background fetch');
                   setSalesData(initialData);
                   setError(null);
-                  return;
                 } else {
-                  // Generate mock data for demonstration purposes
-                  console.log('Revenue Calendar: Generating mock data for demonstration in background fetch');
-                  const mockData = generateMockSalesData();
-                  setSalesData(mockData);
-                  setError('Database update in progress. Showing sample data.');
-                  return;
+                  // No data available, set empty array
+                  setSalesData([]);
+                  setError('Database update in progress.');
                 }
+                return;
               }
               
               return; // Keep using current data
@@ -246,126 +302,27 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               const rawDate = sale.created_at;
               const saleAmount = parseFloat(sale.total_price || '0');
               
-              // CRITICAL FIX: For the $2000 sale specifically, force it to show on the 1st
-              if (Math.abs(saleAmount - 2000) < 1) {
-                console.log('BACKGROUND FETCH: FOUND THE $2,000 SALE - FORCING TO SHOW ON THE 1ST!', {
-                  rawDate,
-                  originalDate: rawDate.split('T')[0]
-                });
-                
-                // Extract the year and month from the original date
-                const dateParts = rawDate.split('T')[0].split('-');
-                const year = dateParts[0];
-                const month = dateParts[1];
-                
-                // Force the day to be the 1st
-                const forcedDate = `${year}-${month}-01T12:00:00.000Z`;
-                
-                return {
-                  date: forcedDate,
-                  revenue: saleAmount,
-                  isTimezoneShifted: true,
-                  forceShowOnFirst: true,
-                  id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
-                };
-              }
-              
-              // IMPORTANT: For Shopify dates, we need to preserve the exact date regardless of timezone
-              // This ensures that a sale made at 8pm on the 1st stays on the 1st
-              
-              // First try to parse the date
-              let saleDate: Date;
-              try {
-                saleDate = parseISO(rawDate);
-                
-                // If the date is invalid, try alternative parsing
-                if (!isValid(saleDate)) {
-                  // Try as timestamp
-                  const timestamp = parseInt(rawDate);
-                  if (!isNaN(timestamp)) {
-                    saleDate = new Date(timestamp);
-                  } else {
-                    // Try other formats as fallback
-                    saleDate = parse(rawDate, 'yyyy-MM-dd', new Date());
-                  }
-                }
-              } catch (e) {
-                // If parsing fails, create a new date object
-                console.error('Error parsing date:', rawDate, e);
-                saleDate = new Date();
-              }
-              
-              // Extract the date components from the raw string to avoid timezone shifts
-              let localDate: Date;
-              let isTimezoneShifted = false;
-              
-              if (typeof rawDate === 'string' && rawDate.includes('T')) {
-                // Extract just the date part from the ISO string (yyyy-MM-dd)
-                const datePart = rawDate.split('T')[0];
-                const [year, month, day] = datePart.split('-').map(num => parseInt(num));
-                
-                // Create a date using local timezone interpretation
-                localDate = new Date(year, month - 1, day); // month is 0-indexed in JS Date
-                
-                // Check if this sale might be timezone-shifted
-                // If the sale was made late in the day (after 8 PM), it might appear on the next day in UTC
-                if (rawDate.includes('T')) {
-                  const timePart = rawDate.split('T')[1];
-                  if (timePart) {
-                    const hourPart = timePart.split(':')[0];
-                    const hour = parseInt(hourPart);
-                    
-                    // IMPORTANT: Be more aggressive in detecting timezone-shifted sales
-                    // Any sale after 5 PM could potentially be shifted to the next day in UTC
-                    if (hour >= 17) { // 5 PM or later (was 8 PM)
-                      isTimezoneShifted = true;
-                      if (saleAmount > 1000) {
-                        console.log(`Background fetch: Marking significant sale as timezone-shifted (made at ${hour}:00)`);
-                        
-                        // Add extra debugging for the $2,000 sale
-                        if (Math.abs(saleAmount - 2000) < 1) {
-                          console.log('BACKGROUND FETCH: FOUND THE $2,000 SALE!', {
-                            rawDate,
-                            hour,
-                            isTimezoneShifted: true,
-                            datePart: rawDate.split('T')[0],
-                            shouldShowOn: datePart
-                          });
-                        }
-                      }
-                    }
-                  }
-                }
-              } else {
-                // Fallback to using the parsed date
-                saleDate = parseISO(rawDate);
-                localDate = new Date(
-                  saleDate.getFullYear(),
-                  saleDate.getMonth(),
-                  saleDate.getDate()
-                );
-              }
-              
               return {
-                date: localDate.toISOString(), // Store as ISO string but with local date
+                date: rawDate,
                 revenue: saleAmount,
-                isTimezoneShifted,
-                id: sale.id || `sale-${rawDate}-${saleAmount}` // Include ID for tracking
+                id: sale.id
               };
             });
             
             console.log('Revenue Calendar: Background fetch successful, updating data');
             setSalesData(transformedData);
             setError(null);
+            
           } catch (error) {
-            console.error('Revenue Calendar: Background fetch error:', error);
-            // Keep using initial data, don't update error state
+            console.error('Revenue Calendar: Error in background fetch:', error);
+            // Don't update state or show error for background fetches
           }
         };
         
         quietFetch();
       }
-    } else {
+    } else if (brandId) {
+      // No initial data, need to fetch
       fetchSalesData();
     }
   }, [brandId, initialData]);
@@ -537,25 +494,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Modify the useEffect for error handling
   useEffect(() => {
     if (error) {
-      const isDatabaseError = typeof error === 'string' && (
-        error.includes('Database schema has changed') || 
-        error.includes('database schema') ||
-        error.includes('no such table') ||
-        error.includes('does not exist') ||
-        error.includes('relation "public.shopify_data" does not exist')
-      );
-      
-      if (isDatabaseError) {
-        // If we have initial data, use it
-        if (initialData && Array.isArray(initialData) && initialData.length > 0) {
-          setSalesData(initialData);
-          setError(null);
-        } else {
-          // Only generate mock data if we don't have initial data
-          const mockData = generateMockSalesData();
-          setSalesData(mockData);
-          setError('Showing sample data while database updates.');
-        }
+      // If we have initial data, use it
+      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+        setSalesData(initialData);
+        setError(null);
+      } else {
+        // No data available, set empty array
+        setSalesData([]);
+        setError('No sales data available.');
       }
     }
   }, [error, initialData]);
@@ -582,75 +528,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       hasError: !!error
     });
   }, [brandId, initialData, salesData, timeFrame, isLoading, error]);
-
-  // Generate mock sales data for demonstration purposes
-  const generateMockSalesData = () => {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-    const mockData = [];
-    
-    // Create a $30,000 sale on the 1st of the current month
-    mockData.push({
-      date: new Date(currentYear, currentMonth, 1).toISOString(),
-      revenue: 30000,
-      id: 'mock-big-sale-1',
-      forceShowOnFirst: true
-    });
-    
-    // Create a $2,000 sale on the 2nd of the current month
-    mockData.push({
-      date: new Date(currentYear, currentMonth, 2).toISOString(),
-      revenue: 2000,
-      id: 'mock-medium-sale-1'
-    });
-    
-    // Create some smaller sales throughout the current month
-    for (let i = 0; i < 10; i++) {
-      mockData.push({
-        date: new Date(currentYear, currentMonth, 5 + i * 2).toISOString(),
-        revenue: 500 + Math.floor(Math.random() * 500),
-        id: `mock-small-sale-current-${i}`
-      });
-    }
-    
-    // Create sales for the previous month
-    for (let i = 0; i < 5; i++) {
-      mockData.push({
-        date: new Date(currentYear, currentMonth - 1, 5 + i * 5).toISOString(),
-        revenue: 800 + Math.floor(Math.random() * 700),
-        id: `mock-sale-prev-${i}`
-      });
-    }
-    
-    // Create sales for two months ago
-    for (let i = 0; i < 3; i++) {
-      mockData.push({
-        date: new Date(currentYear, currentMonth - 2, 10 + i * 7).toISOString(),
-        revenue: 600 + Math.floor(Math.random() * 400),
-        id: `mock-sale-prev2-${i}`
-      });
-    }
-    
-    // Create a few sales for each month of the year for the yearly view
-    for (let month = 0; month < 12; month++) {
-      // Skip months we've already added data for
-      if (month >= currentMonth - 2 && month <= currentMonth) continue;
-      
-      // Add 1-3 sales per month
-      const numSales = 1 + Math.floor(Math.random() * 3);
-      for (let i = 0; i < numSales; i++) {
-        mockData.push({
-          date: new Date(currentYear, month, 10 + i * 7).toISOString(),
-          revenue: 1000 + Math.floor(Math.random() * 1000),
-          id: `mock-sale-month-${month}-${i}`
-        });
-      }
-    }
-    
-    console.log(`Generated ${mockData.length} mock sales records`);
-    return mockData;
-  };
 
   // Modify the quiet fetch to prevent overwriting valid data
   const quietFetch = async () => {
@@ -744,9 +621,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             </div>
           </div>
 
-          {displayData && displayData.length > 0 ? (
-            <div className="grid grid-cols-7 gap-2">
-              {displayData.map((day, index) => (
+          <div className="grid grid-cols-7 gap-2">
+            {daysToDisplay.map((day, index) => {
+              const dayData = displayData.find(d => d.formattedDate === day.formattedDate) || {
+                ...day,
+                revenue: 0
+              };
+
+              return (
                 <div
                   key={day.formattedDate}
                   className={cn(
@@ -764,61 +646,26 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     <div className="relative h-24">
                       <div
                         className={cn(
-                          "absolute bottom-0 w-full bg-blue-500",
-                          day.revenue === 0 && "bg-gray-700"
+                          "absolute bottom-0 w-full",
+                          dayData.revenue > 0 ? "bg-blue-500" : "bg-gray-700"
                         )}
                         style={{
-                          height: `${(day.revenue / maxRevenue) * 100}%`,
-                          minHeight: '2px'
+                          height: dayData.revenue > 0 ? `${(dayData.revenue / maxRevenue) * 100}%` : '2px'
                         }}
-                        title={`$${day.revenue.toFixed(2)}`}
+                        title={`$${dayData.revenue.toFixed(2)}`}
                       ></div>
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
-                      ${day.revenue > 999 ? (day.revenue/1000).toFixed(1) + 'k' : day.revenue.toFixed(0)}
+                      ${dayData.revenue > 999 ? (dayData.revenue/1000).toFixed(1) + 'k' : dayData.revenue.toFixed(0)}
                     </div>
                     {timeFrame === 'yearly' && (
                       <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-7 gap-2">
-              {daysToDisplay.map((day, index) => (
-                <div
-                  key={day.formattedDate}
-                  className={cn(
-                    "flex flex-col items-center p-2 rounded border border-gray-800",
-                    day.isToday && "bg-blue-950 border-blue-800"
-                  )}
-                >
-                  <div className="text-xs text-gray-400">
-                    {timeFrame !== 'yearly' && day.dayName}
-                  </div>
-                  <div className="text-sm font-medium">
-                    {timeFrame !== 'yearly' && day.dayNumber}
-                  </div>
-                  <div className="w-full mt-2">
-                    <div className="relative h-24">
-                      <div
-                        className="absolute bottom-0 w-full bg-gray-700"
-                        style={{
-                          height: '2px'
-                        }}
-                        title="$0.00"
-                      ></div>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">$0</div>
-                    {timeFrame === 'yearly' && (
-                      <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
