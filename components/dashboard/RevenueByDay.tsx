@@ -436,15 +436,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       return (
         <div className="h-full flex flex-col">
-          <div className="grid grid-cols-7 gap-1 mb-1">
+          <div className="grid grid-cols-7 gap-0.5 mb-0.5">
             {daysOfWeek.map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-gray-400 py-1">
+              <div key={index} className="text-center text-xs font-medium text-gray-400 py-0.5">
                 {day}
               </div>
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-1 flex-1">
+          <div className="grid grid-cols-7 gap-0.5 flex-1">
             {/* Empty cells for days before the first of the month */}
             {emptyCells.map(({ index }) => (
               <div key={`empty-${index}`} className="bg-transparent"></div>
@@ -459,21 +459,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 <div
                   key={index}
                   className={cn(
-                    "flex flex-col rounded-md overflow-hidden border",
+                    "flex flex-col rounded-sm overflow-hidden border",
                     isToday 
                       ? "bg-[#1a1a1a] border-gray-700" 
                       : "bg-[#1e1e1e] border-gray-800"
                   )}
                 >
                   <div className={cn(
-                    "text-center py-1 text-xs font-medium",
+                    "text-center py-0.5 text-xs font-medium",
                     isToday ? "bg-[#1a1a1a] text-gray-300" : "bg-gray-800 text-gray-300"
                   )}>
                     {day}
                   </div>
                   
-                  <div className="flex-1 flex flex-col justify-end p-1">
-                    <div className="relative h-6 w-full flex flex-col justify-end">
+                  <div className="flex-1 flex flex-col justify-end p-0.5">
+                    <div className="relative h-3 w-full flex flex-col justify-end">
                       {item.revenue > 0 && (
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
@@ -482,7 +482,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                       )}
                     </div>
                     
-                    <div className="text-center text-xs mt-1 text-gray-400">
+                    <div className="text-center text-xs text-gray-400">
                       {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '$0'}
                     </div>
                   </div>
@@ -536,7 +536,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   return (
     <div className="h-full w-full flex flex-col bg-[#111111] rounded-lg border border-gray-800 overflow-hidden">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-2">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -575,7 +575,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       </div>
       
-      <div className="flex-1 px-4 pb-4 overflow-hidden">
+      <div className="flex-1 px-3 pb-3 overflow-hidden">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
@@ -589,7 +589,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         )}
       </div>
       
-      <div className="p-3 border-t border-gray-800 bg-[#0f0f0f] text-xs text-gray-400 flex justify-between">
+      <div className="p-2 border-t border-gray-800 bg-[#0f0f0f] text-xs text-gray-400 flex justify-between">
         <div>Total Revenue: ${totalRevenue.toLocaleString()}</div>
         <div>Last updated: {format(lastUpdated, 'h:mm a')}</div>
       </div>
