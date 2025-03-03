@@ -91,10 +91,16 @@ export function PlatformConnectionModal({
       const height = 700;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
-      const features = `width=${width},height=${height},left=${left},top=${top},resizable,scrollbars=yes,status=1`;
+      const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=1`;
       
-      const authWindow = window.open(authUrl, 'shopify-auth', features)
-      authWindowRef.current = authWindow
+      // Try to open the window
+      let authWindow: Window | null = null;
+      try {
+        authWindow = window.open(authUrl, 'shopify-auth', features);
+        authWindowRef.current = authWindow;
+      } catch (e) {
+        console.error('Error opening popup window:', e);
+      }
       
       if (!authWindow) {
         toast.error('Popup blocked. Please allow popups for this site and try again.')
@@ -110,42 +116,62 @@ export function PlatformConnectionModal({
       }
       
       // Focus the popup window
-      authWindow.focus()
+      try {
+        authWindow.focus();
+      } catch (e) {
+        console.error('Error focusing popup window:', e);
+      }
       
       // Check periodically if the connection is successful
       const checkInterval = setInterval(async () => {
         // First check if the window is still open
-        if (authWindow.closed) {
+        let isClosed = false;
+        try {
+          isClosed = authWindow?.closed || false;
+        } catch (e) {
+          console.error('Error checking if window is closed:', e);
+          isClosed = true;
+        }
+        
+        if (isClosed) {
           console.log('Auth window was closed')
           // Window was closed, check if connection was successful
-          const { data, error } = await supabase
-            .from('platform_connections')
-            .select('status')
-            .eq('id', connection.id)
-            .single()
-            
-          if (data && data.status === 'active') {
-            console.log('Connection is active')
-            clearInterval(checkInterval)
-            shopifyCheckIntervalRef.current = null
-            setIsLoading(false)
-            setIsOpen(false)
-            toast.success('Shopify connected successfully')
-            if (onSuccess) onSuccess()
-          } else {
-            // Window closed but connection not active
-            console.log('Window closed but connection not active')
-            clearInterval(checkInterval)
-            shopifyCheckIntervalRef.current = null
-            setIsLoading(false)
-            toast.error('Connection process was interrupted. Please try again.')
-            
-            // Clean up the pending connection
-            await supabase
+          try {
+            const { data, error } = await supabase
               .from('platform_connections')
-              .delete()
+              .select('status')
               .eq('id', connection.id)
-              .eq('status', 'pending')
+              .single()
+              
+            if (data && data.status === 'active') {
+              console.log('Connection is active')
+              clearInterval(checkInterval)
+              shopifyCheckIntervalRef.current = null
+              setIsLoading(false)
+              setIsOpen(false)
+              toast.success('Shopify connected successfully')
+              if (onSuccess) onSuccess()
+            } else {
+              // Window closed but connection not active
+              console.log('Window closed but connection not active')
+              clearInterval(checkInterval)
+              shopifyCheckIntervalRef.current = null
+              setIsLoading(false)
+              toast.error('Connection process was interrupted. Please try again.')
+              
+              // Clean up the pending connection
+              await supabase
+                .from('platform_connections')
+                .delete()
+                .eq('id', connection.id)
+                .eq('status', 'pending')
+            }
+          } catch (err) {
+            console.error('Error checking connection status after window close:', err);
+            clearInterval(checkInterval);
+            shopifyCheckIntervalRef.current = null;
+            setIsLoading(false);
+            toast.error('Error checking connection status. Please try again.');
           }
           return
         }
@@ -167,7 +193,16 @@ export function PlatformConnectionModal({
             console.log('Connection is active')
             clearInterval(checkInterval)
             shopifyCheckIntervalRef.current = null
-            if (authWindow && !authWindow.closed) authWindow.close()
+            
+            // Try to close the window
+            try {
+              if (authWindow && !authWindow.closed) {
+                authWindow.close();
+              }
+            } catch (e) {
+              console.error('Error closing auth window:', e);
+            }
+            
             authWindowRef.current = null
             setIsLoading(false)
             setIsOpen(false)
@@ -194,10 +229,15 @@ export function PlatformConnectionModal({
           toast.error('Connection timed out. Please try again.')
           
           // Close the auth window if it's still open
-          if (authWindowRef.current && !authWindowRef.current.closed) {
-            authWindowRef.current.close()
-            authWindowRef.current = null
+          try {
+            if (authWindowRef.current && !authWindowRef.current.closed) {
+              authWindowRef.current.close()
+            }
+          } catch (e) {
+            console.error('Error closing auth window on timeout:', e);
           }
+          
+          authWindowRef.current = null
           
           // Clean up the pending connection
           try {

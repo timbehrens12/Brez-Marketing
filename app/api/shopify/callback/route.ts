@@ -5,6 +5,28 @@ import { registerShopifyWebhooks } from '@/lib/services/shopify-service'
 // Force dynamic rendering to ensure the route is not cached
 export const dynamic = 'force-dynamic'
 
+// Add CORS headers to the response
+function addCorsHeaders(response: Response): Response {
+  const headers = new Headers(response.headers)
+  headers.set('Access-Control-Allow-Origin', '*')
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  headers.set('Access-Control-Allow-Headers', 'Content-Type')
+  
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  })
+}
+
+export async function OPTIONS() {
+  return addCorsHeaders(
+    new Response(null, {
+      status: 204,
+    })
+  )
+}
+
 export async function GET(request: Request) {
   console.log('Shopify callback route hit', request.url)
   const { searchParams } = new URL(request.url)
@@ -44,6 +66,8 @@ export async function GET(request: Request) {
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Connection Failed</title>
           <style>
             body {
@@ -101,11 +125,14 @@ export async function GET(request: Request) {
       </html>
     `;
 
-    return new Response(errorHtml, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-      },
-    });
+    return addCorsHeaders(
+      new Response(errorHtml, {
+        status: 400,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      })
+    );
   }
 
   try {
@@ -187,6 +214,8 @@ export async function GET(request: Request) {
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Connection Successful</title>
           <style>
             body {
@@ -238,11 +267,14 @@ export async function GET(request: Request) {
 
     console.log('Returning success HTML response')
     // Return the HTML content with proper content type
-    return new Response(htmlContent, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-      },
-    });
+    return addCorsHeaders(
+      new Response(htmlContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      })
+    );
   } catch (error) {
     console.error('Error in Shopify callback:', error)
     
@@ -251,6 +283,8 @@ export async function GET(request: Request) {
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Connection Failed</title>
           <style>
             body {
@@ -309,10 +343,13 @@ export async function GET(request: Request) {
     `;
 
     console.log('Returning error HTML response')
-    return new Response(errorHtml, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-      },
-    });
+    return addCorsHeaders(
+      new Response(errorHtml, {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      })
+    );
   }
 } 

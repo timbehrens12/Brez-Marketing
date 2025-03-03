@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   console.log('Shopify auth route hit')
   const { searchParams } = new URL(request.url)
@@ -51,7 +53,17 @@ export async function GET(request: Request) {
     authUrl.searchParams.set('state', JSON.stringify({ brandId, connectionId }))
 
     console.log('Redirecting to:', authUrl.toString())
-    return NextResponse.redirect(authUrl.toString())
+    
+    // Use a 302 redirect to ensure the browser follows it properly
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': authUrl.toString(),
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    })
   } catch (error) {
     console.error('Shopify auth error:', error)
     return NextResponse.json({ error: 'Failed to start OAuth' }, { status: 500 })
