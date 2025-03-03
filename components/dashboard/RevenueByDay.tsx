@@ -470,9 +470,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       const dayRevenue = salesData
         .filter(sale => {
           if (!sale || !sale.date) return false;
-          return timeFrame === 'yearly'
-            ? sale.date.startsWith(day.formattedDate) // Match by year-month for yearly view
-            : sale.date.startsWith(day.formattedDate); // Match by full date for other views
+          
+          // Parse the sale date and the day we're checking
+          const saleDate = parseISO(sale.date);
+          const checkDate = day.date;
+          
+          if (timeFrame === 'yearly') {
+            // For yearly view, match year and month
+            return format(saleDate, 'yyyy-MM') === format(checkDate, 'yyyy-MM');
+          } else {
+            // For other views, match exact date but ignore time
+            return format(saleDate, 'yyyy-MM-dd') === format(checkDate, 'yyyy-MM-dd');
+          }
         })
         .reduce((sum, sale) => sum + (sale.revenue || 0), 0);
 
