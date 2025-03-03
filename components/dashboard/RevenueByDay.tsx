@@ -442,10 +442,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
   };
   
+  // Calculate the number of weeks in the month for dynamic sizing
+  const getMonthlyViewHeight = () => {
+    if (timeFrame !== 'monthly') return 'auto';
+    
+    // Count the number of weeks (rows) needed
+    const numWeeks = Math.ceil((displayData.length) / 7);
+    
+    // Base height per week plus header
+    return `${numWeeks * 80 + 40}px`;
+  };
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
+        <h3 className="text-xl font-semibold text-white">Revenue Calendar</h3>
         <div className="flex gap-2">
           <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
             <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
@@ -476,7 +487,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="text-gray-400">{error}</div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col">
+        <div 
+          className="flex-1 flex flex-col"
+          style={{ 
+            minHeight: timeFrame === 'monthly' ? getMonthlyViewHeight() : 'auto',
+            height: timeFrame === 'monthly' ? getMonthlyViewHeight() : '100%'
+          }}
+        >
           {timeFrame === 'monthly' && (
             <div className="grid grid-cols-7 gap-2 mb-1">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
@@ -488,7 +505,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           <div className={cn(
-            "flex-1 grid gap-2 auto-rows-fr",
+            "grid gap-2 auto-rows-fr",
             timeFrame === 'daily' 
               ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" 
               : timeFrame === 'weekly' 
