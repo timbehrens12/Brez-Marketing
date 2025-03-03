@@ -1,9 +1,7 @@
 "use client"
 
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { TopProducts } from "@/components/dashboard/TopProducts"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
-import { CustomerSegmentsWidget } from "@/components/widgets/CustomerSegments"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
@@ -16,7 +14,6 @@ import { addDays } from "date-fns"
 import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
-import { OrdersTimeline } from "@/components/dashboard/OrdersTimeline"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -166,56 +163,16 @@ export function ShopifyTab({
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Revenue Calendar - Full Width */}
+      <div className="w-full">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader>
             <CardTitle className="text-white">Revenue Calendar</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[600px]">
             <RevenueByDay 
               data={safeMetrics.revenueByDay} 
               brandId={brandId}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader>
-            <CardTitle className="text-white">Customer Segments</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <CustomerSegmentsWidget segments={safeMetrics.customerSegments} />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Products and Additional Data */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader>
-            <CardTitle className="text-white">Top Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {safeMetrics.topProducts.length > 0 ? (
-              <TopProducts products={safeMetrics.topProducts} />
-            ) : (
-              <div className="text-gray-400">No product data available</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader>
-            <CardTitle className="text-white">Orders Timeline</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <OrdersTimeline 
-              data={safeMetrics.dailyData.map(d => ({ 
-                date: d.date, 
-                orders: d.orders 
-              }))} 
-              dateRange={dateRange} 
             />
           </CardContent>
         </Card>
