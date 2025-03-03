@@ -243,26 +243,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               const errorText = await response.text();
               console.error(`Revenue Calendar: Background fetch API error (${response.status}):`, errorText);
               
-              // Check if this is a database schema error
-              if (errorText.includes('relation "public.shopify_data" does not exist') || 
-                  errorText.includes('Database schema has changed')) {
-                console.log('Revenue Calendar: Database schema error detected in background fetch');
-                
-                // If we have initial data, use it and don't show an error
-                if (initialData && initialData.length > 0) {
-                  console.log('Revenue Calendar: Using initial data for database schema error in background fetch');
-                  setSalesData(initialData);
-                  setError(null);
-                } else {
-                  // No data available, set empty array
-                  setSalesData([]);
-                  setError('Database update in progress.');
-                }
-                return;
-              }
-              
-              // For other errors, just log and continue using current data
-              console.error('Revenue Calendar: Background fetch error:', errorText);
+              // Don't update state or show error for background fetches with errors
+              // This ensures we keep showing whatever data we already have
+              console.log('Revenue Calendar: Background fetch error, keeping existing data');
               return;
             }
             
@@ -270,6 +253,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             
             if (!result.sales) {
               console.error('Revenue Calendar: No sales array in background fetch response', result);
+              // Keep existing data
+              console.log('Revenue Calendar: No sales array in response, keeping existing data');
               return;
             }
             
@@ -279,26 +264,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               // Check if this is a database schema error
               if (result.message && result.message.includes('Database schema has changed')) {
                 console.log('Revenue Calendar: Database schema error detected in background fetch message');
-                
-                // If we have initial data, use it and don't show an error
-                if (initialData && initialData.length > 0) {
-                  console.log('Revenue Calendar: Using initial data for database schema error in background fetch');
-                  setSalesData(initialData);
-                  setError(null);
-                } else {
-                  // No data available, set empty array
-                  setSalesData([]);
-                  setError('Database update in progress.');
-                }
+                // Keep existing data
+                console.log('Revenue Calendar: Database schema error, keeping existing data');
                 return;
               }
               
-              return; // Keep using current data
+              // CRITICAL: If we have existing data, don't overwrite it with empty data
+              if (Array.isArray(salesData) && salesData.length > 0) {
+                console.log('Revenue Calendar: Empty sales array but we have existing data, keeping it');
+                return;
+              }
+              
+              // Only set empty array if we don't already have data
+              console.log('Revenue Calendar: Empty sales array and no existing data');
+              return;
             }
             
-            // Only update if we got valid data
+            // Transform the sales data
             const transformedData = result.sales.map((sale: any) => {
-              // Parse the date and adjust for timezone
               const rawDate = sale.created_at;
               const saleAmount = parseFloat(sale.total_price || '0');
               
@@ -309,13 +292,19 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
               };
             });
             
-            console.log('Revenue Calendar: Background fetch successful, updating data');
-            setSalesData(transformedData);
-            setError(null);
+            // Only update if we got valid data AND it's different from what we have
+            if (transformedData.length > 0) {
+              console.log('Revenue Calendar: Background fetch successful, updating data');
+              setSalesData(transformedData);
+              setError(null);
+            } else {
+              console.log('Revenue Calendar: Background fetch returned no valid data, keeping existing data');
+            }
             
           } catch (error) {
             console.error('Revenue Calendar: Error in background fetch:', error);
             // Don't update state or show error for background fetches
+            console.log('Revenue Calendar: Background fetch exception, keeping existing data');
           }
         };
         
@@ -532,27 +521,85 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Modify the quiet fetch to prevent overwriting valid data
   const quietFetch = async () => {
     try {
-      const response = await fetch(`/api/shopify/sales?brandId=${brandId}`);
-      const data = await response.json();
-
+      // IMPORTANT: Always use a very wide date range to ensure we get ALL sales data
+      // regardless of what date range is selected in the date picker
+      // This ensures the revenue calendar always shows all data
+      const endDate = new Date(new Date().getFullYear() + 2, 0, 1).toISOString().split('T')[0]; // 2 years in the future
+      const startDate = new Date(new Date().getFullYear() - 5, 0, 1).toISOString().split('T')[0]; // 5 years ago
+      
+      console.log('Revenue Calendar: Quiet background fetch for ALL sales data', { startDate, endDate, brandId });
+      
+      const response = await fetch(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch sales data');
+        const errorText = await response.text();
+        console.error(`Revenue Calendar: Background fetch API error (${response.status}):`, errorText);
+        
+        // Don't update state or show error for background fetches with errors
+        // This ensures we keep showing whatever data we already have
+        console.log('Revenue Calendar: Background fetch error, keeping existing data');
+        return;
       }
-
-      // Only update if we got valid new data
-      if (Array.isArray(data) && data.length > 0) {
-        console.log('Quiet fetch received valid data:', data.length, 'records');
-        setSalesData(data);
+      
+      const result = await response.json();
+      
+      if (!result.sales) {
+        console.error('Revenue Calendar: No sales array in background fetch response', result);
+        // Keep existing data
+        console.log('Revenue Calendar: No sales array in response, keeping existing data');
+        return;
+      }
+      
+      if (result.sales.length === 0) {
+        console.warn('Revenue Calendar: Empty sales array returned in background fetch');
+        
+        // Check if this is a database schema error
+        if (result.message && result.message.includes('Database schema has changed')) {
+          console.log('Revenue Calendar: Database schema error detected in background fetch message');
+          // Keep existing data
+          console.log('Revenue Calendar: Database schema error, keeping existing data');
+          return;
+        }
+        
+        // CRITICAL: If we have existing data, don't overwrite it with empty data
+        if (Array.isArray(salesData) && salesData.length > 0) {
+          console.log('Revenue Calendar: Empty sales array but we have existing data, keeping it');
+          return;
+        }
+        
+        // Only set empty array if we don't already have data
+        console.log('Revenue Calendar: Empty sales array and no existing data');
+        return;
+      }
+      
+      // Transform the sales data
+      const transformedData = result.sales.map((sale: any) => {
+        const rawDate = sale.created_at;
+        const saleAmount = parseFloat(sale.total_price || '0');
+        
+        return {
+          date: rawDate,
+          revenue: saleAmount,
+          id: sale.id
+        };
+      });
+      
+      // Only update if we got valid data AND it's different from what we have
+      if (transformedData.length > 0) {
+        console.log('Revenue Calendar: Background fetch successful, updating data');
+        setSalesData(transformedData);
         setError(null);
       } else {
-        console.log('Quiet fetch: No new data, keeping existing data');
+        console.log('Revenue Calendar: Background fetch returned no valid data, keeping existing data');
       }
+      
     } catch (error) {
-      console.error('Error in quiet fetch:', error);
-      // Don't update state or show error for quiet fetches
+      console.error('Revenue Calendar: Error in background fetch:', error);
+      // Don't update state or show error for background fetches
+      console.log('Revenue Calendar: Background fetch exception, keeping existing data');
     }
   };
-
+  
   // Set up the refresh interval with proper cleanup
   useEffect(() => {
     let isSubscribed = true;
