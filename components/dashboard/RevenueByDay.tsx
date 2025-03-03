@@ -29,7 +29,9 @@ import {
   getDay,
   endOfDay,
   subYears,
-  addYears
+  addYears,
+  subWeeks,
+  subMonths
 } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
@@ -260,6 +262,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     const todayFormatted = format(today, 'yyyy-MM-dd');
     const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
     
+    console.log('Revenue Calendar: Checking for today and yesterday in data', {
+      todayFormatted,
+      yesterdayFormatted,
+      dataLength: data.length,
+      sampleDates: data.slice(0, 3).map(s => s.date)
+    });
+    
     // Check if today and yesterday are in the data
     const hasTodaySale = data.some(sale => {
       if (!sale || !sale.date) return false;
@@ -281,13 +290,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       }
     });
     
+    console.log('Revenue Calendar: Today and yesterday check results', {
+      hasTodaySale,
+      hasYesterdaySale
+    });
+    
     // Create a copy of the data
     const enhancedData = [...data];
     
     // Add today if not present
     if (!hasTodaySale) {
       enhancedData.push({
-        date: todayFormatted,
+        date: `${todayFormatted}T00:00:00.000Z`,
         revenue: 0,
         id: `generated-today-${Math.random()}`
       });
@@ -296,7 +310,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     // Add yesterday if not present
     if (!hasYesterdaySale) {
       enhancedData.push({
-        date: yesterdayFormatted,
+        date: `${yesterdayFormatted}T00:00:00.000Z`,
         revenue: 0,
         id: `generated-yesterday-${Math.random()}`
       });
@@ -310,14 +324,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     const today = new Date();
     const yesterday = subDays(today, 1);
     
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+    
     return [
       {
-        date: format(today, 'yyyy-MM-dd'),
+        date: `${todayFormatted}T00:00:00.000Z`,
         revenue: 0,
         id: `generated-today-${Math.random()}`
       },
       {
-        date: format(yesterday, 'yyyy-MM-dd'),
+        date: `${yesterdayFormatted}T00:00:00.000Z`,
         revenue: 0,
         id: `generated-yesterday-${Math.random()}`
       }
@@ -444,82 +461,61 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     })
   }, [])
   
-  // Get days to display based on timeFrame
+  // Generate days to display based on timeFrame
   const daysToDisplay = useMemo(() => {
     const now = new Date();
     let days = [];
     
-    // First, determine the days based on the selected timeFrame
-    switch (timeFrame) {
-      case 'yearly': {
-        // Get all months of the current year
-        const yearStart = startOfYear(now);
-        for (let month = 0; month < 12; month++) {
-          const date = addMonths(yearStart, month);
-          days.push({
-            date,
-            dayName: format(date, 'MMM'),
-            dayNumber: format(date, 'M'),
-            formattedDate: format(date, 'yyyy-MM'),
-            isToday: isSameMonth(date, now)
-          });
-        }
-        break;
-      }
-
-      case 'monthly': {
-        // Get all days of the current month
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
-        let currentDay = monthStart;
-        while (currentDay <= monthEnd) {
-          days.push({
-            date: currentDay,
-            dayName: format(currentDay, 'EEE'),
-            dayNumber: format(currentDay, 'd'),
-            formattedDate: format(currentDay, 'yyyy-MM-dd'),
-            isToday: isSameDay(currentDay, now)
-          });
-          currentDay = addDays(currentDay, 1);
-        }
-        break;
-      }
-
-      case 'daily': {
-        // For daily view, we'll actually show ALL days with data
-        // This is handled below, but we'll add today and yesterday as a minimum
-        const today = now;
+    console.log('Revenue Calendar: Generating days to display for timeFrame:', timeFrame);
+    
+    // Generate days based on timeFrame
+    if (timeFrame === 'daily') {
+      // For daily view, show the last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = subDays(now, i);
         days.push({
-          date: today,
-          dayName: 'Today',
-          dayNumber: format(today, 'd'),
-          formattedDate: format(today, 'yyyy-MM-dd'),
-          isToday: true
+          date,
+          dayName: format(date, 'EEE'),
+          dayNumber: format(date, 'd'),
+          formattedDate: format(date, 'yyyy-MM-dd'),
+          isToday: i === 0
         });
-        
-        const yesterday = subDays(now, 1);
-        days.push({
-          date: yesterday,
-          dayName: 'Yesterday',
-          dayNumber: format(yesterday, 'd'),
-          formattedDate: format(yesterday, 'yyyy-MM-dd'),
-          isToday: false
-        });
-        break;
       }
-
-      default: {
-        // Weekly view - show last 7 days
-        for (let i = 6; i >= 0; i--) {
-          const date = subDays(now, i);
-          days.push({
-            date,
-            dayName: format(date, 'EEE'),
-            dayNumber: format(date, 'd'),
-            formattedDate: format(date, 'yyyy-MM-dd'),
-            isToday: isSameDay(date, now)
-          });
-        }
+    } else if (timeFrame === 'weekly') {
+      // For weekly view, show the last 7 weeks
+      for (let i = 6; i >= 0; i--) {
+        const date = subWeeks(now, i);
+        days.push({
+          date,
+          dayName: `Week ${format(date, 'w')}`,
+          dayNumber: format(date, 'MMM d'),
+          formattedDate: format(date, 'yyyy-MM-dd'),
+          isToday: i === 0
+        });
+      }
+    } else if (timeFrame === 'monthly') {
+      // For monthly view, show the last 7 months
+      for (let i = 6; i >= 0; i--) {
+        const date = subMonths(now, i);
+        days.push({
+          date,
+          dayName: format(date, 'MMM'),
+          dayNumber: format(date, 'yyyy'),
+          formattedDate: format(date, 'yyyy-MM-dd'),
+          isToday: i === 0
+        });
+      }
+    } else if (timeFrame === 'yearly') {
+      // For yearly view, show the last 7 years
+      for (let i = 6; i >= 0; i--) {
+        const date = subYears(now, i);
+        days.push({
+          date,
+          dayName: format(date, 'yyyy'),
+          dayNumber: '',
+          formattedDate: format(date, 'yyyy-MM-dd'),
+          isToday: i === 0
+        });
       }
     }
 
@@ -573,52 +569,57 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     const yesterdayFormatted = format(subDays(now, 1), 'yyyy-MM-dd');
     
     // Check if today is already included
-    const hasTodayAlready = days.some(day => format(day.date, 'yyyy-MM-dd') === todayFormatted);
-    
-    // Check if yesterday is already included
-    const hasYesterdayAlready = days.some(day => format(day.date, 'yyyy-MM-dd') === yesterdayFormatted);
-    
-    // Add today if not already included
-    if (!hasTodayAlready) {
+    const hasToday = days.some(day => format(day.date, 'yyyy-MM-dd') === todayFormatted);
+    if (!hasToday) {
       days.push({
         date: now,
-        dayName: 'Today',
+        dayName: format(now, 'EEE'),
         dayNumber: format(now, 'd'),
         formattedDate: todayFormatted,
         isToday: true
       });
     }
     
-    // Add yesterday if not already included
-    if (!hasYesterdayAlready) {
-      const yesterday = subDays(now, 1);
+    // Check if yesterday is already included
+    const yesterday = subDays(now, 1);
+    const hasYesterday = days.some(day => format(day.date, 'yyyy-MM-dd') === yesterdayFormatted);
+    if (!hasYesterday) {
       days.push({
         date: yesterday,
-        dayName: 'Yesterday',
+        dayName: format(yesterday, 'EEE'),
         dayNumber: format(yesterday, 'd'),
         formattedDate: yesterdayFormatted,
         isToday: false
       });
     }
-
+    
+    // Sort days by date again if we added today or yesterday
+    if (!hasToday || !hasYesterday) {
+      days.sort((a, b) => {
+        return a.date.getTime() - b.date.getTime();
+      });
+    }
+    
+    console.log('Revenue Calendar: Generated', days.length, 'days to display');
     return days;
   }, [timeFrame, salesData]);
 
-  // Process sales data for display
+  // Transform the sales data into display data
   const displayData = useMemo(() => {
-    // Always show days even if no sales data
-    if (!salesData || !Array.isArray(salesData)) {
-      // Return days with zero revenue instead of empty array
-      return daysToDisplay.map(day => ({
-        ...day,
-        revenue: 0
-      }));
+    if (!salesData || !Array.isArray(salesData) || salesData.length === 0 || !daysToDisplay || !Array.isArray(daysToDisplay)) {
+      return [];
     }
-
-    // Create a map of formatted dates to their revenue for faster lookup
-    const revenueByDate = new Map();
     
-    // Process all sales data once
+    console.log('Revenue Calendar: Transforming sales data to display data', {
+      salesDataLength: salesData.length,
+      daysToDisplayLength: daysToDisplay.length,
+      timeFrame
+    });
+    
+    // Map of date to revenue
+    const revenueByDate = new Map<string, number>();
+    
+    // Process each sale
     salesData.forEach(sale => {
       if (!sale || !sale.date) return;
       
@@ -640,6 +641,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       } catch (error) {
         console.error('Error processing sale date:', sale.date, error);
       }
+    });
+    
+    // Debug log for today and yesterday
+    const today = new Date();
+    const yesterday = subDays(today, 1);
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+    
+    console.log('Revenue Calendar: Today and yesterday revenue', {
+      todayRevenue: revenueByDate.get(todayFormatted) || 0,
+      yesterdayRevenue: revenueByDate.get(yesterdayFormatted) || 0
     });
     
     // Map days to their revenue
@@ -771,7 +783,14 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       const startDate = format(subYears(new Date(), 5), 'yyyy-MM-dd');
       const endDate = format(addYears(new Date(), 2), 'yyyy-MM-dd');
       
-      const result = await fetchFromAPI(`/api/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      // Fix: Use the correct API endpoint that matches the one in fetchSalesData
+      const result = await fetchFromAPI(`/api/shopify/sales?brandId=${brandId}&startDate=${startDate}&endDate=${endDate}`);
+      
+      console.log('Revenue Calendar: Background fetch result:', {
+        hasResult: !!result,
+        hasSales: result && !!result.sales,
+        salesCount: result && result.sales ? result.sales.length : 0
+      });
       
       if (!result || !result.sales || !Array.isArray(result.sales)) {
         console.log('Revenue Calendar: No sales data in background fetch, keeping existing data');
