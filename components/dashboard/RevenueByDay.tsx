@@ -428,52 +428,53 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   
   // Get the current month and year for the title
   const currentDate = new Date();
-  const getTitle = () => {
-    if (timeFrame === 'daily') {
-      return `Today (${format(currentDate, 'MMMM d, yyyy')})`;
-    } else if (timeFrame === 'weekly') {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
-    } else if (timeFrame === 'monthly') {
-      return format(currentDate, 'MMMM yyyy');
-    } else {
-      return format(currentDate, 'yyyy');
-    }
+  const monthYearTitle = format(currentDate, 'MMMM yyyy');
+
+  // Get revenue for a specific day
+  const getRevenueForDay = (day: number): { revenue: number, formattedRevenue: string } => {
+    // Find the day in our data
+    const dayData = displayData.find(item => {
+      if (timeFrame === 'monthly' && item.displayDate === day.toString()) {
+        return true;
+      }
+      return false;
+    });
+    
+    const revenue = dayData?.revenue || 0;
+    const formattedRevenue = revenue > 0 
+      ? revenue >= 1000
+        ? `$${(revenue/1000).toFixed(1)}k`
+        : `$${revenue.toFixed(0)}`
+      : '$0';
+      
+    return { revenue, formattedRevenue };
   };
   
-  // Calculate the number of weeks in the month for dynamic sizing
-  const getMonthlyViewHeight = () => {
-    if (timeFrame !== 'monthly') return 'auto';
-    
-    // Count the number of weeks (rows) needed
-    const numWeeks = Math.ceil((displayData.length) / 7);
-    
-    // Base height per week plus header
-    return `${numWeeks * 80 + 40}px`;
+  // Calculate height percentage for bars
+  const getHeightPercentage = (revenue: number): string => {
+    if (revenue <= 0) return '0%';
+    return `${Math.max(5, Math.min(100, (revenue / maxRevenue) * 100))}%`;
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <h3 className="text-xl font-semibold text-white mb-2">Revenue Calendar</h3>
+    <div className="w-full h-full flex flex-col bg-black rounded-lg p-4">
+      <div className="mb-2">
+        <h2 className="text-xl font-semibold text-white">Revenue Calendar</h2>
+      </div>
       
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-lg font-medium text-white">
-          {getTitle()}
-        </h4>
-        <div className="flex gap-2">
-          <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
-            <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
-              <SelectValue placeholder="Select view" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="daily">Today</SelectItem>
-              <SelectItem value="weekly">This Week</SelectItem>
-              <SelectItem value="monthly">This Month</SelectItem>
-              <SelectItem value="yearly">This Year</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-white">{monthYearTitle}</h3>
+        <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
+          <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
+            <SelectValue>This Month</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="daily">Today</SelectItem>
+            <SelectItem value="weekly">This Week</SelectItem>
+            <SelectItem value="monthly">This Month</SelectItem>
+            <SelectItem value="yearly">This Year</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       {isLoading ? (
@@ -488,99 +489,92 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       ) : (
         <div className="flex-1">
-          {timeFrame === 'monthly' && (
-            <div className="grid grid-cols-7 gap-2">
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
-                  {day}
-                </div>
-              ))}
-            </div>
-          )}
-          
-          <div className={cn(
-            "grid gap-2",
-            timeFrame === 'daily' 
-              ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" 
-              : timeFrame === 'weekly' 
-                ? "grid-cols-7" 
-                : timeFrame === 'monthly' 
-                  ? "grid-cols-7"
-                  : "grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12" // yearly
-          )}>
-            {displayData.map((item) => {
-              // Skip rendering empty cells with no display date (for monthly view alignment)
-              if (item.displayDate === '') {
-                return (
-                  <div 
-                    key={item.date} 
-                    className="bg-transparent h-[70px]"
-                  />
-                );
-              }
-              
-              // Calculate the height percentage based on revenue
-              const heightPercentage = item.revenue > 0 
-                ? Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100)) 
-                : 0;
-                
-              // Format the revenue display
-              const formattedRevenue = item.revenue > 0 
-                ? item.revenue >= 1000
-                  ? `$${(item.revenue/1000).toFixed(1)}k`
-                  : `$${item.revenue.toFixed(0)}`
-                : '$0';
-                
-              // Check if this is the current period
-              const isCurrentPeriod = 
-                (timeFrame === 'daily' && 'isCurrentHour' in item && item.isCurrentHour) ||
-                (timeFrame === 'weekly' && 'isToday' in item && item.isToday) ||
-                (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
-                (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
-
-              // Special styling for cell 3 (matches screenshot)
-              const isCell3 = timeFrame === 'monthly' && item.displayDate === '3';
-
+          <div className="grid grid-cols-7 gap-2">
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Mon</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Tue</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Wed</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Thu</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Fri</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Sat</div>
+            <div className="text-center text-xs font-medium text-gray-400 py-1">Sun</div>
+            
+            {/* Empty cells for days before the 1st */}
+            <div className="bg-transparent h-[60px]"></div>
+            <div className="bg-transparent h-[60px]"></div>
+            <div className="bg-transparent h-[60px]"></div>
+            <div className="bg-transparent h-[60px]"></div>
+            
+            {/* Day 1 */}
+            {(() => {
+              const { revenue, formattedRevenue } = getRevenueForDay(1);
               return (
-                <div
-                  key={item.date}
-                  className={cn(
-                    "flex flex-col h-[70px] rounded-md overflow-hidden border",
-                    isCell3
-                      ? "bg-blue-900/20 border-blue-700"
-                      : isCurrentPeriod 
-                        ? "bg-blue-900/20 border-blue-700" 
-                        : "bg-gray-900 border-gray-800"
-                  )}
-                >
-                  <div className={cn(
-                    "text-center py-1 text-sm font-medium",
-                    isCell3 || isCurrentPeriod 
-                      ? "bg-blue-900/50 text-blue-100" 
-                      : "bg-gray-800 text-gray-300"
-                  )}>
-                    {formatDisplayLabel(item)}
-                  </div>
-                  
+                <div className="flex flex-col h-[60px] rounded-md overflow-hidden border bg-gray-900 border-gray-800">
+                  <div className="text-center py-1 text-sm font-medium bg-gray-800 text-gray-300">1</div>
                   <div className="flex-1 flex flex-col justify-end p-2 relative">
                     <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                      <div
-                        className={cn(
-                          "w-full rounded-t transition-all duration-300",
-                          item.revenue > 0 
-                            ? isCurrentPeriod || isCell3
-                              ? "bg-blue-500" 
-                              : "bg-blue-600"
-                            : "bg-gray-700 h-0.5"
-                        )}
-                        style={{
-                          height: heightPercentage > 0 ? `${heightPercentage}%` : '2px'
-                        }}
-                      />
+                      <div 
+                        className={`w-full rounded-t transition-all duration-300 ${revenue > 0 ? 'bg-blue-600' : 'bg-gray-700 h-0.5'}`}
+                        style={{ height: getHeightPercentage(revenue) }}
+                      ></div>
                     </div>
-                    <div className="text-center text-sm font-medium text-white">
-                      {formattedRevenue}
+                    <div className="text-center text-sm font-medium text-white">{formattedRevenue}</div>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Day 2 */}
+            {(() => {
+              const { revenue, formattedRevenue } = getRevenueForDay(2);
+              return (
+                <div className="flex flex-col h-[60px] rounded-md overflow-hidden border bg-gray-900 border-gray-800">
+                  <div className="text-center py-1 text-sm font-medium bg-gray-800 text-gray-300">2</div>
+                  <div className="flex-1 flex flex-col justify-end p-2 relative">
+                    <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                      <div 
+                        className={`w-full rounded-t transition-all duration-300 ${revenue > 0 ? 'bg-blue-600' : 'bg-gray-700 h-0.5'}`}
+                        style={{ height: getHeightPercentage(revenue) }}
+                      ></div>
                     </div>
+                    <div className="text-center text-sm font-medium text-white">{formattedRevenue}</div>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Day 3 (highlighted) */}
+            {(() => {
+              const { revenue, formattedRevenue } = getRevenueForDay(3);
+              return (
+                <div className="flex flex-col h-[60px] rounded-md overflow-hidden border bg-blue-900/20 border-blue-700">
+                  <div className="text-center py-1 text-sm font-medium bg-blue-900/50 text-blue-100">3</div>
+                  <div className="flex-1 flex flex-col justify-end p-2 relative">
+                    <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                      <div 
+                        className={`w-full rounded-t transition-all duration-300 ${revenue > 0 ? 'bg-blue-500' : 'bg-gray-700 h-0.5'}`}
+                        style={{ height: getHeightPercentage(revenue) }}
+                      ></div>
+                    </div>
+                    <div className="text-center text-sm font-medium text-white">{formattedRevenue}</div>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Days 4-16 */}
+            {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(day => {
+              const { revenue, formattedRevenue } = getRevenueForDay(day);
+              return (
+                <div key={day} className="flex flex-col h-[60px] rounded-md overflow-hidden border bg-gray-900 border-gray-800">
+                  <div className="text-center py-1 text-sm font-medium bg-gray-800 text-gray-300">{day}</div>
+                  <div className="flex-1 flex flex-col justify-end p-2 relative">
+                    <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
+                      <div 
+                        className={`w-full rounded-t transition-all duration-300 ${revenue > 0 ? 'bg-blue-600' : 'bg-gray-700 h-0.5'}`}
+                        style={{ height: getHeightPercentage(revenue) }}
+                      ></div>
+                    </div>
+                    <div className="text-center text-sm font-medium text-white">{formattedRevenue}</div>
                   </div>
                 </div>
               );
