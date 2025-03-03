@@ -84,7 +84,12 @@ export async function GET(request: Request) {
     }
 
     // Register the webhook
-    await registerShopifyWebhooks(shop, access_token)
+    try {
+      await registerShopifyWebhooks(shop, access_token)
+    } catch (webhookError) {
+      console.error('Error registering webhooks:', webhookError)
+      // Continue anyway, as this shouldn't block the connection process
+    }
 
     // Return a success page that will close the popup window
     return new Response(`
@@ -129,6 +134,10 @@ export async function GET(request: Request) {
               // Close the window after a short delay
               setTimeout(() => {
                 window.close();
+                // If window doesn't close (e.g., not opened as popup), redirect
+                setTimeout(() => {
+                  window.location.href = '/settings?success=true';
+                }, 1000);
               }, 2000);
             </script>
           </div>
@@ -141,6 +150,69 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Error in Shopify callback:', error)
-    return NextResponse.redirect('/settings?error=connection_failed')
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Connection Failed</title>
+          <style>
+            body {
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background-color: #1A1A1A;
+              color: white;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              text-align: center;
+            }
+            .error {
+              background-color: #2A2A2A;
+              border-radius: 8px;
+              padding: 2rem;
+              max-width: 400px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+              color: #ef4444;
+              margin-bottom: 1rem;
+            }
+            p {
+              margin-bottom: 2rem;
+              color: #d1d5db;
+            }
+            button {
+              background-color: #3b82f6;
+              color: white;
+              border: none;
+              padding: 0.5rem 1rem;
+              border-radius: 0.25rem;
+              cursor: pointer;
+            }
+            button:hover {
+              background-color: #2563eb;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h1>Connection Failed</h1>
+            <p>There was an error connecting your Shopify store. Please try again.</p>
+            <button onclick="window.close()">Close</button>
+            <script>
+              // If window doesn't close (e.g., not opened as popup), redirect
+              setTimeout(() => {
+                window.location.href = '/settings?error=connection_failed';
+              }, 3000);
+            </script>
+          </div>
+        </body>
+      </html>
+    `, {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    })
   }
 } 

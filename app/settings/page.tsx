@@ -44,6 +44,8 @@ export default function SettingsPage() {
   const loadConnections = async () => {
     if (!user) return
     
+    console.log('Loading connections for user:', user.id)
+    
     const { data, error } = await supabase
       .from('platform_connections')
       .select('*')
@@ -54,12 +56,20 @@ export default function SettingsPage() {
       return
     }
 
+    console.log('Loaded connections:', data)
     const typedData = data as PlatformConnection[] | null
     setConnections(typedData || [])
   }
 
   useEffect(() => {
     loadConnections()
+    
+    // Set up a refresh interval to check for new connections
+    const refreshInterval = setInterval(() => {
+      loadConnections()
+    }, 5000) // Check every 5 seconds
+    
+    return () => clearInterval(refreshInterval)
   }, [user, supabase])
 
   const handleAddBrand = async () => {

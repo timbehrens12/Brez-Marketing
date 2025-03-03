@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,8 +26,18 @@ export function PlatformConnectionModal({
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [shopUrl, setShopUrl] = useState('')
+  const [metaCheckInterval, setMetaCheckInterval] = useState<NodeJS.Timeout | null>(null)
   const supabase = useSupabase()
   const { user } = useUser()
+
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (metaCheckInterval) {
+        clearInterval(metaCheckInterval)
+      }
+    }
+  }, [metaCheckInterval])
 
   const handleShopifyConnect = async () => {
     if (!shopUrl) {
@@ -99,21 +109,64 @@ export function PlatformConnectionModal({
   const handleMetaConnect = async () => {
     setIsLoading(true)
     try {
+      // Create a pending connection record first
+      const { data: connection, error } = await supabase
+        .from('platform_connections')
+        .insert({
+          platform_type: 'meta',
+          brand_id: brandId,
+          user_id: user?.id,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+          
+      if (error) {
+        console.error('Error creating Meta connection:', error)
+        toast.error('Failed to create Meta connection')
+        return
+      }
+      
       // Open the Meta auth URL in a new window
       const authUrl = `/api/auth/meta?brandId=${brandId}`
       const authWindow = window.open(authUrl, 'meta-auth', 'width=600,height=700')
       
-      // We can't easily check the status of Meta connection, so we'll just close the modal
-      // after a short delay and rely on the callback to update the UI
+      // Check periodically if the connection is successful
+      const interval = setInterval(async () => {
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .select('status')
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'meta')
+          .eq('status', 'active')
+          
+        if (data && data.length > 0) {
+          clearInterval(interval)
+          setMetaCheckInterval(null)
+          if (authWindow && !authWindow.closed) authWindow.close()
+          setIsOpen(false)
+          toast.success('Meta connected successfully')
+          if (onSuccess) onSuccess()
+        }
+      }, 2000)
+      
+      setMetaCheckInterval(interval)
+      
+      // Clear interval after 2 minutes (timeout)
       setTimeout(() => {
-        setIsOpen(false)
-        if (onSuccess) onSuccess()
-      }, 1000)
+        clearInterval(interval)
+        setMetaCheckInterval(null)
+        // If still loading after timeout, show error
+        if (isLoading) {
+          setIsLoading(false)
+          toast.error('Connection timed out. Please check if Meta was connected and try again if needed.')
+        }
+      }, 120000)
       
     } catch (error) {
       console.error('Connection error:', error)
       toast.error('Failed to initiate connection')
-    } finally {
       setIsLoading(false)
     }
   }
