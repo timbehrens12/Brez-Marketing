@@ -789,7 +789,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   }
 
   return (
-    <div className="w-full">
+    <div className="h-full">
       {error && (
         <div className="text-sm text-gray-400 mb-4">
           {timeFrame === 'daily' && displayData && displayData.length > 2 ? (
@@ -826,18 +826,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
+          {/* Restore the previous layout with a more compact design */}
+          <div className="grid grid-cols-7 gap-1">
             {daysToDisplay.map((day, index) => {
               const dayData = displayData.find(d => d.formattedDate === day.formattedDate) || {
                 ...day,
                 revenue: 0
               };
 
+              // Calculate the height percentage based on revenue
+              const heightPercentage = dayData.revenue > 0 
+                ? Math.max(5, Math.min(100, (dayData.revenue / maxRevenue) * 100)) 
+                : 2;
+
               return (
                 <div
                   key={day.formattedDate}
                   className={cn(
-                    "flex flex-col items-center p-2 rounded border border-gray-800",
+                    "flex flex-col items-center p-1 rounded border border-gray-800",
                     day.isToday && "bg-blue-950 border-blue-800"
                   )}
                 >
@@ -847,21 +853,23 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   <div className="text-sm font-medium">
                     {timeFrame !== 'yearly' && day.dayNumber}
                   </div>
-                  <div className="w-full mt-2">
-                    <div className="relative h-24">
+                  <div className="w-full mt-1">
+                    <div className="relative h-16">
                       <div
                         className={cn(
-                          "absolute bottom-0 w-full",
+                          "absolute bottom-0 w-full rounded-t",
                           dayData.revenue > 0 ? "bg-blue-500" : "bg-gray-700"
                         )}
                         style={{
-                          height: dayData.revenue > 0 ? `${(dayData.revenue / maxRevenue) * 100}%` : '2px'
+                          height: `${heightPercentage}%`
                         }}
                         title={`$${dayData.revenue.toFixed(2)}`}
                       ></div>
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      ${dayData.revenue > 999 ? (dayData.revenue/1000).toFixed(1) + 'k' : dayData.revenue.toFixed(0)}
+                    <div className="text-xs text-gray-400 mt-1 text-center">
+                      ${dayData.revenue > 999 
+                        ? (dayData.revenue/1000).toFixed(1) + 'k' 
+                        : dayData.revenue.toFixed(0)}
                     </div>
                     {timeFrame === 'yearly' && (
                       <div className="text-xs text-gray-400 mt-1">{day.dayName}</div>
