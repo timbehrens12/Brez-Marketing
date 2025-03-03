@@ -420,8 +420,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   // Get days to display based on timeFrame
   const daysToDisplay = useMemo(() => {
     const now = new Date();
-    const days = [];
-
+    let days = [];
+    
+    // First, determine the days based on the selected timeFrame
     switch (timeFrame) {
       case 'yearly': {
         // Get all months of the current year
@@ -458,16 +459,17 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       }
 
       case 'daily': {
-        // Show just today
+        // For daily view, we'll actually show ALL days with data
+        // This is handled below, but we'll add today and yesterday as a minimum
+        const today = now;
         days.push({
-          date: now,
+          date: today,
           dayName: 'Today',
-          dayNumber: format(now, 'd'),
-          formattedDate: format(now, 'yyyy-MM-dd'),
+          dayNumber: format(today, 'd'),
+          formattedDate: format(today, 'yyyy-MM-dd'),
           isToday: true
         });
         
-        // Add yesterday
         const yesterday = subDays(now, 1);
         days.push({
           date: yesterday,
@@ -492,6 +494,50 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           });
         }
       }
+    }
+
+    // CRITICAL: For 'daily' timeFrame, we want to show ALL days with data
+    // This ensures that when viewing "today" or "yesterday", we still see all days with sales
+    if (timeFrame === 'daily' && Array.isArray(salesData) && salesData.length > 0) {
+      console.log('Revenue Calendar: Adding all days with sales data to display');
+      
+      // Create a map of days we already have
+      const existingDays = new Map();
+      days.forEach(day => {
+        existingDays.set(format(day.date, 'yyyy-MM-dd'), true);
+      });
+      
+      // Add all days with sales data
+      salesData.forEach(sale => {
+        if (!sale || !sale.date) return;
+        
+        try {
+          const saleDate = parseISO(sale.date);
+          const formattedDate = format(saleDate, 'yyyy-MM-dd');
+          
+          // Skip if we already have this day
+          if (existingDays.has(formattedDate)) return;
+          
+          // Add this day
+          days.push({
+            date: saleDate,
+            dayName: format(saleDate, 'EEE'),
+            dayNumber: format(saleDate, 'd'),
+            formattedDate: formattedDate,
+            isToday: isSameDay(saleDate, now)
+          });
+          
+          // Mark as added
+          existingDays.set(formattedDate, true);
+        } catch (error) {
+          console.error('Error processing sale date for display:', sale.date, error);
+        }
+      });
+      
+      // Sort days by date
+      days.sort((a, b) => {
+        return a.date.getTime() - b.date.getTime();
+      });
     }
 
     // CRITICAL: Always ensure today and yesterday are included
@@ -529,7 +575,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
 
     return days;
-  }, [timeFrame]);
+  }, [timeFrame, salesData]);
 
   // Process sales data for display
   const displayData = useMemo(() => {
@@ -618,9 +664,10 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
   const getTitle = () => {
     switch (timeFrame) {
       case 'daily':
-        return 'Last 7 Days';
+        // If we're in daily mode but showing all days with data, make that clear
+        return 'All Days with Sales';
       case 'weekly':
-        return 'Weekly';
+        return 'Last 7 Days';
       case 'monthly':
         return `${format(new Date(), 'MMMM yyyy')}`;
       case 'yearly':
@@ -817,7 +864,15 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     <div className="w-full">
       {error && (
         <div className="text-sm text-gray-400 mb-4">
-          {error}
+          {timeFrame === 'daily' && displayData && displayData.length > 2 ? (
+            // If we're showing all days with data, make the error less prominent
+            <span className="text-xs text-gray-300">
+              {error} (Showing all days with sales)
+            </span>
+          ) : (
+            // Regular error display
+            error
+          )}
         </div>
       )}
       {isLoading ? (
