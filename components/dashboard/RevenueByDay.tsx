@@ -191,8 +191,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         date: todayStr,
         revenue: 0,
         id: `generated-today-${Date.now()}`,
-        isTimezoneShifted: false,
-        forceShowOnFirst: true
+        isTimezoneShifted: false
       })
     }
     
@@ -202,8 +201,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         date: yesterdayStr,
         revenue: 0,
         id: `generated-yesterday-${Date.now()}`,
-        isTimezoneShifted: false,
-        forceShowOnFirst: true
+        isTimezoneShifted: false
       })
     }
     
@@ -224,15 +222,13 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         date: todayStr,
         revenue: 0,
         id: `generated-today-${Date.now()}`,
-        isTimezoneShifted: false,
-        forceShowOnFirst: true
+        isTimezoneShifted: false
       },
       {
         date: yesterdayStr,
         revenue: 0,
         id: `generated-yesterday-${Date.now()}`,
-        isTimezoneShifted: false,
-        forceShowOnFirst: true
+        isTimezoneShifted: false
       }
     ]
   }
@@ -374,10 +370,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     return `$${revenue.toFixed(0)}`
   }
   
-  // Get the current month and year for the title
-  const currentDate = new Date()
-  const monthYearTitle = format(currentDate, 'MMMM yyyy')
-  
   // Generate days for the monthly view
   const generateMonthlyDays = () => {
     const today = new Date()
@@ -423,7 +415,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       
       <div className="bg-[#111] rounded-lg p-4 flex-1">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-white">{monthYearTitle}</h3>
+          <h3 className="text-lg font-medium text-white">March 2025</h3>
           <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
             <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
               <SelectValue>This Month</SelectValue>
@@ -451,7 +443,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="flex-1">
             {timeFrame === 'monthly' && (
               <>
-                <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-1 mb-1">
                   <div className="text-center text-xs font-medium text-gray-400">Mon</div>
                   <div className="text-center text-xs font-medium text-gray-400">Tue</div>
                   <div className="text-center text-xs font-medium text-gray-400">Wed</div>
@@ -461,24 +453,24 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   <div className="text-center text-xs font-medium text-gray-400">Sun</div>
                 </div>
                 
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1">
                   {/* Empty cells for days before the 1st */}
                   {emptyCells.map((_, index) => (
-                    <div key={`empty-${index}`} className="bg-transparent h-[60px]"></div>
+                    <div key={`empty-${index}`} className="bg-transparent h-[40px]"></div>
                   ))}
                   
                   {/* Days of the month */}
                   {days.map(({ day, revenue, isToday }) => (
                     <div 
                       key={`day-${day}`} 
-                      className={`flex flex-col h-[60px] rounded-md overflow-hidden border ${
+                      className={`flex flex-col h-[40px] rounded-md overflow-hidden ${
                         isToday 
-                          ? 'bg-blue-900/20 border-blue-700' 
-                          : 'bg-gray-900 border-gray-800'
+                          ? 'bg-blue-900/20 border border-blue-700' 
+                          : 'bg-gray-900 border border-gray-800'
                       }`}
                     >
                       <div 
-                        className={`text-center py-1 text-sm font-medium ${
+                        className={`text-center py-1 text-xs font-medium ${
                           isToday 
                             ? 'bg-blue-900/50 text-blue-100' 
                             : 'bg-gray-800 text-gray-300'
@@ -486,22 +478,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                       >
                         {day}
                       </div>
-                      <div className="flex-1 flex flex-col justify-end p-2 relative">
-                        <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                          <div 
-                            className={`w-full rounded-t transition-all duration-300 ${
-                              revenue > 0 
-                                ? isToday ? 'bg-blue-500' : 'bg-blue-600' 
-                                : 'bg-gray-700 h-0.5'
-                            }`}
-                            style={{ 
-                              height: revenue > 0 
-                                ? `${Math.max(5, Math.min(100, (revenue / maxRevenue) * 100))}%` 
-                                : '0.125rem' 
-                            }}
-                          ></div>
-                        </div>
-                        <div className="text-center text-sm font-medium text-white">
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center text-xs font-medium text-white">
                           {formatRevenue(revenue)}
                         </div>
                       </div>
@@ -512,18 +490,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             )}
             
             {timeFrame === 'weekly' && (
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1">
                 {displayData.map((item, index) => (
                   <div 
                     key={`week-${index}`} 
-                    className={`flex flex-col h-[60px] rounded-md overflow-hidden border ${
+                    className={`flex flex-col h-[40px] rounded-md overflow-hidden ${
                       'isToday' in item && item.isToday 
-                        ? 'bg-blue-900/20 border-blue-700' 
-                        : 'bg-gray-900 border-gray-800'
+                        ? 'bg-blue-900/20 border border-blue-700' 
+                        : 'bg-gray-900 border border-gray-800'
                     }`}
                   >
                     <div 
-                      className={`text-center py-1 text-sm font-medium ${
+                      className={`text-center py-1 text-xs font-medium ${
                         'isToday' in item && item.isToday 
                           ? 'bg-blue-900/50 text-blue-100' 
                           : 'bg-gray-800 text-gray-300'
@@ -531,22 +509,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     >
                       {item.displayDate}
                     </div>
-                    <div className="flex-1 flex flex-col justify-end p-2 relative">
-                      <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                        <div 
-                          className={`w-full rounded-t transition-all duration-300 ${
-                            item.revenue > 0 
-                              ? 'isToday' in item && item.isToday ? 'bg-blue-500' : 'bg-blue-600' 
-                              : 'bg-gray-700 h-0.5'
-                          }`}
-                          style={{ 
-                            height: item.revenue > 0 
-                              ? `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` 
-                              : '0.125rem' 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-center text-sm font-medium text-white">
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center text-xs font-medium text-white">
                         {formatRevenue(item.revenue)}
                       </div>
                     </div>
@@ -556,18 +520,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             )}
             
             {timeFrame === 'daily' && (
-              <div className="grid grid-cols-8 gap-2">
+              <div className="grid grid-cols-8 gap-1">
                 {displayData.slice(0, 24).map((item, index) => (
                   <div 
                     key={`hour-${index}`} 
-                    className={`flex flex-col h-[60px] rounded-md overflow-hidden border ${
+                    className={`flex flex-col h-[40px] rounded-md overflow-hidden ${
                       'isCurrentHour' in item && item.isCurrentHour 
-                        ? 'bg-blue-900/20 border-blue-700' 
-                        : 'bg-gray-900 border-gray-800'
+                        ? 'bg-blue-900/20 border border-blue-700' 
+                        : 'bg-gray-900 border border-gray-800'
                     }`}
                   >
                     <div 
-                      className={`text-center py-1 text-sm font-medium ${
+                      className={`text-center py-1 text-xs font-medium ${
                         'isCurrentHour' in item && item.isCurrentHour 
                           ? 'bg-blue-900/50 text-blue-100' 
                           : 'bg-gray-800 text-gray-300'
@@ -575,22 +539,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     >
                       {item.displayDate}
                     </div>
-                    <div className="flex-1 flex flex-col justify-end p-2 relative">
-                      <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                        <div 
-                          className={`w-full rounded-t transition-all duration-300 ${
-                            item.revenue > 0 
-                              ? 'isCurrentHour' in item && item.isCurrentHour ? 'bg-blue-500' : 'bg-blue-600' 
-                              : 'bg-gray-700 h-0.5'
-                          }`}
-                          style={{ 
-                            height: item.revenue > 0 
-                              ? `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` 
-                              : '0.125rem' 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-center text-sm font-medium text-white">
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center text-xs font-medium text-white">
                         {formatRevenue(item.revenue)}
                       </div>
                     </div>
@@ -600,18 +550,18 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             )}
             
             {timeFrame === 'yearly' && (
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-6 gap-1">
                 {displayData.map((item, index) => (
                   <div 
                     key={`month-${index}`} 
-                    className={`flex flex-col h-[60px] rounded-md overflow-hidden border ${
+                    className={`flex flex-col h-[40px] rounded-md overflow-hidden ${
                       'isCurrentMonth' in item && item.isCurrentMonth 
-                        ? 'bg-blue-900/20 border-blue-700' 
-                        : 'bg-gray-900 border-gray-800'
+                        ? 'bg-blue-900/20 border border-blue-700' 
+                        : 'bg-gray-900 border border-gray-800'
                     }`}
                   >
                     <div 
-                      className={`text-center py-1 text-sm font-medium ${
+                      className={`text-center py-1 text-xs font-medium ${
                         'isCurrentMonth' in item && item.isCurrentMonth 
                           ? 'bg-blue-900/50 text-blue-100' 
                           : 'bg-gray-800 text-gray-300'
@@ -619,22 +569,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     >
                       {item.displayDate}
                     </div>
-                    <div className="flex-1 flex flex-col justify-end p-2 relative">
-                      <div className="absolute inset-x-2 bottom-8 top-2 flex items-end">
-                        <div 
-                          className={`w-full rounded-t transition-all duration-300 ${
-                            item.revenue > 0 
-                              ? 'isCurrentMonth' in item && item.isCurrentMonth ? 'bg-blue-500' : 'bg-blue-600' 
-                              : 'bg-gray-700 h-0.5'
-                          }`}
-                          style={{ 
-                            height: item.revenue > 0 
-                              ? `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` 
-                              : '0.125rem' 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="text-center text-sm font-medium text-white">
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center text-xs font-medium text-white">
                         {formatRevenue(item.revenue)}
                       </div>
                     </div>
