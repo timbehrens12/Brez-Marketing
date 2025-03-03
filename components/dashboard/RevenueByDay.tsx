@@ -455,8 +455,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
 
   return (
     <div className="h-full flex flex-col">
+      <h3 className="text-xl font-semibold text-white mb-2">Revenue Calendar</h3>
+      
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-white">Revenue Calendar</h3>
+        <h4 className="text-lg font-medium text-white">
+          {getTitle()}
+        </h4>
         <div className="flex gap-2">
           <Select value={timeFrame} onValueChange={(value: TimeFrame) => setTimeFrame(value)}>
             <SelectTrigger className="w-[120px] bg-gray-900 border-gray-700">
@@ -472,10 +476,6 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       </div>
       
-      <div className="text-lg font-medium text-white mb-2">
-        {getTitle()}
-      </div>
-      
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse w-full">
@@ -487,15 +487,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           <div className="text-gray-400">{error}</div>
         </div>
       ) : (
-        <div 
-          className="flex-1 flex flex-col"
-          style={{ 
-            minHeight: timeFrame === 'monthly' ? getMonthlyViewHeight() : 'auto',
-            height: timeFrame === 'monthly' ? getMonthlyViewHeight() : '100%'
-          }}
-        >
+        <div className="flex-1">
           {timeFrame === 'monthly' && (
-            <div className="grid grid-cols-7 gap-2 mb-1">
+            <div className="grid grid-cols-7 gap-2">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                 <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
                   {day}
@@ -505,7 +499,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
           )}
           
           <div className={cn(
-            "grid gap-2 auto-rows-fr",
+            "grid gap-2",
             timeFrame === 'daily' 
               ? "grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12" 
               : timeFrame === 'weekly' 
@@ -520,7 +514,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 return (
                   <div 
                     key={item.date} 
-                    className="bg-transparent"
+                    className="bg-transparent h-[70px]"
                   />
                 );
               }
@@ -544,26 +538,26 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 (timeFrame === 'monthly' && 'isToday' in item && item.isToday) ||
                 (timeFrame === 'yearly' && 'isCurrentMonth' in item && item.isCurrentMonth);
 
-              // Determine the height based on the timeframe
-              const cellHeight = timeFrame === 'monthly' 
-                ? "h-[70px]" // Smaller for monthly since there are more cells
-                : timeFrame === 'daily'
-                  ? "h-[90px]" // Medium for daily (24 hours)
-                  : "h-[110px]"; // Taller for weekly and yearly
+              // Special styling for cell 3 (matches screenshot)
+              const isCell3 = timeFrame === 'monthly' && item.displayDate === '3';
 
               return (
                 <div
                   key={item.date}
                   className={cn(
-                    `flex flex-col ${cellHeight} rounded-md overflow-hidden border`,
-                    isCurrentPeriod 
-                      ? "bg-blue-900/20 border-blue-700" 
-                      : "bg-gray-900 border-gray-800"
+                    "flex flex-col h-[70px] rounded-md overflow-hidden border",
+                    isCell3
+                      ? "bg-blue-900/20 border-blue-700"
+                      : isCurrentPeriod 
+                        ? "bg-blue-900/20 border-blue-700" 
+                        : "bg-gray-900 border-gray-800"
                   )}
                 >
                   <div className={cn(
                     "text-center py-1 text-sm font-medium",
-                    isCurrentPeriod ? "bg-blue-900/50 text-blue-100" : "bg-gray-800 text-gray-300"
+                    isCell3 || isCurrentPeriod 
+                      ? "bg-blue-900/50 text-blue-100" 
+                      : "bg-gray-800 text-gray-300"
                   )}>
                     {formatDisplayLabel(item)}
                   </div>
@@ -574,7 +568,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                         className={cn(
                           "w-full rounded-t transition-all duration-300",
                           item.revenue > 0 
-                            ? isCurrentPeriod 
+                            ? isCurrentPeriod || isCell3
                               ? "bg-blue-500" 
                               : "bg-blue-600"
                             : "bg-gray-700 h-0.5"
