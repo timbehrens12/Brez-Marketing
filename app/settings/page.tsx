@@ -10,7 +10,6 @@ import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
 import { Trash2, Edit2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useUser } from "@clerk/nextjs"
-import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
@@ -19,6 +18,7 @@ import { createClient } from "@supabase/supabase-js"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/AuthContext"
 import { JwtTemplateAlert } from '@/components/JwtTemplateAlert'
+import { supabase } from '@/lib/supabase'
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -30,9 +30,25 @@ interface MetaDataRetention {
   dataType: 'metrics' | 'insights';
 }
 
+// Define the PlatformConnection type
+interface PlatformConnection {
+  id: string
+  user_id: string
+  brand_id: string
+  platform_type: string
+  status: string
+  shop?: string | null
+  access_token?: string | null
+  refresh_token?: string | null
+  expires_at?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  metadata?: any
+}
+
 export default function SettingsPage() {
   const { user } = useUser()
-  const { toast } = useToast()
+  const { toast: uiToast } = useToast()
   const { isSupabaseAuthenticated, jwtTemplateError } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
@@ -40,7 +56,7 @@ export default function SettingsPage() {
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
-  const supabase = useSupabase()
+  const supabaseClient = useSupabase()
 
   useEffect(() => {
     console.log('Current brands:', brands)
@@ -50,51 +66,35 @@ export default function SettingsPage() {
   // Display an error message if the JWT template is missing
   useEffect(() => {
     if (jwtTemplateError) {
-      toast({
+      uiToast({
         title: "Authentication Error",
         description: jwtTemplateError,
         variant: "destructive",
       })
     }
-  }, [jwtTemplateError, toast])
+  }, [jwtTemplateError, uiToast])
 
   const loadConnections = async () => {
-    if (!user) {
-      console.warn('No user found, cannot load connections')
-      return
-    }
+    if (!user) return
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('platform_connections')
         .select('*')
         .eq('user_id', user.id)
       
-      if (error) {
-        console.error('Error loading connections:', error)
-        
-        // Check if it's an authentication error
-        if (error.code === '401' || error.message.includes('JWT')) {
-          toast.error('Authentication error. Please refresh the page or sign out and sign in again.')
-        } else {
-          toast.error('Failed to load connections')
-        }
-        return
-      }
+      if (error) throw error
       
-      if (data) {
-        console.log('Loaded connections:', data)
-        setConnections(data)
-      }
-    } catch (err) {
-      console.error('Exception loading connections:', err)
-      toast.error('An unexpected error occurred')
+      // Cast the data to match our PlatformConnection type
+      setConnections((data || []) as PlatformConnection[])
+    } catch (error) {
+      console.error('Error loading connections:', error)
     }
   }
 
   useEffect(() => {
     loadConnections()
-  }, [user, supabase])
+  }, [user])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       
       if (!token) {
         console.error('Failed to get Supabase token from Clerk')
-        toast({
+        uiToast({
           title: "Authentication Error",
           description: "Failed to authenticate with the database. Please try again.",
           variant: "destructive"
@@ -166,7 +166,7 @@ export default function SettingsPage() {
   const handleDeleteBrand = async (brandId: string) => {
     try {
       // First, disconnect all platforms for this brand
-      const { data: connections } = await supabase
+      const { data: connections } = await supabaseClient
         .from('platform_connections')
         .select('platform_type')
         .eq('brand_id', brandId);
@@ -179,7 +179,7 @@ export default function SettingsPage() {
       }
 
       // Then delete the brand
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('brands')
         .delete()
         .eq('id', brandId);
@@ -235,7 +235,7 @@ export default function SettingsPage() {
           if (forceDelete) {
             console.log('User confirmed force delete')
             // Try direct deletion from the database
-            const { error } = await supabase
+            const { error } = await supabaseClient
               .from('platform_connections')
               .delete()
               .eq('brand_id', brandId)
@@ -272,7 +272,7 @@ export default function SettingsPage() {
   // Track Meta data access for retention purposes
   const updateMetaDataAccess = async (brandId: string) => {
     try {
-      await supabase
+      await supabaseClient
         .from('meta_data_tracking')
         .upsert({
           brand_id: brandId,
@@ -300,11 +300,10 @@ export default function SettingsPage() {
         brand_id: selectedBrandId,
         status: 'pending',
         scopes: META_SCOPE,
-        created_at: new Date().toISOString(),
-        last_accessed: new Date().toISOString()
+        created_at: new Date().toISOString()
       }
 
-      await supabase
+      await supabaseClient
         .from('platform_connections')
         .insert(connectionData)
 
@@ -322,19 +321,19 @@ export default function SettingsPage() {
       cutoffDate.setDate(cutoffDate.getDate() - META_DATA_RETENTION_DAYS)
 
       // Delete stale metrics data
-      await supabase
+      await supabaseClient
         .from('metrics')
         .delete()
         .eq('platform', 'meta')
         .lt('created_at', cutoffDate.toISOString())
 
       // Delete inactive connections
-      await supabase
+      await supabaseClient
         .from('platform_connections')
         .delete()
         .eq('platform_type', 'meta')
         .eq('status', 'inactive')
-        .lt('last_accessed', cutoffDate.toISOString())
+        .lt('updated_at', cutoffDate.toISOString())
 
     } catch (error) {
       console.error('Error cleaning up stale data:', error)
@@ -348,13 +347,13 @@ export default function SettingsPage() {
       await cleanupStaleMetaData()
 
       // Then disconnect
-      await supabase
+      await supabaseClient
         .from('platform_connections')
         .update({ 
           status: 'inactive',
           disconnected_at: new Date().toISOString(),
           // Store minimal required metadata for audit purposes
-          disconnection_reason: 'user_initiated'
+          metadata: { disconnection_reason: 'user_initiated' }
         })
         .eq('brand_id', selectedBrandId)
         .eq('platform_type', 'meta')
@@ -384,28 +383,43 @@ export default function SettingsPage() {
 
   // Modified handleClearAllData with proper Meta data cleanup
   const handleClearAllData = async () => {
+    if (!user) return
+    
     // First confirmation
-    if (!confirm('WARNING: This will delete ALL brands and their platform connections for your account. This cannot be undone.')) {
-      return;
+    if (!confirm('Are you sure you want to delete ALL your data? This cannot be undone.')) {
+      return
     }
     
     // Second confirmation requiring typing
-    const confirmText = 'DELETE ALL DATA';
+    const confirmText = 'DELETE ALL DATA'
     const userInput = prompt(`Please type "${confirmText}" to confirm:`)
     if (userInput === confirmText) {
-      // First, clean up any associated Meta data
-      await cleanupStaleMetaData()
-
-      // Then delete all brands and their connections
-      await supabase
-        .from('brands')
-        .delete()
-        .eq('user_id', user.id)
-
-      await loadConnections()
-      toast.success('All data deleted successfully')
+      try {
+        // Delete all brands (which should cascade to connections)
+        await supabaseClient
+          .from('brands')
+          .delete()
+          .eq('user_id', user.id)
+  
+        await refreshBrands()
+        
+        uiToast({
+          title: "Success",
+          description: "All data has been deleted successfully",
+        })
+      } catch (error) {
+        console.error('Error clearing data:', error)
+        uiToast({
+          title: "Error",
+          description: "Failed to clear data. Please try again.",
+          variant: "destructive",
+        })
+      }
     } else {
-      toast.error('Deletion cancelled. No data was deleted.')
+      uiToast({
+        title: "Cancelled",
+        description: "Deletion cancelled. No data was deleted.",
+      })
     }
   }
 
@@ -415,7 +429,49 @@ export default function SettingsPage() {
       
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold text-white">Settings</h1>
-        {/* ... rest of the code ... */}
+        <Button 
+          variant="destructive"
+          className="bg-red-600 hover:bg-red-700 text-white"
+          onClick={handleClearAllData}
+        >
+          Clear All Data
+        </Button>
+      </div>
+      
+      <div className="grid gap-6">
+        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-white">Account Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-400">Your account settings will appear here.</p>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
+          <CardHeader>
+            <CardTitle className="text-lg font-medium text-white">Brand Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {brands.length > 0 ? (
+              <div className="space-y-4">
+                {brands.map(brand => (
+                  <div key={brand.id} className="p-4 rounded-lg bg-[#2A2A2A]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
+                        {brand.name[0].toUpperCase()}
+                      </div>
+                      <span className="text-white">{brand.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No brands added yet.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
