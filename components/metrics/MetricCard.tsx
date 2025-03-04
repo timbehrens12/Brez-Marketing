@@ -69,21 +69,7 @@ export function MetricCard({
     }));
   }, [safeData, dateRange]);
 
-  if (loading) {
-    return (
-      <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Skeleton className="h-4 w-[100px]" />
-          <Skeleton className="h-4 w-[60px]" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-[120px] mb-4" />
-          <Skeleton className="h-[80px] w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
-
+  // Format functions
   const formatValue = (val: number) => {
     try {
       switch(valueFormat) {
@@ -106,6 +92,33 @@ export function MetricCard({
   }
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
+
+  if (loading) {
+    return (
+      <Card className={cn("bg-[#1A1A1A] border-[#2A2A2A] hover:bg-[#222] transition-colors", className)}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center space-x-2">
+            {icon && <span className="text-gray-400">{icon}</span>}
+            <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            <div className="text-2xl font-bold text-white opacity-20">
+              {prefix}{formattedValue}{suffix}
+            </div>
+            <Skeleton className="h-8 w-[120px] absolute top-0 left-0" />
+          </div>
+          <div className="relative mt-1">
+            <div className="text-xs font-medium opacity-20">
+              {isPositive ? "+" : ""}{formatChange(safeChange)}
+            </div>
+            <Skeleton className="h-4 w-[60px] absolute top-0 left-0" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const PlatformIcon = () => {
     switch (platform) {

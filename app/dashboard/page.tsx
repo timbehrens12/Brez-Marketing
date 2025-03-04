@@ -370,7 +370,13 @@ export default function DashboardPage() {
   const fetchAllData = async () => {
     if (!selectedBrandId) return
     
+    // Instead of setting isLoading to true for the entire dashboard,
+    // we'll create a copy of the current metrics to preserve structure
+    const currentMetrics = { ...metrics };
+    
+    // Set loading state for individual components rather than the entire dashboard
     setIsLoading(true)
+    
     try {
       // Fetch Shopify data
       if (activePlatforms.shopify) {
@@ -444,6 +450,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error refreshing data:', error)
+      // If there's an error, restore the previous metrics to maintain UI consistency
+      setMetrics(currentMetrics)
     } finally {
       setIsLoading(false)
     }

@@ -546,6 +546,44 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
     }
   };
   
+  // Render loading state
+  if (isLoading && !salesData.length) {
+    return (
+      <div className="border border-gray-700 rounded-lg p-4 shadow-lg bg-[#1A1A1A]">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-white text-lg font-medium">Revenue Calendar</h3>
+          <div className="w-32 opacity-50">
+            <Select disabled>
+              <SelectTrigger className="bg-[#2A2A2A] border-gray-700 text-white">
+                <SelectValue placeholder="Monthly" />
+              </SelectTrigger>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-2 animate-pulse">
+          <div className="grid grid-cols-7 gap-1">
+            {Array(7).fill(0).map((_, i) => (
+              <div key={i} className="h-8 bg-[#2A2A2A] rounded"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {Array(28).fill(0).map((_, i) => (
+              <div key={i} className="h-16 bg-[#2A2A2A] rounded"></div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <div className="h-5 w-32 bg-[#2A2A2A] rounded"></div>
+          <div className="h-4 w-40 bg-[#2A2A2A] rounded"></div>
+        </div>
+      </div>
+    )
+  }
+  
+  // If we're refreshing data but already have existing data, we'll keep showing the existing data
+  // with a subtle loading indicator
+  const isRefreshing = isLoading && salesData.length > 0;
+  
   return (
     <div className="h-full w-full flex flex-col bg-[#111111] rounded-lg border border-gray-700 overflow-hidden shadow-lg">
       <div className="flex items-center justify-between p-3 bg-[#1A1A1A] border-b border-gray-700">
@@ -566,6 +604,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
             <line x1="3" x2="21" y1="10" y2="10" />
           </svg>
           <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
+          {isRefreshing && (
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500 ml-2"></div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="text-base font-medium text-white mr-2">
@@ -588,11 +629,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
       </div>
       
       <div className="flex-1 px-3 pb-3 pt-3 overflow-hidden">
-        {isLoading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-400"></div>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="h-full flex items-center justify-center text-gray-400">
             {error}
           </div>
