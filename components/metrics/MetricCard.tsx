@@ -88,11 +88,12 @@ export function MetricCard({
     try {
       switch(valueFormat) {
         case "currency":
-          return prefix === "$" ? val.toFixed(2) : `$${val.toFixed(2)}`
+          return prefix === "$" ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                                : `$${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         case "percentage":
           return `${val.toFixed(1)}%`
         default:
-          return val.toFixed(0)
+          return val.toLocaleString('en-US', { maximumFractionDigits: 0 })
       }
     } catch {
       return "0"
