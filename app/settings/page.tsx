@@ -14,6 +14,10 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
+import { getToken } from "@clerk/nextjs"
+import { createClient } from "@supabase/supabase-js"
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth as useClerkAuth } from "@clerk/nextjs"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -27,6 +31,8 @@ interface MetaDataRetention {
 
 export default function SettingsPage() {
   const { user } = useUser()
+  const { toast } = useToast()
+  const { getToken } = useClerkAuth()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
@@ -84,7 +90,33 @@ export default function SettingsPage() {
     try {
       console.log('Adding brand:', { name: newBrandName, user_id: user.id })
       
-      const { data, error } = await supabase
+      // Get the Clerk token for Supabase
+      const token = await getToken({ template: 'supabase' })
+      
+      if (!token) {
+        console.error('Failed to get Supabase token from Clerk')
+        toast({
+          title: "Authentication Error",
+          description: "Failed to authenticate with the database. Please try again.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      // Create a Supabase client with the token
+      const supabaseWithAuth = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        }
+      )
+      
+      const { data, error } = await supabaseWithAuth
         .from('brands')
         .insert({
           name: newBrandName,

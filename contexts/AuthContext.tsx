@@ -13,6 +13,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only run this effect if Clerk auth is loaded and we have a userId
     if (!isLoaded || !userId) {
+      setIsSupabaseAuthenticated(false);
       return
     }
 
@@ -30,13 +31,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (error) {
             console.error('Error setting Supabase session:', error)
+            setIsSupabaseAuthenticated(false)
           } else {
             console.log('Supabase session set successfully')
             setIsSupabaseAuthenticated(true)
           }
+        } else {
+          console.error('No token received from Clerk')
+          setIsSupabaseAuthenticated(false)
         }
       } catch (error) {
         console.error('Error authenticating with Supabase:', error)
+        setIsSupabaseAuthenticated(false)
       }
     }
 
