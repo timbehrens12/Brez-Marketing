@@ -30,7 +30,6 @@ import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw } from "lucide-react"
-import { JwtTemplateAlert } from '@/components/JwtTemplateAlert'
 
 interface WidgetData {
   shopify?: any;
@@ -460,12 +459,7 @@ export default function DashboardPage() {
               <img 
                 src="https://i.imgur.com/IW2OcJ0.png" 
                 alt="Brez Logo" 
-                className="h-16 mx-auto mb-4 logo-image" 
-                style={{ objectFit: 'contain', maxWidth: '200px' }}
-                onError={(e) => {
-                  console.error('Logo failed to load');
-                  e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50"><text x="10" y="30" font-family="Arial" font-size="24" fill="white">BREZ</text></svg>';
-                }}
+                className="h-16 mx-auto mb-4" 
               />
               <p className="text-gray-400">Sign in to access your dashboard</p>
             </div>
@@ -508,9 +502,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto">
-      <JwtTemplateAlert />
-      
+    <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>

@@ -103,28 +103,11 @@ export default function RootLayout({
             font-weight: 500 !important;
             opacity: 1 !important;
           }
-          
-          /* Ensure logo displays properly */
-          .logo-image {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-          }
         `}</style>
       </head>
       <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <ClerkProvider
-            appearance={{
-              baseTheme: undefined,
-              variables: { colorPrimary: '#3B82F6' },
-              elements: {
-                formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-white',
-                card: 'bg-[#1A1A1A] border-[#333]'
-              }
-            }}
-          >
+          <ClerkProvider>
             <BrandProvider>
               <MetricsProvider>
                 <WidgetProvider>

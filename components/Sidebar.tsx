@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
 import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs"
@@ -22,7 +22,6 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
   const { userId, isLoaded } = useAuth()
-  const router = useRouter()
   
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
@@ -47,12 +46,6 @@ export function Sidebar({ className }: SidebarProps) {
       </aside>
     )
   }
-
-  const handleSignOut = () => {
-    // This function will be called after sign out is complete
-    // We'll redirect to the dashboard page where the sign-in overlay will be shown
-    router.push('/dashboard');
-  };
 
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
@@ -88,7 +81,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="p-4 border-t border-[#2A2A2A]">
-        <SignOutButton signOutCallback={handleSignOut}>
+        <SignOutButton>
           <Button 
             variant="ghost" 
             className="w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-[#2A2A2A]"

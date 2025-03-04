@@ -10,15 +10,10 @@ import { useBrandContext, type Brand } from "@/lib/context/BrandContext"
 import { Trash2, Edit2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useUser } from "@clerk/nextjs"
+import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
-import { getToken } from "@clerk/nextjs"
-import { createClient } from "@supabase/supabase-js"
-import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/contexts/AuthContext"
-import { JwtTemplateAlert } from '@/components/JwtTemplateAlert'
-import { supabase } from '@/lib/supabase'
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -30,71 +25,41 @@ interface MetaDataRetention {
   dataType: 'metrics' | 'insights';
 }
 
-// Define the PlatformConnection type
-interface PlatformConnection {
-  id: string
-  user_id: string
-  brand_id: string
-  platform_type: string
-  status: string
-  shop?: string | null
-  access_token?: string | null
-  refresh_token?: string | null
-  expires_at?: string | null
-  created_at?: string | null
-  updated_at?: string | null
-  metadata?: any
-}
-
 export default function SettingsPage() {
   const { user } = useUser()
-  const { toast: uiToast } = useToast()
-  const { isSupabaseAuthenticated, jwtTemplateError } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
-  const supabaseClient = useSupabase()
+  const supabase = useSupabase()
 
   useEffect(() => {
     console.log('Current brands:', brands)
     console.log('Selected brand:', selectedBrandId)
   }, [brands, selectedBrandId])
 
-  // Display an error message if the JWT template is missing
-  useEffect(() => {
-    if (jwtTemplateError) {
-      uiToast({
-        title: "Authentication Error",
-        description: jwtTemplateError,
-        variant: "destructive",
-      })
-    }
-  }, [jwtTemplateError, uiToast])
-
   const loadConnections = async () => {
     if (!user) return
     
-    try {
-      const { data, error } = await supabaseClient
-        .from('platform_connections')
-        .select('*')
-        .eq('user_id', user.id)
-      
-      if (error) throw error
-      
-      // Cast the data to match our PlatformConnection type
-      setConnections((data || []) as PlatformConnection[])
-    } catch (error) {
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('user_id', user.id)
+
+    if (error) {
       console.error('Error loading connections:', error)
+      return
     }
+
+    const typedData = data as PlatformConnection[] | null
+    setConnections(typedData || [])
   }
 
   useEffect(() => {
     loadConnections()
-  }, [user])
+  }, [user, supabase])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
@@ -102,33 +67,7 @@ export default function SettingsPage() {
     try {
       console.log('Adding brand:', { name: newBrandName, user_id: user.id })
       
-      // Get the Clerk token for Supabase
-      const token = await getToken({ template: 'supabase' })
-      
-      if (!token) {
-        console.error('Failed to get Supabase token from Clerk')
-        uiToast({
-          title: "Authentication Error",
-          description: "Failed to authenticate with the database. Please try again.",
-          variant: "destructive"
-        })
-        return
-      }
-      
-      // Create a Supabase client with the token
-      const supabaseWithAuth = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        }
-      )
-      
-      const { data, error } = await supabaseWithAuth
+      const { data, error } = await supabase
         .from('brands')
         .insert({
           name: newBrandName,
@@ -166,7 +105,7 @@ export default function SettingsPage() {
   const handleDeleteBrand = async (brandId: string) => {
     try {
       // First, disconnect all platforms for this brand
-      const { data: connections } = await supabaseClient
+      const { data: connections } = await supabase
         .from('platform_connections')
         .select('platform_type')
         .eq('brand_id', brandId);
@@ -179,7 +118,7 @@ export default function SettingsPage() {
       }
 
       // Then delete the brand
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('brands')
         .delete()
         .eq('id', brandId);
@@ -235,7 +174,7 @@ export default function SettingsPage() {
           if (forceDelete) {
             console.log('User confirmed force delete')
             // Try direct deletion from the database
-            const { error } = await supabaseClient
+            const { error } = await supabase
               .from('platform_connections')
               .delete()
               .eq('brand_id', brandId)
@@ -272,7 +211,7 @@ export default function SettingsPage() {
   // Track Meta data access for retention purposes
   const updateMetaDataAccess = async (brandId: string) => {
     try {
-      await supabaseClient
+      await supabase
         .from('meta_data_tracking')
         .upsert({
           brand_id: brandId,
@@ -300,10 +239,11 @@ export default function SettingsPage() {
         brand_id: selectedBrandId,
         status: 'pending',
         scopes: META_SCOPE,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        last_accessed: new Date().toISOString()
       }
 
-      await supabaseClient
+      await supabase
         .from('platform_connections')
         .insert(connectionData)
 
@@ -321,19 +261,19 @@ export default function SettingsPage() {
       cutoffDate.setDate(cutoffDate.getDate() - META_DATA_RETENTION_DAYS)
 
       // Delete stale metrics data
-      await supabaseClient
+      await supabase
         .from('metrics')
         .delete()
         .eq('platform', 'meta')
         .lt('created_at', cutoffDate.toISOString())
 
       // Delete inactive connections
-      await supabaseClient
+      await supabase
         .from('platform_connections')
         .delete()
         .eq('platform_type', 'meta')
         .eq('status', 'inactive')
-        .lt('updated_at', cutoffDate.toISOString())
+        .lt('last_accessed', cutoffDate.toISOString())
 
     } catch (error) {
       console.error('Error cleaning up stale data:', error)
@@ -347,13 +287,13 @@ export default function SettingsPage() {
       await cleanupStaleMetaData()
 
       // Then disconnect
-      await supabaseClient
+      await supabase
         .from('platform_connections')
         .update({ 
           status: 'inactive',
           disconnected_at: new Date().toISOString(),
           // Store minimal required metadata for audit purposes
-          metadata: { disconnection_reason: 'user_initiated' }
+          disconnection_reason: 'user_initiated'
         })
         .eq('brand_id', selectedBrandId)
         .eq('platform_type', 'meta')
@@ -383,50 +323,120 @@ export default function SettingsPage() {
 
   // Modified handleClearAllData with proper Meta data cleanup
   const handleClearAllData = async () => {
-    if (!user) return
-    
     // First confirmation
-    if (!confirm('Are you sure you want to delete ALL your data? This cannot be undone.')) {
-      return
+    if (!confirm('WARNING: This will delete ALL brands and their platform connections for your account. This cannot be undone.')) {
+      return;
     }
     
     // Second confirmation requiring typing
-    const confirmText = 'DELETE ALL DATA'
-    const userInput = prompt(`Please type "${confirmText}" to confirm:`)
-    if (userInput === confirmText) {
-      try {
-        // Delete all brands (which should cascade to connections)
-        await supabaseClient
-          .from('brands')
-          .delete()
-          .eq('user_id', user.id)
-  
-        await refreshBrands()
-        
-        uiToast({
-          title: "Success",
-          description: "All data has been deleted successfully",
-        })
-      } catch (error) {
-        console.error('Error clearing data:', error)
-        uiToast({
-          title: "Error",
-          description: "Failed to clear data. Please try again.",
-          variant: "destructive",
-        })
-      }
-    } else {
-      uiToast({
-        title: "Cancelled",
-        description: "Deletion cancelled. No data was deleted.",
-      })
+    const confirmText = 'DELETE ALL DATA';
+    const userInput = prompt(`To confirm, please type "${confirmText}" in all caps:`);
+    if (userInput !== confirmText) {
+      toast.error('Deletion cancelled - text did not match');
+      return;
     }
+    
+    try {
+      if (!user?.id) {
+        throw new Error('No user ID found')
+      }
+
+      // First, clean up Meta-specific data
+      await cleanupStaleMetaData()
+
+      // Then proceed with existing cleanup
+      await supabase
+        .from('platform_connections')
+        .delete()
+        .eq('user_id', user.id)
+
+      await supabase
+        .from('brands')
+        .delete()
+        .eq('user_id', user.id)
+
+      await refreshBrands()
+      
+      toast.success('All data has been cleared successfully')
+    } catch (error) {
+      console.error('Error clearing data:', error)
+      toast.error('Failed to clear data. Please try again.')
+    }
+  }
+
+  // Add automatic cleanup on component mount
+  useEffect(() => {
+    cleanupStaleMetaData()
+    // Run cleanup periodically (e.g., daily)
+    const cleanup = setInterval(cleanupStaleMetaData, 24 * 60 * 60 * 1000)
+    return () => clearInterval(cleanup)
+  }, [])
+
+  const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
+    try {
+      if (platform === 'shopify') {
+        // First create a connection record
+        const { data: connection, error } = await supabase
+          .from('platform_connections')
+          .insert({
+            platform_type: 'shopify',
+            brand_id: brandId,
+            user_id: user?.id,
+            status: 'pending',
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+          
+        if (error) {
+          console.error('Error creating Shopify connection:', error);
+          toast.error('Failed to create Shopify connection');
+          return;
+        }
+        
+        // Now redirect with both brandId and connectionId
+        const shop = prompt('Enter your Shopify store URL (e.g., your-store.myshopify.com):');
+        if (!shop) {
+          toast.error('Shop URL is required');
+          return;
+        }
+        
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
+      } else if (platform === 'meta') {
+        // Redirect to Meta auth endpoint
+        window.location.href = `/api/auth/meta?brandId=${brandId}`;
+      }
+    } catch (error) {
+      console.error('Connection error:', error);
+      toast.error('Failed to initiate connection');
+    }
+  }
+
+  const handleSync = async (connectionId: string) => {
+    if (!connectionId) return
+    setIsSyncing(true)
+    try {
+      const response = await fetch('/api/shopify/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId })
+      })
+      if (!response.ok) throw new Error('Sync failed')
+      toast.success('Sync completed successfully')
+    } catch (error) {
+      toast.error('Failed to sync data')
+      console.error('Sync error:', error)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  const handleBrandSelect = (brandId: string) => {
+    setSelectedBrandId(selectedBrandId === brandId ? null : brandId)
   }
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
-      <JwtTemplateAlert />
-      
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold text-white">Settings</h1>
         <Button 
@@ -437,37 +447,197 @@ export default function SettingsPage() {
           Clear All Data
         </Button>
       </div>
-      
+
       <div className="grid gap-6">
+        {/* Account Settings Card */}
         <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
           <CardHeader>
             <CardTitle className="text-lg font-medium text-white">Account Settings</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-400">Your account settings will appear here.</p>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-gray-200">Email Notifications</Label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Daily Reports</span>
+                <Switch />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Weekly Analytics</span>
+                <Switch />
+              </div>
+            </div>
           </CardContent>
         </Card>
-        
+
+        {/* Brand Management Card */}
         <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-medium text-white">Brand Management</CardTitle>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-[#2A2A2A] hover:bg-[#333]">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Brand
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-[#2A2A2A] border-[#333] text-white">
+                <DialogHeader>
+                  <DialogTitle>Add New Brand</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={async (e) => {
+                  e.preventDefault()
+                  console.log('Form submitted, brand name:', newBrandName)
+                  try {
+                    await handleAddBrand()
+                    console.log('Brand added successfully')
+                  } catch (error) {
+                    console.error('Error adding brand:', error)
+                  }
+                }}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Brand Name</Label>
+                      <Input 
+                        required
+                        value={newBrandName}
+                        onChange={(e) => setNewBrandName(e.target.value)}
+                        className="bg-[#333] border-[#444] text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label>Brand Logo (optional)</Label>
+                      <Input 
+                        type="file"
+                        onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
+                        className="bg-[#333] border-[#444] text-white"
+                        accept="image/*"
+                      />
+                    </div>
+                    <Button 
+                      type="submit"
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Add Brand
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {brands.length > 0 ? (
-              <div className="space-y-4">
-                {brands.map(brand => (
-                  <div key={brand.id} className="p-4 rounded-lg bg-[#2A2A2A]">
+              brands.map(brand => (
+                <div key={brand.id} className="space-y-2">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
-                        {brand.name[0].toUpperCase()}
+                      {brand.image_url ? (
+                        <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
+                          {brand.name[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-white">{brand.name}</span>
+                        <div className="flex gap-2 mt-1">
+                          {connections.filter(c => c.brand_id === brand.id).map(connection => (
+                            <div key={connection.id} className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300">
+                              <img src={`/${connection.platform_type}-icon.png`} alt={connection.platform_type} className="w-3 h-3" />
+                              {connection.platform_type === 'shopify' ? connection.shop : connection.platform_type}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <span className="text-white">{brand.name}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        className="hover:bg-[#333]"
+                        onClick={() => handleBrandSelect(brand.id)}
+                      >
+                        Manage Connections
+                      </Button>
+                      <Button variant="ghost" className="hover:bg-[#333]" onClick={() => handleEditBrand(brand.id)}>
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" className="hover:bg-[#333] text-red-400 hover:text-red-300" onClick={() => handleDeleteBrand(brand.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {/* Platform connections panel */}
+                  {selectedBrandId === brand.id && (
+                    <div className="ml-12 p-4 rounded-lg bg-[#222] space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
+                          <span className="text-white">Shopify</span>
+                        </div>
+                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') ? (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-red-400 hover:text-red-300"
+                            onClick={() => handleDisconnect('shopify', brand.id)}
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-gray-400 hover:text-white"
+                            onClick={() => handleConnect('shopify', brand.id)}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
+                          <span className="text-white">Meta Ads</span>
+                        </div>
+                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta') ? (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-red-400 hover:text-red-300"
+                            onClick={() => handleDisconnect('meta', brand.id)}
+                          >
+                            Disconnect
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-gray-400 hover:text-white"
+                            onClick={() => handleConnect('meta', brand.id)}
+                          >
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+
+                      {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') && (
+                        <Button 
+                          variant="outline" 
+                          className="border-[#333] text-blue-400 hover:text-blue-300"
+                          onClick={() => handleSync(connections.find(c => 
+                            c.brand_id === brand.id && 
+                            c.platform_type === 'shopify'
+                          )?.id!)}
+                          disabled={isSyncing}
+                        >
+                          {isSyncing ? 'Syncing...' : 'Sync Data'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
             ) : (
-              <p className="text-gray-400">No brands added yet.</p>
+              <div className="text-center text-gray-400 py-4">
+                No brands added yet
+              </div>
             )}
           </CardContent>
         </Card>
