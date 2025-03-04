@@ -1,12 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
-import { UserButton, useAuth } from "@clerk/nextjs"
+import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "./ui/button"
-import { CustomSignOutButton } from "./CustomSignOutButton"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -23,6 +22,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
   const { userId, isLoaded } = useAuth()
+  const router = useRouter()
   
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
@@ -48,6 +48,12 @@ export function Sidebar({ className }: SidebarProps) {
     )
   }
 
+  const handleSignOut = () => {
+    // This function will be called after sign out is complete
+    // We'll redirect to the dashboard page where the sign-in overlay will be shown
+    router.push('/dashboard');
+  };
+
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
       <div className="p-6 flex-1">
@@ -60,7 +66,6 @@ export function Sidebar({ className }: SidebarProps) {
                 userButtonTrigger: "rounded-full"
               }
             }}
-            afterSignOutUrl="/dashboard"
           />
         </div>
         <nav className="space-y-0.5">
@@ -83,7 +88,15 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="p-4 border-t border-[#2A2A2A]">
-        <CustomSignOutButton />
+        <SignOutButton signOutCallback={handleSignOut}>
+          <Button 
+            variant="ghost" 
+            className="w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </Button>
+        </SignOutButton>
       </div>
     </aside>
   )
