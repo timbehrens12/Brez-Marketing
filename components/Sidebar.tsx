@@ -4,8 +4,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
-import { SignOutButton, UserButton, useAuth } from "@clerk/nextjs"
+import { UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "./ui/button"
+import { CustomSignOutButton } from "./CustomSignOutButton"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -81,15 +82,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="p-4 border-t border-[#2A2A2A]">
-        <SignOutButton>
-          <Button 
-            variant="ghost" 
-            className="w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </SignOutButton>
+        <CustomSignOutButton />
       </div>
     </aside>
   )
