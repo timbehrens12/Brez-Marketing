@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET(request: Request) {
   console.log('Shopify auth route hit')
   const { searchParams } = new URL(request.url)
@@ -42,8 +40,8 @@ export async function GET(request: Request) {
       'read_discounts'
     ].join(',')
 
-    // Make sure to use the full callback URL with www prefix
-    const callbackUrl = 'https://www.brezmarketingdashboard.com/api/shopify/callback'
+    // Make sure to use the full callback URL
+    const callbackUrl = 'https://brezmarketingdashboard.com/api/shopify/callback'
     
     // Construct auth URL with explicit parameters
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
@@ -53,17 +51,7 @@ export async function GET(request: Request) {
     authUrl.searchParams.set('state', JSON.stringify({ brandId, connectionId }))
 
     console.log('Redirecting to:', authUrl.toString())
-    
-    // Use a 302 redirect to ensure the browser follows it properly
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': authUrl.toString(),
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
-    })
+    return NextResponse.redirect(authUrl.toString())
   } catch (error) {
     console.error('Shopify auth error:', error)
     return NextResponse.json({ error: 'Failed to start OAuth' }, { status: 500 })

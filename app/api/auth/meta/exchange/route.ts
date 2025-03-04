@@ -51,55 +51,22 @@ export async function POST(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    // First check if there's a pending connection
-    const { data: pendingConnections } = await supabase
+    const { error: dbError } = await supabase
       .from('platform_connections')
-      .select('*')
-      .eq('brand_id', state)
-      .eq('platform_type', 'meta')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .upsert({
+        brand_id: state,
+        platform_type: 'meta',
+        access_token: tokenData.access_token,
+        status: 'active',
+        user_id: userId
+      })
 
-    if (pendingConnections && pendingConnections.length > 0) {
-      // Update the pending connection
-      const { error: updateError } = await supabase
-        .from('platform_connections')
-        .update({
-          access_token: tokenData.access_token,
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', pendingConnections[0].id)
-
-      if (updateError) {
-        console.error('Error updating connection:', updateError)
-        return NextResponse.json(
-          { success: false, error: 'Failed to update connection' },
-          { status: 500 }
-        )
-      }
-    } else {
-      // Create a new connection if no pending one exists
-      const { error: insertError } = await supabase
-        .from('platform_connections')
-        .upsert({
-          brand_id: state,
-          platform_type: 'meta',
-          access_token: tokenData.access_token,
-          status: 'active',
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-
-      if (insertError) {
-        console.error('Error creating connection:', insertError)
-        return NextResponse.json(
-          { success: false, error: 'Failed to store token' },
-          { status: 500 }
-        )
-      }
+    if (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to store token' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ success: true })
