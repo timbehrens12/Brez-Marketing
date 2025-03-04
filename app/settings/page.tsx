@@ -41,20 +41,37 @@ export default function SettingsPage() {
   }, [brands, selectedBrandId])
 
   const loadConnections = async () => {
-    if (!user) return
-    
-    const { data, error } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Error loading connections:', error)
+    if (!user) {
+      console.warn('No user found, cannot load connections')
       return
     }
-
-    const typedData = data as PlatformConnection[] | null
-    setConnections(typedData || [])
+    
+    try {
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('user_id', user.id)
+      
+      if (error) {
+        console.error('Error loading connections:', error)
+        
+        // Check if it's an authentication error
+        if (error.code === '401' || error.message.includes('JWT')) {
+          toast.error('Authentication error. Please refresh the page or sign out and sign in again.')
+        } else {
+          toast.error('Failed to load connections')
+        }
+        return
+      }
+      
+      if (data) {
+        console.log('Loaded connections:', data)
+        setConnections(data)
+      }
+    } catch (err) {
+      console.error('Exception loading connections:', err)
+      toast.error('An unexpected error occurred')
+    }
   }
 
   useEffect(() => {
@@ -373,15 +390,27 @@ export default function SettingsPage() {
   }, [])
 
   const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
+    if (!user?.id) {
+      toast.error('You must be signed in to connect a platform')
+      return
+    }
+
     try {
       if (platform === 'shopify') {
+        // Get the shop URL first to avoid creating a record if the user cancels
+        const shop = prompt('Enter your Shopify store URL (e.g., your-store.myshopify.com):');
+        if (!shop) {
+          toast.error('Shop URL is required');
+          return;
+        }
+
         // First create a connection record
         const { data: connection, error } = await supabase
           .from('platform_connections')
           .insert({
             platform_type: 'shopify',
             brand_id: brandId,
-            user_id: user?.id,
+            user_id: user.id,
             status: 'pending',
             created_at: new Date().toISOString()
           })
@@ -390,25 +419,25 @@ export default function SettingsPage() {
           
         if (error) {
           console.error('Error creating Shopify connection:', error);
-          toast.error('Failed to create Shopify connection');
+          
+          // Check if it's an authentication error
+          if (error.code === '401' || error.code === '42501' || error.message.includes('JWT') || error.message.includes('policy')) {
+            toast.error('Authentication error. Please refresh the page or sign out and sign in again.');
+          } else {
+            toast.error('Failed to create Shopify connection');
+          }
           return;
         }
         
         // Now redirect with both brandId and connectionId
-        const shop = prompt('Enter your Shopify store URL (e.g., your-store.myshopify.com):');
-        if (!shop) {
-          toast.error('Shop URL is required');
-          return;
-        }
-        
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
+        window.location.href = `/api/shopify/auth?shop=${shop}&brandId=${brandId}&connectionId=${connection.id}`;
       } else if (platform === 'meta') {
         // Redirect to Meta auth endpoint
         window.location.href = `/api/auth/meta?brandId=${brandId}`;
       }
-    } catch (error) {
-      console.error('Connection error:', error);
-      toast.error('Failed to initiate connection');
+    } catch (err) {
+      console.error(`Error connecting to ${platform}:`, err);
+      toast.error(`An unexpected error occurred while connecting to ${platform}`);
     }
   }
 
