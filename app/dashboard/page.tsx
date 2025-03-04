@@ -30,6 +30,7 @@ import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw } from "lucide-react"
+import { JwtTemplateAlert } from '@/components/JwtTemplateAlert'
 
 interface WidgetData {
   shopify?: any;
@@ -507,7 +508,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="p-6 max-w-[1600px] mx-auto">
+      <JwtTemplateAlert />
+      
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>

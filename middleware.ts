@@ -22,7 +22,8 @@ export default authMiddleware({
     "/api/cron/meta-sync",
     "/api/debug/meta-metrics",
     "/api/analytics/meta/campaigns",
-    "/api/debug/auth-test"
+    "/api/debug/auth-test",
+    "/setup-jwt"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",
