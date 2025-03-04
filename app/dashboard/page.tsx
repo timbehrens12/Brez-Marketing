@@ -382,6 +382,30 @@ export default function DashboardPage() {
           ...prevMetrics,
           ...data
         }))
+        
+        // Trigger a Shopify sync to refresh data
+        const shopifyConnection = connections.find(c => 
+          c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
+        )
+        
+        if (shopifyConnection) {
+          console.log('Triggering Shopify sync for fresh data')
+          try {
+            const syncResponse = await fetch('/api/shopify/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ connectionId: shopifyConnection.id })
+            })
+            
+            if (syncResponse.ok) {
+              console.log('Shopify sync triggered successfully')
+            }
+          } catch (syncError) {
+            console.error('Error triggering Shopify sync:', syncError)
+          }
+        }
       }
       
       // Fetch Meta data
@@ -425,10 +449,10 @@ export default function DashboardPage() {
     }
   }
 
-  // Use the refresh hook - refresh every 2 minutes
+  // Set up periodic data refresh
   const { lastRefreshed, isRefreshing, refresh } = useDataRefresh(
     fetchAllData,
-    120, // 2 minutes in seconds
+    120, // Refresh every 2 minutes
     [selectedBrandId, dateRange, activePlatforms]
   )
 

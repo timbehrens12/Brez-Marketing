@@ -417,8 +417,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   )}
                 </div>
                 
-                <div className="text-center text-xs mt-1 text-gray-400">
-                  {item.revenue > 0 ? `$${item.revenue.toLocaleString()}` : '$0'}
+                <div className="text-center text-xs text-gray-400">
+                  {item.revenue > 0 
+                    ? (item.revenue >= 1000 
+                        ? `$${(item.revenue / 1000).toFixed(1)}k` 
+                        : `$${item.revenue.toFixed(0)}`)
+                    : '$0'}
                 </div>
               </div>
             </div>
@@ -483,7 +487,11 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     </div>
                     
                     <div className="text-center text-xs text-gray-400">
-                      {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '$0'}
+                      {item.revenue > 0 
+                        ? (item.revenue >= 1000 
+                            ? `$${(item.revenue / 1000).toFixed(1)}k` 
+                            : `$${item.revenue.toFixed(0)}`)
+                        : '$0'}
                     </div>
                   </div>
                 </div>
@@ -523,8 +531,12 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   )}
                 </div>
                 
-                <div className="text-center text-xs mt-1 text-gray-400">
-                  {item.revenue > 0 ? `$${(item.revenue / 1000).toFixed(1)}k` : '$0'}
+                <div className="text-center text-xs text-gray-400 mt-1">
+                  {item.revenue > 0 
+                    ? (item.revenue >= 1000 
+                        ? `$${(item.revenue / 1000).toFixed(1)}k` 
+                        : `$${item.revenue.toFixed(0)}`)
+                    : '$0'}
                 </div>
               </div>
             </div>
