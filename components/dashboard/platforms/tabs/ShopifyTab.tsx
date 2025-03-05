@@ -7,13 +7,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import type { Metrics, CustomerSegments, DailyData, Product } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw } from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2 } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
 import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
+import Image from "next/image"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -100,40 +101,97 @@ export function ShopifyTab({
           prefix="$"
           valueFormat="currency"
           data={safeMetrics.dailyData}
-          icon={<DollarSign className="h-4 w-4" />}
+          icon={
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
           loading={isLoading}
           refreshing={isRefreshingData}
+          platform="shopify"
         />
         <MetricCard
           title="Orders"
           value={safeMetrics.ordersPlaced || 0}
           change={safeMetrics.ordersGrowth || 0}
-          valueFormat="number"
-          data={safeMetrics.dailyData}
-          icon={<ShoppingBag className="h-4 w-4" />}
+          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
+          icon={
+            <div className="flex items-center gap-1">
+              <ShoppingBag className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
           loading={isLoading}
           refreshing={isRefreshingData}
+          platform="shopify"
         />
         <MetricCard
-          title="AOV"
+          title="Average Order Value"
           value={safeMetrics.averageOrderValue || 0}
           change={safeMetrics.aovGrowth || 0}
           prefix="$"
           valueFormat="currency"
-          data={safeMetrics.dailyData}
-          icon={<Activity className="h-4 w-4" />}
+          data={safeMetrics.dailyData.map(d => ({ 
+            ...d, 
+            value: d.orders > 0 ? d.revenue / d.orders : 0 
+          }))}
+          icon={
+            <div className="flex items-center gap-1">
+              <TrendingUp className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
           loading={isLoading}
           refreshing={isRefreshingData}
+          platform="shopify"
         />
         <MetricCard
           title="Units Sold"
           value={safeMetrics.unitsSold || 0}
           change={safeMetrics.unitsGrowth || 0}
-          valueFormat="number"
-          data={safeMetrics.dailyData}
-          icon={<Package className="h-4 w-4" />}
+          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
+          icon={
+            <div className="flex items-center gap-1">
+              <Package className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
           loading={isLoading}
           refreshing={isRefreshingData}
+          platform="shopify"
         />
       </div>
 

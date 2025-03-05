@@ -85,8 +85,9 @@ export function PlatformTabs({
           disabled={!platforms.shopify}
           className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
         >
-          <div className="flex items-center gap-2">
-            <div className="relative w-5 h-5">
+          <div className="flex items-center justify-center gap-2">
+            <span>Shopify</span>
+            <div className="relative w-5 h-5 flex items-center justify-center">
               <Image 
                 src="https://i.imgur.com/cnCcupx.png" 
                 alt="Shopify logo" 
@@ -95,7 +96,6 @@ export function PlatformTabs({
                 className="object-contain"
               />
             </div>
-            <span>Shopify</span>
           </div>
         </TabsTrigger>
         <TabsTrigger 
@@ -103,8 +103,9 @@ export function PlatformTabs({
           disabled={!platforms.meta}
           className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
         >
-          <div className="flex items-center gap-2">
-            <div className="relative w-5 h-5">
+          <div className="flex items-center justify-center gap-2">
+            <span>Meta Ads</span>
+            <div className="relative w-5 h-5 flex items-center justify-center">
               <Image 
                 src="https://i.imgur.com/6hyyRrs.png" 
                 alt="Meta logo" 
@@ -113,7 +114,6 @@ export function PlatformTabs({
                 className="object-contain"
               />
             </div>
-            <span>Meta Ads</span>
           </div>
         </TabsTrigger>
       </TabsList>

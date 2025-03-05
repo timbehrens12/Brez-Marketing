@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { useState, useEffect } from "react"
-import { DollarSign, TrendingUp, Target, MousePointer, BarChart2 } from "lucide-react"
+import { DollarSign, TrendingUp, Target, MousePointer, BarChart2, Activity, Users } from "lucide-react"
+import Image from "next/image"
+import { MetricCard } from "@/components/metrics/MetricCard"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -12,6 +14,18 @@ interface MetaTabProps {
   isLoading: boolean
   isRefreshingData?: boolean
   brandId: string
+}
+
+interface DailyDataItem {
+  date: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  ctr: number;
+  roas: number;
+  value?: number;
+  [key: string]: string | number | undefined;
 }
 
 export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = false, brandId }: MetaTabProps) {
@@ -49,10 +63,120 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
 
   return (
     <div className="space-y-8">
+      {/* Meta Metrics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Ad Spend"
+          value={data.adSpend || 0}
+          change={data.adSpendGrowth || 0}
+          prefix="$"
+          valueFormat="currency"
+          data={data.dailyData || []}
+          icon={
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+        />
+        <MetricCard
+          title="Impressions"
+          value={data.impressions || 0}
+          change={data.impressionGrowth || 0}
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.impressions })) || []}
+          icon={
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+        />
+        <MetricCard
+          title="Clicks"
+          value={data.clicks || 0}
+          change={data.clickGrowth || 0}
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.clicks })) || []}
+          icon={
+            <div className="flex items-center gap-1">
+              <MousePointer className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+        />
+        <MetricCard
+          title="ROAS"
+          value={data.roas || 0}
+          change={data.roasGrowth || 0}
+          suffix="x"
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.roas })) || []}
+          icon={
+            <div className="flex items-center gap-1">
+              <Activity className="h-4 w-4" />
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
+          }
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+        />
+      </div>
+
       <Card className="bg-[#111111] border-[#222222]">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2">
-            <BarChart2 className="h-5 w-5 text-blue-400" />
+            <div className="flex items-center gap-1.5">
+              <BarChart2 className="h-5 w-5 text-blue-400" />
+              <div className="relative w-5 h-5">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={20} 
+                  height={20} 
+                  className="object-contain"
+                />
+              </div>
+            </div>
             Baseline Column Configuration
           </CardTitle>
         </CardHeader>
@@ -68,7 +192,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           ) : (
             <ul className="space-y-4">
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Budget</div>
                   <div className="text-gray-400 text-sm">
@@ -78,7 +202,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Amount Spent</div>
                   <div className="text-gray-400 text-sm">
@@ -88,7 +212,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Purchase ROAS</div>
                   <div className="text-gray-400 text-sm">
@@ -98,7 +222,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Purchase Conversion Value</div>
                   <div className="text-gray-400 text-sm">
@@ -108,7 +232,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Results</div>
                   <div className="text-gray-400 text-sm">
@@ -118,7 +242,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Cost Per Result</div>
                   <div className="text-gray-400 text-sm">
@@ -128,7 +252,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">CPC (all)</div>
                   <div className="text-gray-400 text-sm">
@@ -138,7 +262,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">CPC (link click)</div>
                   <div className="text-gray-400 text-sm">
@@ -148,7 +272,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">CTR</div>
                   <div className="text-gray-400 text-sm">
@@ -158,7 +282,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
               </li>
               
               <li className="flex items-start">
-                <div className="bg-gray-800 w-2 h-2 rounded-full mt-2 mr-2"></div>
+                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
                 <div>
                   <div className="text-white font-medium">Frequency</div>
                   <div className="text-gray-400 text-sm">
