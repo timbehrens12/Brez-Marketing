@@ -97,6 +97,12 @@ export interface Metrics {
   conversionGrowth: number
   costPerResult: number
   cprGrowth: number
+  customerLifetimeValue?: number
+  totalInventory?: number
+  fulfillmentRate?: number
+  paymentSuccessRate?: number
+  discountUsageRate?: number
+  productCategories?: Array<{ name: string; count: number }>
 }
 
 export interface ComparisonDates {

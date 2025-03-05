@@ -3,6 +3,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
 import { MetaTab } from "./tabs/MetaTab"
+import { TikTokTab } from "./tabs/TikTokTab"
+import { GoogleAdsTab } from "./tabs/GoogleAdsTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
@@ -98,18 +100,18 @@ export function PlatformTabs({
                       alt="Shopify logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className="object-contain hover:scale-110 transition-transform duration-200"
                     />
                   </div>
                 </div>
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+            <TooltipContent>
               <p>Shopify</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -125,14 +127,14 @@ export function PlatformTabs({
                       alt="Meta logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className="object-contain hover:scale-110 transition-transform duration-200"
                     />
                   </div>
                 </div>
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Meta Ads</p>
+            <TooltipContent>
+              <p>Meta</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -142,24 +144,24 @@ export function PlatformTabs({
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="tiktok" 
-                disabled={false}
+                disabled={!platforms.tiktok}
                 className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
-                      src="https://i.imgur.com/AXHa9UT.png" 
+                      src="https://i.imgur.com/Jpip3Yl.png" 
                       alt="TikTok logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className="object-contain hover:scale-110 transition-transform duration-200"
                     />
                   </div>
                 </div>
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>TikTok Ads</p>
+            <TooltipContent>
+              <p>TikTok</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -169,23 +171,23 @@ export function PlatformTabs({
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="googleads" 
-                disabled={false}
+                disabled={!platforms.googleads}
                 className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
-                      src="https://i.imgur.com/TavV4UJ.png" 
+                      src="https://i.imgur.com/vMJRtDT.png" 
                       alt="Google Ads logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className="object-contain hover:scale-110 transition-transform duration-200"
                     />
                   </div>
                 </div>
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+            <TooltipContent>
               <p>Google Ads</p>
             </TooltipContent>
           </Tooltip>
@@ -193,95 +195,68 @@ export function PlatformTabs({
       </TabsList>
 
       <TabsContent value="shopify" className="mt-8">
-        {selectedConnection ? (
+        {platforms.shopify ? (
           <ShopifyTab 
-            connection={selectedConnection}
-            dateRange={dateRange}
+            connection={selectedConnection!} 
+            dateRange={dateRange} 
             brandId={brandId}
             metrics={safeMetrics}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
         ) : (
-          <div className="text-center py-8 text-gray-400">
-            No active Shopify connection found. Please connect your store.
+          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
+            <p className="text-gray-400">Shopify not connected</p>
           </div>
         )}
       </TabsContent>
-      
+
       <TabsContent value="meta" className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {children}
-        </div>
-        <MetaTab 
-          dateRange={dateRange}
-          metrics={metrics}
-          isLoading={isLoading}
-          isRefreshingData={isRefreshingData}
-          brandId={brandId}
-        />
+        {platforms.meta ? (
+          <MetaTab 
+            dateRange={dateRange} 
+            metrics={metrics}
+            isLoading={isLoading}
+            isRefreshingData={isRefreshingData}
+            brandId={brandId}
+          />
+        ) : (
+          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
+            <p className="text-gray-400">Meta not connected</p>
+          </div>
+        )}
       </TabsContent>
 
       <TabsContent value="tiktok" className="mt-8">
-        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
-          <div className="mb-4">
-            <Image 
-              src="https://i.imgur.com/AXHa9UT.png" 
-              alt="TikTok logo" 
-              width={64} 
-              height={64} 
-              className="mx-auto"
-            />
+        {platforms.tiktok ? (
+          <TikTokTab 
+            dateRange={dateRange} 
+            metrics={metrics}
+            isLoading={isLoading}
+            isRefreshingData={isRefreshingData}
+            brandId={brandId}
+          />
+        ) : (
+          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
+            <p className="text-gray-400">TikTok not connected</p>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">TikTok Ads Integration</h2>
-          <p className="text-gray-400 mb-4">
-            This is a placeholder to demonstrate the dashboard's capability to integrate with TikTok Ads.
-            In a production environment, this would connect to the TikTok Ads API to display your campaign metrics.
-          </p>
-          <div className="p-4 bg-[#222] border border-[#444] rounded-lg inline-block text-left">
-            <p className="text-gray-300 text-sm">
-              <span className="font-semibold">Features would include:</span>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>Campaign performance metrics</li>
-                <li>Ad spend tracking</li>
-                <li>Audience insights</li>
-                <li>Conversion tracking</li>
-                <li>ROI analysis</li>
-              </ul>
-            </p>
-          </div>
-        </div>
+        )}
       </TabsContent>
 
       <TabsContent value="googleads" className="mt-8">
-        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
-          <div className="mb-4">
-            <Image 
-              src="https://i.imgur.com/TavV4UJ.png" 
-              alt="Google Ads logo" 
-              width={64} 
-              height={64} 
-              className="mx-auto"
-            />
+        {platforms.googleads ? (
+          <GoogleAdsTab 
+            dateRange={dateRange} 
+            metrics={metrics}
+            isLoading={isLoading}
+            isRefreshingData={isRefreshingData}
+            brandId={brandId}
+          />
+        ) : (
+          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
+            <p className="text-gray-400">Google Ads not connected</p>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Google Ads Integration</h2>
-          <p className="text-gray-400 mb-4">
-            This is a placeholder to demonstrate the dashboard's capability to integrate with Google Ads.
-            In a production environment, this would connect to the Google Ads API to display your campaign metrics.
-          </p>
-          <div className="p-4 bg-[#222] border border-[#444] rounded-lg inline-block text-left">
-            <p className="text-gray-300 text-sm">
-              <span className="font-semibold">Features would include:</span>
-              <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li>Campaign performance tracking</li>
-                <li>Keyword analysis</li>
-                <li>Ad spend monitoring</li>
-                <li>Conversion tracking</li>
-                <li>Quality score metrics</li>
-              </ul>
-            </p>
-          </div>
-        </div>
+        )}
       </TabsContent>
     </Tabs>
   )
