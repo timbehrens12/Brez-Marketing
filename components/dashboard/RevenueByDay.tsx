@@ -417,7 +417,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   )}
                 </div>
                 
-                <div className="text-center text-xs font-medium text-white">
+                <div className="text-center text-xs font-medium text-emerald-500">
                   {item.revenue > 0 
                     ? (item.revenue >= 1000 
                         ? `$${(item.revenue / 1000).toFixed(1)}k` 
@@ -477,7 +477,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-center p-0.5">
-                    <div className="text-center text-sm font-medium text-white">
+                    <div className="text-center text-sm font-medium text-emerald-500">
                       {item.revenue > 0 
                         ? (item.revenue >= 1000 
                             ? `$${(item.revenue / 1000).toFixed(1)}k` 
@@ -522,7 +522,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   )}
                 </div>
                 
-                <div className="text-center text-xs font-medium text-white mt-1">
+                <div className="text-center text-xs font-medium text-emerald-500 mt-1">
                   {item.revenue > 0 
                     ? (item.revenue >= 1000 
                         ? `$${(item.revenue / 1000).toFixed(1)}k` 
@@ -592,9 +592,9 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         )}
       </div>
       
-      <div className="p-2 border-t border-gray-800 bg-[#0f0f0f] text-sm font-medium text-white flex justify-between">
-        <div>Total Revenue: ${totalRevenue.toLocaleString()}</div>
-        <div>Last updated: {format(lastUpdated, 'h:mm a')}</div>
+      <div className="p-2 border-t border-gray-800 bg-[#0f0f0f] text-sm font-medium flex justify-between">
+        <div className="text-emerald-500">Total Revenue: ${totalRevenue.toLocaleString()}</div>
+        <div className="text-white">Last updated: {format(lastUpdated, 'h:mm a')}</div>
       </div>
     </div>
   )

@@ -43,7 +43,7 @@ export function TopProducts({ products = [] as Product[] }) {
               <TableRow key={product.name}>
                 <TableCell className="font-medium text-white">{product.name}</TableCell>
                 <TableCell className="text-white text-right">{product.quantity}</TableCell>
-                <TableCell className="text-white text-right">${product.revenue.toFixed(2)}</TableCell>
+                <TableCell className="text-emerald-500 text-right">${product.revenue.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
