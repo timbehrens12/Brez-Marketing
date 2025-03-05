@@ -63,20 +63,6 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
 
   return (
     <div className="space-y-8">
-      {/* Platform Indicator */}
-      <div className="flex items-center justify-center mb-4">
-        <div className="relative flex items-center justify-center w-16 h-16 bg-[#111111] rounded-full border-2 border-[#1877F2] shadow-[0_0_15px_rgba(24,119,242,0.5)]">
-          <Image 
-            src="https://i.imgur.com/6hyyRrs.png" 
-            alt="Meta" 
-            width={40} 
-            height={40} 
-            className="object-contain"
-          />
-          <div className="absolute inset-0 rounded-full border-2 border-[#1877F2] animate-pulse"></div>
-        </div>
-      </div>
-      
       {/* Meta Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard

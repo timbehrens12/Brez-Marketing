@@ -1,16 +1,12 @@
 export interface PlatformConnection {
   id: string
-  brand_id: string | null
-  platform_type: string
-  status: string
-  access_token: string | null
-  refresh_token?: string | null
-  shop?: string | null
-  created_at: string | null
-  updated_at: string | null
-  expires_at?: string | null
-  user_id?: string
-  metadata?: any
-  sync_status?: string
+  brand_id: string
+  platform_type: 'shopify' | 'meta'
+  status: 'active' | 'inactive'
+  access_token: string
+  shop?: string
+  created_at: string
+  updated_at: string
+  sync_status?: 'pending' | 'in_progress' | 'completed' | 'failed'
   last_synced_at?: string
 } 

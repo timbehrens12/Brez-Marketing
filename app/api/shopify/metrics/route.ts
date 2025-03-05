@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
     // Fetch orders from Shopify
     const ordersResponse = await fetch(
-      `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${from}&created_at_max=${to}&fields=id,created_at,total_price,line_items,customer,financial_status,fulfillment_status,discount_codes`, {
+      `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${from}&created_at_max=${to}&fields=id,created_at,total_price,line_items,customer,shipping_address,billing_address,financial_status`, {
         headers: {
           'X-Shopify-Access-Token': connection.access_token
         }
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
     // Fetch customers from Shopify
     const customersResponse = await fetch(
-      `https://${shop}/admin/api/2024-01/customers.json?created_at_min=${from}&created_at_max=${to}&fields=id,email,orders_count,total_spent,addresses,default_address,state,tags`, {
+      `https://${shop}/admin/api/2024-01/customers.json?created_at_min=${from}&created_at_max=${to}&fields=id,email,orders_count,total_spent,addresses`, {
         headers: {
           'X-Shopify-Access-Token': connection.access_token
         }
@@ -53,19 +53,6 @@ export async function GET(request: Request) {
     console.log('Shopify Customers Response:', customersData)
     const { customers = [] } = customersData
 
-    // Fetch products from Shopify
-    const productsResponse = await fetch(
-      `https://${shop}/admin/api/2024-01/products.json?fields=id,title,vendor,product_type,created_at,updated_at,variants,images`, {
-        headers: {
-          'X-Shopify-Access-Token': connection.access_token
-        }
-      }
-    )
-
-    const productsData = await productsResponse.json()
-    console.log('Shopify Products Response:', productsData)
-    const { products = [] } = productsData
-
     // Calculate metrics
     const totalSales = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0)
     const orderCount = orders.length
@@ -74,35 +61,21 @@ export async function GET(request: Request) {
       sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
     )
 
+    // Calculate items per order
+    const totalItems = orders.reduce((sum: number, order: any) => 
+      sum + order.line_items.length, 0
+    )
+    const averageItemsPerOrder = orderCount > 0 ? totalItems / orderCount : 0
+
     // Calculate customer metrics
     const newCustomers = customers.filter((customer: any) => customer.orders_count === 1).length
     const returningCustomers = customers.filter((customer: any) => customer.orders_count > 1).length
     const totalCustomers = customers.length
 
-    // Calculate average customer lifetime value
-    const totalCustomerSpend = customers.reduce((sum: number, customer: any) => 
-      sum + parseFloat(customer.total_spent || 0), 0)
-    const averageCustomerLTV = totalCustomers > 0 ? totalCustomerSpend / totalCustomers : 0
-
-    // Calculate inventory metrics
-    const totalInventory = products.reduce((sum: number, product: any) => {
-      return sum + product.variants.reduce((variantSum: number, variant: any) => {
-        return variantSum + (variant.inventory_quantity || 0)
-      }, 0)
-    }, 0)
-
-    // Calculate fulfillment metrics
-    const fulfilledOrders = orders.filter((order: any) => order.fulfillment_status === 'fulfilled').length
-    const fulfillmentRate = orderCount > 0 ? (fulfilledOrders / orderCount) * 100 : 0
-
-    // Calculate payment metrics
-    const paidOrders = orders.filter((order: any) => order.financial_status === 'paid').length
-    const paymentSuccessRate = orderCount > 0 ? (paidOrders / orderCount) * 100 : 0
-
-    // Calculate discount usage
-    const ordersWithDiscount = orders.filter((order: any) => 
-      order.discount_codes && order.discount_codes.length > 0).length
-    const discountUsageRate = orderCount > 0 ? (ordersWithDiscount / orderCount) * 100 : 0
+    // Estimate sessions and conversion rate (since we don't have direct access to this data)
+    // This is an approximation - in a real app, you'd use analytics data
+    const estimatedSessions = Math.max(orderCount * 20, 100) // Rough estimate: 20 sessions per order, minimum 100
+    const conversionRate = orderCount > 0 ? (orderCount / estimatedSessions) * 100 : 0
 
     // Group orders by day for revenue chart
     const dailyRevenue = orders.reduce((acc: any, order: any) => {
@@ -118,20 +91,11 @@ export async function GET(request: Request) {
       return acc
     }, {})
 
-    // Group units sold by day
-    const dailyUnits = orders.reduce((acc: any, order: any) => {
-      const date = order.created_at.split('T')[0]
-      const units = order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
-      acc[date] = (acc[date] || 0) + units
-      return acc
-    }, {})
-
     // Create daily data array with orders and revenue
     const dailyData = Object.keys(dailyRevenue).map(date => ({
       date,
       revenue: dailyRevenue[date],
       orders: dailyOrders[date] || 0,
-      units: dailyUnits[date] || 0,
       value: dailyRevenue[date] // For MetricCard compatibility
     }))
 
@@ -166,32 +130,75 @@ export async function GET(request: Request) {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5)
 
-    // Calculate product categories
-    const productCategories = products.reduce((acc: Record<string, number>, product: any) => {
-      const category = product.product_type || 'Uncategorized'
-      acc[category] = (acc[category] || 0) + 1
-      return acc
-    }, {})
-
-    const productCategoriesArray = Object.entries(productCategories)
-      .map(([name, count]) => ({ name, count }))
+    // Calculate geographic distribution
+    const locationData: Record<string, { country: string, count: number, revenue: number }> = {}
+    
+    orders.forEach((order: any) => {
+      if (order.shipping_address && order.shipping_address.country) {
+        const country = order.shipping_address.country
+        
+        if (!locationData[country]) {
+          locationData[country] = {
+            country,
+            count: 0,
+            revenue: 0
+          }
+        }
+        
+        locationData[country].count += 1
+        locationData[country].revenue += parseFloat(order.total_price)
+      }
+    })
+    
+    const topLocations = Object.values(locationData)
       .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+
+    // Calculate order timeline (orders by hour of day)
+    const ordersByHour: Record<number, number> = {}
+    
+    for (let i = 0; i < 24; i++) {
+      ordersByHour[i] = 0
+    }
+    
+    orders.forEach((order: any) => {
+      const hour = new Date(order.created_at).getHours()
+      ordersByHour[hour] += 1
+    })
+    
+    const orderTimeline = Object.entries(ordersByHour).map(([hour, count]) => ({
+      hour: parseInt(hour),
+      count
+    }))
+
+    // Calculate order status distribution
+    const orderStatusData: Record<string, number> = {}
+    
+    orders.forEach((order: any) => {
+      const status = order.financial_status || 'unknown'
+      orderStatusData[status] = (orderStatusData[status] || 0) + 1
+    })
+    
+    const orderStatuses = Object.entries(orderStatusData).map(([status, count]) => ({
+      status,
+      count,
+      percentage: (count / orderCount) * 100
+    }))
 
     console.log('Metrics calculated:', {
       totalSales,
       orderCount,
       averageOrderValue,
       unitsSold,
+      conversionRate,
       newCustomers,
       returningCustomers,
-      averageCustomerLTV,
-      totalInventory,
-      fulfillmentRate,
-      paymentSuccessRate,
-      discountUsageRate,
       revenueByDay,
       topProducts,
-      productCategoriesArray
+      topLocations,
+      orderTimeline,
+      orderStatuses,
+      averageItemsPerOrder
     })
 
     return NextResponse.json({
@@ -199,23 +206,24 @@ export async function GET(request: Request) {
       ordersPlaced: orderCount,
       averageOrderValue,
       unitsSold,
+      conversionRate,
       revenueByDay,
       salesGrowth: 0, // Add growth calculations later
       ordersGrowth: 0,
       aovGrowth: 0,
       unitsGrowth: 0,
+      conversionRateGrowth: 0,
       customerSegments: {
         newCustomers,
         returningCustomers
       },
-      customerLifetimeValue: averageCustomerLTV,
-      totalInventory,
-      fulfillmentRate,
-      paymentSuccessRate,
-      discountUsageRate,
       topProducts,
-      productCategories: productCategoriesArray,
-      dailyData
+      dailyData,
+      topLocations,
+      orderTimeline,
+      orderStatuses,
+      averageItemsPerOrder,
+      isSessionsEstimated: true // Flag to indicate sessions are estimated
     })
 
   } catch (error) {

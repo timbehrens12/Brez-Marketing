@@ -3,8 +3,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
 import { MetaTab } from "./tabs/MetaTab"
-import { TikTokTab } from "./tabs/TikTokTab"
-import { GoogleAdsTab } from "./tabs/GoogleAdsTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
@@ -56,6 +54,22 @@ export function PlatformTabs({
 }: PlatformTabsProps) {
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
+  const [activeTab, setActiveTab] = useState<string>('shopify')
+  const shopifyConnection = connections.find(c => c.platform_type === 'shopify')
+  const metaConnection = connections.find(c => c.platform_type === 'meta')
+  
+  useEffect(() => {
+    // Set initial tab based on available platforms
+    if (platforms.shopify) {
+      setActiveTab('shopify')
+    } else if (platforms.meta) {
+      setActiveTab('meta')
+    } else if (platforms.tiktok) {
+      setActiveTab('tiktok')
+    } else if (platforms.googleads) {
+      setActiveTab('googleads')
+    }
+  }, [platforms])
 
   // Update selectedConnection when connections change
   useEffect(() => {
@@ -75,188 +89,188 @@ export function PlatformTabs({
   // Ensure metrics is never undefined
   const safeMetrics = metrics || defaultMetrics
 
-  // Handle tab change
   const handleValueChange = (value: string) => {
+    setActiveTab(value)
     if (onTabChange) {
-      onTabChange(value);
+      onTabChange(value)
     }
-  };
+  }
 
   return (
-    <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger 
-                value="shopify" 
-                disabled={!platforms.shopify}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
-              >
-                <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <Image 
-                      src="https://i.imgur.com/cnCcupx.png" 
-                      alt="Shopify logo" 
-                      width={36} 
-                      height={36} 
-                      className="object-contain hover:scale-110 transition-transform duration-200"
-                    />
-                  </div>
-                </div>
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Shopify</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger 
-                value="meta" 
-                disabled={!platforms.meta}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
-              >
-                <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta logo" 
-                      width={36} 
-                      height={36} 
-                      className="object-contain hover:scale-110 transition-transform duration-200"
-                    />
-                  </div>
-                </div>
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Meta</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger 
-                value="tiktok" 
-                disabled={!platforms.tiktok}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
-              >
-                <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <Image 
-                      src="https://i.imgur.com/Jpip3Yl.png" 
-                      alt="TikTok logo" 
-                      width={36} 
-                      height={36} 
-                      className="object-contain hover:scale-110 transition-transform duration-200"
-                    />
-                  </div>
-                </div>
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>TikTok</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger 
-                value="googleads" 
-                disabled={!platforms.googleads}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
-              >
-                <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <Image 
-                      src="https://i.imgur.com/vMJRtDT.png" 
-                      alt="Google Ads logo" 
-                      width={36} 
-                      height={36} 
-                      className="object-contain hover:scale-110 transition-transform duration-200"
-                    />
-                  </div>
-                </div>
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Google Ads</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+    <Tabs defaultValue="shopify" value={activeTab} onValueChange={handleValueChange} className="w-full">
+      <TabsList className="flex justify-center mb-10 bg-[#111111] border border-[#222222] p-1 rounded-lg">
+        {platforms.shopify && (
+          <TabsTrigger 
+            value="shopify" 
+            className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
+            title="Shopify"
+          >
+            <div className={`relative w-8 h-8 ${activeTab === 'shopify' ? 'drop-shadow-[0_0_8px_rgba(95,199,104,0.5)]' : ''}`}>
+              <Image 
+                src="https://i.imgur.com/cnCcupx.png" 
+                alt="Shopify" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
+            </div>
+            {activeTab === 'shopify' && (
+              <div className="absolute -bottom-1 w-6 h-0.5 bg-[#5fc768] rounded-full"></div>
+            )}
+          </TabsTrigger>
+        )}
+        {platforms.meta && (
+          <TabsTrigger 
+            value="meta" 
+            className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
+            title="Meta"
+          >
+            <div className={`relative w-8 h-8 ${activeTab === 'meta' ? 'drop-shadow-[0_0_8px_rgba(24,119,242,0.5)]' : ''}`}>
+              <Image 
+                src="https://i.imgur.com/YBDjVBL.png" 
+                alt="Meta" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
+            </div>
+            {activeTab === 'meta' && (
+              <div className="absolute -bottom-1 w-6 h-0.5 bg-[#1877f2] rounded-full"></div>
+            )}
+          </TabsTrigger>
+        )}
+        {platforms.tiktok && (
+          <TabsTrigger 
+            value="tiktok" 
+            className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
+            title="TikTok"
+          >
+            <div className={`relative w-8 h-8 ${activeTab === 'tiktok' ? 'drop-shadow-[0_0_8px_rgba(238,29,82,0.5)]' : ''}`}>
+              <Image 
+                src="https://i.imgur.com/VVSgLPI.png" 
+                alt="TikTok" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
+            </div>
+            {activeTab === 'tiktok' && (
+              <div className="absolute -bottom-1 w-6 h-0.5 bg-[#ee1d52] rounded-full"></div>
+            )}
+          </TabsTrigger>
+        )}
+        {platforms.googleads && (
+          <TabsTrigger 
+            value="googleads" 
+            className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
+            title="Google Ads"
+          >
+            <div className={`relative w-8 h-8 ${activeTab === 'googleads' ? 'drop-shadow-[0_0_8px_rgba(66,133,244,0.5)]' : ''}`}>
+              <Image 
+                src="https://i.imgur.com/Ht9NkXt.png" 
+                alt="Google Ads" 
+                width={32} 
+                height={32} 
+                className="object-contain"
+              />
+            </div>
+            {activeTab === 'googleads' && (
+              <div className="absolute -bottom-1 w-6 h-0.5 bg-[#4285f4] rounded-full"></div>
+            )}
+          </TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="shopify" className="mt-8">
-        {platforms.shopify ? (
+        {selectedConnection ? (
           <ShopifyTab 
-            connection={selectedConnection!} 
-            dateRange={dateRange} 
+            connection={selectedConnection}
+            dateRange={dateRange}
             brandId={brandId}
             metrics={safeMetrics}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
           />
         ) : (
-          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
-            <p className="text-gray-400">Shopify not connected</p>
+          <div className="text-center py-8 text-gray-400">
+            No active Shopify connection found. Please connect your store.
           </div>
         )}
       </TabsContent>
-
+      
       <TabsContent value="meta" className="mt-8">
-        {platforms.meta ? (
-          <MetaTab 
-            dateRange={dateRange} 
-            metrics={metrics}
-            isLoading={isLoading}
-            isRefreshingData={isRefreshingData}
-            brandId={brandId}
-          />
-        ) : (
-          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
-            <p className="text-gray-400">Meta not connected</p>
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {children}
+        </div>
+        <MetaTab 
+          dateRange={dateRange}
+          metrics={metrics}
+          isLoading={isLoading}
+          isRefreshingData={isRefreshingData}
+          brandId={brandId}
+        />
       </TabsContent>
 
       <TabsContent value="tiktok" className="mt-8">
-        {platforms.tiktok ? (
-          <TikTokTab 
-            dateRange={dateRange} 
-            metrics={metrics}
-            isLoading={isLoading}
-            isRefreshingData={isRefreshingData}
-            brandId={brandId}
-          />
-        ) : (
-          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
-            <p className="text-gray-400">TikTok not connected</p>
+        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
+          <div className="mb-4">
+            <Image 
+              src="https://i.imgur.com/AXHa9UT.png" 
+              alt="TikTok logo" 
+              width={64} 
+              height={64} 
+              className="mx-auto"
+            />
           </div>
-        )}
+          <h2 className="text-xl font-bold text-white mb-2">TikTok Ads Integration</h2>
+          <p className="text-gray-400 mb-4">
+            This is a placeholder to demonstrate the dashboard's capability to integrate with TikTok Ads.
+            In a production environment, this would connect to the TikTok Ads API to display your campaign metrics.
+          </p>
+          <div className="p-4 bg-[#222] border border-[#444] rounded-lg inline-block text-left">
+            <p className="text-gray-300 text-sm">
+              <span className="font-semibold">Features would include:</span>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Campaign performance metrics</li>
+                <li>Ad spend tracking</li>
+                <li>Audience insights</li>
+                <li>Conversion tracking</li>
+                <li>ROI analysis</li>
+              </ul>
+            </p>
+          </div>
+        </div>
       </TabsContent>
 
       <TabsContent value="googleads" className="mt-8">
-        {platforms.googleads ? (
-          <GoogleAdsTab 
-            dateRange={dateRange} 
-            metrics={metrics}
-            isLoading={isLoading}
-            isRefreshingData={isRefreshingData}
-            brandId={brandId}
-          />
-        ) : (
-          <div className="flex items-center justify-center p-12 bg-[#111111] border border-[#222222] rounded-lg">
-            <p className="text-gray-400">Google Ads not connected</p>
+        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
+          <div className="mb-4">
+            <Image 
+              src="https://i.imgur.com/TavV4UJ.png" 
+              alt="Google Ads logo" 
+              width={64} 
+              height={64} 
+              className="mx-auto"
+            />
           </div>
-        )}
+          <h2 className="text-xl font-bold text-white mb-2">Google Ads Integration</h2>
+          <p className="text-gray-400 mb-4">
+            This is a placeholder to demonstrate the dashboard's capability to integrate with Google Ads.
+            In a production environment, this would connect to the Google Ads API to display your campaign metrics.
+          </p>
+          <div className="p-4 bg-[#222] border border-[#444] rounded-lg inline-block text-left">
+            <p className="text-gray-300 text-sm">
+              <span className="font-semibold">Features would include:</span>
+              <ul className="list-disc pl-5 mt-2 space-y-1">
+                <li>Campaign performance tracking</li>
+                <li>Keyword analysis</li>
+                <li>Ad spend monitoring</li>
+                <li>Conversion tracking</li>
+                <li>Quality score metrics</li>
+              </ul>
+            </p>
+          </div>
+        </div>
       </TabsContent>
     </Tabs>
   )

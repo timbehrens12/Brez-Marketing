@@ -95,9 +95,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
-    meta: false,
-    tiktok: false,
-    googleads: false
+    meta: false
   })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -135,24 +133,9 @@ export default function DashboardPage() {
         setConnections(connections || [])
         
         // Update active platforms
-        const hasShopify = connections.some((c: PlatformConnection) => 
-          c.platform_type === 'shopify' && c.status === 'active'
-        )
-        const hasMeta = connections.some((c: PlatformConnection) => 
-          c.platform_type === 'meta' && c.status === 'active'
-        )
-        const hasTikTok = connections.some((c: PlatformConnection) => 
-          c.platform_type === 'tiktok' && c.status === 'active'
-        )
-        const hasGoogleAds = connections.some((c: PlatformConnection) => 
-          c.platform_type === 'googleads' && c.status === 'active'
-        )
-
         setPlatformStatus({
-          shopify: hasShopify,
-          meta: hasMeta,
-          tiktok: hasTikTok,
-          googleads: hasGoogleAds
+          shopify: connections?.some(c => c.platform_type === 'shopify') || false,
+          meta: connections?.some(c => c.platform_type === 'meta') || false
         })
 
       } catch (error) {
@@ -197,18 +180,10 @@ export default function DashboardPage() {
       const hasMeta = connections.some((c: PlatformConnection) => 
         c.platform_type === 'meta' && c.status === 'active'
       )
-      const hasTikTok = connections.some((c: PlatformConnection) => 
-        c.platform_type === 'tiktok' && c.status === 'active'
-      )
-      const hasGoogleAds = connections.some((c: PlatformConnection) => 
-        c.platform_type === 'googleads' && c.status === 'active'
-      )
 
       setPlatformStatus({
         shopify: hasShopify,
-        meta: hasMeta,
-        tiktok: hasTikTok,
-        googleads: hasGoogleAds
+        meta: hasMeta
       })
 
       // If Shopify is connected, set the store
@@ -274,12 +249,11 @@ export default function DashboardPage() {
       if (metaConnection) {
         try {
           // Load Meta data
-          const { data: metaData, error: metaError } = await supabase
-            .from('meta_data_tracking')
+          const { data: metaData } = await supabase
+            .from('meta_data')
             .select('*')
-            .eq('brand_id', selectedBrandId)
-            .order('date', { ascending: false })
-            .limit(30)
+            .eq('connection_id', metaConnection.id)
+            .single()
 
           // Update widget data
           setWidgetData(current => ({

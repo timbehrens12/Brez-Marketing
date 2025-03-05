@@ -4,14 +4,10 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts"
 import type { Metrics, CustomerSegments, DailyData, Product } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { 
-  Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, 
-  PercentIcon, UserCheck, MousePointerClick, Truck, CreditCard, 
-  Tag, BarChart3, HeartHandshake, Boxes
-} from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck, MousePointerClick, Clock, Globe, CreditCard, ShoppingCart } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
@@ -19,6 +15,8 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -34,16 +32,15 @@ interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'cu
   topProducts: Array<Product>
   customerSegments: CustomerSegments
   dailyData: Array<DailyData>
-  customerLifetimeValue?: number
-  totalInventory?: number
-  fulfillmentRate?: number
-  paymentSuccessRate?: number
-  discountUsageRate?: number
-  productCategories?: Array<{ name: string; count: number }>
+  topLocations?: Array<{ country: string; count: number; revenue: number }>
+  orderTimeline?: Array<{ hour: number; count: number }>
+  orderStatuses?: Array<{ status: string; count: number; percentage: number }>
+  averageItemsPerOrder?: number
+  isSessionsEstimated?: boolean
 }
 
-// Colors for pie chart
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1'];
+// Colors for charts
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export function ShopifyTab({ 
   connection, 
@@ -93,18 +90,28 @@ export function ShopifyTab({
       revenue: d.revenue || 0,
       value: d.revenue || 0 // Add this for MetricCard compatibility
     })),
-    customerLifetimeValue: metrics.customerLifetimeValue || 0,
-    totalInventory: metrics.totalInventory || 0,
-    fulfillmentRate: metrics.fulfillmentRate || 0,
-    paymentSuccessRate: metrics.paymentSuccessRate || 0,
-    discountUsageRate: metrics.discountUsageRate || 0,
-    productCategories: metrics.productCategories || []
+    topLocations: metrics.topLocations || [],
+    orderTimeline: metrics.orderTimeline || [],
+    orderStatuses: metrics.orderStatuses || [],
+    averageItemsPerOrder: metrics.averageItemsPerOrder || 0,
+    isSessionsEstimated: metrics.isSessionsEstimated || true
   }
 
-  // Prepare data for product categories pie chart
-  const productCategoriesData = safeMetrics.productCategories?.slice(0, 8).map(category => ({
-    name: category.name,
-    value: category.count
+  // Estimate sessions based on conversion rate
+  const estimatedSessions = safeMetrics.conversionRate > 0 
+    ? Math.round(safeMetrics.ordersPlaced / (safeMetrics.conversionRate / 100)) 
+    : Math.max(safeMetrics.ordersPlaced * 20, 100); // Fallback estimate
+
+  // Format order timeline data for chart
+  const formattedOrderTimeline = safeMetrics.orderTimeline?.map(item => ({
+    ...item,
+    hour: `${item.hour}:00`
+  })) || [];
+
+  // Format order status data for chart
+  const formattedOrderStatuses = safeMetrics.orderStatuses?.map((status, index) => ({
+    ...status,
+    color: COLORS[index % COLORS.length]
   })) || [];
 
   return (
@@ -116,20 +123,6 @@ export function ShopifyTab({
           <div>Revenue Data Points: {safeMetrics.revenueByDay.length}</div>
         </div>
       )}
-      
-      {/* Platform Indicator */}
-      <div className="flex items-center justify-center mb-4">
-        <div className="relative flex items-center justify-center w-16 h-16 bg-[#111111] rounded-full border-2 border-[#95BF47] shadow-[0_0_15px_rgba(149,191,71,0.5)]">
-          <Image 
-            src="https://i.imgur.com/cnCcupx.png" 
-            alt="Shopify" 
-            width={40} 
-            height={40} 
-            className="object-contain"
-          />
-          <div className="absolute inset-0 rounded-full border-2 border-[#95BF47] animate-pulse"></div>
-        </div>
-      </div>
       
       {/* Key Metrics Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -234,8 +227,69 @@ export function ShopifyTab({
         />
       </div>
 
-      {/* Customer Metrics Row */}
+      {/* Secondary Metrics Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>Conversion Rate</span>
+              <PercentIcon className="h-4 w-4" />
+            </div>
+          }
+          value={safeMetrics.conversionRate || 0}
+          change={safeMetrics.conversionRateGrowth || 0}
+          suffix="%"
+          valueFormat="percentage"
+          data={safeMetrics.dailyData}
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>Sessions</span>
+              <MousePointerClick className="h-4 w-4" />
+              {safeMetrics.isSessionsEstimated && (
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="ml-1 text-xs">Est</Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Sessions are estimated based on orders and conversion rate</p>
+                    </TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          }
+          value={estimatedSessions}
+          change={0}
+          valueFormat="number"
+          data={safeMetrics.dailyData}
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+        />
         <MetricCard
           title={
             <div className="flex items-center gap-2">
@@ -284,59 +338,10 @@ export function ShopifyTab({
           refreshing={isRefreshingData}
           platform="shopify"
         />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Customer Lifetime Value</span>
-              <HeartHandshake className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.customerLifetimeValue || 0}
-          change={0}
-          prefix="$"
-          valueFormat="currency"
-          data={safeMetrics.dailyData}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Total Inventory</span>
-              <Boxes className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.totalInventory || 0}
-          change={0}
-          valueFormat="number"
-          data={safeMetrics.dailyData}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
       </div>
 
-      {/* Performance Metrics Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Third Metrics Row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title={
             <div className="flex items-center gap-2">
@@ -349,64 +354,13 @@ export function ShopifyTab({
                   className="object-contain"
                 />
               </div>
-              <span>Fulfillment Rate</span>
-              <Truck className="h-4 w-4" />
+              <span>Items Per Order</span>
+              <ShoppingCart className="h-4 w-4" />
             </div>
           }
-          value={safeMetrics.fulfillmentRate || 0}
+          value={safeMetrics.averageItemsPerOrder || 0}
           change={0}
-          suffix="%"
-          valueFormat="percentage"
-          data={safeMetrics.dailyData}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Payment Success Rate</span>
-              <CreditCard className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.paymentSuccessRate || 0}
-          change={0}
-          suffix="%"
-          valueFormat="percentage"
-          data={safeMetrics.dailyData}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Discount Usage Rate</span>
-              <Tag className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.discountUsageRate || 0}
-          change={0}
-          suffix="%"
-          valueFormat="percentage"
+          valueFormat="number"
           data={safeMetrics.dailyData}
           loading={isLoading}
           refreshing={isRefreshingData}
@@ -430,13 +384,131 @@ export function ShopifyTab({
         </Card>
       </div>
 
-      {/* Two Column Layout for Top Products and Product Categories */}
+      {/* Order Timeline and Geographic Distribution - Two Column Layout */}
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Order Timeline */}
+        {formattedOrderTimeline.length > 0 && (
+          <Card className="bg-[#111111] border-[#222222]">
+            <CardHeader className="py-2">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                <span>Order Timeline</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={formattedOrderTimeline}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                >
+                  <XAxis 
+                    dataKey="hour" 
+                    tick={{ fill: '#888' }} 
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fill: '#888' }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#222', border: 'none' }}
+                    labelStyle={{ color: '#fff' }}
+                    formatter={(value: any) => [`${value} orders`, 'Count']}
+                  />
+                  <Bar dataKey="count" fill="#5fc768" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Geographic Distribution */}
+        {safeMetrics.topLocations && safeMetrics.topLocations.length > 0 && (
+          <Card className="bg-[#111111] border-[#222222]">
+            <CardHeader className="py-2">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                <span>Geographic Distribution</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {safeMetrics.topLocations.map((location, index) => (
+                  <div key={location.country || index} className="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">{index + 1}.</span>
+                      <span className="text-white">{location.country}</span>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="text-right">
+                        <div className="text-gray-400 text-xs">Orders</div>
+                        <div className="text-white">{location.count}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-gray-400 text-xs">Revenue</div>
+                        <div className="text-white">${location.revenue.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Order Status and Top Products - Two Column Layout */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Order Status */}
+        {formattedOrderStatuses.length > 0 && (
+          <Card className="bg-[#111111] border-[#222222]">
+            <CardHeader className="py-2">
+              <CardTitle className="text-white flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                <span>Order Status</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={formattedOrderStatuses}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                    nameKey="status"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {formattedOrderStatuses.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#222', border: 'none' }}
+                    formatter={(value: any, name: any, props: any) => [
+                      `${value} orders (${(props.payload.percentage).toFixed(1)}%)`,
+                      props.payload.status
+                    ]}
+                  />
+                  <Legend 
+                    formatter={(value) => <span style={{ color: '#ccc' }}>{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Top Products */}
         {safeMetrics.topProducts && safeMetrics.topProducts.length > 0 && (
           <Card className="bg-[#111111] border-[#222222]">
             <CardHeader className="py-2">
-              <CardTitle className="text-white">Top Products</CardTitle>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                <span>Top Products</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -456,49 +528,6 @@ export function ShopifyTab({
                         <div className="text-white">${product.revenue.toFixed(2)}</div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Product Categories */}
-        {productCategoriesData && productCategoriesData.length > 0 && (
-          <Card className="bg-[#111111] border-[#222222]">
-            <CardHeader className="py-2">
-              <CardTitle className="text-white">Product Categories</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={productCategoriesData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {productCategoriesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} products`, 'Count']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2 w-full">
-                {productCategoriesData.map((category, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    ></div>
-                    <span className="text-xs text-gray-300 truncate">{category.name}</span>
                   </div>
                 ))}
               </div>

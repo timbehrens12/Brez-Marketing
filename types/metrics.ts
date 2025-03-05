@@ -64,6 +64,23 @@ export interface DailyData {
   value: number // For MetricCard compatibility
 }
 
+export interface LocationData {
+  country: string
+  count: number
+  revenue: number
+}
+
+export interface OrderTimelineData {
+  hour: number
+  count: number
+}
+
+export interface OrderStatusData {
+  status: string
+  count: number
+  percentage: number
+}
+
 export interface Metrics {
   totalSales: number
   ordersPlaced: number
@@ -97,12 +114,11 @@ export interface Metrics {
   conversionGrowth: number
   costPerResult: number
   cprGrowth: number
-  customerLifetimeValue?: number
-  totalInventory?: number
-  fulfillmentRate?: number
-  paymentSuccessRate?: number
-  discountUsageRate?: number
-  productCategories?: Array<{ name: string; count: number }>
+  topLocations?: Array<LocationData>
+  orderTimeline?: Array<OrderTimelineData>
+  orderStatuses?: Array<OrderStatusData>
+  averageItemsPerOrder?: number
+  isSessionsEstimated?: boolean
 }
 
 export interface ComparisonDates {
