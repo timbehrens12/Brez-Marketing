@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import type { Metrics, CustomerSegments, DailyData, Product } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck } from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck, MousePointerClick } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
@@ -81,6 +81,11 @@ export function ShopifyTab({
       value: d.revenue || 0 // Add this for MetricCard compatibility
     }))
   }
+
+  // Estimate sessions based on conversion rate
+  const estimatedSessions = safeMetrics.conversionRate > 0 
+    ? Math.round(safeMetrics.ordersPlaced / (safeMetrics.conversionRate / 100)) 
+    : Math.max(safeMetrics.ordersPlaced * 20, 100); // Fallback estimate
 
   return (
     <div className="space-y-8">
@@ -234,14 +239,37 @@ export function ShopifyTab({
                   className="object-contain"
                 />
               </div>
-              <span>Customer Retention</span>
+              <span>Sessions</span>
+              <MousePointerClick className="h-4 w-4" />
+            </div>
+          }
+          value={estimatedSessions}
+          change={0}
+          valueFormat="number"
+          data={safeMetrics.dailyData}
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>New Customers</span>
               <Users className="h-4 w-4" />
             </div>
           }
-          value={safeMetrics.customerRetentionRate || 0}
-          change={safeMetrics.retentionGrowth || 0}
-          suffix="%"
-          valueFormat="percentage"
+          value={safeMetrics.customerSegments.newCustomers || 0}
+          change={0}
+          valueFormat="number"
           data={safeMetrics.dailyData}
           loading={isLoading}
           refreshing={isRefreshingData}
@@ -259,36 +287,11 @@ export function ShopifyTab({
                   className="object-contain"
                 />
               </div>
-              <span>Return Rate</span>
-              <RefreshCcw className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.returnRate || 0}
-          change={safeMetrics.returnGrowth || 0}
-          suffix="%"
-          valueFormat="percentage"
-          data={safeMetrics.dailyData}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Active Customers</span>
+              <span>Returning Customers</span>
               <UserCheck className="h-4 w-4" />
             </div>
           }
-          value={safeMetrics.customerSegments.newCustomers + safeMetrics.customerSegments.returningCustomers || 0}
+          value={safeMetrics.customerSegments.returningCustomers || 0}
           change={0}
           valueFormat="number"
           data={safeMetrics.dailyData}
@@ -313,6 +316,39 @@ export function ShopifyTab({
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Products - If we have data */}
+      {safeMetrics.topProducts && safeMetrics.topProducts.length > 0 && (
+        <div className="w-full">
+          <Card className="bg-[#111111] border-[#222222]">
+            <CardHeader className="py-2">
+              <CardTitle className="text-white">Top Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {safeMetrics.topProducts.map((product, index) => (
+                  <div key={product.id || index} className="flex justify-between items-center border-b border-gray-800 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">{index + 1}.</span>
+                      <span className="text-white">{product.name}</span>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="text-right">
+                        <div className="text-gray-400 text-xs">Units</div>
+                        <div className="text-white">{product.quantity}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-gray-400 text-xs">Revenue</div>
+                        <div className="text-white">${product.revenue.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 } 
