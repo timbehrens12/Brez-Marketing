@@ -397,8 +397,27 @@ export default function DashboardPage() {
           ...data
         }))
         
-        // No need to manually fetch inventory data here
-        // The InventorySummary component will automatically refresh when isRefreshingData changes
+        // Sync inventory data from Shopify
+        if (shopifyConnection) {
+          try {
+            console.log('Syncing inventory data from Shopify')
+            const syncResponse = await fetch('/api/shopify/inventory/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ connectionId: shopifyConnection.id })
+            })
+            
+            if (!syncResponse.ok) {
+              console.error('Failed to sync inventory data:', await syncResponse.text())
+            } else {
+              console.log('Inventory sync initiated successfully')
+            }
+          } catch (error) {
+            console.error('Error syncing inventory data:', error)
+          }
+        }
       }
       
       // Fetch Meta data

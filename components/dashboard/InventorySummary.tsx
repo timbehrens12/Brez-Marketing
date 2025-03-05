@@ -64,6 +64,33 @@ export function InventorySummary({
     }
 
     fetchInventoryData()
+  }, [brandId])
+  
+  useEffect(() => {
+    if (isRefreshingData && brandId) {
+      console.log('Refreshing inventory data due to isRefreshingData change')
+      const fetchInventoryData = async () => {
+        try {
+          console.log(`Refreshing inventory data for brandId: ${brandId}`)
+          const response = await fetch(`/api/shopify/inventory?brandId=${brandId}&refresh=true`)
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            throw new Error(`Failed to fetch inventory data: ${errorText}`)
+          }
+          
+          const data = await response.json()
+          console.log('Refreshed inventory data fetched successfully:', data)
+          setInventorySummary(data.summary)
+          setError(null)
+        } catch (err) {
+          console.error('Error refreshing inventory data:', err)
+          // Don't show toast on refresh errors to avoid spamming the user
+        }
+      }
+      
+      fetchInventoryData()
+    }
   }, [brandId, isRefreshingData])
 
   const isDataLoading = isLoading || loading

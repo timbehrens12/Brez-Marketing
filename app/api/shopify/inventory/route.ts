@@ -6,8 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const brandId = searchParams.get('brandId')
+    const refresh = searchParams.get('refresh') === 'true'
     
-    console.log(`Inventory API called with brandId: ${brandId}`)
+    console.log(`Inventory API called with brandId: ${brandId}, refresh: ${refresh}`)
     
     if (!brandId) {
       console.error('Missing brandId parameter')
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     console.log(`Fetching Shopify connection for brandId: ${brandId}`)
     const { data: connections, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('id')
+      .select('id, access_token, shop')
       .eq('brand_id', brandId)
       .eq('platform_type', 'shopify')
       .order('created_at', { ascending: false }) // Get the most recent connection
@@ -43,6 +44,33 @@ export async function GET(request: NextRequest) {
 
     const connection = connections[0]
     console.log(`Found connection with id: ${connection.id}`)
+
+    // If refresh is true, trigger a sync before fetching data
+    if (refresh && connection.access_token && connection.shop) {
+      console.log('Refresh parameter is true, triggering inventory sync')
+      try {
+        // Call the inventory sync endpoint
+        const syncResponse = await fetch(new URL('/api/shopify/inventory/sync', request.url).toString(), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ connectionId: connection.id })
+        })
+        
+        if (!syncResponse.ok) {
+          console.error('Error syncing inventory:', await syncResponse.text())
+          // Continue anyway to return the current data
+        } else {
+          console.log('Inventory sync initiated successfully')
+          // Wait a moment for the sync to complete
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+      } catch (syncError) {
+        console.error('Error triggering inventory sync:', syncError)
+        // Continue anyway to return the current data
+      }
+    }
 
     // Fetch inventory data
     console.log(`Fetching inventory data for connection: ${connection.id}`)
