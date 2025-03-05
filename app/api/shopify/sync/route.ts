@@ -51,15 +51,14 @@ export async function POST(request: Request) {
       .update({ sync_status: 'in_progress' })
       .eq('id', connectionId)
 
-    // Start sync process for orders
-    console.log('Starting sync process for orders')
+    // Start sync process
+    console.log('Starting sync process')
     let totalOrders = 0
     let nextCursor = null
 
     do {
       try {
         // Build the URL with cursor-based pagination
-        // We're fetching orders with their line items to calculate metrics like total sales, order count, etc.
         let url = `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
         if (nextCursor) {
           url += `&page_info=${nextCursor}`
@@ -134,124 +133,6 @@ export async function POST(request: Request) {
       }
     } while (nextCursor)
 
-    // Check if shopify_products table exists, create it if not
-    console.log('Checking if shopify_products table exists')
-    try {
-      // Try to query the table to see if it exists
-      const { error } = await supabase
-        .from('shopify_products')
-        .select('id')
-        .limit(1)
-      
-      // If there's an error, the table might not exist
-      if (error && error.message.includes('relation "shopify_products" does not exist')) {
-        console.log('Creating shopify_products table')
-        
-        // Create the table using SQL
-        const { error: createError } = await supabase.rpc('create_shopify_products_table')
-        
-        if (createError) {
-          console.error('Error creating shopify_products table:', createError)
-          // Continue with sync process even if table creation fails
-        } else {
-          console.log('shopify_products table created successfully')
-        }
-      } else {
-        console.log('shopify_products table already exists')
-      }
-    } catch (error) {
-      console.error('Error checking/creating shopify_products table:', error)
-      // Continue with sync process even if table check fails
-    }
-
-    // Fetch products to get additional data
-    console.log('Starting sync process for products')
-    let totalProducts = 0
-    nextCursor = null
-
-    do {
-      try {
-        // Build the URL with cursor-based pagination for products
-        // We're fetching products to get inventory levels and other product data
-        let url = `https://${connection.shop}/admin/api/2024-01/products.json?limit=250&fields=id,title,vendor,product_type,created_at,updated_at,variants,images`
-        if (nextCursor) {
-          url += `&page_info=${nextCursor}`
-        }
-
-        console.log('Fetching products from Shopify:', { url: url.substring(0, 100) + '...' })
-        const response = await fetch(url, {
-          headers: {
-            'X-Shopify-Access-Token': connection.access_token,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Shopify API error response:', errorText)
-          throw new Error(`Shopify API error: ${response.statusText} - ${errorText}`)
-        }
-
-        // Get the next page cursor from the Link header
-        const linkHeader = response.headers.get('Link')
-        nextCursor = null
-        if (linkHeader) {
-          const match = linkHeader.match(/<[^>]*page_info=([^>&"]*)[^>]*>; rel="next"/)
-          if (match) {
-            nextCursor = match[1]
-          }
-        }
-
-        const data = await response.json()
-        const products = data.products
-
-        if (!products?.length) {
-          console.log('No products found in this batch')
-          break
-        }
-
-        console.log(`Found ${products.length} products in this batch`)
-
-        // Format products for database
-        const formattedProducts = products.map((product: any) => ({
-          id: product.id.toString(),
-          connection_id: connectionId,
-          title: product.title,
-          vendor: product.vendor,
-          product_type: product.product_type,
-          created_at: product.created_at,
-          updated_at: product.updated_at,
-          variants: product.variants,
-          images: product.images
-        }))
-
-        // Batch insert products
-        console.log(`Inserting ${formattedProducts.length} products into database`)
-        const { error: insertError } = await supabase
-          .from('shopify_products')
-          .upsert(formattedProducts, {
-            onConflict: 'id',
-            ignoreDuplicates: true
-          })
-
-        if (insertError) {
-          console.error('Error inserting products:', insertError)
-          throw insertError
-        }
-
-        totalProducts += products.length
-        console.log(`Total products processed so far: ${totalProducts}`)
-
-        // Respect API rate limits
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch (error) {
-        console.error('Error during product sync:', error)
-        // Continue with other operations even if product sync fails
-        console.log('Continuing with other operations...')
-        break
-      }
-    } while (nextCursor)
-
     // Update sync status to completed
     console.log('Sync completed, updating status')
     await supabase
@@ -263,11 +144,7 @@ export async function POST(request: Request) {
       .eq('id', connectionId)
 
     console.log('Sync process completed successfully')
-    return NextResponse.json({ 
-      success: true, 
-      totalOrders,
-      totalProducts
-    })
+    return NextResponse.json({ success: true, totalOrders })
 
   } catch (error) {
     console.error('Sync error:', error)

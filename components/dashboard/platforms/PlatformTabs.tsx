@@ -54,6 +54,7 @@ export function PlatformTabs({
 }: PlatformTabsProps) {
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
+  const [activeTab, setActiveTab] = useState<string>("shopify")
 
   // Update selectedConnection when connections change
   useEffect(() => {
@@ -75,6 +76,7 @@ export function PlatformTabs({
 
   // Handle tab change
   const handleValueChange = (value: string) => {
+    setActiveTab(value);
     if (onTabChange) {
       onTabChange(value);
     }
@@ -89,16 +91,22 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="shopify" 
                 disabled={!platforms.shopify}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
+                className={`rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                  activeTab === "shopify" 
+                    ? "bg-[#2A2A2A] border-[#444] border shadow-[0_0_15px_rgba(7,89,133,0.5)] text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
+                }`}
               >
                 <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
+                  <div className={`relative w-10 h-10 flex items-center justify-center ${
+                    activeTab === "shopify" ? "filter drop-shadow-[0_0_3px_rgba(7,89,133,0.7)]" : ""
+                  }`}>
                     <Image 
                       src="https://i.imgur.com/cnCcupx.png" 
                       alt="Shopify logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "shopify" ? "scale-110" : ""}`}
                     />
                   </div>
                 </div>
@@ -116,16 +124,22 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="meta" 
                 disabled={!platforms.meta}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
+                className={`rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                  activeTab === "meta" 
+                    ? "bg-[#2A2A2A] border-[#444] border shadow-[0_0_15px_rgba(24,119,242,0.5)] text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
+                }`}
               >
                 <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
+                  <div className={`relative w-10 h-10 flex items-center justify-center ${
+                    activeTab === "meta" ? "filter drop-shadow-[0_0_3px_rgba(24,119,242,0.7)]" : ""
+                  }`}>
                     <Image 
                       src="https://i.imgur.com/6hyyRrs.png" 
                       alt="Meta logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "meta" ? "scale-110" : ""}`}
                     />
                   </div>
                 </div>
@@ -143,16 +157,22 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="tiktok" 
                 disabled={false}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
+                className={`rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                  activeTab === "tiktok" 
+                    ? "bg-[#2A2A2A] border-[#444] border shadow-[0_0_15px_rgba(238,29,82,0.5)] text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
+                }`}
               >
                 <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
+                  <div className={`relative w-10 h-10 flex items-center justify-center ${
+                    activeTab === "tiktok" ? "filter drop-shadow-[0_0_3px_rgba(238,29,82,0.7)]" : ""
+                  }`}>
                     <Image 
                       src="https://i.imgur.com/AXHa9UT.png" 
                       alt="TikTok logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "tiktok" ? "scale-110" : ""}`}
                     />
                   </div>
                 </div>
@@ -170,16 +190,22 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="googleads" 
                 disabled={false}
-                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
+                className={`rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                  activeTab === "googleads" 
+                    ? "bg-[#2A2A2A] border-[#444] border shadow-[0_0_15px_rgba(66,133,244,0.5)] text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
+                }`}
               >
                 <div className="flex items-center justify-center">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
+                  <div className={`relative w-10 h-10 flex items-center justify-center ${
+                    activeTab === "googleads" ? "filter drop-shadow-[0_0_3px_rgba(66,133,244,0.7)]" : ""
+                  }`}>
                     <Image 
                       src="https://i.imgur.com/TavV4UJ.png" 
                       alt="Google Ads logo" 
                       width={36} 
                       height={36} 
-                      className="object-contain transition-transform duration-300 hover:scale-110"
+                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "googleads" ? "scale-110" : ""}`}
                     />
                   </div>
                 </div>

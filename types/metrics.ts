@@ -79,8 +79,6 @@ export interface Metrics {
   returnGrowth: number
   conversionRate: number
   conversionRateGrowth: number
-  inventoryLevels: number
-  inventoryGrowth: number
   revenueByDay: Array<{ date: string; amount: number }>
   topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
   customerSegments: CustomerSegments
@@ -172,8 +170,6 @@ export const defaultMetrics: Metrics = {
   returnGrowth: 0,
   conversionRate: 0,
   conversionRateGrowth: 0,
-  inventoryLevels: 0,
-  inventoryGrowth: 0,
   dailyData: [],
   revenueByDay: [],
   customerSegments: {
