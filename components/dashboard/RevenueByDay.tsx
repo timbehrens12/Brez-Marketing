@@ -398,7 +398,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as WeeklyOrMonthlyDisplayItem).isToday 
                   ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
-                  : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
+                  : "bg-[#1e1e1e] border-gray-500 hover:border-gray-400 transition-colors"
               )}
             >
               <div className={cn(
@@ -439,7 +439,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         <div className="h-full flex flex-col">
           <div className="grid grid-cols-7 gap-0.5 mb-0.5">
             {daysOfWeek.map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-white py-0.5 bg-gray-800 rounded-sm">
+              <div key={index} className="text-center text-xs font-medium text-white py-0.5 bg-gray-700 rounded-sm">
                 {day}
               </div>
             ))}
@@ -463,7 +463,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     "flex flex-col rounded-sm overflow-hidden border",
                     isToday 
                       ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
-                      : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
+                      : "bg-[#1e1e1e] border-gray-500 hover:border-gray-400 transition-colors"
                   )}
                 >
                   <div className={cn(
@@ -495,7 +495,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as YearlyDisplayItem).isCurrentMonth 
                   ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
-                  : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
+                  : "bg-[#1e1e1e] border-gray-500 hover:border-gray-400 transition-colors"
               )}
             >
               <div className={cn(
@@ -560,6 +560,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             <line x1="8" x2="8" y1="2" y2="6" />
             <line x1="3" x2="21" y1="10" y2="10" />
           </svg>
+          <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-base font-medium text-white mr-2">
