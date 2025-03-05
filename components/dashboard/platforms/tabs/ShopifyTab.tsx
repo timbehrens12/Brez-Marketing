@@ -3,7 +3,6 @@
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
-import { InventorySyncButton } from "@/components/dashboard/InventorySyncButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
@@ -201,7 +200,6 @@ export function ShopifyTab({
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-white">Inventory Summary</h3>
-          <InventorySyncButton connectionId={connection.id} />
         </div>
         <InventorySummary 
           brandId={brandId}

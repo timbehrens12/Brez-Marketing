@@ -130,12 +130,12 @@ export default function DashboardPage() {
 
         if (error) throw error
 
-        setConnections(connections || [])
+        setConnections(connections as unknown as PlatformConnection[] || [])
         
         // Update active platforms
         setPlatformStatus({
-          shopify: connections?.some(c => c.platform_type === 'shopify') || false,
-          meta: connections?.some(c => c.platform_type === 'meta') || false
+          shopify: connections?.some((c: any) => c.platform_type === 'shopify') || false,
+          meta: connections?.some((c: any) => c.platform_type === 'meta') || false
         })
 
       } catch (error) {
@@ -174,10 +174,10 @@ export default function DashboardPage() {
       console.log('Platform connections:', connections)
 
       // Update platforms state based on connections from database
-      const hasShopify = connections.some((c: PlatformConnection) => 
+      const hasShopify = connections.some((c: any) => 
         c.platform_type === 'shopify' && c.status === 'active'
       )
-      const hasMeta = connections.some((c: PlatformConnection) => 
+      const hasMeta = connections.some((c: any) => 
         c.platform_type === 'meta' && c.status === 'active'
       )
 
@@ -187,9 +187,10 @@ export default function DashboardPage() {
       })
 
       // If Shopify is connected, set the store
-      const shopifyConnection = connections.find(c => 
+      const shopifyConnection = connections.find((c: any) => 
         c.platform_type === 'shopify' && c.status === 'active'
-      )
+      ) as PlatformConnection | undefined
+
       if (hasShopify && shopifyConnection?.shop) {
         setSelectedStore(shopifyConnection.shop)
       }
@@ -228,7 +229,7 @@ export default function DashboardPage() {
           const processedData = orders?.map(order => ({
             id: order.id,
             created_at: order.created_at,
-            total_price: parseFloat(order.total_price),
+            total_price: typeof order.total_price === 'string' ? parseFloat(order.total_price) : (order.total_price || 0),
             customer_id: order.customer_id,
             line_items: order.line_items
           })) || []
@@ -242,15 +243,15 @@ export default function DashboardPage() {
         }
       }
 
-      const metaConnection = connections.find(c => 
+      const metaConnection = connections.find((c: any) => 
         c.platform_type === 'meta' && c.status === 'active'
-      )
+      ) as PlatformConnection | undefined
 
       if (metaConnection) {
         try {
           // Load Meta data
           const { data: metaData } = await supabase
-            .from('meta_data')
+            .from('meta_data_tracking')
             .select('*')
             .eq('connection_id', metaConnection.id)
             .single()
@@ -375,7 +376,7 @@ export default function DashboardPage() {
   }
 
   const shopifyConnection = connections.find(c => 
-    c.platform_type === 'shopify' && c.status === 'active'
+    c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
   )
 
   // Modify the fetchAllData function to use isRefreshingData instead of isLoading
@@ -388,7 +389,7 @@ export default function DashboardPage() {
       // Fetch Shopify data
       if (activePlatforms.shopify) {
         // Fetch Shopify data
-        const response = await fetch(`/api/metrics?brandId=${selectedBrandId}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+        const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
         if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
         const data = await response.json()
         setMetrics(prevMetrics => ({
@@ -396,29 +397,8 @@ export default function DashboardPage() {
           ...data
         }))
         
-        // Trigger a Shopify sync to refresh data
-        const shopifyConnection = connections.find(c => 
-          c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
-        )
-        
-        if (shopifyConnection) {
-          console.log('Triggering Shopify sync for fresh data')
-          try {
-            const syncResponse = await fetch('/api/shopify/sync', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ connectionId: shopifyConnection.id })
-            })
-            
-            if (syncResponse.ok) {
-              console.log('Shopify sync triggered successfully')
-            }
-          } catch (syncError) {
-            console.error('Error triggering Shopify sync:', syncError)
-          }
-        }
+        // No need to manually fetch inventory data here
+        // The InventorySummary component will automatically refresh when isRefreshingData changes
       }
       
       // Fetch Meta data
@@ -427,7 +407,7 @@ export default function DashboardPage() {
         const endDate = formatDate(dateRange.to);
         
         const metaResponse = await fetch(
-          `/api/metrics/meta?brandId=${selectedBrandId}&startDate=${startDate}&endDate=${endDate}`
+          `/api/metrics/meta?brandId=${selectedBrandId.toString()}&startDate=${startDate}&endDate=${endDate}`
         );
         
         if (!metaResponse.ok) {

@@ -22,7 +22,6 @@ export function InventorySummary({
   const [inventorySummary, setInventorySummary] = useState<InventorySummaryType | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
 
   useEffect(() => {
     if (!brandId) {
@@ -52,11 +51,6 @@ export function InventorySummary({
         }
         
         console.log('Inventory data fetched successfully:', data)
-        setDebugInfo({
-          itemsCount: data.items?.length || 0,
-          summary: data.summary
-        })
-        
         setInventorySummary(data.summary)
         setError(null)
       } catch (err) {
@@ -76,14 +70,7 @@ export function InventorySummary({
 
   return (
     <div className="space-y-4">
-      {process.env.NODE_ENV === 'development' && debugInfo && (
-        <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded mb-4">
-          <div>Items Count: {debugInfo.itemsCount}</div>
-          <div>Summary: {JSON.stringify(debugInfo.summary)}</div>
-        </div>
-      )}
-      
-      {error && (
+      {error && !isDataLoading && (
         <div className="bg-red-900/30 border border-red-700 p-4 rounded-md text-red-200 mb-4">
           {error}
         </div>
