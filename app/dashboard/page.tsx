@@ -104,6 +104,13 @@ export default function DashboardPage() {
   const { connections: connectionStoreConnections } = useConnectionStore()
   const supabase = useSupabase()
 
+  // Add a new state for data refresh that's separate from initial loading
+  const [isRefreshingData, setIsRefreshingData] = useState(false);
+
+  // Add missing state for lastRefreshed
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   // Load initial connections when component mounts
   useEffect(() => {
     async function loadConnections() {
@@ -366,17 +373,12 @@ export default function DashboardPage() {
     c.platform_type === 'shopify' && c.status === 'active'
   )
 
-  // Create a function to fetch all data
+  // Modify the fetchAllData function to use isRefreshingData instead of isLoading
   const fetchAllData = async () => {
     if (!selectedBrandId) return
     
-    // Instead of setting isLoading to true for the entire dashboard,
-    // we'll create a copy of the current metrics to preserve structure
-    const currentMetrics = { ...metrics };
-    
-    // Set loading state for individual components rather than the entire dashboard
-    setIsLoading(true)
-    
+    // Use isRefreshingData instead of isLoading for refreshes
+    setIsRefreshingData(true)
     try {
       // Fetch Shopify data
       if (activePlatforms.shopify) {
@@ -450,19 +452,35 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error refreshing data:', error)
-      // If there's an error, restore the previous metrics to maintain UI consistency
-      setMetrics(currentMetrics)
     } finally {
-      setIsLoading(false)
+      setIsRefreshingData(false)
     }
   }
 
+  // Modify the refresh function to use isRefreshingData
+  const refresh = async () => {
+    if (isRefreshing) return
+    
+    setIsRefreshing(true)
+    await fetchAllData()
+    setLastRefreshed(new Date())
+    setIsRefreshing(false)
+  }
+
   // Set up periodic data refresh
-  const { lastRefreshed, isRefreshing, refresh } = useDataRefresh(
-    fetchAllData,
-    120, // Refresh every 2 minutes
-    [selectedBrandId, dateRange, activePlatforms]
-  )
+  useEffect(() => {
+    // Initial fetch
+    fetchAllData();
+    
+    // Set up interval for periodic refresh
+    const interval = setInterval(() => {
+      fetchAllData();
+      setLastRefreshed(new Date());
+    }, 120000); // Refresh every 2 minutes
+    
+    // Clean up interval on unmount
+    return () => clearInterval(interval);
+  }, [selectedBrandId, dateRange, activePlatforms]);
 
   // If auth is loaded and user is not signed in, show sign-in overlay
   if (isLoaded && !userId) {
@@ -586,6 +604,7 @@ export default function DashboardPage() {
             brandId={selectedBrandId}
             metrics={metrics}
             isLoading={isLoading}
+            isRefreshingData={isRefreshingData}
             platformStatus={activePlatforms}
             existingConnections={connections}
           >

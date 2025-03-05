@@ -21,6 +21,7 @@ interface ShopifyTabProps {
   brandId: string
   metrics: Metrics
   isLoading: boolean
+  isRefreshingData?: boolean
 }
 
 interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'customerSegments' | 'dailyData'> {
@@ -35,7 +36,8 @@ export function ShopifyTab({
   dateRange, 
   brandId,
   metrics,
-  isLoading
+  isLoading,
+  isRefreshingData = false
 }: ShopifyTabProps) {
   if (!connection) return <div>No Shopify connection found</div>
   if (isLoading) return <div className="flex items-center justify-center p-6">Loading metrics...</div>
@@ -99,6 +101,8 @@ export function ShopifyTab({
           valueFormat="currency"
           data={safeMetrics.dailyData}
           icon={<DollarSign className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="Orders"
@@ -107,6 +111,8 @@ export function ShopifyTab({
           valueFormat="number"
           data={safeMetrics.dailyData}
           icon={<ShoppingBag className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="AOV"
@@ -116,6 +122,8 @@ export function ShopifyTab({
           valueFormat="currency"
           data={safeMetrics.dailyData}
           icon={<Activity className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="Units Sold"
@@ -124,6 +132,8 @@ export function ShopifyTab({
           valueFormat="number"
           data={safeMetrics.dailyData}
           icon={<Package className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
       </div>
 
@@ -136,6 +146,8 @@ export function ShopifyTab({
           valueFormat="percentage"
           data={safeMetrics.dailyData}
           icon={<TrendingUp className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="Customer Retention"
@@ -144,6 +156,8 @@ export function ShopifyTab({
           valueFormat="percentage"
           data={safeMetrics.dailyData}
           icon={<Users className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="Return Rate"
@@ -152,6 +166,8 @@ export function ShopifyTab({
           valueFormat="percentage"
           data={safeMetrics.dailyData}
           icon={<RefreshCcw className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
         <MetricCard
           title="Active Customers"
@@ -160,6 +176,8 @@ export function ShopifyTab({
           valueFormat="number"
           data={safeMetrics.dailyData}
           icon={<Users className="h-4 w-4" />}
+          loading={isLoading}
+          refreshing={isRefreshingData}
         />
       </div>
 

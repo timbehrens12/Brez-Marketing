@@ -18,6 +18,7 @@ interface WidgetManagerProps {
   brandId: string;
   metrics: Metrics;
   isLoading: boolean;
+  isRefreshingData?: boolean;
   platformStatus: {
     shopify: boolean;
     meta: boolean;
@@ -30,7 +31,8 @@ export function WidgetManager({
   dateRange, 
   brandId, 
   metrics, 
-  isLoading, 
+  isLoading,
+  isRefreshingData = false,
   platformStatus,
   existingConnections,
   children
@@ -76,6 +78,7 @@ export function WidgetManager({
         dateRange={dateRange}
         metrics={metrics}
         isLoading={isLoading}
+        isRefreshingData={isRefreshingData}
         brandId={brandId}
         connections={localConnections}
         onTabChange={handleTabChange}
@@ -86,6 +89,7 @@ export function WidgetManager({
           change={metrics.adSpendGrowth || 0}
           icon={<DollarSign className="h-4 w-4" />}
           loading={isLoading}
+          refreshing={isRefreshingData}
           data={[]}
         />
 
@@ -95,6 +99,7 @@ export function WidgetManager({
           change={metrics.roasGrowth || 0}
           icon={<TrendingUp className="h-4 w-4" />}
           loading={isLoading}
+          refreshing={isRefreshingData}
           data={[]}
         />
 
@@ -104,6 +109,7 @@ export function WidgetManager({
           change={metrics.impressionGrowth || 0}
           icon={<Eye className="h-4 w-4" />}
           loading={isLoading}
+          refreshing={isRefreshingData}
           data={[]}
         />
 
@@ -113,6 +119,7 @@ export function WidgetManager({
           change={metrics.ctrGrowth || 0}
           icon={<MousePointer className="h-4 w-4" />}
           loading={isLoading}
+          refreshing={isRefreshingData}
           data={[]}
         />
       </PlatformTabs>

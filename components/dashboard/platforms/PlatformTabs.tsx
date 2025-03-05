@@ -19,6 +19,7 @@ interface PlatformTabsProps {
   dateRange: { from: Date; to: Date }
   metrics: Metrics
   isLoading: boolean
+  isRefreshingData?: boolean
   brandId: string
   connections: PlatformConnection[]
   children?: React.ReactNode
@@ -40,7 +41,8 @@ export function PlatformTabs({
   platforms, 
   dateRange, 
   metrics, 
-  isLoading, 
+  isLoading,
+  isRefreshingData = false,
   brandId, 
   connections, 
   children,
@@ -99,6 +101,7 @@ export function PlatformTabs({
             brandId={brandId}
             metrics={safeMetrics}
             isLoading={isLoading}
+            isRefreshingData={isRefreshingData}
           />
         ) : (
           <div className="text-center py-8 text-gray-400">
@@ -115,6 +118,7 @@ export function PlatformTabs({
           dateRange={dateRange}
           metrics={metrics}
           isLoading={isLoading}
+          isRefreshingData={isRefreshingData}
           brandId={brandId}
         />
       </TabsContent>

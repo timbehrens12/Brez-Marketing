@@ -10,10 +10,11 @@ interface MetaTabProps {
   dateRange: DateRange | undefined
   metrics: any
   isLoading: boolean
+  isRefreshingData?: boolean
   brandId: string
 }
 
-export function MetaTab({ dateRange, metrics, isLoading, brandId }: MetaTabProps) {
+export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = false, brandId }: MetaTabProps) {
   const [metaData, setMetaData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +57,7 @@ export function MetaTab({ dateRange, metrics, isLoading, brandId }: MetaTabProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {loading || isRefreshingData ? (
             <div className="animate-pulse space-y-4">
               {Array(10).fill(0).map((_, i) => (
                 <div key={i} className="h-6 bg-gray-800 rounded w-full"></div>
