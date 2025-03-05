@@ -1,75 +1,127 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+// Define types that match the actual database schema
+interface ShopifyOrder {
+  id: number;
+  connection_id: string | null;
+  created_at: string | null;
+  created_at_timestamp: string | null;
+  customer_id: number | null;
+  total_price: number | null;
+  line_items: any[];
+  shipping_address?: {
+    country: string;
+  };
+  financial_status?: string;
+}
+
+interface ShopifyCustomer {
+  id: number;
+  connection_id: string | null;
+  email: string | null;
+  orders_count: number;
+  total_spent: number | null;
+}
+
+interface ShopifyProduct {
+  id: number;
+  connection_id: string | null;
+  title: string | null;
+  product_type: string | null;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
   const from = searchParams.get('from')
   const to = searchParams.get('to')
+  const connectionId = searchParams.get('connectionId')
 
-  if (!shop || !from || !to) {
+  if ((!shop && !connectionId) || !from || !to) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
   }
 
   try {
-    // Get access token from database
-    const { data: connection } = await supabase
-      .from('platform_connections')
-      .select('access_token')
-      .eq('shop', shop)
-      .single()
-
-    if (!connection?.access_token) {
-      throw new Error('No access token found')
+    // Get connection details
+    let connection;
+    
+    if (connectionId) {
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('id', connectionId)
+        .single()
+        
+      if (error) throw error
+      connection = data
+    } else {
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('shop', shop)
+        .eq('platform_type', 'shopify')
+        .eq('status', 'active')
+        .single()
+        
+      if (error) throw error
+      connection = data
     }
 
-    // Fetch orders from Shopify
-    const ordersResponse = await fetch(
-      `https://${shop}/admin/api/2024-01/orders.json?status=any&created_at_min=${from}&created_at_max=${to}&fields=id,created_at,total_price,line_items,customer,shipping_address,billing_address,financial_status`, {
-        headers: {
-          'X-Shopify-Access-Token': connection.access_token
-        }
-      }
-    )
-
-    const ordersData = await ordersResponse.json()
-    console.log('Shopify Orders Response:', ordersData)
-    const { orders = [] } = ordersData
-
-    if (!orders.length) {
-      console.log('No orders found for date range:', { from, to })
+    if (!connection) {
+      throw new Error('No active Shopify connection found')
     }
 
-    // Fetch customers from Shopify
-    const customersResponse = await fetch(
-      `https://${shop}/admin/api/2024-01/customers.json?created_at_min=${from}&created_at_max=${to}&fields=id,email,orders_count,total_spent,addresses`, {
-        headers: {
-          'X-Shopify-Access-Token': connection.access_token
-        }
-      }
-    )
-
-    const customersData = await customersResponse.json()
-    console.log('Shopify Customers Response:', customersData)
-    const { customers = [] } = customersData
+    // Fetch orders from database
+    const { data: ordersData, error: ordersError } = await supabase
+      .from('shopify_orders')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .gte('created_at', from)
+      .lte('created_at', to)
+    
+    if (ordersError) throw ordersError
+    const orders: ShopifyOrder[] = ordersData || []
+    
+    // Fetch customers from database
+    const { data: customersData, error: customersError } = await supabase
+      .from('shopify_customers')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .gte('created_at', from)
+      .lte('created_at', to)
+    
+    if (customersError) throw customersError
+    const customers: ShopifyCustomer[] = customersData || []
+    
+    // Fetch products from database
+    const { data: productsData, error: productsError } = await supabase
+      .from('shopify_products')
+      .select('*')
+      .eq('connection_id', connection.id)
+    
+    if (productsError) throw productsError
+    const products: ShopifyProduct[] = productsData || []
 
     // Calculate metrics
-    const totalSales = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0)
+    const totalSales = orders.reduce((sum: number, order: ShopifyOrder) => sum + (order.total_price || 0), 0)
     const orderCount = orders.length
     const averageOrderValue = orderCount > 0 ? totalSales / orderCount : 0
-    const unitsSold = orders.reduce((sum: number, order: any) => 
-      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
-    )
+    const unitsSold = orders.reduce((sum: number, order: ShopifyOrder) => {
+      if (!order.line_items) return sum
+      return sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0)
+    }, 0)
 
     // Calculate items per order
-    const totalItems = orders.reduce((sum: number, order: any) => 
-      sum + order.line_items.length, 0
-    )
+    const totalItems = orders.reduce((sum: number, order: ShopifyOrder) => {
+      if (!order.line_items) return sum
+      return sum + order.line_items.length
+    }, 0)
     const averageItemsPerOrder = orderCount > 0 ? totalItems / orderCount : 0
 
     // Calculate customer metrics
-    const newCustomers = customers.filter((customer: any) => customer.orders_count === 1).length
-    const returningCustomers = customers.filter((customer: any) => customer.orders_count > 1).length
+    const newCustomers = customers.filter((customer: ShopifyCustomer) => customer.orders_count === 1).length
+    const returningCustomers = customers.filter((customer: ShopifyCustomer) => customer.orders_count > 1).length
     const totalCustomers = customers.length
 
     // Calculate sessions and conversion rate
@@ -80,14 +132,16 @@ export async function GET(request: Request) {
     const sessions = Math.round(orderCount / (conversionRate / 100))
 
     // Group orders by day for revenue chart
-    const dailyRevenue = orders.reduce((acc: any, order: any) => {
+    const dailyRevenue = orders.reduce((acc: Record<string, number>, order: ShopifyOrder) => {
+      if (!order.created_at) return acc
       const date = order.created_at.split('T')[0]
-      acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
+      acc[date] = (acc[date] || 0) + (order.total_price || 0)
       return acc
     }, {})
 
     // Group orders by day for daily data
-    const dailyOrders = orders.reduce((acc: any, order: any) => {
+    const dailyOrders = orders.reduce((acc: Record<string, number>, order: ShopifyOrder) => {
+      if (!order.created_at) return acc
       const date = order.created_at.split('T')[0]
       acc[date] = (acc[date] || 0) + 1
       return acc
@@ -110,7 +164,9 @@ export async function GET(request: Request) {
     // Calculate top products
     const productSales: Record<string, { id: string, title: string, quantity: number, revenue: number }> = {}
     
-    orders.forEach((order: any) => {
+    orders.forEach((order: ShopifyOrder) => {
+      if (!order.line_items) return
+      
       order.line_items.forEach((item: any) => {
         const productId = item.product_id?.toString() || item.id?.toString() || 'unknown'
         
@@ -135,7 +191,7 @@ export async function GET(request: Request) {
     // Calculate geographic distribution
     const locationData: Record<string, { country: string, count: number, revenue: number }> = {}
     
-    orders.forEach((order: any) => {
+    orders.forEach((order: ShopifyOrder) => {
       if (order.shipping_address && order.shipping_address.country) {
         const country = order.shipping_address.country
         
@@ -148,7 +204,7 @@ export async function GET(request: Request) {
         }
         
         locationData[country].count += 1
-        locationData[country].revenue += parseFloat(order.total_price)
+        locationData[country].revenue += (order.total_price || 0)
       }
     })
     
@@ -163,7 +219,8 @@ export async function GET(request: Request) {
       ordersByHour[i] = 0
     }
     
-    orders.forEach((order: any) => {
+    orders.forEach((order: ShopifyOrder) => {
+      if (!order.created_at) return
       const hour = new Date(order.created_at).getHours()
       ordersByHour[hour] += 1
     })
@@ -176,7 +233,7 @@ export async function GET(request: Request) {
     // Calculate order status distribution
     const orderStatusData: Record<string, number> = {}
     
-    orders.forEach((order: any) => {
+    orders.forEach((order: ShopifyOrder) => {
       const status = order.financial_status || 'unknown'
       orderStatusData[status] = (orderStatusData[status] || 0) + 1
     })
@@ -186,6 +243,31 @@ export async function GET(request: Request) {
       count,
       percentage: (count / orderCount) * 100
     }))
+
+    // Store the calculated metrics in the database
+    await supabase
+      .from('metrics')
+      .upsert({
+        platform_type: 'shopify',
+        brand_id: connection.brand_id,
+        total_sales: totalSales,
+        orders_count: orderCount,
+        average_order_value: averageOrderValue,
+        customer_count: totalCustomers,
+        conversion_rate: conversionRate,
+        sessions: sessions,
+        units_sold: unitsSold,
+        items_per_order: averageItemsPerOrder,
+        new_customers: newCustomers,
+        returning_customers: returningCustomers,
+        top_products: topProducts,
+        top_locations: topLocations,
+        order_timeline: orderTimeline,
+        order_statuses: orderStatuses,
+        created_at: new Date().toISOString()
+      }, {
+        onConflict: 'platform_type,brand_id'
+      })
 
     console.log('Metrics calculated:', {
       totalSales,

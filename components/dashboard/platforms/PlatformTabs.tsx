@@ -105,12 +105,12 @@ export function PlatformTabs({
             className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
             title="Shopify"
           >
-            <div className={`relative w-8 h-8 ${activeTab === 'shopify' ? 'drop-shadow-[0_0_8px_rgba(95,199,104,0.5)]' : ''}`}>
+            <div className={`relative flex items-center justify-center w-8 h-8 ${activeTab === 'shopify' ? 'drop-shadow-[0_0_8px_rgba(95,199,104,0.5)]' : ''}`}>
               <Image 
-                src="https://i.imgur.com/cnCcupx.png" 
+                src="/shopify-icon.png" 
                 alt="Shopify" 
-                width={32} 
-                height={32} 
+                width={28} 
+                height={28} 
                 className="object-contain"
               />
             </div>
@@ -125,12 +125,12 @@ export function PlatformTabs({
             className="relative flex items-center justify-center w-12 h-12 p-0 data-[state=active]:bg-[#1a1a1a] rounded-md transition-all duration-200 hover:scale-105"
             title="Meta"
           >
-            <div className={`relative w-8 h-8 ${activeTab === 'meta' ? 'drop-shadow-[0_0_8px_rgba(24,119,242,0.5)]' : ''}`}>
+            <div className={`relative flex items-center justify-center w-8 h-8 ${activeTab === 'meta' ? 'drop-shadow-[0_0_8px_rgba(24,119,242,0.5)]' : ''}`}>
               <Image 
-                src="https://i.imgur.com/6hyyRrs.png" 
+                src="/meta-icon.png" 
                 alt="Meta" 
-                width={32} 
-                height={32} 
+                width={28} 
+                height={28} 
                 className="object-contain"
               />
             </div>
