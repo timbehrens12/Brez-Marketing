@@ -127,7 +127,7 @@ export function PlatformTabs({
           >
             <div className={`relative w-8 h-8 ${activeTab === 'meta' ? 'drop-shadow-[0_0_8px_rgba(24,119,242,0.5)]' : ''}`}>
               <Image 
-                src="https://i.imgur.com/YBDjVBL.png" 
+                src="https://i.imgur.com/6hyyRrs.png" 
                 alt="Meta" 
                 width={32} 
                 height={32} 

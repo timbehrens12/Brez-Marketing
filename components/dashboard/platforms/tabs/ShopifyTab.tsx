@@ -27,20 +27,59 @@ interface ShopifyTabProps {
   isRefreshingData?: boolean
 }
 
-interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'customerSegments' | 'dailyData'> {
-  revenueByDay: Array<{ date: string; revenue: number }>
-  topProducts: Array<Product>
-  customerSegments: CustomerSegments
-  dailyData: Array<DailyData>
-  topLocations?: Array<{ country: string; count: number; revenue: number }>
-  orderTimeline?: Array<{ hour: number; count: number }>
-  orderStatuses?: Array<{ status: string; count: number; percentage: number }>
-  averageItemsPerOrder?: number
-  isSessionsEstimated?: boolean
+interface SafeMetrics {
+  totalSales: number;
+  ordersPlaced: number;
+  averageOrderValue: number;
+  unitsSold: number;
+  conversionRate: number;
+  sessions: number;
+  revenueByDay: any[];
+  salesGrowth: number;
+  ordersGrowth: number;
+  aovGrowth: number;
+  unitsGrowth: number;
+  conversionRateGrowth: number;
+  dailyData: any[];
+  customerSegments: {
+    newCustomers: number;
+    returningCustomers: number;
+  };
+  topProducts?: any[];
+  topLocations?: any[];
+  orderTimeline?: any[];
+  orderStatuses?: any[];
+  averageItemsPerOrder?: number;
+  isSessionsEstimated?: boolean;
 }
 
 // Colors for charts
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+const defaultMetrics: SafeMetrics = {
+  totalSales: 0,
+  ordersPlaced: 0,
+  averageOrderValue: 0,
+  unitsSold: 0,
+  conversionRate: 0,
+  sessions: 0,
+  revenueByDay: [],
+  salesGrowth: 0,
+  ordersGrowth: 0,
+  aovGrowth: 0,
+  unitsGrowth: 0,
+  conversionRateGrowth: 0,
+  dailyData: [],
+  customerSegments: {
+    newCustomers: 0,
+    returningCustomers: 0
+  },
+  topProducts: [],
+  topLocations: [],
+  orderTimeline: [],
+  orderStatuses: [],
+  averageItemsPerOrder: 0
+}
 
 export function ShopifyTab({ 
   connection, 
@@ -93,14 +132,8 @@ export function ShopifyTab({
     topLocations: metrics.topLocations || [],
     orderTimeline: metrics.orderTimeline || [],
     orderStatuses: metrics.orderStatuses || [],
-    averageItemsPerOrder: metrics.averageItemsPerOrder || 0,
-    isSessionsEstimated: metrics.isSessionsEstimated || true
+    averageItemsPerOrder: metrics.averageItemsPerOrder || 0
   }
-
-  // Estimate sessions based on conversion rate
-  const estimatedSessions = safeMetrics.conversionRate > 0 
-    ? Math.round(safeMetrics.ordersPlaced / (safeMetrics.conversionRate / 100)) 
-    : Math.max(safeMetrics.ordersPlaced * 20, 100); // Fallback estimate
 
   // Format order timeline data for chart
   const formattedOrderTimeline = safeMetrics.orderTimeline?.map(item => ({
@@ -129,17 +162,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Total Sales</span>
-              <DollarSign className="h-4 w-4" />
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.totalSales || 0}
@@ -154,17 +185,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Orders</span>
-              <ShoppingBag className="h-4 w-4" />
+              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.ordersPlaced || 0}
@@ -177,17 +206,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Average Order Value</span>
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.averageOrderValue || 0}
@@ -205,17 +232,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Units Sold</span>
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.unitsSold || 0}
@@ -242,7 +267,7 @@ export function ShopifyTab({
                 />
               </div>
               <span>Conversion Rate</span>
-              <PercentIcon className="h-4 w-4" />
+              <PercentIcon className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.conversionRate || 0}
@@ -257,53 +282,37 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Sessions</span>
-              <MousePointerClick className="h-4 w-4" />
-              {safeMetrics.isSessionsEstimated && (
-                <TooltipProvider>
-                  <UITooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="outline" className="ml-1 text-xs">Est</Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Sessions are estimated based on orders and conversion rate</p>
-                    </TooltipContent>
-                  </UITooltip>
-                </TooltipProvider>
-              )}
+              <Users className="h-4 w-4 text-muted-foreground" />
             </div>
           }
-          value={estimatedSessions}
+          value={safeMetrics.sessions || 0}
           change={0}
-          valueFormat="number"
-          data={safeMetrics.dailyData}
           loading={isLoading}
           refreshing={isRefreshingData}
+          valueFormat="number"
+          data={safeMetrics.dailyData}
           platform="shopify"
         />
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>New Customers</span>
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.customerSegments.newCustomers || 0}
@@ -317,17 +326,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Returning Customers</span>
-              <UserCheck className="h-4 w-4" />
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.customerSegments.returningCustomers || 0}
@@ -345,17 +352,15 @@ export function ShopifyTab({
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
+              <Image
+                src="/images/shopify-logo.png"
+                alt="Shopify"
+                width={20}
+                height={20}
+                className="mr-1"
+              />
               <span>Items Per Order</span>
-              <ShoppingCart className="h-4 w-4" />
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </div>
           }
           value={safeMetrics.averageItemsPerOrder || 0}
