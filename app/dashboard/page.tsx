@@ -29,7 +29,8 @@ import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Info } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface WidgetData {
   shopify?: any;
@@ -570,23 +571,48 @@ export default function DashboardPage() {
           </select>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={refresh}
-            disabled={isRefreshing}
-            className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
-          >
-            {isRefreshing ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Refreshing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={refresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Refresh
+                      </>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                  <p>Manually refresh dashboard data</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-gray-500 hover:text-gray-300 transition-colors">
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>Dashboard data refreshes automatically every 2 minutes. You can also refresh manually.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
           <span className="text-xs text-gray-500">
             Last updated: {lastRefreshed.toLocaleTimeString()}
           </span>

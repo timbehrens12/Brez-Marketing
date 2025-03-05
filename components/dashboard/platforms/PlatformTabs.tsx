@@ -10,6 +10,7 @@ import { useEffect, useState } from "react"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { defaultMetrics } from "@/lib/defaultMetrics"
 import { ShoppingBag, Facebook } from "lucide-react"
+import Image from "next/image"
 
 interface PlatformTabsProps {
   platforms: {
@@ -78,17 +79,41 @@ export function PlatformTabs({
 
   return (
     <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="grid grid-cols-2 w-full max-w-md">
-        <TabsTrigger value="shopify" disabled={!platforms.shopify}>
+      <TabsList className="grid grid-cols-2 w-full max-w-md bg-[#1A1A1A] border border-[#333] rounded-lg p-1">
+        <TabsTrigger 
+          value="shopify" 
+          disabled={!platforms.shopify}
+          className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
+        >
           <div className="flex items-center gap-2">
-            <ShoppingBag className="h-4 w-4" />
-            Shopify
+            <div className="relative w-5 h-5">
+              <Image 
+                src="https://i.imgur.com/cnCcupx.png" 
+                alt="Shopify logo" 
+                width={20} 
+                height={20} 
+                className="object-contain"
+              />
+            </div>
+            <span>Shopify</span>
           </div>
         </TabsTrigger>
-        <TabsTrigger value="meta" disabled={!platforms.meta}>
+        <TabsTrigger 
+          value="meta" 
+          disabled={!platforms.meta}
+          className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
+        >
           <div className="flex items-center gap-2">
-            <Facebook className="h-4 w-4" />
-            Meta Ads
+            <div className="relative w-5 h-5">
+              <Image 
+                src="https://i.imgur.com/6hyyRrs.png" 
+                alt="Meta logo" 
+                width={20} 
+                height={20} 
+                className="object-contain"
+              />
+            </div>
+            <span>Meta Ads</span>
           </div>
         </TabsTrigger>
       </TabsList>
