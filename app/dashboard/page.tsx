@@ -513,7 +513,7 @@ export default function DashboardPage() {
     const interval = setInterval(() => {
       fetchAllData();
       setLastRefreshed(new Date());
-    }, 120000); // Refresh every 2 minutes
+    }, 300000); // Refresh every 5 minutes
     
     // Clean up interval on unmount
     return () => clearInterval(interval);
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                  <p>Dashboard data refreshes automatically every 2 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
+                  <p>Dashboard data refreshes automatically every 5 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
