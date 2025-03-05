@@ -184,16 +184,6 @@ export function MetricCard({
             <>{prefix}{formattedValue}{suffix}</>
           )}
         </div>
-        <div className={cn(
-          "text-xs font-medium mt-1",
-          isPositive ? "text-emerald-500" : "text-red-500"
-        )}>
-          {refreshing ? (
-            <div className="h-3 w-12 animate-pulse bg-gray-700 rounded"></div>
-          ) : (
-            <>{isPositive ? "+" : ""}{formatChange(safeChange)}</>
-          )}
-        </div>
       </CardContent>
     </Card>
   )
