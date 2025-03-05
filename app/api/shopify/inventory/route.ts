@@ -16,21 +16,32 @@ export async function GET(request: NextRequest) {
 
     // Get connection for this brand
     console.log(`Fetching Shopify connection for brandId: ${brandId}`)
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connections, error: connectionError } = await supabase
       .from('platform_connections')
       .select('id')
       .eq('brand_id', brandId)
       .eq('platform_type', 'shopify')
-      .single()
+      .order('created_at', { ascending: false }) // Get the most recent connection
+      .limit(1) // Just get the first one instead of using .single()
 
     if (connectionError) {
       console.error('Error fetching connection:', connectionError)
       return NextResponse.json({ 
-        error: 'Connection not found', 
+        error: 'Error fetching connection', 
         details: connectionError.message 
+      }, { status: 500 })
+    }
+
+    // Check if any connections were found
+    if (!connections || connections.length === 0) {
+      console.error('No Shopify connection found for this brand')
+      return NextResponse.json({ 
+        error: 'No Shopify connection found', 
+        details: 'Please connect your Shopify store first' 
       }, { status: 404 })
     }
 
+    const connection = connections[0]
     console.log(`Found connection with id: ${connection.id}`)
 
     // Fetch inventory data

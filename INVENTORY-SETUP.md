@@ -30,13 +30,22 @@ If you still encounter errors, try Option C:
 3. Copy and paste the contents of `scripts/minimal-inventory-table.sql` into the SQL Editor
 4. Run the SQL script to create the table with minimal constraints
 
-### Step 2: Sync Inventory Data
+### Step 2: Verify Shopify Connection
+
+Before syncing inventory data, make sure you have a valid Shopify connection:
+
+1. Go to the Settings page in your dashboard
+2. Check if your Shopify store is connected to the brand you're using
+3. If not, connect your Shopify store
+4. If it's already connected, try disconnecting and reconnecting it
+
+### Step 3: Sync Inventory Data
 
 1. In your dashboard, go to the Shopify tab
 2. Click the "Sync Inventory" button to manually sync inventory data from Shopify
 3. Check the browser console for any error messages (F12 > Console)
 
-### Step 3: Verify Data in Supabase
+### Step 4: Verify Data in Supabase
 
 1. Go to your Supabase dashboard
 2. Navigate to Table Editor > shopify_inventory
@@ -45,6 +54,20 @@ If you still encounter errors, try Option C:
 ## Troubleshooting
 
 If you're still experiencing issues:
+
+### Connection Issues
+
+If you see errors like:
+- `"Connection not found"`
+- `"No Shopify connection found"`
+- `"JSON object requested, multiple (or no) rows returned"`
+
+These indicate issues with your Shopify connection. Try the following:
+
+1. Make sure your Shopify store is connected to your brand
+2. Check if you have multiple Shopify connections for the same brand (this can cause conflicts)
+3. Try disconnecting and reconnecting your Shopify store
+4. Verify that your Shopify access token is valid and has the necessary permissions
 
 ### Database Structure Issues
 
@@ -68,10 +91,6 @@ let url = `https://${connection.shop}/admin/api/2023-04/products.json?limit=250&
 ```
 
 Try different API versions like `2023-07` or `2023-10` if needed.
-
-### Check Shopify Access Token
-
-Ensure your Shopify access token has the necessary permissions to access inventory data. You might need to reconnect your Shopify store to refresh the token.
 
 ### Enable Debug Logging
 
