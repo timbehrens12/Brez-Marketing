@@ -2,34 +2,40 @@
 
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import type { Metrics, CustomerSegments, DailyData, Product } from "@/types/metrics"
-import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck, Layers } from "lucide-react"
-import { PlatformConnection } from "@/types/platformConnection"
-import { DateRangePicker } from "@/components/ui/date-range-picker"
-import { addDays } from "date-fns"
-import { useState, useEffect } from "react"
-import { useSupabase } from "@/lib/hooks/useSupabase"
+import { DollarSign, ShoppingBag, TrendingUp, Package, Layers, Users, RefreshCw } from "lucide-react"
+import { PlatformConnection } from "@/types/platforms"
+import { DateRange } from "react-day-picker"
+import { Metrics, SafeMetrics } from "@/types/metrics"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
+import { Table, TableHeader, TableBody, TableCell, TableRow, TableHead } from "@/components/ui/table"
+
+// Update the Product interface to match what we're using
+interface Product {
+  id: string
+  title: string
+  quantity: number
+  revenue: number
+}
+
+// Update the DailyData interface to include units
+interface DailyData {
+  date: string
+  revenue: number
+  orders: number
+  units: number
+}
 
 interface ShopifyTabProps {
   connection: PlatformConnection
-  dateRange: { from: Date; to: Date }
+  dateRange: DateRange
   brandId: string
   metrics: Metrics
   isLoading: boolean
   isRefreshingData?: boolean
-}
-
-interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'customerSegments' | 'dailyData'> {
-  revenueByDay: Array<{ date: string; revenue: number }>
-  topProducts: Array<Product>
-  customerSegments: CustomerSegments
-  dailyData: Array<DailyData>
 }
 
 export function ShopifyTab({ 
@@ -43,226 +49,104 @@ export function ShopifyTab({
   if (!connection) return <div>No Shopify connection found</div>
   if (isLoading) return <div className="flex items-center justify-center p-6">Loading metrics...</div>
 
-  const safeMetrics: SafeMetrics = {
-    ...metrics,
-    revenueByDay: (metrics.revenueByDay || []).map(d => {
-      // Ensure we have a proper date string in ISO format
-      let dateStr = d.date;
-      if (typeof dateStr === 'object' && dateStr !== null) {
-        // If it's a Date object, convert to ISO string
-        dateStr = (dateStr as Date).toISOString();
-      } else if (typeof dateStr !== 'string') {
-        // If it's neither a string nor a Date, use current date
-        dateStr = new Date().toISOString();
-      }
-      
-      // Log for debugging
-      console.log(`Processing revenue data: ${dateStr} = $${d.amount || 0}`);
-      
-      return {
-        date: dateStr,
-        revenue: d.amount || 0
-      };
-    }),
-    topProducts: (metrics.topProducts || []).map(product => ({
-      id: product.id,
-      name: product.title || '',
-      quantity: product.quantity || 0,
-      revenue: product.revenue || 0
+  // Ensure metrics are safe to use
+  const safeMetrics = {
+    totalSales: metrics?.totalSales || 0,
+    ordersPlaced: metrics?.ordersPlaced || 0,
+    averageOrderValue: metrics?.averageOrderValue || 0,
+    unitsSold: metrics?.unitsSold || 0,
+    inventoryLevels: metrics?.inventoryLevels || 0,
+    salesGrowth: metrics?.salesGrowth || 0,
+    ordersGrowth: metrics?.ordersGrowth || 0,
+    aovGrowth: metrics?.aovGrowth || 0,
+    unitsGrowth: metrics?.unitsGrowth || 0,
+    inventoryGrowth: metrics?.inventoryGrowth || 0,
+    revenueByDay: (metrics?.revenueByDay || []).map(item => ({
+      date: item.date,
+      revenue: item.revenue || item.amount || 0
     })),
-    customerSegments: {
-      newCustomers: metrics.customerSegments?.newCustomers || 0,
-      returningCustomers: metrics.customerSegments?.returningCustomers || 0
-    },
-    dailyData: (metrics.dailyData || []).map(d => ({
-      date: d.date,
-      orders: d.orders || 0,
-      revenue: d.revenue || 0,
-      value: d.revenue || 0 // Add this for MetricCard compatibility
-    }))
+    topProducts: (metrics?.topProducts || []) as Product[],
+    customerSegments: metrics?.customerSegments || { newCustomers: 0, returningCustomers: 0 },
+    dailyData: (metrics?.dailyData || []) as DailyData[]
   }
 
   return (
-    <div className="space-y-8">
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-800 p-2 text-xs text-gray-300 rounded">
-          <div>Date Range: {dateRange.from.toDateString()} to {dateRange.to.toDateString()}</div>
-          <div>Revenue Data Points: {safeMetrics.revenueByDay.length}</div>
-        </div>
-      )}
-      
-      {/* Key Metrics Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Total Sales</span>
-              <DollarSign className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.totalSales || 0}
-          change={safeMetrics.salesGrowth || 0}
+          title="Total Sales"
+          value={safeMetrics.totalSales}
+          change={safeMetrics.salesGrowth}
+          data={safeMetrics.dailyData.map(d => ({ date: d.date, value: d.revenue }))}
           prefix="$"
           valueFormat="currency"
-          data={safeMetrics.dailyData}
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          infoTooltip="Total sales revenue for the selected period"
+          includesRefunds={true}
+          dateRange={dateRange}
         />
         <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Orders</span>
-              <ShoppingBag className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.ordersPlaced || 0}
-          change={safeMetrics.ordersGrowth || 0}
-          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Average Order Value</span>
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.averageOrderValue || 0}
-          change={safeMetrics.aovGrowth || 0}
-          prefix="$"
-          valueFormat="currency"
-          data={safeMetrics.dailyData.map(d => ({ 
-            ...d, 
-            value: d.orders > 0 ? d.revenue / d.orders : 0 
-          }))}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Units Sold</span>
-              <Package className="h-4 w-4" />
-            </div>
-          }
-          value={safeMetrics.unitsSold || 0}
-          change={safeMetrics.unitsGrowth || 0}
-          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
-          loading={isLoading}
-          refreshing={isRefreshingData}
-          platform="shopify"
-        />
-      </div>
-
-      {/* Secondary Metrics Row */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>Inventory Levels</span>
-              <Layers className="h-4 w-4" />
-            </div>
-          }
-          value={metrics.inventoryLevels || 0}
-          change={metrics.inventoryGrowth || 0}
+          title="Orders"
+          value={safeMetrics.ordersPlaced}
+          change={safeMetrics.ordersGrowth}
+          data={safeMetrics.dailyData.map(d => ({ date: d.date, value: d.orders }))}
           valueFormat="number"
-          data={safeMetrics.dailyData}
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          infoTooltip="Total number of orders placed during the selected period"
+          dateRange={dateRange}
+        />
+        <MetricCard
+          title="Average Order Value"
+          value={safeMetrics.averageOrderValue}
+          change={safeMetrics.aovGrowth}
+          data={[]}
+          prefix="$"
+          valueFormat="currency"
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+          infoTooltip="Average value of orders during the selected period"
+          dateRange={dateRange}
+        />
+        <MetricCard
+          title="Units Sold"
+          value={safeMetrics.unitsSold}
+          change={safeMetrics.unitsGrowth}
+          data={safeMetrics.dailyData.map(d => ({ date: d.date, value: d.units }))}
+          valueFormat="number"
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+          infoTooltip="Total number of product units sold during the selected period"
+          dateRange={dateRange}
+        />
+        <MetricCard
+          title="Inventory Levels"
+          value={safeMetrics.inventoryLevels}
+          change={safeMetrics.inventoryGrowth}
+          data={[]}
+          valueFormat="number"
+          loading={isLoading}
+          refreshing={isRefreshingData}
+          platform="shopify"
+          infoTooltip="Current inventory levels across all products"
+          dateRange={dateRange}
         />
       </div>
 
-      {/* Top Products */}
-      {safeMetrics.topProducts && safeMetrics.topProducts.length > 0 && (
-        <div className="w-full">
-          <Card className="bg-[#111111] border-[#222222]">
-            <CardHeader className="py-2">
-              <CardTitle className="text-white">Top Products</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-300">
-                  <thead className="text-xs uppercase bg-[#222222]">
-                    <tr>
-                      <th scope="col" className="px-6 py-3">Product</th>
-                      <th scope="col" className="px-6 py-3">Quantity</th>
-                      <th scope="col" className="px-6 py-3">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {safeMetrics.topProducts.map((product, index) => (
-                      <tr key={product.id} className="border-b border-[#222222]">
-                        <td className="px-6 py-4">{product.name}</td>
-                        <td className="px-6 py-4">{product.quantity}</td>
-                        <td className="px-6 py-4">${product.revenue.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Revenue Calendar - Full Width */}
-      <div className="w-full">
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader className="py-2">
-            <CardTitle className="text-white">Revenue Calendar</CardTitle>
+      {/* Remove non-functional metrics as requested */}
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue by Day</CardTitle>
+            <CardDescription>Daily revenue for the selected period</CardDescription>
           </CardHeader>
-          <CardContent className="h-[520px]">
+          <CardContent>
             <RevenueByDay 
               data={safeMetrics.revenueByDay} 
               brandId={brandId}
@@ -270,6 +154,35 @@ export function ShopifyTab({
             />
           </CardContent>
         </Card>
+
+        {safeMetrics.topProducts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Products</CardTitle>
+              <CardDescription>Best-selling products by revenue</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-right">Units</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {safeMetrics.topProducts.slice(0, 5).map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.title}</TableCell>
+                      <TableCell className="text-right">{product.quantity}</TableCell>
+                      <TableCell className="text-right">${product.revenue.toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
