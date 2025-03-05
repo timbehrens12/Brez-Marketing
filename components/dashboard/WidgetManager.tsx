@@ -9,6 +9,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
+import Image from "next/image"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -84,43 +85,99 @@ export function WidgetManager({
         onTabChange={handleTabChange}
       >
         <MetricCard
-          title="Ad Spend"
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>Ad Spend</span>
+              <DollarSign className="h-4 w-4" />
+            </div>
+          }
           value={`$${(metrics.adSpend || 0).toFixed(2)}`}
           change={metrics.adSpendGrowth || 0}
-          icon={<DollarSign className="h-4 w-4" />}
           loading={isLoading}
           refreshing={isRefreshingData}
           data={[]}
+          platform="meta"
         />
 
         <MetricCard
-          title="ROAS"
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>ROAS</span>
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          }
           value={`${(metrics.roas || 0).toFixed(1)}x`}
           change={metrics.roasGrowth || 0}
-          icon={<TrendingUp className="h-4 w-4" />}
           loading={isLoading}
           refreshing={isRefreshingData}
           data={[]}
+          platform="meta"
         />
 
         <MetricCard
-          title="Impressions"
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>Impressions</span>
+              <Eye className="h-4 w-4" />
+            </div>
+          }
           value={(metrics.impressions || 0).toLocaleString()}
           change={metrics.impressionGrowth || 0}
-          icon={<Eye className="h-4 w-4" />}
           loading={isLoading}
           refreshing={isRefreshingData}
           data={[]}
+          platform="meta"
         />
 
         <MetricCard
-          title="CTR"
+          title={
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>CTR</span>
+              <MousePointer className="h-4 w-4" />
+            </div>
+          }
           value={`${(metrics.ctr || 0).toFixed(1)}%`}
           change={metrics.ctrGrowth || 0}
-          icon={<MousePointer className="h-4 w-4" />}
           loading={isLoading}
           refreshing={isRefreshingData}
           data={[]}
+          platform="meta"
         />
       </PlatformTabs>
       

@@ -138,7 +138,7 @@ export function MetricCard({
       case "Google Ads":
         return (
           <img
-            src="https://i.imgur.com/t4E5ngO.png"
+            src="https://i.imgur.com/TavV4UJ.png"
             alt="Google Ads"
             className="h-4 w-4"
           />

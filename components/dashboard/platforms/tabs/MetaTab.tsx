@@ -68,19 +68,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <span>Ad Spend</span>
-              <div className="flex items-center gap-1">
-                <DollarSign className="h-4 w-4" />
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src="https://i.imgur.com/6hyyRrs.png" 
-                    alt="Meta logo" 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
               </div>
+              <span>Ad Spend</span>
+              <DollarSign className="h-4 w-4" />
             </div>
           }
           value={data.adSpend || 0}
@@ -95,19 +93,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <span>Impressions</span>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src="https://i.imgur.com/6hyyRrs.png" 
-                    alt="Meta logo" 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
               </div>
+              <span>Impressions</span>
+              <Users className="h-4 w-4" />
             </div>
           }
           value={data.impressions || 0}
@@ -120,19 +116,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <span>Clicks</span>
-              <div className="flex items-center gap-1">
-                <MousePointer className="h-4 w-4" />
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src="https://i.imgur.com/6hyyRrs.png" 
-                    alt="Meta logo" 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
               </div>
+              <span>Clicks</span>
+              <MousePointer className="h-4 w-4" />
             </div>
           }
           value={data.clicks || 0}
@@ -145,19 +139,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         <MetricCard
           title={
             <div className="flex items-center gap-2">
-              <span>ROAS</span>
-              <div className="flex items-center gap-1">
-                <Activity className="h-4 w-4" />
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src="https://i.imgur.com/6hyyRrs.png" 
-                    alt="Meta logo" 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
               </div>
+              <span>ROAS</span>
+              <Activity className="h-4 w-4" />
             </div>
           }
           value={data.roas || 0}
@@ -173,19 +165,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
       <Card className="bg-[#111111] border-[#222222]">
         <CardHeader className="pb-2">
           <CardTitle className="text-white flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <BarChart2 className="h-5 w-5 text-blue-400" />
-              <div className="relative w-5 h-5">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={20} 
-                  height={20} 
-                  className="object-contain"
-                />
-              </div>
+            <div className="relative w-5 h-5">
+              <Image 
+                src="https://i.imgur.com/6hyyRrs.png" 
+                alt="Meta logo" 
+                width={20} 
+                height={20} 
+                className="object-contain"
+              />
             </div>
-            Baseline Column Configuration
+            <span>Baseline Column Configuration</span>
+            <BarChart2 className="h-5 w-5 text-blue-400" />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -265,36 +255,6 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
                   <div className="text-white font-medium">CPC (all)</div>
                   <div className="text-gray-400 text-sm">
                     {hasData ? `$${data.cpc?.toFixed(2) || "0.00"}` : "$0.00"}
-                  </div>
-                </div>
-              </li>
-              
-              <li className="flex items-start">
-                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
-                <div>
-                  <div className="text-white font-medium">CPC (link click)</div>
-                  <div className="text-gray-400 text-sm">
-                    {hasData ? `$${data.cpcLink?.toFixed(2) || data.cpc?.toFixed(2) || "0.00"}` : "$0.00"}
-                  </div>
-                </div>
-              </li>
-              
-              <li className="flex items-start">
-                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
-                <div>
-                  <div className="text-white font-medium">CTR</div>
-                  <div className="text-gray-400 text-sm">
-                    {hasData ? `${data.ctr?.toFixed(2) || "0.00"}%` : "0.00%"}
-                  </div>
-                </div>
-              </li>
-              
-              <li className="flex items-start">
-                <div className="bg-blue-500 w-2 h-2 rounded-full mt-2 mr-2"></div>
-                <div>
-                  <div className="text-white font-medium">Frequency</div>
-                  <div className="text-gray-400 text-sm">
-                    {hasData ? data.frequency?.toFixed(2) || "N/A" : "N/A"}
                   </div>
                 </div>
               </li>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { MetaConnectButton } from "./MetaConnectButton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, ArrowRight, Loader2, TrendingUp, Users, Target, DollarSign, BarChart2, LineChart, Megaphone, ArrowUp, ArrowDown } from "lucide-react"
+import { AlertCircle, ArrowRight, Loader2, TrendingUp, Users, Target, DollarSign, BarChart2, LineChart, Megaphone, ArrowUp, ArrowDown, MousePointer } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { TabsContent } from "@/components/ui/tabs"
 import Link from "next/link"
@@ -12,6 +12,7 @@ import { LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, Responsive
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DateRange } from "react-day-picker"
+import Image from "next/image"
 
 interface AdSetData {
   name: string
@@ -187,7 +188,21 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
           {/* Overview Section */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <MetricCard
-              title="Total Ad Spend"
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta logo" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>Total Ad Spend</span>
+                  <DollarSign className="h-4 w-4" />
+                </div>
+              }
               value={parseFloat(metaData.insights?.spend || "0")}
               change={10}
               prefix="$"
@@ -201,7 +216,21 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
             />
             <MetricCard
-              title="Total Impressions"
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta logo" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>Total Impressions</span>
+                  <Users className="h-4 w-4" />
+                </div>
+              }
               value={parseFloat(metaData.insights?.impressions || "0")}
               change={0}
               valueFormat="number"
@@ -210,7 +239,21 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
             />
             <MetricCard
-              title="Total Clicks"
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta logo" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>Total Clicks</span>
+                  <MousePointer className="h-4 w-4" />
+                </div>
+              }
               value={parseFloat(metaData.insights?.clicks || "0")}
               change={0}
               valueFormat="number"
@@ -219,7 +262,21 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
             />
             <MetricCard
-              title="Click-Through Rate"
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta logo" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>Click-Through Rate</span>
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+              }
               value={parseFloat(metaData.insights?.ctr || "0") * 100}
               change={0}
               suffix="%"
