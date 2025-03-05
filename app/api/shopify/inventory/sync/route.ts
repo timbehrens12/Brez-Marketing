@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       id: connection.id,
       platform_type: connection.platform_type,
       status: connection.status,
-      shop: connection.shop
+      shop: connection.shop,
+      brand_id: connection.brand_id
     })
 
     // Validate connection data
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     do {
       try {
         // Build the URL with cursor-based pagination
-        let url = `https://${connection.shop}/admin/api/2024-01/products.json?limit=250&fields=id,title,variants`
+        let url = `https://${connection.shop}/admin/api/2023-04/products.json?limit=250&fields=id,title,variants`
         if (nextCursor) {
           url += `&page_info=${nextCursor}`
         }
@@ -102,8 +103,10 @@ export async function POST(request: Request) {
         const inventoryItems = []
         
         for (const product of products) {
+          console.log(`Processing product: ${product.id} - ${product.title}`)
           if (product.variants && product.variants.length > 0) {
             for (const variant of product.variants) {
+              console.log(`  Variant: ${variant.id} - ${variant.title}, Inventory: ${variant.inventory_quantity}`)
               inventoryItems.push({
                 brand_id: connection.brand_id,
                 connection_id: connectionId,
@@ -117,23 +120,46 @@ export async function POST(request: Request) {
                 last_updated: new Date().toISOString()
               })
             }
+          } else {
+            console.log(`  No variants found for product: ${product.id}`)
           }
         }
 
         // Batch insert inventory items
         if (inventoryItems.length > 0) {
           console.log(`Inserting ${inventoryItems.length} inventory items into database`)
+          
+          // First, let's try to clear existing inventory for this connection to avoid conflicts
+          const { error: deleteError } = await supabase
+            .from('shopify_inventory')
+            .delete()
+            .eq('connection_id', connectionId.toString())
+          
+          if (deleteError) {
+            console.error('Error deleting existing inventory items:', deleteError)
+            // Continue anyway, as this is not a critical error
+          }
+          
+          // Ensure all inventory items have string connection_id
+          const processedItems = inventoryItems.map(item => ({
+            ...item,
+            connection_id: item.connection_id.toString(),
+            brand_id: item.brand_id.toString()
+          }))
+          
+          // Now insert the new inventory items
           const { error: insertError } = await supabase
             .from('shopify_inventory')
-            .upsert(inventoryItems, {
-              onConflict: 'product_id,variant_id',
-              ignoreDuplicates: false
-            })
+            .insert(processedItems)
 
           if (insertError) {
             console.error('Error inserting inventory items:', insertError)
             throw insertError
+          } else {
+            console.log(`Successfully inserted ${inventoryItems.length} inventory items`)
           }
+        } else {
+          console.log('No inventory items to insert')
         }
 
         totalProducts += products.length

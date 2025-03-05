@@ -22,6 +22,7 @@ export function InventorySyncButton({ connectionId, className }: InventorySyncBu
     try {
       setIsSyncing(true)
       toast.info("Starting inventory sync...")
+      console.log(`Starting inventory sync for connection: ${connectionId}`)
 
       const response = await fetch('/api/shopify/inventory/sync', {
         method: 'POST',
@@ -31,13 +32,26 @@ export function InventorySyncButton({ connectionId, className }: InventorySyncBu
         body: JSON.stringify({ connectionId })
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to sync inventory')
+      const responseText = await response.text()
+      console.log(`Inventory sync response: ${responseText.substring(0, 200)}...`)
+      
+      let data
+      try {
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Error parsing sync response:', parseError)
+        throw new Error(`Failed to parse sync response: ${responseText.substring(0, 100)}...`)
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to sync inventory')
+      }
+
+      console.log('Inventory sync completed successfully:', data)
       toast.success(`Inventory sync completed! Processed ${data.totalProducts} products.`)
+      
+      // Force a page refresh to show the new data
+      window.location.reload()
     } catch (error) {
       console.error('Error syncing inventory:', error)
       toast.error(`Failed to sync inventory: ${error instanceof Error ? error.message : 'Unknown error'}`)
