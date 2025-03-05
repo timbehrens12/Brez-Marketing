@@ -82,7 +82,7 @@ export function PlatformTabs({
 
   return (
     <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
+      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -192,7 +192,7 @@ export function PlatformTabs({
         </TooltipProvider>
       </TabsList>
 
-      <TabsContent value="shopify">
+      <TabsContent value="shopify" className="mt-8">
         {selectedConnection ? (
           <ShopifyTab 
             connection={selectedConnection}
@@ -209,7 +209,7 @@ export function PlatformTabs({
         )}
       </TabsContent>
       
-      <TabsContent value="meta">
+      <TabsContent value="meta" className="mt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {children}
         </div>
@@ -222,7 +222,7 @@ export function PlatformTabs({
         />
       </TabsContent>
 
-      <TabsContent value="tiktok">
+      <TabsContent value="tiktok" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
           <div className="mb-4">
             <Image 
@@ -253,7 +253,7 @@ export function PlatformTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="googleads">
+      <TabsContent value="googleads" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
           <div className="mb-4">
             <Image 

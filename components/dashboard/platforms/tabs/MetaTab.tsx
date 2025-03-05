@@ -67,17 +67,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>Ad Spend</span>
+              <span className="ml-0.5">Ad Spend</span>
               <DollarSign className="h-4 w-4" />
             </div>
           }
@@ -92,17 +92,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         />
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>Impressions</span>
+              <span className="ml-0.5">Impressions</span>
               <Users className="h-4 w-4" />
             </div>
           }
@@ -115,17 +115,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         />
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>Clicks</span>
+              <span className="ml-0.5">Clicks</span>
               <MousePointer className="h-4 w-4" />
             </div>
           }
@@ -138,17 +138,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
         />
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>ROAS</span>
+              <span className="ml-0.5">ROAS</span>
               <Activity className="h-4 w-4" />
             </div>
           }
@@ -164,17 +164,17 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
 
       <Card className="bg-[#111111] border-[#222222]">
         <CardHeader className="pb-2">
-          <CardTitle className="text-white flex items-center gap-2">
-            <div className="relative w-5 h-5">
+          <CardTitle className="text-white flex items-center gap-1.5">
+            <div className="relative w-5 h-5 flex items-center justify-center">
               <Image 
                 src="https://i.imgur.com/6hyyRrs.png" 
                 alt="Meta logo" 
-                width={20} 
-                height={20} 
+                width={18} 
+                height={18} 
                 className="object-contain"
               />
             </div>
-            <span>Baseline Column Configuration</span>
+            <span className="ml-0.5">Baseline Column Configuration</span>
             <BarChart2 className="h-5 w-5 text-blue-400" />
           </CardTitle>
         </CardHeader>

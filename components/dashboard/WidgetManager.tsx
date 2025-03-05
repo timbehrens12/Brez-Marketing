@@ -86,17 +86,17 @@ export function WidgetManager({
       >
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>Ad Spend</span>
+              <span className="ml-0.5">Ad Spend</span>
               <DollarSign className="h-4 w-4" />
             </div>
           }
@@ -110,17 +110,17 @@ export function WidgetManager({
 
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>ROAS</span>
+              <span className="ml-0.5">ROAS</span>
               <TrendingUp className="h-4 w-4" />
             </div>
           }
@@ -134,17 +134,17 @@ export function WidgetManager({
 
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>Impressions</span>
+              <span className="ml-0.5">Impressions</span>
               <Eye className="h-4 w-4" />
             </div>
           }
@@ -158,17 +158,17 @@ export function WidgetManager({
 
         <MetricCard
           title={
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta logo" 
-                  width={16} 
-                  height={16} 
+                  width={18} 
+                  height={18} 
                   className="object-contain"
                 />
               </div>
-              <span>CTR</span>
+              <span className="ml-0.5">CTR</span>
               <MousePointer className="h-4 w-4" />
             </div>
           }
