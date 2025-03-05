@@ -66,96 +66,104 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
       {/* Meta Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Ad Spend"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Ad Spend</span>
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={data.adSpend || 0}
           change={data.adSpendGrowth || 0}
           prefix="$"
           valueFormat="currency"
           data={data.dailyData || []}
-          icon={
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
         />
         <MetricCard
-          title="Impressions"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Impressions</span>
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={data.impressions || 0}
           change={data.impressionGrowth || 0}
           data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.impressions })) || []}
-          icon={
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
         />
         <MetricCard
-          title="Clicks"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Clicks</span>
+              <div className="flex items-center gap-1">
+                <MousePointer className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={data.clicks || 0}
           change={data.clickGrowth || 0}
           data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.clicks })) || []}
-          icon={
-            <div className="flex items-center gap-1">
-              <MousePointer className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
         />
         <MetricCard
-          title="ROAS"
+          title={
+            <div className="flex items-center gap-2">
+              <span>ROAS</span>
+              <div className="flex items-center gap-1">
+                <Activity className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={data.roas || 0}
           change={data.roasGrowth || 0}
           suffix="x"
           data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.roas })) || []}
-          icon={
-            <div className="flex items-center gap-1">
-              <Activity className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"

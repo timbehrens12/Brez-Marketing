@@ -95,55 +95,75 @@ export function ShopifyTab({
       {/* Key Metrics Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          title="Total Sales"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Total Sales</span>
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/cnCcupx.png" 
+                    alt="Shopify logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={safeMetrics.totalSales || 0}
           change={safeMetrics.salesGrowth || 0}
           prefix="$"
           valueFormat="currency"
           data={safeMetrics.dailyData}
-          icon={
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"
         />
         <MetricCard
-          title="Orders"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Orders</span>
+              <div className="flex items-center gap-1">
+                <ShoppingBag className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/cnCcupx.png" 
+                    alt="Shopify logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={safeMetrics.ordersPlaced || 0}
           change={safeMetrics.ordersGrowth || 0}
           data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
-          icon={
-            <div className="flex items-center gap-1">
-              <ShoppingBag className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"
         />
         <MetricCard
-          title="Average Order Value"
+          title={
+            <div className="flex items-center gap-2">
+              <span>Average Order Value</span>
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/cnCcupx.png" 
+                    alt="Shopify logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </div>
+          }
           value={safeMetrics.averageOrderValue || 0}
           change={safeMetrics.aovGrowth || 0}
           prefix="$"
@@ -152,43 +172,31 @@ export function ShopifyTab({
             ...d, 
             value: d.orders > 0 ? d.revenue / d.orders : 0 
           }))}
-          icon={
-            <div className="flex items-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          }
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"
         />
         <MetricCard
-          title="Units Sold"
-          value={safeMetrics.unitsSold || 0}
-          change={safeMetrics.unitsGrowth || 0}
-          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
-          icon={
-            <div className="flex items-center gap-1">
-              <Package className="h-4 w-4" />
-              <div className="relative w-4 h-4">
-                <Image 
-                  src="https://i.imgur.com/cnCcupx.png" 
-                  alt="Shopify logo" 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
+          title={
+            <div className="flex items-center gap-2">
+              <span>Units Sold</span>
+              <div className="flex items-center gap-1">
+                <Package className="h-4 w-4" />
+                <div className="relative w-4 h-4">
+                  <Image 
+                    src="https://i.imgur.com/cnCcupx.png" 
+                    alt="Shopify logo" 
+                    width={16} 
+                    height={16} 
+                    className="object-contain"
+                  />
+                </div>
               </div>
             </div>
           }
+          value={safeMetrics.unitsSold || 0}
+          change={safeMetrics.unitsGrowth || 0}
+          data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
           loading={isLoading}
           refreshing={isRefreshingData}
           platform="shopify"

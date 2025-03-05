@@ -9,7 +9,7 @@ import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 
 interface MetricCardProps {
-  title: string
+  title: string | React.ReactNode
   value: string | number
   change: number
   data: MetricData[]

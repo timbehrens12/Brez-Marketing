@@ -11,6 +11,7 @@ import { useSupabase } from '@/lib/hooks/useSupabase'
 import { defaultMetrics } from "@/lib/defaultMetrics"
 import { ShoppingBag, Facebook } from "lucide-react"
 import Image from "next/image"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface PlatformTabsProps {
   platforms: {
@@ -79,43 +80,60 @@ export function PlatformTabs({
 
   return (
     <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="grid grid-cols-2 w-full max-w-md bg-[#1A1A1A] border border-[#333] rounded-lg p-1">
-        <TabsTrigger 
-          value="shopify" 
-          disabled={!platforms.shopify}
-          className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <span>Shopify</span>
-            <div className="relative w-5 h-5 flex items-center justify-center">
-              <Image 
-                src="https://i.imgur.com/cnCcupx.png" 
-                alt="Shopify logo" 
-                width={20} 
-                height={20} 
-                className="object-contain"
-              />
-            </div>
-          </div>
-        </TabsTrigger>
-        <TabsTrigger 
-          value="meta" 
-          disabled={!platforms.meta}
-          className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white"
-        >
-          <div className="flex items-center justify-center gap-2">
-            <span>Meta Ads</span>
-            <div className="relative w-5 h-5 flex items-center justify-center">
-              <Image 
-                src="https://i.imgur.com/6hyyRrs.png" 
-                alt="Meta logo" 
-                width={20} 
-                height={20} 
-                className="object-contain"
-              />
-            </div>
-          </div>
-        </TabsTrigger>
+      <TabsList className="grid grid-cols-2 w-full max-w-[200px] mx-auto bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger 
+                value="shopify" 
+                disabled={!platforms.shopify}
+                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-2"
+              >
+                <div className="flex items-center justify-center">
+                  <div className="relative w-8 h-8 flex items-center justify-center">
+                    <Image 
+                      src="https://i.imgur.com/cnCcupx.png" 
+                      alt="Shopify logo" 
+                      width={32} 
+                      height={32} 
+                      className="object-contain transition-transform duration-300 hover:scale-110"
+                    />
+                  </div>
+                </div>
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+              <p>Shopify</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger 
+                value="meta" 
+                disabled={!platforms.meta}
+                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-2"
+              >
+                <div className="flex items-center justify-center">
+                  <div className="relative w-8 h-8 flex items-center justify-center">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta logo" 
+                      width={32} 
+                      height={32} 
+                      className="object-contain transition-transform duration-300 hover:scale-110"
+                    />
+                  </div>
+                </div>
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+              <p>Meta Ads</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </TabsList>
 
       <TabsContent value="shopify">
