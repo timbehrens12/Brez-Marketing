@@ -64,23 +64,6 @@ export interface DailyData {
   value: number // For MetricCard compatibility
 }
 
-export interface LocationData {
-  country: string
-  count: number
-  revenue: number
-}
-
-export interface OrderTimelineData {
-  hour: number
-  count: number
-}
-
-export interface OrderStatusData {
-  status: string
-  count: number
-  percentage: number
-}
-
 export interface Metrics {
   totalSales: number
   ordersPlaced: number
@@ -96,7 +79,8 @@ export interface Metrics {
   returnGrowth: number
   conversionRate: number
   conversionRateGrowth: number
-  sessions: number
+  inventoryLevels: number
+  inventoryGrowth: number
   revenueByDay: Array<{ date: string; amount: number }>
   topProducts: Array<{ id: string; title: string; quantity: number; revenue: number }>
   customerSegments: CustomerSegments
@@ -115,11 +99,6 @@ export interface Metrics {
   conversionGrowth: number
   costPerResult: number
   cprGrowth: number
-  topLocations?: Array<LocationData>
-  orderTimeline?: Array<OrderTimelineData>
-  orderStatuses?: Array<OrderStatusData>
-  averageItemsPerOrder?: number
-  isSessionsEstimated?: boolean
 }
 
 export interface ComparisonDates {
@@ -193,7 +172,8 @@ export const defaultMetrics: Metrics = {
   returnGrowth: 0,
   conversionRate: 0,
   conversionRateGrowth: 0,
-  sessions: 0,
+  inventoryLevels: 0,
+  inventoryGrowth: 0,
   dailyData: [],
   revenueByDay: [],
   customerSegments: {
