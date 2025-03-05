@@ -175,7 +175,7 @@ export function PlatformTabs({
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
-                      src="https://i.imgur.com/t4E5ngO.png" 
+                      src="https://i.imgur.com/TavV4UJ.png" 
                       alt="Google Ads logo" 
                       width={36} 
                       height={36} 
@@ -257,7 +257,7 @@ export function PlatformTabs({
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
           <div className="mb-4">
             <Image 
-              src="https://i.imgur.com/t4E5ngO.png" 
+              src="https://i.imgur.com/TavV4UJ.png" 
               alt="Google Ads logo" 
               width={64} 
               height={64} 
