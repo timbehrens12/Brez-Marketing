@@ -31,6 +31,7 @@ import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "@/components/ui/use-toast"
 
 interface WidgetData {
   shopify?: any;
@@ -109,8 +110,11 @@ export default function DashboardPage() {
   const [isRefreshingData, setIsRefreshingData] = useState(false);
 
   // Add missing state for lastRefreshed
-  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const [cooldownMessage, setCooldownMessage] = useState('');
+  const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -458,14 +462,46 @@ export default function DashboardPage() {
     }
   }
 
-  // Modify the refresh function to use isRefreshingData
+  // Modify the refresh function to use isRefreshingData and add cooldown
   const refresh = async () => {
     if (isRefreshing) return
+    
+    // Check if we're in cooldown period
+    if (refreshCooldown) {
+      toast({
+        title: "Refresh cooldown active",
+        description: cooldownMessage,
+        variant: "destructive"
+      })
+      return
+    }
     
     setIsRefreshing(true)
     await fetchAllData()
     setLastRefreshed(new Date())
     setIsRefreshing(false)
+    
+    // Set cooldown
+    setRefreshCooldown(true)
+    const remainingSeconds = COOLDOWN_SECONDS
+    setCooldownMessage(`Please wait ${remainingSeconds} seconds before refreshing again.`)
+    
+    // Start countdown
+    const countdownInterval = setInterval(() => {
+      const secondsLeft = Math.max(0, remainingSeconds - Math.floor((Date.now() - (lastRefreshed?.getTime() || Date.now())) / 1000))
+      setCooldownMessage(`Please wait ${secondsLeft} seconds before refreshing again.`)
+      
+      if (secondsLeft <= 0) {
+        clearInterval(countdownInterval)
+        setRefreshCooldown(false)
+      }
+    }, 1000)
+    
+    // Clear cooldown after the specified time
+    setTimeout(() => {
+      clearInterval(countdownInterval)
+      setRefreshCooldown(false)
+    }, COOLDOWN_SECONDS * 1000)
   }
 
   // Set up periodic data refresh
@@ -607,14 +643,14 @@ export default function DashboardPage() {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                  <p>Dashboard data refreshes automatically every 2 minutes. You can also refresh manually.</p>
+                  <p>Dashboard data refreshes automatically every 2 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           
           <span className="text-xs text-gray-500">
-            Last updated: {lastRefreshed.toLocaleTimeString()}
+            Last updated: {lastRefreshed?.toLocaleTimeString()}
           </span>
           <DateRangePicker 
             dateRange={dateRange}

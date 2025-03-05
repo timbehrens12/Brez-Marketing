@@ -39,6 +39,7 @@ interface RevenueByDayProps {
     id?: string;
   }>;
   brandId: string;
+  isRefreshing?: boolean;
 }
 
 // Define types for our display items
@@ -59,7 +60,7 @@ interface YearlyDisplayItem extends BaseDisplayItem {
 
 type DisplayItem = WeeklyOrMonthlyDisplayItem | YearlyDisplayItem;
 
-export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) {
+export function RevenueByDay({ data: initialData, brandId, isRefreshing = false }: RevenueByDayProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('monthly');
   const [salesData, setSalesData] = useState<Array<{
     date: string; 
@@ -418,11 +419,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                 </div>
                 
                 <div className="text-center text-xs font-medium text-emerald-500">
-                  {item.revenue > 0 
-                    ? (item.revenue >= 1000 
-                        ? `$${(item.revenue / 1000).toFixed(1)}k` 
-                        : `$${item.revenue.toFixed(0)}`)
-                    : '$0'}
+                  {renderRevenueValue(item.revenue)}
                 </div>
               </div>
             </div>
@@ -478,11 +475,7 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   
                   <div className="flex-1 flex flex-col justify-center p-0.5">
                     <div className="text-center text-sm font-medium text-emerald-500">
-                      {item.revenue > 0 
-                        ? (item.revenue >= 1000 
-                            ? `$${(item.revenue / 1000).toFixed(1)}k` 
-                            : `$${item.revenue.toFixed(0)}`)
-                        : '$0'}
+                      {renderRevenueValue(item.revenue)}
                     </div>
                   </div>
                 </div>
@@ -522,12 +515,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                   )}
                 </div>
                 
-                <div className="text-center text-xs font-medium text-emerald-500 mt-1">
-                  {item.revenue > 0 
-                    ? (item.revenue >= 1000 
-                        ? `$${(item.revenue / 1000).toFixed(1)}k` 
-                        : `$${item.revenue.toFixed(0)}`)
-                    : '$0'}
+                <div className="text-center text-lg font-medium text-emerald-500">
+                  {renderRevenueValue(item.revenue)}
                 </div>
               </div>
             </div>
@@ -535,6 +524,21 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
         </div>
       );
     }
+  };
+  
+  // Render revenue value with loading state
+  const renderRevenueValue = (revenue: number) => {
+    if (isRefreshing) {
+      return (
+        <div className="animate-pulse bg-gray-700 h-5 w-12 rounded mx-auto"></div>
+      );
+    }
+    
+    return revenue > 0 
+      ? (revenue >= 1000 
+          ? `$${(revenue / 1000).toFixed(1)}k` 
+          : `$${revenue.toFixed(0)}`)
+      : '$0';
   };
   
   return (

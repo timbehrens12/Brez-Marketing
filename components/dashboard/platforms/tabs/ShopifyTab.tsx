@@ -308,6 +308,7 @@ export function ShopifyTab({
             <RevenueByDay 
               data={safeMetrics.revenueByDay} 
               brandId={brandId}
+              isRefreshing={isRefreshingData}
             />
           </CardContent>
         </Card>
