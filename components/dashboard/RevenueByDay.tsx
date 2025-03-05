@@ -397,13 +397,13 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as WeeklyOrMonthlyDisplayItem).isToday 
-                  ? "bg-[#1a1a1a] border-blue-700 shadow-md" 
+                  ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
                   : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
               )}
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-blue-900 text-white" : "bg-gray-800 text-white"
+                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
               )}>
                 {item.displayDate}
               </div>
@@ -413,7 +413,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   {item.revenue > 0 && (
                     <div 
                       style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                      className="w-full rounded-t bg-blue-500"
+                      className="w-full rounded-t bg-gray-500"
                     ></div>
                   )}
                 </div>
@@ -462,13 +462,13 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   className={cn(
                     "flex flex-col rounded-sm overflow-hidden border",
                     isToday 
-                      ? "bg-[#1a1a1a] border-blue-700 shadow-md" 
+                      ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
                       : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
                   )}
                 >
                   <div className={cn(
                     "text-center py-0.5 text-xs font-medium",
-                    isToday ? "bg-blue-900 text-white" : "bg-gray-800 text-white"
+                    isToday ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
                   )}>
                     {day}
                   </div>
@@ -494,13 +494,13 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "flex flex-col rounded-md overflow-hidden border h-full",
                 (item as YearlyDisplayItem).isCurrentMonth 
-                  ? "bg-[#1a1a1a] border-blue-700 shadow-md" 
+                  ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
                   : "bg-[#1e1e1e] border-gray-700 hover:border-gray-500 transition-colors"
               )}
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as YearlyDisplayItem).isCurrentMonth ? "bg-blue-900 text-white" : "bg-gray-800 text-white"
+                (item as YearlyDisplayItem).isCurrentMonth ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
               )}>
                 {item.displayDate}
               </div>
@@ -510,7 +510,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   {item.revenue > 0 && (
                     <div 
                       style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                      className="w-full rounded-t bg-blue-500"
+                      className="w-full rounded-t bg-gray-500"
                     ></div>
                   )}
                 </div>
@@ -553,14 +553,13 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="h-5 w-5 text-blue-400"
+            className="h-5 w-5 text-gray-400"
           >
             <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
             <line x1="16" x2="16" y1="2" y2="6" />
             <line x1="8" x2="8" y1="2" y2="6" />
             <line x1="3" x2="21" y1="10" y2="10" />
           </svg>
-          <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-base font-medium text-white mr-2">
