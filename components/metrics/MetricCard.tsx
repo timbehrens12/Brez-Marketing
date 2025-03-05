@@ -135,6 +135,14 @@ export function MetricCard({
             className="h-4 w-4"
           />
         )
+      case "Google Ads":
+        return (
+          <img
+            src="https://i.imgur.com/t4E5ngO.png"
+            alt="Google Ads"
+            className="h-4 w-4"
+          />
+        )
       default:
         return null
     }
@@ -160,8 +168,9 @@ export function MetricCard({
     <Card className={cn("bg-[#1A1A1A] border-[#2A2A2A] hover:bg-[#222] transition-colors", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center space-x-2">
-          {icon && <span className="text-gray-400">{icon}</span>}
+          <PlatformIcon />
           <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
+          {icon && <span className="text-gray-400">{icon}</span>}
         </div>
       </CardHeader>
       <CardContent>

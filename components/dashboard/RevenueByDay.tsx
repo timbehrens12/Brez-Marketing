@@ -476,17 +476,8 @@ export function RevenueByDay({ data: initialData, brandId }: RevenueByDayProps) 
                     {day}
                   </div>
                   
-                  <div className="flex-1 flex flex-col justify-end p-0.5">
-                    <div className="relative h-3 w-full flex flex-col justify-end">
-                      {item.revenue > 0 && (
-                        <div 
-                          style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                          className="w-full rounded-t bg-blue-500"
-                        ></div>
-                      )}
-                    </div>
-                    
-                    <div className="text-center text-xs font-medium text-white">
+                  <div className="flex-1 flex flex-col justify-center p-0.5">
+                    <div className="text-center text-sm font-medium text-white">
                       {item.revenue > 0 
                         ? (item.revenue >= 1000 
                             ? `$${(item.revenue / 1000).toFixed(1)}k` 
