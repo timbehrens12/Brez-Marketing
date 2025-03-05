@@ -82,22 +82,22 @@ export function PlatformTabs({
 
   return (
     <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="grid grid-cols-4 w-full max-w-[500px] mx-auto bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
+      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="shopify" 
                 disabled={!platforms.shopify}
-                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-3"
+                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
                       src="https://i.imgur.com/cnCcupx.png" 
                       alt="Shopify logo" 
-                      width={40} 
-                      height={40} 
+                      width={36} 
+                      height={36} 
                       className="object-contain transition-transform duration-300 hover:scale-110"
                     />
                   </div>
@@ -116,15 +116,15 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="meta" 
                 disabled={!platforms.meta}
-                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-3"
+                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
                       src="https://i.imgur.com/6hyyRrs.png" 
                       alt="Meta logo" 
-                      width={40} 
-                      height={40} 
+                      width={36} 
+                      height={36} 
                       className="object-contain transition-transform duration-300 hover:scale-110"
                     />
                   </div>
@@ -143,15 +143,15 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="tiktok" 
                 disabled={false}
-                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-3"
+                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
                       src="https://i.imgur.com/AXHa9UT.png" 
                       alt="TikTok logo" 
-                      width={40} 
-                      height={40} 
+                      width={36} 
+                      height={36} 
                       className="object-contain transition-transform duration-300 hover:scale-110"
                     />
                   </div>
@@ -170,15 +170,15 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="googleads" 
                 disabled={false}
-                className="rounded-md data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out p-3"
+                className="rounded-md w-24 h-12 data-[state=active]:bg-[#2A2A2A] data-[state=active]:border-[#444] data-[state=active]:border text-gray-300 data-[state=active]:text-white transition-all duration-300 ease-in-out"
               >
                 <div className="flex items-center justify-center">
                   <div className="relative w-10 h-10 flex items-center justify-center">
                     <Image 
                       src="https://i.imgur.com/t4E5ngO.png" 
                       alt="Google Ads logo" 
-                      width={40} 
-                      height={40} 
+                      width={36} 
+                      height={36} 
                       className="object-contain transition-transform duration-300 hover:scale-110"
                     />
                   </div>
