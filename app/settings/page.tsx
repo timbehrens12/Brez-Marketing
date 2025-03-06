@@ -616,6 +616,47 @@ export default function SettingsPage() {
           return;
         }
         
+        // Clear any Shopify-related cookies and localStorage before redirecting
+        try {
+          // Clear localStorage items
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.includes('shopify') || key.includes('Shopify'))) {
+              localStorage.removeItem(key);
+              console.log('Removed localStorage item:', key);
+            }
+          }
+          
+          // Clear sessionStorage items
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && (key.includes('shopify') || key.includes('Shopify'))) {
+              sessionStorage.removeItem(key);
+              console.log('Removed sessionStorage item:', key);
+            }
+          }
+          
+          // Try to clear cookies for the Shopify domain
+          const cookies = document.cookie.split(";");
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i];
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+            
+            // Try to delete the cookie with various domain options
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
+            if (shop) {
+              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + shop;
+              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + shop;
+            }
+          }
+          
+          console.log('Cleared cookies and storage');
+        } catch (e) {
+          console.error('Error clearing cookies and storage:', e);
+          // Continue anyway
+        }
+        
         // Add a cache-busting parameter to prevent browser caching
         const cacheBuster = Date.now().toString();
         window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}&_=${cacheBuster}`;
