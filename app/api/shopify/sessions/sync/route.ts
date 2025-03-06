@@ -24,19 +24,28 @@ export async function POST(request: Request) {
         }, { status: 400 })
       }
       
-      const { data: connection, error: connectionError } = await supabase
-        .from('platform_connections')
-        .select('*')
-        .eq('id', connectionId)
-        .single()
+      // Use raw SQL query with explicit type casting
+      const { data: connections, error: connectionError } = await supabase.rpc('get_connection_by_id', {
+        connection_id_param: connectionId
+      })
       
-      if (connectionError || !connection) {
+      if (connectionError) {
         console.error('Error fetching connection:', connectionError)
         return NextResponse.json({ 
+          error: 'Error fetching connection', 
+          details: connectionError.message 
+        }, { status: 500 })
+      }
+      
+      if (!connections || connections.length === 0) {
+        console.error('Connection not found')
+        return NextResponse.json({ 
           error: 'Connection not found', 
-          details: connectionError?.message 
+          details: 'No connection found with the provided ID'
         }, { status: 404 })
       }
+      
+      const connection = connections[0]
       
       // Calculate date range (last 30 days)
       const endDate = new Date()
@@ -58,7 +67,7 @@ export async function POST(request: Request) {
         const avgSessionDuration = Math.floor(Math.random() * 180) + 60
         
         sessionData.push({
-          connection_id: connection.id, // Use the UUID from the connection object
+          connection_id: connection.id,
           brand_id: connection.brand_id,
           date: format(currentDate, 'yyyy-MM-dd'),
           session_count: sessionCount,
@@ -72,14 +81,15 @@ export async function POST(request: Request) {
       
       console.log(`Generated ${sessionData.length} session records`)
       
-      // In a real implementation, you would upsert the data to avoid duplicates
-      // For now, we'll delete existing data for this date range and insert new data
-      const { error: deleteError } = await supabase
-        .from('shopify_sessions')
-        .delete()
-        .eq('connection_id', connection.id) // Use the UUID from the connection object
-        .gte('date', format(startDate, 'yyyy-MM-dd'))
-        .lte('date', format(endDate, 'yyyy-MM-dd'))
+      // Delete existing data using raw SQL with explicit type casting
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd')
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd')
+      
+      const { error: deleteError } = await supabase.rpc('delete_sessions_by_date_range', {
+        connection_id_param: connection.id,
+        start_date_param: formattedStartDate,
+        end_date_param: formattedEndDate
+      })
       
       if (deleteError) {
         console.error('Error deleting existing sessions data:', deleteError)

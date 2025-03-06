@@ -428,25 +428,31 @@ export default function DashboardPage() {
           // Sync sessions data from Shopify
           try {
             console.log('Syncing sessions data from Shopify')
-            const sessionsResponse = await fetch('/api/shopify/sessions/sync', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ connectionId: shopifyConnection.id })
-            })
-            
-            if (!sessionsResponse.ok) {
-              console.error('Failed to sync sessions data:', await sessionsResponse.text())
-            } else {
-              console.log('Sessions sync initiated successfully')
-              // Wait a moment for the sync to complete
-              await new Promise(resolve => setTimeout(resolve, 2000))
+            // Ensure connectionId is a valid UUID
+            if (shopifyConnection && shopifyConnection.id) {
+              console.log(`Using connection ID: ${shopifyConnection.id} for sessions sync`)
+              const sessionsResponse = await fetch('/api/shopify/sessions/sync', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ connectionId: shopifyConnection.id })
+              })
               
-              // Force a refresh of the sessions data by dispatching a custom event
-              window.dispatchEvent(new CustomEvent('refreshSessions', { 
-                detail: { brandId: selectedBrandId }
-              }))
+              if (!sessionsResponse.ok) {
+                console.error('Failed to sync sessions data:', await sessionsResponse.text())
+              } else {
+                console.log('Sessions sync initiated successfully')
+                // Wait a moment for the sync to complete
+                await new Promise(resolve => setTimeout(resolve, 2000))
+                
+                // Force a refresh of the sessions data by dispatching a custom event
+                window.dispatchEvent(new CustomEvent('refreshSessions', { 
+                  detail: { brandId: selectedBrandId }
+                }))
+              }
+            } else {
+              console.error('Invalid or missing connection ID for sessions sync')
             }
           } catch (error) {
             console.error('Error syncing sessions data:', error)

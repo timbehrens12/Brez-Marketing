@@ -25,6 +25,8 @@ export function SessionsSyncButton({ connectionId, className }: SessionsSyncButt
     
     setIsSyncing(true)
     try {
+      console.log(`Syncing sessions for connection ID: ${connectionId}`)
+      
       const response = await fetch('/api/shopify/sessions/sync', {
         method: 'POST',
         headers: {
