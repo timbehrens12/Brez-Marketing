@@ -212,7 +212,7 @@ export function ShopifyTab({
       <div className="w-full">
         <Card className="bg-[#111111] border-[#222222]">
           <CardHeader className="py-2">
-            <CardTitle className="text-white">Revenue Calendar</CardTitle>
+            <CardTitle className="text-white"></CardTitle>
           </CardHeader>
           <CardContent className="h-[520px]">
             <RevenueByDay 

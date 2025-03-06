@@ -403,7 +403,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-gray-500 text-white" : "bg-gray-500 text-white"
               )}>
                 {item.displayDate}
               </div>
@@ -439,7 +439,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         <div className="h-full flex flex-col">
           <div className="grid grid-cols-7 gap-0.5 mb-0.5">
             {daysOfWeek.map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-white py-0.5 bg-gray-700 rounded-sm">
+              <div key={index} className="text-center text-xs font-medium text-white py-0.5 bg-gray-500 rounded-sm">
                 {day}
               </div>
             ))}
@@ -468,7 +468,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 >
                   <div className={cn(
                     "text-center py-0.5 text-xs font-medium",
-                    isToday ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                    isToday ? "bg-gray-500 text-white" : "bg-gray-500 text-white"
                   )}>
                     {day}
                   </div>
@@ -500,7 +500,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             >
               <div className={cn(
                 "text-center py-1 text-xs font-medium",
-                (item as YearlyDisplayItem).isCurrentMonth ? "bg-gray-700 text-white" : "bg-gray-800 text-white"
+                (item as YearlyDisplayItem).isCurrentMonth ? "bg-gray-500 text-white" : "bg-gray-500 text-white"
               )}>
                 {item.displayDate}
               </div>

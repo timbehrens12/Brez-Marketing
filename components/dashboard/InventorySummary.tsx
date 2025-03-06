@@ -76,7 +76,36 @@ export function InventorySummary({
       const fetchInventoryData = async () => {
         try {
           console.log(`Refreshing inventory data for brandId: ${brandId}`)
-          const response = await fetch(`/api/shopify/inventory?brandId=${brandId}&refresh=true`)
+          // Force a complete refresh from Shopify by calling the sync endpoint first
+          if (brandId) {
+            try {
+              // Find the connection ID for this brand
+              const connectionsResponse = await fetch(`/api/connections?brandId=${brandId}`)
+              const connectionsData = await connectionsResponse.json()
+              const shopifyConnection = connectionsData.connections?.find(c => 
+                c.platform_type === 'shopify' && c.status === 'active'
+              )
+              
+              if (shopifyConnection) {
+                console.log('Syncing inventory data from Shopify before refresh')
+                await fetch('/api/shopify/inventory/sync', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ connectionId: shopifyConnection.id })
+                })
+                
+                // Wait a moment for the sync to complete
+                await new Promise(resolve => setTimeout(resolve, 2000))
+              }
+            } catch (syncError) {
+              console.error('Error syncing inventory before refresh:', syncError)
+            }
+          }
+          
+          // Now fetch the updated inventory data
+          const response = await fetch(`/api/shopify/inventory?brandId=${brandId}&refresh=true&t=${new Date().getTime()}`)
           
           if (!response.ok) {
             const errorText = await response.text()
@@ -155,8 +184,8 @@ export function InventorySummary({
         
         {/* Product Inventory Levels Widget */}
         <Card className="bg-[#111111] border-[#222222] overflow-hidden">
-          <CardHeader className="py-2 px-4">
-            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+          <CardHeader className="py-2 px-4 bg-[#111111]">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2 bg-[#111111]">
               <div className="relative w-4 h-4">
                 <Image 
                   src="https://i.imgur.com/cnCcupx.png" 
@@ -170,7 +199,7 @@ export function InventorySummary({
               <Layers className="h-4 w-4" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 bg-[#111111]">
             {isDataLoading ? (
               <div className="flex items-center justify-center h-[120px]">
                 <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-400"></div>
