@@ -183,7 +183,7 @@ export function InventorySummary({
         />
         
         {/* Product Inventory Levels Widget */}
-        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+        <Card className="bg-[#1a1a1a] border-[#333] shadow-lg overflow-hidden">
           <CardHeader className="py-2 px-4">
             <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
               <div className="relative w-4 h-4">
@@ -201,15 +201,15 @@ export function InventorySummary({
           </CardHeader>
           <CardContent className="p-0">
             {isDataLoading ? (
-              <div className="flex items-center justify-center h-[120px]">
+              <div className="flex items-center justify-center h-[120px] bg-[#1a1a1a]">
                 <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-400"></div>
               </div>
             ) : sortedProducts.length === 0 ? (
-              <div className="flex items-center justify-center h-[120px] text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-[120px] text-gray-400 text-sm bg-[#1a1a1a]">
                 No inventory data available
               </div>
             ) : (
-              <ScrollArea className="h-[120px]">
+              <ScrollArea className="h-[120px] bg-[#1a1a1a]">
                 <div className="px-4 py-2">
                   {sortedProducts.slice(0, 8).map((product, index) => (
                     <div key={product.product_id} className="flex justify-between items-center py-1 text-xs border-b border-gray-800 last:border-0">
