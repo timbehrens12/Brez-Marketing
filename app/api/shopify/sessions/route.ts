@@ -62,7 +62,8 @@ export async function GET(request: Request) {
         avgSessionDuration: 0,
         sessionGrowth: 0,
         visitorGrowth: 0,
-        sessionsByDay: []
+        sessionsByDay: [],
+        isEstimate: false
       })
     }
     
@@ -119,6 +120,21 @@ export async function GET(request: Request) {
     
     console.log(`Found ${previousSessions?.length || 0} session records for previous period`)
 
+    // Check if we have any data
+    if (!sessions || sessions.length === 0) {
+      console.log('No session data found, returning empty metrics')
+      return NextResponse.json({
+        sessionCount: 0,
+        uniqueVisitors: 0,
+        bounceRate: 0,
+        avgSessionDuration: 0,
+        sessionGrowth: 0,
+        visitorGrowth: 0,
+        sessionsByDay: [],
+        isEstimate: false
+      })
+    }
+
     // Calculate current period metrics
     const currentSessionCount = sessions?.reduce((sum: number, session: any) => sum + (session.session_count || 0), 0) || 0;
     const currentUniqueVisitors = sessions?.reduce((sum: number, session: any) => sum + (session.unique_visitors || 0), 0) || 0;
@@ -153,6 +169,14 @@ export async function GET(request: Request) {
       value: session.session_count || 0 // For compatibility with MetricCard
     })) || [];
 
+    // Check if the data is estimated
+    // We'll consider it estimated if the average session count is a multiple of 10
+    // This is a heuristic based on how we generate estimates in the sync endpoint
+    const isEstimated = sessions.some((session: any) => {
+      const sessionCount = session.session_count || 0;
+      return sessionCount % 10 === 0 && sessionCount > 0;
+    });
+
     // Return the metrics
     const metrics = {
       sessionCount: currentSessionCount,
@@ -161,14 +185,16 @@ export async function GET(request: Request) {
       avgSessionDuration: currentAvgSessionDuration,
       sessionGrowth,
       visitorGrowth,
-      sessionsByDay
+      sessionsByDay,
+      isEstimate: isEstimated
     };
 
     console.log('Calculated session metrics:', {
       sessionCount: metrics.sessionCount,
       uniqueVisitors: metrics.uniqueVisitors,
       sessionGrowth: metrics.sessionGrowth,
-      visitorGrowth: metrics.visitorGrowth
+      visitorGrowth: metrics.visitorGrowth,
+      isEstimate: metrics.isEstimate
     });
 
     return NextResponse.json(metrics)

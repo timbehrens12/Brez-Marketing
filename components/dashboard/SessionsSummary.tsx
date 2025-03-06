@@ -27,6 +27,7 @@ interface SessionsData {
     visitors: number
     value: number
   }>
+  isEstimate?: boolean
 }
 
 export function SessionsSummary({ 
@@ -39,6 +40,7 @@ export function SessionsSummary({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false)
+  const [isEstimated, setIsEstimated] = useState<boolean>(false)
 
   const fetchSessionsData = async (forceRefresh = false) => {
     if (!brandId) {
@@ -68,6 +70,7 @@ export function SessionsSummary({
       const data = await response.json()
       console.log('Sessions data fetched successfully:', data)
       setSessionsData(data)
+      setIsEstimated(data.isEstimate || false)
       setError(null)
       setInitialLoadComplete(true)
     } catch (err) {
@@ -131,6 +134,12 @@ export function SessionsSummary({
       {error && !isDataLoading && (
         <div className="bg-red-900/30 border border-red-700 p-4 rounded-md text-red-200 mb-4">
           {error}
+        </div>
+      )}
+      
+      {isEstimated && !isDataLoading && (
+        <div className="bg-yellow-900/30 border border-yellow-700 p-2 rounded-md text-yellow-200 mb-4 text-xs">
+          Note: This data is estimated based on your order history. For accurate analytics, please install the Shopify Analytics app.
         </div>
       )}
       
