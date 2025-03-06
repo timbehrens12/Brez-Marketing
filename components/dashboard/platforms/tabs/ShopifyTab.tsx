@@ -3,6 +3,8 @@
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
+import { SessionsSummary } from "@/components/dashboard/SessionsSummary"
+import { SessionsSyncButton } from "@/components/dashboard/SessionsSyncButton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
@@ -218,6 +220,20 @@ export function ShopifyTab({
           brandId={brandId}
           isLoading={isLoading}
           isRefreshingData={isRefreshingData}
+        />
+      </div>
+
+      {/* Sessions Summary Section */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-white">Sessions Summary</h3>
+          <SessionsSyncButton connectionId={connection.id} />
+        </div>
+        <SessionsSummary 
+          brandId={brandId}
+          isLoading={isLoading}
+          isRefreshingData={isRefreshingData}
+          dateRange={dateRange}
         />
       </div>
 
