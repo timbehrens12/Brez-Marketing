@@ -143,6 +143,7 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
             color: ${statusColor === 'green' ? '#10b981' : '#ef4444'};
             font-weight: bold;
             margin-bottom: 20px;
+            font-size: 18px;
           }
           .spinner {
             border: 4px solid rgba(255, 255, 255, 0.1);
@@ -188,13 +189,32 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
         </a>
         ${autoRedirect ? `
         <script>
-          // Store connection data in localStorage to ensure it persists
-          localStorage.setItem('shopifyConnectionComplete', 'true');
-          localStorage.setItem('shopifyConnectionTimestamp', Date.now().toString());
+          // Function to safely store data in localStorage
+          function safelyStoreData() {
+            try {
+              // Store connection data in localStorage to ensure it persists
+              localStorage.setItem('shopifyConnectionComplete', 'true');
+              localStorage.setItem('shopifyConnectionTimestamp', Date.now().toString());
+              console.log('Connection data stored in localStorage');
+              return true;
+            } catch (e) {
+              console.error('Failed to store data in localStorage:', e);
+              return false;
+            }
+          }
+          
+          // Try to store the data
+          const dataStored = safelyStoreData();
           
           // Redirect after a short delay
           setTimeout(function() {
-            window.location.href = "${redirectUrl}";
+            try {
+              window.location.href = "${redirectUrl}";
+            } catch (e) {
+              console.error('Failed to redirect:', e);
+              // Fallback - try to reload the page
+              document.location.href = "${redirectUrl}";
+            }
           }, 2000);
         </script>
         ` : ''}
@@ -205,6 +225,9 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
   return new Response(html, {
     headers: {
       'Content-Type': 'text/html',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
   });
 } 

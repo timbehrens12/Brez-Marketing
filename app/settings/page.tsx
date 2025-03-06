@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,6 +37,30 @@ export default function SettingsPage() {
   const supabase = useSupabase()
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Define loadConnections with useCallback to prevent unnecessary re-renders
+  const loadConnections = useCallback(async () => {
+    if (!user) return
+    
+    const { data, error } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Error loading connections:', error)
+      return
+    }
+
+    console.log('Loaded connections:', data)
+    const typedData = data as PlatformConnection[] | null
+    setConnections(typedData || [])
+  }, [user, supabase, setConnections])
+
+  // Add back the useEffect to load connections on mount
+  useEffect(() => {
+    loadConnections()
+  }, [user, supabase])
 
   // Handle loading state from Shopify callback
   useEffect(() => {
@@ -120,27 +144,6 @@ export default function SettingsPage() {
     console.log('Current brands:', brands)
     console.log('Selected brand:', selectedBrandId)
   }, [brands, selectedBrandId])
-
-  const loadConnections = async () => {
-    if (!user) return
-    
-    const { data, error } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('user_id', user.id)
-
-    if (error) {
-      console.error('Error loading connections:', error)
-      return
-    }
-
-    const typedData = data as PlatformConnection[] | null
-    setConnections(typedData || [])
-  }
-
-  useEffect(() => {
-    loadConnections()
-  }, [user, supabase])
 
   const handleAddBrand = async () => {
     if (!newBrandName || !user) return
