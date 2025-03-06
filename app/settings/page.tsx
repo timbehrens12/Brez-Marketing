@@ -104,6 +104,8 @@ export default function SettingsPage() {
         errorMessage = `Error from Shopify: ${searchParams.get('description') || 'Unknown error'}`;
       } else if (error === 'token_exchange_failed') {
         errorMessage = 'Failed to exchange token with Shopify. Please try again.';
+      } else if (error === 'auth_cancelled') {
+        errorMessage = 'Authentication was cancelled. Please try again if you want to connect your store.';
       }
       
       toast.error(errorMessage, {
@@ -227,6 +229,8 @@ export default function SettingsPage() {
         errorMessage = `Error from Shopify: ${errorDescription || 'Unknown error'}`;
       } else if (error === 'token_exchange_failed') {
         errorMessage = 'Failed to exchange token with Shopify. Please try again.';
+      } else if (error === 'auth_cancelled') {
+        errorMessage = 'Authentication was cancelled. Please try again if you want to connect your store.';
       }
       
       toast.error(errorMessage, {

@@ -38,12 +38,23 @@ export default function ShopifyCallbackPage() {
           console.error('Shopify returned an error:', error, errorDescription)
           setDebugInfo(prev => prev + `Shopify error: ${error}\nDescription: ${errorDescription || 'No description provided'}\n`)
           setStatus('error')
-          setMessage(`Error from Shopify: ${error}`)
           
-          // Redirect after a delay
-          setTimeout(() => {
-            router.push(`/settings?error=shopify_error&description=${encodeURIComponent(errorDescription || '')}`)
-          }, 2000)
+          // Special handling for access_denied error (user cancelled)
+          if (error === 'access_denied') {
+            setMessage('Authentication cancelled by user')
+            
+            // Redirect after a delay
+            setTimeout(() => {
+              router.push('/settings?error=auth_cancelled&description=Authentication+was+cancelled')
+            }, 2000)
+          } else {
+            setMessage(`Error from Shopify: ${error}`)
+            
+            // Redirect after a delay
+            setTimeout(() => {
+              router.push(`/settings?error=shopify_error&description=${encodeURIComponent(errorDescription || '')}`)
+            }, 2000)
+          }
           return
         }
 

@@ -7,12 +7,12 @@ export async function POST(request: Request) {
   try {
     console.log('Disconnecting platform:', { brandId, platformType })
     
-    // First, delete all related orders
+    // First, get the connection details
     if (platformType === 'shopify') {
-      // Get the connection ID first
+      // Get the connection details first
       const { data: connection, error: connectionQueryError } = await supabase
         .from('platform_connections')
-        .select('id')
+        .select('id, access_token, shop')
         .eq('brand_id', brandId)
         .eq('platform_type', platformType)
         .single()
@@ -25,7 +25,36 @@ export async function POST(request: Request) {
         )
       }
 
-      console.log('Found connection:', connection)
+      console.log('Processing connection:', connection.id)
+
+      // Try to revoke the access token with Shopify
+      if (connection.access_token && connection.shop) {
+        try {
+          console.log('Revoking Shopify access token')
+          
+          // Attempt to revoke the token
+          const revokeResponse = await fetch(`https://${connection.shop}/admin/api/2023-04/access_tokens/current.json`, {
+            method: 'DELETE',
+            headers: {
+              'X-Shopify-Access-Token': connection.access_token,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          if (!revokeResponse.ok) {
+            console.error('Failed to revoke token, but continuing with disconnect:', {
+              status: revokeResponse.status,
+              statusText: revokeResponse.statusText
+            })
+            // Continue anyway - we'll still delete the local connection
+          } else {
+            console.log('Successfully revoked Shopify access token')
+          }
+        } catch (revokeError) {
+          console.error('Error revoking Shopify token:', revokeError)
+          // Continue anyway - we'll still delete the local connection
+        }
+      }
 
       // Check if shopify_orders table exists and delete all orders for this connection
       try {
@@ -40,6 +69,22 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         console.error('Error with shopify_orders table:', error)
+        // Continue anyway - the table might not exist
+      }
+      
+      // Check if shopify_inventory table exists and delete all inventory for this connection
+      try {
+        const { error: inventoryError } = await supabase
+          .from('shopify_inventory')
+          .delete()
+          .eq('connection_id', connection.id)
+
+        if (inventoryError) {
+          console.error('Error deleting inventory:', inventoryError)
+          // Continue anyway - the table might not exist
+        }
+      } catch (error) {
+        console.error('Error with shopify_inventory table:', error)
         // Continue anyway - the table might not exist
       }
     }

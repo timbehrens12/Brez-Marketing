@@ -54,6 +54,13 @@ export async function GET(request: Request) {
     authUrl.searchParams.set('scope', scopes)
     authUrl.searchParams.set('redirect_uri', callbackUrl)
     authUrl.searchParams.set('state', JSON.stringify({ brandId, connectionId }))
+    
+    // IMPORTANT: Add auth_mode=per_user_oauth to force re-authentication
+    // This ensures the user has to log in every time, even if they've connected before
+    authUrl.searchParams.set('auth_mode', 'per_user_oauth')
+    
+    // Add a grant_options parameter to force the consent screen
+    authUrl.searchParams.set('grant_options[]', 'per_user')
 
     console.log('Redirecting to:', authUrl.toString())
     return NextResponse.redirect(authUrl.toString())
