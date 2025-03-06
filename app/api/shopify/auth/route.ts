@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { randomBytes } from 'crypto'
 
 export async function GET(request: Request) {
   console.log('Shopify auth route hit')
@@ -49,49 +48,15 @@ export async function GET(request: Request) {
     
     console.log('Using callback URL:', callbackUrl)
     
-    // Generate a unique nonce for this connection attempt
-    const nonce = randomBytes(16).toString('hex')
-    
-    // Create state with nonce and timestamp to prevent caching
-    const stateObj = {
-      brandId,
-      connectionId,
-      nonce,
-      timestamp: Date.now()
-    }
-    
     // Construct auth URL with explicit parameters
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
-    
-    // Use the correct client ID - hardcoded for testing
-    // This should match the client ID registered with Shopify
-    const clientId = 'cf8e763ebf00bb4be4319e5bfa7ceb47' // This is from your URL
-    authUrl.searchParams.set('client_id', clientId)
-    
+    authUrl.searchParams.set('client_id', process.env.SHOPIFY_CLIENT_ID!)
     authUrl.searchParams.set('scope', scopes)
     authUrl.searchParams.set('redirect_uri', callbackUrl)
-    authUrl.searchParams.set('state', JSON.stringify(stateObj))
-    
-    // IMPORTANT: Add auth_mode=per_user_oauth to force re-authentication
-    // This ensures the user has to log in every time, even if they've connected before
-    authUrl.searchParams.set('auth_mode', 'per_user_oauth')
-    
-    // Add a grant_options parameter to force the consent screen
-    authUrl.searchParams.set('grant_options[]', 'per_user')
-    
-    // Add a cache-busting parameter to prevent browser caching
-    authUrl.searchParams.set('_', Date.now().toString())
+    authUrl.searchParams.set('state', JSON.stringify({ brandId, connectionId }))
 
     console.log('Redirecting to:', authUrl.toString())
-    
-    // Return a direct redirect response
-    return NextResponse.redirect(authUrl.toString(), {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    })
+    return NextResponse.redirect(authUrl.toString())
   } catch (error) {
     console.error('Shopify auth error:', error)
     return NextResponse.json({ error: 'Failed to start OAuth' }, { status: 500 })

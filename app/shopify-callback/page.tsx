@@ -38,23 +38,12 @@ export default function ShopifyCallbackPage() {
           console.error('Shopify returned an error:', error, errorDescription)
           setDebugInfo(prev => prev + `Shopify error: ${error}\nDescription: ${errorDescription || 'No description provided'}\n`)
           setStatus('error')
+          setMessage(`Error from Shopify: ${error}`)
           
-          // Special handling for access_denied error (user cancelled)
-          if (error === 'access_denied') {
-            setMessage('Authentication cancelled by user')
-            
-            // Redirect after a delay
-            setTimeout(() => {
-              router.push('/settings?error=auth_cancelled&description=Authentication+was+cancelled')
-            }, 2000)
-          } else {
-            setMessage(`Error from Shopify: ${error}`)
-            
-            // Redirect after a delay
-            setTimeout(() => {
-              router.push(`/settings?error=shopify_error&description=${encodeURIComponent(errorDescription || '')}`)
-            }, 2000)
-          }
+          // Redirect after a delay
+          setTimeout(() => {
+            router.push(`/settings?error=shopify_error&description=${encodeURIComponent(errorDescription || '')}`)
+          }, 2000)
           return
         }
 
@@ -73,31 +62,9 @@ export default function ShopifyCallbackPage() {
         // Parse state to get brandId and connectionId
         let brandId: string, connectionId: string;
         try {
-          const stateObj = JSON.parse(state) as { 
-            brandId: string; 
-            connectionId: string;
-            nonce?: string;
-            timestamp?: number;
-          };
-          
+          const stateObj = JSON.parse(state) as { brandId: string; connectionId: string };
           brandId = stateObj.brandId;
           connectionId = stateObj.connectionId;
-          
-          // Log the nonce and timestamp if present
-          if (stateObj.nonce) {
-            setDebugInfo(prev => prev + `Nonce: ${stateObj.nonce}\n`);
-          }
-          
-          if (stateObj.timestamp) {
-            const timeDiff = Date.now() - stateObj.timestamp;
-            setDebugInfo(prev => prev + `Request age: ${Math.round(timeDiff / 1000)} seconds\n`);
-            
-            // If the request is too old (more than 10 minutes), show a warning
-            if (timeDiff > 10 * 60 * 1000) {
-              setDebugInfo(prev => prev + `Warning: Request is older than 10 minutes\n`);
-            }
-          }
-          
           setDebugInfo(prev => prev + `Parsed state: brandId=${brandId}, connectionId=${connectionId}\n`);
         } catch (error) {
           console.error('Error parsing state:', error)

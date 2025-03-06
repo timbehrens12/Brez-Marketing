@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const supabase = useSupabase()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [disconnectingPlatforms, setDisconnectingPlatforms] = useState<Record<string, boolean>>({});
 
   // Define loadConnections with useCallback to prevent unnecessary re-renders
   const loadConnections = useCallback(async () => {
@@ -104,8 +105,6 @@ export default function SettingsPage() {
         errorMessage = `Error from Shopify: ${searchParams.get('description') || 'Unknown error'}`;
       } else if (error === 'token_exchange_failed') {
         errorMessage = 'Failed to exchange token with Shopify. Please try again.';
-      } else if (error === 'auth_cancelled') {
-        errorMessage = 'Authentication was cancelled. Please try again if you want to connect your store.';
       }
       
       toast.error(errorMessage, {
@@ -229,8 +228,6 @@ export default function SettingsPage() {
         errorMessage = `Error from Shopify: ${errorDescription || 'Unknown error'}`;
       } else if (error === 'token_exchange_failed') {
         errorMessage = 'Failed to exchange token with Shopify. Please try again.';
-      } else if (error === 'auth_cancelled') {
-        errorMessage = 'Authentication was cancelled. Please try again if you want to connect your store.';
       }
       
       toast.error(errorMessage, {
@@ -333,10 +330,14 @@ export default function SettingsPage() {
 
   const handleDisconnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
+      // Set loading state for this specific platform/brand combination
+      const key = `${platform}-${brandId}`;
+      setDisconnectingPlatforms(prev => ({ ...prev, [key]: true }));
+      
       console.log(`Disconnecting ${platform} for brand ${brandId}`)
       
       // Use the full URL to ensure it works in production
-      const apiUrl = `${window.location.origin}/api/disconnect-platform`
+      const apiUrl = `${window.location.origin}/api/platforms/disconnect`
       console.log('Using API URL:', apiUrl)
       
       // Use the existing API route
@@ -381,23 +382,25 @@ export default function SettingsPage() {
             console.log('Force delete successful')
             await loadConnections();
             toast.success(`${platform} disconnected successfully (forced)`);
-            return;
           } else {
             console.log('User cancelled force delete')
             toast.error(`Disconnect cancelled. Please delete related data first.`);
-            return;
           }
+        } else {
+          throw new Error(responseData.error || 'Failed to disconnect platform');
         }
-        
-        throw new Error(responseData.error || 'Failed to disconnect platform');
+      } else {
+        console.log('Disconnect successful, reloading connections')
+        await loadConnections();
+        toast.success(`${platform} disconnected successfully`);
       }
-      
-      console.log('Disconnect successful, reloading connections')
-      await loadConnections();
-      toast.success(`${platform} disconnected successfully`);
     } catch (error) {
       console.error(`Error disconnecting ${platform}:`, error);
       toast.error(`Failed to disconnect ${platform}: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      // Clear loading state
+      const key = `${platform}-${brandId}`;
+      setDisconnectingPlatforms(prev => ({ ...prev, [key]: false }));
     }
   }
 
@@ -568,28 +571,6 @@ export default function SettingsPage() {
   const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       if (platform === 'shopify') {
-        // Check if there's an existing connection and disconnect it first
-        const { data: existingConnections, error: checkError } = await supabase
-          .from('platform_connections')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('platform_type', 'shopify');
-          
-        if (checkError) {
-          console.error('Error checking existing connections:', checkError);
-        } else if (existingConnections && existingConnections.length > 0) {
-          console.log('Found existing connections, disconnecting first:', existingConnections.length);
-          
-          // Disconnect existing connections
-          await handleDisconnect('shopify', brandId);
-          
-          // Wait a moment for the disconnect to complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Reload connections to ensure we have the latest state
-          await loadConnections();
-        }
-        
         // First create a connection record
         const { data: connection, error } = await supabase
           .from('platform_connections')
@@ -616,52 +597,7 @@ export default function SettingsPage() {
           return;
         }
         
-        // Clear any Shopify-related cookies and localStorage before redirecting
-        try {
-          // Clear localStorage items
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.includes('shopify') || key.includes('Shopify'))) {
-              localStorage.removeItem(key);
-              console.log('Removed localStorage item:', key);
-            }
-          }
-          
-          // Clear sessionStorage items
-          for (let i = 0; i < sessionStorage.length; i++) {
-            const key = sessionStorage.key(i);
-            if (key && (key.includes('shopify') || key.includes('Shopify'))) {
-              sessionStorage.removeItem(key);
-              console.log('Removed sessionStorage item:', key);
-            }
-          }
-          
-          // Try to clear cookies for the Shopify domain
-          const cookies = document.cookie.split(";");
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i];
-            const eqPos = cookie.indexOf("=");
-            const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-            
-            // Try to delete the cookie with various domain options
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
-            if (shop) {
-              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + shop;
-              document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + shop;
-            }
-          }
-          
-          console.log('Cleared cookies and storage');
-        } catch (e) {
-          console.error('Error clearing cookies and storage:', e);
-          // Continue anyway
-        }
-        
-        // Add a cache-busting parameter to prevent browser caching
-        const cacheBuster = Date.now().toString();
-        
-        // Use our client-side redirect page instead of the API route
-        window.location.href = `/shopify-auth-redirect?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}&_=${cacheBuster}`;
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
       } else if (platform === 'meta') {
         // Redirect to Meta auth endpoint
         window.location.href = `/api/auth/meta?brandId=${brandId}`;
@@ -839,8 +775,16 @@ export default function SettingsPage() {
                             variant="outline" 
                             className="border-[#333] text-red-400 hover:text-red-300"
                             onClick={() => handleDisconnect('shopify', brand.id)}
+                            disabled={disconnectingPlatforms[`shopify-${brand.id}`]}
                           >
-                            Disconnect
+                            {disconnectingPlatforms[`shopify-${brand.id}`] ? (
+                              <>
+                                <span className="mr-2">Disconnecting</span>
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              </>
+                            ) : (
+                              'Disconnect'
+                            )}
                           </Button>
                         ) : (
                           <Button 
@@ -863,8 +807,16 @@ export default function SettingsPage() {
                             variant="outline" 
                             className="border-[#333] text-red-400 hover:text-red-300"
                             onClick={() => handleDisconnect('meta', brand.id)}
+                            disabled={disconnectingPlatforms[`meta-${brand.id}`]}
                           >
-                            Disconnect
+                            {disconnectingPlatforms[`meta-${brand.id}`] ? (
+                              <>
+                                <span className="mr-2">Disconnecting</span>
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              </>
+                            ) : (
+                              'Disconnect'
+                            )}
                           </Button>
                         ) : (
                           <Button 
