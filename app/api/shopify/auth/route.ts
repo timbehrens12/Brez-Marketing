@@ -42,8 +42,9 @@ export async function GET(request: Request) {
     const host = request.headers.get('host') || 'www.brezmarketingdashboard.com'
     const protocol = host.includes('localhost') ? 'http' : 'https'
     
-    // Make sure to use the full callback URL with the correct domain
-    const callbackUrl = `${protocol}://${host}/api/shopify/callback`
+    // IMPORTANT: Use a direct page route instead of an API route for the callback
+    // This ensures the callback is handled as a page render, not an API call
+    const callbackUrl = `${protocol}://${host}/shopify-callback`
     
     console.log('Using callback URL:', callbackUrl)
     
