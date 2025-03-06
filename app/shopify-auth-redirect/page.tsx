@@ -8,6 +8,9 @@ export default function ShopifyAuthRedirectPage() {
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'preparing' | 'redirecting' | 'error'>('preparing')
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [shop, setShop] = useState<string>('')
+  const [authUrl, setAuthUrl] = useState<string>('')
+  const [showManualButton, setShowManualButton] = useState<boolean>(false)
 
   useEffect(() => {
     const prepareAuth = async () => {
@@ -15,18 +18,20 @@ export default function ShopifyAuthRedirectPage() {
         // Get all the params
         const brandId = searchParams.get('brandId')
         const connectionId = searchParams.get('connectionId')
-        const shop = searchParams.get('shop')
+        const shopParam = searchParams.get('shop')
         
-        if (!brandId || !connectionId || !shop) {
+        if (!brandId || !connectionId || !shopParam) {
           setStatus('error')
           setErrorMessage('Missing required parameters')
           return
         }
         
+        setShop(shopParam)
+        
         console.log('Preparing Shopify auth with params:', { 
           brandId, 
           connectionId,
-          shop
+          shop: shopParam
         })
         
         // Clear any Shopify-related cookies and localStorage
@@ -58,8 +63,8 @@ export default function ShopifyAuthRedirectPage() {
             
             // Try to delete the cookie with various domain options
             document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;"
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + shop
-            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + shop
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + shopParam
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + shopParam
           }
           
           console.log('Cleared cookies and storage')
@@ -97,34 +102,66 @@ export default function ShopifyAuthRedirectPage() {
           'read_inventory'
         ].join(',')
         
+        // First, try to log out of Shopify
+        const logoutUrl = `https://${shopParam}/admin/auth/logout`
+        
         // Construct auth URL with explicit parameters
-        const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
+        const shopifyAuthUrl = new URL(`https://${shopParam}/admin/oauth/authorize`)
         
         // Use the correct client ID - hardcoded for testing
         // This should match the client ID registered with Shopify
         const clientId = 'cf8e763ebf00bb4be4319e5bfa7ceb47' // This is from your URL
-        authUrl.searchParams.set('client_id', clientId)
+        shopifyAuthUrl.searchParams.set('client_id', clientId)
         
-        authUrl.searchParams.set('scope', scopes)
-        authUrl.searchParams.set('redirect_uri', callbackUrl)
-        authUrl.searchParams.set('state', JSON.stringify(stateObj))
+        shopifyAuthUrl.searchParams.set('scope', scopes)
+        shopifyAuthUrl.searchParams.set('redirect_uri', callbackUrl)
+        shopifyAuthUrl.searchParams.set('state', JSON.stringify(stateObj))
         
         // Add auth_mode=per_user_oauth to force re-authentication
-        authUrl.searchParams.set('auth_mode', 'per_user_oauth')
+        shopifyAuthUrl.searchParams.set('auth_mode', 'per_user_oauth')
         
         // Add a grant_options parameter to force the consent screen
-        authUrl.searchParams.set('grant_options[]', 'per_user')
+        shopifyAuthUrl.searchParams.set('grant_options[]', 'per_user')
         
         // Add a cache-busting parameter to prevent browser caching
-        authUrl.searchParams.set('_', Date.now().toString())
+        shopifyAuthUrl.searchParams.set('_', Date.now().toString())
         
-        console.log('Auth URL:', authUrl.toString())
+        console.log('Auth URL:', shopifyAuthUrl.toString())
+        
+        // Store the auth URL for the manual button
+        setAuthUrl(shopifyAuthUrl.toString())
         
         // Update status
         setStatus('redirecting')
         
-        // Redirect to Shopify auth URL
-        window.location.href = authUrl.toString()
+        // First, try to log out of Shopify in a hidden iframe
+        const iframe = document.createElement('iframe')
+        iframe.style.display = 'none'
+        iframe.src = logoutUrl
+        document.body.appendChild(iframe)
+        
+        // Wait a moment for the logout to complete
+        setTimeout(() => {
+          // Remove the iframe
+          document.body.removeChild(iframe)
+          
+          // Open the auth URL in a popup window
+          const authWindow = window.open(shopifyAuthUrl.toString(), 'shopifyAuth', 'width=800,height=600')
+          
+          if (!authWindow) {
+            console.error('Popup blocked')
+            setErrorMessage('Popup blocked. Please allow popups for this site.')
+            setShowManualButton(true)
+          } else {
+            // Check if the popup was closed without completing auth
+            const checkPopupInterval = setInterval(() => {
+              if (authWindow.closed) {
+                clearInterval(checkPopupInterval)
+                setShowManualButton(true)
+              }
+            }, 1000)
+          }
+        }, 1000)
       } catch (error) {
         console.error('Error preparing auth:', error)
         setStatus('error')
@@ -134,6 +171,10 @@ export default function ShopifyAuthRedirectPage() {
     
     prepareAuth()
   }, [searchParams, router])
+  
+  const handleManualAuth = () => {
+    window.open(authUrl, '_blank')
+  }
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4">
@@ -153,9 +194,41 @@ export default function ShopifyAuthRedirectPage() {
       
       <div className="text-gray-400 mb-8">
         {status === 'preparing' && 'Please wait while we prepare your Shopify connection...'}
-        {status === 'redirecting' && 'You will be redirected to Shopify to authorize access...'}
+        {status === 'redirecting' && 'A popup window should open for Shopify authentication. Please check if it was blocked.'}
         {status === 'error' && 'There was an error preparing your Shopify authentication.'}
       </div>
+      
+      {showManualButton && (
+        <div className="flex flex-col items-center mt-4">
+          <p className="text-yellow-400 mb-4">If the popup didn't open or was closed, click the button below:</p>
+          <button 
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={handleManualAuth}
+          >
+            Authenticate with Shopify
+          </button>
+        </div>
+      )}
+      
+      {status === 'redirecting' && (
+        <div className="mt-8 p-4 bg-gray-800 rounded-lg max-w-md">
+          <p className="text-yellow-400 mb-2">Important:</p>
+          <p className="text-gray-300">
+            You <strong>must</strong> log out of Shopify and log in again to properly authenticate.
+            If you're automatically connected without seeing a login page, please:
+          </p>
+          <ol className="list-decimal pl-5 mt-2 text-gray-300">
+            <li>Go to <a href={`https://${shop}/admin/auth/logout`} target="_blank" className="text-blue-400 underline">Shopify Logout</a></li>
+            <li>Then click the button below to try again</li>
+          </ol>
+          <button 
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mt-4"
+            onClick={handleManualAuth}
+          >
+            Authenticate with Shopify
+          </button>
+        </div>
+      )}
       
       {status === 'error' && (
         <button 
