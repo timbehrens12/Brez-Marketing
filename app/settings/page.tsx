@@ -140,30 +140,103 @@ export default function SettingsPage() {
     }
   }, [loadConnections])
 
+  // Define a function to check a specific connection
+  const checkConnection = useCallback(async (connectionId: string) => {
+    if (!user) return false;
+    
+    try {
+      console.log(`Checking connection status for ID: ${connectionId}`);
+      
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('id', connectionId)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error) {
+        console.error('Error checking connection:', error);
+        return false;
+      }
+      
+      if (!data) {
+        console.log('Connection not found');
+        return false;
+      }
+      
+      console.log('Connection found:', data);
+      
+      // Refresh all connections to update the UI
+      loadConnections();
+      
+      return true;
+    } catch (err) {
+      console.error('Error in checkConnection:', err);
+      return false;
+    }
+  }, [user, supabase, loadConnections]);
+
   // Check for connectionId in URL - this is a fallback for when localStorage doesn't work
   useEffect(() => {
     const connectionId = searchParams.get('connectionId')
     const success = searchParams.get('success')
+    const error = searchParams.get('error')
+    let cleanupTimer: NodeJS.Timeout | null = null;
     
     if (connectionId && success === 'true') {
-      console.log('Found connectionId in URL, refreshing connections:', connectionId)
+      console.log('Found connectionId in URL, checking connection:', connectionId)
       
-      // Refresh connections
-      loadConnections()
+      // Check the specific connection
+      checkConnection(connectionId).then(found => {
+        if (found) {
+          // Show success notification
+          toast.success('Shopify store connected successfully! Your store data is now being synced.', {
+            duration: 5000,
+          });
+        } else {
+          // If connection check failed, try refreshing all connections anyway
+          loadConnections();
+          
+          // Use success toast instead of info
+          toast.success('Connection process completed. Refreshing data...', {
+            duration: 5000,
+          });
+        }
+        
+        // Clear the parameters after showing the notification
+        cleanupTimer = setTimeout(() => {
+          router.replace('/settings')
+        }, 500);
+      });
+    } else if (error) {
+      let errorMessage = 'Failed to connect Shopify store.';
       
-      // Show success notification
-      toast.success('Shopify store connected successfully! Your store data is now being synced.', {
+      // Map error codes to user-friendly messages
+      if (error === 'brand_not_found') {
+        errorMessage = 'Brand not found. Please try again with a valid brand.';
+      } else if (error === 'connection_create_failed') {
+        errorMessage = 'Failed to create connection. Please try again.';
+      } else if (error === 'connection_create_error') {
+        errorMessage = 'Error creating connection. Please try again.';
+      } else if (error === 'auth_required') {
+        errorMessage = 'Authentication required. Please log in first.';
+      }
+      
+      toast.error(errorMessage, {
         duration: 5000,
-      })
+      });
       
-      // Clear the parameters after showing the notification
-      const timer = setTimeout(() => {
+      // Clear the error parameter after showing the notification
+      cleanupTimer = setTimeout(() => {
         router.replace('/settings')
-      }, 500)
-      
-      return () => clearTimeout(timer)
+      }, 500);
     }
-  }, [searchParams, router, loadConnections])
+    
+    // Cleanup function
+    return () => {
+      if (cleanupTimer) clearTimeout(cleanupTimer);
+    };
+  }, [searchParams, router, loadConnections, checkConnection]);
 
   useEffect(() => {
     console.log('Current brands:', brands)

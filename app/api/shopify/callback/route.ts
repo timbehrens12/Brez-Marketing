@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   console.log('Shopify callback route hit')
@@ -16,6 +18,18 @@ export async function GET(request: Request) {
   let statusColor = 'red';
   let autoRedirect = true;
   let debugInfo = '';
+
+  // Create a server-side Supabase client
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
 
   if (!code || !shop || !state) {
     console.error('Missing required params:', { code: !!code, shop: !!shop, state: !!state })
@@ -72,7 +86,7 @@ export async function GET(request: Request) {
         console.log('Checking if connection exists')
         debugInfo += `Checking if connection exists with ID: ${connectionId}\n`;
         
-        const { data: existingConnection, error: checkError } = await supabase
+        const { data: existingConnection, error: checkError } = await supabaseAdmin
           .from('platform_connections')
           .select('*')
           .eq('id', connectionId)
@@ -81,6 +95,100 @@ export async function GET(request: Request) {
         if (checkError) {
           console.error('Error checking connection:', checkError)
           debugInfo += `Error checking connection: ${checkError.message}\n`;
+          
+          // If the connection doesn't exist, try to create it
+          if (checkError.code === 'PGRST116') {
+            debugInfo += `Connection not found, attempting to create a new one\n`;
+            
+            try {
+              // First, get the user_id from the brand
+              const { data: brand, error: brandError } = await supabaseAdmin
+                .from('brands')
+                .select('user_id')
+                .eq('id', brandId)
+                .single();
+                
+              if (brandError || !brand) {
+                console.error('Failed to get brand:', brandError)
+                debugInfo += `Brand error: ${brandError?.message || 'Brand not found'}\n`;
+                redirectUrl = '/settings?error=brand_not_found';
+                statusMessage = 'Error: Brand not found';
+                return createHtmlResponse(redirectUrl, statusMessage, 'red', autoRedirect, debugInfo);
+              }
+              
+              const { data: newConnection, error: insertError } = await supabaseAdmin
+                .from('platform_connections')
+                .insert({
+                  id: connectionId,
+                  user_id: brand.user_id,
+                  brand_id: brandId,
+                  platform_type: 'shopify',
+                  status: 'active',
+                  shop: shop,
+                  access_token: tokenData.access_token,
+                  metadata: {
+                    shop_url: `https://${shop}`
+                  },
+                  created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+                
+              if (insertError) {
+                console.error('Failed to create connection:', insertError)
+                debugInfo += `Insert error: ${insertError.message}\n`;
+                redirectUrl = '/settings?error=connection_create_failed';
+                statusMessage = 'Error: Failed to create connection';
+                return createHtmlResponse(redirectUrl, statusMessage, 'red', autoRedirect, debugInfo);
+              }
+              
+              debugInfo += `Successfully created new connection\n`;
+              
+              // Continue with the newly created connection
+              const connection = newConnection;
+              
+              // Trigger initial sync
+              console.log('Triggering initial sync')
+              debugInfo += 'Attempting to trigger initial sync...\n';
+              
+              try {
+                const syncResponse = await fetch(new URL('/api/shopify/sync', request.url).toString(), {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ connectionId: connection.id })
+                });
+
+                if (!syncResponse.ok) {
+                  console.error('Failed to trigger initial sync')
+                  debugInfo += `Sync error: ${syncResponse.status}\n`;
+                  // Continue anyway, this is not critical
+                } else {
+                  console.log('Initial sync triggered successfully')
+                  debugInfo += 'Initial sync triggered successfully\n';
+                }
+              } catch (syncError: any) {
+                console.error('Error triggering sync:', syncError)
+                debugInfo += `Sync error: ${syncError.message}\n`;
+                // Continue anyway, this is not critical
+              }
+
+              // Set success redirect
+              redirectUrl = `/settings?success=true&connectionId=${connection.id}`;
+              statusMessage = 'Success! Shopify store connected successfully.';
+              statusColor = 'green';
+              
+              return createHtmlResponse(redirectUrl, statusMessage, statusColor, autoRedirect, debugInfo);
+            } catch (createError: any) {
+              console.error('Error creating connection:', createError)
+              debugInfo += `Create error: ${createError.message}\n`;
+              redirectUrl = '/settings?error=connection_create_error';
+              statusMessage = 'Error: Failed to create connection';
+              return createHtmlResponse(redirectUrl, statusMessage, 'red', autoRedirect, debugInfo);
+            }
+          }
+          
           redirectUrl = '/settings?error=connection_check_failed';
           statusMessage = 'Error: Failed to check connection';
           return createHtmlResponse(redirectUrl, statusMessage, 'red', autoRedirect, debugInfo);
@@ -101,7 +209,7 @@ export async function GET(request: Request) {
         debugInfo += 'Attempting to update connection in database...\n';
         
         try {
-          const { data: connection, error: updateError } = await supabase
+          const { data: connection, error: updateError } = await supabaseAdmin
             .from('platform_connections')
             .update({
               status: 'active',
