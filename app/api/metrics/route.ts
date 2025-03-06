@@ -77,6 +77,18 @@ export async function GET(request: Request) {
     console.log(`From: ${formattedFromDate}`);
     console.log(`To: ${formattedToDate}`);
 
+    // Calculate the previous period date range (same length as current period)
+    const daysDiff = Math.ceil((adjustedToDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+    const prevFromDate = subDays(fromDate, daysDiff);
+    const prevToDate = subDays(fromDate, 1);
+    
+    const formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    const formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    
+    console.log('Previous period date range:');
+    console.log(`From: ${formattedPrevFromDate}`);
+    console.log(`To: ${formattedPrevToDate}`);
+
     // Fetch orders from Supabase for current period
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
@@ -90,67 +102,48 @@ export async function GET(request: Request) {
       throw ordersError;
     }
 
-    console.log(`Found ${orders?.length || 0} orders for current period`)
-    
-    // Calculate previous period date range
-    const periodLengthInDays = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const previousFromDate = subDays(fromDate, periodLengthInDays);
-    const previousToDate = subDays(toDate, periodLengthInDays);
-    const formattedPreviousFromDate = format(previousFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-    const formattedPreviousToDate = format(endOfDay(previousToDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-    
-    console.log('Querying orders for previous period:');
-    console.log(`Previous From: ${formattedPreviousFromDate}`);
-    console.log(`Previous To: ${formattedPreviousToDate}`);
-    
     // Fetch orders from Supabase for previous period
-    const { data: previousOrders, error: previousOrdersError } = await supabase
+    const { data: prevOrders, error: prevOrdersError } = await supabase
       .from('shopify_orders')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('created_at', formattedPreviousFromDate)
-      .lte('created_at', formattedPreviousToDate)
-    
-    if (previousOrdersError) {
-      console.error('Error fetching previous period orders:', previousOrdersError);
-      // Continue with current period data only
-    }
-    
-    console.log(`Found ${previousOrders?.length || 0} orders for previous period`)
+      .gte('created_at', formattedPrevFromDate)
+      .lte('created_at', formattedPrevToDate)
 
+    if (prevOrdersError) {
+      console.error('Error fetching previous period orders:', prevOrdersError);
+      // Continue with current period data even if previous period fetch fails
+    }
+
+    console.log(`Found ${orders?.length || 0} orders for current period`);
+    console.log(`Found ${prevOrders?.length || 0} orders for previous period`);
+    
     // Calculate current period metrics
     const currentTotalSales = orders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
     const currentOrdersPlaced = orders?.length || 0;
     const currentAverageOrderValue = currentOrdersPlaced ? currentTotalSales / currentOrdersPlaced : 0;
     const currentUnitsSold = orders?.reduce((sum: number, order: any) => 
-      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0), 0
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
     ) || 0;
-    
+
     // Calculate previous period metrics
-    const previousTotalSales = previousOrders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
-    const previousOrdersPlaced = previousOrders?.length || 0;
-    const previousAverageOrderValue = previousOrdersPlaced ? previousTotalSales / previousOrdersPlaced : 0;
-    const previousUnitsSold = previousOrders?.reduce((sum: number, order: any) => 
-      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0), 0
+    const prevTotalSales = prevOrders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
+    const prevOrdersPlaced = prevOrders?.length || 0;
+    const prevAverageOrderValue = prevOrdersPlaced ? prevTotalSales / prevOrdersPlaced : 0;
+    const prevUnitsSold = prevOrders?.reduce((sum: number, order: any) => 
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
     ) || 0;
-    
+
     // Calculate growth percentages
     const calculateGrowth = (current: number, previous: number): number => {
       if (previous === 0) return current > 0 ? 100 : 0;
       return ((current - previous) / previous) * 100;
     };
-    
-    const salesGrowth = calculateGrowth(currentTotalSales, previousTotalSales);
-    const ordersGrowth = calculateGrowth(currentOrdersPlaced, previousOrdersPlaced);
-    const aovGrowth = calculateGrowth(currentAverageOrderValue, previousAverageOrderValue);
-    const unitsGrowth = calculateGrowth(currentUnitsSold, previousUnitsSold);
-    
-    console.log('Growth calculations:', {
-      salesGrowth,
-      ordersGrowth,
-      aovGrowth,
-      unitsGrowth
-    });
+
+    const salesGrowth = calculateGrowth(currentTotalSales, prevTotalSales);
+    const ordersGrowth = calculateGrowth(currentOrdersPlaced, prevOrdersPlaced);
+    const aovGrowth = calculateGrowth(currentAverageOrderValue, prevAverageOrderValue);
+    const unitsGrowth = calculateGrowth(currentUnitsSold, prevUnitsSold);
 
     // Calculate metrics from orders
     const metrics = {
@@ -158,6 +151,10 @@ export async function GET(request: Request) {
       ordersPlaced: currentOrdersPlaced,
       averageOrderValue: currentAverageOrderValue,
       unitsSold: currentUnitsSold,
+      salesGrowth,
+      ordersGrowth,
+      aovGrowth,
+      unitsGrowth,
       revenueByDay: Object.entries((orders || []).reduce((acc: Record<string, number>, order: any) => {
         const date = new Date(order.created_at).toISOString().split('T')[0]
         acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
@@ -167,28 +164,16 @@ export async function GET(request: Request) {
         revenue,
         amount: revenue
       })).sort((a, b) => a.date.localeCompare(b.date)),
-      salesGrowth,
-      ordersGrowth,
-      aovGrowth,
-      unitsGrowth,
-      customerSegments: {
-        newCustomers: new Set(orders?.map((o: any) => o.customer_id) || []).size,
-        returningCustomers: (orders?.length || 0) - new Set(orders?.map((o: any) => o.customer_id) || []).size
-      },
-      dailyData: Object.entries((orders || []).reduce((acc: Record<string, { date: string, revenue: number, orders: number }>, order: any) => {
-        const date = new Date(order.created_at).toISOString().split('T')[0]
-        if (!acc[date]) {
-          acc[date] = { date, revenue: 0, orders: 0 }
+      customerSegments: [
+        { 
+          name: 'new', 
+          value: new Set(orders?.map((o: any) => o.customer_id) || []).size 
+        },
+        { 
+          name: 'returning', 
+          value: (orders?.length || 0) - new Set(orders?.map((o: any) => o.customer_id) || []).size 
         }
-        acc[date].revenue += parseFloat(order.total_price)
-        acc[date].orders += 1
-        return acc
-      }, {})).map(([date, data]) => ({
-        date,
-        revenue: (data as any).revenue,
-        orders: (data as any).orders,
-        value: (data as any).revenue
-      })).sort((a, b) => a.date.localeCompare(b.date))
+      ]
     }
 
     console.log('Calculated metrics:', {
@@ -196,11 +181,11 @@ export async function GET(request: Request) {
       ordersPlaced: metrics.ordersPlaced,
       averageOrderValue: metrics.averageOrderValue,
       unitsSold: metrics.unitsSold,
-      revenueByDayCount: metrics.revenueByDay.length,
       salesGrowth: metrics.salesGrowth,
       ordersGrowth: metrics.ordersGrowth,
       aovGrowth: metrics.aovGrowth,
-      unitsGrowth: metrics.unitsGrowth
+      unitsGrowth: metrics.unitsGrowth,
+      revenueByDayCount: metrics.revenueByDay.length
     });
 
     return NextResponse.json(metrics)

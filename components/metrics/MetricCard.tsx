@@ -9,6 +9,7 @@ import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
+import React from "react"
 
 interface MetricCardProps {
   title: string | React.ReactNode
@@ -28,7 +29,6 @@ interface MetricCardProps {
   isCustomRange?: boolean
   emptyState?: string
   icon?: React.ReactNode
-  hideChange?: boolean
 }
 
 export function MetricCard({
@@ -49,7 +49,6 @@ export function MetricCard({
   isCustomRange = false,
   emptyState,
   icon,
-  hideChange = false,
 }: MetricCardProps) {
   // Force everything to be numbers
   const safeValue = typeof value === 'number' ? value : Number(value) || 0
@@ -107,11 +106,39 @@ export function MetricCard({
   }
 
   const formatChange = (change: number) => {
-    if (!isFinite(change)) return '+0.0%'
+    if (!isFinite(change) || isNaN(change)) return '+0.0%'
     return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
   }
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
+  
+  // Determine if this is an inventory metric that shouldn't show percentage change
+  const isInventoryMetric = React.useMemo(() => {
+    if (!title) return false;
+    
+    // Check if title is a React element
+    if (typeof title === 'object' && React.isValidElement(title)) {
+      // Check if it contains inventory-related text
+      const titleText = title.props?.children;
+      
+      if (Array.isArray(titleText)) {
+        return titleText.some(child => {
+          if (typeof child === 'object' && child?.props?.children) {
+            const text = child.props.children;
+            return typeof text === 'string' && (
+              text.includes('Inventory') || 
+              text.includes('Stock') || 
+              text.includes('Out of Stock') || 
+              text.includes('Low Stock')
+            );
+          }
+          return false;
+        });
+      }
+    }
+    
+    return false;
+  }, [title]);
 
   const PlatformIcon = () => {
     switch (platform) {
@@ -217,7 +244,7 @@ export function MetricCard({
           )}
         </div>
         
-        {!refreshing && !hideChange && (
+        {!refreshing && !isInventoryMetric && (
           <div className="flex items-center mt-2">
             <TooltipProvider>
               <Tooltip>
