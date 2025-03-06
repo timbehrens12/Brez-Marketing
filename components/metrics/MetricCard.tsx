@@ -113,32 +113,29 @@ export function MetricCard({
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
   
   // Determine if this is an inventory metric that shouldn't show percentage change
-  const isInventoryMetric = React.useMemo(() => {
-    if (!title) return false;
+  const isInventoryMetric = (() => {
+    // Convert title to string for easier checking
+    let titleStr = '';
     
-    // Check if title is a React element
-    if (typeof title === 'object' && React.isValidElement(title)) {
-      // Check if it contains inventory-related text
-      const titleText = title.props?.children;
-      
-      if (Array.isArray(titleText)) {
-        return titleText.some(child => {
-          if (typeof child === 'object' && child?.props?.children) {
-            const text = child.props.children;
-            return typeof text === 'string' && (
-              text.includes('Inventory') || 
-              text.includes('Stock') || 
-              text.includes('Out of Stock') || 
-              text.includes('Low Stock')
-            );
-          }
-          return false;
-        });
+    if (typeof title === 'string') {
+      titleStr = title;
+    } else if (typeof title === 'object' && React.isValidElement(title)) {
+      // Try to extract text from the title element
+      try {
+        // Convert the title element to a string representation
+        titleStr = JSON.stringify(title);
+      } catch (e) {
+        // If conversion fails, default to empty string
+        titleStr = '';
       }
     }
     
-    return false;
-  }, [title]);
+    // Check if the title contains inventory-related keywords
+    const inventoryKeywords = ['inventory', 'stock', 'out of stock', 'low stock'];
+    return inventoryKeywords.some(keyword => 
+      titleStr.toLowerCase().includes(keyword.toLowerCase())
+    );
+  })();
 
   const PlatformIcon = () => {
     switch (platform) {
