@@ -37,21 +37,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid date format' }, { status: 400 });
     }
     
-    // Validate brandId is a valid UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(brandId)) {
-      console.error('Invalid UUID format for brandId:', brandId)
-      return NextResponse.json({ 
-        error: 'Invalid brand ID format', 
-        details: 'Brand ID must be a valid UUID'
-      }, { status: 400 })
-    }
-    
-    // Get active platform connection using RPC function with explicit type casting
-    const { data: connections, error: connectionError } = await supabase.rpc('get_active_connection_by_brand', {
-      brand_id_param: brandId,
-      platform_type_param: 'shopify'
-    })
+    // Get active platform connection
+    const { data: connections, error: connectionError } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('platform_type', 'shopify')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
     
     if (connectionError) {
       console.error('Error fetching connection:', connectionError)
@@ -85,12 +77,14 @@ export async function GET(request: Request) {
     console.log(`From: ${formattedFromDate}`);
     console.log(`To: ${formattedToDate}`);
 
-    // Fetch sessions from Supabase for current period using RPC function
-    const { data: sessions, error: sessionsError } = await supabase.rpc('get_sessions_by_date_range', {
-      connection_id_param: connection.id,
-      start_date_param: formattedFromDate,
-      end_date_param: formattedToDate
-    })
+    // Fetch sessions from Supabase for current period
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('shopify_sessions')
+      .select('*')
+      .eq('connection_id', connection.id.toString())
+      .gte('date', formattedFromDate)
+      .lte('date', formattedToDate)
+      .order('date', { ascending: true })
 
     if (sessionsError) {
       console.error('Error fetching sessions:', sessionsError);
@@ -110,12 +104,13 @@ export async function GET(request: Request) {
     console.log(`Previous From: ${formattedPreviousFromDate}`);
     console.log(`Previous To: ${formattedPreviousToDate}`);
     
-    // Fetch sessions from Supabase for previous period using RPC function
-    const { data: previousSessions, error: previousSessionsError } = await supabase.rpc('get_sessions_by_date_range', {
-      connection_id_param: connection.id,
-      start_date_param: formattedPreviousFromDate,
-      end_date_param: formattedPreviousToDate
-    })
+    // Fetch sessions from Supabase for previous period
+    const { data: previousSessions, error: previousSessionsError } = await supabase
+      .from('shopify_sessions')
+      .select('*')
+      .eq('connection_id', connection.id.toString())
+      .gte('date', formattedPreviousFromDate)
+      .lte('date', formattedPreviousToDate)
     
     if (previousSessionsError) {
       console.error('Error fetching previous period sessions:', previousSessionsError);

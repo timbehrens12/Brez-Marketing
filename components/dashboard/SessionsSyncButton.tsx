@@ -16,10 +16,8 @@ export function SessionsSyncButton({ connectionId, className }: SessionsSyncButt
   const handleSync = async () => {
     if (isSyncing) return
     
-    // Validate that connectionId is a valid UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!connectionId || !uuidRegex.test(connectionId)) {
-      toast.error('Invalid connection ID format')
+    if (!connectionId) {
+      toast.error('Connection ID is required')
       return
     }
     

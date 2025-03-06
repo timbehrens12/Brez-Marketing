@@ -12,22 +12,13 @@ export async function POST(request: Request) {
     
     console.log(`Syncing sessions data for connection: ${connectionId}`)
     
-    // Get connection details - ensure connectionId is properly handled
+    // Get connection details
     try {
-      // First, validate that connectionId is a valid UUID
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(connectionId)) {
-        console.error('Invalid UUID format for connectionId:', connectionId)
-        return NextResponse.json({ 
-          error: 'Invalid connection ID format', 
-          details: 'Connection ID must be a valid UUID'
-        }, { status: 400 })
-      }
-      
-      // Use raw SQL query with explicit type casting
-      const { data: connections, error: connectionError } = await supabase.rpc('get_connection_by_id', {
-        connection_id_param: connectionId
-      })
+      // Get connection details
+      const { data: connections, error: connectionError } = await supabase
+        .from('platform_connections')
+        .select('*')
+        .eq('id', connectionId)
       
       if (connectionError) {
         console.error('Error fetching connection:', connectionError)
@@ -67,8 +58,8 @@ export async function POST(request: Request) {
         const avgSessionDuration = Math.floor(Math.random() * 180) + 60
         
         sessionData.push({
-          connection_id: connection.id,
-          brand_id: connection.brand_id,
+          connection_id: connection.id.toString(), // Store as string
+          brand_id: connection.brand_id.toString(), // Store as string
           date: format(currentDate, 'yyyy-MM-dd'),
           session_count: sessionCount,
           unique_visitors: uniqueVisitors,
@@ -81,15 +72,16 @@ export async function POST(request: Request) {
       
       console.log(`Generated ${sessionData.length} session records`)
       
-      // Delete existing data using raw SQL with explicit type casting
+      // Delete existing data
       const formattedStartDate = format(startDate, 'yyyy-MM-dd')
       const formattedEndDate = format(endDate, 'yyyy-MM-dd')
       
-      const { error: deleteError } = await supabase.rpc('delete_sessions_by_date_range', {
-        connection_id_param: connection.id,
-        start_date_param: formattedStartDate,
-        end_date_param: formattedEndDate
-      })
+      const { error: deleteError } = await supabase
+        .from('shopify_sessions')
+        .delete()
+        .eq('connection_id', connection.id.toString())
+        .gte('date', formattedStartDate)
+        .lte('date', formattedEndDate)
       
       if (deleteError) {
         console.error('Error deleting existing sessions data:', deleteError)

@@ -428,7 +428,6 @@ export default function DashboardPage() {
           // Sync sessions data from Shopify
           try {
             console.log('Syncing sessions data from Shopify')
-            // Ensure connectionId is a valid UUID
             if (shopifyConnection && shopifyConnection.id) {
               console.log(`Using connection ID: ${shopifyConnection.id} for sessions sync`)
               const sessionsResponse = await fetch('/api/shopify/sessions/sync', {
