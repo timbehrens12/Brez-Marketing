@@ -4,9 +4,9 @@
   const config = {
     apiEndpoint: window.location.hostname.includes('localhost') 
       ? 'http://localhost:3000/api/shopify/web-pixels' 
-      : 'https://your-production-domain.com/api/shopify/web-pixels',
+      : 'https://brezmarketingdashboard.com/api/shopify/web-pixels',
     shop: Shopify.shop || window.location.hostname,
-    debug: false // Set to true to enable debug logging
+    debug: true // Set to true to enable debug logging
   };
 
   // Initialize analytics

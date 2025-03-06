@@ -3,8 +3,8 @@ import { register } from "@shopify/web-pixels-extension";
 register(({ configuration, analytics, browser }) => {
   // Get configuration values
   const apiEndpoint = configuration.apiEndpoint || 
-    "https://your-production-domain.com/api/shopify/web-pixels";
-  const debug = configuration.debug || false;
+    "https://brezmarketingdashboard.com/api/shopify/web-pixels";
+  const debug = configuration.debug || true;
   
   // Log initialization if debug is enabled
   if (debug) {
