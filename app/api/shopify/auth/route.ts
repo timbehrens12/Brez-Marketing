@@ -30,19 +30,22 @@ export async function GET(request: Request) {
 
     console.log('Found connection:', connection)
 
+    // Use a more limited set of scopes to reduce permission requirements
     const scopes = [
       'read_products',
       'read_orders',
       'read_customers',
-      'read_analytics',
-      'read_inventory',
-      'read_price_rules',
-      'read_discounts'
+      'read_inventory'
     ].join(',')
 
-    // Make sure to use the full callback URL
-    const url = new URL(request.url)
-    const callbackUrl = `${url.protocol}//${url.host}/api/shopify/callback`
+    // Get the host from the request to build the callback URL
+    const host = request.headers.get('host') || 'www.brezmarketingdashboard.com'
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    
+    // Make sure to use the full callback URL with the correct domain
+    const callbackUrl = `${protocol}://${host}/api/shopify/callback`
+    
+    console.log('Using callback URL:', callbackUrl)
     
     // Construct auth URL with explicit parameters
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)

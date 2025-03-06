@@ -19,8 +19,16 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const shop = searchParams.get('shop')
   const state = searchParams.get('state')
+  const error = searchParams.get('error')
+  const errorDescription = searchParams.get('error_description')
 
-  console.log('Callback params:', { code: code?.substring(0, 5) + '...', shop, state })
+  console.log('Callback params:', { 
+    code: code?.substring(0, 5) + '...',
+    shop, 
+    state,
+    error,
+    errorDescription
+  })
 
   // Create a base HTML response that will handle the redirect client-side
   let redirectUrl = '/settings?error=missing_params';
@@ -28,6 +36,15 @@ export async function GET(request: Request) {
   let statusColor = 'red';
   let autoRedirect = true;
   let debugInfo = '';
+
+  // If Shopify returned an error, handle it
+  if (error) {
+    console.error('Shopify returned an error:', error, errorDescription)
+    debugInfo = `Shopify error: ${error}\nDescription: ${errorDescription || 'No description provided'}\n`;
+    redirectUrl = `/settings?error=shopify_error&description=${encodeURIComponent(errorDescription || '')}`;
+    statusMessage = `Error from Shopify: ${error}`;
+    return createHtmlResponse(redirectUrl, statusMessage, 'red', autoRedirect, debugInfo);
+  }
 
   if (!code || !shop || !state) {
     console.error('Missing required params:', { code: !!code, shop: !!shop, state: !!state })
@@ -55,21 +72,37 @@ export async function GET(request: Request) {
       debugInfo += 'Attempting to exchange code for access token...\n';
       
       try {
-        const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+        // Log the full token exchange request for debugging
+        const tokenUrl = `https://${shop}/admin/oauth/access_token`;
+        const tokenBody = {
+          client_id: process.env.SHOPIFY_CLIENT_ID,
+          client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+          code
+        };
+        
+        console.log('Token exchange request:', {
+          url: tokenUrl,
+          body: {
+            ...tokenBody,
+            client_secret: '[REDACTED]'
+          }
+        });
+        
+        const tokenResponse = await fetch(tokenUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            client_id: process.env.SHOPIFY_CLIENT_ID,
-            client_secret: process.env.SHOPIFY_CLIENT_SECRET,
-            code,
-          }),
+          body: JSON.stringify(tokenBody),
         });
 
         if (!tokenResponse.ok) {
           const errorText = await tokenResponse.text()
-          console.error('Token exchange failed:', errorText)
+          console.error('Token exchange failed:', {
+            status: tokenResponse.status,
+            statusText: tokenResponse.statusText,
+            body: errorText
+          })
           debugInfo += `Token exchange failed: ${tokenResponse.status} - ${errorText}\n`;
           redirectUrl = '/settings?error=token_exchange_failed';
           statusMessage = 'Error: Failed to get access token';

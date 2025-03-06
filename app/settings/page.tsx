@@ -92,16 +92,18 @@ export default function SettingsPage() {
       let errorMessage = 'Failed to connect Shopify store.';
       
       // Map error codes to user-friendly messages
-      if (error === 'missing_params') {
-        errorMessage = 'Missing required parameters for Shopify connection.';
-      } else if (error === 'invalid_state') {
-        errorMessage = 'Invalid state parameter in Shopify callback.';
-      } else if (error === 'callback_failed') {
-        errorMessage = 'Shopify connection process failed. Please try again.';
+      if (error === 'brand_not_found') {
+        errorMessage = 'Brand not found. Please try again with a valid brand.';
+      } else if (error === 'connection_create_failed') {
+        errorMessage = 'Failed to create connection. Please try again.';
+      } else if (error === 'connection_create_error') {
+        errorMessage = 'Error creating connection. Please try again.';
+      } else if (error === 'auth_required') {
+        errorMessage = 'Authentication required. Please log in first.';
+      } else if (error === 'shopify_error') {
+        errorMessage = `Error from Shopify: ${searchParams.get('description') || 'Unknown error'}`;
       } else if (error === 'token_exchange_failed') {
-        errorMessage = 'Failed to get access token from Shopify. Please try again.';
-      } else if (error === 'database_update_failed') {
-        errorMessage = 'Failed to update connection in database. Please try again.';
+        errorMessage = 'Failed to exchange token with Shopify. Please try again.';
       }
       
       toast.error(errorMessage, {
@@ -181,6 +183,7 @@ export default function SettingsPage() {
     const connectionId = searchParams.get('connectionId')
     const success = searchParams.get('success')
     const error = searchParams.get('error')
+    const errorDescription = searchParams.get('description')
     let cleanupTimer: NodeJS.Timeout | null = null;
     
     if (connectionId && success === 'true') {
@@ -220,6 +223,10 @@ export default function SettingsPage() {
         errorMessage = 'Error creating connection. Please try again.';
       } else if (error === 'auth_required') {
         errorMessage = 'Authentication required. Please log in first.';
+      } else if (error === 'shopify_error') {
+        errorMessage = `Error from Shopify: ${errorDescription || 'Unknown error'}`;
+      } else if (error === 'token_exchange_failed') {
+        errorMessage = 'Failed to exchange token with Shopify. Please try again.';
       }
       
       toast.error(errorMessage, {
