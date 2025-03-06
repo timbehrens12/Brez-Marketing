@@ -62,7 +62,12 @@ export async function GET(request: Request) {
     
     // Construct auth URL with explicit parameters
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
-    authUrl.searchParams.set('client_id', process.env.SHOPIFY_CLIENT_ID!)
+    
+    // Use the correct client ID - hardcoded for testing
+    // This should match the client ID registered with Shopify
+    const clientId = 'cf8e763ebf00bb4be4319e5bfa7ceb47' // This is from your URL
+    authUrl.searchParams.set('client_id', clientId)
+    
     authUrl.searchParams.set('scope', scopes)
     authUrl.searchParams.set('redirect_uri', callbackUrl)
     authUrl.searchParams.set('state', JSON.stringify(stateObj))

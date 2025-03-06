@@ -41,7 +41,7 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          client_id: process.env.SHOPIFY_CLIENT_ID,
+          client_id: 'cf8e763ebf00bb4be4319e5bfa7ceb47', // Hardcoded for testing
           client_secret: process.env.SHOPIFY_CLIENT_SECRET,
           code,
         }),

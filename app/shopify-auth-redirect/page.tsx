@@ -83,8 +83,11 @@ export default function ShopifyAuthRedirectPage() {
         const host = window.location.host
         const protocol = window.location.protocol
         
-        // Build the callback URL
-        const callbackUrl = `${protocol}//${host}/shopify-callback`
+        // Build the callback URL - this must match what's registered with Shopify
+        // Use the API route for the callback as that's likely what's registered
+        const callbackUrl = `${protocol}//${host}/api/shopify/callback`
+        
+        console.log('Using callback URL:', callbackUrl)
         
         // Use a more limited set of scopes to reduce permission requirements
         const scopes = [
@@ -96,7 +99,12 @@ export default function ShopifyAuthRedirectPage() {
         
         // Construct auth URL with explicit parameters
         const authUrl = new URL(`https://${shop}/admin/oauth/authorize`)
-        authUrl.searchParams.set('client_id', process.env.NEXT_PUBLIC_SHOPIFY_CLIENT_ID || '')
+        
+        // Use the correct client ID - hardcoded for testing
+        // This should match the client ID registered with Shopify
+        const clientId = 'cf8e763ebf00bb4be4319e5bfa7ceb47' // This is from your URL
+        authUrl.searchParams.set('client_id', clientId)
+        
         authUrl.searchParams.set('scope', scopes)
         authUrl.searchParams.set('redirect_uri', callbackUrl)
         authUrl.searchParams.set('state', JSON.stringify(stateObj))
