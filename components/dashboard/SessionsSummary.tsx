@@ -28,6 +28,7 @@ interface SessionsData {
     value: number
   }>
   isEstimate?: boolean
+  isRealTime?: boolean
 }
 
 export function SessionsSummary({ 
@@ -41,6 +42,7 @@ export function SessionsSummary({
   const [loading, setLoading] = useState<boolean>(true)
   const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false)
   const [isEstimated, setIsEstimated] = useState<boolean>(false)
+  const [isRealTimeData, setIsRealTimeData] = useState<boolean>(false)
 
   const fetchSessionsData = async (forceRefresh = false) => {
     if (!brandId) {
@@ -71,6 +73,7 @@ export function SessionsSummary({
       console.log('Sessions data fetched successfully:', data)
       setSessionsData(data)
       setIsEstimated(data.isEstimate || false)
+      setIsRealTimeData(data.isRealTime || false)
       setError(null)
       setInitialLoadComplete(true)
     } catch (err) {
@@ -139,7 +142,15 @@ export function SessionsSummary({
       
       {isEstimated && !isDataLoading && (
         <div className="bg-yellow-900/30 border border-yellow-700 p-2 rounded-md text-yellow-200 mb-4 text-xs">
-          Note: This data is estimated based on your order history. For accurate analytics, please install the Shopify Analytics app.
+          Note: This data is estimated based on your order history. For accurate analytics, install the Brez Analytics Pixel in your Shopify store.
+          <a href="/docs/shopify-pixel-setup.md" target="_blank" className="ml-1 underline hover:text-yellow-100">Learn how to install</a>
+        </div>
+      )}
+      
+      {isRealTimeData && !isDataLoading && (
+        <div className="bg-green-900/30 border border-green-700 p-2 rounded-md text-green-200 mb-4 text-xs">
+          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse"></span>
+          Real-time analytics data from Brez Analytics Pixel
         </div>
       )}
       

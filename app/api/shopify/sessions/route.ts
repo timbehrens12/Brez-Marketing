@@ -177,6 +177,16 @@ export async function GET(request: Request) {
       return sessionCount % 10 === 0 && sessionCount > 0;
     });
 
+    // Check if the data is from Web Pixels (real-time)
+    // We'll consider it real-time if any session has a last_updated timestamp within the last hour
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const isRealTime = sessions.some((session: any) => {
+      if (!session.last_updated) return false;
+      const lastUpdated = new Date(session.last_updated);
+      return lastUpdated >= oneHourAgo;
+    });
+
     // Return the metrics
     const metrics = {
       sessionCount: currentSessionCount,
@@ -186,7 +196,8 @@ export async function GET(request: Request) {
       sessionGrowth,
       visitorGrowth,
       sessionsByDay,
-      isEstimate: isEstimated
+      isEstimate: isEstimated,
+      isRealTime: isRealTime
     };
 
     console.log('Calculated session metrics:', {

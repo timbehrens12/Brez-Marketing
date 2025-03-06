@@ -1,0 +1,24 @@
+name = "Brez Analytics Pixel"
+type = "web_pixel"
+
+runtime_context = "strict"
+
+[commands]
+build = "npm run build"
+
+[configuration]
+type = "object"
+
+[[configuration.fields]]
+key = "apiEndpoint"
+name = "API Endpoint"
+description = "The endpoint where analytics data will be sent"
+type = "single_line_text_field"
+required = true
+
+[[configuration.fields]]
+key = "debug"
+name = "Debug Mode"
+description = "Enable debug logging"
+type = "boolean"
+default = false 
