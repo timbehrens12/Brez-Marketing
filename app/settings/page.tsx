@@ -659,7 +659,9 @@ export default function SettingsPage() {
         
         // Add a cache-busting parameter to prevent browser caching
         const cacheBuster = Date.now().toString();
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}&_=${cacheBuster}`;
+        
+        // Use our client-side redirect page instead of the API route
+        window.location.href = `/shopify-auth-redirect?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}&_=${cacheBuster}`;
       } else if (platform === 'meta') {
         // Redirect to Meta auth endpoint
         window.location.href = `/api/auth/meta?brandId=${brandId}`;
