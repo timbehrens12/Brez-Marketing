@@ -183,9 +183,9 @@ export function InventorySummary({
         />
         
         {/* Product Inventory Levels Widget */}
-        <Card className="bg-[#111111] border-[#222222] overflow-hidden">
-          <CardHeader className="py-2 px-4 bg-[#111111]">
-            <CardTitle className="text-sm font-medium text-white flex items-center gap-2 bg-[#111111]">
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="py-2 px-4">
+            <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
               <div className="relative w-4 h-4">
                 <Image 
                   src="https://i.imgur.com/cnCcupx.png" 
@@ -199,7 +199,7 @@ export function InventorySummary({
               <Layers className="h-4 w-4" />
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 bg-[#111111]">
+          <CardContent className="p-0">
             {isDataLoading ? (
               <div className="flex items-center justify-center h-[120px]">
                 <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-400"></div>
