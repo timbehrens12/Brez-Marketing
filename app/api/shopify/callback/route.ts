@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+
+// Create a direct admin client that doesn't require authentication
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 export async function GET(request: Request) {
   console.log('Shopify callback route hit')
@@ -18,18 +28,6 @@ export async function GET(request: Request) {
   let statusColor = 'red';
   let autoRedirect = true;
   let debugInfo = '';
-
-  // Create a server-side Supabase client
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
 
   if (!code || !shop || !state) {
     console.error('Missing required params:', { code: !!code, shop: !!shop, state: !!state })
@@ -302,12 +300,13 @@ export async function GET(request: Request) {
 
 function createHtmlResponse(redirectUrl: string, statusMessage: string, statusColor: string, autoRedirect: boolean, debugInfo: string = '') {
   const showDebug = process.env.NODE_ENV === 'development' || debugInfo.includes('error');
+  const isError = statusColor === 'red';
   
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Connecting Shopify Store</title>
+        <title>Shopify Connection Status</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
@@ -359,6 +358,13 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
           .button:hover {
             background-color: #2563eb;
           }
+          .button.secondary {
+            background-color: #4b5563;
+            margin-left: 10px;
+          }
+          .button.secondary:hover {
+            background-color: #374151;
+          }
           .debug-info {
             margin-top: 30px;
             text-align: left;
@@ -383,19 +389,54 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
             margin-top: 20px;
             font-size: 12px;
           }
+          .info-box {
+            background-color: ${isError ? '#7f1d1d' : '#064e3b'};
+            border: 1px solid ${isError ? '#ef4444' : '#10b981'};
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            max-width: 600px;
+          }
         </style>
       </head>
       <body>
         <div class="status">${statusMessage}</div>
-        ${autoRedirect ? '<div class="spinner"></div>' : ''}
-        <div>
-          ${autoRedirect 
-            ? 'Redirecting to dashboard...' 
-            : 'Please click the button below to continue.'}
+        
+        <div class="info-box">
+          ${isError ? 
+            `<p>There was a problem connecting your Shopify store. This could be due to:</p>
+             <ul style="text-align: left;">
+               <li>Session timeout or authentication issue</li>
+               <li>Database connection problem</li>
+               <li>Invalid Shopify credentials</li>
+             </ul>
+             <p>You can try again or contact support if the issue persists.</p>` 
+            : 
+            `<p>Your Shopify store has been successfully connected!</p>
+             <p>You'll now be able to see your store's data in the dashboard.</p>`
+          }
         </div>
-        <a href="${redirectUrl}" class="button">
-          Continue to Dashboard
-        </a>
+        
+        ${autoRedirect && !isError ? '<div class="spinner"></div>' : ''}
+        
+        <div>
+          ${autoRedirect && !isError
+            ? 'Redirecting to dashboard...' 
+            : 'Please click one of the buttons below to continue.'}
+        </div>
+        
+        <div>
+          <a href="${redirectUrl}" class="button">
+            Continue to Dashboard
+          </a>
+          
+          ${isError ? 
+            `<a href="/login" class="button secondary">
+              Log In Again
+            </a>` 
+            : ''
+          }
+        </div>
         
         ${showDebug ? `
         <div class="debug-info">
@@ -414,7 +455,7 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
         </div>
         `}
         
-        ${autoRedirect ? `
+        ${autoRedirect && !isError ? `
         <script>
           // Function to safely store data in localStorage
           function safelyStoreData() {
@@ -434,7 +475,7 @@ function createHtmlResponse(redirectUrl: string, statusMessage: string, statusCo
           const dataStored = safelyStoreData();
           
           // Only redirect if not showing debug info in production
-          ${!showDebug || statusColor === 'green' ? `
+          ${!showDebug ? `
           // Redirect after a short delay
           setTimeout(function() {
             try {

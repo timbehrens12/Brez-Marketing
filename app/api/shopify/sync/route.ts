@@ -1,5 +1,18 @@
 import { supabase } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+// Create a direct admin client that doesn't require authentication
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+)
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +28,7 @@ export async function POST(request: Request) {
 
     // Get connection details
     console.log('Fetching connection details')
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connection, error: connectionError } = await supabaseAdmin
       .from('platform_connections')
       .select('*')
       .eq('id', connectionId)
@@ -46,7 +59,7 @@ export async function POST(request: Request) {
 
     // Update sync status to in_progress
     console.log('Updating sync status to in_progress')
-    await supabase
+    await supabaseAdmin
       .from('platform_connections')
       .update({ sync_status: 'in_progress' })
       .eq('id', connectionId)
@@ -59,7 +72,7 @@ export async function POST(request: Request) {
     do {
       try {
         // Build the URL with cursor-based pagination
-        let url = `https://${connection.shop}/admin/api/2024-01/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
+        let url = `https://${connection.shop}/admin/api/2023-04/orders.json?limit=250&status=any&fields=id,created_at,total_price,customer,line_items`
         if (nextCursor) {
           url += `&page_info=${nextCursor}`
         }
@@ -110,7 +123,7 @@ export async function POST(request: Request) {
 
         // Batch insert orders
         console.log(`Inserting ${formattedOrders.length} orders into database`)
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseAdmin
           .from('shopify_orders')
           .upsert(formattedOrders, {
             onConflict: 'id',
@@ -135,7 +148,7 @@ export async function POST(request: Request) {
 
     // Update sync status to completed
     console.log('Sync completed, updating status')
-    await supabase
+    await supabaseAdmin
       .from('platform_connections')
       .update({ 
         sync_status: 'completed',
@@ -155,7 +168,7 @@ export async function POST(request: Request) {
         const body = await request.json()
         if (body.connectionId) {
           console.log('Updating sync status to failed')
-          await supabase
+          await supabaseAdmin
             .from('platform_connections')
             .update({ sync_status: 'failed' })
             .eq('id', body.connectionId)
