@@ -162,6 +162,8 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hideChange={true}
+          infoTooltip="Total number of items in inventory across all products"
         />
         
         {/* Product Inventory Levels Widget */}
@@ -231,6 +233,8 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hideChange={true}
+          infoTooltip="Number of products with zero inventory"
         />
         
         <MetricCard
@@ -255,6 +259,8 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hideChange={true}
+          infoTooltip="Number of products with inventory below 5 units"
         />
       </div>
     </div>

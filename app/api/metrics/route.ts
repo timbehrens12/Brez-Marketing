@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { parseISO, endOfDay, format, isValid } from 'date-fns'
+import { parseISO, endOfDay, format, isValid, subDays } from 'date-fns'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     console.log(`From: ${formattedFromDate}`);
     console.log(`To: ${formattedToDate}`);
 
-    // Fetch orders from Supabase
+    // Fetch orders from Supabase for current period
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
       .select('*')
@@ -90,27 +90,75 @@ export async function GET(request: Request) {
       throw ordersError;
     }
 
-    console.log(`Found ${orders?.length || 0} orders for date range`)
+    console.log(`Found ${orders?.length || 0} orders for current period`)
     
-    // Log a sample of the orders for debugging
-    if (orders && orders.length > 0) {
-      console.log('Sample order data:', orders.slice(0, 2).map(order => ({
-        id: order.id,
-        created_at: order.created_at,
-        total_price: order.total_price
-      })));
+    // Calculate previous period date range
+    const periodLengthInDays = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const previousFromDate = subDays(fromDate, periodLengthInDays);
+    const previousToDate = subDays(toDate, periodLengthInDays);
+    const formattedPreviousFromDate = format(previousFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    const formattedPreviousToDate = format(endOfDay(previousToDate), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    
+    console.log('Querying orders for previous period:');
+    console.log(`Previous From: ${formattedPreviousFromDate}`);
+    console.log(`Previous To: ${formattedPreviousToDate}`);
+    
+    // Fetch orders from Supabase for previous period
+    const { data: previousOrders, error: previousOrdersError } = await supabase
+      .from('shopify_orders')
+      .select('*')
+      .eq('connection_id', connection.id)
+      .gte('created_at', formattedPreviousFromDate)
+      .lte('created_at', formattedPreviousToDate)
+    
+    if (previousOrdersError) {
+      console.error('Error fetching previous period orders:', previousOrdersError);
+      // Continue with current period data only
     }
+    
+    console.log(`Found ${previousOrders?.length || 0} orders for previous period`)
+
+    // Calculate current period metrics
+    const currentTotalSales = orders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
+    const currentOrdersPlaced = orders?.length || 0;
+    const currentAverageOrderValue = currentOrdersPlaced ? currentTotalSales / currentOrdersPlaced : 0;
+    const currentUnitsSold = orders?.reduce((sum: number, order: any) => 
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0), 0
+    ) || 0;
+    
+    // Calculate previous period metrics
+    const previousTotalSales = previousOrders?.reduce((sum: number, order: any) => sum + parseFloat(order.total_price), 0) || 0;
+    const previousOrdersPlaced = previousOrders?.length || 0;
+    const previousAverageOrderValue = previousOrdersPlaced ? previousTotalSales / previousOrdersPlaced : 0;
+    const previousUnitsSold = previousOrders?.reduce((sum: number, order: any) => 
+      sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0), 0
+    ) || 0;
+    
+    // Calculate growth percentages
+    const calculateGrowth = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    };
+    
+    const salesGrowth = calculateGrowth(currentTotalSales, previousTotalSales);
+    const ordersGrowth = calculateGrowth(currentOrdersPlaced, previousOrdersPlaced);
+    const aovGrowth = calculateGrowth(currentAverageOrderValue, previousAverageOrderValue);
+    const unitsGrowth = calculateGrowth(currentUnitsSold, previousUnitsSold);
+    
+    console.log('Growth calculations:', {
+      salesGrowth,
+      ordersGrowth,
+      aovGrowth,
+      unitsGrowth
+    });
 
     // Calculate metrics from orders
     const metrics = {
-      totalSales: orders?.reduce((sum, order) => sum + parseFloat(order.total_price), 0) || 0,
-      ordersPlaced: orders?.length || 0,
-      averageOrderValue: orders?.length ? 
-        orders.reduce((sum, order) => sum + parseFloat(order.total_price), 0) / orders.length : 0,
-      unitsSold: orders?.reduce((sum, order) => 
-        sum + order.line_items.reduce((itemSum: number, item: any) => itemSum + item.quantity, 0), 0
-      ) || 0,
-      revenueByDay: Object.entries((orders || []).reduce((acc, order) => {
+      totalSales: currentTotalSales,
+      ordersPlaced: currentOrdersPlaced,
+      averageOrderValue: currentAverageOrderValue,
+      unitsSold: currentUnitsSold,
+      revenueByDay: Object.entries((orders || []).reduce((acc: Record<string, number>, order: any) => {
         const date = new Date(order.created_at).toISOString().split('T')[0]
         acc[date] = (acc[date] || 0) + parseFloat(order.total_price)
         return acc
@@ -119,16 +167,28 @@ export async function GET(request: Request) {
         revenue,
         amount: revenue
       })).sort((a, b) => a.date.localeCompare(b.date)),
-      customerSegments: [
-        { 
-          name: 'new', 
-          value: new Set(orders?.map(o => o.customer_id) || []).size 
-        },
-        { 
-          name: 'returning', 
-          value: (orders?.length || 0) - new Set(orders?.map(o => o.customer_id) || []).size 
+      salesGrowth,
+      ordersGrowth,
+      aovGrowth,
+      unitsGrowth,
+      customerSegments: {
+        newCustomers: new Set(orders?.map((o: any) => o.customer_id) || []).size,
+        returningCustomers: (orders?.length || 0) - new Set(orders?.map((o: any) => o.customer_id) || []).size
+      },
+      dailyData: Object.entries((orders || []).reduce((acc: Record<string, { date: string, revenue: number, orders: number }>, order: any) => {
+        const date = new Date(order.created_at).toISOString().split('T')[0]
+        if (!acc[date]) {
+          acc[date] = { date, revenue: 0, orders: 0 }
         }
-      ]
+        acc[date].revenue += parseFloat(order.total_price)
+        acc[date].orders += 1
+        return acc
+      }, {})).map(([date, data]) => ({
+        date,
+        revenue: (data as any).revenue,
+        orders: (data as any).orders,
+        value: (data as any).revenue
+      })).sort((a, b) => a.date.localeCompare(b.date))
     }
 
     console.log('Calculated metrics:', {
@@ -136,7 +196,11 @@ export async function GET(request: Request) {
       ordersPlaced: metrics.ordersPlaced,
       averageOrderValue: metrics.averageOrderValue,
       unitsSold: metrics.unitsSold,
-      revenueByDayCount: metrics.revenueByDay.length
+      revenueByDayCount: metrics.revenueByDay.length,
+      salesGrowth: metrics.salesGrowth,
+      ordersGrowth: metrics.ordersGrowth,
+      aovGrowth: metrics.aovGrowth,
+      unitsGrowth: metrics.unitsGrowth
     });
 
     return NextResponse.json(metrics)
