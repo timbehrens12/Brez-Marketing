@@ -89,6 +89,8 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Total amount spent on Meta ads in the selected period"
         />
         <MetricCard
           title={
@@ -112,6 +114,8 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Number of times your ads were displayed to users"
         />
         <MetricCard
           title={
@@ -135,6 +139,8 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Number of clicks on your ads"
         />
         <MetricCard
           title={
@@ -159,6 +165,83 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           loading={loading}
           refreshing={isRefreshingData}
           platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Return on Ad Spend - revenue generated per dollar spent on ads"
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={18} 
+                  height={18} 
+                  className="object-contain"
+                />
+              </div>
+              <span className="ml-0.5">CTR</span>
+              <MousePointer className="h-4 w-4" />
+            </div>
+          }
+          value={`${(data.ctr || 0).toFixed(2)}%`}
+          change={data.ctrGrowth || 0}
+          data={data.dailyData || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Click-Through Rate - percentage of impressions that resulted in clicks"
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={18} 
+                  height={18} 
+                  className="object-contain"
+                />
+              </div>
+              <span className="ml-0.5">CPC</span>
+              <Target className="h-4 w-4" />
+            </div>
+          }
+          value={`$${(data.costPerResult || 0).toFixed(2)}`}
+          change={data.cprGrowth || 0}
+          data={data.dailyData || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Cost Per Click - average cost for each click on your ads"
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-1.5">
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                <Image 
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={18} 
+                  height={18} 
+                  className="object-contain"
+                />
+              </div>
+              <span className="ml-0.5">Conversions</span>
+              <BarChart2 className="h-4 w-4" />
+            </div>
+          }
+          value={data.conversions || 0}
+          change={data.conversionGrowth || 0}
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.conversions })) || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Number of actions taken after viewing or clicking your ads"
         />
       </div>
     </div>

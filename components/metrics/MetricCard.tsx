@@ -7,6 +7,8 @@ import { format, subDays } from "date-fns"
 import type { MetricData } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { TrendingUp, TrendingDown, Info } from "lucide-react"
 
 interface MetricCardProps {
   title: string | React.ReactNode
@@ -154,14 +156,27 @@ export function MetricCard({
     }
     
     if (!dateRange?.from || !dateRange?.to) {
-      return "No date range selected"
+      return "Compared to previous equivalent period"
     }
 
     const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
     const prevStart = format(subDays(dateRange.from, days), 'MMM d, yyyy')
     const prevEnd = format(subDays(dateRange.from, 1), 'MMM d, yyyy')
     
-    return `Compared to ${prevStart} - ${prevEnd}`
+    let periodName = "period";
+    if (days === 1) {
+      periodName = "day";
+    } else if (days === 7) {
+      periodName = "week";
+    } else if (days === 30 || days === 31 || days === 28 || days === 29) {
+      periodName = "month";
+    } else if (days === 90 || days === 91 || days === 92) {
+      periodName = "quarter";
+    } else if (days >= 365 && days <= 366) {
+      periodName = "year";
+    }
+    
+    return `Compared to previous ${periodName}: ${prevStart} - ${prevEnd}`
   }
 
   return (
@@ -171,6 +186,21 @@ export function MetricCard({
           <PlatformIcon />
           <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
           {icon && <span className="text-gray-400">{icon}</span>}
+          
+          {infoTooltip && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <Info className="h-3.5 w-3.5 text-gray-500 hover:text-gray-300 transition-colors" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>{infoTooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -184,6 +214,34 @@ export function MetricCard({
             <>{prefix}{formattedValue}{suffix}</>
           )}
         </div>
+        
+        {!refreshing && (
+          <div className="flex items-center mt-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center space-x-1 cursor-help">
+                    <div className={cn(
+                      "flex items-center text-sm font-medium",
+                      isPositive ? "text-emerald-500" : safeChange < 0 ? "text-red-500" : "text-gray-400"
+                    )}>
+                      {isPositive ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : safeChange < 0 ? (
+                        <TrendingDown className="h-3 w-3 mr-1" />
+                      ) : null}
+                      <span>{formatChange(safeChange)}</span>
+                    </div>
+                    <Info className="h-3 w-3 text-gray-500" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>{getComparisonText()}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
