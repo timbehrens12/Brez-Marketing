@@ -413,6 +413,13 @@ export default function DashboardPage() {
               console.error('Failed to sync inventory data:', await syncResponse.text())
             } else {
               console.log('Inventory sync initiated successfully')
+              // Wait a moment for the sync to complete
+              await new Promise(resolve => setTimeout(resolve, 3000))
+              
+              // Force a refresh of the inventory data by dispatching a custom event
+              window.dispatchEvent(new CustomEvent('refreshInventory', { 
+                detail: { brandId: selectedBrandId }
+              }))
             }
           } catch (error) {
             console.error('Error syncing inventory data:', error)
@@ -505,18 +512,33 @@ export default function DashboardPage() {
 
   // Set up periodic data refresh
   useEffect(() => {
-    // Initial fetch
-    fetchAllData();
+    // Initial fetch - ensure this runs immediately when the component mounts
+    if (selectedBrandId) {
+      console.log('Initial dashboard data load triggered')
+      fetchAllData();
+      setLastRefreshed(new Date());
+    }
     
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
-      fetchAllData();
-      setLastRefreshed(new Date());
+      if (selectedBrandId) {
+        console.log('Periodic dashboard data refresh triggered')
+        fetchAllData();
+        setLastRefreshed(new Date());
+      }
     }, 300000); // Refresh every 5 minutes
     
     // Clean up interval on unmount
     return () => clearInterval(interval);
   }, [selectedBrandId, dateRange, activePlatforms]);
+
+  // Add a new effect to trigger data load when brand is selected
+  useEffect(() => {
+    if (selectedBrandId && !isRefreshingData && !isLoading) {
+      console.log('Brand selected, triggering data load')
+      fetchAllData();
+    }
+  }, [selectedBrandId]);
 
   // If auth is loaded and user is not signed in, show sign-in overlay
   if (isLoaded && !userId) {

@@ -24,108 +24,90 @@ export function InventorySummary({
   const [inventoryItems, setInventoryItems] = useState<ShopifyInventoryItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [initialLoadComplete, setInitialLoadComplete] = useState<boolean>(false)
 
-  useEffect(() => {
+  const fetchInventoryData = async (forceRefresh = false) => {
     if (!brandId) {
       console.log('No brandId provided to InventorySummary component')
       return
     }
 
-    const fetchInventoryData = async () => {
+    try {
+      console.log(`Fetching inventory data for brandId: ${brandId}${forceRefresh ? ' (forced refresh)' : ''}`)
+      setLoading(true)
+      
+      // Add cache-busting parameter and refresh flag if needed
+      const refreshParam = forceRefresh ? '&refresh=true' : ''
+      const cacheBuster = `&t=${new Date().getTime()}`
+      const response = await fetch(`/api/shopify/inventory?brandId=${brandId}${refreshParam}${cacheBuster}`)
+      
+      const responseText = await response.text()
+      console.log(`Inventory API response: ${responseText.substring(0, 200)}...`)
+      
+      let data
       try {
-        console.log(`Fetching inventory data for brandId: ${brandId}`)
-        setLoading(true)
-        const response = await fetch(`/api/shopify/inventory?brandId=${brandId}`)
-        
-        const responseText = await response.text()
-        console.log(`Inventory API response: ${responseText.substring(0, 200)}...`)
-        
-        let data
-        try {
-          data = JSON.parse(responseText)
-        } catch (parseError) {
-          console.error('Error parsing inventory response:', parseError)
-          throw new Error(`Failed to parse inventory response: ${responseText.substring(0, 100)}...`)
-        }
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch inventory data: ${data.error || response.statusText}`)
-        }
-        
-        console.log('Inventory data fetched successfully:', data)
-        setInventorySummary(data.summary)
-        setInventoryItems(data.items || [])
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching inventory data:', err)
-        setError('Failed to load inventory data')
-        setInventorySummary(null)
-        setInventoryItems([])
-        toast.error(`Error loading inventory data: ${err instanceof Error ? err.message : 'Unknown error'}`)
-      } finally {
-        setLoading(false)
+        data = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Error parsing inventory response:', parseError)
+        throw new Error(`Failed to parse inventory response: ${responseText.substring(0, 100)}...`)
       }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch inventory data: ${data.error || response.statusText}`)
+      }
+      
+      console.log('Inventory data fetched successfully:', data)
+      setInventorySummary(data.summary)
+      setInventoryItems(data.items || [])
+      setError(null)
+      setInitialLoadComplete(true)
+    } catch (err) {
+      console.error('Error fetching inventory data:', err)
+      setError('Failed to load inventory data')
+      setInventorySummary(null)
+      setInventoryItems([])
+      toast.error(`Error loading inventory data: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // Initial data load when component mounts or brandId changes
+  useEffect(() => {
     fetchInventoryData()
   }, [brandId])
   
+  // Handle refresh requests
   useEffect(() => {
     if (isRefreshingData && brandId) {
       console.log('Refreshing inventory data due to isRefreshingData change')
-      const fetchInventoryData = async () => {
-        try {
-          console.log(`Refreshing inventory data for brandId: ${brandId}`)
-          // Force a complete refresh from Shopify by calling the sync endpoint first
-          if (brandId) {
-            try {
-              // Find the connection ID for this brand
-              const connectionsResponse = await fetch(`/api/connections?brandId=${brandId}`)
-              const connectionsData = await connectionsResponse.json()
-              const shopifyConnection = connectionsData.connections?.find(c => 
-                c.platform_type === 'shopify' && c.status === 'active'
-              )
-              
-              if (shopifyConnection) {
-                console.log('Syncing inventory data from Shopify before refresh')
-                await fetch('/api/shopify/inventory/sync', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ connectionId: shopifyConnection.id })
-                })
-                
-                // Wait a moment for the sync to complete
-                await new Promise(resolve => setTimeout(resolve, 2000))
-              }
-            } catch (syncError) {
-              console.error('Error syncing inventory before refresh:', syncError)
-            }
-          }
-          
-          // Now fetch the updated inventory data
-          const response = await fetch(`/api/shopify/inventory?brandId=${brandId}&refresh=true&t=${new Date().getTime()}`)
-          
-          if (!response.ok) {
-            const errorText = await response.text()
-            throw new Error(`Failed to fetch inventory data: ${errorText}`)
-          }
-          
-          const data = await response.json()
-          console.log('Refreshed inventory data fetched successfully:', data)
-          setInventorySummary(data.summary)
-          setInventoryItems(data.items || [])
-          setError(null)
-        } catch (err) {
-          console.error('Error refreshing inventory data:', err)
-          // Don't show toast on refresh errors to avoid spamming the user
-        }
-      }
-      
-      fetchInventoryData()
+      fetchInventoryData(true)
     }
   }, [brandId, isRefreshingData])
+
+  // Force a data load if we haven't loaded data yet and we have a brandId
+  useEffect(() => {
+    if (!initialLoadComplete && brandId && !loading) {
+      console.log('Forcing initial inventory data load')
+      fetchInventoryData()
+    }
+  }, [initialLoadComplete, brandId, loading])
+
+  // Listen for custom refresh event
+  useEffect(() => {
+    const handleRefreshEvent = (event: CustomEvent) => {
+      if (event.detail?.brandId === brandId) {
+        console.log('Received refreshInventory event, refreshing inventory data')
+        fetchInventoryData(true)
+      }
+    }
+
+    window.addEventListener('refreshInventory', handleRefreshEvent as EventListener)
+    
+    return () => {
+      window.removeEventListener('refreshInventory', handleRefreshEvent as EventListener)
+    }
+  }, [brandId])
 
   const isDataLoading = isLoading || loading
 
@@ -250,6 +232,7 @@ export function InventorySummary({
           refreshing={isRefreshingData}
           platform="shopify"
         />
+        
         <MetricCard
           title={
             <div className="flex items-center gap-2">
@@ -262,11 +245,11 @@ export function InventorySummary({
                   className="object-contain"
                 />
               </div>
-              <span>Total Products</span>
+              <span>Low Stock</span>
               <BarChart2 className="h-4 w-4" />
             </div>
           }
-          value={inventorySummary?.totalProducts || 0}
+          value={inventorySummary?.lowStockItems || 0}
           change={0}
           data={[]}
           loading={isDataLoading}
@@ -276,4 +259,4 @@ export function InventorySummary({
       </div>
     </div>
   )
-} 
+}
