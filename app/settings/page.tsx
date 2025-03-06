@@ -74,6 +74,10 @@ export default function SettingsPage() {
         errorMessage = 'Invalid state parameter in Shopify callback.';
       } else if (error === 'callback_failed') {
         errorMessage = 'Shopify connection process failed. Please try again.';
+      } else if (error === 'token_exchange_failed') {
+        errorMessage = 'Failed to get access token from Shopify. Please try again.';
+      } else if (error === 'database_update_failed') {
+        errorMessage = 'Failed to update connection in database. Please try again.';
       }
       
       toast.error(errorMessage, {
@@ -88,6 +92,29 @@ export default function SettingsPage() {
       return () => clearTimeout(timer)
     }
   }, [searchParams, router])
+
+  // Check for Shopify connection completion in localStorage
+  useEffect(() => {
+    // Only run after loadConnections is defined and in browser environment
+    if (typeof window !== 'undefined') {
+      const connectionComplete = localStorage.getItem('shopifyConnectionComplete')
+      const connectionTimestamp = localStorage.getItem('shopifyConnectionTimestamp')
+      
+      if (connectionComplete === 'true') {
+        // Clear the flag
+        localStorage.removeItem('shopifyConnectionComplete')
+        localStorage.removeItem('shopifyConnectionTimestamp')
+        
+        // Refresh connections
+        loadConnections()
+        
+        // Show success notification
+        toast.success('Shopify store connected successfully! Your store data is now being synced.', {
+          duration: 5000,
+        })
+      }
+    }
+  }, [loadConnections])
 
   useEffect(() => {
     console.log('Current brands:', brands)
