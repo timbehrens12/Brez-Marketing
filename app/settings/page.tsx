@@ -42,6 +42,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const loading = searchParams.get('loading')
     const success = searchParams.get('success')
+    const error = searchParams.get('error')
     
     if (loading === 'true' && success === 'true') {
       // Wait a moment then refresh the page without the loading parameter
@@ -57,6 +58,29 @@ export default function SettingsPage() {
       })
       
       // Clear the success parameter after showing the notification
+      const timer = setTimeout(() => {
+        router.replace('/settings')
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    } else if (error) {
+      // Show error notification
+      let errorMessage = 'Failed to connect Shopify store.';
+      
+      // Map error codes to user-friendly messages
+      if (error === 'missing_params') {
+        errorMessage = 'Missing required parameters for Shopify connection.';
+      } else if (error === 'invalid_state') {
+        errorMessage = 'Invalid state parameter in Shopify callback.';
+      } else if (error === 'callback_failed') {
+        errorMessage = 'Shopify connection process failed. Please try again.';
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+      })
+      
+      // Clear the error parameter after showing the notification
       const timer = setTimeout(() => {
         router.replace('/settings')
       }, 500)
