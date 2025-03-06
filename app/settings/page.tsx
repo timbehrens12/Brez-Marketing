@@ -140,6 +140,31 @@ export default function SettingsPage() {
     }
   }, [loadConnections])
 
+  // Check for connectionId in URL - this is a fallback for when localStorage doesn't work
+  useEffect(() => {
+    const connectionId = searchParams.get('connectionId')
+    const success = searchParams.get('success')
+    
+    if (connectionId && success === 'true') {
+      console.log('Found connectionId in URL, refreshing connections:', connectionId)
+      
+      // Refresh connections
+      loadConnections()
+      
+      // Show success notification
+      toast.success('Shopify store connected successfully! Your store data is now being synced.', {
+        duration: 5000,
+      })
+      
+      // Clear the parameters after showing the notification
+      const timer = setTimeout(() => {
+        router.replace('/settings')
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, router, loadConnections])
+
   useEffect(() => {
     console.log('Current brands:', brands)
     console.log('Selected brand:', selectedBrandId)
