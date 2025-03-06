@@ -73,9 +73,31 @@ export default function ShopifyCallbackPage() {
         // Parse state to get brandId and connectionId
         let brandId: string, connectionId: string;
         try {
-          const stateObj = JSON.parse(state) as { brandId: string; connectionId: string };
+          const stateObj = JSON.parse(state) as { 
+            brandId: string; 
+            connectionId: string;
+            nonce?: string;
+            timestamp?: number;
+          };
+          
           brandId = stateObj.brandId;
           connectionId = stateObj.connectionId;
+          
+          // Log the nonce and timestamp if present
+          if (stateObj.nonce) {
+            setDebugInfo(prev => prev + `Nonce: ${stateObj.nonce}\n`);
+          }
+          
+          if (stateObj.timestamp) {
+            const timeDiff = Date.now() - stateObj.timestamp;
+            setDebugInfo(prev => prev + `Request age: ${Math.round(timeDiff / 1000)} seconds\n`);
+            
+            // If the request is too old (more than 10 minutes), show a warning
+            if (timeDiff > 10 * 60 * 1000) {
+              setDebugInfo(prev => prev + `Warning: Request is older than 10 minutes\n`);
+            }
+          }
+          
           setDebugInfo(prev => prev + `Parsed state: brandId=${brandId}, connectionId=${connectionId}\n`);
         } catch (error) {
           console.error('Error parsing state:', error)

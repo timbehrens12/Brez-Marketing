@@ -568,6 +568,28 @@ export default function SettingsPage() {
   const handleConnect = async (platform: 'shopify' | 'meta', brandId: string) => {
     try {
       if (platform === 'shopify') {
+        // Check if there's an existing connection and disconnect it first
+        const { data: existingConnections, error: checkError } = await supabase
+          .from('platform_connections')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'shopify');
+          
+        if (checkError) {
+          console.error('Error checking existing connections:', checkError);
+        } else if (existingConnections && existingConnections.length > 0) {
+          console.log('Found existing connections, disconnecting first:', existingConnections.length);
+          
+          // Disconnect existing connections
+          await handleDisconnect('shopify', brandId);
+          
+          // Wait a moment for the disconnect to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Reload connections to ensure we have the latest state
+          await loadConnections();
+        }
+        
         // First create a connection record
         const { data: connection, error } = await supabase
           .from('platform_connections')
@@ -594,7 +616,9 @@ export default function SettingsPage() {
           return;
         }
         
-        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}`;
+        // Add a cache-busting parameter to prevent browser caching
+        const cacheBuster = Date.now().toString();
+        window.location.href = `/api/shopify/auth?brandId=${brandId}&connectionId=${connection.id}&shop=${shop}&_=${cacheBuster}`;
       } else if (platform === 'meta') {
         // Redirect to Meta auth endpoint
         window.location.href = `/api/auth/meta?brandId=${brandId}`;
