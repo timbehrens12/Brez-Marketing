@@ -62,13 +62,25 @@ module.exports = {
           },
           "pulse-subtle": {
             "0%, 100%": { opacity: 1 },
-            "50%": { opacity: 0.85 },
+            "50%": { opacity: 0.8 },
+          },
+          "glow-pulse": {
+            "0%": { 
+              filter: "drop-shadow(0 0 2px rgba(var(--glow-color), 0.6))" 
+            },
+            "50%": { 
+              filter: "drop-shadow(0 0 8px rgba(var(--glow-color), 0.8))" 
+            },
+            "100%": { 
+              filter: "drop-shadow(0 0 2px rgba(var(--glow-color), 0.6))" 
+            },
           },
         },
         animation: {
           "accordion-down": "accordion-down 0.2s ease-out",
           "accordion-up": "accordion-up 0.2s ease-out",
-          "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
+          "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         },
       },
     },
