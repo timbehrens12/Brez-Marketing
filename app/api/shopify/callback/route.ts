@@ -90,9 +90,9 @@ export async function GET(request: Request) {
       console.log('Initial sync triggered successfully')
     }
 
-    // Redirect back to settings page
+    // Redirect back to settings page with loading state
     console.log('Redirecting to settings page')
-    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?success=true')
+    return NextResponse.redirect('https://brezmarketingdashboard.com/settings?success=true&loading=true')
   } catch (error) {
     console.error('Shopify callback error:', error)
     return NextResponse.redirect('https://brezmarketingdashboard.com/settings?error=callback_failed')

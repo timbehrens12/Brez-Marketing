@@ -14,6 +14,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
+import { useRouter, useSearchParams } from "next/navigation"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -34,6 +35,35 @@ export default function SettingsPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const supabase = useSupabase()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Handle loading state from Shopify callback
+  useEffect(() => {
+    const loading = searchParams.get('loading')
+    const success = searchParams.get('success')
+    
+    if (loading === 'true' && success === 'true') {
+      // Wait a moment then refresh the page without the loading parameter
+      const timer = setTimeout(() => {
+        router.replace('/settings?success=true')
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    } else if (success === 'true') {
+      // Show success notification
+      toast.success('Shopify store connected successfully! Your store data is now being synced.', {
+        duration: 5000,
+      })
+      
+      // Clear the success parameter after showing the notification
+      const timer = setTimeout(() => {
+        router.replace('/settings')
+      }, 500)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, router])
 
   useEffect(() => {
     console.log('Current brands:', brands)
