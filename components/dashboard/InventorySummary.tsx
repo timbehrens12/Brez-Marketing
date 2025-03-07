@@ -162,6 +162,7 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hidePercentageChange={true}
         />
         
         {/* Product Inventory Levels Widget */}
@@ -231,6 +232,7 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hidePercentageChange={true}
         />
         
         <MetricCard
@@ -255,6 +257,7 @@ export function InventorySummary({
           loading={isDataLoading}
           refreshing={isRefreshingData}
           platform="shopify"
+          hidePercentageChange={true}
         />
       </div>
     </div>

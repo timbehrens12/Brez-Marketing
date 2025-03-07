@@ -93,8 +93,8 @@ export function PlatformTabs({
                 disabled={!platforms.shopify}
                 className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
                   activeTab === "shopify" 
-                    ? "bg-[#2A2A2A] border-[#96bf48] border shadow-[0_0_15px_rgba(150,191,72,0.6)] text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222] hover:border hover:border-[#96bf48]/30 hover:shadow-[0_0_10px_rgba(150,191,72,0.3)]"
+                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
                 }`}
               >
                 <div className="flex items-center justify-center">
@@ -131,8 +131,8 @@ export function PlatformTabs({
                 disabled={!platforms.meta}
                 className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
                   activeTab === "meta" 
-                    ? "bg-[#2A2A2A] border-[#1877f2] border shadow-[0_0_15px_rgba(24,119,242,0.6)] text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222] hover:border hover:border-[#1877f2]/30 hover:shadow-[0_0_10px_rgba(24,119,242,0.3)]"
+                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
                 }`}
               >
                 <div className="flex items-center justify-center">
@@ -169,8 +169,8 @@ export function PlatformTabs({
                 disabled={false}
                 className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
                   activeTab === "tiktok" 
-                    ? "bg-[#2A2A2A] border-[#ff0050] border shadow-[0_0_15px_rgba(255,0,80,0.6)] text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222] hover:border hover:border-[#ff0050]/30 hover:shadow-[0_0_10px_rgba(255,0,80,0.3)]"
+                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
                 }`}
               >
                 <div className="flex items-center justify-center">
@@ -207,8 +207,8 @@ export function PlatformTabs({
                 disabled={false}
                 className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
                   activeTab === "googleads" 
-                    ? "bg-[#2A2A2A] border-[#4285f4] border shadow-[0_0_15px_rgba(66,133,244,0.6)] text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222] hover:border hover:border-[#4285f4]/30 hover:shadow-[0_0_10px_rgba(66,133,244,0.3)]"
+                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
+                    : "hover:bg-[#222]"
                 }`}
               >
                 <div className="flex items-center justify-center">

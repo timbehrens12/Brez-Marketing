@@ -28,6 +28,7 @@ interface MetricCardProps {
   isCustomRange?: boolean
   emptyState?: string
   icon?: React.ReactNode
+  hidePercentageChange?: boolean
 }
 
 export function MetricCard({
@@ -48,6 +49,7 @@ export function MetricCard({
   isCustomRange = false,
   emptyState,
   icon,
+  hidePercentageChange = false,
 }: MetricCardProps) {
   // Force everything to be numbers
   const safeValue = typeof value === 'number' ? value : Number(value) || 0
@@ -251,7 +253,7 @@ export function MetricCard({
           )}
         </div>
         
-        {!refreshing && !isInventoryMetric && (
+        {!refreshing && !isInventoryMetric && !hidePercentageChange && (
           <div className="flex items-center mt-2">
             <TooltipProvider>
               <Tooltip>
