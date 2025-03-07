@@ -24,10 +24,9 @@ const presets = [
     getDate: () => {
       const today = new Date()
       const startOfToday = startOfDay(today)
-      const endOfToday = endOfDay(today)
       return {
         from: startOfToday,
-        to: endOfToday,
+        to: today,
       }
     },
   },
@@ -115,14 +114,28 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const handleCalendarSelect = (newDateRange: DateRange | undefined) => {
     if (!newDateRange) return
     
-    setTempDateRange(newDateRange)
+    // Ensure no future dates are selected
+    const now = new Date()
+    let adjustedRange = { ...newDateRange }
+    
+    // If from date is in the future, set it to today
+    if (adjustedRange.from && adjustedRange.from > now) {
+      adjustedRange.from = startOfDay(now)
+    }
+    
+    // If to date is in the future, set it to today
+    if (adjustedRange.to && adjustedRange.to > now) {
+      adjustedRange.to = now
+    }
+    
+    setTempDateRange(adjustedRange)
     
     // If both from and to are selected, mark as complete
-    if (newDateRange.from && newDateRange.to) {
+    if (adjustedRange.from && adjustedRange.to) {
       setSelectionStep('complete')
     } 
     // If only from is selected, prompt for end date
-    else if (newDateRange.from) {
+    else if (adjustedRange.from) {
       setSelectionStep('end')
     }
   }
@@ -144,6 +157,13 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
     const newRange = preset.getDate()
+    
+    // Ensure no future dates are selected
+    const now = new Date()
+    if (newRange.to > now) {
+      newRange.to = now
+    }
+    
     setTempDateRange(newRange)
     setSelectionStep('complete')
   }
@@ -285,8 +305,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   onSelect={handleCalendarSelect}
                   numberOfMonths={2}
                   showOutsideDays={false}
+                  disabled={{ after: new Date() }}
                   className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
                 />
+                <div className="text-xs text-gray-400 mt-2 italic">
+                  Future dates are disabled. You can only select dates up to today.
+                </div>
               </div>
             </div>
             
