@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears, startOfMonth, isBefore, isAfter } from "date-fns"
+import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears, startOfMonth, isBefore, isAfter, isSameMonth } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -87,6 +87,13 @@ function CustomCaption({ displayMonth }: { displayMonth: Date }) {
       </div>
     </div>
   );
+}
+
+// Add this helper function before the DateRangePicker component
+function isAfterOrSameMonth(date1: Date, date2: Date): boolean {
+  if (date1.getFullYear() > date2.getFullYear()) return true;
+  if (date1.getFullYear() < date2.getFullYear()) return false;
+  return date1.getMonth() >= date2.getMonth();
 }
 
 export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProps) {
@@ -190,9 +197,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleNextMonth = () => {
-    // Only allow navigating to next month if it's not in the future
+    // Only allow navigating to next month if it's not beyond the current month
     const nextMonth = addMonths(currentMonth, 1)
-    if (isBefore(startOfMonth(nextMonth), addMonths(currentMonthStart, 1))) {
+    if (isSameMonth(startOfMonth(nextMonth), currentMonthStart) || isBefore(startOfMonth(nextMonth), currentMonthStart)) {
       setCurrentMonth(nextMonth)
     }
   }
@@ -202,9 +209,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleNextYear = () => {
-    // Only allow navigating to next year if it's not in the future
+    // Only allow navigating to next year if it's not beyond the current month/year
     const nextYear = addYears(currentMonth, 1)
-    if (isBefore(startOfMonth(nextYear), addYears(currentMonthStart, 1))) {
+    if (isSameMonth(startOfMonth(nextYear), currentMonthStart) || isBefore(startOfMonth(nextYear), currentMonthStart)) {
       setCurrentMonth(nextYear)
     }
   }
@@ -280,7 +287,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                       className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
                       onClick={handleNextMonth}
                       title="Next Month"
-                      disabled={isAfter(addMonths(startOfMonth(currentMonth), 1), currentMonthStart)}
+                      disabled={isAfterOrSameMonth(addMonths(startOfMonth(currentMonth), 1), currentMonthStart)}
                     >
                       <ChevronRight className="h-4 w-4" />
                       <span className="sr-only">Next Month</span>
@@ -291,7 +298,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                       className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
                       onClick={handleNextYear}
                       title="Next Year"
-                      disabled={isAfter(addYears(startOfMonth(currentMonth), 1), currentMonthStart)}
+                      disabled={isAfterOrSameMonth(addYears(startOfMonth(currentMonth), 1), currentMonthStart)}
                     >
                       <ChevronsRight className="h-4 w-4" />
                       <span className="sr-only">Next Year</span>
