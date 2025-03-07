@@ -337,7 +337,7 @@ export default function SettingsPage() {
       console.log(`Disconnecting ${platform} for brand ${brandId}`)
       
       // Use the full URL to ensure it works in production
-      const apiUrl = `${window.location.origin}/api/platforms/disconnect`
+      const apiUrl = `${window.location.origin}/api/disconnect-platform`
       console.log('Using API URL:', apiUrl)
       
       // Use the existing API route
