@@ -290,7 +290,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   numberOfMonths={2}
                   showOutsideDays={false}
                   disabled={{ after: new Date() }}
-                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:hidden"
+                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
                   components={{
                     IconLeft: () => null,
                     IconRight: () => null,
