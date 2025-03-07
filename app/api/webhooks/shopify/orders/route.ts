@@ -134,6 +134,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to store order', details: orderError.message }, { status: 500 })
     }
     
+    // Store the regional sales data
+    console.log('Storing regional sales data for order:', order.id)
+    
+    // Extract shipping address data
+    const shippingAddress = order.shipping_address || {}
+    const billingAddress = order.billing_address || {}
+    
+    // Use shipping address if available, otherwise fall back to billing address
+    const address = shippingAddress.city ? shippingAddress : billingAddress
+    
+    if (address && address.city) {
+      const { error: regionError } = await supabase
+        .from('shopify_sales_by_region')
+        .upsert([{
+          connection_id: connection.id.toString(),
+          brand_id: connection.brand_id.toString(),
+          user_id: connection.user_id.toString(),
+          order_id: order.id.toString(),
+          created_at: order.created_at,
+          city: address.city,
+          province: address.province,
+          province_code: address.province_code,
+          country: address.country,
+          country_code: address.country_code,
+          total_price: parseFloat(order.total_price),
+          order_count: 1
+        }], { onConflict: 'connection_id,order_id' })
+      
+      if (regionError) {
+        console.error('Error storing regional sales data:', regionError)
+        // Continue processing even if regional data storage fails
+      } else {
+        console.log('Successfully stored regional sales data for order:', order.id)
+      }
+    } else {
+      console.log('No address data available for order:', order.id)
+    }
+    
     console.log('Successfully stored order:', order.id)
     return NextResponse.json({ success: true })
   } catch (error) {
