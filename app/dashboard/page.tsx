@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { WidgetManager } from "@/components/dashboard/WidgetManager"
 import { useMetrics } from "@/lib/contexts/MetricsContext"
-import { addDays } from "date-fns"
+import { addDays, startOfDay, endOfDay } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
@@ -32,6 +32,7 @@ import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
+import { Button } from "@/components/ui/button"
 
 interface WidgetData {
   shopify?: any;
@@ -85,9 +86,28 @@ function formatDate(date: Date | undefined): string {
 export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
-  const [dateRange, setDateRange] = useState({
-    from: addDays(new Date(), -30),
-    to: new Date(),
+  const [dateRange, setDateRange] = useState(() => {
+    // Try to get saved date range from localStorage
+    if (typeof window !== 'undefined') {
+      const savedDateRange = localStorage.getItem('dashboardDateRange');
+      if (savedDateRange) {
+        try {
+          const parsed = JSON.parse(savedDateRange);
+          // Ensure the dates are valid by converting strings back to Date objects
+          return {
+            from: new Date(parsed.from),
+            to: new Date(parsed.to)
+          };
+        } catch (e) {
+          console.error('Error parsing saved date range:', e);
+        }
+      }
+    }
+    // Default to today if no saved preference or error
+    return {
+      from: startOfDay(new Date()),
+      to: endOfDay(new Date()),
+    };
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
@@ -115,6 +135,18 @@ export default function DashboardPage() {
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState('');
   const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
+
+  // Save date range preference when it changes
+  const handleDateRangeChange = (newDateRange: { from: Date; to: Date }) => {
+    setDateRange(newDateRange);
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dashboardDateRange', JSON.stringify({
+        from: newDateRange.from.toISOString(),
+        to: newDateRange.to.toISOString()
+      }));
+    }
+  }
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -673,10 +705,23 @@ export default function DashboardPage() {
           <span className="text-xs text-gray-500">
             Last updated: {lastRefreshed?.toLocaleTimeString()}
           </span>
-          <DateRangePicker 
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-          />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="h-9 bg-[#2A2A2A] hover:bg-[#333] border-[#444] text-white"
+              onClick={() => handleDateRangeChange({
+                from: startOfDay(new Date()),
+                to: endOfDay(new Date())
+              })}
+            >
+              Today
+            </Button>
+            <DateRangePicker 
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+            />
+          </div>
         </div>
       </div>
 
