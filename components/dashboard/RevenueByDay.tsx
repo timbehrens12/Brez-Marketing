@@ -23,12 +23,17 @@ import {
   startOfDay,
   isSameMonth,
   isSameWeek,
-  getDay
+  getDay,
+  addMonths,
+  subMonths
 } from "date-fns"
+import { toZonedTime } from 'date-fns-tz'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
-type TimeFrame = 'weekly' | 'monthly' | 'yearly'
+type TimeFrame = 'today' | 'weekly' | 'monthly' | 'yearly'
 
 interface RevenueByDayProps {
   data?: Array<{
@@ -136,8 +141,14 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       
       // Process the orders into sales data
       const processedData = orders.map((order: { created_at: string; total_price: string; id: string }) => {
-        // Apply timezone adjustment to ensure dates are displayed correctly
+        // Get the user's timezone
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Parse the UTC date from the order
         let orderDate = parseISO(order.created_at);
+        
+        // Convert to the user's local timezone
+        orderDate = toZonedTime(orderDate, userTimeZone);
         
         // Check if the date needs timezone adjustment
         // This handles cases where the date might be shifted due to timezone differences
@@ -262,7 +273,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       let key = '';
       
       // Group by different time frames
-      if (timeFrame === 'weekly') {
+      if (timeFrame === 'today') {
+        // Group by hour for today view
+        const today = new Date();
+        if (isSameDay(saleDate, today)) {
+          key = format(saleDate, 'HH'); // 00-23 hour format
+        } else {
+          return acc; // Skip if not today
+        }
+      } else if (timeFrame === 'weekly') {
         // Group by day for weekly view
         key = format(saleDate, 'yyyy-MM-dd');
       } else if (timeFrame === 'monthly') {
@@ -294,7 +313,36 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   const generateDisplayData = (): DisplayItem[] => {
     const today = new Date();
     
-    if (timeFrame === 'weekly') {
+    if (timeFrame === 'today') {
+      // For today view, show hours of the day (0-23)
+      const hours = Array.from({ length: 24 }, (_, i) => i);
+      
+      return hours.map(hour => {
+        const hourKey = hour.toString().padStart(2, '0');
+        const existingData = groupedSalesData[hourKey];
+        const currentHour = today.getHours();
+        
+        // Format the hour for display (12am, 1am, ..., 11pm)
+        let displayHour;
+        if (hour === 0) {
+          displayHour = '12am';
+        } else if (hour < 12) {
+          displayHour = `${hour}am`;
+        } else if (hour === 12) {
+          displayHour = '12pm';
+        } else {
+          displayHour = `${hour - 12}pm`;
+        }
+        
+        return {
+          date: hourKey,
+          displayDate: displayHour,
+          revenue: existingData ? existingData.revenue : 0,
+          count: existingData ? existingData.count : 0,
+          isToday: hour === currentHour
+        } as WeeklyOrMonthlyDisplayItem;
+      });
+    } else if (timeFrame === 'weekly') {
       // For weekly view, show days of current week (Monday-Sunday)
       const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
       const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
@@ -374,7 +422,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   // Get the current month and year for the title
   const currentDate = new Date();
   const getTitle = () => {
-    if (timeFrame === 'weekly') {
+    if (timeFrame === 'today') {
+      return `Today (${format(currentDate, 'MMMM d, yyyy')})`;
+    } else if (timeFrame === 'weekly') {
       const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
       return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
@@ -387,7 +437,86 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   
   // Render different layouts based on timeFrame
   const renderCalendarContent = () => {
-    if (timeFrame === 'weekly') {
+    if (timeFrame === 'today') {
+      // Today view - 24 hours in a row
+      return (
+        <div className="flex flex-col h-full">
+          <div className="text-xs text-gray-400 mb-2">
+            Sales by hour of the day (adjusted to your local timezone)
+          </div>
+          <div className="grid grid-cols-12 gap-2 h-full">
+            {displayData.slice(0, 12).map((item, index) => (
+              <div 
+                key={index}
+                className={cn(
+                  "flex flex-col rounded-md overflow-hidden border h-full",
+                  (item as WeeklyOrMonthlyDisplayItem).isToday 
+                    ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
+                    : "bg-[#1e1e1e] border-gray-500 hover:border-gray-400 transition-colors"
+                )}
+              >
+                <div className={cn(
+                  "text-center py-1 text-xs font-medium",
+                  (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-gray-500 text-white" : "bg-gray-500 text-white"
+                )}>
+                  {item.displayDate}
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-end p-1">
+                  <div className="relative h-16 w-full flex flex-col justify-end">
+                    {item.revenue > 0 && (
+                      <div 
+                        style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                        className="w-full rounded-t bg-gray-500"
+                      ></div>
+                    )}
+                  </div>
+                  
+                  <div className="text-center text-xs font-medium text-emerald-500">
+                    {renderRevenueValue(item.revenue)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-12 gap-2 h-full mt-2">
+            {displayData.slice(12, 24).map((item, index) => (
+              <div 
+                key={index + 12}
+                className={cn(
+                  "flex flex-col rounded-md overflow-hidden border h-full",
+                  (item as WeeklyOrMonthlyDisplayItem).isToday 
+                    ? "bg-[#1a1a1a] border-gray-500 shadow-md" 
+                    : "bg-[#1e1e1e] border-gray-500 hover:border-gray-400 transition-colors"
+                )}
+              >
+                <div className={cn(
+                  "text-center py-1 text-xs font-medium",
+                  (item as WeeklyOrMonthlyDisplayItem).isToday ? "bg-gray-500 text-white" : "bg-gray-500 text-white"
+                )}>
+                  {item.displayDate}
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-end p-1">
+                  <div className="relative h-16 w-full flex flex-col justify-end">
+                    {item.revenue > 0 && (
+                      <div 
+                        style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                        className="w-full rounded-t bg-gray-500"
+                      ></div>
+                    )}
+                  </div>
+                  
+                  <div className="text-center text-xs font-medium text-emerald-500">
+                    {renderRevenueValue(item.revenue)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    } else if (timeFrame === 'weekly') {
       // Weekly view - 7 days in a row
       return (
         <div className="grid grid-cols-7 gap-2 h-full">
@@ -542,45 +671,61 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   };
   
   return (
-    <div className="h-full w-full flex flex-col bg-[#111111] rounded-lg border border-gray-700 overflow-hidden shadow-lg">
-      <div className="flex items-center justify-between p-3 bg-[#1A1A1A] border-b border-gray-700">
-        <div className="flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5 text-gray-400"
-          >
-            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-            <line x1="16" x2="16" y1="2" y2="6" />
-            <line x1="8" x2="8" y1="2" y2="6" />
-            <line x1="3" x2="21" y1="10" y2="10" />
-          </svg>
-          <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-base font-medium text-white mr-2">
-            {getTitle()}
+    <Card className="h-full">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-semibold">Revenue Calendar</CardTitle>
+          <div className="flex space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "text-xs h-7 px-2",
+                timeFrame === 'today' && "bg-gray-700"
+              )}
+              onClick={() => handleTimeFrameChange('today')}
+            >
+              Today
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "text-xs h-7 px-2",
+                timeFrame === 'weekly' && "bg-gray-700"
+              )}
+              onClick={() => handleTimeFrameChange('weekly')}
+            >
+              Week
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "text-xs h-7 px-2",
+                timeFrame === 'monthly' && "bg-gray-700"
+              )}
+              onClick={() => handleTimeFrameChange('monthly')}
+            >
+              Month
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "text-xs h-7 px-2",
+                timeFrame === 'yearly' && "bg-gray-700"
+              )}
+              onClick={() => handleTimeFrameChange('yearly')}
+            >
+              Year
+            </Button>
           </div>
-          <Select 
-            value={timeFrame} 
-            onValueChange={handleTimeFrameChange}
-          >
-            <SelectTrigger className="w-[120px] bg-gray-800 border-gray-700 h-8 text-white">
-              <SelectValue placeholder="Select period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">This Week</SelectItem>
-              <SelectItem value="monthly">This Month</SelectItem>
-              <SelectItem value="yearly">This Year</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-      </div>
+        <CardDescription className="text-sm font-medium">
+          {getTitle()}
+        </CardDescription>
+      </CardHeader>
       
       <div className="flex-1 px-3 pb-3 pt-3 overflow-hidden">
         {isLoading ? (
@@ -600,6 +745,6 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         <div className="text-emerald-500">Total Revenue: ${totalRevenue.toLocaleString()}</div>
         <div className="text-white">Last updated: {format(lastUpdated, 'h:mm a')}</div>
       </div>
-    </div>
+    </Card>
   )
 }
