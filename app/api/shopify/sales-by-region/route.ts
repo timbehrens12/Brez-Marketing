@@ -22,13 +22,19 @@ export async function GET(request: Request) {
     // Directly query the shopify_sales_by_region table
     console.log('Fetching sales by region data for brand:', brandId)
     
+    // First, let's check if the table exists and has data
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('shopify_sales_by_region')
+      .select('count(*)', { count: 'exact' })
+      .eq('brand_id', brandId)
+    
+    console.log('Table info:', tableInfo, 'Error:', tableError)
+    
+    // Now query the actual data
     let query = supabase
       .from('shopify_sales_by_region')
-      .select('city, country, total_price, order_count')
+      .select('*')
       .eq('brand_id', brandId)
-      .not('city', 'is', null)
-      .order('total_price', { ascending: false })
-      .limit(parseInt(limit))
     
     // Add date filters if provided
     if (startDate) {
@@ -53,7 +59,7 @@ export async function GET(request: Request) {
     }
     
     // Execute query
-    const { data: regions, error: regionsError } = await query
+    const { data: regionsData, error: regionsError } = await query
     
     if (regionsError) {
       console.error('Error fetching sales by region data:', regionsError)
@@ -63,12 +69,41 @@ export async function GET(request: Request) {
       }, { status: 500 })
     }
     
-    console.log(`Found ${regions?.length || 0} regions with sales data:`, regions)
+    let regions = regionsData || []
+    console.log(`Found ${regions.length || 0} regions with sales data:`, regions)
     
-    // If we can't use group by, we'll aggregate the data in JavaScript
+    // If we have no data, try to get placeholder data
+    if (regions.length === 0) {
+      console.log('No data found, checking for placeholder data')
+      
+      // Try to get placeholder data without date filters
+      const { data: placeholderRegions, error: placeholderError } = await supabase
+        .from('shopify_sales_by_region')
+        .select('*')
+        .eq('brand_id', brandId)
+        .ilike('order_id', 'placeholder%')
+      
+      if (placeholderError) {
+        console.error('Error fetching placeholder data:', placeholderError)
+      } else if (placeholderRegions && placeholderRegions.length > 0) {
+        console.log(`Found ${placeholderRegions.length} placeholder regions:`, placeholderRegions)
+        regions = placeholderRegions
+      }
+    }
+    
+    // If we still have no data, return empty result
+    if (regions.length === 0) {
+      console.log('No data found, returning empty result')
+      return NextResponse.json({ 
+        regions: [],
+        message: 'No regional sales data found'
+      })
+    }
+    
+    // Aggregate the data by city and country
     const regionMap = new Map()
     
-    regions?.forEach((region: any) => {
+    regions.forEach((region: any) => {
       const key = `${region.city}|${region.country}`
       if (!regionMap.has(key)) {
         regionMap.set(key, {
