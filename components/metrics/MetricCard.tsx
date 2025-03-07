@@ -184,7 +184,35 @@ export function MetricCard({
       periodName = "year";
     }
     
-    return `Compared to previous ${periodName}: ${prevStart} - ${prevEnd}`
+    // Calculate the previous period value
+    const previousValue = calculatePreviousValue(safeValue, safeChange);
+    const formattedPreviousValue = formatPreviousValue(previousValue);
+    const formattedCurrentValue = formatPreviousValue(safeValue);
+    
+    // Return just the period name for use in the tooltip component
+    return periodName;
+  }
+  
+  // Helper function to calculate the previous period value based on current value and percentage change
+  const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
+    if (percentChange === 0) return currentValue;
+    return currentValue / (1 + percentChange / 100);
+  }
+  
+  // Format the previous value based on the valueFormat
+  const formatPreviousValue = (value: number): string => {
+    try {
+      switch(valueFormat) {
+        case "currency":
+          return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        case "percentage":
+          return `${value.toFixed(1)}%`;
+        default:
+          return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+      }
+    } catch {
+      return "0";
+    }
   }
 
   return (
@@ -243,8 +271,35 @@ export function MetricCard({
                     <Info className="h-3 w-3 text-gray-500" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                  <p>{getComparisonText()}</p>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[250px] p-3">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-gray-400 mb-1">Current</p>
+                        <p className="font-bold text-sm">{formatPreviousValue(safeValue)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 mb-1">Previous {getComparisonText()}</p>
+                        <p className="font-bold text-sm">{formatPreviousValue(calculatePreviousValue(safeValue, safeChange))}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-1 border-t border-gray-700">
+                      <div className={cn(
+                        "flex items-center text-sm font-medium",
+                        isPositive ? "text-emerald-500" : safeChange < 0 ? "text-red-500" : "text-gray-400"
+                      )}>
+                        <span>Change: {formatChange(safeChange)}</span>
+                      </div>
+                    </div>
+                    
+                    {dateRange?.from && dateRange?.to && (
+                      <div className="text-gray-400 text-[10px] pt-1 border-t border-gray-700 mt-1">
+                        <p className="mb-0.5">Current: {format(dateRange.from, 'MMM d, yyyy')} - {format(dateRange.to, 'MMM d, yyyy')}</p>
+                        <p>Previous: {format(subDays(dateRange.from, Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))), 'MMM d, yyyy')} - {format(subDays(dateRange.from, 1), 'MMM d, yyyy')}</p>
+                      </div>
+                    )}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
