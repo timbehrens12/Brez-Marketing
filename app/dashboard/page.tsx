@@ -32,7 +32,6 @@ import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
-import { Button } from "@/components/ui/button"
 
 interface WidgetData {
   shopify?: any;
@@ -86,28 +85,9 @@ function formatDate(date: Date | undefined): string {
 export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
-  const [dateRange, setDateRange] = useState(() => {
-    // Try to get saved date range from localStorage
-    if (typeof window !== 'undefined') {
-      const savedDateRange = localStorage.getItem('dashboardDateRange');
-      if (savedDateRange) {
-        try {
-          const parsed = JSON.parse(savedDateRange);
-          // Ensure the dates are valid by converting strings back to Date objects
-          return {
-            from: new Date(parsed.from),
-            to: new Date(parsed.to)
-          };
-        } catch (e) {
-          console.error('Error parsing saved date range:', e);
-        }
-      }
-    }
-    // Default to today if no saved preference or error
-    return {
-      from: startOfDay(new Date()),
-      to: endOfDay(new Date()),
-    };
+  const [dateRange, setDateRange] = useState({
+    from: startOfDay(new Date()),
+    to: endOfDay(new Date()),
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
@@ -135,18 +115,6 @@ export default function DashboardPage() {
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState('');
   const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
-
-  // Save date range preference when it changes
-  const handleDateRangeChange = (newDateRange: { from: Date; to: Date }) => {
-    setDateRange(newDateRange);
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dashboardDateRange', JSON.stringify({
-        from: newDateRange.from.toISOString(),
-        to: newDateRange.to.toISOString()
-      }));
-    }
-  }
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -419,9 +387,34 @@ export default function DashboardPage() {
     setIsRefreshingData(true)
     try {
       // Fetch Shopify data
-      if (activePlatforms.shopify) {
-        // Fetch Shopify data
-        const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}`)
+      if (activePlatforms.shopify && shopifyConnection) {
+        // First, sync Shopify orders to ensure we have the latest data
+        try {
+          console.log('Syncing Shopify orders data')
+          const syncOrdersResponse = await fetch('/api/shopify/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ connectionId: shopifyConnection.id })
+          })
+          
+          if (!syncOrdersResponse.ok) {
+            console.error('Failed to sync orders data:', await syncOrdersResponse.text())
+          } else {
+            console.log('Orders sync initiated successfully')
+            // Wait for the sync to complete
+            await new Promise(resolve => setTimeout(resolve, 5000))
+          }
+        } catch (error) {
+          console.error('Error syncing orders data:', error)
+        }
+        
+        // Now fetch the metrics with the updated data
+        // Add a cache-busting parameter to ensure we get fresh data
+        const cacheBuster = `&t=${new Date().getTime()}`
+        const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}${cacheBuster}`)
+        
         if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
         const data = await response.json()
         setMetrics(prevMetrics => ({
@@ -430,32 +423,30 @@ export default function DashboardPage() {
         }))
         
         // Sync inventory data from Shopify
-        if (shopifyConnection) {
-          try {
-            console.log('Syncing inventory data from Shopify')
-            const syncResponse = await fetch('/api/shopify/inventory/sync', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ connectionId: shopifyConnection.id })
-            })
+        try {
+          console.log('Syncing inventory data from Shopify')
+          const syncResponse = await fetch('/api/shopify/inventory/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ connectionId: shopifyConnection.id })
+          })
+          
+          if (!syncResponse.ok) {
+            console.error('Failed to sync inventory data:', await syncResponse.text())
+          } else {
+            console.log('Inventory sync initiated successfully')
+            // Wait a moment for the sync to complete
+            await new Promise(resolve => setTimeout(resolve, 3000))
             
-            if (!syncResponse.ok) {
-              console.error('Failed to sync inventory data:', await syncResponse.text())
-            } else {
-              console.log('Inventory sync initiated successfully')
-              // Wait a moment for the sync to complete
-              await new Promise(resolve => setTimeout(resolve, 3000))
-              
-              // Force a refresh of the inventory data by dispatching a custom event
-              window.dispatchEvent(new CustomEvent('refreshInventory', { 
-                detail: { brandId: selectedBrandId }
-              }))
-            }
-          } catch (error) {
-            console.error('Error syncing inventory data:', error)
+            // Force a refresh of the inventory data by dispatching a custom event
+            window.dispatchEvent(new CustomEvent('refreshInventory', { 
+              detail: { brandId: selectedBrandId }
+            }))
           }
+        } catch (error) {
+          console.error('Error syncing inventory data:', error)
         }
       }
       
@@ -515,8 +506,24 @@ export default function DashboardPage() {
     }
     
     setIsRefreshing(true)
+    
+    // Show toast to inform user that refresh is happening
+    toast({
+      title: "Refreshing data",
+      description: "Syncing latest data from Shopify. This may take a few moments...",
+      variant: "default"
+    })
+    
     await fetchAllData()
     setLastRefreshed(new Date())
+    
+    // Show success toast
+    toast({
+      title: "Data refreshed",
+      description: "Your dashboard has been updated with the latest data.",
+      variant: "default"
+    })
+    
     setIsRefreshing(false)
     
     // Set cooldown
@@ -705,23 +712,10 @@ export default function DashboardPage() {
           <span className="text-xs text-gray-500">
             Last updated: {lastRefreshed?.toLocaleTimeString()}
           </span>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-9 bg-[#2A2A2A] hover:bg-[#333] border-[#444] text-white"
-              onClick={() => handleDateRangeChange({
-                from: startOfDay(new Date()),
-                to: endOfDay(new Date())
-              })}
-            >
-              Today
-            </Button>
-            <DateRangePicker 
-              dateRange={dateRange}
-              setDateRange={handleDateRangeChange}
-            />
-          </div>
+          <DateRangePicker 
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+          />
         </div>
       </div>
 
