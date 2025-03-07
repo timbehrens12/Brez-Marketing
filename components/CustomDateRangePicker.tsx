@@ -9,13 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-// Add custom styles to hide the default navigation buttons
-const calendarStyles = `
-  .rdp-nav_button {
-    display: none !important;
-  }
-`;
-
 interface DateRangePickerProps {
   dateRange: {
     from: Date;
@@ -31,6 +24,7 @@ const presets = [
     getDate: () => {
       const today = new Date()
       const startOfToday = startOfDay(today)
+      // Use current time instead of end of day to avoid future times
       return {
         from: startOfToday,
         to: today,
@@ -324,5 +318,4 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       </Popover>
     </div>
   )
-}
-
+} 
