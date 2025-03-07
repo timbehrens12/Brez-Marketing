@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears } from "date-fns"
+import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears, startOfMonth, isBefore, isAfter } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -100,6 +100,10 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
   const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
+  
+  // Get current date for comparison
+  const today = new Date()
+  const currentMonthStart = startOfMonth(today)
 
   // Reset temp state when popover opens
   React.useEffect(() => {
@@ -192,7 +196,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleNextMonth = () => {
-    setCurrentMonth(prevMonth => addMonths(prevMonth, 1))
+    // Only allow navigating to next month if it's not in the future
+    const nextMonth = addMonths(currentMonth, 1)
+    if (isBefore(startOfMonth(nextMonth), addMonths(currentMonthStart, 1))) {
+      setCurrentMonth(nextMonth)
+    }
   }
 
   const handlePreviousYear = () => {
@@ -200,7 +208,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleNextYear = () => {
-    setCurrentMonth(prevMonth => addYears(prevMonth, 1))
+    // Only allow navigating to next year if it's not in the future
+    const nextYear = addYears(currentMonth, 1)
+    if (isBefore(startOfMonth(nextYear), addYears(currentMonthStart, 1))) {
+      setCurrentMonth(nextYear)
+    }
   }
 
   return (
@@ -274,6 +286,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                       className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
                       onClick={handleNextMonth}
                       title="Next Month"
+                      disabled={isAfter(addMonths(startOfMonth(currentMonth), 1), currentMonthStart)}
                     >
                       <ChevronRight className="h-4 w-4" />
                       <span className="sr-only">Next Month</span>
@@ -284,6 +297,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                       className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
                       onClick={handleNextYear}
                       title="Next Year"
+                      disabled={isAfter(addYears(startOfMonth(currentMonth), 1), currentMonthStart)}
                     >
                       <ChevronsRight className="h-4 w-4" />
                       <span className="sr-only">Next Year</span>
@@ -301,6 +315,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   numberOfMonths={2}
                   showOutsideDays={false}
                   disabled={{ after: new Date() }}
+                  fromMonth={undefined}
+                  toMonth={today}
                   className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
                   components={{
                     IconLeft: () => null,
