@@ -58,6 +58,7 @@ export function SalesByRegion({
       }
       
       // Fetch data from API
+      console.log(`Fetching sales by region data: /api/shopify/sales-by-region?${params.toString()}`)
       const response = await fetch(`/api/shopify/sales-by-region?${params.toString()}`)
       
       if (!response.ok) {
@@ -65,6 +66,7 @@ export function SalesByRegion({
       }
       
       const data = await response.json()
+      console.log('Sales by region API response:', data)
       
       if (data.error) {
         throw new Error(data.error)

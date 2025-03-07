@@ -19,104 +19,41 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Get Shopify connection for this brand
-    console.log('Fetching Shopify connection for brand:', brandId)
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('*')
-      .eq('platform_type', 'shopify')
+    // Directly query the shopify_sales_by_region table
+    console.log('Fetching sales by region data for brand:', brandId)
+    
+    let query = supabase
+      .from('shopify_sales_by_region')
+      .select('city, country, total_price, order_count')
       .eq('brand_id', brandId)
-      .eq('status', 'active')
-      .single()
-
-    if (connectionError) {
-      if (connectionError.code === 'PGRST116') {
-        // No connection found (not an error)
-        console.log('No active Shopify connection found for brand:', brandId)
-        return NextResponse.json({ 
-          regions: [],
-          message: 'No active Shopify connection found'
-        })
-      }
-      
-      // Other database error
-      console.error('Error fetching Shopify connection:', connectionError)
-      return NextResponse.json({ 
-        error: 'Database error', 
-        details: connectionError.message 
-      }, { status: 500 })
-    }
-
-    if (!connection) {
-      console.log('No active Shopify connection found for brand:', brandId)
-      return NextResponse.json({ 
-        regions: [],
-        message: 'No active Shopify connection found'
-      })
-    }
-
-    console.log('Found Shopify connection:', { 
-      id: connection.id, 
-      status: connection.status
-    })
-
-    // Build query parameters
-    let queryParams: any = {
-      connection_id: connection.id.toString(),
-      brand_id: brandId.toString(),
-      limit: parseInt(limit)
-    }
+      .not('city', 'is', null)
+      .order('total_price', { ascending: false })
+      .limit(parseInt(limit))
     
     // Add date filters if provided
-    let dateFilter = ''
     if (startDate) {
-      queryParams.start_date = startDate
-      dateFilter += ' AND created_at >= :start_date'
+      console.log('Filtering by start date:', startDate)
+      query = query.gte('created_at', startDate)
     }
     
     if (endDate) {
       try {
         const parsedEndDate = parseISO(endDate)
         const adjustedEndDate = endOfDay(parsedEndDate)
-        queryParams.end_date = format(adjustedEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
-        dateFilter += ' AND created_at <= :end_date'
+        const formattedEndDate = format(adjustedEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+        
+        console.log('Filtering by end date:', endDate)
+        console.log('Adjusted end date to include full day:', formattedEndDate)
+        
+        query = query.lte('created_at', formattedEndDate)
       } catch (error) {
         console.error('Error adjusting end date:', error)
-        queryParams.end_date = endDate
-        dateFilter += ' AND created_at <= :end_date'
+        query = query.lte('created_at', endDate)
       }
     }
     
-    // Use a raw SQL query with GROUP BY
-    const query = `
-      SELECT 
-        city, 
-        country, 
-        SUM(total_price) as total_sales, 
-        COUNT(*) as order_count
-      FROM 
-        shopify_sales_by_region
-      WHERE 
-        connection_id = :connection_id 
-        AND brand_id = :brand_id
-        AND city IS NOT NULL
-        ${dateFilter}
-      GROUP BY 
-        city, country
-      ORDER BY 
-        total_sales DESC
-      LIMIT :limit
-    `
-    
     // Execute query
-    const { data: regions, error: regionsError } = await supabase
-      .from('shopify_sales_by_region')
-      .select('city, country, total_price, order_count')
-      .eq('connection_id', connection.id.toString())
-      .eq('brand_id', brandId.toString())
-      .not('city', 'is', null)
-      .order('total_price', { ascending: false })
-      .limit(parseInt(limit))
+    const { data: regions, error: regionsError } = await query
     
     if (regionsError) {
       console.error('Error fetching sales by region data:', regionsError)
@@ -125,6 +62,8 @@ export async function GET(request: Request) {
         details: regionsError.message 
       }, { status: 500 })
     }
+    
+    console.log(`Found ${regions?.length || 0} regions with sales data:`, regions)
     
     // If we can't use group by, we'll aggregate the data in JavaScript
     const regionMap = new Map()
@@ -150,7 +89,7 @@ export async function GET(request: Request) {
       .sort((a, b) => b.totalSales - a.totalSales)
       .slice(0, parseInt(limit))
     
-    console.log(`Found ${formattedRegions.length} regions with sales data`)
+    console.log(`Formatted ${formattedRegions.length} regions with sales data:`, formattedRegions)
     
     return NextResponse.json({ 
       regions: formattedRegions,

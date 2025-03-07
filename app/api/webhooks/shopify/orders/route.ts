@@ -137,12 +137,15 @@ export async function POST(request: NextRequest) {
     // Store the regional sales data
     console.log('Storing regional sales data for order:', order.id)
     
-    // Extract shipping address data
+    // Extract address data from various possible sources
     const shippingAddress = order.shipping_address || {}
     const billingAddress = order.billing_address || {}
+    const customerDefaultAddress = order.customer?.default_address || {}
     
-    // Use shipping address if available, otherwise fall back to billing address
-    const address = shippingAddress.city ? shippingAddress : billingAddress
+    // Use shipping address if available, otherwise try billing address, then customer default address
+    const address = shippingAddress.city ? shippingAddress : 
+                   billingAddress.city ? billingAddress : 
+                   customerDefaultAddress.city ? customerDefaultAddress : null
     
     if (address && address.city) {
       const { error: regionError } = await supabase
@@ -150,7 +153,7 @@ export async function POST(request: NextRequest) {
         .upsert([{
           connection_id: connection.id.toString(),
           brand_id: connection.brand_id.toString(),
-          user_id: connection.user_id.toString(),
+          user_id: connection.user_id.toString(), // Ensure user_id is stored as text
           order_id: order.id.toString(),
           created_at: order.created_at,
           city: address.city,
