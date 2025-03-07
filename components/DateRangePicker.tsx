@@ -88,7 +88,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     if (isOpen) {
       setTempDateRange(dateRange)
       setSelectionStep('start')
-      setCurrentMonth(dateRange?.from || new Date())
+      // Set current month to show current month on right, previous month on left
+      setCurrentMonth(prevMonth => subMonths(new Date(), 1))
     }
   }, [isOpen, dateRange])
 
@@ -224,7 +225,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                 ))}
               </div>
               <div className="pl-4 flex-1">
-                {/* Month navigation controls */}
+                {/* Month navigation controls - simplified */}
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex space-x-1">
                     <Button 
@@ -246,20 +247,6 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                     >
                       <ChevronLeft className="h-4 w-4" />
                       <span className="sr-only">Previous Month</span>
-                    </Button>
-                  </div>
-                  <div className="text-sm font-medium flex items-center space-x-2">
-                    <span>{format(currentMonth, "MMM yyyy")}</span>
-                    <span>-</span>
-                    <span>{format(addMonths(currentMonth, 1), "MMM yyyy")}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="ml-2 h-6 px-2 text-xs bg-[#222222] hover:bg-[#333333]"
-                      onClick={() => setCurrentMonth(new Date())}
-                      title="Go to Today"
-                    >
-                      Today
                     </Button>
                   </div>
                   <div className="flex space-x-1">
@@ -286,16 +273,6 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   </div>
                 </div>
                 
-                {selectionStep === 'start' && (
-                  <div className="mb-2 text-sm text-blue-400">
-                    Select start date
-                  </div>
-                )}
-                {selectionStep === 'end' && (
-                  <div className="mb-2 text-sm text-blue-400">
-                    Select end date
-                  </div>
-                )}
                 <Calendar
                   initialFocus
                   mode="range"
