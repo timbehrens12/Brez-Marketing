@@ -552,7 +552,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
           {/* AM Hours (12am-11am) */}
           <div className="mb-4">
             <div className="text-xs font-medium text-gray-300 mb-2">AM</div>
-            <div className="grid grid-cols-12 gap-3">
+            <div className="grid grid-cols-12 gap-2">
               {displayData.slice(0, 12).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
                 const hasRevenue = item.revenue > 0;
@@ -561,34 +561,34 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index}
                     className={cn(
-                      "flex flex-col rounded-lg overflow-hidden h-24 transition-all duration-200",
+                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
-                        ? "border-2 border-blue-500 shadow-lg shadow-blue-900/20" 
+                        ? "border-2 border-blue-500 shadow-md" 
                         : hasRevenue
-                          ? "border border-emerald-500/30 bg-gradient-to-b from-emerald-900/20 to-emerald-900/5"
-                          : "border border-gray-700 bg-gray-800/30"
+                          ? "border border-teal-500/30 bg-[#1a2235]"
+                          : "border border-[#2a3348] bg-[#141b2d]/70"
                     )}
                   >
                     <div className={cn(
-                      "text-center py-1.5 text-xs font-medium",
+                      "text-center py-1 text-xs font-medium",
                       isCurrentHour 
-                        ? "bg-blue-500 text-white" 
-                        : "bg-gray-700 text-gray-200"
+                        ? "bg-blue-600 text-white" 
+                        : "bg-[#1e2738] text-gray-200"
                     )}>
                       {item.displayDate}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-end p-2">
+                    <div className="flex-1 flex flex-col justify-end p-1.5">
                       {hasRevenue ? (
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-md bg-emerald-500/80"
+                              className="w-full rounded-sm bg-teal-500/60"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-sm font-medium text-emerald-400">
+                          <div className="text-center text-xs font-medium text-teal-400">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
@@ -599,7 +599,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                         </>
                       ) : (
                         <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                          No sales
+                          -
                         </div>
                       )}
                     </div>
@@ -612,7 +612,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
           {/* PM Hours (12pm-11pm) */}
           <div>
             <div className="text-xs font-medium text-gray-300 mb-2">PM</div>
-            <div className="grid grid-cols-12 gap-3">
+            <div className="grid grid-cols-12 gap-2">
               {displayData.slice(12, 24).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
                 const hasRevenue = item.revenue > 0;
@@ -621,34 +621,34 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index + 12}
                     className={cn(
-                      "flex flex-col rounded-lg overflow-hidden h-24 transition-all duration-200",
+                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
-                        ? "border-2 border-blue-500 shadow-lg shadow-blue-900/20" 
+                        ? "border-2 border-blue-500 shadow-md" 
                         : hasRevenue
-                          ? "border border-emerald-500/30 bg-gradient-to-b from-emerald-900/20 to-emerald-900/5"
-                          : "border border-gray-700 bg-gray-800/30"
+                          ? "border border-teal-500/30 bg-[#1a2235]"
+                          : "border border-[#2a3348] bg-[#141b2d]/70"
                     )}
                   >
                     <div className={cn(
-                      "text-center py-1.5 text-xs font-medium",
+                      "text-center py-1 text-xs font-medium",
                       isCurrentHour 
-                        ? "bg-blue-500 text-white" 
-                        : "bg-gray-700 text-gray-200"
+                        ? "bg-blue-600 text-white" 
+                        : "bg-[#1e2738] text-gray-200"
                     )}>
                       {item.displayDate}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-end p-2">
+                    <div className="flex-1 flex flex-col justify-end p-1.5">
                       {hasRevenue ? (
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-md bg-emerald-500/80"
+                              className="w-full rounded-sm bg-teal-500/60"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-sm font-medium text-emerald-400">
+                          <div className="text-center text-xs font-medium text-teal-400">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
@@ -659,7 +659,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                         </>
                       ) : (
                         <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                          No sales
+                          -
                         </div>
                       )}
                     </div>
@@ -673,7 +673,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else if (timeFrame === 'weekly') {
       // Weekly view - 7 days in a row
       return (
-        <div className="grid grid-cols-7 gap-3 h-full">
+        <div className="grid grid-cols-7 gap-2 h-full">
           {displayData.map((item, index) => {
             const isToday = (item as WeeklyOrMonthlyDisplayItem).isToday;
             const hasRevenue = item.revenue > 0;
@@ -682,19 +682,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               <div 
                 key={index}
                 className={cn(
-                  "flex flex-col rounded-lg overflow-hidden h-full transition-all duration-200",
+                  "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isToday 
-                    ? "border-2 border-blue-500 shadow-lg shadow-blue-900/20" 
+                    ? "border-2 border-blue-500 shadow-md" 
                     : hasRevenue
-                      ? "border border-emerald-500/30 bg-gradient-to-b from-emerald-900/20 to-emerald-900/5"
-                      : "border border-gray-700 bg-gray-800/30"
+                      ? "border border-teal-500/30 bg-[#1a2235]"
+                      : "border border-[#2a3348] bg-[#141b2d]/70"
                 )}
               >
                 <div className={cn(
-                  "text-center py-1.5 text-xs font-medium",
+                  "text-center py-1 text-xs font-medium",
                   isToday 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-gray-700 text-gray-200"
+                    ? "bg-blue-600 text-white" 
+                    : "bg-[#1e2738] text-gray-200"
                 )}>
                   {item.displayDate}
                 </div>
@@ -705,11 +705,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div className="relative h-full w-full flex flex-col justify-end mb-1">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                          className="w-full rounded-md bg-emerald-500/80"
+                          className="w-full rounded-sm bg-teal-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-sm font-medium text-emerald-400">
+                      <div className="text-center text-sm font-medium text-teal-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
@@ -720,7 +720,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     </>
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                      No sales
+                      -
                     </div>
                   )}
                 </div>
@@ -740,7 +740,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       
       return (
         <div className="h-full flex flex-col">
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-1 mb-1">
             {daysOfWeek.map((day, index) => (
               <div key={index} className="text-center text-xs font-medium text-gray-400 py-1">
                 {day}
@@ -748,7 +748,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-2 flex-1">
+          <div className="grid grid-cols-7 gap-1 flex-1">
             {/* Empty cells for days before the first of the month */}
             {emptyCells.map(({ index }) => (
               <div key={`empty-${index}`} className="bg-transparent"></div>
@@ -764,26 +764,26 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div
                   key={index}
                   className={cn(
-                    "flex flex-col rounded-lg overflow-hidden aspect-square transition-all duration-200",
+                    "flex flex-col rounded-md overflow-hidden min-h-[40px] transition-all duration-200",
                     isToday 
-                      ? "border-2 border-blue-500 shadow-lg shadow-blue-900/20" 
+                      ? "border-2 border-blue-500 shadow-md" 
                       : hasRevenue
-                        ? "border border-emerald-500/30 bg-gradient-to-b from-emerald-900/20 to-emerald-900/5"
-                        : "border border-gray-700 bg-gray-800/30"
+                        ? "border border-teal-500/30 bg-[#1a2235]"
+                        : "border border-[#2a3348] bg-[#141b2d]/70"
                   )}
                 >
                   <div className={cn(
-                    "text-center py-1 text-xs font-medium",
+                    "text-center py-0.5 text-xs font-medium",
                     isToday 
-                      ? "bg-blue-500 text-white" 
-                      : "bg-gray-700 text-gray-200"
+                      ? "bg-blue-600 text-white" 
+                      : "bg-[#1e2738] text-gray-200"
                   )}>
                     {day}
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-center p-1">
                     {hasRevenue ? (
-                      <div className="text-center text-sm font-medium text-emerald-400">
+                      <div className="text-center text-xs font-medium text-teal-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                     ) : (
@@ -801,7 +801,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else {
       // Yearly view - 12 months in a grid
       return (
-        <div className="grid grid-cols-4 gap-4 h-full">
+        <div className="grid grid-cols-4 gap-3 h-full">
           {displayData.map((item, index) => {
             const isCurrentMonth = (item as YearlyDisplayItem).isCurrentMonth;
             const hasRevenue = item.revenue > 0;
@@ -810,34 +810,34 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               <div 
                 key={index}
                 className={cn(
-                  "flex flex-col rounded-lg overflow-hidden h-full transition-all duration-200",
+                  "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isCurrentMonth 
-                    ? "border-2 border-blue-500 shadow-lg shadow-blue-900/20" 
+                    ? "border-2 border-blue-500 shadow-md" 
                     : hasRevenue
-                      ? "border border-emerald-500/30 bg-gradient-to-b from-emerald-900/20 to-emerald-900/5"
-                      : "border border-gray-700 bg-gray-800/30"
+                      ? "border border-teal-500/30 bg-[#1a2235]"
+                      : "border border-[#2a3348] bg-[#141b2d]/70"
                 )}
               >
                 <div className={cn(
-                  "text-center py-1.5 text-sm font-medium",
+                  "text-center py-1 text-sm font-medium",
                   isCurrentMonth 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-gray-700 text-gray-200"
+                    ? "bg-blue-600 text-white" 
+                    : "bg-[#1e2738] text-gray-200"
                 )}>
                   {item.displayDate}
                 </div>
                 
-                <div className="flex-1 flex flex-col justify-end p-3">
+                <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="relative h-24 w-full flex flex-col justify-end mb-2">
+                      <div className="relative h-16 w-full flex flex-col justify-end mb-1">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                          className="w-full rounded-md bg-emerald-500/80"
+                          className="w-full rounded-sm bg-teal-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-lg font-medium text-emerald-400">
+                      <div className="text-center text-sm font-medium text-teal-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
@@ -847,8 +847,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                      No sales
+                    <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                      -
                     </div>
                   )}
                 </div>
@@ -864,7 +864,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   const renderRevenueValue = (revenue: number) => {
     if (isRefreshing) {
       return (
-        <div className="animate-pulse bg-gray-700 h-5 w-16 rounded mx-auto"></div>
+        <div className="animate-pulse bg-[#1e2738] h-4 w-12 rounded mx-auto"></div>
       );
     }
     
@@ -872,11 +872,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       ? (revenue >= 1000 
           ? `$${(revenue / 1000).toFixed(1)}k` 
           : `$${revenue.toFixed(0)}`)
-      : "$0";
+      : "-";
   };
   
   return (
-    <Card className="h-full bg-gray-900 border-gray-800">
+    <Card className="h-full bg-[#111827] border-[#1e2738]">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-white">Revenue Calendar</CardTitle>
@@ -885,10 +885,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               variant="ghost"
               size="sm"
               className={cn(
-                "text-xs h-8 px-3 rounded-full transition-all",
+                "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'today' 
                   ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('today')}
             >
@@ -898,10 +898,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               variant="ghost"
               size="sm"
               className={cn(
-                "text-xs h-8 px-3 rounded-full transition-all",
+                "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'weekly' 
                   ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('weekly')}
             >
@@ -911,10 +911,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               variant="ghost"
               size="sm"
               className={cn(
-                "text-xs h-8 px-3 rounded-full transition-all",
+                "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'monthly' 
                   ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('monthly')}
             >
@@ -924,10 +924,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               variant="ghost"
               size="sm"
               className={cn(
-                "text-xs h-8 px-3 rounded-full transition-all",
+                "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'yearly' 
                   ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('yearly')}
             >
@@ -940,19 +940,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         </CardDescription>
       </CardHeader>
       
-      <div className="flex-1 px-4 pb-4 pt-2 overflow-hidden">
+      <div className="flex-1 px-3 pb-3 pt-2 overflow-hidden">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mb-3"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-2"></div>
               <div className="text-gray-400 text-sm">Loading sales data...</div>
             </div>
           </div>
         ) : error ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center text-center max-w-md">
-              <div className="bg-red-900/20 p-3 rounded-full mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-red-900/20 p-2 rounded-full mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -965,8 +965,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         )}
       </div>
       
-      <div className="p-3 border-t border-gray-800 bg-gray-900/50 text-sm font-medium flex justify-between items-center">
-        <div className="text-emerald-400 flex items-center">
+      <div className="p-2 border-t border-[#1e2738] bg-[#0f1623] text-sm font-medium flex justify-between items-center">
+        <div className="text-teal-400 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
