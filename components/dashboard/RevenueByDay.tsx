@@ -71,6 +71,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     date: string; 
     revenue: number; 
     id?: string;
+    zonedDate?: Date;
   }>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,25 +148,21 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         // Parse the UTC date from the order
         let orderDate = parseISO(order.created_at);
         
+        // Log the original UTC time
+        console.log(`Original order time (UTC): ${format(orderDate, 'yyyy-MM-dd HH:mm:ss')}`);
+        
         // Convert to the user's local timezone
-        orderDate = toZonedTime(orderDate, userTimeZone);
+        const zonedDate = toZonedTime(orderDate, userTimeZone);
         
-        // Check if the date needs timezone adjustment
-        // This handles cases where the date might be shifted due to timezone differences
-        const needsAdjustment = orderDate.getHours() === 0 && 
-                                orderDate.getMinutes() === 0 && 
-                                orderDate.getSeconds() === 0;
+        // Log the converted time
+        console.log(`Converted to ${userTimeZone}: ${format(zonedDate, 'yyyy-MM-dd HH:mm:ss')}`);
         
-        if (needsAdjustment) {
-          // Add hours to adjust for timezone if needed
-          orderDate = addHours(orderDate, 12);
-        }
-        
+        // We'll keep the original UTC date for the date field, but use the zoned date for display
         return {
           date: format(orderDate, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+          zonedDate: zonedDate, // Store the timezone-adjusted date for display purposes
           revenue: parseFloat(order.total_price || '0'),
-          id: order.id,
-          isTimezoneShifted: needsAdjustment
+          id: order.id
         };
       });
       
@@ -207,7 +204,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   };
   
   // Ensure today and yesterday are included in the data
-  const ensureTodayAndYesterday = (data: Array<{date: string; revenue: number; id?: string; isTimezoneShifted?: boolean}>) => {
+  const ensureTodayAndYesterday = (data: Array<{date: string; zonedDate?: Date; revenue: number; id?: string;}>) => {
     const today = new Date();
     const yesterday = subDays(today, 1);
     
@@ -218,6 +215,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     const hasTodaySale = data.some(sale => {
       if (!sale || !sale.date) return false;
       try {
+        // If we have a zonedDate, use that for comparison
+        if (sale.zonedDate) {
+          return format(sale.zonedDate, 'yyyy-MM-dd') === todayFormatted;
+        }
+        
         const saleDate = parseISO(sale.date);
         return format(saleDate, 'yyyy-MM-dd') === todayFormatted;
       } catch (error) {
@@ -228,6 +230,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     const hasYesterdaySale = data.some(sale => {
       if (!sale || !sale.date) return false;
       try {
+        // If we have a zonedDate, use that for comparison
+        if (sale.zonedDate) {
+          return format(sale.zonedDate, 'yyyy-MM-dd') === yesterdayFormatted;
+        }
+        
         const saleDate = parseISO(sale.date);
         return format(saleDate, 'yyyy-MM-dd') === yesterdayFormatted;
       } catch (error) {
@@ -242,9 +249,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     if (!hasTodaySale) {
       enhancedData.push({
         date: format(today, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+        zonedDate: today,
         revenue: 0,
-        id: `generated-today-${Date.now()}`,
-        isTimezoneShifted: false
+        id: `generated-today-${Date.now()}`
       });
     }
     
@@ -252,9 +259,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     if (!hasYesterdaySale) {
       enhancedData.push({
         date: format(yesterday, 'yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\''),
+        zonedDate: yesterday,
         revenue: 0,
-        id: `generated-yesterday-${Date.now()}`,
-        isTimezoneShifted: false
+        id: `generated-yesterday-${Date.now()}`
       });
     }
     
@@ -276,8 +283,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       if (timeFrame === 'today') {
         // Group by hour for today view
         const today = new Date();
-        if (isSameDay(saleDate, today)) {
-          key = format(saleDate, 'HH'); // 00-23 hour format
+        
+        // Get the user's timezone
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        
+        // Convert the sale date to the user's timezone
+        const zonedDate = toZonedTime(saleDate, userTimeZone);
+        
+        if (isSameDay(zonedDate, today)) {
+          // Use the hour from the timezone-adjusted date
+          const hour = format(zonedDate, 'HH'); // 00-23 hour format
+          key = hour;
+          
+          console.log(`Sale at ${format(saleDate, 'yyyy-MM-dd HH:mm:ss')} UTC grouped to hour ${hour} in ${userTimeZone}`);
         } else {
           return acc; // Skip if not today
         }
@@ -309,9 +327,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     return acc;
   }, {} as Record<string, { date: string; revenue: number; count: number }>);
   
+  // For the "Today" view, add a helper function to get the current hour
+  const getCurrentHour = (): number => {
+    return new Date().getHours();
+  };
+
   // Generate display data based on time frame
   const generateDisplayData = (): DisplayItem[] => {
     const today = new Date();
+    const currentHour = getCurrentHour();
     
     if (timeFrame === 'today') {
       // For today view, show hours of the day (0-23)
@@ -320,7 +344,6 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       return hours.map(hour => {
         const hourKey = hour.toString().padStart(2, '0');
         const existingData = groupedSalesData[hourKey];
-        const currentHour = today.getHours();
         
         // Format the hour for display (12am, 1am, ..., 11pm)
         let displayHour;
@@ -439,10 +462,12 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   const renderCalendarContent = () => {
     if (timeFrame === 'today') {
       // Today view - 24 hours in a row
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
       return (
         <div className="flex flex-col h-full">
           <div className="text-xs text-gray-400 mb-2">
-            Sales by hour of the day (adjusted to your local timezone)
+            Sales by hour of the day (adjusted to your local timezone: {userTimeZone})
           </div>
           <div className="grid grid-cols-12 gap-2 h-full">
             {displayData.slice(0, 12).map((item, index) => (
@@ -475,6 +500,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div className="text-center text-xs font-medium text-emerald-500">
                     {renderRevenueValue(item.revenue)}
                   </div>
+                  {item.count > 0 && (
+                    <div className="text-center text-xs text-gray-400">
+                      {item.count} order{item.count !== 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -510,9 +540,31 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div className="text-center text-xs font-medium text-emerald-500">
                     {renderRevenueValue(item.revenue)}
                   </div>
+                  {item.count > 0 && (
+                    <div className="text-center text-xs text-gray-400">
+                      {item.count} order{item.count !== 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
+          </div>
+          
+          {/* Debug information */}
+          <div className="mt-4 p-2 border border-gray-700 rounded-md bg-[#111111] text-xs text-gray-400">
+            <div className="font-medium mb-1">Debug Information:</div>
+            <div>Your timezone: {userTimeZone}</div>
+            <div>Current local time: {format(new Date(), 'yyyy-MM-dd HH:mm:ss')}</div>
+            <div>Current hour: {getCurrentHour()}</div>
+            <div className="mt-1">Raw sales data:</div>
+            <div className="max-h-20 overflow-y-auto">
+              {salesData.slice(0, 5).map((sale, index) => (
+                <div key={index} className="text-xs">
+                  UTC: {sale.date} → Local: {sale.zonedDate ? format(sale.zonedDate, 'yyyy-MM-dd HH:mm:ss') : 'N/A'} (${sale.revenue})
+                </div>
+              ))}
+              {salesData.length > 5 && <div>...and {salesData.length - 5} more</div>}
+            </div>
           </div>
         </div>
       );
