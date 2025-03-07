@@ -80,6 +80,16 @@ const presets = [
 
 export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
+  const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
+
+  // Reset temp state when popover opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setTempDateRange(dateRange)
+      setSelectionStep('start')
+    }
+  }, [isOpen, dateRange])
 
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
     if (!currentDate?.from || !currentDate?.to) return "Pick a date range"
@@ -98,6 +108,42 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
 
     // If no preset matches, show date range
     return `${format(currentDate.from, "LLL dd, y")} - ${format(currentDate.to, "LLL dd, y")}`
+  }
+
+  const handleCalendarSelect = (newDateRange: DateRange | undefined) => {
+    if (!newDateRange) return
+    
+    setTempDateRange(newDateRange)
+    
+    // If both from and to are selected, mark as complete
+    if (newDateRange.from && newDateRange.to) {
+      setSelectionStep('complete')
+    } 
+    // If only from is selected, prompt for end date
+    else if (newDateRange.from) {
+      setSelectionStep('end')
+    }
+  }
+
+  const handleApply = () => {
+    if (tempDateRange?.from && tempDateRange?.to) {
+      setDateRange({
+        from: tempDateRange.from,
+        to: tempDateRange.to
+      })
+    }
+    setIsOpen(false)
+  }
+
+  const handleCancel = () => {
+    setTempDateRange(dateRange)
+    setIsOpen(false)
+  }
+
+  const handlePresetSelect = (preset: typeof presets[0]) => {
+    const newRange = preset.getDate()
+    setTempDateRange(newRange)
+    setSelectionStep('complete')
   }
 
   return (
@@ -124,35 +170,61 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="space-y-4 p-4 bg-[#111111] text-white">
-            <div className="border-r flex flex-col">
-              {presets.map((preset) => (
-                <Button
-                  key={preset.value}
-                  variant="ghost"
-                  className="w-full justify-start text-white hover:bg-[#222222]"
-                  onClick={() => {
-                    setDateRange(preset.getDate())
-                    setIsOpen(false)
-                  }}
-                >
-                  {preset.label}
-                </Button>
-              ))}
+            <div className="flex">
+              <div className="border-r pr-4 flex flex-col space-y-1">
+                {presets.map((preset) => (
+                  <Button
+                    key={preset.value}
+                    variant="ghost"
+                    className="w-full justify-start text-white hover:bg-[#222222]"
+                    onClick={() => {
+                      handlePresetSelect(preset)
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="pl-4 flex-1">
+                {selectionStep === 'start' && (
+                  <div className="mb-2 text-sm text-blue-400">
+                    Select start date
+                  </div>
+                )}
+                {selectionStep === 'end' && (
+                  <div className="mb-2 text-sm text-blue-400">
+                    Select end date
+                  </div>
+                )}
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={tempDateRange?.from || new Date()}
+                  selected={tempDateRange}
+                  onSelect={handleCalendarSelect}
+                  numberOfMonths={2}
+                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
+                />
+              </div>
             </div>
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={(newDateRange) => {
-                if (newDateRange) {
-                  setDateRange(newDateRange as { from: Date; to: Date })
-                }
-                setIsOpen(false)
-              }}
-              numberOfMonths={2}
-              className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
-            />
+            
+            <div className="flex justify-end space-x-2 pt-2 border-t border-[#222222]">
+              <Button 
+                variant="outline" 
+                className="bg-[#222222] hover:bg-[#333333] text-white"
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="default"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={!tempDateRange?.from || !tempDateRange?.to}
+                onClick={handleApply}
+              >
+                Apply
+              </Button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>
