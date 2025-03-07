@@ -86,7 +86,7 @@ export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
   const [dateRange, setDateRange] = useState({
-    from: addDays(new Date(), -30),
+    from: addDays(new Date(), -7),
     to: new Date(),
   })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
