@@ -16,7 +16,6 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
-import { SalesByRegion } from "@/components/dashboard/SalesByRegion"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -237,14 +236,6 @@ export function ShopifyTab({
           </CardContent>
         </Card>
       </div>
-
-      {/* Add the SalesByRegion component */}
-      <SalesByRegion 
-        brandId={brandId}
-        isLoading={isLoading}
-        isRefreshingData={isRefreshingData}
-        dateRange={dateRange}
-      />
     </div>
   )
 } 

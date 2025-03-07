@@ -9,7 +9,6 @@ import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
-import React from "react"
 
 interface MetricCardProps {
   title: string | React.ReactNode
@@ -112,30 +111,13 @@ export function MetricCard({
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
   
-  // Determine if this is an inventory metric that shouldn't show percentage change
-  const isInventoryMetric = (() => {
-    // Convert title to string for easier checking
-    let titleStr = '';
-    
-    if (typeof title === 'string') {
-      titleStr = title;
-    } else if (typeof title === 'object' && React.isValidElement(title)) {
-      // Try to extract text from the title element
-      try {
-        // Convert the title element to a string representation
-        titleStr = JSON.stringify(title);
-      } catch (e) {
-        // If conversion fails, default to empty string
-        titleStr = '';
-      }
-    }
-    
-    // Check if the title contains inventory-related keywords
-    const inventoryKeywords = ['inventory', 'stock', 'out of stock', 'low stock'];
-    return inventoryKeywords.some(keyword => 
-      titleStr.toLowerCase().includes(keyword.toLowerCase())
-    );
-  })();
+  // Simple check for inventory metrics without using complex hooks
+  const titleString = String(title);
+  const isInventoryMetric = 
+    titleString.includes('Inventory') || 
+    titleString.includes('Stock') || 
+    titleString.includes('Out of Stock') || 
+    titleString.includes('Low Stock');
 
   const PlatformIcon = () => {
     switch (platform) {
