@@ -195,12 +195,35 @@ export function MetricCard({
   
   // Helper function to calculate the previous period value based on current value and percentage change
   const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
-    if (percentChange === 0) return currentValue;
+    // If the current value is 0 and the change is -100%, the previous value was something > 0
+    if (currentValue === 0 && percentChange === -100) {
+      // We don't know the exact previous value, but we can check if there's data in the calendar
+      // For now, return a small positive number to avoid NaN
+      return 0.01;
+    }
+    
+    // If the percentage change is 0 or NaN, return the current value
+    if (percentChange === 0 || isNaN(percentChange)) return currentValue;
+    
+    // Normal calculation
     return currentValue / (1 + percentChange / 100);
   }
   
   // Format the previous value based on the valueFormat
   const formatPreviousValue = (value: number): string => {
+    // Handle NaN, undefined, or invalid values
+    if (isNaN(value) || value === undefined || value === null) {
+      // Return appropriate default based on format
+      switch(valueFormat) {
+        case "currency":
+          return "$0.00";
+        case "percentage":
+          return "0.0%";
+        default:
+          return "0";
+      }
+    }
+    
     try {
       switch(valueFormat) {
         case "currency":
@@ -213,6 +236,103 @@ export function MetricCard({
     } catch {
       return "0";
     }
+  }
+
+  // Function to get the previous value display, trying to use actual data if available
+  const getPreviousValueDisplay = (): string => {
+    // If we don't have data, use the calculated value
+    if (!safeData || safeData.length === 0) {
+      return formatPreviousValue(calculatePreviousValue(safeValue, safeChange));
+    }
+    
+    // Check if we're comparing to yesterday (1-day comparison)
+    const isYesterdayComparison = dateRange?.from && dateRange?.to && 
+      dateRange.from.toDateString() === dateRange.to.toDateString() &&
+      new Date().toDateString() === dateRange.from.toDateString();
+    
+    // For yesterday comparison
+    if (isYesterdayComparison) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayString = yesterday.toISOString().split('T')[0];
+      
+      // Find yesterday's data point
+      const yesterdayData = safeData.find(d => 
+        d.date && d.date.toString().includes(yesterdayString)
+      );
+      
+      if (yesterdayData) {
+        // Extract the value - handle different data structures
+        let value: number | undefined;
+        
+        if ('value' in yesterdayData && typeof yesterdayData.value === 'number') {
+          value = yesterdayData.value;
+        } else if ('revenue' in yesterdayData && typeof yesterdayData.revenue === 'number') {
+          value = yesterdayData.revenue;
+        } else if ('amount' in yesterdayData && typeof yesterdayData.amount === 'number') {
+          value = yesterdayData.amount;
+        }
+        
+        if (value !== undefined) {
+          return formatPreviousValue(value);
+        }
+      }
+    }
+    
+    // For other period comparisons, try to find data for the previous period
+    if (dateRange?.from) {
+      const currentPeriodLength = dateRange.to 
+        ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        : 1;
+      
+      const prevPeriodEnd = new Date(dateRange.from);
+      prevPeriodEnd.setDate(prevPeriodEnd.getDate() - 1);
+      
+      const prevPeriodStart = new Date(prevPeriodEnd);
+      prevPeriodStart.setDate(prevPeriodStart.getDate() - currentPeriodLength + 1);
+      
+      // Find data points in the previous period
+      const prevPeriodData = safeData.filter(d => {
+        if (!d.date) return false;
+        const date = new Date(d.date);
+        return date >= prevPeriodStart && date <= prevPeriodEnd;
+      });
+      
+      if (prevPeriodData.length > 0) {
+        // Calculate the sum of values in the previous period
+        let sum = 0;
+        let count = 0;
+        
+        prevPeriodData.forEach(d => {
+          let value: number | undefined;
+          
+          if ('value' in d && typeof d.value === 'number') {
+            value = d.value;
+          } else if ('revenue' in d && typeof d.revenue === 'number') {
+            value = d.revenue;
+          } else if ('amount' in d && typeof d.amount === 'number') {
+            value = d.amount;
+          }
+          
+          if (value !== undefined) {
+            sum += value;
+            count++;
+          }
+        });
+        
+        if (count > 0) {
+          // For average metrics like AOV, we want the average
+          if (title && typeof title === 'string' && title.toLowerCase().includes('average')) {
+            return formatPreviousValue(sum / count);
+          }
+          // Otherwise return the sum
+          return formatPreviousValue(sum);
+        }
+      }
+    }
+    
+    // Fall back to calculated value
+    return formatPreviousValue(calculatePreviousValue(safeValue, safeChange));
   }
 
   return (
@@ -280,7 +400,7 @@ export function MetricCard({
                       </div>
                       <div>
                         <p className="text-gray-400 mb-1">Previous {getComparisonText()}</p>
-                        <p className="font-bold text-sm">{formatPreviousValue(calculatePreviousValue(safeValue, safeChange))}</p>
+                        <p className="font-bold text-sm">{getPreviousValueDisplay()}</p>
                       </div>
                     </div>
                     
@@ -297,6 +417,19 @@ export function MetricCard({
                       <div className="text-gray-400 text-[10px] pt-1 border-t border-gray-700 mt-1">
                         <p className="mb-0.5">Current: {format(dateRange.from, 'MMM d, yyyy')} - {format(dateRange.to, 'MMM d, yyyy')}</p>
                         <p>Previous: {format(subDays(dateRange.from, Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))), 'MMM d, yyyy')} - {format(subDays(dateRange.from, 1), 'MMM d, yyyy')}</p>
+                      </div>
+                    )}
+                    
+                    {/* Debug information - only shown in development */}
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mt-2 pt-1 border-t border-gray-700 text-[9px] text-gray-500">
+                        <p>Debug Info:</p>
+                        <p>Data points: {safeData.length}</p>
+                        {safeData.length > 0 && (
+                          <p>Latest data: {JSON.stringify(safeData[safeData.length - 1]).substring(0, 50)}...</p>
+                        )}
+                        <p>Raw change: {safeChange}</p>
+                        <p>Calc prev: {calculatePreviousValue(safeValue, safeChange)}</p>
                       </div>
                     )}
                   </div>
