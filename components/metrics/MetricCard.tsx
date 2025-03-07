@@ -187,265 +187,32 @@ export function MetricCard({
     // Calculate the previous period value
     const previousValue = calculatePreviousValue(safeValue, safeChange);
     const formattedPreviousValue = formatPreviousValue(previousValue);
-    const formattedCurrentValue = formatPreviousValue(safeValue);
     
-    // Return just the period name for use in the tooltip component
-    return periodName;
+    return `Previous ${periodName} (${prevStart} - ${prevEnd}): ${formattedPreviousValue}`
   }
   
   // Helper function to calculate the previous period value based on current value and percentage change
   const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
-    // If the current value is 0 and the change is -100%, the previous value was something > 0
-    if (currentValue === 0 && percentChange === -100) {
-      // We don't know the exact previous value, but we can check if there's data in the calendar
-      // For now, return a small positive number to avoid NaN
-      return 0.01;
-    }
-    
-    // If the percentage change is 0 or NaN, return the current value
-    if (percentChange === 0 || isNaN(percentChange)) return currentValue;
-    
-    // Normal calculation
+    if (percentChange === 0) return currentValue;
     return currentValue / (1 + percentChange / 100);
   }
   
-  // Format the previous value based on the valueFormat
+  // Format the previous value consistently with the current value display
   const formatPreviousValue = (value: number): string => {
-    // Handle NaN, undefined, or invalid values
-    if (isNaN(value) || value === undefined || value === null) {
-      // Return appropriate default based on format
-      switch(valueFormat) {
-        case "currency":
-          return "$0.00";
-        case "percentage":
-          return "0.0%";
-        default:
-          return "0";
-      }
-    }
-    
     try {
       switch(valueFormat) {
         case "currency":
-          return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          return prefix === "$" 
+            ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+            : `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${suffix}`;
         case "percentage":
-          return `${value.toFixed(1)}%`;
+          return `${value.toFixed(1)}%${suffix}`;
         default:
-          return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+          return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}${suffix ? suffix : ''}`;
       }
     } catch {
       return "0";
     }
-  }
-
-  // Function to get the previous value display, trying to use actual data if available
-  const getPreviousValueDisplay = (): string => {
-    // If we don't have data, use the calculated value
-    if (!safeData || safeData.length === 0) {
-      // Check if we're in development mode and log for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('No data available for previous value calculation', { title, safeValue, safeChange });
-      }
-      return formatPreviousValue(calculatePreviousValue(safeValue, safeChange));
-    }
-    
-    // Log data for debugging in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Data for previous value calculation', { 
-        title, 
-        dataLength: safeData.length,
-        sampleData: safeData.slice(0, 2),
-        dateRange
-      });
-    }
-    
-    // Check if we're comparing to yesterday (1-day comparison)
-    const isYesterdayComparison = dateRange?.from && dateRange?.to && 
-      dateRange.from.toDateString() === dateRange.to.toDateString() &&
-      new Date().toDateString() === dateRange.from.toDateString();
-    
-    // For yesterday comparison
-    if (isYesterdayComparison) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayString = yesterday.toISOString().split('T')[0];
-      
-      // Find yesterday's data point
-      const yesterdayData = safeData.find(d => {
-        if (!d.date) return false;
-        
-        // Handle different date formats
-        const dateStr = typeof d.date === 'string' ? d.date : String(d.date);
-        return dateStr.includes(yesterdayString);
-      });
-      
-      if (yesterdayData) {
-        // Extract the value - handle different data structures
-        let value: number | undefined;
-        
-        if ('value' in yesterdayData && typeof yesterdayData.value === 'number') {
-          value = yesterdayData.value;
-        } else if ('revenue' in yesterdayData && typeof yesterdayData.revenue === 'number') {
-          value = yesterdayData.revenue;
-        } else if ('amount' in yesterdayData && typeof yesterdayData.amount === 'number') {
-          value = yesterdayData.amount;
-        }
-        
-        if (value !== undefined) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Found yesterday data', { yesterdayData, value });
-          }
-          return formatPreviousValue(value);
-        }
-      }
-      
-      // If we couldn't find yesterday's data in the normal data array,
-      // check if there's a dailyData array with the information
-      if (safeData.length > 0 && 'dailyData' in safeData[0] && Array.isArray(safeData[0].dailyData)) {
-        const dailyData = safeData[0].dailyData;
-        const yesterdayData = dailyData.find(d => {
-          if (!d.date) return false;
-          const dateStr = typeof d.date === 'string' ? d.date : String(d.date);
-          return dateStr.includes(yesterdayString);
-        });
-        
-        if (yesterdayData) {
-          let value: number | undefined;
-          
-          if ('value' in yesterdayData && typeof yesterdayData.value === 'number') {
-            value = yesterdayData.value;
-          } else if ('revenue' in yesterdayData && typeof yesterdayData.revenue === 'number') {
-            value = yesterdayData.revenue;
-          } else if ('amount' in yesterdayData && typeof yesterdayData.amount === 'number') {
-            value = yesterdayData.amount;
-          }
-          
-          if (value !== undefined) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Found yesterday data in dailyData', { yesterdayData, value });
-            }
-            return formatPreviousValue(value);
-          }
-        }
-      }
-      
-      // If we still couldn't find the data, try to extract it from the calendar data
-      // This is a special case for the calendar view where data might be in a different format
-      try {
-        // Check if we're in a component that has access to calendar data
-        // This is a bit of a hack, but it's the best we can do without refactoring the entire app
-        // @ts-ignore - These properties are added by our app but not typed
-        const calendarData = window.__CALENDAR_DATA__ || window.__DASHBOARD_DATA__;
-        if (calendarData && typeof calendarData === 'object') {
-          // Try to find yesterday's data in the calendar
-          const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
-          
-          // Look for data in various formats
-          let yesterdayValue: number | undefined;
-          
-          // Format 1: Direct key-value mapping
-          if (yesterdayFormatted in calendarData) {
-            yesterdayValue = parseFloat(calendarData[yesterdayFormatted]);
-          }
-          
-          // Format 2: Array of objects with date property
-          else if (Array.isArray(calendarData)) {
-            const entry = calendarData.find((d: any) => 
-              d.date === yesterdayFormatted || 
-              d.day === yesterdayFormatted || 
-              d.key === yesterdayFormatted
-            );
-            
-            if (entry) {
-              yesterdayValue = parseFloat(entry.value || entry.revenue || entry.amount || entry.sales || 0);
-            }
-          }
-          
-          // Format 3: Nested object structure
-          else if ('days' in calendarData && Array.isArray(calendarData.days)) {
-            const entry = calendarData.days.find((d: any) => 
-              d.date === yesterdayFormatted || 
-              d.day === yesterdayFormatted || 
-              d.key === yesterdayFormatted
-            );
-            
-            if (entry) {
-              yesterdayValue = parseFloat(entry.value || entry.revenue || entry.amount || entry.sales || 0);
-            }
-          }
-          
-          if (yesterdayValue !== undefined && !isNaN(yesterdayValue)) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Found yesterday data in calendar', { yesterdayFormatted, yesterdayValue });
-            }
-            return formatPreviousValue(yesterdayValue);
-          }
-        }
-      } catch (error) {
-        console.error('Error extracting calendar data', error);
-      }
-      
-      // If we know there was $395k yesterday (hardcoded for now)
-      // This is a temporary fix until we can properly extract the data
-      if (yesterday.getDate() === 6 && yesterday.getMonth() === 2 && yesterday.getFullYear() === 2025) {
-        return '$395,000.00';
-      }
-    }
-    
-    // For other period comparisons, try to find data for the previous period
-    if (dateRange?.from) {
-      const currentPeriodLength = dateRange.to 
-        ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        : 1;
-      
-      const prevPeriodEnd = new Date(dateRange.from);
-      prevPeriodEnd.setDate(prevPeriodEnd.getDate() - 1);
-      
-      const prevPeriodStart = new Date(prevPeriodEnd);
-      prevPeriodStart.setDate(prevPeriodStart.getDate() - currentPeriodLength + 1);
-      
-      // Find data points in the previous period
-      const prevPeriodData = safeData.filter(d => {
-        if (!d.date) return false;
-        const date = new Date(d.date);
-        return date >= prevPeriodStart && date <= prevPeriodEnd;
-      });
-      
-      if (prevPeriodData.length > 0) {
-        // Calculate the sum of values in the previous period
-        let sum = 0;
-        let count = 0;
-        
-        prevPeriodData.forEach(d => {
-          let value: number | undefined;
-          
-          if ('value' in d && typeof d.value === 'number') {
-            value = d.value;
-          } else if ('revenue' in d && typeof d.revenue === 'number') {
-            value = d.revenue;
-          } else if ('amount' in d && typeof d.amount === 'number') {
-            value = d.amount;
-          }
-          
-          if (value !== undefined) {
-            sum += value;
-            count++;
-          }
-        });
-        
-        if (count > 0) {
-          // For average metrics like AOV, we want the average
-          if (title && typeof title === 'string' && title.toLowerCase().includes('average')) {
-            return formatPreviousValue(sum / count);
-          }
-          // Otherwise return the sum
-          return formatPreviousValue(sum);
-        }
-      }
-    }
-    
-    // Fall back to calculated value
-    return formatPreviousValue(calculatePreviousValue(safeValue, safeChange));
   }
 
   return (
@@ -504,45 +271,17 @@ export function MetricCard({
                     <Info className="h-3 w-3 text-gray-500" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[250px] p-3">
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-gray-400 mb-1">Current</p>
-                        <p className="font-bold text-sm">{formatPreviousValue(safeValue)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 mb-1">Previous {getComparisonText()}</p>
-                        <p className="font-bold text-sm">{getPreviousValueDisplay()}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-1 border-t border-gray-700">
-                      <div className={cn(
-                        "flex items-center text-sm font-medium",
-                        isPositive ? "text-emerald-500" : safeChange < 0 ? "text-red-500" : "text-gray-400"
-                      )}>
-                        <span>Change: {formatChange(safeChange)}</span>
-                      </div>
-                    </div>
-                    
-                    {dateRange?.from && dateRange?.to && (
-                      <div className="text-gray-400 text-[10px] pt-1 border-t border-gray-700 mt-1">
-                        <p className="mb-0.5">Current: {format(dateRange.from, 'MMM d, yyyy')} - {format(dateRange.to, 'MMM d, yyyy')}</p>
-                        <p>Previous: {format(subDays(dateRange.from, Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))), 'MMM d, yyyy')} - {format(subDays(dateRange.from, 1), 'MMM d, yyyy')}</p>
-                      </div>
-                    )}
-                    
-                    {/* Debug information - only shown in development */}
-                    {process.env.NODE_ENV === 'development' && (
-                      <div className="mt-2 pt-1 border-t border-gray-700 text-[9px] text-gray-500">
-                        <p>Debug Info:</p>
-                        <p>Data points: {safeData.length}</p>
-                        {safeData.length > 0 && (
-                          <p>Latest data: {JSON.stringify(safeData[safeData.length - 1]).substring(0, 50)}...</p>
-                        )}
-                        <p>Raw change: {safeChange}</p>
-                        <p>Calc prev: {calculatePreviousValue(safeValue, safeChange)}</p>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <div className="space-y-1">
+                    <p className="font-medium">{getComparisonText()}</p>
+                    {safeChange !== 0 && (
+                      <div className="flex items-center mt-1">
+                        <span className={cn(
+                          "text-xs",
+                          isPositive ? "text-emerald-400" : safeChange < 0 ? "text-red-400" : "text-gray-400"
+                        )}>
+                          {isPositive ? "+" : ""}{safeChange.toFixed(1)}% {isPositive ? "increase" : safeChange < 0 ? "decrease" : "change"}
+                        </span>
                       </div>
                     )}
                   </div>
