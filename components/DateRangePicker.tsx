@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CalendarIcon, ChevronDown } from "lucide-react"
-import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay } from "date-fns"
+import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
+import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -82,12 +82,14 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const [isOpen, setIsOpen] = React.useState(false)
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
 
   // Reset temp state when popover opens
   React.useEffect(() => {
     if (isOpen) {
       setTempDateRange(dateRange)
       setSelectionStep('start')
+      setCurrentMonth(dateRange?.from || new Date())
     }
   }, [isOpen, dateRange])
 
@@ -146,6 +148,22 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     setSelectionStep('complete')
   }
 
+  const handlePreviousMonth = () => {
+    setCurrentMonth(prevMonth => subMonths(prevMonth, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentMonth(prevMonth => addMonths(prevMonth, 1))
+  }
+
+  const handlePreviousYear = () => {
+    setCurrentMonth(prevMonth => subYears(prevMonth, 1))
+  }
+
+  const handleNextYear = () => {
+    setCurrentMonth(prevMonth => addYears(prevMonth, 1))
+  }
+
   return (
     <div className="grid gap-2">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -186,6 +204,68 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                 ))}
               </div>
               <div className="pl-4 flex-1">
+                {/* Month navigation controls */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex space-x-1">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
+                      onClick={handlePreviousYear}
+                      title="Previous Year"
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                      <span className="sr-only">Previous Year</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
+                      onClick={handlePreviousMonth}
+                      title="Previous Month"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="sr-only">Previous Month</span>
+                    </Button>
+                  </div>
+                  <div className="text-sm font-medium flex items-center space-x-2">
+                    <span>{format(currentMonth, "MMM yyyy")}</span>
+                    <span>-</span>
+                    <span>{format(addMonths(currentMonth, 1), "MMM yyyy")}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-2 h-6 px-2 text-xs bg-[#222222] hover:bg-[#333333]"
+                      onClick={() => setCurrentMonth(new Date())}
+                      title="Go to Today"
+                    >
+                      Today
+                    </Button>
+                  </div>
+                  <div className="flex space-x-1">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
+                      onClick={handleNextMonth}
+                      title="Next Month"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">Next Month</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-7 w-7 bg-[#222222] hover:bg-[#333333]"
+                      onClick={handleNextYear}
+                      title="Next Year"
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                      <span className="sr-only">Next Year</span>
+                    </Button>
+                  </div>
+                </div>
+                
                 {selectionStep === 'start' && (
                   <div className="mb-2 text-sm text-blue-400">
                     Select start date
@@ -199,10 +279,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                 <Calendar
                   initialFocus
                   mode="range"
-                  defaultMonth={tempDateRange?.from || new Date()}
+                  month={currentMonth}
+                  defaultMonth={currentMonth}
                   selected={tempDateRange}
                   onSelect={handleCalendarSelect}
                   numberOfMonths={2}
+                  showOutsideDays={false}
                   className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222]"
                 />
               </div>
