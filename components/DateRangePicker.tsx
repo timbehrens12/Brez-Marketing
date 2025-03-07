@@ -16,6 +16,17 @@ const calendarStyles = `
   }
 `;
 
+// Custom Caption component that only shows the month name without the containers
+function CustomCaption({ displayMonth }: { displayMonth: Date }) {
+  return (
+    <div className="flex justify-center py-2">
+      <div className="text-sm font-medium">
+        {format(displayMonth, "MMMM yyyy")}
+      </div>
+    </div>
+  );
+}
+
 interface DateRangePickerProps {
   dateRange: {
     from: Date;
@@ -290,11 +301,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   numberOfMonths={2}
                   showOutsideDays={false}
                   disabled={{ after: new Date() }}
-                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden [&_.rdp-caption]:!hidden [&_.rdp-caption_start]:!hidden [&_.rdp-caption_end]:!hidden [&_.rdp-caption_label]:!hidden"
+                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
                   components={{
                     IconLeft: () => null,
                     IconRight: () => null,
-                    Caption: () => null
+                    Caption: CustomCaption
                   }}
                 />
                 <div className="text-xs text-gray-400 mt-2 italic">
