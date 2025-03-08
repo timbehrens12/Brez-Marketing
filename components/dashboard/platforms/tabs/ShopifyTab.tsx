@@ -2,6 +2,7 @@
 
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
+import { DarkRevenueCalendar } from "@/components/dashboard/DarkRevenueCalendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
@@ -218,6 +219,21 @@ export function ShopifyTab({
           isLoading={isLoading}
           isRefreshingData={isRefreshingData}
         />
+      </div>
+
+      {/* Revenue Calendar - Full Width */}
+      <div className="w-full">
+        <Card className="bg-[#111111] border-[#222222]">
+          <CardHeader className="py-2">
+            <CardTitle className="text-white"></CardTitle>
+          </CardHeader>
+          <CardContent className="h-[520px]">
+            <DarkRevenueCalendar 
+              brandId={brandId}
+              isRefreshing={isRefreshingData}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
