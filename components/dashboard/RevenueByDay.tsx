@@ -607,7 +607,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 
                 return (
                   <div 
-                    key={index + 12}
+                    key={index}
                     className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-20"
                   >
                     <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
@@ -692,13 +692,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         </div>
       );
     } else if (timeFrame === 'monthly') {
-      // Monthly view - Calendar grid
-      const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-      const firstDayOfMonth = startOfMonth(currentDate);
-      const startDayOfWeek = getDay(firstDayOfMonth);
+      // Monthly view - calendar grid
+      const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+      const today = new Date();
+      const firstDayOfMonth = startOfMonth(today);
+      const startDayOfWeek = getDay(firstDayOfMonth) || 7; // Convert Sunday (0) to 7 for easier calculation
+      const startDayIndex = startDayOfWeek === 7 ? 0 : startDayOfWeek; // Adjust for Monday start (0)
       
       // Create array for empty cells before the first day of the month
-      const emptyCells = Array.from({ length: startDayOfWeek }, (_, i) => ({ isEmpty: true, index: i }));
+      const emptyCells = Array.from({ length: startDayIndex }, (_, i) => ({ isEmpty: true, index: i }));
       
       return (
         <div className="h-full flex flex-col">
