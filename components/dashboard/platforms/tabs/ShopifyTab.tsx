@@ -1,7 +1,6 @@
 "use client"
 
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -16,6 +15,7 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
+import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -221,20 +221,12 @@ export function ShopifyTab({
         />
       </div>
 
-      {/* Revenue Calendar - Full Width */}
-      <div className="w-full">
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader className="py-2">
-            <CardTitle className="text-white"></CardTitle>
-          </CardHeader>
-          <CardContent className="h-[520px]">
-            <RevenueByDay 
-              data={safeMetrics.revenueByDay} 
-              brandId={brandId}
-              isRefreshing={isRefreshingData}
-            />
-          </CardContent>
-        </Card>
+      {/* Revenue Calendar */}
+      <div className="grid grid-cols-1 gap-4 mb-4">
+        <RevenueCalendarNew 
+          brandId={brandId}
+          isRefreshing={isRefreshingData}
+        />
       </div>
     </div>
   )

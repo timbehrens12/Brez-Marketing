@@ -1,6 +1,6 @@
 "use client"
 
-import { PlatformTabs } from "./platforms/PlatformTabs"
+import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { useMetrics } from "@/lib/hooks/useMetrics"
 import { DateRange } from "react-day-picker"
 import { useState, useEffect } from "react"
@@ -10,7 +10,6 @@ import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
 import Image from "next/image"
-import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
 
 interface WidgetManagerProps {
@@ -186,6 +185,7 @@ export function WidgetManager({
       {/* Only show Meta widgets when Meta tab is active */}
       {activeTab === "meta" && children}
 
+      {/* Revenue Calendar - completely black version */}
       <div className="grid grid-cols-1 gap-4 mb-4">
         <RevenueCalendarNew 
           brandId={brandId}
