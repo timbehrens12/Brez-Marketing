@@ -823,8 +823,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'today' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
-                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
+                  ? "bg-gray-800 text-white hover:bg-gray-800" 
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('today')}
             >
@@ -836,8 +836,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'weekly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
-                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
+                  ? "bg-gray-800 text-white hover:bg-gray-800" 
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('weekly')}
             >
@@ -849,8 +849,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'monthly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
-                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
+                  ? "bg-gray-800 text-white hover:bg-gray-800" 
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('monthly')}
             >
@@ -862,8 +862,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'yearly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
-                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
+                  ? "bg-gray-800 text-white hover:bg-gray-800" 
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('yearly')}
             >
@@ -887,7 +887,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         ) : error ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center text-center max-w-md">
-              <div className="bg-[#1a1f2c] p-2 rounded-full mb-2">
+              <div className="bg-gray-800 p-2 rounded-full mb-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
