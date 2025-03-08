@@ -572,11 +572,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-sm bg-emerald-500"
+                              className="w-full rounded-sm bg-gray-600"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-emerald-400">
+                          <div className="text-center text-xs font-medium text-gray-300">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
@@ -620,11 +620,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-sm bg-emerald-500"
+                              className="w-full rounded-sm bg-gray-600"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-emerald-400">
+                          <div className="text-center text-xs font-medium text-gray-300">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
@@ -667,7 +667,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div className="flex-grow flex items-end">
                     {hasRevenue && (
                       <div 
-                        className="w-full bg-emerald-500 rounded-sm"
+                        className="w-full bg-gray-600 rounded-sm"
                         style={{ 
                           height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`
                         }}
@@ -676,7 +676,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   </div>
                   
                   <div className="mt-2 text-center">
-                    <div className="text-emerald-400 text-sm font-medium">
+                    <div className="text-gray-300 text-sm font-medium">
                       {renderRevenueValue(item.revenue)}
                     </div>
                     {item.count > 0 && (
@@ -733,7 +733,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   
                   <div className="flex-1 flex flex-col justify-center p-0.5">
                     {hasRevenue ? (
-                      <div className="text-center text-xs font-medium text-emerald-400">
+                      <div className="text-center text-xs font-medium text-gray-300">
                         {renderRevenueValue(item.revenue)}
                       </div>
                     ) : (
@@ -769,7 +769,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div className="flex-grow flex items-end">
                     {hasRevenue && (
                       <div 
-                        className="w-full bg-emerald-500 rounded-sm"
+                        className="w-full bg-gray-600 rounded-sm"
                         style={{ 
                           height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`
                         }}
@@ -778,7 +778,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   </div>
                   
                   <div className="mt-2 text-center">
-                    <div className="text-emerald-400 text-sm font-medium">
+                    <div className="text-gray-300 text-sm font-medium">
                       {renderRevenueValue(item.revenue)}
                     </div>
                     {item.count > 0 && (
@@ -902,7 +902,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       </div>
       
       <div className="p-2 border-t border-gray-800 bg-[#131722] text-sm font-medium flex justify-between items-center">
-        <div className="text-emerald-400 flex items-center">
+        <div className="text-gray-300 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
