@@ -1,7 +1,6 @@
 "use client"
 
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -219,22 +218,6 @@ export function ShopifyTab({
           isLoading={isLoading}
           isRefreshingData={isRefreshingData}
         />
-      </div>
-
-      {/* Revenue Calendar - Full Width */}
-      <div className="w-full">
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader className="py-2">
-            <CardTitle className="text-white"></CardTitle>
-          </CardHeader>
-          <CardContent className="h-[520px]">
-            <RevenueByDay 
-              data={safeMetrics.revenueByDay} 
-              brandId={brandId}
-              isRefreshing={isRefreshingData}
-            />
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

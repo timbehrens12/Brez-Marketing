@@ -32,7 +32,6 @@ import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
-import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
 
 interface WidgetData {
   shopify?: any;
