@@ -10,6 +10,8 @@ import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
 import Image from "next/image"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
+import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -183,6 +185,13 @@ export function WidgetManager({
       
       {/* Only show Meta widgets when Meta tab is active */}
       {activeTab === "meta" && children}
+
+      <div className="grid grid-cols-1 gap-4 mb-4">
+        <RevenueCalendarNew 
+          brandId={brandId}
+          isRefreshing={isRefreshingData}
+        />
+      </div>
     </>
   )
 } 
