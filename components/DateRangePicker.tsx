@@ -336,18 +336,16 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
               </div>
             </div>
             
-            <div className="flex justify-end space-x-2 pt-2 border-t border-[#222222]">
-              <Button 
-                variant="outline" 
-                className="bg-[#222222] hover:bg-[#333333] text-white"
+            <div className="flex justify-end space-x-2 pt-4 border-t border-[#222222]">
+              <Button
+                variant="outline"
+                className="text-white border-[#222222] hover:bg-[#222222]"
                 onClick={handleCancel}
               >
                 Cancel
               </Button>
-              <Button 
-                variant="default"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!tempDateRange?.from || !tempDateRange?.to}
+              <Button
+                className="bg-gray-700 hover:bg-gray-600 text-white"
                 onClick={handleApply}
               >
                 Apply
