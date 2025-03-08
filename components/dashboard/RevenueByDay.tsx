@@ -563,42 +563,42 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     className={cn(
                       "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
-                        ? "border-2 border-blue-500 shadow-md" 
+                        ? "border-2 border-emerald-500/70 shadow-lg shadow-emerald-900/20" 
                         : hasRevenue
-                          ? "border border-teal-500/30 bg-[#1a2235]"
-                          : "border border-[#2a3348] bg-[#141b2d]/70"
+                          ? "border border-emerald-500/30 bg-[#1a1f2c]"
+                          : "border border-gray-800 bg-[#131722]"
                     )}
                   >
                     <div className={cn(
                       "text-center py-1 text-xs font-medium",
                       isCurrentHour 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-[#1e2738] text-gray-200"
+                        ? "bg-[#1e2530] text-white" 
+                        : "bg-[#1a1f2c] text-gray-300"
                     )}>
                       {item.displayDate}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-end p-1.5">
+                    <div className="flex-1 flex flex-col justify-end p-2">
                       {hasRevenue ? (
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-sm bg-teal-500/60"
+                              className="w-full rounded-sm bg-emerald-500/60"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-teal-400">
+                          <div className="text-center text-xs font-medium text-emerald-400">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-400">
+                            <div className="text-center text-xs text-gray-500">
                               {item.count} order{item.count !== 1 ? 's' : ''}
                             </div>
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                        <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                           -
                         </div>
                       )}
@@ -623,42 +623,42 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     className={cn(
                       "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
-                        ? "border-2 border-blue-500 shadow-md" 
+                        ? "border-2 border-emerald-500/70 shadow-lg shadow-emerald-900/20" 
                         : hasRevenue
-                          ? "border border-teal-500/30 bg-[#1a2235]"
-                          : "border border-[#2a3348] bg-[#141b2d]/70"
+                          ? "border border-emerald-500/30 bg-[#1a1f2c]"
+                          : "border border-gray-800 bg-[#131722]"
                     )}
                   >
                     <div className={cn(
                       "text-center py-1 text-xs font-medium",
                       isCurrentHour 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-[#1e2738] text-gray-200"
+                        ? "bg-[#1e2530] text-white" 
+                        : "bg-[#1a1f2c] text-gray-300"
                     )}>
                       {item.displayDate}
                     </div>
                     
-                    <div className="flex-1 flex flex-col justify-end p-1.5">
+                    <div className="flex-1 flex flex-col justify-end p-2">
                       {hasRevenue ? (
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-sm bg-teal-500/60"
+                              className="w-full rounded-sm bg-emerald-500/60"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-teal-400">
+                          <div className="text-center text-xs font-medium text-emerald-400">
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-400">
+                            <div className="text-center text-xs text-gray-500">
                               {item.count} order{item.count !== 1 ? 's' : ''}
                             </div>
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                        <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                           -
                         </div>
                       )}
@@ -684,17 +684,17 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 className={cn(
                   "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isToday 
-                    ? "border-2 border-blue-500 shadow-md" 
+                    ? "border-2 border-emerald-500/70 shadow-lg shadow-emerald-900/20" 
                     : hasRevenue
-                      ? "border border-teal-500/30 bg-[#1a2235]"
-                      : "border border-[#2a3348] bg-[#141b2d]/70"
+                      ? "border border-emerald-500/30 bg-[#1a1f2c]"
+                      : "border border-gray-800 bg-[#131722]"
                 )}
               >
                 <div className={cn(
                   "text-center py-1 text-xs font-medium",
                   isToday 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-[#1e2738] text-gray-200"
+                    ? "bg-[#1e2530] text-white" 
+                    : "bg-[#1a1f2c] text-gray-300"
                 )}>
                   {item.displayDate}
                 </div>
@@ -702,24 +702,24 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="relative h-full w-full flex flex-col justify-end mb-1">
+                      <div className="relative h-24 w-full flex flex-col justify-end mb-1">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                          className="w-full rounded-sm bg-teal-500/60"
+                          className="w-full rounded-sm bg-emerald-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-sm font-medium text-teal-400">
+                      <div className="text-center text-sm font-medium text-emerald-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
-                        <div className="text-center text-xs text-gray-400">
+                        <div className="text-center text-xs text-gray-500">
                           {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                    <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                       -
                     </div>
                   )}
@@ -742,7 +742,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         <div className="h-full flex flex-col">
           <div className="grid grid-cols-7 gap-1 mb-1">
             {daysOfWeek.map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-gray-400 py-1">
+              <div key={index} className="text-center text-xs font-medium text-gray-400 py-0.5">
                 {day}
               </div>
             ))}
@@ -766,28 +766,28 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   className={cn(
                     "flex flex-col rounded-md overflow-hidden min-h-[40px] transition-all duration-200",
                     isToday 
-                      ? "border-2 border-blue-500 shadow-md" 
+                      ? "border border-emerald-500/70 shadow-sm shadow-emerald-900/20" 
                       : hasRevenue
-                        ? "border border-teal-500/30 bg-[#1a2235]"
-                        : "border border-[#2a3348] bg-[#141b2d]/70"
+                        ? "border border-emerald-500/30 bg-[#1a1f2c]"
+                        : "border border-gray-800 bg-[#131722]"
                   )}
                 >
                   <div className={cn(
                     "text-center py-0.5 text-xs font-medium",
                     isToday 
-                      ? "bg-blue-600 text-white" 
-                      : "bg-[#1e2738] text-gray-200"
+                      ? "bg-[#1e2530] text-white" 
+                      : "bg-[#1a1f2c] text-gray-300"
                   )}>
                     {day}
                   </div>
                   
-                  <div className="flex-1 flex flex-col justify-center p-1">
+                  <div className="flex-1 flex flex-col justify-center p-0.5">
                     {hasRevenue ? (
-                      <div className="text-center text-xs font-medium text-teal-400">
+                      <div className="text-center text-xs font-medium text-emerald-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                      <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                         -
                       </div>
                     )}
@@ -801,7 +801,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else {
       // Yearly view - 12 months in a grid
       return (
-        <div className="grid grid-cols-4 gap-3 h-full">
+        <div className="grid grid-cols-4 gap-2 h-full">
           {displayData.map((item, index) => {
             const isCurrentMonth = (item as YearlyDisplayItem).isCurrentMonth;
             const hasRevenue = item.revenue > 0;
@@ -812,17 +812,17 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 className={cn(
                   "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isCurrentMonth 
-                    ? "border-2 border-blue-500 shadow-md" 
+                    ? "border-2 border-emerald-500/70 shadow-lg shadow-emerald-900/20" 
                     : hasRevenue
-                      ? "border border-teal-500/30 bg-[#1a2235]"
-                      : "border border-[#2a3348] bg-[#141b2d]/70"
+                      ? "border border-emerald-500/30 bg-[#1a1f2c]"
+                      : "border border-gray-800 bg-[#131722]"
                 )}
               >
                 <div className={cn(
                   "text-center py-1 text-sm font-medium",
                   isCurrentMonth 
-                    ? "bg-blue-600 text-white" 
-                    : "bg-[#1e2738] text-gray-200"
+                    ? "bg-[#1e2530] text-white" 
+                    : "bg-[#1a1f2c] text-gray-300"
                 )}>
                   {item.displayDate}
                 </div>
@@ -833,21 +833,21 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div className="relative h-16 w-full flex flex-col justify-end mb-1">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                          className="w-full rounded-sm bg-teal-500/60"
+                          className="w-full rounded-sm bg-emerald-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-sm font-medium text-teal-400">
+                      <div className="text-center text-sm font-medium text-emerald-400">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
-                        <div className="text-center text-xs text-gray-400">
+                        <div className="text-center text-xs text-gray-500">
                           {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                    <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                       -
                     </div>
                   )}
@@ -864,7 +864,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   const renderRevenueValue = (revenue: number) => {
     if (isRefreshing) {
       return (
-        <div className="animate-pulse bg-[#1e2738] h-4 w-12 rounded mx-auto"></div>
+        <div className="animate-pulse bg-gray-700 h-4 w-12 rounded mx-auto"></div>
       );
     }
     
@@ -876,7 +876,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   };
   
   return (
-    <Card className="h-full bg-[#111827] border-[#1e2738]">
+    <Card className="h-full bg-[#131722] border-gray-800">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-white">Revenue Calendar</CardTitle>
@@ -887,8 +887,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'today' 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
+                  ? "bg-[#1e2530] text-white hover:bg-[#1e2530]/80" 
+                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('today')}
             >
@@ -900,8 +900,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'weekly' 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
+                  ? "bg-[#1e2530] text-white hover:bg-[#1e2530]/80" 
+                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('weekly')}
             >
@@ -913,8 +913,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'monthly' 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
+                  ? "bg-[#1e2530] text-white hover:bg-[#1e2530]/80" 
+                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('monthly')}
             >
@@ -926,8 +926,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'yearly' 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "text-gray-300 hover:bg-[#1e2738] hover:text-white"
+                  ? "bg-[#1e2530] text-white hover:bg-[#1e2530]/80" 
+                  : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('yearly')}
             >
@@ -944,7 +944,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-2"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 mb-2"></div>
               <div className="text-gray-400 text-sm">Loading sales data...</div>
             </div>
           </div>
@@ -965,8 +965,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         )}
       </div>
       
-      <div className="p-2 border-t border-[#1e2738] bg-[#0f1623] text-sm font-medium flex justify-between items-center">
-        <div className="text-teal-400 flex items-center">
+      <div className="p-2 border-t border-gray-800 bg-[#131722]/80 text-sm font-medium flex justify-between items-center">
+        <div className="text-emerald-400 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
