@@ -544,14 +544,14 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       return (
-        <div className="flex flex-col h-full">
-          <div className="text-xs text-gray-400 mb-3">
+        <div className="flex flex-col h-full" style={{backgroundColor: '#131722', color: '#d1d5db'}}>
+          <div className="text-xs text-gray-400 mb-3" style={{color: '#9ca3af'}}>
             Sales by hour of the day (adjusted to your local timezone: {userTimeZone})
           </div>
           
           {/* AM Hours (12am-11am) */}
           <div className="mb-4">
-            <div className="text-xs font-medium text-gray-300 mb-2">AM</div>
+            <div className="text-xs font-medium text-gray-300 mb-2" style={{color: '#d1d5db'}}>AM</div>
             <div className="grid grid-cols-12 gap-2">
               {displayData.slice(0, 12).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
@@ -561,8 +561,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index}
                     className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-20"
+                    style={{borderColor: '#1f2937', backgroundColor: '#131722'}}
                   >
-                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
+                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300" style={{backgroundColor: '#1a1f2c', color: '#d1d5db'}}>
                       {item.displayDate}
                     </div>
                     
@@ -571,22 +572,25 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
-                              style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                              style={{ 
+                                height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%`,
+                                backgroundColor: '#4b5563'
+                              }}
                               className="w-full rounded-sm bg-gray-600"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-gray-300">
+                          <div className="text-center text-xs font-medium text-gray-300" style={{color: '#d1d5db'}}>
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-500">
+                            <div className="text-center text-xs text-gray-500" style={{color: '#6b7280'}}>
                               {item.count} order{item.count !== 1 ? 's' : ''}
                             </div>
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-center h-full text-gray-600 text-xs">
+                        <div className="flex items-center justify-center h-full text-gray-600 text-xs" style={{color: '#4b5563'}}>
                           -
                         </div>
                       )}
@@ -599,7 +603,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
           
           {/* PM Hours (12pm-11pm) */}
           <div>
-            <div className="text-xs font-medium text-gray-300 mb-2">PM</div>
+            <div className="text-xs font-medium text-gray-300 mb-2" style={{color: '#d1d5db'}}>PM</div>
             <div className="grid grid-cols-12 gap-2">
               {displayData.slice(12, 24).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
@@ -609,8 +613,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index}
                     className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-20"
+                    style={{borderColor: '#1f2937', backgroundColor: '#131722'}}
                   >
-                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
+                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300" style={{backgroundColor: '#1a1f2c', color: '#d1d5db'}}>
                       {item.displayDate}
                     </div>
                     
@@ -619,22 +624,25 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                         <>
                           <div className="relative h-full w-full flex flex-col justify-end mb-1">
                             <div 
-                              style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                              style={{ 
+                                height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%`,
+                                backgroundColor: '#4b5563'
+                              }}
                               className="w-full rounded-sm bg-gray-600"
                             ></div>
                           </div>
                           
-                          <div className="text-center text-xs font-medium text-gray-300">
+                          <div className="text-center text-xs font-medium text-gray-300" style={{color: '#d1d5db'}}>
                             {renderRevenueValue(item.revenue)}
                           </div>
                           {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-500">
+                            <div className="text-center text-xs text-gray-500" style={{color: '#6b7280'}}>
                               {item.count} order{item.count !== 1 ? 's' : ''}
                             </div>
                           )}
                         </>
                       ) : (
-                        <div className="flex items-center justify-center h-full text-gray-600 text-xs">
+                        <div className="flex items-center justify-center h-full text-gray-600 text-xs" style={{color: '#4b5563'}}>
                           -
                         </div>
                       )}
@@ -649,7 +657,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else if (timeFrame === 'weekly') {
       // Weekly view - 7 days in a row
       return (
-        <div className="grid grid-cols-7 gap-2 h-full">
+        <div className="grid grid-cols-7 gap-2 h-full" style={{backgroundColor: '#131722', color: '#d1d5db'}}>
           {displayData.map((item, index) => {
             const isToday = (item as WeeklyOrMonthlyDisplayItem).isToday;
             const hasRevenue = item.revenue > 0;
@@ -658,8 +666,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               <div 
                 key={index}
                 className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-full"
+                style={{borderColor: '#1f2937', backgroundColor: '#131722'}}
               >
-                <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
+                <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300" style={{backgroundColor: '#1a1f2c', color: '#d1d5db'}}>
                   {item.displayDate}
                 </div>
                 
@@ -669,18 +678,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div 
                         className="w-full bg-gray-600 rounded-sm"
                         style={{ 
-                          height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`
+                          height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`,
+                          backgroundColor: '#4b5563'
                         }}
                       ></div>
                     )}
                   </div>
                   
                   <div className="mt-2 text-center">
-                    <div className="text-gray-300 text-sm font-medium">
+                    <div className="text-gray-300 text-sm font-medium" style={{color: '#d1d5db'}}>
                       {renderRevenueValue(item.revenue)}
                     </div>
                     {item.count > 0 && (
-                      <div className="text-gray-500 text-xs">
+                      <div className="text-gray-500 text-xs" style={{color: '#6b7280'}}>
                         {item.count} order{item.count !== 1 ? 's' : ''}
                       </div>
                     )}
@@ -703,10 +713,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       const emptyCells = Array.from({ length: startDayIndex }, (_, i) => ({ isEmpty: true, index: i }));
       
       return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex flex-col" style={{backgroundColor: '#131722', color: '#d1d5db'}}>
           <div className="grid grid-cols-7 gap-1 mb-1">
             {daysOfWeek.map((day, index) => (
-              <div key={index} className="text-center text-xs font-medium text-gray-400 py-0.5">
+              <div key={index} className="text-center text-xs font-medium text-gray-400 py-0.5" style={{color: '#9ca3af'}}>
                 {day}
               </div>
             ))}
@@ -728,18 +738,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div
                   key={index}
                   className="flex flex-col rounded-md overflow-hidden min-h-[40px] border border-gray-800 bg-[#131722]"
+                  style={{borderColor: '#1f2937', backgroundColor: '#131722'}}
                 >
-                  <div className="text-center py-0.5 text-xs font-medium bg-[#1a1f2c] text-gray-300">
+                  <div className="text-center py-0.5 text-xs font-medium bg-[#1a1f2c] text-gray-300" style={{backgroundColor: '#1a1f2c', color: '#d1d5db'}}>
                     {day}
                   </div>
                   
                   <div className="flex-1 flex flex-col justify-center p-0.5">
                     {hasRevenue ? (
-                      <div className="text-center text-xs font-medium text-gray-300">
+                      <div className="text-center text-xs font-medium text-gray-300" style={{color: '#d1d5db'}}>
                         {renderRevenueValue(item.revenue)}
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-gray-600 text-xs">
+                      <div className="flex items-center justify-center h-full text-gray-600 text-xs" style={{color: '#4b5563'}}>
                         -
                       </div>
                     )}
@@ -753,7 +764,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else {
       // Yearly view - 12 months in a grid
       return (
-        <div className="grid grid-cols-4 gap-2 h-full">
+        <div className="grid grid-cols-4 gap-2 h-full" style={{backgroundColor: '#131722', color: '#d1d5db'}}>
           {displayData.map((item, index) => {
             const isCurrentMonth = (item as YearlyDisplayItem).isCurrentMonth;
             const hasRevenue = item.revenue > 0;
@@ -762,8 +773,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               <div 
                 key={index}
                 className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-full"
+                style={{borderColor: '#1f2937', backgroundColor: '#131722'}}
               >
-                <div className="text-center py-1 text-sm font-medium bg-[#1a1f2c] text-gray-300">
+                <div className="text-center py-1 text-sm font-medium bg-[#1a1f2c] text-gray-300" style={{backgroundColor: '#1a1f2c', color: '#d1d5db'}}>
                   {item.displayDate}
                 </div>
                 
@@ -773,18 +785,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div 
                         className="w-full bg-gray-600 rounded-sm"
                         style={{ 
-                          height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`
+                          height: `${Math.max(5, Math.min(80, (item.revenue / maxRevenue) * 100))}%`,
+                          backgroundColor: '#4b5563'
                         }}
                       ></div>
                     )}
                   </div>
                   
                   <div className="mt-2 text-center">
-                    <div className="text-gray-300 text-sm font-medium">
+                    <div className="text-gray-300 text-sm font-medium" style={{color: '#d1d5db'}}>
                       {renderRevenueValue(item.revenue)}
                     </div>
                     {item.count > 0 && (
-                      <div className="text-gray-500 text-xs">
+                      <div className="text-gray-500 text-xs" style={{color: '#6b7280'}}>
                         {item.count} order{item.count !== 1 ? 's' : ''}
                       </div>
                     )}
@@ -802,7 +815,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   const renderRevenueValue = (revenue: number) => {
     if (isRefreshing) {
       return (
-        <div className="animate-pulse bg-gray-700 h-4 w-12 rounded mx-auto"></div>
+        <div className="animate-pulse bg-gray-700 h-4 w-12 rounded mx-auto" style={{backgroundColor: '#374151'}}></div>
       );
     }
     
@@ -814,7 +827,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   };
   
   return (
-    <Card className="h-full bg-[#131722] border-gray-800">
+    <Card className="h-full bg-[#131722] border-gray-800" style={{backgroundColor: '#131722', borderColor: '#1f2937'}}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-white">Revenue Calendar</CardTitle>
@@ -828,6 +841,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   ? "bg-gray-800 text-white hover:bg-gray-800" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
+              style={{
+                backgroundColor: timeFrame === 'today' ? '#1f2937' : 'transparent',
+                color: timeFrame === 'today' ? 'white' : '#d1d5db',
+                border: 'none'
+              }}
               onClick={() => handleTimeFrameChange('today')}
             >
               Today
@@ -841,6 +859,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   ? "bg-gray-800 text-white hover:bg-gray-800" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
+              style={{
+                backgroundColor: timeFrame === 'weekly' ? '#1f2937' : 'transparent',
+                color: timeFrame === 'weekly' ? 'white' : '#d1d5db',
+                border: 'none'
+              }}
               onClick={() => handleTimeFrameChange('weekly')}
             >
               Week
@@ -854,6 +877,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   ? "bg-gray-800 text-white hover:bg-gray-800" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
+              style={{
+                backgroundColor: timeFrame === 'monthly' ? '#1f2937' : 'transparent',
+                color: timeFrame === 'monthly' ? 'white' : '#d1d5db',
+                border: 'none'
+              }}
               onClick={() => handleTimeFrameChange('monthly')}
             >
               Month
@@ -867,6 +895,11 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   ? "bg-gray-800 text-white hover:bg-gray-800" 
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               )}
+              style={{
+                backgroundColor: timeFrame === 'yearly' ? '#1f2937' : 'transparent',
+                color: timeFrame === 'yearly' ? 'white' : '#d1d5db',
+                border: 'none'
+              }}
               onClick={() => handleTimeFrameChange('yearly')}
             >
               Year
@@ -882,7 +915,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500 mb-2"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500 mb-2" style={{borderColor: '#6b7280'}}></div>
               <div className="text-gray-400 text-sm">Loading sales data...</div>
             </div>
           </div>
@@ -903,9 +936,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         )}
       </div>
       
-      <div className="p-2 border-t border-gray-800 bg-[#131722] text-sm font-medium flex justify-between items-center">
+      <div className="p-2 border-t border-gray-800 bg-[#131722] text-sm font-medium flex justify-between items-center" style={{borderColor: '#1f2937', backgroundColor: '#131722'}}>
         <div className="text-gray-300 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#d1d5db'}}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Total Revenue: ${totalRevenue.toLocaleString()}

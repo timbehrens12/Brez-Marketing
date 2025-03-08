@@ -57,6 +57,20 @@ function Calendar({
         IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
       }}
+      modifiersStyles={{
+        selected: {
+          backgroundColor: '#374151',
+          color: 'white'
+        },
+        today: {
+          backgroundColor: '#1f2937',
+          color: 'white'
+        },
+        range_middle: {
+          backgroundColor: '#374151',
+          color: 'white'
+        }
+      }}
       {...props}
     />
   )
