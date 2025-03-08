@@ -560,19 +560,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 return (
                   <div 
                     key={index}
-                    className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
-                      isCurrentHour 
-                        ? "border border-emerald-500/70" 
-                        : "border border-gray-800 bg-[#131722]"
-                    )}
+                    className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-20"
                   >
-                    <div className={cn(
-                      "text-center py-1 text-xs font-medium",
-                      isCurrentHour 
-                        ? "bg-[#1a1f2c] text-white" 
-                        : "bg-[#1a1f2c] text-gray-300"
-                    )}>
+                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
                       {item.displayDate}
                     </div>
                     
@@ -618,19 +608,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 return (
                   <div 
                     key={index + 12}
-                    className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
-                      isCurrentHour 
-                        ? "border border-emerald-500/70" 
-                        : "border border-gray-800 bg-[#131722]"
-                    )}
+                    className="flex flex-col rounded-md overflow-hidden border border-gray-800 bg-[#131722] h-20"
                   >
-                    <div className={cn(
-                      "text-center py-1 text-xs font-medium",
-                      isCurrentHour 
-                        ? "bg-[#1a1f2c] text-white" 
-                        : "bg-[#1a1f2c] text-gray-300"
-                    )}>
+                    <div className="text-center py-1 text-xs font-medium bg-[#1a1f2c] text-gray-300">
                       {item.displayDate}
                     </div>
                     
@@ -843,7 +823,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'today' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]/80" 
+                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
                   : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('today')}
@@ -856,7 +836,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'weekly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]/80" 
+                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
                   : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('weekly')}
@@ -869,7 +849,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'monthly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]/80" 
+                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
                   : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('monthly')}
@@ -882,7 +862,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               className={cn(
                 "text-xs h-7 px-3 rounded-md transition-all",
                 timeFrame === 'yearly' 
-                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]/80" 
+                  ? "bg-[#1a1f2c] text-white hover:bg-[#1a1f2c]" 
                   : "text-gray-300 hover:bg-[#1a1f2c] hover:text-white"
               )}
               onClick={() => handleTimeFrameChange('yearly')}
@@ -900,7 +880,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 mb-2"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-500 mb-2"></div>
               <div className="text-gray-400 text-sm">Loading sales data...</div>
             </div>
           </div>
