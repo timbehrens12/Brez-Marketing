@@ -10,7 +10,7 @@ import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
 import Image from "next/image"
-import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -187,7 +187,7 @@ export function WidgetManager({
 
       {/* Revenue Calendar - completely black version */}
       <div className="grid grid-cols-1 gap-4 mb-4">
-        <RevenueCalendarNew 
+        <RevenueByDay 
           brandId={brandId}
           isRefreshing={isRefreshingData}
         />
