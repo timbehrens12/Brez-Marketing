@@ -1,8 +1,8 @@
 "use client"
 
 import { MetricCard } from "@/components/metrics/MetricCard"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
-import { DarkRevenueCalendar } from "@/components/dashboard/DarkRevenueCalendar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
@@ -228,7 +228,8 @@ export function ShopifyTab({
             <CardTitle className="text-white"></CardTitle>
           </CardHeader>
           <CardContent className="h-[520px]">
-            <DarkRevenueCalendar 
+            <RevenueByDay 
+              data={safeMetrics.revenueByDay} 
               brandId={brandId}
               isRefreshing={isRefreshingData}
             />
