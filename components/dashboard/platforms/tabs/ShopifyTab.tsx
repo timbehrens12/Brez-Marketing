@@ -15,7 +15,7 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
-import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -223,7 +223,7 @@ export function ShopifyTab({
 
       {/* Revenue Calendar */}
       <div className="grid grid-cols-1 gap-4 mb-4">
-        <RevenueCalendarNew 
+        <RevenueByDay 
           brandId={brandId}
           isRefreshing={isRefreshingData}
         />
