@@ -1,6 +1,6 @@
 "use client"
 
-import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
+import { PlatformTabs } from "./platforms/PlatformTabs"
 import { useMetrics } from "@/lib/hooks/useMetrics"
 import { DateRange } from "react-day-picker"
 import { useState, useEffect } from "react"
@@ -11,6 +11,7 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
 import Image from "next/image"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
+import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -185,12 +186,51 @@ export function WidgetManager({
       {/* Only show Meta widgets when Meta tab is active */}
       {activeTab === "meta" && children}
 
-      {/* Revenue Calendar - completely black version */}
       <div className="grid grid-cols-1 gap-4 mb-4">
-        <RevenueByDay 
-          brandId={brandId}
-          isRefreshing={isRefreshingData}
-        />
+        <div className="h-[400px] rounded-md border border-gray-800" style={{backgroundColor: '#131722', borderColor: '#1f2937', color: 'white'}}>
+          <div className="p-4 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold text-white">Revenue Calendar</h3>
+              <div className="flex space-x-1">
+                <button className="text-xs h-7 px-3 rounded-md" style={{backgroundColor: '#1f2937', color: 'white', border: 'none'}}>
+                  Today
+                </button>
+                <button className="text-xs h-7 px-3 rounded-md" style={{backgroundColor: 'transparent', color: '#d1d5db', border: 'none'}}>
+                  Week
+                </button>
+                <button className="text-xs h-7 px-3 rounded-md" style={{backgroundColor: 'transparent', color: '#d1d5db', border: 'none'}}>
+                  Month
+                </button>
+                <button className="text-xs h-7 px-3 rounded-md" style={{backgroundColor: 'transparent', color: '#d1d5db', border: 'none'}}>
+                  Year
+                </button>
+              </div>
+            </div>
+            <div className="text-sm font-medium text-gray-400 mb-4">March 2024</div>
+            
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-gray-400 mb-2">No revenue data available</div>
+                <div className="text-gray-500 text-sm">Try refreshing or selecting a different date range</div>
+              </div>
+            </div>
+            
+            <div className="p-2 border-t border-gray-800 text-sm font-medium flex justify-between items-center mt-4" style={{borderColor: '#1f2937'}}>
+              <div className="text-gray-300 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Total Revenue: $0
+              </div>
+              <div className="text-gray-400 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Last updated: 3:47 PM
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   )
