@@ -701,15 +701,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
-                    <>
-                      <div className="relative h-24 w-full flex flex-col justify-end mb-1">
+                    <div className="flex flex-col h-full justify-end">
+                      <div className="flex-grow flex items-end">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-sm bg-emerald-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-sm font-medium text-emerald-400">
+                      <div className="text-center text-sm font-medium text-emerald-400 mt-2">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
@@ -717,7 +717,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                           {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                       -
@@ -829,15 +829,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
-                    <>
-                      <div className="relative h-16 w-full flex flex-col justify-end mb-1">
+                    <div className="flex flex-col h-full justify-end">
+                      <div className="flex-grow flex items-end">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-sm bg-emerald-500/60"
                         ></div>
                       </div>
                       
-                      <div className="text-center text-sm font-medium text-emerald-400">
+                      <div className="text-center text-sm font-medium text-emerald-400 mt-2">
                         {renderRevenueValue(item.revenue)}
                       </div>
                       {item.count > 0 && (
@@ -845,7 +845,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                           {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-600 text-xs">
                       -
@@ -951,12 +951,12 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         ) : error ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center text-center max-w-md">
-              <div className="bg-red-900/20 p-2 rounded-full mb-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="bg-[#1e2530] p-2 rounded-full mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-red-400 font-medium mb-1">Error Loading Data</div>
+              <div className="text-gray-300 font-medium mb-1">Error Loading Data</div>
               <div className="text-gray-400 text-sm">{error}</div>
             </div>
           </div>
