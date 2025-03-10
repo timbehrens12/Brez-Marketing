@@ -9,6 +9,7 @@ import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { TrendingUp, TrendingDown, Info } from "lucide-react"
+import { MetricLineChart } from "./MetricLineChart"
 
 interface MetricCardProps {
   title: string | React.ReactNode
@@ -74,6 +75,11 @@ export function MetricCard({
       value: 0
     }));
   }, [safeData, dateRange]);
+
+  // Determine if we should show the chart
+  const showChart = useMemo(() => {
+    return data && data.length > 0;
+  }, [data]);
 
   if (loading) {
     return (
@@ -273,24 +279,29 @@ export function MetricCard({
                     <Info className="h-3 w-3 text-gray-500" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                  <div className="space-y-1">
-                    <p className="font-medium">{getComparisonText()}</p>
-                    {safeChange !== 0 && (
-                      <div className="flex items-center mt-1">
-                        <span className={cn(
-                          "text-xs",
-                          isPositive ? "text-emerald-400" : safeChange < 0 ? "text-red-400" : "text-gray-400"
-                        )}>
-                          {isPositive ? "+" : ""}{safeChange.toFixed(1)}% {isPositive ? "increase" : safeChange < 0 ? "decrease" : "change"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>{getComparisonText()}</p>
+                  {!isCustomRange && (
+                    <p className="mt-1">
+                      Previous: {formatPreviousValue(calculatePreviousValue(safeValue, safeChange))}
+                    </p>
+                  )}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
+        )}
+        
+        {/* Add the line chart */}
+        {showChart && !refreshing && !loading && (
+          <MetricLineChart 
+            data={safeData}
+            dateRange={dateRange}
+            valuePrefix={prefix}
+            valueSuffix={suffix}
+            valueFormat={valueFormat}
+            color={isInventoryMetric ? "#f59e0b" : "#4ade80"}
+          />
         )}
       </CardContent>
     </Card>

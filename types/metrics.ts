@@ -97,6 +97,10 @@ export interface Metrics {
   conversionGrowth: number
   costPerResult: number
   cprGrowth: number
+  salesData?: Array<{ date: string; value: number }>
+  ordersData?: Array<{ date: string; value: number }>
+  aovData?: Array<{ date: string; value: number }>
+  unitsSoldData?: Array<{ date: string; value: number }>
 }
 
 export interface ComparisonDates {

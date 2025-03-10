@@ -173,7 +173,24 @@ export async function GET(request: Request) {
           name: 'returning', 
           value: (orders?.length || 0) - new Set(orders?.map((o: any) => o.customer_id) || []).size 
         }
-      ]
+      ],
+      // Add detailed data for charts
+      salesData: (orders || []).map((order: any) => ({
+        date: order.created_at,
+        value: parseFloat(order.total_price || '0')
+      })),
+      ordersData: (orders || []).map((order: any) => ({
+        date: order.created_at,
+        value: 1 // Each order counts as 1
+      })),
+      aovData: (orders || []).map((order: any) => ({
+        date: order.created_at,
+        value: parseFloat(order.total_price || '0')
+      })),
+      unitsSoldData: (orders || []).map((order: any) => ({
+        date: order.created_at,
+        value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+      }))
     }
 
     console.log('Calculated metrics:', {

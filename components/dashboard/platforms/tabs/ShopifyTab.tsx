@@ -31,6 +31,10 @@ interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'cu
   topProducts: Array<Product>
   customerSegments: CustomerSegments
   dailyData: Array<DailyData>
+  salesData?: Array<{ date: string; value: number }>
+  ordersData?: Array<{ date: string; value: number }>
+  aovData?: Array<{ date: string; value: number }>
+  unitsSoldData?: Array<{ date: string; value: number }>
 }
 
 export function ShopifyTab({ 
@@ -80,7 +84,11 @@ export function ShopifyTab({
       orders: d.orders || 0,
       revenue: d.revenue || 0,
       value: d.revenue || 0 // Add this for MetricCard compatibility
-    }))
+    })),
+    salesData: metrics.salesData || [],
+    ordersData: metrics.ordersData || [],
+    aovData: metrics.aovData || [],
+    unitsSoldData: metrics.unitsSoldData || []
   }
 
   return (
@@ -119,7 +127,7 @@ export function ShopifyTab({
             change={safeMetrics.salesGrowth || 0}
             prefix="$"
             valueFormat="currency"
-            data={safeMetrics.dailyData}
+            data={safeMetrics.salesData || []}
             loading={isLoading}
             refreshing={isRefreshingData}
             platform="shopify"
@@ -144,7 +152,7 @@ export function ShopifyTab({
             }
             value={safeMetrics.ordersPlaced || 0}
             change={safeMetrics.ordersGrowth || 0}
-            data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
+            data={safeMetrics.ordersData || []}
             loading={isLoading}
             refreshing={isRefreshingData}
             platform="shopify"
@@ -171,10 +179,7 @@ export function ShopifyTab({
             change={safeMetrics.aovGrowth || 0}
             prefix="$"
             valueFormat="currency"
-            data={safeMetrics.dailyData.map(d => ({ 
-              ...d, 
-              value: d.orders > 0 ? d.revenue / d.orders : 0 
-            }))}
+            data={safeMetrics.aovData || []}
             loading={isLoading}
             refreshing={isRefreshingData}
             platform="shopify"
@@ -199,12 +204,12 @@ export function ShopifyTab({
             }
             value={safeMetrics.unitsSold || 0}
             change={safeMetrics.unitsGrowth || 0}
-            data={safeMetrics.dailyData.map(d => ({ ...d, value: d.orders }))}
+            data={safeMetrics.unitsSoldData || []}
             loading={isLoading}
             refreshing={isRefreshingData}
             platform="shopify"
             dateRange={dateRange}
-            infoTooltip="Total number of product units sold in the selected period"
+            infoTooltip="Total number of units sold in the selected period"
           />
         </div>
       </div>
