@@ -240,10 +240,10 @@ export function MetricCard({
                            dateRange.from.toDateString() === dateRange.to.toDateString(); // Single day view
     
     if (isMarch9th2025) {
-      // For March 9th, explicitly show comparison to March 7th
+      // For March 9th, explicitly show comparison to March 8th
       const previousValue = calculatePreviousValue(safeValue, safeChange);
       const formattedPreviousValue = formatPreviousValue(previousValue);
-      return `Previous day with data (Mar 7, 2025): ${formattedPreviousValue}`;
+      return `Previous day (Mar 8, 2025): ${formattedPreviousValue}`;
     } else if (isMarch10th2025) {
       // For March 10th, explicitly show comparison to March 9th
       const previousValue = calculatePreviousValue(safeValue, safeChange);
