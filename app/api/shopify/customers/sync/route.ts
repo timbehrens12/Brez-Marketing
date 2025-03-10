@@ -7,6 +7,7 @@ export async function POST(request: Request) {
     const { connectionId } = await request.json();
     
     if (!connectionId) {
+      console.error('Missing connectionId in request');
       return NextResponse.json({ error: 'Connection ID is required' }, { status: 400 });
     }
     
@@ -29,8 +30,11 @@ export async function POST(request: Request) {
     const { shop, access_token } = connection;
     
     if (!shop || !access_token) {
+      console.error('Invalid connection data - missing shop or access_token');
       return NextResponse.json({ error: 'Invalid connection data' }, { status: 400 });
     }
+    
+    console.log('Fetching customers from Shopify shop:', shop);
     
     // Fetch customers from Shopify API
     let url = `https://${shop}/admin/api/2023-04/customers.json?limit=250`;
@@ -40,40 +44,62 @@ export async function POST(request: Request) {
     while (hasNextPage) {
       console.log('Fetching customers from:', url);
       
-      const response = await fetch(url, {
-        headers: {
-          'X-Shopify-Access-Token': access_token,
-          'Content-Type': 'application/json'
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'X-Shopify-Access-Token': access_token,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error fetching customers from Shopify:', errorText);
+          return NextResponse.json({ error: 'Failed to fetch customers from Shopify' }, { status: response.status });
         }
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error fetching customers from Shopify:', errorText);
-        return NextResponse.json({ error: 'Failed to fetch customers from Shopify' }, { status: response.status });
-      }
-      
-      const data = await response.json();
-      const customers = data.customers || [];
-      
-      allCustomers = [...allCustomers, ...customers];
-      
-      // Check if there's a next page
-      const linkHeader = response.headers.get('Link');
-      if (linkHeader && linkHeader.includes('rel="next"')) {
-        const nextLink = linkHeader.split(',').find(link => link.includes('rel="next"'));
-        if (nextLink) {
-          const match = nextLink.match(/<(.*?)>/);
-          if (match && match[1]) {
-            url = match[1];
+        
+        const data = await response.json();
+        console.log('Shopify API response received, customers count:', data.customers?.length || 0);
+        
+        if (!data.customers || data.customers.length === 0) {
+          console.log('No customers returned from Shopify API');
+          if (allCustomers.length === 0) {
+            return NextResponse.json({ 
+              success: true, 
+              message: 'No customers found in Shopify store',
+              count: 0
+            });
+          }
+          break;
+        }
+        
+        const customers = data.customers || [];
+        
+        allCustomers = [...allCustomers, ...customers];
+        
+        // Check if there's a next page
+        const linkHeader = response.headers.get('Link');
+        if (linkHeader && linkHeader.includes('rel="next"')) {
+          const nextLink = linkHeader.split(',').find(link => link.includes('rel="next"'));
+          if (nextLink) {
+            const match = nextLink.match(/<(.*?)>/);
+            if (match && match[1]) {
+              url = match[1];
+            } else {
+              hasNextPage = false;
+            }
           } else {
             hasNextPage = false;
           }
         } else {
           hasNextPage = false;
         }
-      } else {
-        hasNextPage = false;
+      } catch (fetchError) {
+        console.error('Error during Shopify API fetch:', fetchError);
+        return NextResponse.json({ 
+          error: 'Error fetching from Shopify API', 
+          details: fetchError instanceof Error ? fetchError.message : 'Unknown error' 
+        }, { status: 500 });
       }
       
       // Avoid rate limiting
@@ -84,6 +110,15 @@ export async function POST(request: Request) {
     
     console.log(`Fetched ${allCustomers.length} customers from Shopify`);
     
+    if (allCustomers.length === 0) {
+      console.log('No customers found in Shopify store');
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No customers found in Shopify store',
+        count: 0
+      });
+    }
+    
     // Fetch orders to calculate additional metrics
     const { data: orders, error: ordersError } = await supabase
       .from('shopify_orders')
@@ -93,15 +128,18 @@ export async function POST(request: Request) {
     if (ordersError) {
       console.error('Error fetching orders:', ordersError);
       // Continue with customer sync even if orders fetch fails
+    } else {
+      console.log(`Found ${orders?.length || 0} orders for calculating customer metrics`);
     }
     
     // Process customers and calculate additional metrics
-    const processedCustomers = allCustomers.map(customer => {
+    console.log('Processing customer data...');
+    const processedCustomers = allCustomers.map((customer: any) => {
       // Get all orders for this customer
-      const customerOrders = orders?.filter(order => order.customer_id === customer.id.toString()) || [];
+      const customerOrders = orders?.filter((order: any) => order.customer_id === customer.id.toString()) || [];
       
       // Calculate lifetime value
-      const lifetimeValue = customerOrders.reduce((sum, order) => {
+      const lifetimeValue = customerOrders.reduce((sum: number, order: any) => {
         return sum + parseFloat(order.total_price);
       }, 0);
       
@@ -113,11 +151,11 @@ export async function POST(request: Request) {
       // Calculate purchase frequency (orders per year)
       let purchaseFrequency = 0;
       if (customerOrders.length > 0 && customer.created_at) {
-        const firstOrderDate = new Date(customerOrders.sort((a, b) => 
+        const firstOrderDate = new Date(customerOrders.sort((a: any, b: any) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )[0].created_at);
         
-        const lastOrderDate = new Date(customerOrders.sort((a, b) => 
+        const lastOrderDate = new Date(customerOrders.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )[0].created_at);
         
@@ -133,7 +171,7 @@ export async function POST(request: Request) {
       let daysSinceLastOrder = null;
       let lastOrderDate = null;
       if (customerOrders.length > 0) {
-        const sortedOrders = customerOrders.sort((a, b) => 
+        const sortedOrders = customerOrders.sort((a: any, b: any) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         
@@ -208,57 +246,118 @@ export async function POST(request: Request) {
       };
     });
     
-    // Batch insert/update customers in Supabase
-    const batchSize = 100;
-    for (let i = 0; i < processedCustomers.length; i += batchSize) {
-      const batch = processedCustomers.slice(i, i + batchSize);
+    console.log(`Processed ${processedCustomers.length} customers, preparing to save to Supabase`);
+    
+    // Check if shopify_customers table exists
+    try {
+      const { count, error: tableCheckError } = await supabase
+        .from('shopify_customers')
+        .select('*', { count: 'exact', head: true });
       
-      // For each customer in the batch, upsert (insert or update)
-      for (const customer of batch) {
-        // Check if customer already exists
-        const { data: existingCustomer, error: lookupError } = await supabase
-          .from('shopify_customers')
-          .select('id')
-          .eq('connection_id', connectionId)
-          .eq('customer_id', customer.customer_id)
-          .single();
-        
-        if (lookupError && lookupError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-          console.error('Error looking up customer:', lookupError);
-          continue;
-        }
-        
-        if (existingCustomer) {
-          // Update existing customer
-          const { error: updateError } = await supabase
-            .from('shopify_customers')
-            .update(customer)
-            .eq('id', existingCustomer.id);
-          
-          if (updateError) {
-            console.error('Error updating customer:', updateError);
-          }
-        } else {
-          // Insert new customer
-          const { error: insertError } = await supabase
-            .from('shopify_customers')
-            .insert(customer);
-          
-          if (insertError) {
-            console.error('Error inserting customer:', insertError);
-          }
+      if (tableCheckError) {
+        console.error('Error checking shopify_customers table:', tableCheckError);
+        if (tableCheckError.message.includes('relation "shopify_customers" does not exist')) {
+          return NextResponse.json({ 
+            error: 'The shopify_customers table does not exist in the database. Please run the SQL script to create it.', 
+            details: tableCheckError.message 
+          }, { status: 500 });
         }
       }
       
-      console.log(`Processed batch ${i/batchSize + 1} of ${Math.ceil(processedCustomers.length/batchSize)}`);
+      console.log('shopify_customers table exists, proceeding with data insertion');
+    } catch (tableError) {
+      console.error('Error checking table existence:', tableError);
     }
     
-    console.log('Customer sync completed successfully');
+    // Batch insert/update customers in Supabase
+    const batchSize = 50; // Reduced batch size for better error tracking
+    let successCount = 0;
+    let errorCount = 0;
+    
+    console.log(`Processing customers in batches of ${batchSize}`);
+    
+    for (let i = 0; i < processedCustomers.length; i += batchSize) {
+      const batch = processedCustomers.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+      const totalBatches = Math.ceil(processedCustomers.length / batchSize);
+      
+      console.log(`Processing batch ${batchNumber} of ${totalBatches} (${batch.length} customers)`);
+      
+      // For each customer in the batch, upsert (insert or update)
+      for (const customer of batch) {
+        try {
+          // Check if customer already exists
+          const { data: existingCustomer, error: lookupError } = await supabase
+            .from('shopify_customers')
+            .select('id')
+            .eq('connection_id', connectionId)
+            .eq('customer_id', customer.customer_id)
+            .single();
+          
+          if (lookupError && lookupError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+            console.error('Error looking up customer:', lookupError);
+            errorCount++;
+            continue;
+          }
+          
+          if (existingCustomer) {
+            // Update existing customer
+            console.log(`Updating existing customer: ${customer.customer_id}`);
+            const { error: updateError } = await supabase
+              .from('shopify_customers')
+              .update(customer)
+              .eq('id', existingCustomer.id);
+            
+            if (updateError) {
+              console.error('Error updating customer:', updateError);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          } else {
+            // Insert new customer
+            console.log(`Inserting new customer: ${customer.customer_id}`);
+            const { error: insertError } = await supabase
+              .from('shopify_customers')
+              .insert(customer);
+            
+            if (insertError) {
+              console.error('Error inserting customer:', insertError);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          }
+        } catch (customerError) {
+          console.error('Error processing customer:', customerError);
+          errorCount++;
+        }
+      }
+      
+      console.log(`Completed batch ${batchNumber} of ${totalBatches}`);
+    }
+    
+    console.log(`Customer sync completed: ${successCount} successful, ${errorCount} errors`);
+    
+    // Verify data was saved
+    const { count, error: countError } = await supabase
+      .from('shopify_customers')
+      .select('*', { count: 'exact', head: true })
+      .eq('connection_id', connectionId);
+    
+    if (countError) {
+      console.error('Error verifying saved data:', countError);
+    } else {
+      console.log(`Verified ${count} customers in database for connection ${connectionId}`);
+    }
     
     return NextResponse.json({ 
       success: true, 
       message: 'Customer sync completed successfully',
-      count: processedCustomers.length
+      count: processedCustomers.length,
+      saved: successCount,
+      errors: errorCount,
+      verified_count: count
     });
     
   } catch (error) {
