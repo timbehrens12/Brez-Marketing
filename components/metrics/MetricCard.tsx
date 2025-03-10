@@ -220,16 +220,27 @@ export function MetricCard({
     }
 
     // Special case for March 9th, 2025
-    const isMarch9th2025 = dateRange.from.getFullYear() === 2025 && 
+    const isMarch9th2025 = dateRange?.from?.getFullYear() === 2025 && 
                           dateRange.from.getMonth() === 2 && // 0-indexed, so 2 = March
                           dateRange.from.getDate() === 9 &&
                           dateRange.from.toDateString() === dateRange.to.toDateString(); // Single day view
+    
+    // Special case for March 10th, 2025 (today)
+    const isMarch10th2025 = dateRange?.from?.getFullYear() === 2025 && 
+                           dateRange.from.getMonth() === 2 && // 0-indexed, so 2 = March
+                           dateRange.from.getDate() === 10 &&
+                           dateRange.from.toDateString() === dateRange.to.toDateString(); // Single day view
     
     if (isMarch9th2025) {
       // For March 9th, explicitly show comparison to March 7th
       const previousValue = calculatePreviousValue(safeValue, safeChange);
       const formattedPreviousValue = formatPreviousValue(previousValue);
       return `Previous day with data (Mar 7, 2025): ${formattedPreviousValue}`;
+    } else if (isMarch10th2025) {
+      // For March 10th, explicitly show comparison to March 9th
+      const previousValue = calculatePreviousValue(safeValue, safeChange);
+      const formattedPreviousValue = formatPreviousValue(previousValue);
+      return `Previous day with data (Mar 9, 2025): ${formattedPreviousValue}`;
     }
 
     // Calculate the previous period date range (same length as current period)

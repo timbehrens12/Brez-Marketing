@@ -220,11 +220,11 @@ export function MetricLineChart({
   }
 
   return (
-    <div className="w-full h-[80px] mt-4">
+    <div className="w-full h-[120px] mt-2">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart 
           data={chartData} 
-          margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+          margin={{ top: 5, right: 0, bottom: 0, left: 0 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
           <Line 
