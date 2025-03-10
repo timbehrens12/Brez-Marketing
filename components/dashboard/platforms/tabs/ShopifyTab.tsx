@@ -109,8 +109,16 @@ export function ShopifyTab({
       }
       
       try {
+        // Validate the date
         const date = new Date(item.date);
-        return !isNaN(date.getTime());
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date in sales data:', item.date);
+          return false;
+        }
+        
+        // Update the date property to ensure it's a valid ISO string
+        item.date = date.toISOString();
+        return true;
       } catch (error) {
         console.error('Invalid date in sales data:', item.date);
         return false;
@@ -123,8 +131,16 @@ export function ShopifyTab({
       }
       
       try {
+        // Validate the date
         const date = new Date(item.date);
-        return !isNaN(date.getTime());
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date in orders data:', item.date);
+          return false;
+        }
+        
+        // Update the date property to ensure it's a valid ISO string
+        item.date = date.toISOString();
+        return true;
       } catch (error) {
         console.error('Invalid date in orders data:', item.date);
         return false;
@@ -137,8 +153,16 @@ export function ShopifyTab({
       }
       
       try {
+        // Validate the date
         const date = new Date(item.date);
-        return !isNaN(date.getTime());
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date in AOV data:', item.date);
+          return false;
+        }
+        
+        // Update the date property to ensure it's a valid ISO string
+        item.date = date.toISOString();
+        return true;
       } catch (error) {
         console.error('Invalid date in AOV data:', item.date);
         return false;
@@ -151,8 +175,16 @@ export function ShopifyTab({
       }
       
       try {
+        // Validate the date
         const date = new Date(item.date);
-        return !isNaN(date.getTime());
+        if (isNaN(date.getTime())) {
+          console.error('Invalid date in units sold data:', item.date);
+          return false;
+        }
+        
+        // Update the date property to ensure it's a valid ISO string
+        item.date = date.toISOString();
+        return true;
       } catch (error) {
         console.error('Invalid date in units sold data:', item.date);
         return false;

@@ -191,8 +191,10 @@ export async function GET(request: Request) {
             return null;
           }
           
+          // Format date consistently - use ISO format with just the date part for daily views
+          // and full ISO for hourly views
           return {
-            date: date.toISOString(),
+            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
             value: parseFloat(order.total_price || '0')
           };
         } catch (error) {
@@ -216,8 +218,9 @@ export async function GET(request: Request) {
             return null;
           }
           
+          // Format date consistently
           return {
-            date: date.toISOString(),
+            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
             value: 1 // Each order counts as 1
           };
         } catch (error) {
@@ -241,8 +244,9 @@ export async function GET(request: Request) {
             return null;
           }
           
+          // Format date consistently
           return {
-            date: date.toISOString(),
+            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
             value: parseFloat(order.total_price || '0')
           };
         } catch (error) {
@@ -266,8 +270,9 @@ export async function GET(request: Request) {
             return null;
           }
           
+          // Format date consistently
           return {
-            date: date.toISOString(),
+            date: format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx"),
             value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
           };
         } catch (error) {
