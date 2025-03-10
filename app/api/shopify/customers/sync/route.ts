@@ -323,6 +323,40 @@ export async function POST(request: Request) {
             
             if (insertError) {
               console.error('Error inserting customer:', insertError);
+              
+              // Check if this is an RLS policy violation
+              if (insertError.message && insertError.message.includes('violates row-level security policy')) {
+                console.error('RLS policy violation detected. You need to add RLS policies to the shopify_customers table.');
+                
+                // Return a specific error for RLS violations
+                return NextResponse.json({ 
+                  error: 'Row Level Security policy violation', 
+                  details: insertError.message,
+                  solution: `
+                    Run the following SQL in your Supabase SQL Editor:
+                    
+                    -- Enable Row Level Security on the shopify_customers table
+                    ALTER TABLE shopify_customers ENABLE ROW LEVEL SECURITY;
+                    
+                    -- Create a policy to allow all operations for authenticated users
+                    CREATE POLICY "Allow all operations for authenticated users"
+                      ON shopify_customers
+                      USING (auth.role() = 'authenticated');
+                    
+                    -- Create a policy for all operations (as a fallback)
+                    CREATE POLICY "Allow all operations"
+                      ON shopify_customers
+                      FOR ALL
+                      USING (true);
+                    
+                    -- Grant all privileges on the table to authenticated users
+                    GRANT ALL ON shopify_customers TO authenticated;
+                    GRANT ALL ON shopify_customers TO anon;
+                    GRANT ALL ON shopify_customers TO service_role;
+                  `
+                }, { status: 500 });
+              }
+              
               errorCount++;
             } else {
               successCount++;

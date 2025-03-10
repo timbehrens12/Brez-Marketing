@@ -28,9 +28,29 @@ export async function GET(request: Request) {
       }, { status: 500 });
     }
     
+    // Get a valid connection_id from the platform_connections table
+    let connectionId = '00000000-0000-0000-0000-000000000000'; // Default placeholder
+    
+    try {
+      const { data: connections, error: connectionsError } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('platform_type', 'shopify')
+        .limit(1);
+      
+      if (connectionsError) {
+        console.error('Error fetching connections:', connectionsError);
+      } else if (connections && connections.length > 0) {
+        connectionId = connections[0].id;
+        console.log('Using existing connection ID:', connectionId);
+      }
+    } catch (connectionsError) {
+      console.error('Error fetching connections:', connectionsError);
+    }
+    
     // Try to insert a test record
     const testCustomer = {
-      connection_id: '00000000-0000-0000-0000-000000000000', // This is a placeholder UUID
+      connection_id: connectionId,
       customer_id: 'test-customer-' + Date.now(),
       email: 'test@example.com',
       first_name: 'Test',
@@ -47,6 +67,18 @@ export async function GET(request: Request) {
     
     console.log('Attempting to insert test customer:', testCustomer);
     
+    // First, check if we can access the table with RLS bypassed
+    const { data: rlsCheckData, error: rlsCheckError } = await supabase.rpc('check_rls_enabled', {
+      table_name: 'shopify_customers'
+    });
+    
+    if (rlsCheckError) {
+      console.log('RLS check failed (function may not exist):', rlsCheckError);
+    } else {
+      console.log('RLS check result:', rlsCheckData);
+    }
+    
+    // Try inserting with regular client first
     const { data: insertedCustomer, error: insertError } = await supabase
       .from('shopify_customers')
       .insert(testCustomer)
@@ -55,6 +87,39 @@ export async function GET(request: Request) {
     
     if (insertError) {
       console.error('Error inserting test customer:', insertError);
+      
+      // If there's an RLS error, try with service role client if available
+      if (insertError.message && insertError.message.includes('violates row-level security policy')) {
+        console.log('RLS policy violation detected. You need to add RLS policies to the shopify_customers table.');
+        
+        return NextResponse.json({ 
+          error: 'Error inserting test customer: RLS policy violation', 
+          details: insertError,
+          solution: `
+            Run the following SQL in your Supabase SQL Editor:
+            
+            -- Enable Row Level Security on the shopify_customers table
+            ALTER TABLE shopify_customers ENABLE ROW LEVEL SECURITY;
+            
+            -- Create a policy to allow all operations for authenticated users
+            CREATE POLICY "Allow all operations for authenticated users"
+              ON shopify_customers
+              USING (auth.role() = 'authenticated');
+            
+            -- Create a policy for all operations (as a fallback)
+            CREATE POLICY "Allow all operations"
+              ON shopify_customers
+              FOR ALL
+              USING (true);
+            
+            -- Grant all privileges on the table to authenticated users
+            GRANT ALL ON shopify_customers TO authenticated;
+            GRANT ALL ON shopify_customers TO anon;
+            GRANT ALL ON shopify_customers TO service_role;
+          `
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({ 
         error: 'Error inserting test customer', 
         details: insertError 
