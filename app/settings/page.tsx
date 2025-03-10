@@ -15,6 +15,7 @@ import { toast } from "react-hot-toast"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 import { useRouter, useSearchParams } from "next/navigation"
+import { CustomerSyncButton } from "@/components/dashboard/CustomerSyncButton"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -830,17 +831,27 @@ export default function SettingsPage() {
                       </div>
 
                       {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') && (
-                        <Button 
-                          variant="outline" 
-                          className="border-[#333] text-blue-400 hover:text-blue-300"
-                          onClick={() => handleSync(connections.find(c => 
-                            c.brand_id === brand.id && 
-                            c.platform_type === 'shopify'
-                          )?.id!)}
-                          disabled={isSyncing}
-                        >
-                          {isSyncing ? 'Syncing...' : 'Sync Data'}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="border-[#333] text-blue-400 hover:text-blue-300"
+                            onClick={() => handleSync(connections.find(c => 
+                              c.brand_id === brand.id && 
+                              c.platform_type === 'shopify'
+                            )?.id!)}
+                            disabled={isSyncing}
+                          >
+                            {isSyncing ? 'Syncing Orders...' : 'Sync Orders'}
+                          </Button>
+                          
+                          <CustomerSyncButton 
+                            connectionId={connections.find(c => 
+                              c.brand_id === brand.id && 
+                              c.platform_type === 'shopify'
+                            )?.id!}
+                            className="border-[#333] text-blue-400 hover:text-blue-300"
+                          />
+                        </div>
                       )}
                     </div>
                   )}
