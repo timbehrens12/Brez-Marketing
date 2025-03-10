@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase'
 import { format, parseISO } from 'date-fns'
 import { MetricLineChart } from '@/components/metrics/MetricLineChart'
 import { Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { ShoppingBag } from 'lucide-react'
 
 interface SalesByProductProps {
   brandId: string
@@ -45,12 +47,21 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     setError(null)
     
     try {
+      if (!brandId) {
+        console.error('Missing brandId parameter')
+        setError('Missing brand ID')
+        setIsLoading(false)
+        return
+      }
+      
       const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
+      console.log('Fetching products for brand:', brandId, 'from:', formattedFrom, 'to:', formattedTo)
+      
       const { data: orders, error } = await supabase
         .from('shopify_orders')
-        .select('line_items, created_at')
+        .select('line_items, created_at, brand_id')
         .eq('brand_id', brandId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
@@ -61,6 +72,15 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         setIsLoading(false)
         return
       }
+      
+      if (!orders || orders.length === 0) {
+        console.log('No orders found for the selected date range')
+        setProducts([])
+        setIsLoading(false)
+        return
+      }
+      
+      console.log(`Found ${orders.length} orders with brand_id: ${brandId}`)
       
       // Process orders to extract unique products and their sales data
       const productMap = new Map<string, Product>()
@@ -121,12 +141,21 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     setError(null)
     
     try {
+      if (!brandId) {
+        console.error('Missing brandId parameter')
+        setError('Missing brand ID')
+        setIsLoading(false)
+        return
+      }
+      
       const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
+      console.log('Fetching sales data for product:', selectedProductId, 'brand:', brandId)
+      
       const { data: orders, error } = await supabase
         .from('shopify_orders')
-        .select('line_items, created_at')
+        .select('line_items, created_at, brand_id')
         .eq('brand_id', brandId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
@@ -137,6 +166,15 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         setIsLoading(false)
         return
       }
+      
+      if (!orders || orders.length === 0) {
+        console.log('No orders found for the selected date range')
+        setSalesData([])
+        setIsLoading(false)
+        return
+      }
+      
+      console.log(`Found ${orders.length} orders for product data`)
       
       // Process orders to extract sales data for the selected product
       const salesByDate = new Map<string, { value: number, quantity: number }>()
@@ -235,17 +273,33 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
       <CardHeader className="p-4 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gray-200">Sales by Product</CardTitle>
+          <CardTitle className="text-sm font-medium text-gray-200">
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src="https://i.imgur.com/cnCcupx.png" 
+                  alt="Shopify logo" 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>Sales by Product</span>
+              <ShoppingBag className="h-4 w-4" />
+            </div>
+          </CardTitle>
           {isRefreshing && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
         </div>
-        
-        <div className="mt-2">
+      </CardHeader>
+      
+      <CardContent className="p-4 pt-2">
+        <div className="mb-3">
           <Select
             value={selectedProductId}
             onValueChange={setSelectedProductId}
             disabled={isLoading || products.length === 0}
           >
-            <SelectTrigger className="w-full bg-[#222] border-[#444] text-white">
+            <SelectTrigger className="w-full bg-[#222] border-[#444] text-white text-sm h-8">
               <SelectValue placeholder="Select a product" />
             </SelectTrigger>
             <SelectContent className="bg-[#222] border-[#444] text-white">
@@ -257,9 +311,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
             </SelectContent>
           </Select>
         </div>
-      </CardHeader>
-      
-      <CardContent className="p-4 pt-2">
+        
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full bg-gray-700" />
@@ -269,7 +321,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
           <div className="text-red-500 text-sm">{error}</div>
         ) : selectedProduct ? (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
                 <div className="text-xs text-gray-400">Total Sales</div>
                 <div className="text-xl font-bold text-white">{formatCurrency(totalSales)}</div>
@@ -280,7 +332,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
               </div>
             </div>
             
-            <div className="h-[120px] mt-4">
+            <div className="h-[120px]">
               <MetricLineChart 
                 data={salesData}
                 dateRange={dateRange}

@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 import type { Metrics, CustomerSegments, DailyData, Product } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
-import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck } from "lucide-react"
+import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck, ShoppingCart } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays } from "date-fns"
@@ -208,7 +208,7 @@ export function ShopifyTab({
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-white">Sales Summary</h3>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
           <MetricCard
             title={
               <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export function ShopifyTab({
                   />
                 </div>
                 <span>Orders</span>
-                <ShoppingBag className="h-4 w-4" />
+                <ShoppingCart className="h-4 w-4" />
               </div>
             }
             value={safeMetrics.ordersPlaced || 0}
@@ -273,7 +273,7 @@ export function ShopifyTab({
                     className="object-contain"
                   />
                 </div>
-                <span>Average Order Value</span>
+                <span>Average Order</span>
                 <TrendingUp className="h-4 w-4" />
               </div>
             }
@@ -314,14 +314,9 @@ export function ShopifyTab({
             infoTooltip="Total number of units sold in the selected period"
           />
         </div>
-      </div>
-
-      {/* Sales by Product Section */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-white">Sales by Product</h3>
-        </div>
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+        
+        {/* Sales by Product Widget - Full Width */}
+        <div className="w-full">
           <SalesByProduct 
             brandId={brandId}
             dateRange={dateRange}
