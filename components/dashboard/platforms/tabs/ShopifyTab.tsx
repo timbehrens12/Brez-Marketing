@@ -16,6 +16,7 @@ import { useState, useEffect } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
+import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -311,6 +312,20 @@ export function ShopifyTab({
             platform="shopify"
             dateRange={dateRange}
             infoTooltip="Total number of units sold in the selected period"
+          />
+        </div>
+      </div>
+
+      {/* Sales by Product Section */}
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium text-white">Sales by Product</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
+          <SalesByProduct 
+            brandId={brandId}
+            dateRange={dateRange}
+            isRefreshing={isRefreshingData}
           />
         </div>
       </div>

@@ -8,10 +8,11 @@ import { supabase } from "@/lib/supabase"
 import { PlatformConnection } from "@/types/platformConnection"
 import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { DollarSign, TrendingUp, Eye, MousePointer } from "lucide-react"
+import { DollarSign, TrendingUp, Eye, MousePointer, ShoppingBag } from "lucide-react"
 import Image from "next/image"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
+import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 
 interface WidgetManagerProps {
   dateRange: {
