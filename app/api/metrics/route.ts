@@ -86,16 +86,13 @@ export async function GET(request: Request) {
     // This is a hardcoded fix for the specific issue with March 9th
     let prevFromDate, prevToDate;
     
+    // Check if we're looking at today (March 10th, 2025)
+    const isToday = isSameDay(fromDate, new Date()) && isSameDay(adjustedToDate, new Date());
+    
     const isMarch9th2025 = fromDate.getFullYear() === 2025 && 
                           fromDate.getMonth() === 2 && // 0-indexed, so 2 = March
                           fromDate.getDate() === 9 &&
                           isSameDay(fromDate, adjustedToDate); // Single day view
-    
-    // SPECIAL CASE: If looking at March 10th, 2025 (today), explicitly compare to March 9th (not March 8th)
-    const isMarch10th2025 = fromDate.getFullYear() === 2025 && 
-                           fromDate.getMonth() === 2 && // 0-indexed, so 2 = March
-                           fromDate.getDate() === 10 &&
-                           isSameDay(fromDate, adjustedToDate); // Single day view
     
     if (isMarch9th2025) {
       console.log('SPECIAL CASE: March 9th, 2025 - Comparing to March 7th instead of March 8th');
@@ -103,12 +100,6 @@ export async function GET(request: Request) {
       // Set comparison to March 7th
       prevFromDate = new Date(2025, 2, 7, 0, 0, 0, 0); // March 7th, 2025 00:00:00
       prevToDate = new Date(2025, 2, 7, 23, 59, 59, 999); // March 7th, 2025 23:59:59.999
-    } else if (isMarch10th2025) {
-      console.log('SPECIAL CASE: March 10th, 2025 - Comparing to March 9th instead of March 8th');
-      
-      // Set comparison to March 9th
-      prevFromDate = new Date(2025, 2, 9, 0, 0, 0, 0); // March 9th, 2025 00:00:00
-      prevToDate = new Date(2025, 2, 9, 23, 59, 59, 999); // March 9th, 2025 23:59:59.999
     } else {
       // Calculate the previous period as the exact same number of days immediately before the selected period
       prevToDate = startOfDay(fromDate);
@@ -118,6 +109,11 @@ export async function GET(request: Request) {
       prevFromDate = new Date(prevToDate);
       prevFromDate.setDate(prevFromDate.getDate() - selectedPeriodDays + 1); // Start of previous period
       prevFromDate.setHours(0, 0, 0, 0); // Set to start of day
+      
+      // Log if we're comparing today to yesterday
+      if (isToday) {
+        console.log('Comparing today to yesterday');
+      }
     }
     
     const formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");

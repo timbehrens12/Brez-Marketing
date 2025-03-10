@@ -8,7 +8,7 @@ import type { MetricData } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { TrendingUp, TrendingDown, Info } from "lucide-react"
+import { TrendingUp, TrendingDown, Info, Minus } from "lucide-react"
 import { MetricLineChart } from "./MetricLineChart"
 
 interface MetricCardProps {
@@ -118,9 +118,17 @@ export function MetricCard({
     }
   }
 
+  // Format the change value as a percentage
   const formatChange = (change: number) => {
     if (!isFinite(change) || isNaN(change)) return '+0.0%'
     return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
+  }
+  
+  // Get the appropriate color class based on the change value
+  const getChangeColor = (change: number): string => {
+    if (change > 0) return "text-emerald-500";
+    if (change < 0) return "text-red-500";
+    return "text-gray-400";
   }
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
@@ -270,6 +278,8 @@ export function MetricCard({
   
   // Helper function to calculate the previous period value based on current value and percentage change
   const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
+    // If growth is exactly 100%, it means previous value was 0 (special case in the API)
+    if (percentChange === 100) return 0;
     if (percentChange === 0) return currentValue;
     return currentValue / (1 + percentChange / 100);
   }
@@ -292,10 +302,26 @@ export function MetricCard({
     }
   }
 
-  // Add a function to directly display the actual data from the revenue calendar
+  // Add a function to directly display the actual comparison
   const renderActualComparison = () => {
-    // We no longer need this function as the API now provides the correct comparison period
-    return null;
+    // Calculate the previous value based on the current value and percentage change
+    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
+    const previousValue = calculatePreviousValue(numericValue, change);
+    
+    // If the previous value is 0 or very close to 0, show a special message
+    if (previousValue === 0 || (previousValue < 0.01 && previousValue > -0.01)) {
+      return (
+        <p className="mt-1">
+          Previous: {valueFormat === "currency" ? "$0.00" : "0"}
+        </p>
+      );
+    }
+    
+    return (
+      <p className="mt-1">
+        Previous: {formatPreviousValue(previousValue)}
+      </p>
+    );
   };
 
   return (
@@ -339,16 +365,9 @@ export function MetricCard({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-1 cursor-help">
-                    <div className={cn(
-                      "flex items-center text-sm font-medium",
-                      isPositive ? "text-emerald-500" : safeChange < 0 ? "text-red-500" : "text-gray-400"
-                    )}>
-                      {isPositive ? (
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                      ) : safeChange < 0 ? (
-                        <TrendingDown className="h-3 w-3 mr-1" />
-                      ) : null}
+                  <div className={`flex items-center space-x-1 cursor-help`}>
+                    <div className={`flex items-center ${getChangeColor(safeChange)}`}>
+                      {safeChange > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : safeChange < 0 ? <TrendingDown className="w-3 h-3 mr-1" /> : <Minus className="w-3 h-3 mr-1" />}
                       <span>{formatChange(safeChange)}</span>
                     </div>
                     <Info className="h-3 w-3 text-gray-500" />
@@ -356,11 +375,7 @@ export function MetricCard({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
                   <p>{getComparisonText()}</p>
-                  {!isCustomRange && (
-                    <p className="mt-1">
-                      Previous: {formatPreviousValue(calculatePreviousValue(safeValue, safeChange))}
-                    </p>
-                  )}
+                  {!isCustomRange && renderActualComparison()}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
