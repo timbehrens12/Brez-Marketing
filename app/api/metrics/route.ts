@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { parseISO, endOfDay, format, isValid, subDays } from 'date-fns'
+import { parseISO, endOfDay, format, isValid, subDays, differenceInDays, startOfDay } from 'date-fns'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -77,109 +77,27 @@ export async function GET(request: Request) {
     console.log(`From: ${formattedFromDate}`);
     console.log(`To: ${formattedToDate}`);
 
-    // Check if we're looking at a single day
-    const isSingleDay = fromDate.toDateString() === adjustedToDate.toDateString();
+    // Calculate the previous period date range (same length as current period)
+    // Calculate the exact number of days in the selected period
+    const selectedPeriodDays = differenceInDays(adjustedToDate, fromDate) + 1;
+    console.log(`Selected period is ${selectedPeriodDays} days long`);
     
-    // For single day view, we need to find the most recent day with data
-    let prevFromDate, prevToDate, formattedPrevFromDate, formattedPrevToDate;
+    // Calculate the previous period as the exact same number of days immediately before the selected period
+    const prevToDate = startOfDay(fromDate);
+    prevToDate.setDate(prevToDate.getDate() - 1); // End of previous period is the day before the start of current period
+    prevToDate.setHours(23, 59, 59, 999); // Set to end of day
     
-    if (isSingleDay) {
-      // First, get all orders for the past 30 days to find the most recent day with data
-      const thirtyDaysAgo = subDays(fromDate, 30);
-      const formattedThirtyDaysAgo = format(thirtyDaysAgo, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-      
-      console.log('Looking for most recent day with data in the past 30 days');
-      console.log(`From: ${formattedThirtyDaysAgo}`);
-      console.log(`To: ${format(subDays(fromDate, 1), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")}`);
-      
-      // Fetch all orders from the past 30 days up to yesterday
-      const { data: recentOrders, error: recentOrdersError } = await supabase
-        .from('shopify_orders')
-        .select('created_at, total_price')
-        .eq('connection_id', connection.id)
-        .gte('created_at', formattedThirtyDaysAgo)
-        .lt('created_at', formattedFromDate)
-        .order('created_at', { ascending: false });
-      
-      if (recentOrdersError) {
-        console.error('Error fetching recent orders:', recentOrdersError);
-      }
-      
-      // Group orders by day
-      const ordersByDay = new Map();
-      
-      if (recentOrders && recentOrders.length > 0) {
-        recentOrders.forEach((order: { created_at: string; total_price: string }) => {
-          const orderDate = new Date(order.created_at);
-          const dateKey = format(orderDate, 'yyyy-MM-dd');
-          
-          if (ordersByDay.has(dateKey)) {
-            ordersByDay.set(dateKey, ordersByDay.get(dateKey) + parseFloat(order.total_price));
-          } else {
-            ordersByDay.set(dateKey, parseFloat(order.total_price));
-          }
-        });
-        
-        // Convert to array and sort by date (most recent first)
-        const sortedDays = Array.from(ordersByDay.entries())
-          .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
-        
-        console.log('Days with data in the past 30 days:', sortedDays);
-        
-        // Find the most recent day with data
-        const mostRecentDayWithData = sortedDays.length > 0 ? sortedDays[0][0] : null;
-        
-        if (mostRecentDayWithData) {
-          // Set the previous period to be that specific day
-          const mostRecentDate = new Date(mostRecentDayWithData);
-          prevFromDate = new Date(mostRecentDate);
-          prevFromDate.setHours(0, 0, 0, 0);
-          
-          prevToDate = new Date(mostRecentDate);
-          prevToDate.setHours(23, 59, 59, 999);
-          
-          formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-          formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-          
-          console.log(`Found most recent day with data: ${mostRecentDayWithData}`);
-          console.log(`Setting previous period to: ${formattedPrevFromDate} - ${formattedPrevToDate}`);
-        } else {
-          // Fallback to yesterday if no data found
-          prevFromDate = subDays(fromDate, 1);
-          prevToDate = subDays(fromDate, 1);
-          prevToDate = endOfDay(prevToDate);
-          
-          formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-          formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-          
-          console.log('No recent days with data found, falling back to yesterday');
-          console.log(`Previous period: ${formattedPrevFromDate} - ${formattedPrevToDate}`);
-        }
-      } else {
-        // Fallback to yesterday if no data found
-        prevFromDate = subDays(fromDate, 1);
-        prevToDate = subDays(fromDate, 1);
-        prevToDate = endOfDay(prevToDate);
-        
-        formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-        formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-        
-        console.log('No recent orders found, falling back to yesterday');
-        console.log(`Previous period: ${formattedPrevFromDate} - ${formattedPrevToDate}`);
-      }
-    } else {
-      // For multi-day periods, use the standard calculation
-      const daysDiff = Math.ceil((adjustedToDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
-      prevFromDate = subDays(fromDate, daysDiff);
-      prevToDate = subDays(fromDate, 1);
-      
-      formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-      formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
-      
-      console.log('Standard previous period date range:');
-      console.log(`From: ${formattedPrevFromDate}`);
-      console.log(`To: ${formattedPrevToDate}`);
-    }
+    const prevFromDate = new Date(prevToDate);
+    prevFromDate.setDate(prevFromDate.getDate() - selectedPeriodDays + 1); // Start of previous period
+    prevFromDate.setHours(0, 0, 0, 0); // Set to start of day
+    
+    const formattedPrevFromDate = format(prevFromDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    const formattedPrevToDate = format(prevToDate, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+    
+    console.log('Previous period date range:');
+    console.log(`From: ${formattedPrevFromDate} (${format(prevFromDate, 'yyyy-MM-dd')})`);
+    console.log(`To: ${formattedPrevToDate} (${format(prevToDate, 'yyyy-MM-dd')})`);
+    console.log(`Previous period is also ${selectedPeriodDays} days long`);
 
     // Fetch orders from Supabase for current period
     const { data: orders, error: ordersError } = await supabase
@@ -300,6 +218,7 @@ export async function GET(request: Request) {
           return null;
         }
       }).filter(Boolean),
+      
       ordersData: (orders || []).map((order: any) => {
         try {
           // Ensure we have a valid date string
@@ -326,6 +245,7 @@ export async function GET(request: Request) {
           return null;
         }
       }).filter(Boolean),
+      
       aovData: (orders || []).map((order: any) => {
         try {
           // Ensure we have a valid date string
@@ -352,6 +272,7 @@ export async function GET(request: Request) {
           return null;
         }
       }).filter(Boolean),
+      
       unitsSoldData: (orders || []).map((order: any) => {
         try {
           // Ensure we have a valid date string
@@ -391,6 +312,13 @@ export async function GET(request: Request) {
       unitsGrowth: metrics.unitsGrowth,
       revenueByDayCount: metrics.revenueByDay.length
     });
+
+    // Add previous period date range to the response for UI display
+    metrics.previousPeriod = {
+      from: format(prevFromDate, 'MMM d, yyyy'),
+      to: format(prevToDate, 'MMM d, yyyy'),
+      totalSales: prevTotalSales
+    };
 
     return NextResponse.json(metrics)
 

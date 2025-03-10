@@ -219,61 +219,15 @@ export function MetricCard({
       return "Compared to previous equivalent period"
     }
 
-    // Check if we're looking at a single day (today or yesterday)
-    const isSingleDay = dateRange.from.toDateString() === dateRange.to.toDateString();
-    
-    if (isSingleDay) {
-      // Get the current date we're viewing
-      const currentDateStr = format(dateRange.from, 'yyyy-MM-dd');
-      
-      // Find days with data
-      const daysWithData = findMostRecentDayWithData();
-      
-      // Debug output
-      console.log('Current date:', currentDateStr);
-      console.log('Days with data:', daysWithData);
-      
-      if (daysWithData && daysWithData.length > 0) {
-        // Find the most recent day with data before the current day
-        let prevDayWithData = null;
-        
-        for (const [date, value] of daysWithData) {
-          // Skip days that are on or after the current date
-          if (date >= currentDateStr) continue;
-          
-          // We found the most recent day before the current date with data
-          prevDayWithData = [date, value];
-          break;
-        }
-        
-        if (prevDayWithData) {
-          const [date, value] = prevDayWithData;
-          const prevDate = format(new Date(date), 'MMM d, yyyy');
-          
-          // Format the previous value
-          const formattedPrevValue = formatPreviousValue(value);
-          
-          return `Previous day with data (${prevDate}): ${formattedPrevValue}`;
-        }
-      }
-      
-      // Fallback to standard previous day
-      const prevDate = format(subDays(dateRange.from, 1), 'MMM d, yyyy');
-      
-      // Calculate the previous period value
-      const previousValue = calculatePreviousValue(safeValue, safeChange);
-      const formattedPreviousValue = formatPreviousValue(previousValue);
-      
-      return `Previous day (${prevDate}): ${formattedPreviousValue}`;
-    }
-    
-    // For multi-day periods
+    // Calculate the previous period date range (same length as current period)
     const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
     const prevStart = format(subDays(dateRange.from, days), 'MMM d, yyyy')
     const prevEnd = format(subDays(dateRange.from, 1), 'MMM d, yyyy')
     
     let periodName = "period";
-    if (days === 7) {
+    if (days === 1) {
+      periodName = "day";
+    } else if (days === 7) {
       periodName = "week";
     } else if (days === 30 || days === 31 || days === 28 || days === 29) {
       periodName = "month";
@@ -316,45 +270,7 @@ export function MetricCard({
 
   // Add a function to directly display the actual data from the revenue calendar
   const renderActualComparison = () => {
-    // If we're in a single day view
-    if (dateRange?.from && dateRange?.to && 
-        dateRange.from.toDateString() === dateRange.to.toDateString()) {
-      
-      // Get the current date we're viewing
-      const currentDateStr = format(dateRange.from, 'yyyy-MM-dd');
-      
-      // Find days with data
-      const daysWithData = findMostRecentDayWithData();
-      
-      if (daysWithData && daysWithData.length > 0) {
-        // Find the most recent day with data before the current day
-        let prevDayWithData = null;
-        
-        for (const [date, value] of daysWithData) {
-          // Skip days that are on or after the current date
-          if (date >= currentDateStr) continue;
-          
-          // We found the most recent day before the current date with data
-          prevDayWithData = [date, value];
-          break;
-        }
-        
-        if (prevDayWithData) {
-          const [date, value] = prevDayWithData;
-          const prevDate = format(new Date(date), 'MMM d, yyyy');
-          
-          // Format the previous value
-          const formattedPrevValue = formatPreviousValue(value);
-          
-          return (
-            <div className="text-xs text-gray-400 mt-1">
-              Previous day with data: {prevDate} ({formattedPrevValue})
-            </div>
-          );
-        }
-      }
-    }
-    
+    // We no longer need this function as the API now provides the correct comparison period
     return null;
   };
 
