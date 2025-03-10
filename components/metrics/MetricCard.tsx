@@ -181,14 +181,27 @@ export function MetricCard({
       return "Compared to previous equivalent period"
     }
 
+    // Check if we're looking at a single day (today or yesterday)
+    const isSingleDay = dateRange.from.toDateString() === dateRange.to.toDateString();
+    
+    if (isSingleDay) {
+      // For single day view, compare to the day before
+      const prevDate = format(subDays(dateRange.from, 1), 'MMM d, yyyy');
+      
+      // Calculate the previous period value
+      const previousValue = calculatePreviousValue(safeValue, safeChange);
+      const formattedPreviousValue = formatPreviousValue(previousValue);
+      
+      return `Previous day (${prevDate}): ${formattedPreviousValue}`;
+    }
+    
+    // For multi-day periods
     const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
     const prevStart = format(subDays(dateRange.from, days), 'MMM d, yyyy')
     const prevEnd = format(subDays(dateRange.from, 1), 'MMM d, yyyy')
     
     let periodName = "period";
-    if (days === 1) {
-      periodName = "day";
-    } else if (days === 7) {
+    if (days === 7) {
       periodName = "week";
     } else if (days === 30 || days === 31 || days === 28 || days === 29) {
       periodName = "month";

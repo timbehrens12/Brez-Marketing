@@ -47,7 +47,7 @@ export function MetricLineChart({
       // Create 24 hour buckets (0-23) with zero values
       const hourlyData = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
-        displayHour: i % 2 === 0 ? (i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`) : '',
+        displayHour: i % 4 === 0 ? (i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`) : '',
         value: 0,
         formattedDate: dayLabel,
         formattedTime: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`
@@ -200,7 +200,7 @@ export function MetricLineChart({
   // Determine X-axis interval based on date range span
   const xAxisInterval = useMemo(() => {
     if (isSingleDayView) {
-      return 1; // Show every 2 hours for single day view (since we're only displaying even hours)
+      return 3; // Show every 4 hours for single day view (since we're only displaying every 4 hours)
     } else if (dateRangeSpan <= 7) {
       return 0; // Show all days for a week or less
     } else if (dateRangeSpan <= 31) {
@@ -240,7 +240,7 @@ export function MetricLineChart({
             tick={{ fontSize: 10, fill: '#666' }}
             axisLine={{ stroke: '#333' }}
             tickLine={{ stroke: '#333' }}
-            interval={0}
+            interval={xAxisInterval}
             minTickGap={15}
           />
           <YAxis 
