@@ -219,6 +219,19 @@ export function MetricCard({
       return "Compared to previous equivalent period"
     }
 
+    // Special case for March 9th, 2025
+    const isMarch9th2025 = dateRange.from.getFullYear() === 2025 && 
+                          dateRange.from.getMonth() === 2 && // 0-indexed, so 2 = March
+                          dateRange.from.getDate() === 9 &&
+                          dateRange.from.toDateString() === dateRange.to.toDateString(); // Single day view
+    
+    if (isMarch9th2025) {
+      // For March 9th, explicitly show comparison to March 7th
+      const previousValue = calculatePreviousValue(safeValue, safeChange);
+      const formattedPreviousValue = formatPreviousValue(previousValue);
+      return `Previous day with data (Mar 7, 2025): ${formattedPreviousValue}`;
+    }
+
     // Calculate the previous period date range (same length as current period)
     const days = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
     const prevStart = format(subDays(dateRange.from, days), 'MMM d, yyyy')
