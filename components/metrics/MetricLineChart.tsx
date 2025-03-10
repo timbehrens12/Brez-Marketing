@@ -47,9 +47,10 @@ export function MetricLineChart({
       // Create 24 hour buckets (0-23) with zero values
       const hourlyData = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
-        displayHour: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`,
+        displayHour: i % 2 === 0 ? (i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`) : '',
         value: 0,
-        formattedDate: dayLabel
+        formattedDate: dayLabel,
+        formattedTime: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`
       }));
 
       // Fill in data if we have any
@@ -144,7 +145,9 @@ export function MetricLineChart({
       case "percentage":
         return `${valuePrefix}${value.toFixed(1)}${valueSuffix}`;
       case "currency":
-        return `${valuePrefix}$${value.toLocaleString('en-US', { 
+        // Remove the $ from valuePrefix if it's already there to avoid double dollar signs
+        const prefix = valuePrefix === "$" ? "" : valuePrefix;
+        return `${prefix}$${value.toLocaleString('en-US', { 
           minimumFractionDigits: 0, 
           maximumFractionDigits: 0 
         })}${valueSuffix}`;
@@ -182,7 +185,7 @@ export function MetricLineChart({
         <div className="bg-[#1a1a1a] border border-[#333] rounded p-2 text-xs shadow-lg">
           <p className="text-gray-300 mb-1">
             {isSingleDayView 
-              ? `${payload[0]?.payload?.formattedDate || ''} ${label}`
+              ? `${payload[0]?.payload?.formattedDate}, ${payload[0]?.payload?.formattedTime || label}`
               : label}
           </p>
           <p className="text-emerald-500 font-medium">
@@ -197,7 +200,7 @@ export function MetricLineChart({
   // Determine X-axis interval based on date range span
   const xAxisInterval = useMemo(() => {
     if (isSingleDayView) {
-      return 3; // Show every 4th hour for single day view
+      return 1; // Show every 2 hours for single day view (since we're only displaying even hours)
     } else if (dateRangeSpan <= 7) {
       return 0; // Show all days for a week or less
     } else if (dateRangeSpan <= 31) {
@@ -237,7 +240,7 @@ export function MetricLineChart({
             tick={{ fontSize: 10, fill: '#666' }}
             axisLine={{ stroke: '#333' }}
             tickLine={{ stroke: '#333' }}
-            interval={xAxisInterval}
+            interval={0}
             minTickGap={15}
           />
           <YAxis 
