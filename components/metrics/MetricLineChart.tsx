@@ -40,64 +40,72 @@ export function MetricLineChart({
 
   // Process data for the chart
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) {
-      // If there's no data but we're in single day view, still create the hourly structure
-      if (isSingleDayView && dateRange?.from) {
-        // Create 24 hour buckets (0-23) with zero values
-        return Array.from({ length: 24 }, (_, i) => ({
-          hour: i,
-          displayHour: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`,
-          value: 0,
-          formattedDate: dateRange.from ? format(dateRange.from, 'MMM dd') : 'Today'
-        }));
-      }
-      return [];
-    }
-
-    // For single day view, group by hour
+    // For single day view, always create the hourly structure regardless of data
     if (isSingleDayView) {
       // Create 24 hour buckets (0-23)
       const hourlyData = Array.from({ length: 24 }, (_, i) => ({
         hour: i,
         displayHour: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`,
         value: 0,
-        formattedDate: dateRange?.from ? format(dateRange.from, 'MMM dd') : ''
+        formattedDate: dateRange?.from ? format(dateRange.from, 'MMM dd') : 'Today'
       }));
 
-      // Fill in the data
-      data.forEach(item => {
-        try {
-          // Validate date string before parsing
-          if (!item.date || typeof item.date !== 'string') {
-            console.error('Invalid date value:', item.date);
-            return; // Skip this item
+      // If we have data, fill it in
+      if (data && data.length > 0) {
+        data.forEach(item => {
+          try {
+            // Validate date string before parsing
+            if (!item.date || typeof item.date !== 'string') {
+              console.error('Invalid date value:', item.date);
+              return; // Skip this item
+            }
+            
+            // Try to parse the date safely
+            const date = parseISO(item.date);
+            
+            // Verify the date is valid before proceeding
+            if (isNaN(date.getTime())) {
+              console.error('Invalid date after parsing:', item.date);
+              return; // Skip this item
+            }
+            
+            const localDate = toZonedTime(date, userTimeZone);
+            const hour = localDate.getHours();
+            
+            // Add to the appropriate hour bucket
+            if (hour >= 0 && hour < 24) {
+              hourlyData[hour].value += item.value;
+            }
+          } catch (error) {
+            console.error('Error processing date for hourly chart:', error, 'Date value:', item.date);
           }
-          
-          // Try to parse the date safely
-          const date = parseISO(item.date);
-          
-          // Verify the date is valid before proceeding
-          if (isNaN(date.getTime())) {
-            console.error('Invalid date after parsing:', item.date);
-            return; // Skip this item
-          }
-          
-          const localDate = toZonedTime(date, userTimeZone);
-          const hour = localDate.getHours();
-          
-          // Add to the appropriate hour bucket
-          if (hour >= 0 && hour < 24) {
-            hourlyData[hour].value += item.value;
-          }
-        } catch (error) {
-          console.error('Error processing date for hourly chart:', error, 'Date value:', item.date);
-        }
-      });
+        });
+      }
 
       return hourlyData;
     } 
-    // For multi-day view, use daily data
+    // For multi-day view
     else {
+      // If no data, return empty array for multi-day view
+      if (!data || data.length === 0) {
+        // If we have a date range, create empty entries for each day
+        if (dateRange?.from && dateRange?.to) {
+          const emptyData = [];
+          let currentDate = new Date(dateRange.from);
+          while (currentDate <= dateRange.to) {
+            emptyData.push({
+              date: format(currentDate, 'yyyy-MM-dd'),
+              displayDate: format(currentDate, 'MMM dd'),
+              value: 0,
+              rawDate: new Date(currentDate)
+            });
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          return emptyData;
+        }
+        return [];
+      }
+
       // Create a map to aggregate values by date
       const dateMap = new Map();
       
@@ -239,8 +247,8 @@ export function MetricLineChart({
     }
   }, [isSingleDayView, dateRangeSpan]);
 
-  // If no data or all zero values, show empty state - EXCEPT for single day view
-  if (chartData.length === 0 || (chartData.every(item => item.value === 0) && !isSingleDayView)) {
+  // Only show empty state for multi-day views with no data
+  if (chartData.length === 0 && !isSingleDayView) {
     return (
       <div className="w-full h-[80px] mt-4 flex items-center justify-center text-gray-500 text-xs">
         No data available for this time period
