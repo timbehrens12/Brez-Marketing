@@ -868,11 +868,19 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       );
     }
     
-    return revenue > 0 
-      ? (revenue >= 1000 
-          ? `$${(revenue / 1000).toFixed(1)}k` 
-          : `$${revenue.toFixed(0)}`)
-      : "$0";
+    if (revenue <= 0) return "$0";
+    
+    // Format based on value range
+    if (revenue >= 1000000) {
+      // For values >= 1M, show as X.XXm
+      return `$${(revenue / 1000000).toFixed(2)}m`;
+    } else if (revenue >= 1000) {
+      // For values >= 1K but < 1M, show as X.Xk
+      return `$${(revenue / 1000).toFixed(1)}k`;
+    } else {
+      // For values < 1K, show as whole number
+      return `$${revenue.toFixed(0)}`;
+    }
   };
   
   return (
