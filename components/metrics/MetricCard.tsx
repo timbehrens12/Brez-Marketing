@@ -78,8 +78,14 @@ export function MetricCard({
 
   // Determine if we should show the chart
   const showChart = useMemo(() => {
+    // Always show chart for single day views (today/yesterday)
+    if (dateRange?.from && dateRange?.to && 
+        dateRange.from.toDateString() === dateRange.to.toDateString()) {
+      return true;
+    }
+    // Otherwise, only show if we have data
     return data && data.length > 0;
-  }, [data]);
+  }, [data, dateRange]);
 
   if (loading) {
     return (
