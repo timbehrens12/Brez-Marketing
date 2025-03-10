@@ -48,14 +48,28 @@ export function MetricLineChart({
       // Fill in the data
       data.forEach(item => {
         try {
+          // Validate date string before parsing
+          if (!item.date || typeof item.date !== 'string') {
+            console.error('Invalid date value:', item.date);
+            return; // Skip this item
+          }
+          
+          // Try to parse the date safely
           const date = parseISO(item.date);
+          
+          // Verify the date is valid before proceeding
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date after parsing:', item.date);
+            return; // Skip this item
+          }
+          
           const localDate = toZonedTime(date, userTimeZone);
           const hour = localDate.getHours();
           
           // Add to the appropriate hour bucket
           hourlyData[hour].value += item.value;
         } catch (error) {
-          console.error('Error processing date for hourly chart:', error);
+          console.error('Error processing date for hourly chart:', error, 'Date value:', item.date);
         }
       });
 
@@ -65,17 +79,31 @@ export function MetricLineChart({
     else {
       return data.map(item => {
         try {
+          // Validate date string before parsing
+          if (!item.date || typeof item.date !== 'string') {
+            console.error('Invalid date value:', item.date);
+            return { date: 'Invalid', displayDate: 'Invalid', value: item.value };
+          }
+          
+          // Try to parse the date safely
           const date = parseISO(item.date);
+          
+          // Verify the date is valid before proceeding
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date after parsing:', item.date);
+            return { date: item.date, displayDate: 'Invalid', value: item.value };
+          }
+          
           return {
             date: item.date,
             displayDate: format(date, 'MMM dd'),
             value: item.value
           };
         } catch (error) {
-          console.error('Error processing date for daily chart:', error);
+          console.error('Error processing date for daily chart:', error, 'Date value:', item.date);
           return { date: item.date, displayDate: 'Invalid', value: item.value };
         }
-      });
+      }).filter(Boolean); // Remove any undefined entries
     }
   }, [data, isSingleDayView, userTimeZone]);
 
@@ -100,7 +128,24 @@ export function MetricLineChart({
       return (
         <div className="bg-[#1a1a1a] border border-[#333] rounded p-2 text-xs shadow-lg">
           <p className="text-gray-300 mb-1">
-            {isSingleDayView ? label : format(parseISO(label), 'MMM dd, yyyy')}
+            {isSingleDayView ? label : (() => {
+              try {
+                // Validate label before parsing
+                if (typeof label !== 'string') {
+                  return 'Invalid date';
+                }
+                
+                const date = parseISO(label);
+                if (isNaN(date.getTime())) {
+                  return 'Invalid date';
+                }
+                
+                return format(date, 'MMM dd, yyyy');
+              } catch (error) {
+                console.error('Error formatting date in tooltip:', error);
+                return 'Invalid date';
+              }
+            })()}
           </p>
           <p className="text-emerald-500 font-medium">
             {formatValue(payload[0].value)}

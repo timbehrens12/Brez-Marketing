@@ -175,22 +175,106 @@ export async function GET(request: Request) {
         }
       ],
       // Add detailed data for charts
-      salesData: (orders || []).map((order: any) => ({
-        date: order.created_at,
-        value: parseFloat(order.total_price || '0')
-      })),
-      ordersData: (orders || []).map((order: any) => ({
-        date: order.created_at,
-        value: 1 // Each order counts as 1
-      })),
-      aovData: (orders || []).map((order: any) => ({
-        date: order.created_at,
-        value: parseFloat(order.total_price || '0')
-      })),
-      unitsSoldData: (orders || []).map((order: any) => ({
-        date: order.created_at,
-        value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
-      }))
+      salesData: (orders || []).map((order: any) => {
+        try {
+          // Ensure we have a valid date string
+          let dateStr = order.created_at;
+          if (!dateStr) {
+            console.error('Missing created_at date in order:', order.id);
+            return null;
+          }
+          
+          // Validate the date by attempting to parse it
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date in order:', order.id, dateStr);
+            return null;
+          }
+          
+          return {
+            date: date.toISOString(),
+            value: parseFloat(order.total_price || '0')
+          };
+        } catch (error) {
+          console.error('Error processing sales data for order:', order.id, error);
+          return null;
+        }
+      }).filter(Boolean),
+      ordersData: (orders || []).map((order: any) => {
+        try {
+          // Ensure we have a valid date string
+          let dateStr = order.created_at;
+          if (!dateStr) {
+            console.error('Missing created_at date in order:', order.id);
+            return null;
+          }
+          
+          // Validate the date by attempting to parse it
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date in order:', order.id, dateStr);
+            return null;
+          }
+          
+          return {
+            date: date.toISOString(),
+            value: 1 // Each order counts as 1
+          };
+        } catch (error) {
+          console.error('Error processing orders data for order:', order.id, error);
+          return null;
+        }
+      }).filter(Boolean),
+      aovData: (orders || []).map((order: any) => {
+        try {
+          // Ensure we have a valid date string
+          let dateStr = order.created_at;
+          if (!dateStr) {
+            console.error('Missing created_at date in order:', order.id);
+            return null;
+          }
+          
+          // Validate the date by attempting to parse it
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date in order:', order.id, dateStr);
+            return null;
+          }
+          
+          return {
+            date: date.toISOString(),
+            value: parseFloat(order.total_price || '0')
+          };
+        } catch (error) {
+          console.error('Error processing AOV data for order:', order.id, error);
+          return null;
+        }
+      }).filter(Boolean),
+      unitsSoldData: (orders || []).map((order: any) => {
+        try {
+          // Ensure we have a valid date string
+          let dateStr = order.created_at;
+          if (!dateStr) {
+            console.error('Missing created_at date in order:', order.id);
+            return null;
+          }
+          
+          // Validate the date by attempting to parse it
+          const date = new Date(dateStr);
+          if (isNaN(date.getTime())) {
+            console.error('Invalid date in order:', order.id, dateStr);
+            return null;
+          }
+          
+          return {
+            date: date.toISOString(),
+            value: order.line_items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+          };
+        } catch (error) {
+          console.error('Error processing units sold data for order:', order.id, error);
+          return null;
+        }
+      }).filter(Boolean)
     }
 
     console.log('Calculated metrics:', {

@@ -55,10 +55,27 @@ export function ShopifyTab({
       let dateStr = d.date;
       if (typeof dateStr === 'object' && dateStr !== null) {
         // If it's a Date object, convert to ISO string
-        dateStr = (dateStr as Date).toISOString();
+        try {
+          dateStr = (dateStr as Date).toISOString();
+        } catch (error) {
+          console.error('Error converting date object to ISO string:', error);
+          dateStr = new Date().toISOString(); // Fallback to current date
+        }
       } else if (typeof dateStr !== 'string') {
         // If it's neither a string nor a Date, use current date
         dateStr = new Date().toISOString();
+      } else {
+        // Validate the string date
+        try {
+          const testDate = new Date(dateStr);
+          if (isNaN(testDate.getTime())) {
+            console.error('Invalid date string:', dateStr);
+            dateStr = new Date().toISOString(); // Fallback to current date
+          }
+        } catch (error) {
+          console.error('Error validating date string:', error);
+          dateStr = new Date().toISOString(); // Fallback to current date
+        }
       }
       
       // Log for debugging
@@ -85,10 +102,62 @@ export function ShopifyTab({
       revenue: d.revenue || 0,
       value: d.revenue || 0 // Add this for MetricCard compatibility
     })),
-    salesData: metrics.salesData || [],
-    ordersData: metrics.ordersData || [],
-    aovData: metrics.aovData || [],
-    unitsSoldData: metrics.unitsSoldData || []
+    salesData: (metrics.salesData || []).filter(item => {
+      if (!item.date) {
+        console.error('Missing date in sales data item');
+        return false;
+      }
+      
+      try {
+        const date = new Date(item.date);
+        return !isNaN(date.getTime());
+      } catch (error) {
+        console.error('Invalid date in sales data:', item.date);
+        return false;
+      }
+    }),
+    ordersData: (metrics.ordersData || []).filter(item => {
+      if (!item.date) {
+        console.error('Missing date in orders data item');
+        return false;
+      }
+      
+      try {
+        const date = new Date(item.date);
+        return !isNaN(date.getTime());
+      } catch (error) {
+        console.error('Invalid date in orders data:', item.date);
+        return false;
+      }
+    }),
+    aovData: (metrics.aovData || []).filter(item => {
+      if (!item.date) {
+        console.error('Missing date in AOV data item');
+        return false;
+      }
+      
+      try {
+        const date = new Date(item.date);
+        return !isNaN(date.getTime());
+      } catch (error) {
+        console.error('Invalid date in AOV data:', item.date);
+        return false;
+      }
+    }),
+    unitsSoldData: (metrics.unitsSoldData || []).filter(item => {
+      if (!item.date) {
+        console.error('Missing date in units sold data item');
+        return false;
+      }
+      
+      try {
+        const date = new Date(item.date);
+        return !isNaN(date.getTime());
+      } catch (error) {
+        console.error('Invalid date in units sold data:', item.date);
+        return false;
+      }
+    })
   }
 
   return (
