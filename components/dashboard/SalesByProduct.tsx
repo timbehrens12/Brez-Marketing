@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { supabase } from '@/lib/supabase'
 import { format, parseISO } from 'date-fns'
 import { MetricLineChart } from '@/components/metrics/MetricLineChart'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
-import { ShoppingBag } from 'lucide-react'
 
 interface SalesByProductProps {
   brandId: string
@@ -40,29 +39,71 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
   const [salesData, setSalesData] = useState<ProductSalesData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [connectionId, setConnectionId] = useState<string | null>(null)
+  const [isLoadingConnection, setIsLoadingConnection] = useState(true)
+
+  // First, get the connection_id for the brand
+  useEffect(() => {
+    const fetchConnectionId = async () => {
+      if (!brandId) return;
+      
+      setIsLoadingConnection(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('platform_connections')
+          .select('id')
+          .eq('brand_id', brandId)
+          .eq('platform_type', 'shopify')
+          .eq('status', 'active')
+          .single();
+        
+        if (error) {
+          console.error('Error fetching connection:', error);
+          setError('Failed to load connection data');
+          return;
+        }
+        
+        if (data) {
+          console.log('Found connection ID for brand:', data.id);
+          setConnectionId(data.id);
+        } else {
+          console.log('No active Shopify connection found for brand:', brandId);
+          setError('No Shopify connection found');
+        }
+      } catch (err) {
+        console.error('Error in fetchConnectionId:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setIsLoadingConnection(false);
+      }
+    };
+    
+    fetchConnectionId();
+  }, [brandId]);
 
   // Fetch all products from orders
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     
     try {
-      if (!brandId) {
-        console.error('Missing brandId parameter')
-        setError('Missing brand ID')
-        setIsLoading(false)
-        return
+      if (!connectionId) {
+        console.error('Missing connectionId parameter');
+        setError('No active Shopify connection');
+        setIsLoading(false);
+        return;
       }
       
       const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
-      console.log('Fetching products for brand:', brandId, 'from:', formattedFrom, 'to:', formattedTo)
+      console.log('Fetching products for connection:', connectionId, 'from:', formattedFrom, 'to:', formattedTo)
       
       const { data: orders, error } = await supabase
         .from('shopify_orders')
-        .select('line_items, created_at, brand_id')
-        .eq('brand_id', brandId)
+        .select('line_items, created_at')
+        .eq('connection_id', connectionId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
       
@@ -80,7 +121,7 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
         return
       }
       
-      console.log(`Found ${orders.length} orders with brand_id: ${brandId}`)
+      console.log(`Found ${orders.length} orders with connection_id: ${connectionId}`)
       
       // Process orders to extract unique products and their sales data
       const productMap = new Map<string, Product>()
@@ -131,19 +172,19 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [connectionId, dateRange.from, dateRange.to, selectedProductId])
   
   // Fetch sales data for the selected product
-  const fetchProductSalesData = async () => {
+  const fetchProductSalesData = useCallback(async () => {
     if (!selectedProductId) return
     
     setIsLoading(true)
     setError(null)
     
     try {
-      if (!brandId) {
-        console.error('Missing brandId parameter')
-        setError('Missing brand ID')
+      if (!connectionId) {
+        console.error('Missing connectionId parameter')
+        setError('No active Shopify connection')
         setIsLoading(false)
         return
       }
@@ -151,12 +192,12 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       const formattedFrom = format(dateRange.from, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       const formattedTo = format(dateRange.to, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
       
-      console.log('Fetching sales data for product:', selectedProductId, 'brand:', brandId)
+      console.log('Fetching sales data for product:', selectedProductId, 'connection:', connectionId)
       
       const { data: orders, error } = await supabase
         .from('shopify_orders')
-        .select('line_items, created_at, brand_id')
-        .eq('brand_id', brandId)
+        .select('line_items, created_at')
+        .eq('connection_id', connectionId)
         .gte('created_at', formattedFrom)
         .lte('created_at', formattedTo)
       
@@ -236,19 +277,21 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [connectionId, dateRange.from, dateRange.to, selectedProductId])
   
-  // Fetch products when date range or brand changes
+  // Fetch products when connection ID is available
   useEffect(() => {
-    fetchProducts()
-  }, [brandId, dateRange.from, dateRange.to, isRefreshing])
+    if (connectionId) {
+      fetchProducts();
+    }
+  }, [connectionId, dateRange.from, dateRange.to, isRefreshing, fetchProducts]);
   
   // Fetch sales data when selected product changes
   useEffect(() => {
-    if (selectedProductId) {
-      fetchProductSalesData()
+    if (connectionId && selectedProductId) {
+      fetchProductSalesData();
     }
-  }, [selectedProductId, brandId, dateRange.from, dateRange.to, isRefreshing])
+  }, [connectionId, selectedProductId, dateRange.from, dateRange.to, isRefreshing, fetchProductSalesData]);
   
   // Get the selected product details
   const selectedProduct = useMemo(() => {
@@ -293,57 +336,68 @@ export function SalesByProduct({ brandId, dateRange, isRefreshing = false }: Sal
       </CardHeader>
       
       <CardContent className="p-4 pt-2">
-        <div className="mb-3">
-          <Select
-            value={selectedProductId}
-            onValueChange={setSelectedProductId}
-            disabled={isLoading || products.length === 0}
-          >
-            <SelectTrigger className="w-full bg-[#222] border-[#444] text-white text-sm h-8">
-              <SelectValue placeholder="Select a product" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#222] border-[#444] text-white">
-              {products.map(product => (
-                <SelectItem key={product.id} value={product.id}>
-                  {product.title} {product.variant_title ? `(${product.variant_title})` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {isLoading ? (
+        {isLoadingConnection ? (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full bg-gray-700" />
+            <Skeleton className="h-[120px] w-full bg-gray-700" />
+          </div>
+        ) : isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full bg-gray-700" />
             <Skeleton className="h-[120px] w-full bg-gray-700" />
           </div>
         ) : error ? (
-          <div className="text-red-500 text-sm">{error}</div>
-        ) : selectedProduct ? (
+          <div className="text-red-500 text-sm p-4 text-center">{error}</div>
+        ) : products.length === 0 ? (
+          <div className="text-gray-400 text-sm p-4 text-center">No products found for the selected date range</div>
+        ) : (
           <>
-            <div className="grid grid-cols-2 gap-4 mb-3">
-              <div>
-                <div className="text-xs text-gray-400">Total Sales</div>
-                <div className="text-xl font-bold text-white">{formatCurrency(totalSales)}</div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-400">Units Sold</div>
-                <div className="text-xl font-bold text-white">{totalQuantity}</div>
-              </div>
+            <div className="mb-3">
+              <Select
+                value={selectedProductId}
+                onValueChange={setSelectedProductId}
+                disabled={isLoading || products.length === 0}
+              >
+                <SelectTrigger className="w-full bg-[#222] border-[#444] text-white text-sm h-8">
+                  <SelectValue placeholder="Select a product" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#222] border-[#444] text-white">
+                  {products.map(product => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.title} {product.variant_title ? `(${product.variant_title})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
-            <div className="h-[120px]">
-              <MetricLineChart 
-                data={salesData}
-                dateRange={dateRange}
-                valuePrefix="$"
-                valueFormat="currency"
-                color="#4ade80"
-              />
-            </div>
+            {selectedProduct ? (
+              <>
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <div className="text-xs text-gray-400">Total Sales</div>
+                    <div className="text-xl font-bold text-white">{formatCurrency(totalSales)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Units Sold</div>
+                    <div className="text-xl font-bold text-white">{totalQuantity}</div>
+                  </div>
+                </div>
+                
+                <div className="h-[120px]">
+                  <MetricLineChart 
+                    data={salesData}
+                    dateRange={dateRange}
+                    valuePrefix="$"
+                    valueFormat="currency"
+                    color="#4ade80"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-400 text-sm p-4 text-center">Select a product to view sales data</div>
+            )}
           </>
-        ) : (
-          <div className="text-gray-400 text-sm">No products found for the selected date range</div>
         )}
       </CardContent>
     </Card>
