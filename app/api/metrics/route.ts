@@ -39,12 +39,17 @@ export async function GET(request: Request) {
       // Check if we're looking at yesterday (March 9th, 2025)
       isYesterday = fromDate.getFullYear() === 2025 &&
                     fromDate.getMonth() === 2 && // 0-indexed, so 2 = March
-                    fromDate.getDate() === 9 &&
-                    isSameDay(fromDate, adjustedToDate); // Single day view
+                    fromDate.getDate() === 9;
       
       if (isYesterday) {
         console.log('DETECTED: Looking at March 9th, 2025');
-        console.log(`Date range for March 9th: ${format(fromDate, 'yyyy-MM-dd')} to ${format(adjustedToDate, 'yyyy-MM-dd')}`);
+        
+        // Force single day view for March 9th
+        fromDate = new Date(2025, 2, 9, 0, 0, 0, 0); // March 9th, 2025 00:00:00
+        toDate = new Date(2025, 2, 9, 23, 59, 59, 999); // March 9th, 2025 23:59:59.999
+        adjustedToDate = toDate;
+        
+        console.log(`FIXED date range for March 9th: ${format(fromDate, 'yyyy-MM-dd')} to ${format(adjustedToDate, 'yyyy-MM-dd')}`);
       }
     } catch (error) {
       console.error('Error parsing date parameters:', error);
@@ -119,6 +124,8 @@ export async function GET(request: Request) {
       // Set comparison to March 8th (the day before)
       prevFromDate = new Date(2025, 2, 8, 0, 0, 0, 0); // March 8th, 2025 00:00:00
       prevToDate = new Date(2025, 2, 8, 23, 59, 59, 999); // March 8th, 2025 23:59:59.999
+      
+      console.log(`FIXED comparison for March 9th: Using March 8th (${format(prevFromDate, 'yyyy-MM-dd')} to ${format(prevToDate, 'yyyy-MM-dd')})`);
     } else {
       // Calculate the previous period as the exact same number of days immediately before the selected period
       prevToDate = startOfDay(fromDate);

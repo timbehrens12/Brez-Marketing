@@ -8,7 +8,7 @@ import type { MetricData } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { TrendingUp, TrendingDown, Info, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Info, Minus, Loader2 } from "lucide-react"
 import { MetricLineChart } from "./MetricLineChart"
 
 interface MetricCardProps {
@@ -126,9 +126,9 @@ export function MetricCard({
   
   // Get the appropriate color class based on the change value
   const getChangeColor = (change: number): string => {
-    if (change > 0) return "text-emerald-500";
-    if (change < 0) return "text-red-500";
-    return "text-gray-400";
+    if (change > 0) return "text-emerald-500 bg-emerald-500";
+    if (change < 0) return "text-red-500 bg-red-500";
+    return "text-gray-400 bg-gray-400";
   }
 
   const formattedValue = typeof value === "string" ? value : formatValue(safeValue)
@@ -325,30 +325,33 @@ export function MetricCard({
   };
 
   return (
-    <Card className={cn("bg-[#1A1A1A] border-[#2A2A2A] hover:bg-[#222] transition-colors", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center space-x-2">
-          <PlatformIcon />
-          <CardTitle className="text-sm font-medium text-gray-200">{title}</CardTitle>
-          {icon && <span className="text-gray-400">{icon}</span>}
-          
-          {infoTooltip && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <Info className="h-3.5 w-3.5 text-gray-500 hover:text-gray-300 transition-colors" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                  <p>{infoTooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+    <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]", className)}>
+      <CardHeader className="p-4 pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {icon && <div className="mr-2">{icon}</div>}
+            <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+              {title}
+              {infoTooltip && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 ml-1 text-gray-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                      <p>{infoTooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </CardTitle>
+            {platform && <PlatformIcon />}
+          </div>
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
+          {refreshing && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-2">
         <div className="text-2xl font-bold text-white">
           {refreshing ? (
             <div className="flex items-center space-x-2">
@@ -365,15 +368,15 @@ export function MetricCard({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className={`flex items-center space-x-1 cursor-help`}>
-                    <div className={`flex items-center ${getChangeColor(safeChange)}`}>
+                  <div className={`flex items-center space-x-1 cursor-help rounded-full px-2 py-0.5 ${getChangeColor(safeChange)} bg-opacity-10`}>
+                    <div className={`flex items-center`}>
                       {safeChange > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : safeChange < 0 ? <TrendingDown className="w-3 h-3 mr-1" /> : <Minus className="w-3 h-3 mr-1" />}
                       <span>{formatChange(safeChange)}</span>
                     </div>
-                    <Info className="h-3 w-3 text-gray-500" />
+                    <Info className="h-3 w-3 opacity-70" />
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                <TooltipContent side="top" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px] shadow-xl">
                   <p>{getComparisonText()}</p>
                   {!isCustomRange && renderActualComparison()}
                 </TooltipContent>
@@ -381,9 +384,6 @@ export function MetricCard({
             </TooltipProvider>
           </div>
         )}
-        
-        {/* Display actual comparison data */}
-        {renderActualComparison()}
         
         {/* Add the line chart */}
         {showChart && !refreshing && !loading && (

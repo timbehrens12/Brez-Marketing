@@ -38,6 +38,15 @@ export function MetricLineChart({
     return Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1);
   }, [dateRange]);
 
+  // Find the maximum value in the data to set appropriate Y-axis scale
+  const maxValue = useMemo(() => {
+    if (!data || data.length === 0) return 100;
+    const max = Math.max(...data.map(item => item.value));
+    // Add 20% padding to the max value to ensure the highest point isn't at the very top
+    // and ensure we have a reasonable minimum for small values
+    return Math.max(100, max * 1.2);
+  }, [data]);
+
   // Process data for the chart
   const chartData = useMemo(() => {
     // For single day view (today/yesterday)
@@ -132,12 +141,14 @@ export function MetricLineChart({
 
   // Calculate Y-axis domain based on data
   const yAxisDomain = useMemo(() => {
-    if (chartData.length === 0) return [0, 10];
+    if (chartData.length === 0) return [0, maxValue];
     
-    const maxValue = Math.max(...chartData.map(item => item.value));
-    // Add 10% padding to the top, with a minimum of 10 for empty data
-    return [0, Math.max(10, Math.ceil(maxValue * 1.1))];
-  }, [chartData]);
+    const chartMax = Math.max(...chartData.map(item => item.value));
+    // Use the larger of the two max values to ensure we capture all data points
+    const finalMax = Math.max(chartMax * 1.1, maxValue);
+    // Ensure we have a reasonable minimum for small values
+    return [0, Math.max(10, Math.ceil(finalMax))];
+  }, [chartData, maxValue]);
 
   // Format value for tooltip and y-axis
   const formatValue = (value: number) => {
@@ -226,14 +237,17 @@ export function MetricLineChart({
           data={chartData} 
           margin={{ top: 5, right: 0, bottom: 0, left: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} opacity={0.3} />
           <Line 
             type="monotone" 
             dataKey="value" 
             stroke={color}
             strokeWidth={2}
-            dot={chartData.length < 10}
+            dot={false}
             activeDot={{ r: 4, fill: color, stroke: '#111' }}
+            isAnimationActive={true}
+            animationDuration={1000}
+            animationEasing="ease-in-out"
           />
           <XAxis 
             dataKey={isSingleDayView ? "displayHour" : "displayDate"} 
@@ -247,13 +261,15 @@ export function MetricLineChart({
             domain={yAxisDomain}
             tick={{ fontSize: 10, fill: '#666' }}
             tickFormatter={formatYAxis}
-            width={30}
+            width={35}
             axisLine={{ stroke: '#333' }}
             tickLine={{ stroke: '#333' }}
+            allowDecimals={false}
           />
           <Tooltip 
             content={<CustomTooltip />}
-            cursor={{ stroke: '#333', strokeWidth: 1, strokeDasharray: '3 3' }}
+            cursor={{ stroke: '#444', strokeWidth: 1, strokeDasharray: '3 3' }}
+            animationDuration={200}
           />
         </LineChart>
       </ResponsiveContainer>
