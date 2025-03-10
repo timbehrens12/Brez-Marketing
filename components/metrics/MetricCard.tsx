@@ -188,7 +188,8 @@ export function MetricCard({
         if (!item.date) return;
         
         // Extract just the date part (YYYY-MM-DD)
-        const datePart = item.date.split('T')[0];
+        const datePart = typeof item.date === 'string' ? item.date.split('T')[0] : '';
+        if (!datePart) return;
         
         // Add to the map
         if (dateValueMap.has(datePart)) {
@@ -228,18 +229,29 @@ export function MetricCard({
       // Find days with data
       const daysWithData = findMostRecentDayWithData();
       
+      // Debug output
+      console.log('Current date:', currentDateStr);
+      console.log('Days with data:', daysWithData);
+      
       if (daysWithData && daysWithData.length > 0) {
-        // Find the current day's index
-        const currentDayIndex = daysWithData.findIndex(([date, _]) => date === currentDateStr);
+        // Find the most recent day with data before the current day
+        let prevDayWithData = null;
         
-        // If we found the current day and there's a previous day with data
-        if (currentDayIndex >= 0 && currentDayIndex < daysWithData.length - 1) {
-          const prevDayWithData = daysWithData[currentDayIndex + 1];
-          const prevDate = format(new Date(prevDayWithData[0]), 'MMM d, yyyy');
-          const prevValue = prevDayWithData[1];
+        for (const [date, value] of daysWithData) {
+          // Skip days that are on or after the current date
+          if (date >= currentDateStr) continue;
+          
+          // We found the most recent day before the current date with data
+          prevDayWithData = [date, value];
+          break;
+        }
+        
+        if (prevDayWithData) {
+          const [date, value] = prevDayWithData;
+          const prevDate = format(new Date(date), 'MMM d, yyyy');
           
           // Format the previous value
-          const formattedPrevValue = formatPreviousValue(prevValue);
+          const formattedPrevValue = formatPreviousValue(value);
           
           return `Previous day with data (${prevDate}): ${formattedPrevValue}`;
         }
@@ -301,6 +313,50 @@ export function MetricCard({
       return "0";
     }
   }
+
+  // Add a function to directly display the actual data from the revenue calendar
+  const renderActualComparison = () => {
+    // If we're in a single day view
+    if (dateRange?.from && dateRange?.to && 
+        dateRange.from.toDateString() === dateRange.to.toDateString()) {
+      
+      // Get the current date we're viewing
+      const currentDateStr = format(dateRange.from, 'yyyy-MM-dd');
+      
+      // Find days with data
+      const daysWithData = findMostRecentDayWithData();
+      
+      if (daysWithData && daysWithData.length > 0) {
+        // Find the most recent day with data before the current day
+        let prevDayWithData = null;
+        
+        for (const [date, value] of daysWithData) {
+          // Skip days that are on or after the current date
+          if (date >= currentDateStr) continue;
+          
+          // We found the most recent day before the current date with data
+          prevDayWithData = [date, value];
+          break;
+        }
+        
+        if (prevDayWithData) {
+          const [date, value] = prevDayWithData;
+          const prevDate = format(new Date(date), 'MMM d, yyyy');
+          
+          // Format the previous value
+          const formattedPrevValue = formatPreviousValue(value);
+          
+          return (
+            <div className="text-xs text-gray-400 mt-1">
+              Previous day with data: {prevDate} ({formattedPrevValue})
+            </div>
+          );
+        }
+      }
+    }
+    
+    return null;
+  };
 
   return (
     <Card className={cn("bg-[#1A1A1A] border-[#2A2A2A] hover:bg-[#222] transition-colors", className)}>
@@ -370,6 +426,9 @@ export function MetricCard({
             </TooltipProvider>
           </div>
         )}
+        
+        {/* Display actual comparison data */}
+        {renderActualComparison()}
         
         {/* Add the line chart */}
         {showChart && !refreshing && !loading && (

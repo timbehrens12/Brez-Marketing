@@ -145,6 +145,12 @@ export async function GET(request: Request) {
     const aovGrowth = calculateGrowth(currentAverageOrderValue, prevAverageOrderValue);
     const unitsGrowth = calculateGrowth(currentUnitsSold, prevUnitsSold);
 
+    console.log('Growth calculations:');
+    console.log(`Current total sales: ${currentTotalSales}, Previous: ${prevTotalSales}, Growth: ${salesGrowth}%`);
+    console.log(`Current orders: ${currentOrdersPlaced}, Previous: ${prevOrdersPlaced}, Growth: ${ordersGrowth}%`);
+    console.log(`Current AOV: ${currentAverageOrderValue}, Previous: ${prevAverageOrderValue}, Growth: ${aovGrowth}%`);
+    console.log(`Current units: ${currentUnitsSold}, Previous: ${prevUnitsSold}, Growth: ${unitsGrowth}%`);
+
     // Calculate metrics from orders
     const metrics = {
       totalSales: currentTotalSales,
