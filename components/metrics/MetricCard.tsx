@@ -172,6 +172,43 @@ export function MetricCard({
     }
   }
 
+  // Add a function to find the most recent day with data
+  const findMostRecentDayWithData = () => {
+    // If we don't have data, we can't determine the most recent day
+    if (!safeData || safeData.length === 0) {
+      return null;
+    }
+
+    // Create a map of dates with their total values
+    const dateValueMap = new Map();
+    
+    // Process all data points
+    safeData.forEach(item => {
+      try {
+        if (!item.date) return;
+        
+        // Extract just the date part (YYYY-MM-DD)
+        const datePart = item.date.split('T')[0];
+        
+        // Add to the map
+        if (dateValueMap.has(datePart)) {
+          dateValueMap.set(datePart, dateValueMap.get(datePart) + item.value);
+        } else {
+          dateValueMap.set(datePart, item.value);
+        }
+      } catch (error) {
+        console.error('Error processing date for finding recent day:', error);
+      }
+    });
+
+    // Convert to array and sort by date (most recent first)
+    const sortedDates = Array.from(dateValueMap.entries())
+      .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime());
+    
+    // Return dates with non-zero values
+    return sortedDates.filter(([_, value]) => value > 0);
+  };
+
   const getComparisonText = () => {
     if (isCustomRange) {
       return "Comparison not available for custom date range"
@@ -185,7 +222,30 @@ export function MetricCard({
     const isSingleDay = dateRange.from.toDateString() === dateRange.to.toDateString();
     
     if (isSingleDay) {
-      // For single day view, compare to the day before
+      // Get the current date we're viewing
+      const currentDateStr = format(dateRange.from, 'yyyy-MM-dd');
+      
+      // Find days with data
+      const daysWithData = findMostRecentDayWithData();
+      
+      if (daysWithData && daysWithData.length > 0) {
+        // Find the current day's index
+        const currentDayIndex = daysWithData.findIndex(([date, _]) => date === currentDateStr);
+        
+        // If we found the current day and there's a previous day with data
+        if (currentDayIndex >= 0 && currentDayIndex < daysWithData.length - 1) {
+          const prevDayWithData = daysWithData[currentDayIndex + 1];
+          const prevDate = format(new Date(prevDayWithData[0]), 'MMM d, yyyy');
+          const prevValue = prevDayWithData[1];
+          
+          // Format the previous value
+          const formattedPrevValue = formatPreviousValue(prevValue);
+          
+          return `Previous day with data (${prevDate}): ${formattedPrevValue}`;
+        }
+      }
+      
+      // Fallback to standard previous day
       const prevDate = format(subDays(dateRange.from, 1), 'MMM d, yyyy');
       
       // Calculate the previous period value
