@@ -40,7 +40,19 @@ export function MetricLineChart({
 
   // Process data for the chart
   const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
+    if (!data || data.length === 0) {
+      // If there's no data but we're in single day view, still create the hourly structure
+      if (isSingleDayView && dateRange?.from) {
+        // Create 24 hour buckets (0-23) with zero values
+        return Array.from({ length: 24 }, (_, i) => ({
+          hour: i,
+          displayHour: i === 0 ? '12am' : i < 12 ? `${i}am` : i === 12 ? '12pm' : `${i-12}pm`,
+          value: 0,
+          formattedDate: dateRange.from ? format(dateRange.from, 'MMM dd') : 'Today'
+        }));
+      }
+      return [];
+    }
 
     // For single day view, group by hour
     if (isSingleDayView) {
@@ -154,8 +166,8 @@ export function MetricLineChart({
     if (chartData.length === 0) return [0, 10];
     
     const maxValue = Math.max(...chartData.map(item => item.value));
-    // Add 10% padding to the top
-    return [0, Math.ceil(maxValue * 1.1)];
+    // Add 10% padding to the top, with a minimum of 10 for empty data
+    return [0, Math.max(10, Math.ceil(maxValue * 1.1))];
   }, [chartData]);
 
   // Format value for tooltip and y-axis
@@ -227,8 +239,8 @@ export function MetricLineChart({
     }
   }, [isSingleDayView, dateRangeSpan]);
 
-  // If no data or all zero values, show empty state
-  if (chartData.length === 0 || chartData.every(item => item.value === 0)) {
+  // If no data or all zero values, show empty state - EXCEPT for single day view
+  if (chartData.length === 0 || (chartData.every(item => item.value === 0) && !isSingleDayView)) {
     return (
       <div className="w-full h-[80px] mt-4 flex items-center justify-center text-gray-500 text-xs">
         No data available for this time period
