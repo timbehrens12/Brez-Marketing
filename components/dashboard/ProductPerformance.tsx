@@ -52,6 +52,7 @@ interface ProductReview {
 
 export function ProductPerformance({ brandId, isRefreshing = false }: ProductPerformanceProps) {
   const [isLoading, setIsLoading] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [sortField, setSortField] = useState('revenue')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -59,6 +60,7 @@ export function ProductPerformance({ brandId, isRefreshing = false }: ProductPer
   const [relatedProducts, setRelatedProducts] = useState<RelatedProduct[]>([])
   const [reviews, setReviews] = useState<ProductReview[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
   
   useEffect(() => {
     if (!brandId) return
@@ -95,6 +97,80 @@ export function ProductPerformance({ brandId, isRefreshing = false }: ProductPer
     
     fetchProductPerformance()
   }, [brandId, isRefreshing])
+  
+  const handleSyncData = async () => {
+    if (!brandId || isSyncing) return
+    
+    setIsSyncing(true)
+    setSyncMessage('Syncing product performance data from Shopify...')
+    setError(null)
+    
+    try {
+      // Get the connection ID for this brand
+      const connectionsResponse = await fetch(`/api/shopify/connections?brandId=${brandId}`)
+      if (!connectionsResponse.ok) throw new Error('Failed to fetch Shopify connections')
+      
+      const connectionsData = await connectionsResponse.json()
+      if (!connectionsData.connections || connectionsData.connections.length === 0) {
+        throw new Error('No Shopify connections found for this brand')
+      }
+      
+      // Use the first connection
+      const connectionId = connectionsData.connections[0].id
+      
+      // Trigger the sync process
+      const syncResponse = await fetch('/api/shopify/products/performance/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ connectionId })
+      })
+      
+      if (!syncResponse.ok) {
+        const errorData = await syncResponse.json()
+        throw new Error(errorData.error || 'Sync failed')
+      }
+      
+      const syncData = await syncResponse.json()
+      
+      setSyncMessage(`Sync completed! Processed ${syncData.metrics} products, ${syncData.relationships} relationships, and ${syncData.reviews} reviews.`)
+      
+      // Refresh the data
+      setTimeout(() => {
+        // Call the real API endpoint
+        fetch(`/api/shopify/products/performance?brandId=${brandId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              throw new Error(data.error)
+            }
+            
+            setProducts(data.products || [])
+            setRelatedProducts(data.relatedProducts || [])
+            setReviews(data.reviews || [])
+            
+            // If it's still mock data, show a message
+            if (data.isMockData) {
+              setSyncMessage('Sync completed, but no real data was found. Using mock data for demonstration.')
+            } else {
+              setSyncMessage('Data refreshed with real Shopify data!')
+            }
+          })
+          .catch(error => {
+            console.error('Error refreshing data after sync:', error)
+            setSyncMessage('Sync completed, but failed to refresh data.')
+          })
+      }, 2000)
+      
+    } catch (error) {
+      console.error('Error syncing product performance data:', error)
+      setError(`Sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      setSyncMessage(null)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
   
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -477,8 +553,36 @@ export function ProductPerformance({ brandId, isRefreshing = false }: ProductPer
   return (
     <Card className="col-span-3">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold">Product Performance</CardTitle>
-        <CardDescription>Detailed metrics about your product performance</CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-xl font-bold">Product Performance</CardTitle>
+            <CardDescription>Detailed metrics about your product performance</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleSyncData}
+            disabled={isSyncing || !brandId}
+            className="flex items-center gap-1"
+          >
+            {isSyncing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Sync Shopify Data
+              </>
+            )}
+          </Button>
+        </div>
+        {syncMessage && (
+          <div className="mt-2 p-2 bg-muted rounded-md text-sm">
+            {syncMessage}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
