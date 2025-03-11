@@ -53,6 +53,46 @@ const METRO_AREAS: Record<string, { center: { lat: number, lng: number }, suburb
   "San Francisco": {
     center: { lat: 37.7749, lng: -122.4194 },
     suburbs: ["Oakland", "Berkeley", "San Jose", "Palo Alto", "Mountain View", "Santa Clara", "Sunnyvale"]
+  },
+  "Miami": {
+    center: { lat: 25.7617, lng: -80.1918 },
+    suburbs: ["Hollywood", "Fort Lauderdale", "Pompano Beach", "Boca Raton", "Hialeah", "Coral Gables", "Miami Beach", "Kendall", "Homestead", "Doral"]
+  },
+  "Atlanta": {
+    center: { lat: 33.7490, lng: -84.3880 },
+    suburbs: ["Marietta", "Alpharetta", "Decatur", "Sandy Springs", "Roswell", "Smyrna", "Dunwoody", "Brookhaven"]
+  },
+  "Boston": {
+    center: { lat: 42.3601, lng: -71.0589 },
+    suburbs: ["Cambridge", "Somerville", "Brookline", "Newton", "Quincy", "Medford", "Waltham", "Malden"]
+  },
+  "Seattle": {
+    center: { lat: 47.6062, lng: -122.3321 },
+    suburbs: ["Bellevue", "Redmond", "Kirkland", "Renton", "Tacoma", "Everett", "Kent", "Auburn"]
+  },
+  "Denver": {
+    center: { lat: 39.7392, lng: -104.9903 },
+    suburbs: ["Aurora", "Lakewood", "Centennial", "Littleton", "Thornton", "Westminster", "Arvada", "Boulder"]
+  },
+  "Phoenix": {
+    center: { lat: 33.4484, lng: -112.0740 },
+    suburbs: ["Scottsdale", "Mesa", "Chandler", "Tempe", "Gilbert", "Glendale", "Peoria", "Surprise"]
+  },
+  "Portland": {
+    center: { lat: 45.5051, lng: -122.6750 },
+    suburbs: ["Beaverton", "Hillsboro", "Gresham", "Tigard", "Lake Oswego", "Oregon City", "Tualatin"]
+  },
+  "Austin": {
+    center: { lat: 30.2672, lng: -97.7431 },
+    suburbs: ["Round Rock", "Cedar Park", "Georgetown", "San Marcos", "Pflugerville", "Leander", "Kyle"]
+  },
+  "Nashville": {
+    center: { lat: 36.1627, lng: -86.7816 },
+    suburbs: ["Franklin", "Murfreesboro", "Hendersonville", "Brentwood", "Lebanon", "Smyrna", "Gallatin"]
+  },
+  "Philadelphia": {
+    center: { lat: 39.9526, lng: -75.1652 },
+    suburbs: ["Camden", "Cherry Hill", "King of Prussia", "West Chester", "Norristown", "Doylestown", "Media"]
   }
 };
 
@@ -71,9 +111,12 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // Find metro area for a city
 function findMetroArea(city: string, lat: number, lng: number): string {
-  // Check if city is a known suburb
+  // Normalize city name for case-insensitive comparison
+  const normalizedCity = city?.toLowerCase() || '';
+  
+  // Check if city is a known suburb (case-insensitive)
   for (const [metro, data] of Object.entries(METRO_AREAS)) {
-    if (data.suburbs.includes(city)) {
+    if (data.suburbs.some(suburb => suburb.toLowerCase() === normalizedCity)) {
       return metro;
     }
   }
