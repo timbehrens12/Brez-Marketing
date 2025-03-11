@@ -18,6 +18,7 @@ import { format } from 'date-fns'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import Script from 'next/script'
 
 interface Location {
   city: string;
@@ -56,37 +57,71 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
   const [tooltipContent, setTooltipContent] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [loadAttempts, setLoadAttempts] = useState(0);
 
+  // Direct script injection approach
   useEffect(() => {
-    // Load required scripts
-    const loadScripts = async () => {
-      if (!window.Globe) {
-        // Load Three.js first
-        const threeScript = document.createElement('script');
-        threeScript.src = 'https://unpkg.com/three@0.152.2/build/three.min.js';
-        document.head.appendChild(threeScript);
+    // Create a script element for direct injection
+    const injectScript = (src: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(script);
+      });
+    };
+
+    const loadAllScripts = async () => {
+      console.log('Starting direct script injection...');
+      try {
+        // Load Three.js
+        await injectScript('https://unpkg.com/three@0.152.2/build/three.min.js');
+        console.log('Three.js loaded via direct injection');
         
-        await new Promise(resolve => threeScript.onload = resolve);
-        
-        // Then load globe.gl
-        const globeScript = document.createElement('script');
-        globeScript.src = 'https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js';
-        document.head.appendChild(globeScript);
-        
-        await new Promise(resolve => globeScript.onload = resolve);
+        // Load globe.gl
+        await injectScript('https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js');
+        console.log('Globe.gl loaded via direct injection');
         
         // Load countries data
         if (!window.countries) {
+          console.log('Loading countries data...');
           const response = await fetch('https://unpkg.com/world-atlas@2/countries-110m.json');
           window.countries = await response.json();
+          console.log('Countries data loaded successfully');
+        }
+        
+        setIsLoading(false);
+        console.log('All scripts loaded via direct injection');
+        
+        // Initialize globe with a slight delay to ensure everything is ready
+        setTimeout(() => {
+          initGlobe();
+        }, 100);
+      } catch (error) {
+        console.error('Error loading scripts via direct injection:', error);
+        
+        // Try again if we haven't reached max attempts
+        if (loadAttempts < 3) {
+          console.log(`Retrying script load (attempt ${loadAttempts + 1}/3)...`);
+          setLoadAttempts(prev => prev + 1);
+          setTimeout(loadAllScripts, 1000); // Wait 1 second before retrying
+        } else {
+          setIsLoading(false);
+          console.error('Failed to load scripts after multiple attempts');
         }
       }
-      
-      setIsLoading(false);
-      initGlobe();
     };
 
-    loadScripts();
+    // Start loading scripts if they're not already loaded
+    if (!window.Globe) {
+      loadAllScripts();
+    } else {
+      console.log('Globe already available, initializing...');
+      setIsLoading(false);
+      initGlobe();
+    }
 
     // Cleanup function
     return () => {
@@ -98,7 +133,7 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
         globeRef.current = null;
       }
     };
-  }, []);
+  }, [loadAttempts]);
 
   useEffect(() => {
     if (!isLoading && globeRef.current && data) {
@@ -120,8 +155,12 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
   }, []);
 
   const initGlobe = () => {
-    if (!containerRef.current || isLoading) return;
+    if (!containerRef.current || isLoading) {
+      console.log('Cannot initialize globe: container not ready or still loading');
+      return;
+    }
 
+    console.log('Initializing globe with container dimensions:', containerRef.current.getBoundingClientRect());
     const { width, height } = containerRef.current.getBoundingClientRect();
     
     // Clear previous globe
@@ -129,18 +168,47 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
       containerRef.current.removeChild(containerRef.current.firstChild);
     }
 
-    // Create new globe
-    globeRef.current = window.Globe()
-      .width(width)
-      .height(height)
-      .backgroundColor('rgba(5, 5, 35, 1)')
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .hexPolygonsData(window.countries.features)
-      .hexPolygonResolution(3) // Higher values = more hexagons
-      .hexPolygonMargin(0.6)
-      .hexPolygonColor(() => '#1f2937') // Default color for all countries
-      .onHexPolygonHover((polygon: any) => {
-        if (polygon) {
+    try {
+      // Create new globe
+      console.log('Creating globe instance...');
+      globeRef.current = window.Globe()
+        .width(width)
+        .height(height)
+        .backgroundColor('rgba(5, 5, 35, 1)')
+        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg') // Darker earth texture
+        .hexPolygonsData(window.countries.features)
+        .hexPolygonResolution(3) // Higher values = more hexagons
+        .hexPolygonMargin(0.7) // Increased margin to make hexagons more visible
+        .hexPolygonColor(() => '#1f2937') // Default color for all countries
+        .hexPolygonAltitude(0.01) // Add slight altitude to hexagons
+        .hexPolygonUseDots(true) // Use dots at hexagon corners for better visibility
+        .hexPolygonDotRadius(0.12) // Larger dots
+        .hexPolygonDotColor(() => '#3b82f6') // Blue dots
+        .onHexPolygonHover((polygon: any) => {
+          if (polygon) {
+            const countryName = polygon.properties.name;
+            const countryData = data.locations.filter(loc => loc.country === countryName);
+            
+            if (countryData.length > 0) {
+              const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
+              const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
+              
+              setTooltipContent(`
+                <div style="font-weight: bold;">${countryName}</div>
+                <div>Customers: ${totalCustomers}</div>
+                <div>Revenue: $${totalRevenue.toLocaleString()}</div>
+              `);
+            } else {
+              setTooltipContent(`<div style="font-weight: bold;">${countryName}</div>`);
+            }
+            
+            const event = window.event as MouseEvent;
+            setTooltipPosition({ x: event.clientX, y: event.clientY });
+          } else {
+            setTooltipContent(null);
+          }
+        })
+        .hexPolygonLabel((polygon: any) => {
           const countryName = polygon.properties.name;
           const countryData = data.locations.filter(loc => loc.country === countryName);
           
@@ -148,47 +216,36 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
             const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
             const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
             
-            setTooltipContent(`
+            return `
               <div style="font-weight: bold;">${countryName}</div>
               <div>Customers: ${totalCustomers}</div>
               <div>Revenue: $${totalRevenue.toLocaleString()}</div>
-            `);
-          } else {
-            setTooltipContent(`<div style="font-weight: bold;">${countryName}</div>`);
+            `;
           }
           
-          const event = window.event as MouseEvent;
-          setTooltipPosition({ x: event.clientX, y: event.clientY });
-        } else {
-          setTooltipContent(null);
-        }
-      })
-      .hexPolygonLabel((polygon: any) => {
-        const countryName = polygon.properties.name;
-        const countryData = data.locations.filter(loc => loc.country === countryName);
-        
-        if (countryData.length > 0) {
-          const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
-          const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
-          
-          return `
-            <div style="font-weight: bold;">${countryName}</div>
-            <div>Customers: ${totalCustomers}</div>
-            <div>Revenue: $${totalRevenue.toLocaleString()}</div>
-          `;
-        }
-        
-        return `<div style="font-weight: bold;">${countryName}</div>`;
-      });
+          return `<div style="font-weight: bold;">${countryName}</div>`;
+        });
 
-    // Add to DOM
-    containerRef.current.appendChild(globeRef.current.canvas());
-    
-    // Initial camera position
-    globeRef.current.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
-    
-    // Update data
-    updateGlobeData();
+      console.log('Globe instance created successfully');
+      
+      // Add to DOM
+      containerRef.current.appendChild(globeRef.current.canvas());
+      console.log('Globe canvas added to DOM');
+      
+      // Initial camera position
+      globeRef.current.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
+      
+      // Enable controls
+      globeRef.current.controls().autoRotate = true;
+      globeRef.current.controls().autoRotateSpeed = 0.5;
+      globeRef.current.controls().enableZoom = true;
+      
+      // Update data
+      console.log('Updating globe data...');
+      updateGlobeData();
+    } catch (error) {
+      console.error('Error initializing globe:', error);
+    }
   };
 
   const updateGlobeData = () => {
@@ -219,8 +276,8 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
       lat: loc.lat,
       lng: loc.lng,
       size: viewMode === 'customers' 
-        ? Math.max(0.5, Math.min(3, loc.customerCount / 10)) 
-        : Math.max(0.5, Math.min(3, loc.totalRevenue / 1000)),
+        ? Math.max(0.8, Math.min(4, loc.customerCount / 5)) 
+        : Math.max(0.8, Math.min(4, loc.totalRevenue / 500)),
       color: viewMode === 'customers' ? '#60a5fa' : '#fbbf24',
       name: loc.city,
       state: loc.state || '',
@@ -233,7 +290,7 @@ const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; view
       .pointsData(pointsData)
       .pointColor('color')
       .pointRadius('size')
-      .pointAltitude(0.01)
+      .pointAltitude(0.03) // Increased altitude to make points more visible
       .pointsMerge(true)
       .pointLabel((point: any) => `
         <div style="font-weight: bold;">${point.name}${point.state ? `, ${point.state}` : ''}, ${point.country}</div>
@@ -355,6 +412,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
+  const containerId = `globe-container-${brandId.substring(0, 8)}`;
   
   // Add a resize observer to update the container width
   useEffect(() => {
@@ -459,6 +517,79 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     fetchGeoData();
   }, [brandId, isRefreshing]);
 
+  // Add a direct initialization function for the globe
+  useEffect(() => {
+    // Function to initialize the globe directly
+    const initializeGlobeDirectly = () => {
+      if (typeof window === 'undefined' || !window.Globe || !containerRef.current) return;
+      
+      console.log('Attempting direct globe initialization...');
+      
+      try {
+        // Clear any existing content
+        while (containerRef.current.firstChild) {
+          containerRef.current.removeChild(containerRef.current.firstChild);
+        }
+        
+        // Create the globe instance
+        const globe = window.Globe()
+          .width(containerRef.current.clientWidth)
+          .height(containerRef.current.clientHeight)
+          .backgroundColor('rgba(5, 5, 35, 1)')
+          .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
+          .hexPolygonsData(window.countries?.features || [])
+          .hexPolygonResolution(3)
+          .hexPolygonMargin(0.7)
+          .hexPolygonColor(() => '#1f2937')
+          .hexPolygonAltitude(0.01)
+          .hexPolygonUseDots(true)
+          .hexPolygonDotRadius(0.12)
+          .hexPolygonDotColor(() => '#3b82f6');
+          
+        // Add points for cities with data
+        const pointsData = clusteredData.map(d => ({
+          lat: d.lat,
+          lng: d.lng,
+          size: view === 'customers' 
+            ? Math.max(0.8, Math.min(4, d.customerCount / 5)) 
+            : Math.max(0.8, Math.min(4, d.totalRevenue / 500)),
+          color: view === 'customers' ? '#60a5fa' : '#fbbf24',
+          data: d
+        }));
+        
+        globe
+          .pointsData(pointsData)
+          .pointColor('color')
+          .pointRadius('size')
+          .pointAltitude(0.03)
+          .pointsMerge(true);
+          
+        // Add to DOM
+        containerRef.current.appendChild(globe.canvas());
+        
+        // Set initial camera position
+        globe.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
+        
+        // Enable controls
+        globe.controls().autoRotate = true;
+        globe.controls().autoRotateSpeed = 0.5;
+        
+        console.log('Direct globe initialization successful');
+      } catch (error) {
+        console.error('Error in direct globe initialization:', error);
+      }
+    };
+    
+    // Try to initialize the globe after a delay to ensure scripts are loaded
+    if (clusteredData.length > 0 && !isLoading) {
+      const timer = setTimeout(() => {
+        initializeGlobeDirectly();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [clusteredData, isLoading, view]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -506,12 +637,16 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
 
   return (
     <Card className="col-span-3">
+      {/* Load required scripts directly in the component */}
+      <Script src="https://unpkg.com/three@0.152.2/build/three.min.js" strategy="beforeInteractive" />
+      <Script src="https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js" strategy="beforeInteractive" />
+      
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-bold">Customer Geography</CardTitle>
         <CardDescription>Geographic distribution of customers</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="revenue" className="w-full">
+        <Tabs defaultValue={hasZeroRevenue ? "customers" : "revenue"} className="w-full">
           <div className="flex justify-between items-center mb-4">
             <TabsList>
               <TabsTrigger value="revenue" onClick={() => setView('revenue')} disabled={hasZeroRevenue}>Revenue</TabsTrigger>
@@ -530,12 +665,44 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           ) : clusteredData.length > 0 ? (
             <div className="space-y-6">
               {/* Globe Visualization */}
-              <div ref={containerRef} className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden">
+              <div 
+                id={containerId}
+                ref={containerRef} 
+                className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden"
+              >
                 {typeof window !== 'undefined' && (
                   <GlobeComponent 
                     data={globeData}
                     viewMode={view}
                   />
+                )}
+                
+                {/* Fallback message if globe doesn't load properly */}
+                <div 
+                  id="globe-fallback-message" 
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white opacity-0 transition-opacity duration-1000"
+                >
+                  <div className="text-center p-4">
+                    <p className="mb-2">If you don't see the globe visualization, please try:</p>
+                    <ul className="text-sm list-disc text-left ml-4">
+                      <li>Refreshing the page</li>
+                      <li>Using a different browser</li>
+                      <li>Checking your console for errors</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                {/* Script to check if globe is visible */}
+                {typeof window !== 'undefined' && (
+                  <script dangerouslySetInnerHTML={{ __html: `
+                    setTimeout(() => {
+                      const canvas = document.querySelector('#${containerId} canvas');
+                      const fallback = document.getElementById('globe-fallback-message');
+                      if (!canvas && fallback) {
+                        fallback.style.opacity = '1';
+                      }
+                    }, 5000);
+                  `}} />
                 )}
                 
                 {/* Tooltip */}
