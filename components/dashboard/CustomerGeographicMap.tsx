@@ -113,6 +113,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const controlsRef = useRef<OrbitControls | null>(null)
   const frameRef = useRef<number | null>(null)
+  const pointsRef = useRef<{point: THREE.Object3D, data: RegionData}[]>([])
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster())
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2())
 
   useEffect(() => {
     if (!brandId) return
@@ -268,33 +271,110 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       })
       .pointAltitude(0.01)
       .pointsMerge(false);
-      
-    // Add point hover handler
-    // @ts-ignore
-    globe.onPointHover((point, prevPoint) => {
-      if (point) {
-        const data = point.data as RegionData;
-        setHoveredRegion(data);
-        
-        // Get screen coordinates for tooltip
-        if (globeRef.current && cameraRef.current) {
-          const position = new THREE.Vector3(point.__threeObj.position.x, point.__threeObj.position.y, point.__threeObj.position.z);
-          const screenPosition = position.clone().project(cameraRef.current);
-          
-          const x = (screenPosition.x * 0.5 + 0.5) * width;
-          const y = (-screenPosition.y * 0.5 + 0.5) * height;
-          
-          setTooltipPosition({ x, y });
-        }
-      } else {
-        setHoveredRegion(null);
-        setTooltipPosition(null);
-      }
-    });
     
     // Add globe to scene
     scene.add(globe);
     globeRef.current = globe;
+    
+    // Store references to points for raycasting
+    pointsRef.current = [];
+    
+    // Find the points group in the globe
+    globe.children.forEach((child: THREE.Object3D) => {
+      if (child.type === 'Group' && child.name === 'points') {
+        child.children.forEach((point: THREE.Object3D, index: number) => {
+          if (index < clusteredData.length) {
+            pointsRef.current.push({
+              point,
+              data: clusteredData[index]
+            });
+          }
+        });
+      }
+    });
+    
+    // Add mouse move handler for raycasting
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!globeContainerRef.current || !cameraRef.current) return;
+      
+      // Calculate mouse position in normalized device coordinates
+      const rect = globeContainerRef.current.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      // Update the picking ray
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      
+      // Find intersections
+      const intersects = raycasterRef.current.intersectObjects(
+        pointsRef.current.map(item => item.point)
+      );
+      
+      if (intersects.length > 0) {
+        // Find the data for the intersected point
+        const intersectedPoint = intersects[0].object;
+        const pointData = pointsRef.current.find(item => item.point === intersectedPoint || item.point.children.includes(intersectedPoint));
+        
+        if (pointData) {
+          setHoveredRegion(pointData.data);
+          
+          // Calculate screen position for tooltip
+          const position = new THREE.Vector3();
+          intersectedPoint.getWorldPosition(position);
+          position.project(cameraRef.current);
+          
+          const x = (position.x * 0.5 + 0.5) * width;
+          const y = (-position.y * 0.5 + 0.5) * height;
+          
+          setTooltipPosition({ x, y });
+          
+          // Highlight the point
+          intersectedPoint.traverse((child: THREE.Object3D) => {
+            if (child instanceof THREE.Mesh) {
+              child.material = new THREE.MeshBasicMaterial({
+                color: 0xff9900,
+                transparent: true,
+                opacity: 1
+              });
+            }
+          });
+        }
+      } else {
+        // Reset hover state
+        setHoveredRegion(null);
+        setTooltipPosition(null);
+        
+        // Reset all points to their original material
+        pointsRef.current.forEach(({ point, data }) => {
+          point.traverse((child: THREE.Object3D) => {
+            if (child instanceof THREE.Mesh) {
+              let pointColor;
+              if (view === 'revenue') {
+                if (data.totalRevenue <= 0) {
+                  pointColor = new THREE.Color(0x888888);
+                } else {
+                  const intensity = Math.min(1, data.totalRevenue / 10000);
+                  pointColor = new THREE.Color(0.1, 0.4 + intensity * 0.6, 0.7 + intensity * 0.3);
+                }
+              } else {
+                const intensity = Math.min(1, data.customerCount / 100);
+                pointColor = new THREE.Color(
+                  (100 + intensity * 155) / 255,
+                  30 / 255,
+                  (200 + intensity * 55) / 255
+                );
+              }
+              
+              child.material = new THREE.MeshBasicMaterial({
+                color: pointColor,
+                transparent: true,
+                opacity: 0.9
+              });
+            }
+          });
+        });
+      }
+    };
     
     // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -305,6 +385,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     controls.minDistance = 120;
     controls.maxDistance = 500;
     controlsRef.current = controls;
+    
+    // Add event listeners
+    renderer.domElement.addEventListener('mousemove', handleMouseMove);
     
     // Animation loop
     function animate() {
@@ -332,6 +415,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
