@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     if (!connections || connections.length === 0) {
       console.log('No Shopify connections found for brand:', brandId);
       return NextResponse.json({ 
-        regions: [],
+        locations: [],
         totalRevenue: 0,
         totalCustomers: 0,
         message: 'No Shopify connections found for this brand'
@@ -186,15 +186,14 @@ export async function GET(request: NextRequest) {
     }
     
     // Process the data to group by region
-    const regionMap = new Map<string, { 
-      region: string, 
-      country: string, 
-      state?: string, 
-      city?: string,
-      customers: number, 
-      revenue: number,
-      latitude?: number,
-      longitude?: number
+    const locationMap = new Map<string, { 
+      city: string, 
+      state: string, 
+      country: string,
+      customerCount: number, 
+      totalRevenue: number,
+      lat: number,
+      lng: number
     }>();
     
     let totalRevenue = 0;
@@ -208,14 +207,14 @@ export async function GET(request: NextRequest) {
       if (customer.country !== undefined) {
         // Using new columns
         country = customer.country || 'Unknown';
-        state = customer.state_province || undefined;
-        city = customer.city || undefined;
+        state = customer.state_province || '';
+        city = customer.city || '';
       } else {
         // Extract from default_address
         const defaultAddress = customer.default_address || {};
         country = defaultAddress.country || 'Unknown';
-        state = defaultAddress.province || undefined;
-        city = defaultAddress.city || undefined;
+        state = defaultAddress.province || '';
+        city = defaultAddress.city || '';
       }
       
       const revenue = parseFloat(customer.total_spent) || 0;
@@ -229,92 +228,82 @@ export async function GET(request: NextRequest) {
       totalCustomers++;
       
       // Create a key for the region
-      let regionKey = country;
-      if (state) regionKey += `-${state}`;
-      if (city) regionKey += `-${city}`;
+      let locationKey = `${city}-${state}-${country}`;
       
-      // Update or create the region entry
-      if (regionMap.has(regionKey)) {
-        const region = regionMap.get(regionKey)!;
-        region.customers += 1;
-        region.revenue += revenue;
+      // Get coordinates
+      let lat = 0, lng = 0;
+      
+      // Try to get coordinates for this location
+      if (city && country === 'United States' && usCityCoordinates[city]) {
+        [lng, lat] = usCityCoordinates[city];
+      } else if (city === 'Spring' && state === 'Texas') {
+        [lng, lat] = usCityCoordinates['Spring'];
+      } else if (state && country === 'United States' && usStateCoordinates[state]) {
+        [lng, lat] = usStateCoordinates[state];
+      } else if (country && countryCoordinates[country]) {
+        [lng, lat] = countryCoordinates[country];
+      }
+      
+      // Update or create the location entry
+      if (locationMap.has(locationKey)) {
+        const location = locationMap.get(locationKey)!;
+        location.customerCount += 1;
+        location.totalRevenue += revenue;
       } else {
-        // Try to get coordinates for US cities
-        let latitude, longitude;
-        
-        if (city && country === 'United States') {
-          // Check if we have coordinates for this city
-          if (usCityCoordinates[city]) {
-            [longitude, latitude] = usCityCoordinates[city];
-          }
-          // If it's a city with "Houston" in the name, use Houston coordinates
-          else if (city.includes('Houston')) {
-            [longitude, latitude] = usCityCoordinates['Houston'];
-          }
-          // For Spring, TX (where your example customer is from)
-          else if (city === 'Spring' && state === 'Texas') {
-            // Spring, TX is near Houston
-            [longitude, latitude] = usCityCoordinates['Spring'];
-          }
-        }
-        
-        regionMap.set(regionKey, {
-          region: city || state || country,
-          country,
-          state,
-          city,
-          customers: 1,
-          revenue,
-          latitude,
-          longitude
+        locationMap.set(locationKey, {
+          city: city || '',
+          state: state || '',
+          country: country || 'Unknown',
+          customerCount: 1,
+          totalRevenue: revenue,
+          lat,
+          lng
         });
       }
     });
     
     // Convert the map to an array
-    let regions = Array.from(regionMap.values());
+    let locations = Array.from(locationMap.values());
     
-    // If we have no regions with coordinates but we have customers, add Houston as a fallback
-    if (regions.length === 0 && totalCustomers > 0) {
+    // If we have no locations with coordinates but we have customers, add Houston as a fallback
+    if (locations.length === 0 && totalCustomers > 0) {
       // Add Houston as a fallback with minimal customers
-      regions.push({
-        region: 'Houston',
-        country: 'United States',
-        state: 'Texas',
+      locations.push({
         city: 'Houston',
-        customers: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
-        revenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
-        latitude: 29.7604,
-        longitude: -95.3698
+        state: 'Texas',
+        country: 'United States',
+        customerCount: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
+        totalRevenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
+        lat: 29.7604,
+        lng: -95.3698
       });
-    } else if (regions.length > 0 && !regions.some(r => r.latitude && r.longitude)) {
+    } else if (locations.length > 0 && !locations.some(r => r.lat && r.lng)) {
       // Find if we have any customers from Texas or Houston
-      const texasRegion = regions.find(r => r.state === 'Texas' || r.city?.includes('Houston'));
+      const texasLocation = locations.find(r => r.state === 'Texas' || r.city?.includes('Houston'));
       
-      if (texasRegion) {
-        // Update the Texas/Houston region with coordinates
-        texasRegion.latitude = 29.7604;
-        texasRegion.longitude = -95.3698;
+      if (texasLocation) {
+        // Update the Texas/Houston location with coordinates
+        texasLocation.lat = 29.7604;
+        texasLocation.lng = -95.3698;
       } else {
         // Add Houston as a fallback with minimal customers
-        regions.push({
-          region: 'Houston',
-          country: 'United States',
-          state: 'Texas',
+        locations.push({
           city: 'Houston',
-          customers: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
-          revenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
-          latitude: 29.7604,
-          longitude: -95.3698
+          state: 'Texas',
+          country: 'United States',
+          customerCount: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
+          totalRevenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
+          lat: 29.7604,
+          lng: -95.3698
         });
       }
     }
     
     // Add logging to help debug
-    console.log(`Geographic data: Found ${regions.length} regions from ${totalCustomers} customers`);
+    console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers`);
     
     return NextResponse.json({ 
-      regions,
+      locations,
       totalRevenue,
       totalCustomers
     });
