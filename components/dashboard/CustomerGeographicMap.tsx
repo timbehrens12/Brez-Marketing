@@ -12,6 +12,7 @@ import worldGeoData from './worldGeo.json'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Tooltip } from "@/components/ui/tooltip"
+import * as turf from '@turf/turf'
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -297,13 +298,34 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           
           const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
           const lineMaterial = new THREE.LineBasicMaterial({ 
-            color: 0x4d7c8a, 
+            color: 0x6d9caa, 
             transparent: true, 
-            opacity: 0.7,
-            linewidth: 1.5
+            opacity: 0.9,
+            linewidth: 2
           });
           const line = new THREE.Line(lineGeometry, lineMaterial);
           countriesGroup.add(line);
+        });
+      } else if (feature.geometry.type === 'MultiPolygon') {
+        feature.geometry.coordinates.forEach((multiPolygon: number[][][]) => {
+          multiPolygon.forEach((polygon: number[][]) => {
+            const points: THREE.Vector3[] = [];
+            
+            polygon.forEach((coord: number[]) => {
+              const [lng, lat] = coord;
+              points.push(latLngToVector3(lat, lng, globeRadius * 1.001));
+            });
+            
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+            const lineMaterial = new THREE.LineBasicMaterial({ 
+              color: 0x6d9caa, 
+              transparent: true, 
+              opacity: 0.9,
+              linewidth: 2
+            });
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            countriesGroup.add(line);
+          });
         });
       }
     });
@@ -317,6 +339,42 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       { name: "Asia", lat: 40, lng: 100 },
       { name: "Australia", lat: -25, lng: 135 }
     ];
+    
+    // Add major cities as small dots for reference
+    const majorCities = [
+      { name: "New York", lat: 40.7128, lng: -74.0060 },
+      { name: "Los Angeles", lat: 34.0522, lng: -118.2437 },
+      { name: "Chicago", lat: 41.8781, lng: -87.6298 },
+      { name: "London", lat: 51.5074, lng: -0.1278 },
+      { name: "Paris", lat: 48.8566, lng: 2.3522 },
+      { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
+      { name: "Sydney", lat: -33.8688, lng: 151.2093 },
+      { name: "Beijing", lat: 39.9042, lng: 116.4074 },
+      { name: "Moscow", lat: 55.7558, lng: 37.6173 },
+      { name: "Rio de Janeiro", lat: -22.9068, lng: -43.1729 }
+    ];
+    
+    // Add reference cities as small dots
+    majorCities.forEach(city => {
+      if (!clusteredData.some(loc => 
+        turf.distance(
+          turf.point([city.lng, city.lat]), 
+          turf.point([loc.lng, loc.lat]), 
+          {units: 'kilometers'}
+        ) < 100
+      )) {
+        const position = latLngToVector3(city.lat, city.lng, globeRadius * 1.01);
+        const dotGeometry = new THREE.SphereGeometry(0.005, 8, 8);
+        const dotMaterial = new THREE.MeshBasicMaterial({ 
+          color: 0xaaaaaa,
+          transparent: true,
+          opacity: 0.7
+        });
+        const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+        dot.position.copy(position);
+        countriesGroup.add(dot);
+      }
+    });
     
     // Add customer location points
     const pointsGroup = new THREE.Group();
@@ -552,75 +610,68 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   }
 
   return (
-    <Card className="col-span-2">
-      <CardHeader>
-        <CardTitle>Customer Geography</CardTitle>
-        <CardDescription>
-          Geographic distribution of customers
-        </CardDescription>
+    <Card className="col-span-3">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl font-bold">Customer Geography</CardTitle>
+        <CardDescription>Geographic distribution of customers</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="w-full h-[400px] flex items-center justify-center">
-            <Skeleton className="w-full h-full" />
+        <Tabs defaultValue="revenue" className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="revenue" onClick={() => setView('revenue')}>Revenue</TabsTrigger>
+              <TabsTrigger value="customers" onClick={() => setView('customers')}>Customers</TabsTrigger>
+            </TabsList>
           </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : clusteredData.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex justify-end">
-              <Tabs 
-                value={view} 
-                onValueChange={(v) => setView(v as 'revenue' | 'customers')}
-                className="w-auto"
+          
+          {isLoading ? (
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : clusteredData.length > 0 ? (
+            <div className="relative">
+              <div 
+                ref={globeContainerRef} 
+                className="w-full h-[400px] rounded-md overflow-hidden relative"
+                style={{ cursor: 'grab' }}
               >
-                <TabsList className="grid w-[200px] grid-cols-2">
-                  <TabsTrigger value="revenue" disabled={hasZeroRevenue}>Revenue</TabsTrigger>
-                  <TabsTrigger value="customers">Customers</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
-            <div 
-              ref={globeContainerRef} 
-              className="w-full h-[400px] rounded-md overflow-hidden relative"
-              style={{ cursor: 'grab' }}
-            >
-              {hoveredRegion && tooltipPosition && (
-                <div 
-                  className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none"
-                  style={{
-                    left: `${tooltipPosition.x}px`,
-                    top: `${tooltipPosition.y - 40}px`,
-                    transform: 'translate(-50%, -100%)'
-                  }}
-                >
-                  <div className="font-medium">
-                    {hoveredRegion.city}
-                    {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
-                    {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+                {hoveredRegion && tooltipPosition && (
+                  <div 
+                    className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
+                    style={{
+                      left: `${tooltipPosition.x}px`,
+                      top: `${tooltipPosition.y - 40}px`,
+                      transform: 'translate(-50%, -100%)',
+                      minWidth: '180px'
+                    }}
+                  >
+                    <div className="font-medium">
+                      {hoveredRegion.city}
+                      {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
+                      {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+                    </div>
+                    <div className="flex justify-between gap-4 mt-1">
+                      <span>Customers: <strong>{hoveredRegion.customerCount}</strong></span>
+                      <span>Revenue: <strong>{formatCurrency(hoveredRegion.totalRevenue)}</strong></span>
+                    </div>
                   </div>
-                  <div className="flex justify-between gap-4 mt-1">
-                    <span>Customers: {hoveredRegion.customerCount}</span>
-                    <span>Revenue: {formatCurrency(hoveredRegion.totalRevenue)}</span>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+              
+              {renderZeroRevenueNotice()}
+              {renderTopRegions()}
             </div>
-            
-            {renderZeroRevenueNotice()}
-            {renderTopRegions()}
-          </div>
-        ) : (
-          <div className="w-full h-[400px] flex items-center justify-center">
-            <p className="text-muted-foreground">No geographic data available</p>
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <p className="text-muted-foreground">No geographic data available</p>
+            </div>
+          )}
+        </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 } 
