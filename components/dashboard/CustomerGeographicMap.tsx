@@ -1,326 +1,16 @@
-// Add type declarations at the top of the file
-declare global {
-  interface Window {
-    Globe: any;
-    countries: any;
-    THREE: any;
-  }
-}
-
 "use client"
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Loader2 } from 'lucide-react'
+import { MapPin, Loader2, ArrowUpDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import Script from 'next/script'
-
-interface Location {
-  city: string;
-  state?: string;
-  country: string;
-  lat: number;
-  lng: number;
-  customerCount: number;
-  totalRevenue: number;
-}
-
-interface CustomerGeographicData {
-  locations: Location[];
-  topRegions: {
-    byCustomers: { region: string; count: number }[];
-    byRevenue: { region: string; revenue: number }[];
-  };
-}
-
-// Define a simpler interface for the data passed to the GlobeComponent
-interface GlobePoint {
-  lat: number;
-  lng: number;
-  size: number;
-  color: string;
-  name: string;
-  state?: string;
-  country: string;
-  customers: number;
-  revenue: number;
-}
-
-const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; viewMode: 'customers' | 'revenue' }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const globeRef = useRef<any>(null);
-  const [tooltipContent, setTooltipContent] = useState<string | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadAttempts, setLoadAttempts] = useState(0);
-
-  // Direct script injection approach
-  useEffect(() => {
-    // Create a script element for direct injection
-    const injectScript = (src: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-        document.head.appendChild(script);
-      });
-    };
-
-    const loadAllScripts = async () => {
-      console.log('Starting direct script injection...');
-      try {
-        // Load Three.js
-        await injectScript('https://unpkg.com/three@0.152.2/build/three.min.js');
-        console.log('Three.js loaded via direct injection');
-        
-        // Load globe.gl
-        await injectScript('https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js');
-        console.log('Globe.gl loaded via direct injection');
-        
-        // Load countries data
-        if (!window.countries) {
-          console.log('Loading countries data...');
-          const response = await fetch('https://unpkg.com/world-atlas@2/countries-110m.json');
-          window.countries = await response.json();
-          console.log('Countries data loaded successfully');
-        }
-        
-        setIsLoading(false);
-        console.log('All scripts loaded via direct injection');
-        
-        // Initialize globe with a slight delay to ensure everything is ready
-        setTimeout(() => {
-          initGlobe();
-        }, 100);
-      } catch (error) {
-        console.error('Error loading scripts via direct injection:', error);
-        
-        // Try again if we haven't reached max attempts
-        if (loadAttempts < 3) {
-          console.log(`Retrying script load (attempt ${loadAttempts + 1}/3)...`);
-          setLoadAttempts(prev => prev + 1);
-          setTimeout(loadAllScripts, 1000); // Wait 1 second before retrying
-        } else {
-          setIsLoading(false);
-          console.error('Failed to load scripts after multiple attempts');
-        }
-      }
-    };
-
-    // Start loading scripts if they're not already loaded
-    if (!window.Globe) {
-      loadAllScripts();
-    } else {
-      console.log('Globe already available, initializing...');
-      setIsLoading(false);
-      initGlobe();
-    }
-
-    // Cleanup function
-    return () => {
-      if (globeRef.current) {
-        const container = containerRef.current;
-        if (container && container.firstChild) {
-          container.removeChild(container.firstChild);
-        }
-        globeRef.current = null;
-      }
-    };
-  }, [loadAttempts]);
-
-  useEffect(() => {
-    if (!isLoading && globeRef.current && data) {
-      updateGlobeData();
-    }
-  }, [data, viewMode, isLoading]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (globeRef.current && containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        globeRef.current.width(width);
-        globeRef.current.height(height);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const initGlobe = () => {
-    if (!containerRef.current || isLoading) {
-      console.log('Cannot initialize globe: container not ready or still loading');
-      return;
-    }
-
-    console.log('Initializing globe with container dimensions:', containerRef.current.getBoundingClientRect());
-    const { width, height } = containerRef.current.getBoundingClientRect();
-    
-    // Clear previous globe
-    if (containerRef.current.firstChild) {
-      containerRef.current.removeChild(containerRef.current.firstChild);
-    }
-
-    try {
-      // Create new globe
-      console.log('Creating globe instance...');
-      globeRef.current = window.Globe()
-        .width(width)
-        .height(height)
-        .backgroundColor('rgba(5, 5, 35, 1)')
-        .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg') // Darker earth texture
-        .hexPolygonsData(window.countries.features)
-        .hexPolygonResolution(3) // Higher values = more hexagons
-        .hexPolygonMargin(0.7) // Increased margin to make hexagons more visible
-        .hexPolygonColor(() => '#1f2937') // Default color for all countries
-        .hexPolygonAltitude(0.01) // Add slight altitude to hexagons
-        .hexPolygonUseDots(true) // Use dots at hexagon corners for better visibility
-        .hexPolygonDotRadius(0.12) // Larger dots
-        .hexPolygonDotColor(() => '#3b82f6') // Blue dots
-        .onHexPolygonHover((polygon: any) => {
-          if (polygon) {
-            const countryName = polygon.properties.name;
-            const countryData = data.locations.filter(loc => loc.country === countryName);
-            
-            if (countryData.length > 0) {
-              const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
-              const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
-              
-              setTooltipContent(`
-                <div style="font-weight: bold;">${countryName}</div>
-                <div>Customers: ${totalCustomers}</div>
-                <div>Revenue: $${totalRevenue.toLocaleString()}</div>
-              `);
-            } else {
-              setTooltipContent(`<div style="font-weight: bold;">${countryName}</div>`);
-            }
-            
-            const event = window.event as MouseEvent;
-            setTooltipPosition({ x: event.clientX, y: event.clientY });
-          } else {
-            setTooltipContent(null);
-          }
-        })
-        .hexPolygonLabel((polygon: any) => {
-          const countryName = polygon.properties.name;
-          const countryData = data.locations.filter(loc => loc.country === countryName);
-          
-          if (countryData.length > 0) {
-            const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
-            const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
-            
-            return `
-              <div style="font-weight: bold;">${countryName}</div>
-              <div>Customers: ${totalCustomers}</div>
-              <div>Revenue: $${totalRevenue.toLocaleString()}</div>
-            `;
-          }
-          
-          return `<div style="font-weight: bold;">${countryName}</div>`;
-        });
-
-      console.log('Globe instance created successfully');
-      
-      // Add to DOM
-      containerRef.current.appendChild(globeRef.current.canvas());
-      console.log('Globe canvas added to DOM');
-      
-      // Initial camera position
-      globeRef.current.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
-      
-      // Enable controls
-      globeRef.current.controls().autoRotate = true;
-      globeRef.current.controls().autoRotateSpeed = 0.5;
-      globeRef.current.controls().enableZoom = true;
-      
-      // Update data
-      console.log('Updating globe data...');
-      updateGlobeData();
-    } catch (error) {
-      console.error('Error initializing globe:', error);
-    }
-  };
-
-  const updateGlobeData = () => {
-    if (!globeRef.current || !data || !data.locations) return;
-
-    // Group locations by country
-    const countriesWithData = new Set<string>();
-    data.locations.forEach(loc => {
-      if (loc.country) {
-        countriesWithData.add(loc.country);
-      }
-    });
-
-    // Update hexagon colors based on data
-    globeRef.current.hexPolygonColor((polygon: any) => {
-      const countryName = polygon.properties.name;
-      
-      // If country has data, color it darker
-      if (countriesWithData.has(countryName)) {
-        return viewMode === 'customers' ? '#0f172a' : '#172554'; // Darker blue for countries with data
-      }
-      
-      return '#1f2937'; // Default color for countries without data
-    });
-
-    // Add points for cities with data
-    const pointsData = data.locations.map(loc => ({
-      lat: loc.lat,
-      lng: loc.lng,
-      size: viewMode === 'customers' 
-        ? Math.max(0.8, Math.min(4, loc.customerCount / 5)) 
-        : Math.max(0.8, Math.min(4, loc.totalRevenue / 500)),
-      color: viewMode === 'customers' ? '#60a5fa' : '#fbbf24',
-      name: loc.city,
-      state: loc.state || '',
-      country: loc.country,
-      customers: loc.customerCount,
-      revenue: loc.totalRevenue
-    }));
-
-    globeRef.current
-      .pointsData(pointsData)
-      .pointColor('color')
-      .pointRadius('size')
-      .pointAltitude(0.03) // Increased altitude to make points more visible
-      .pointsMerge(true)
-      .pointLabel((point: any) => `
-        <div style="font-weight: bold;">${point.name}${point.state ? `, ${point.state}` : ''}, ${point.country}</div>
-        <div>Customers: ${point.customers}</div>
-        <div>Revenue: $${point.revenue.toLocaleString()}</div>
-      `);
-  };
-
-  return (
-    <div className="relative w-full h-full">
-      <div ref={containerRef} className="w-full h-full" />
-      {tooltipContent && (
-        <div 
-          className="absolute z-10 bg-black bg-opacity-80 text-white p-2 rounded-md text-sm pointer-events-none"
-          style={{ 
-            left: `${tooltipPosition.x + 10}px`, 
-            top: `${tooltipPosition.y + 10}px`,
-            transform: 'translate(-50%, -100%)'
-          }}
-          dangerouslySetInnerHTML={{ __html: tooltipContent }}
-        />
-      )}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
-          Loading globe...
-        </div>
-      )}
-    </div>
-  );
-};
+import { Button } from "@/components/ui/button"
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts'
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -408,65 +98,39 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [view, setView] = useState<'revenue' | 'customers'>('revenue')
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
-  const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
-  
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(800);
-  const containerId = `globe-container-${brandId.substring(0, 8)}`;
-  
-  // Add a resize observer to update the container width
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Set initial width
-    setContainerWidth(containerRef.current.clientWidth);
-    
-    // Create resize observer
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-    
-    // Start observing
-    resizeObserver.observe(containerRef.current);
-    
-    // Cleanup
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [containerRef.current]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [displayCount, setDisplayCount] = useState(10)
   
   useEffect(() => {
-    if (!brandId) return;
+    if (!brandId) return
 
     const fetchGeoData = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
-        const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`);
+        const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`)
         if (!response.ok) {
-          throw new Error(`Error fetching geographic data: ${response.statusText}`);
+          throw new Error(`Error fetching geographic data: ${response.statusText}`)
         }
         
-        const data = await response.json();
+        const data = await response.json()
         
         if (!data.locations || data.locations.length === 0) {
-          setError("No geographic data found");
-          setIsLoading(false);
-          return;
+          setError("No geographic data found")
+          setIsLoading(false)
+          return
         }
         
         // Set total values
-        setTotalRevenue(data.totalRevenue || 0);
-        setTotalCustomers(data.totalCustomers || 0);
+        setTotalRevenue(data.totalRevenue || 0)
+        setTotalCustomers(data.totalCustomers || 0)
         
         // Check if all revenue values are zero
-        const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0;
-        setHasZeroRevenue(hasZeroRev);
+        const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0
+        setHasZeroRevenue(hasZeroRev)
         
         // If we have zero revenue, default to customers view
         if (hasZeroRev) {
-          setView('customers');
+          setView('customers')
         }
         
         // Process and cluster the data
@@ -507,88 +171,15 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         setClusteredData(Object.values(aggregatedData));
         
       } catch (error) {
-        console.error('Error fetching geographic data:', error);
-        setError("Failed to load geographic data");
+        console.error('Error fetching geographic data:', error)
+        setError("Failed to load geographic data")
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
-
-    fetchGeoData();
-  }, [brandId, isRefreshing]);
-
-  // Add a direct initialization function for the globe
-  useEffect(() => {
-    // Function to initialize the globe directly
-    const initializeGlobeDirectly = () => {
-      if (typeof window === 'undefined' || !window.Globe || !containerRef.current) return;
-      
-      console.log('Attempting direct globe initialization...');
-      
-      try {
-        // Clear any existing content
-        while (containerRef.current.firstChild) {
-          containerRef.current.removeChild(containerRef.current.firstChild);
-        }
-        
-        // Create the globe instance
-        const globe = window.Globe()
-          .width(containerRef.current.clientWidth)
-          .height(containerRef.current.clientHeight)
-          .backgroundColor('rgba(5, 5, 35, 1)')
-          .globeImageUrl('//unpkg.com/three-globe/example/img/earth-night.jpg')
-          .hexPolygonsData(window.countries?.features || [])
-          .hexPolygonResolution(3)
-          .hexPolygonMargin(0.7)
-          .hexPolygonColor(() => '#1f2937')
-          .hexPolygonAltitude(0.01)
-          .hexPolygonUseDots(true)
-          .hexPolygonDotRadius(0.12)
-          .hexPolygonDotColor(() => '#3b82f6');
-          
-        // Add points for cities with data
-        const pointsData = clusteredData.map(d => ({
-          lat: d.lat,
-          lng: d.lng,
-          size: view === 'customers' 
-            ? Math.max(0.8, Math.min(4, d.customerCount / 5)) 
-            : Math.max(0.8, Math.min(4, d.totalRevenue / 500)),
-          color: view === 'customers' ? '#60a5fa' : '#fbbf24',
-          data: d
-        }));
-        
-        globe
-          .pointsData(pointsData)
-          .pointColor('color')
-          .pointRadius('size')
-          .pointAltitude(0.03)
-          .pointsMerge(true);
-          
-        // Add to DOM
-        containerRef.current.appendChild(globe.canvas());
-        
-        // Set initial camera position
-        globe.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
-        
-        // Enable controls
-        globe.controls().autoRotate = true;
-        globe.controls().autoRotateSpeed = 0.5;
-        
-        console.log('Direct globe initialization successful');
-      } catch (error) {
-        console.error('Error in direct globe initialization:', error);
-      }
-    };
-    
-    // Try to initialize the globe after a delay to ensure scripts are loaded
-    if (clusteredData.length > 0 && !isLoading) {
-      const timer = setTimeout(() => {
-        initializeGlobeDirectly();
-      }, 1000);
-      
-      return () => clearTimeout(timer);
     }
-  }, [clusteredData, isLoading, view]);
+
+    fetchGeoData()
+  }, [brandId, isRefreshing])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -596,62 +187,91 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
-  };
+    }).format(value)
+  }
 
   const renderZeroRevenueNotice = () => {
     if (!hasZeroRevenue) return null;
     
     return (
       <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3 text-sm text-amber-600 dark:text-amber-400">
-        Your store has customers but no revenue data yet. The map is showing customer locations instead of sales.
+        Your store has customers but no revenue data yet. The chart is showing customer locations instead of sales.
       </div>
     );
   };
 
   // Sort data by revenue or customer count
-  const sortedData = [...clusteredData].sort((a, b) => {
-    if (view === 'revenue') {
-      return b.totalRevenue - a.totalRevenue;
-    } else {
-      return b.customerCount - a.customerCount;
-    }
+  const getSortedData = () => {
+    return [...clusteredData].sort((a, b) => {
+      const compareValue = view === 'revenue' 
+        ? (b.totalRevenue - a.totalRevenue) 
+        : (b.customerCount - a.customerCount);
+      
+      return sortOrder === 'desc' ? compareValue : -compareValue;
+    });
+  };
+
+  const sortedData = getSortedData();
+  
+  // Prepare data for the bar chart
+  const chartData = sortedData.slice(0, displayCount).map(location => {
+    const locationName = `${location.city}${location.state ? `, ${location.state.substring(0, 2)}` : ''}`;
+    return {
+      name: locationName,
+      fullName: `${location.city}${location.state ? `, ${location.state}` : ''}${location.country && location.country !== 'United States' ? `, ${location.country}` : ''}`,
+      revenue: location.totalRevenue,
+      customers: location.customerCount
+    };
   });
 
-  // Prepare data for globe visualization
-  const globeData = {
-    locations: clusteredData.map(d => ({
-      city: d.city,
-      state: d.state,
-      country: d.country,
-      lat: d.lat,
-      lng: d.lng,
-      customerCount: d.customerCount,
-      totalRevenue: d.totalRevenue
-    })),
-    topRegions: {
-      byCustomers: sortedData.map(d => ({ region: `${d.city}${d.state ? `, ${d.state}` : ''}`, count: d.customerCount })),
-      byRevenue: sortedData.map(d => ({ region: `${d.city}${d.state ? `, ${d.state}` : ''}`, revenue: d.totalRevenue }))
+  // Custom tooltip for the bar chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-900 border border-gray-700 p-3 rounded-md shadow-lg">
+          <p className="font-medium text-white">{payload[0].payload.fullName}</p>
+          <p className="text-blue-400">Revenue: {formatCurrency(payload[0].payload.revenue)}</p>
+          <p className="text-purple-400">Customers: {payload[0].payload.customers}</p>
+        </div>
+      );
     }
+    return null;
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+  };
+
+  const handleShowMore = () => {
+    setDisplayCount(prev => Math.min(prev + 10, clusteredData.length));
+  };
+
+  const handleShowLess = () => {
+    setDisplayCount(prev => Math.max(prev - 10, 5));
   };
 
   return (
     <Card className="col-span-3">
-      {/* Load required scripts directly in the component */}
-      <Script src="https://unpkg.com/three@0.152.2/build/three.min.js" strategy="beforeInteractive" />
-      <Script src="https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js" strategy="beforeInteractive" />
-      
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-bold">Customer Geography</CardTitle>
         <CardDescription>Geographic distribution of customers</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue={hasZeroRevenue ? "customers" : "revenue"} className="w-full">
+        <Tabs defaultValue="revenue" className="w-full">
           <div className="flex justify-between items-center mb-4">
             <TabsList>
               <TabsTrigger value="revenue" onClick={() => setView('revenue')} disabled={hasZeroRevenue}>Revenue</TabsTrigger>
               <TabsTrigger value="customers" onClick={() => setView('customers')}>Customers</TabsTrigger>
             </TabsList>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleSortOrder}
+              className="flex items-center gap-1"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              {sortOrder === 'desc' ? 'Highest First' : 'Lowest First'}
+            </Button>
           </div>
           
           {isLoading ? (
@@ -664,69 +284,47 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             </div>
           ) : clusteredData.length > 0 ? (
             <div className="space-y-6">
-              {/* Globe Visualization */}
-              <div 
-                id={containerId}
-                ref={containerRef} 
-                className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden"
-              >
-                {typeof window !== 'undefined' && (
-                  <GlobeComponent 
-                    data={globeData}
-                    viewMode={view}
-                  />
-                )}
-                
-                {/* Fallback message if globe doesn't load properly */}
-                <div 
-                  id="globe-fallback-message" 
-                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white opacity-0 transition-opacity duration-1000"
-                >
-                  <div className="text-center p-4">
-                    <p className="mb-2">If you don't see the globe visualization, please try:</p>
-                    <ul className="text-sm list-disc text-left ml-4">
-                      <li>Refreshing the page</li>
-                      <li>Using a different browser</li>
-                      <li>Checking your console for errors</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                {/* Script to check if globe is visible */}
-                {typeof window !== 'undefined' && (
-                  <script dangerouslySetInnerHTML={{ __html: `
-                    setTimeout(() => {
-                      const canvas = document.querySelector('#${containerId} canvas');
-                      const fallback = document.getElementById('globe-fallback-message');
-                      if (!canvas && fallback) {
-                        fallback.style.opacity = '1';
-                      }
-                    }, 5000);
-                  `}} />
-                )}
-                
-                {/* Tooltip */}
-                {hoveredRegion && (
-                  <div 
-                    className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
-                    style={{
-                      left: '50%',
-                      bottom: '20px',
-                      transform: 'translateX(-50%)',
-                      minWidth: '180px'
-                    }}
+              {/* Bar Chart */}
+              <div className="w-full h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    barSize={20}
                   >
-                    <div className="font-medium">
-                      {hoveredRegion.city}
-                      {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
-                      {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
-                    </div>
-                    <div className="flex justify-between gap-4 mt-1">
-                      <span>Customers: <strong>{hoveredRegion.customerCount}</strong></span>
-                      <span>Revenue: <strong>{formatCurrency(hoveredRegion.totalRevenue)}</strong></span>
-                    </div>
-                  </div>
-                )}
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={70} 
+                      tick={{ fill: '#888', fontSize: 12 }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#888' }}
+                      tickFormatter={(value) => view === 'revenue' 
+                        ? formatCurrency(value).replace('$', '') 
+                        : value.toString()
+                      }
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar 
+                      dataKey={view === 'revenue' ? 'revenue' : 'customers'} 
+                      fill={view === 'revenue' ? '#3b82f6' : '#8b5cf6'}
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={view === 'revenue' 
+                            ? (entry.revenue > 0 ? '#3b82f6' : '#6b7280') 
+                            : '#8b5cf6'
+                          } 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
               
               {renderZeroRevenueNotice()}
@@ -742,7 +340,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedData.slice(0, 10).map((region) => (
+                    {sortedData.slice(0, displayCount).map((region) => (
                       <TableRow key={region.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center">
@@ -760,6 +358,20 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+              
+              {/* Show more/less buttons */}
+              <div className="flex justify-center gap-2">
+                {displayCount > 5 && (
+                  <Button variant="outline" size="sm" onClick={handleShowLess}>
+                    Show Less
+                  </Button>
+                )}
+                {displayCount < clusteredData.length && (
+                  <Button variant="outline" size="sm" onClick={handleShowMore}>
+                    Show More
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
