@@ -10,90 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-// We'll use a client-side only component for the Globe
-const GlobeComponent = ({ data, containerWidth, onHover }: any) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [globe, setGlobe] = useState<any>(null);
-  const [isReady, setIsReady] = useState(false);
-
-  // Set up the container first
-  useEffect(() => {
-    if (containerRef.current) {
-      setIsReady(true);
-    }
-  }, [containerRef.current]);
-
-  // Initialize globe only after container is ready
-  useEffect(() => {
-    if (!isReady || !containerRef.current) return;
-    
-    let globeInstance: any = null;
-    
-    // Small delay to ensure DOM is fully ready
-    const timer = setTimeout(() => {
-      try {
-        // Only import and initialize globe.gl on the client
-        import('globe.gl').then(({ default: Globe }) => {
-          if (!containerRef.current) return;
-          
-          // Initialize the globe - Globe is a constructor, so we need to use 'new'
-          globeInstance = new Globe(containerRef.current)
-            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
-            .backgroundColor("#111")
-            .width(containerWidth || 800)
-            .height(400)
-            .pointsData(data)
-            .pointLat('lat')
-            .pointLng('lng')
-            .pointColor('color')
-            .pointRadius('size')
-            .pointAltitude(0.01)
-            .pointsMerge(false)
-            .onPointHover(onHover);
-          
-          // Auto-rotate
-          globeInstance.controls().autoRotate = true;
-          globeInstance.controls().autoRotateSpeed = 0.5;
-          
-          // Set initial camera position
-          globeInstance.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
-          
-          setGlobe(globeInstance);
-        }).catch(err => {
-          console.error("Error loading globe.gl:", err);
-        });
-      } catch (err) {
-        console.error("Error initializing globe:", err);
-      }
-    }, 100);
-    
-    // Cleanup
-    return () => {
-      clearTimeout(timer);
-      if (globeInstance) {
-        try {
-          globeInstance._destructor();
-        } catch (err) {
-          console.error("Error cleaning up globe:", err);
-        }
-      }
-    };
-  }, [isReady, containerWidth]);
-  
-  // Update data when it changes
-  useEffect(() => {
-    if (globe && data) {
-      try {
-        globe.pointsData(data);
-      } catch (err) {
-        console.error("Error updating globe data:", err);
-      }
-    }
-  }, [globe, data]);
-
-  return <div ref={containerRef} className="w-full h-full" />;
-};
-
 interface CustomerGeographicMapProps {
   brandId: string
   isRefreshing?: boolean
@@ -172,6 +88,14 @@ function findMetroArea(city: string, lat: number, lng: number): string {
   return city;
 }
 
+// Convert lat/lng to x/y coordinates on a world map
+function latLngToXY(lat: number, lng: number, width: number, height: number): { x: number, y: number } {
+  // Simple equirectangular projection
+  const x = (lng + 180) * (width / 360);
+  const y = (90 - lat) * (height / 180);
+  return { x, y };
+}
+
 export function CustomerGeographicMap({ brandId, isRefreshing = false }: CustomerGeographicMapProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasZeroRevenue, setHasZeroRevenue] = useState(false)
@@ -181,63 +105,75 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
+  const [mapDimensions, setMapDimensions] = useState({ width: 800, height: 400 })
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const [globeContainerWidth, setGlobeContainerWidth] = useState<number>(800);
   
-  // Add a resize observer to update the container width
+  // Update map dimensions when container size changes
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Set initial width
-    setGlobeContainerWidth(containerRef.current.clientWidth);
-    
-    // Create resize observer
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        setGlobeContainerWidth(entry.contentRect.width);
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setMapDimensions({
+          width: containerRef.current.clientWidth,
+          height: 400
+        });
       }
-    });
+    };
     
-    // Start observing
-    resizeObserver.observe(containerRef.current);
+    // Set initial dimensions
+    updateDimensions();
     
-    // Cleanup
+    // Add resize listener
+    window.addEventListener('resize', updateDimensions);
+    
+    // Create ResizeObserver for more accurate size tracking
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(updateDimensions);
+      resizeObserver.observe(containerRef.current);
+      
+      return () => {
+        resizeObserver.disconnect();
+        window.removeEventListener('resize', updateDimensions);
+      };
+    }
+    
     return () => {
-      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
     };
   }, [containerRef.current]);
   
   useEffect(() => {
-    if (!brandId) return
+    if (!brandId) return;
 
     const fetchGeoData = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
-        const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`)
+        const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`);
         if (!response.ok) {
-          throw new Error(`Error fetching geographic data: ${response.statusText}`)
+          throw new Error(`Error fetching geographic data: ${response.statusText}`);
         }
         
-        const data = await response.json()
+        const data = await response.json();
         
         if (!data.locations || data.locations.length === 0) {
-          setError("No geographic data found")
-          setIsLoading(false)
-          return
+          setError("No geographic data found");
+          setIsLoading(false);
+          return;
         }
         
         // Set total values
-        setTotalRevenue(data.totalRevenue || 0)
-        setTotalCustomers(data.totalCustomers || 0)
+        setTotalRevenue(data.totalRevenue || 0);
+        setTotalCustomers(data.totalCustomers || 0);
         
         // Check if all revenue values are zero
-        const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0
-        setHasZeroRevenue(hasZeroRev)
+        const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0;
+        setHasZeroRevenue(hasZeroRev);
         
         // If we have zero revenue, default to customers view
         if (hasZeroRev) {
-          setView('customers')
+          setView('customers');
         }
         
         // Process and cluster the data
@@ -278,15 +214,15 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         setClusteredData(Object.values(aggregatedData));
         
       } catch (error) {
-        console.error('Error fetching geographic data:', error)
-        setError("Failed to load geographic data")
+        console.error('Error fetching geographic data:', error);
+        setError("Failed to load geographic data");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchGeoData()
-  }, [brandId, isRefreshing])
+    fetchGeoData();
+  }, [brandId, isRefreshing]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -294,8 +230,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value)
-  }
+    }).format(value);
+  };
 
   const renderZeroRevenueNotice = () => {
     if (!hasZeroRevenue) return null;
@@ -316,18 +252,10 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     }
   });
 
-  // Prepare data for globe visualization
-  const globeData = clusteredData.map(d => ({
-    lat: d.lat,
-    lng: d.lng,
-    size: view === 'revenue' 
-      ? Math.max(0.2, Math.min(1.5, 0.2 + (d.totalRevenue / 5000)))
-      : Math.max(0.2, Math.min(1.5, 0.2 + (d.customerCount / 20))),
-    color: view === 'revenue'
-      ? d.totalRevenue > 0 ? '#3b82f6' : '#6b7280'
-      : '#8b5cf6',
-    data: d
-  }));
+  // Handle dot hover
+  const handleDotHover = (region: RegionData | null) => {
+    setHoveredRegion(region);
+  };
 
   return (
     <Card className="col-span-3">
@@ -354,23 +282,61 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             </div>
           ) : clusteredData.length > 0 ? (
             <div className="space-y-6">
-              {/* Globe Visualization */}
+              {/* Map Visualization */}
               <div ref={containerRef} className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden">
-                {typeof window !== 'undefined' && (
-                  <GlobeComponent 
-                    data={globeData}
-                    containerWidth={globeContainerWidth}
-                    onHover={(point: any) => {
-                      if (point) {
-                        setHoveredRegion(point.data);
-                      } else {
-                        setHoveredRegion(null);
-                      }
-                    }}
-                  />
-                )}
+                {/* World Map Background */}
+                <img 
+                  src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg"
+                  alt="World Map"
+                  className="absolute inset-0 w-full h-full object-cover opacity-30"
+                />
                 
-                {/* Tooltip - position it better */}
+                {/* SVG Overlay for Dots */}
+                <svg 
+                  className="absolute inset-0 w-full h-full"
+                  viewBox={`0 0 ${mapDimensions.width} ${mapDimensions.height}`}
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  {clusteredData.map((region) => {
+                    const { x, y } = latLngToXY(
+                      region.lat, 
+                      region.lng, 
+                      mapDimensions.width, 
+                      mapDimensions.height
+                    );
+                    
+                    // Size based on data
+                    const size = view === 'revenue' 
+                      ? Math.max(4, Math.min(12, 4 + (region.totalRevenue / 1000)))
+                      : Math.max(4, Math.min(12, 4 + (region.customerCount / 10)));
+                    
+                    // Color based on data
+                    const color = view === 'revenue'
+                      ? region.totalRevenue > 0 ? '#3b82f6' : '#6b7280'
+                      : '#8b5cf6';
+                    
+                    // Only render if coordinates are valid
+                    if (isNaN(x) || isNaN(y)) return null;
+                    
+                    return (
+                      <circle
+                        key={region.id}
+                        cx={x}
+                        cy={y}
+                        r={size}
+                        fill={color}
+                        opacity={0.8}
+                        stroke={hoveredRegion?.id === region.id ? 'white' : 'transparent'}
+                        strokeWidth={2}
+                        onMouseEnter={() => handleDotHover(region)}
+                        onMouseLeave={() => handleDotHover(null)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    );
+                  })}
+                </svg>
+                
+                {/* Tooltip */}
                 {hoveredRegion && (
                   <div 
                     className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
