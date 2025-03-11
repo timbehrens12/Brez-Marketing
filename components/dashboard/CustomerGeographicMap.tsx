@@ -1,3 +1,12 @@
+// Add type declarations at the top of the file
+declare global {
+  interface Window {
+    Globe: any;
+    countries: any;
+    THREE: any;
+  }
+}
+
 "use client"
 
 import React, { useEffect, useState, useRef } from 'react'
@@ -9,6 +18,252 @@ import { format } from 'date-fns'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+interface Location {
+  city: string;
+  state?: string;
+  country: string;
+  lat: number;
+  lng: number;
+  customerCount: number;
+  totalRevenue: number;
+}
+
+interface CustomerGeographicData {
+  locations: Location[];
+  topRegions: {
+    byCustomers: { region: string; count: number }[];
+    byRevenue: { region: string; revenue: number }[];
+  };
+}
+
+// Define a simpler interface for the data passed to the GlobeComponent
+interface GlobePoint {
+  lat: number;
+  lng: number;
+  size: number;
+  color: string;
+  name: string;
+  state?: string;
+  country: string;
+  customers: number;
+  revenue: number;
+}
+
+const GlobeComponent = ({ data, viewMode }: { data: CustomerGeographicData; viewMode: 'customers' | 'revenue' }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const globeRef = useRef<any>(null);
+  const [tooltipContent, setTooltipContent] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load required scripts
+    const loadScripts = async () => {
+      if (!window.Globe) {
+        // Load Three.js first
+        const threeScript = document.createElement('script');
+        threeScript.src = 'https://unpkg.com/three@0.152.2/build/three.min.js';
+        document.head.appendChild(threeScript);
+        
+        await new Promise(resolve => threeScript.onload = resolve);
+        
+        // Then load globe.gl
+        const globeScript = document.createElement('script');
+        globeScript.src = 'https://unpkg.com/globe.gl@2.32.1/dist/globe.gl.min.js';
+        document.head.appendChild(globeScript);
+        
+        await new Promise(resolve => globeScript.onload = resolve);
+        
+        // Load countries data
+        if (!window.countries) {
+          const response = await fetch('https://unpkg.com/world-atlas@2/countries-110m.json');
+          window.countries = await response.json();
+        }
+      }
+      
+      setIsLoading(false);
+      initGlobe();
+    };
+
+    loadScripts();
+
+    // Cleanup function
+    return () => {
+      if (globeRef.current) {
+        const container = containerRef.current;
+        if (container && container.firstChild) {
+          container.removeChild(container.firstChild);
+        }
+        globeRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && globeRef.current && data) {
+      updateGlobeData();
+    }
+  }, [data, viewMode, isLoading]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (globeRef.current && containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        globeRef.current.width(width);
+        globeRef.current.height(height);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const initGlobe = () => {
+    if (!containerRef.current || isLoading) return;
+
+    const { width, height } = containerRef.current.getBoundingClientRect();
+    
+    // Clear previous globe
+    if (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
+
+    // Create new globe
+    globeRef.current = window.Globe()
+      .width(width)
+      .height(height)
+      .backgroundColor('rgba(5, 5, 35, 1)')
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .hexPolygonsData(window.countries.features)
+      .hexPolygonResolution(3) // Higher values = more hexagons
+      .hexPolygonMargin(0.6)
+      .hexPolygonColor(() => '#1f2937') // Default color for all countries
+      .onHexPolygonHover((polygon: any) => {
+        if (polygon) {
+          const countryName = polygon.properties.name;
+          const countryData = data.locations.filter(loc => loc.country === countryName);
+          
+          if (countryData.length > 0) {
+            const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
+            const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
+            
+            setTooltipContent(`
+              <div style="font-weight: bold;">${countryName}</div>
+              <div>Customers: ${totalCustomers}</div>
+              <div>Revenue: $${totalRevenue.toLocaleString()}</div>
+            `);
+          } else {
+            setTooltipContent(`<div style="font-weight: bold;">${countryName}</div>`);
+          }
+          
+          const event = window.event as MouseEvent;
+          setTooltipPosition({ x: event.clientX, y: event.clientY });
+        } else {
+          setTooltipContent(null);
+        }
+      })
+      .hexPolygonLabel((polygon: any) => {
+        const countryName = polygon.properties.name;
+        const countryData = data.locations.filter(loc => loc.country === countryName);
+        
+        if (countryData.length > 0) {
+          const totalCustomers = countryData.reduce((sum, loc) => sum + loc.customerCount, 0);
+          const totalRevenue = countryData.reduce((sum, loc) => sum + loc.totalRevenue, 0);
+          
+          return `
+            <div style="font-weight: bold;">${countryName}</div>
+            <div>Customers: ${totalCustomers}</div>
+            <div>Revenue: $${totalRevenue.toLocaleString()}</div>
+          `;
+        }
+        
+        return `<div style="font-weight: bold;">${countryName}</div>`;
+      });
+
+    // Add to DOM
+    containerRef.current.appendChild(globeRef.current.canvas());
+    
+    // Initial camera position
+    globeRef.current.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
+    
+    // Update data
+    updateGlobeData();
+  };
+
+  const updateGlobeData = () => {
+    if (!globeRef.current || !data || !data.locations) return;
+
+    // Group locations by country
+    const countriesWithData = new Set<string>();
+    data.locations.forEach(loc => {
+      if (loc.country) {
+        countriesWithData.add(loc.country);
+      }
+    });
+
+    // Update hexagon colors based on data
+    globeRef.current.hexPolygonColor((polygon: any) => {
+      const countryName = polygon.properties.name;
+      
+      // If country has data, color it darker
+      if (countriesWithData.has(countryName)) {
+        return viewMode === 'customers' ? '#0f172a' : '#172554'; // Darker blue for countries with data
+      }
+      
+      return '#1f2937'; // Default color for countries without data
+    });
+
+    // Add points for cities with data
+    const pointsData = data.locations.map(loc => ({
+      lat: loc.lat,
+      lng: loc.lng,
+      size: viewMode === 'customers' 
+        ? Math.max(0.5, Math.min(3, loc.customerCount / 10)) 
+        : Math.max(0.5, Math.min(3, loc.totalRevenue / 1000)),
+      color: viewMode === 'customers' ? '#60a5fa' : '#fbbf24',
+      name: loc.city,
+      state: loc.state || '',
+      country: loc.country,
+      customers: loc.customerCount,
+      revenue: loc.totalRevenue
+    }));
+
+    globeRef.current
+      .pointsData(pointsData)
+      .pointColor('color')
+      .pointRadius('size')
+      .pointAltitude(0.01)
+      .pointsMerge(true)
+      .pointLabel((point: any) => `
+        <div style="font-weight: bold;">${point.name}${point.state ? `, ${point.state}` : ''}, ${point.country}</div>
+        <div>Customers: ${point.customers}</div>
+        <div>Revenue: $${point.revenue.toLocaleString()}</div>
+      `);
+  };
+
+  return (
+    <div className="relative w-full h-full">
+      <div ref={containerRef} className="w-full h-full" />
+      {tooltipContent && (
+        <div 
+          className="absolute z-10 bg-black bg-opacity-80 text-white p-2 rounded-md text-sm pointer-events-none"
+          style={{ 
+            left: `${tooltipPosition.x + 10}px`, 
+            top: `${tooltipPosition.y + 10}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+          dangerouslySetInnerHTML={{ __html: tooltipContent }}
+        />
+      )}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
+          Loading globe...
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -88,14 +343,6 @@ function findMetroArea(city: string, lat: number, lng: number): string {
   return city;
 }
 
-// Convert lat/lng to x/y coordinates on a world map
-function latLngToXY(lat: number, lng: number, width: number, height: number): { x: number, y: number } {
-  // Simple equirectangular projection
-  const x = (lng + 180) * (width / 360);
-  const y = (90 - lat) * (height / 180);
-  return { x, y };
-}
-
 export function CustomerGeographicMap({ brandId, isRefreshing = false }: CustomerGeographicMapProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasZeroRevenue, setHasZeroRevenue] = useState(false)
@@ -105,42 +352,30 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
-  const [mapDimensions, setMapDimensions] = useState({ width: 800, height: 400 })
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(800);
   
-  // Update map dimensions when container size changes
+  // Add a resize observer to update the container width
   useEffect(() => {
     if (!containerRef.current) return;
     
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        setMapDimensions({
-          width: containerRef.current.clientWidth,
-          height: 400
-        });
+    // Set initial width
+    setContainerWidth(containerRef.current.clientWidth);
+    
+    // Create resize observer
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
       }
-    };
+    });
     
-    // Set initial dimensions
-    updateDimensions();
+    // Start observing
+    resizeObserver.observe(containerRef.current);
     
-    // Add resize listener
-    window.addEventListener('resize', updateDimensions);
-    
-    // Create ResizeObserver for more accurate size tracking
-    if (typeof ResizeObserver !== 'undefined') {
-      const resizeObserver = new ResizeObserver(updateDimensions);
-      resizeObserver.observe(containerRef.current);
-      
-      return () => {
-        resizeObserver.disconnect();
-        window.removeEventListener('resize', updateDimensions);
-      };
-    }
-    
+    // Cleanup
     return () => {
-      window.removeEventListener('resize', updateDimensions);
+      resizeObserver.disconnect();
     };
   }, [containerRef.current]);
   
@@ -252,9 +487,21 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     }
   });
 
-  // Handle dot hover
-  const handleDotHover = (region: RegionData | null) => {
-    setHoveredRegion(region);
+  // Prepare data for globe visualization
+  const globeData = {
+    locations: clusteredData.map(d => ({
+      city: d.city,
+      state: d.state,
+      country: d.country,
+      lat: d.lat,
+      lng: d.lng,
+      customerCount: d.customerCount,
+      totalRevenue: d.totalRevenue
+    })),
+    topRegions: {
+      byCustomers: sortedData.map(d => ({ region: `${d.city}${d.state ? `, ${d.state}` : ''}`, count: d.customerCount })),
+      byRevenue: sortedData.map(d => ({ region: `${d.city}${d.state ? `, ${d.state}` : ''}`, revenue: d.totalRevenue }))
+    }
   };
 
   return (
@@ -282,59 +529,14 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             </div>
           ) : clusteredData.length > 0 ? (
             <div className="space-y-6">
-              {/* Map Visualization */}
+              {/* Globe Visualization */}
               <div ref={containerRef} className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden">
-                {/* World Map Background */}
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg"
-                  alt="World Map"
-                  className="absolute inset-0 w-full h-full object-cover opacity-30"
-                />
-                
-                {/* SVG Overlay for Dots */}
-                <svg 
-                  className="absolute inset-0 w-full h-full"
-                  viewBox={`0 0 ${mapDimensions.width} ${mapDimensions.height}`}
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                  {clusteredData.map((region) => {
-                    const { x, y } = latLngToXY(
-                      region.lat, 
-                      region.lng, 
-                      mapDimensions.width, 
-                      mapDimensions.height
-                    );
-                    
-                    // Size based on data
-                    const size = view === 'revenue' 
-                      ? Math.max(4, Math.min(12, 4 + (region.totalRevenue / 1000)))
-                      : Math.max(4, Math.min(12, 4 + (region.customerCount / 10)));
-                    
-                    // Color based on data
-                    const color = view === 'revenue'
-                      ? region.totalRevenue > 0 ? '#3b82f6' : '#6b7280'
-                      : '#8b5cf6';
-                    
-                    // Only render if coordinates are valid
-                    if (isNaN(x) || isNaN(y)) return null;
-                    
-                    return (
-                      <circle
-                        key={region.id}
-                        cx={x}
-                        cy={y}
-                        r={size}
-                        fill={color}
-                        opacity={0.8}
-                        stroke={hoveredRegion?.id === region.id ? 'white' : 'transparent'}
-                        strokeWidth={2}
-                        onMouseEnter={() => handleDotHover(region)}
-                        onMouseLeave={() => handleDotHover(null)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                    );
-                  })}
-                </svg>
+                {typeof window !== 'undefined' && (
+                  <GlobeComponent 
+                    data={globeData}
+                    viewMode={view}
+                  />
+                )}
                 
                 {/* Tooltip */}
                 {hoveredRegion && (
