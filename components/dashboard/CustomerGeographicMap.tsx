@@ -14,51 +14,80 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 const GlobeComponent = ({ data, containerWidth, onHover }: any) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [globe, setGlobe] = useState<any>(null);
+  const [isReady, setIsReady] = useState(false);
 
+  // Set up the container first
   useEffect(() => {
-    // Only import and initialize globe.gl on the client
-    if (typeof window !== 'undefined') {
-      import('globe.gl').then(({ default: Globe }) => {
-        if (!containerRef.current) return;
-        
-        // Initialize the globe - Globe is a constructor, so we need to use 'new'
-        const globeInstance = new Globe(containerRef.current)
-          .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
-          .backgroundColor("#111")
-          .width(containerWidth || 800)
-          .height(400)
-          .pointsData(data)
-          .pointLat('lat')
-          .pointLng('lng')
-          .pointColor('color')
-          .pointRadius('size')
-          .pointAltitude(0.01)
-          .pointsMerge(false)
-          .onPointHover(onHover);
-        
-        // Auto-rotate
-        globeInstance.controls().autoRotate = true;
-        globeInstance.controls().autoRotateSpeed = 0.5;
-        
-        // Set initial camera position
-        globeInstance.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
-        
-        setGlobe(globeInstance);
-      });
+    if (containerRef.current) {
+      setIsReady(true);
     }
+  }, [containerRef.current]);
+
+  // Initialize globe only after container is ready
+  useEffect(() => {
+    if (!isReady || !containerRef.current) return;
+    
+    let globeInstance: any = null;
+    
+    // Small delay to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      try {
+        // Only import and initialize globe.gl on the client
+        import('globe.gl').then(({ default: Globe }) => {
+          if (!containerRef.current) return;
+          
+          // Initialize the globe - Globe is a constructor, so we need to use 'new'
+          globeInstance = new Globe(containerRef.current)
+            .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+            .backgroundColor("#111")
+            .width(containerWidth || 800)
+            .height(400)
+            .pointsData(data)
+            .pointLat('lat')
+            .pointLng('lng')
+            .pointColor('color')
+            .pointRadius('size')
+            .pointAltitude(0.01)
+            .pointsMerge(false)
+            .onPointHover(onHover);
+          
+          // Auto-rotate
+          globeInstance.controls().autoRotate = true;
+          globeInstance.controls().autoRotateSpeed = 0.5;
+          
+          // Set initial camera position
+          globeInstance.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
+          
+          setGlobe(globeInstance);
+        }).catch(err => {
+          console.error("Error loading globe.gl:", err);
+        });
+      } catch (err) {
+        console.error("Error initializing globe:", err);
+      }
+    }, 100);
     
     // Cleanup
     return () => {
-      if (globe) {
-        globe._destructor();
+      clearTimeout(timer);
+      if (globeInstance) {
+        try {
+          globeInstance._destructor();
+        } catch (err) {
+          console.error("Error cleaning up globe:", err);
+        }
       }
     };
-  }, []);
+  }, [isReady, containerWidth]);
   
   // Update data when it changes
   useEffect(() => {
     if (globe && data) {
-      globe.pointsData(data);
+      try {
+        globe.pointsData(data);
+      } catch (err) {
+        console.error("Error updating globe data:", err);
+      }
     }
   }, [globe, data]);
 
@@ -154,6 +183,30 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const [globeContainerWidth, setGlobeContainerWidth] = useState<number>(800);
+  
+  // Add a resize observer to update the container width
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    // Set initial width
+    setGlobeContainerWidth(containerRef.current.clientWidth);
+    
+    // Create resize observer
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setGlobeContainerWidth(entry.contentRect.width);
+      }
+    });
+    
+    // Start observing
+    resizeObserver.observe(containerRef.current);
+    
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [containerRef.current]);
   
   useEffect(() => {
     if (!brandId) return
@@ -306,7 +359,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                 {typeof window !== 'undefined' && (
                   <GlobeComponent 
                     data={globeData}
-                    containerWidth={containerRef.current?.clientWidth}
+                    containerWidth={globeContainerWidth}
                     onHover={(point: any) => {
                       if (point) {
                         setHoveredRegion(point.data);
@@ -317,14 +370,14 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                   />
                 )}
                 
-                {/* Tooltip */}
+                {/* Tooltip - position it better */}
                 {hoveredRegion && (
                   <div 
                     className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
                     style={{
                       left: '50%',
-                      top: '50%',
-                      transform: 'translate(-50%, -50%)',
+                      bottom: '20px',
+                      transform: 'translateX(-50%)',
                       minWidth: '180px'
                     }}
                   >
