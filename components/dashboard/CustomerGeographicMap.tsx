@@ -15,22 +15,6 @@ import * as turf from '@turf/turf'
 // @ts-ignore
 import countries from './countries.json'
 
-interface CustomerGeographicMapProps {
-  brandId: string
-  isRefreshing?: boolean
-}
-
-interface RegionData {
-  id: string
-  city: string
-  state: string
-  country: string
-  lat: number
-  lng: number
-  customerCount: number
-  totalRevenue: number
-}
-
 // Metro areas for clustering
 const METRO_AREAS: Record<string, { center: { lat: number, lng: number }, suburbs: string[] }> = {
   "Houston": {
@@ -91,6 +75,36 @@ function findMetroArea(city: string, lat: number, lng: number): string {
   
   // If not a suburb or near a metro, return the original city name
   return city;
+}
+
+// Add CSS for tooltip animation
+const tooltipAnimation = `
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+`;
+
+interface CustomerGeographicMapProps {
+  brandId: string
+  isRefreshing?: boolean
+}
+
+interface RegionData {
+  id: string
+  city: string
+  state: string
+  country: string
+  lat: number
+  lng: number
+  customerCount: number
+  totalRevenue: number
 }
 
 export function CustomerGeographicMap({ brandId, isRefreshing = false }: CustomerGeographicMapProps) {
@@ -252,8 +266,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       .pointColor(() => '#4cc9f0')
       .pointRadius(d => {
         const data = d as RegionData;
-        // Size based on customer count
-        return Math.max(0.8, Math.min(4, 0.8 + (data.customerCount / 20) * 3));
+        // Size based on customer count - increase minimum size for better interaction
+        return Math.max(1.5, Math.min(5, 1.5 + (data.customerCount / 20) * 3));
       })
       .pointAltitude(0.01)
       .pointsMerge(false);
@@ -270,6 +284,21 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       if (child.type === 'Group' && child.name === 'points') {
         child.children.forEach((point: THREE.Object3D, index: number) => {
           if (index < clusteredData.length) {
+            // Make points more visible and interactive
+            point.traverse((obj: THREE.Object3D) => {
+              if (obj instanceof THREE.Mesh) {
+                // Make the material more visible
+                obj.material = new THREE.MeshBasicMaterial({
+                  color: 0x4cc9f0,
+                  transparent: true,
+                  opacity: 0.9
+                });
+                
+                // Increase the size slightly for better hit detection
+                obj.scale.set(1.2, 1.2, 1.2);
+              }
+            });
+            
             pointsRef.current.push({
               point,
               data: clusteredData[index]
@@ -291,56 +320,60 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       // Update the picking ray
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       
-      // Find intersections with all objects in the scene
-      const intersects = raycasterRef.current.intersectObjects(scene.children, true);
+      // Create an array of objects to test for intersection
+      const pointObjects: THREE.Object3D[] = [];
+      pointsRef.current.forEach(({ point }) => {
+        point.traverse((child: THREE.Object3D) => {
+          if (child instanceof THREE.Mesh) {
+            pointObjects.push(child);
+          }
+        });
+      });
+      
+      // Find intersections with point objects
+      const intersects = raycasterRef.current.intersectObjects(pointObjects, false);
       
       let foundPoint = false;
       
       // Check each intersection
-      for (let i = 0; i < intersects.length && !foundPoint; i++) {
-        const intersectedObject = intersects[i].object;
+      if (intersects.length > 0) {
+        const intersectedObject = intersects[0].object;
         
         // Find the parent point that contains this object
-        let currentObject: THREE.Object3D | null = intersectedObject;
-        
-        // Traverse up to find the parent point
-        while (currentObject && !foundPoint) {
-          for (const pointData of pointsRef.current) {
-            if (pointData.point === currentObject || 
-                (currentObject.parent && pointData.point === currentObject.parent) ||
-                (currentObject.parent && currentObject.parent.parent && pointData.point === currentObject.parent.parent)) {
-              
-              foundPoint = true;
-              setHoveredRegion(pointData.data);
-              
-              // Calculate screen position for tooltip
-              const position = new THREE.Vector3();
-              intersectedObject.getWorldPosition(position);
-              position.project(cameraRef.current);
-              
-              const x = (position.x * 0.5 + 0.5) * rect.width;
-              const y = (-position.y * 0.5 + 0.5) * rect.height;
-              
-              setTooltipPosition({ x, y });
-              
-              // Highlight the point
-              pointData.point.traverse((child: THREE.Object3D) => {
-                if (child instanceof THREE.Mesh) {
-                  child.material = new THREE.MeshBasicMaterial({
-                    color: 0xff9900,
-                    transparent: true,
-                    opacity: 1
-                  });
-                }
-              });
-              
-              break;
-            }
-          }
+        for (const pointData of pointsRef.current) {
+          let isMatch = false;
           
-          if (!foundPoint && currentObject.parent) {
-            currentObject = currentObject.parent;
-          } else {
+          pointData.point.traverse((child: THREE.Object3D) => {
+            if (child === intersectedObject) {
+              isMatch = true;
+            }
+          });
+          
+          if (isMatch) {
+            foundPoint = true;
+            setHoveredRegion(pointData.data);
+            
+            // Calculate screen position for tooltip
+            const position = new THREE.Vector3();
+            intersectedObject.getWorldPosition(position);
+            position.project(cameraRef.current);
+            
+            const x = (position.x * 0.5 + 0.5) * rect.width;
+            const y = (-position.y * 0.5 + 0.5) * rect.height;
+            
+            setTooltipPosition({ x, y });
+            
+            // Highlight the point
+            pointData.point.traverse((child: THREE.Object3D) => {
+              if (child instanceof THREE.Mesh) {
+                child.material = new THREE.MeshBasicMaterial({
+                  color: 0xff9900,
+                  transparent: true,
+                  opacity: 1
+                });
+              }
+            });
+            
             break;
           }
         }
@@ -366,22 +399,70 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       }
     };
     
+    // Add click handler for better mobile experience
+    const handleClick = (event: MouseEvent) => {
+      // Reuse the same logic as mousemove for clicks
+      handleMouseMove(event);
+    };
+    
     // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.rotateSpeed = 0.8;
     controls.enableZoom = true;
-    controls.minDistance = 120;
-    controls.maxDistance = 500;
+    controls.minDistance = 200;
+    controls.maxDistance = 400;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
     controlsRef.current = controls;
+    
+    // Initial rotation to show more populated areas
+    globe.rotation.y = Math.PI;  // Start with Americas facing forward
+    
+    // Add a subtle ambient animation to make the points more noticeable
+    const pointsGroup = globe.children.find((child: THREE.Object3D) => child.type === 'Group' && child.name === 'points');
+    if (pointsGroup) {
+      pointsGroup.children.forEach((point: THREE.Object3D) => {
+        // Random slight oscillation for each point
+        const initialY = point.position.y;
+        const oscillationSpeed = 0.5 + Math.random() * 0.5;
+        const oscillationAmount = 0.05 + Math.random() * 0.05;
+        
+        // Store original properties for animation
+        (point as any).userData = {
+          initialY,
+          oscillationSpeed,
+          oscillationAmount,
+          time: Math.random() * Math.PI * 2 // Random start time
+        };
+      });
+    }
     
     // Add event listeners
     renderer.domElement.addEventListener('mousemove', handleMouseMove);
+    renderer.domElement.addEventListener('click', handleClick);
     
     // Animation loop
     function animate() {
       frameRef.current = requestAnimationFrame(animate);
+      
+      // Animate points with subtle oscillation
+      const pointsGroup = globe.children.find((child: THREE.Object3D) => child.type === 'Group' && child.name === 'points');
+      if (pointsGroup) {
+        pointsGroup.children.forEach((point: THREE.Object3D) => {
+          if ((point as any).userData) {
+            const { initialY, oscillationSpeed, oscillationAmount, time } = (point as any).userData;
+            (point as any).userData.time += 0.01;
+            
+            // Only animate points that aren't currently hovered
+            if (!hoveredRegion || !pointsRef.current.some(p => p.point === point && p.data === hoveredRegion)) {
+              point.position.y = initialY + Math.sin((point as any).userData.time * oscillationSpeed) * oscillationAmount;
+            }
+          }
+        });
+      }
+      
       controls.update();
       renderer.render(scene, camera);
     }
@@ -406,6 +487,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+      renderer.domElement.removeEventListener('click', handleClick);
       
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
@@ -471,12 +553,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   };
 
   return (
-    <Card className="col-span-3">
+    <Card className="col-span-1 md:col-span-2 lg:col-span-3">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold">Customer Geography</CardTitle>
-        <CardDescription>Geographic distribution of customers</CardDescription>
+        <CardTitle className="text-xl font-semibold">Customer Geography</CardTitle>
       </CardHeader>
       <CardContent>
+        <style dangerouslySetInnerHTML={{ __html: tooltipAnimation }} />
+        
         {isLoading ? (
           <div className="w-full h-[400px] flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -500,7 +583,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                     top: `${tooltipPosition.y - 20}px`,
                     transform: 'translate(-50%, -100%)',
                     minWidth: '200px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                    animation: 'fadeIn 0.2s ease-in-out'
                   }}
                 >
                   <div className="font-medium text-sm mb-1">
