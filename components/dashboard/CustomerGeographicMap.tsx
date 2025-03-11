@@ -231,23 +231,28 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     rendererRef.current = renderer;
     
     // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
     scene.add(ambientLight);
     
     // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
     
+    // Add a second directional light from another angle
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight2.position.set(-1, -1, -1);
+    scene.add(directionalLight2);
+    
     // Create globe
     const globe = new ThreeGlobe()
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
       .hexPolygonsData(countries.features)
       .hexPolygonResolution(3)
       .hexPolygonMargin(0.7)
-      .hexPolygonColor(() => '#1b2f36')
-      .pointsData(clusteredData)
+      .hexPolygonColor(() => '#3b5e7c')
+      .pointsData(clusteredData.filter(d => d.customerCount > 0))
       .pointLat(d => (d as RegionData).lat)
       .pointLng(d => (d as RegionData).lng)
       .pointColor(d => {
@@ -307,37 +312,48 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       
       // Find intersections
       const intersects = raycasterRef.current.intersectObjects(
-        pointsRef.current.map(item => item.point)
+        pointsRef.current.map(item => item.point),
+        true // Include descendants
       );
       
       if (intersects.length > 0) {
         // Find the data for the intersected point
-        const intersectedPoint = intersects[0].object;
-        const pointData = pointsRef.current.find(item => item.point === intersectedPoint || item.point.children.includes(intersectedPoint));
+        const intersectedObject = intersects[0].object;
         
-        if (pointData) {
-          setHoveredRegion(pointData.data);
-          
-          // Calculate screen position for tooltip
-          const position = new THREE.Vector3();
-          intersectedPoint.getWorldPosition(position);
-          position.project(cameraRef.current);
-          
-          const x = (position.x * 0.5 + 0.5) * width;
-          const y = (-position.y * 0.5 + 0.5) * height;
-          
-          setTooltipPosition({ x, y });
-          
-          // Highlight the point
-          intersectedPoint.traverse((child: THREE.Object3D) => {
-            if (child instanceof THREE.Mesh) {
-              child.material = new THREE.MeshBasicMaterial({
-                color: 0xff9900,
-                transparent: true,
-                opacity: 1
-              });
-            }
-          });
+        // Find the parent point that contains this object
+        let parentPoint: THREE.Object3D | null = intersectedObject;
+        let foundPoint = false;
+        
+        // Traverse up to find the parent point
+        while (parentPoint && !foundPoint) {
+          const pointData = pointsRef.current.find(item => item.point === parentPoint);
+          if (pointData) {
+            foundPoint = true;
+            setHoveredRegion(pointData.data);
+            
+            // Calculate screen position for tooltip
+            const position = new THREE.Vector3();
+            intersectedObject.getWorldPosition(position);
+            position.project(cameraRef.current);
+            
+            const x = (position.x * 0.5 + 0.5) * rect.width;
+            const y = (-position.y * 0.5 + 0.5) * rect.height;
+            
+            setTooltipPosition({ x, y });
+            
+            // Highlight the point
+            parentPoint.traverse((child: THREE.Object3D) => {
+              if (child instanceof THREE.Mesh) {
+                child.material = new THREE.MeshBasicMaterial({
+                  color: 0xff9900,
+                  transparent: true,
+                  opacity: 1
+                });
+              }
+            });
+          } else {
+            parentPoint = parentPoint.parent;
+          }
         }
       } else {
         // Reset hover state
@@ -521,22 +537,29 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               >
                 {hoveredRegion && tooltipPosition && (
                   <div 
-                    className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
+                    className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
                     style={{
                       left: `${tooltipPosition.x}px`,
-                      top: `${tooltipPosition.y - 40}px`,
+                      top: `${tooltipPosition.y - 20}px`,
                       transform: 'translate(-50%, -100%)',
-                      minWidth: '180px'
+                      minWidth: '200px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
                     }}
                   >
-                    <div className="font-medium">
+                    <div className="font-medium text-sm mb-1">
                       {hoveredRegion.city}
                       {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
                       {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
                     </div>
-                    <div className="flex justify-between gap-4 mt-1">
-                      <span>Customers: <strong>{hoveredRegion.customerCount}</strong></span>
-                      <span>Revenue: <strong>{formatCurrency(hoveredRegion.totalRevenue)}</strong></span>
+                    <div className="flex justify-between gap-6 mt-1">
+                      <div>
+                        <span className="text-gray-300">Customers:</span>{' '}
+                        <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-300">Revenue:</span>{' '}
+                        <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
