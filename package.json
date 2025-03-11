@@ -47,6 +47,7 @@
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.48.1",
     "@types/react-grid-layout": "^1.3.5",
+    "@types/three": "^0.174.0",
     "autoprefixer": "^10.4.20",
     "axios": "latest",
     "class-variance-authority": "^0.7.1",
@@ -79,6 +80,7 @@
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.174.0",
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
     "zustand": "^5.0.3"
