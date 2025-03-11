@@ -205,6 +205,74 @@ export async function GET(request: Request) {
                 // Continue anyway, this is not critical
               }
 
+              // Trigger initial data syncs
+              try {
+                console.log('Triggering initial order sync')
+                debugInfo += 'Triggering initial order sync\n';
+                
+                // Sync orders
+                const orderSyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/sync`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ connectionId: connection.id })
+                });
+                
+                if (!orderSyncResponse.ok) {
+                  console.warn('Initial order sync failed, but continuing with connection process')
+                  debugInfo += 'Initial order sync failed, but continuing with connection process\n';
+                } else {
+                  console.log('Initial order sync triggered successfully')
+                  debugInfo += 'Initial order sync triggered successfully\n';
+                }
+                
+                // Sync customers
+                console.log('Triggering initial customer sync')
+                debugInfo += 'Triggering initial customer sync\n';
+                
+                const customerSyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/customers/sync`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ connectionId: connection.id })
+                });
+                
+                if (!customerSyncResponse.ok) {
+                  console.warn('Initial customer sync failed, but continuing with connection process')
+                  debugInfo += 'Initial customer sync failed, but continuing with connection process\n';
+                } else {
+                  console.log('Initial customer sync triggered successfully')
+                  debugInfo += 'Initial customer sync triggered successfully\n';
+                }
+                
+                // Sync inventory if available
+                console.log('Triggering initial inventory sync')
+                debugInfo += 'Triggering initial inventory sync\n';
+                
+                const inventorySyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/inventory/sync`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ connectionId: connection.id })
+                });
+                
+                if (!inventorySyncResponse.ok) {
+                  console.warn('Initial inventory sync failed, but continuing with connection process')
+                  debugInfo += 'Initial inventory sync failed, but continuing with connection process\n';
+                } else {
+                  console.log('Initial inventory sync triggered successfully')
+                  debugInfo += 'Initial inventory sync triggered successfully\n';
+                }
+                
+              } catch (syncError) {
+                console.error('Error triggering initial data syncs:', syncError)
+                debugInfo += `Error triggering initial data syncs: ${syncError}\n`;
+                // Continue with the connection process even if syncs fail
+              }
+
               // Set success redirect
               redirectUrl = `/settings?success=true&connectionId=${connection.id}`;
               statusMessage = 'Success! Shopify store connected successfully.';
@@ -273,31 +341,72 @@ export async function GET(request: Request) {
           console.log('Connection updated successfully')
           debugInfo += 'Connection updated successfully\n';
           
-          // Trigger initial sync
-          console.log('Triggering initial sync')
-          debugInfo += 'Attempting to trigger initial sync...\n';
-          
+          // Trigger initial data syncs
           try {
-            const syncResponse = await fetch(new URL('/api/shopify/sync', request.url).toString(), {
+            console.log('Triggering initial order sync')
+            debugInfo += 'Triggering initial order sync\n';
+            
+            // Sync orders
+            const orderSyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/sync`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({ connectionId: connection.id })
             });
-
-            if (!syncResponse.ok) {
-              console.error('Failed to trigger initial sync')
-              debugInfo += `Sync error: ${syncResponse.status}\n`;
-              // Continue anyway, this is not critical
+            
+            if (!orderSyncResponse.ok) {
+              console.warn('Initial order sync failed, but continuing with connection process')
+              debugInfo += 'Initial order sync failed, but continuing with connection process\n';
             } else {
-              console.log('Initial sync triggered successfully')
-              debugInfo += 'Initial sync triggered successfully\n';
+              console.log('Initial order sync triggered successfully')
+              debugInfo += 'Initial order sync triggered successfully\n';
             }
-          } catch (syncError: any) {
-            console.error('Error triggering sync:', syncError)
-            debugInfo += `Sync error: ${syncError.message}\n`;
-            // Continue anyway, this is not critical
+            
+            // Sync customers
+            console.log('Triggering initial customer sync')
+            debugInfo += 'Triggering initial customer sync\n';
+            
+            const customerSyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/customers/sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ connectionId: connection.id })
+            });
+            
+            if (!customerSyncResponse.ok) {
+              console.warn('Initial customer sync failed, but continuing with connection process')
+              debugInfo += 'Initial customer sync failed, but continuing with connection process\n';
+            } else {
+              console.log('Initial customer sync triggered successfully')
+              debugInfo += 'Initial customer sync triggered successfully\n';
+            }
+            
+            // Sync inventory if available
+            console.log('Triggering initial inventory sync')
+            debugInfo += 'Triggering initial inventory sync\n';
+            
+            const inventorySyncResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || ''}/api/shopify/inventory/sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ connectionId: connection.id })
+            });
+            
+            if (!inventorySyncResponse.ok) {
+              console.warn('Initial inventory sync failed, but continuing with connection process')
+              debugInfo += 'Initial inventory sync failed, but continuing with connection process\n';
+            } else {
+              console.log('Initial inventory sync triggered successfully')
+              debugInfo += 'Initial inventory sync triggered successfully\n';
+            }
+            
+          } catch (syncError) {
+            console.error('Error triggering initial data syncs:', syncError)
+            debugInfo += `Error triggering initial data syncs: ${syncError}\n`;
+            // Continue with the connection process even if syncs fail
           }
 
           // Set success redirect
