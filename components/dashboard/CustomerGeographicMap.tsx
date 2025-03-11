@@ -256,20 +256,16 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     const globe = new ThreeGlobe()
       .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
       .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-      .hexPolygonsData(countries.features)
-      .hexPolygonResolution(3)
-      .hexPolygonMargin(0.7)
-      .hexPolygonColor(() => '#3b5e7c')
       .pointsData(clusteredData)
       .pointLat(d => (d as RegionData).lat)
       .pointLng(d => (d as RegionData).lng)
-      .pointColor(() => '#4cc9f0')
+      .pointColor(() => '#ff5500')
       .pointRadius(d => {
         const data = d as RegionData;
         // Size based on customer count - increase minimum size for better interaction
-        return Math.max(1.5, Math.min(5, 1.5 + (data.customerCount / 20) * 3));
+        return Math.max(3, Math.min(8, 3 + (data.customerCount / 20) * 3));
       })
-      .pointAltitude(0.01)
+      .pointAltitude(0.02)
       .pointsMerge(false);
     
     // Add globe to scene
@@ -289,13 +285,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               if (obj instanceof THREE.Mesh) {
                 // Make the material more visible
                 obj.material = new THREE.MeshBasicMaterial({
-                  color: 0x4cc9f0,
+                  color: 0xff5500,
                   transparent: true,
-                  opacity: 0.9
+                  opacity: 1
                 });
                 
-                // Increase the size slightly for better hit detection
-                obj.scale.set(1.2, 1.2, 1.2);
+                // Increase the size for better hit detection
+                obj.scale.set(1.5, 1.5, 1.5);
               }
             });
             
@@ -331,7 +327,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       });
       
       // Find intersections with point objects
-      const intersects = raycasterRef.current.intersectObjects(pointObjects, false);
+      const intersects = raycasterRef.current.intersectObjects(pointObjects, true);
       
       let foundPoint = false;
       
@@ -367,7 +363,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             pointData.point.traverse((child: THREE.Object3D) => {
               if (child instanceof THREE.Mesh) {
                 child.material = new THREE.MeshBasicMaterial({
-                  color: 0xff9900,
+                  color: 0xffaa00,
                   transparent: true,
                   opacity: 1
                 });
@@ -389,9 +385,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           point.traverse((child: THREE.Object3D) => {
             if (child instanceof THREE.Mesh) {
               child.material = new THREE.MeshBasicMaterial({
-                color: 0x4cc9f0,
+                color: 0xff5500,
                 transparent: true,
-                opacity: 0.9
+                opacity: 1
               });
             }
           });
@@ -405,6 +401,18 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       handleMouseMove(event);
     };
     
+    // Add touch handlers for mobile devices
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+          clientX: touch.clientX,
+          clientY: touch.clientY
+        });
+        handleMouseMove(mouseEvent);
+      }
+    };
+    
     // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -413,55 +421,21 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     controls.enableZoom = true;
     controls.minDistance = 200;
     controls.maxDistance = 400;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    // Disable auto-rotation
+    controls.autoRotate = false;
     controlsRef.current = controls;
     
     // Initial rotation to show more populated areas
     globe.rotation.y = Math.PI;  // Start with Americas facing forward
     
-    // Add a subtle ambient animation to make the points more noticeable
-    const pointsGroup = globe.children.find((child: THREE.Object3D) => child.type === 'Group' && child.name === 'points');
-    if (pointsGroup) {
-      pointsGroup.children.forEach((point: THREE.Object3D) => {
-        // Random slight oscillation for each point
-        const initialY = point.position.y;
-        const oscillationSpeed = 0.5 + Math.random() * 0.5;
-        const oscillationAmount = 0.05 + Math.random() * 0.05;
-        
-        // Store original properties for animation
-        (point as any).userData = {
-          initialY,
-          oscillationSpeed,
-          oscillationAmount,
-          time: Math.random() * Math.PI * 2 // Random start time
-        };
-      });
-    }
-    
     // Add event listeners
     renderer.domElement.addEventListener('mousemove', handleMouseMove);
     renderer.domElement.addEventListener('click', handleClick);
+    renderer.domElement.addEventListener('touchstart', handleTouchStart);
     
     // Animation loop
     function animate() {
       frameRef.current = requestAnimationFrame(animate);
-      
-      // Animate points with subtle oscillation
-      const pointsGroup = globe.children.find((child: THREE.Object3D) => child.type === 'Group' && child.name === 'points');
-      if (pointsGroup) {
-        pointsGroup.children.forEach((point: THREE.Object3D) => {
-          if ((point as any).userData) {
-            const { initialY, oscillationSpeed, oscillationAmount, time } = (point as any).userData;
-            (point as any).userData.time += 0.01;
-            
-            // Only animate points that aren't currently hovered
-            if (!hoveredRegion || !pointsRef.current.some(p => p.point === point && p.data === hoveredRegion)) {
-              point.position.y = initialY + Math.sin((point as any).userData.time * oscillationSpeed) * oscillationAmount;
-            }
-          }
-        });
-      }
       
       controls.update();
       renderer.render(scene, camera);
@@ -488,6 +462,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       renderer.domElement.removeEventListener('click', handleClick);
+      renderer.domElement.removeEventListener('touchstart', handleTouchStart);
       
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
@@ -577,7 +552,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             >
               {hoveredRegion && tooltipPosition && (
                 <div 
-                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
+                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-orange-400"
                   style={{
                     left: `${tooltipPosition.x}px`,
                     top: `${tooltipPosition.y - 20}px`,
