@@ -116,6 +116,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [totalCustomers, setTotalCustomers] = useState(0)
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number} | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
   
   const globeContainerRef = useRef<HTMLDivElement>(null)
   const globeRef = useRef<any>(null)
@@ -259,13 +260,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       .pointsData(clusteredData)
       .pointLat(d => (d as RegionData).lat)
       .pointLng(d => (d as RegionData).lng)
-      .pointColor(() => '#ff5500')
+      .pointColor(() => '#1e88e5')
       .pointRadius(d => {
         const data = d as RegionData;
-        // Size based on customer count - increase minimum size for better interaction
-        return Math.max(3, Math.min(8, 3 + (data.customerCount / 20) * 3));
+        // Make points smaller but still visible
+        return Math.max(1.2, Math.min(3, 1.2 + (data.customerCount / 20) * 1.5));
       })
-      .pointAltitude(0.02)
+      .pointAltitude(0.01)
       .pointsMerge(false);
     
     // Add globe to scene
@@ -285,13 +286,20 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               if (obj instanceof THREE.Mesh) {
                 // Make the material more visible
                 obj.material = new THREE.MeshBasicMaterial({
-                  color: 0xff5500,
+                  color: 0x1e88e5, // Blue color
                   transparent: true,
                   opacity: 1
                 });
                 
-                // Increase the size for better hit detection
-                obj.scale.set(1.5, 1.5, 1.5);
+                // Keep size reasonable for hit detection
+                obj.scale.set(1.2, 1.2, 1.2);
+                
+                // Add userData to help with identification
+                obj.userData = { 
+                  isPoint: true,
+                  pointIndex: index,
+                  regionData: clusteredData[index]
+                };
               }
             });
             
@@ -326,8 +334,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         });
       });
       
-      // Find intersections with point objects
+      // Find intersections with point objects - increase precision even more
+      raycasterRef.current.params.Points.threshold = 0.5;
+      raycasterRef.current.far = 1000;
       const intersects = raycasterRef.current.intersectObjects(pointObjects, true);
+      
+      // Update debug info
+      setDebugInfo(`Mouse: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}, Points: ${pointObjects.length}`);
       
       let foundPoint = false;
       
@@ -363,12 +376,15 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             pointData.point.traverse((child: THREE.Object3D) => {
               if (child instanceof THREE.Mesh) {
                 child.material = new THREE.MeshBasicMaterial({
-                  color: 0xffaa00,
+                  color: 0x03a9f4, // Lighter blue for highlight
                   transparent: true,
                   opacity: 1
                 });
               }
             });
+            
+            // Update debug info with found point
+            setDebugInfo(prev => `${prev}, Found: ${pointData.data.city}`);
             
             break;
           }
@@ -385,7 +401,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           point.traverse((child: THREE.Object3D) => {
             if (child instanceof THREE.Mesh) {
               child.material = new THREE.MeshBasicMaterial({
-                color: 0xff5500,
+                color: 0x1e88e5, // Blue color
                 transparent: true,
                 opacity: 1
               });
@@ -397,8 +413,69 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     
     // Add click handler for better mobile experience
     const handleClick = (event: MouseEvent) => {
-      // Reuse the same logic as mousemove for clicks
-      handleMouseMove(event);
+      if (!globeContainerRef.current || !cameraRef.current) return;
+      
+      // Calculate mouse position in normalized device coordinates
+      const rect = globeContainerRef.current.getBoundingClientRect();
+      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      // Update the picking ray
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+      
+      // Create an array of objects to test for intersection
+      const pointObjects: THREE.Object3D[] = [];
+      pointsRef.current.forEach(({ point }) => {
+        point.traverse((child: THREE.Object3D) => {
+          if (child instanceof THREE.Mesh) {
+            pointObjects.push(child);
+          }
+        });
+      });
+      
+      // Find intersections with point objects
+      raycasterRef.current.params.Points.threshold = 0.5;
+      const intersects = raycasterRef.current.intersectObjects(pointObjects, true);
+      
+      // Update debug info
+      setDebugInfo(`Click: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}`);
+      
+      if (intersects.length > 0) {
+        const intersectedObject = intersects[0].object;
+        
+        // Check if the object has userData with regionData
+        if (intersectedObject.userData && intersectedObject.userData.isPoint) {
+          const regionData = intersectedObject.userData.regionData;
+          setHoveredRegion(regionData);
+          
+          // Calculate screen position for tooltip
+          const position = new THREE.Vector3();
+          intersectedObject.getWorldPosition(position);
+          position.project(cameraRef.current);
+          
+          const x = (position.x * 0.5 + 0.5) * rect.width;
+          const y = (-position.y * 0.5 + 0.5) * rect.height;
+          
+          setTooltipPosition({ x, y });
+          
+          // Highlight all points with the same data
+          pointsRef.current.forEach(({ point, data }) => {
+            if (data.id === regionData.id) {
+              point.traverse((child: THREE.Object3D) => {
+                if (child instanceof THREE.Mesh) {
+                  child.material = new THREE.MeshBasicMaterial({
+                    color: 0x03a9f4,
+                    transparent: true,
+                    opacity: 1
+                  });
+                }
+              });
+            }
+          });
+          
+          setDebugInfo(prev => `${prev}, Clicked: ${regionData.city}`);
+        }
+      }
     };
     
     // Add touch handlers for mobile devices
@@ -550,9 +627,16 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               className="w-full h-[400px] rounded-md overflow-hidden relative"
               style={{ cursor: 'grab' }}
             >
+              {/* Debug info */}
+              {debugInfo && (
+                <div className="absolute top-2 left-2 z-50 bg-black/70 text-white text-xs p-1 rounded">
+                  {debugInfo}
+                </div>
+              )}
+              
               {hoveredRegion && tooltipPosition && (
                 <div 
-                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-orange-400"
+                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
                   style={{
                     left: `${tooltipPosition.x}px`,
                     top: `${tooltipPosition.y - 20}px`,
@@ -574,9 +658,14 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                     </div>
                     <div>
                       <span className="text-gray-300">Revenue:</span>{' '}
-                      <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue)}</span>
+                      <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue || 0)}</span>
                     </div>
                   </div>
+                  {hoveredRegion.totalRevenue === 0 && hoveredRegion.customerCount > 0 && (
+                    <div className="mt-1 text-xs text-gray-400">
+                      Customer data available, but no revenue recorded yet.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
