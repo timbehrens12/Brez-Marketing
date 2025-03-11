@@ -125,7 +125,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
   const controlsRef = useRef<OrbitControls | null>(null)
   const frameRef = useRef<number | null>(null)
-  const pointsRef = useRef<{point: THREE.Object3D, data: RegionData}[]>([])
+  const pointsRef = useRef<{point: THREE.Object3D, data: RegionData, hitSphere?: THREE.Mesh}[]>([])
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster())
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2())
 
@@ -261,11 +261,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       .pointLat(d => (d as RegionData).lat)
       .pointLng(d => (d as RegionData).lng)
       .pointColor(() => '#1e88e5')
-      .pointRadius(d => {
-        const data = d as RegionData;
-        // Make points smaller but still visible
-        return Math.max(1.2, Math.min(3, 1.2 + (data.customerCount / 20) * 1.5));
-      })
+      .pointRadius(() => 0.5)
       .pointAltitude(0.01)
       .pointsMerge(false);
     
@@ -281,31 +277,26 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       if (child.type === 'Group' && child.name === 'points') {
         child.children.forEach((point: THREE.Object3D, index: number) => {
           if (index < clusteredData.length) {
-            // Make points more visible and interactive
-            point.traverse((obj: THREE.Object3D) => {
-              if (obj instanceof THREE.Mesh) {
-                // Make the material more visible
-                obj.material = new THREE.MeshBasicMaterial({
-                  color: 0x1e88e5, // Blue color
-                  transparent: true,
-                  opacity: 1
-                });
-                
-                // Keep size reasonable for hit detection
-                obj.scale.set(1.2, 1.2, 1.2);
-                
-                // Add userData to help with identification
-                obj.userData = { 
-                  isPoint: true,
-                  pointIndex: index,
-                  regionData: clusteredData[index]
-                };
-              }
+            // Create a larger invisible sphere for hit detection
+            const geometry = new THREE.SphereGeometry(2, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ 
+              color: 0x1e88e5,
+              transparent: true,
+              opacity: 0.0 // Invisible for hit detection only
             });
+            const hitSphere = new THREE.Mesh(geometry, material);
+            hitSphere.position.copy(point.position);
+            hitSphere.userData = { 
+              isHitSphere: true,
+              pointIndex: index,
+              regionData: clusteredData[index]
+            };
+            scene.add(hitSphere);
             
             pointsRef.current.push({
               point,
-              data: clusteredData[index]
+              data: clusteredData[index],
+              hitSphere
             });
           }
         });
@@ -324,23 +315,16 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       // Update the picking ray
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       
-      // Create an array of objects to test for intersection
-      const pointObjects: THREE.Object3D[] = [];
-      pointsRef.current.forEach(({ point }) => {
-        point.traverse((child: THREE.Object3D) => {
-          if (child instanceof THREE.Mesh) {
-            pointObjects.push(child);
-          }
-        });
-      });
+      // Create an array of hit spheres for intersection
+      const hitSpheres = pointsRef.current
+        .map(p => p.hitSphere)
+        .filter((sphere): sphere is THREE.Mesh => sphere !== undefined);
       
-      // Find intersections with point objects - increase precision even more
-      raycasterRef.current.params.Points.threshold = 0.5;
-      raycasterRef.current.far = 1000;
-      const intersects = raycasterRef.current.intersectObjects(pointObjects, true);
+      // Find intersections with hit spheres
+      const intersects = raycasterRef.current.intersectObjects(hitSpheres, false);
       
       // Update debug info
-      setDebugInfo(`Mouse: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}, Points: ${pointObjects.length}`);
+      setDebugInfo(`Mouse: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}, Points: ${hitSpheres.length}`);
       
       let foundPoint = false;
       
@@ -348,31 +332,24 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       if (intersects.length > 0) {
         const intersectedObject = intersects[0].object;
         
-        // Find the parent point that contains this object
-        for (const pointData of pointsRef.current) {
-          let isMatch = false;
+        if (intersectedObject.userData && intersectedObject.userData.isHitSphere) {
+          const regionData = intersectedObject.userData.regionData;
+          foundPoint = true;
+          setHoveredRegion(regionData);
           
-          pointData.point.traverse((child: THREE.Object3D) => {
-            if (child === intersectedObject) {
-              isMatch = true;
-            }
-          });
+          // Calculate screen position for tooltip
+          const position = new THREE.Vector3();
+          intersectedObject.getWorldPosition(position);
+          position.project(cameraRef.current);
           
-          if (isMatch) {
-            foundPoint = true;
-            setHoveredRegion(pointData.data);
-            
-            // Calculate screen position for tooltip
-            const position = new THREE.Vector3();
-            intersectedObject.getWorldPosition(position);
-            position.project(cameraRef.current);
-            
-            const x = (position.x * 0.5 + 0.5) * rect.width;
-            const y = (-position.y * 0.5 + 0.5) * rect.height;
-            
-            setTooltipPosition({ x, y });
-            
-            // Highlight the point
+          const x = (position.x * 0.5 + 0.5) * rect.width;
+          const y = (-position.y * 0.5 + 0.5) * rect.height;
+          
+          setTooltipPosition({ x, y });
+          
+          // Highlight the actual point
+          const pointData = pointsRef.current.find(p => p.data.id === regionData.id);
+          if (pointData) {
             pointData.point.traverse((child: THREE.Object3D) => {
               if (child instanceof THREE.Mesh) {
                 child.material = new THREE.MeshBasicMaterial({
@@ -382,12 +359,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                 });
               }
             });
-            
-            // Update debug info with found point
-            setDebugInfo(prev => `${prev}, Found: ${pointData.data.city}`);
-            
-            break;
           }
+          
+          setDebugInfo(prev => `${prev}, Found: ${regionData.city}`);
         }
       }
       
@@ -423,19 +397,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       // Update the picking ray
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       
-      // Create an array of objects to test for intersection
-      const pointObjects: THREE.Object3D[] = [];
-      pointsRef.current.forEach(({ point }) => {
-        point.traverse((child: THREE.Object3D) => {
-          if (child instanceof THREE.Mesh) {
-            pointObjects.push(child);
-          }
-        });
-      });
+      // Create an array of hit spheres for intersection
+      const hitSpheres = pointsRef.current
+        .map(p => p.hitSphere)
+        .filter((sphere): sphere is THREE.Mesh => sphere !== undefined);
       
-      // Find intersections with point objects
-      raycasterRef.current.params.Points.threshold = 0.5;
-      const intersects = raycasterRef.current.intersectObjects(pointObjects, true);
+      // Find intersections with hit spheres
+      const intersects = raycasterRef.current.intersectObjects(hitSpheres, false);
       
       // Update debug info
       setDebugInfo(`Click: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}`);
@@ -443,8 +411,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       if (intersects.length > 0) {
         const intersectedObject = intersects[0].object;
         
-        // Check if the object has userData with regionData
-        if (intersectedObject.userData && intersectedObject.userData.isPoint) {
+        if (intersectedObject.userData && intersectedObject.userData.isHitSphere) {
           const regionData = intersectedObject.userData.regionData;
           setHoveredRegion(regionData);
           
@@ -458,20 +425,19 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           
           setTooltipPosition({ x, y });
           
-          // Highlight all points with the same data
-          pointsRef.current.forEach(({ point, data }) => {
-            if (data.id === regionData.id) {
-              point.traverse((child: THREE.Object3D) => {
-                if (child instanceof THREE.Mesh) {
-                  child.material = new THREE.MeshBasicMaterial({
-                    color: 0x03a9f4,
-                    transparent: true,
-                    opacity: 1
-                  });
-                }
-              });
-            }
-          });
+          // Highlight the actual point
+          const pointData = pointsRef.current.find(p => p.data.id === regionData.id);
+          if (pointData) {
+            pointData.point.traverse((child: THREE.Object3D) => {
+              if (child instanceof THREE.Mesh) {
+                child.material = new THREE.MeshBasicMaterial({
+                  color: 0x03a9f4, // Lighter blue for highlight
+                  transparent: true,
+                  opacity: 1
+                });
+              }
+            });
+          }
           
           setDebugInfo(prev => `${prev}, Clicked: ${regionData.city}`);
         }
@@ -540,6 +506,13 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       renderer.domElement.removeEventListener('click', handleClick);
       renderer.domElement.removeEventListener('touchstart', handleTouchStart);
+      
+      // Remove hit spheres
+      pointsRef.current.forEach(({ hitSphere }) => {
+        if (hitSphere) {
+          scene.remove(hitSphere);
+        }
+      });
       
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
