@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Globe, Loader2, Users } from 'lucide-react'
+import { MapPin, Globe, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
@@ -12,7 +11,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import ThreeGlobe from 'three-globe'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { Tooltip } from "@/components/ui/tooltip"
 import * as turf from '@turf/turf'
 // @ts-ignore
 import countries from './countries.json'
@@ -100,7 +98,6 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [hasZeroRevenue, setHasZeroRevenue] = useState(false)
   const [clusteredData, setClusteredData] = useState<RegionData[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [view, setView] = useState<'revenue' | 'customers'>('revenue')
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
@@ -144,11 +141,6 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0
         setHasZeroRevenue(hasZeroRev)
         
-        // If we have zero revenue, default to customers view
-        if (hasZeroRev) {
-          setView('customers')
-        }
-        
         // Process and cluster the data
         const processedData = data.locations.map((loc: any) => {
           // Default coordinates for locations without lat/lng
@@ -184,7 +176,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           }
         });
         
-        setClusteredData(Object.values(aggregatedData));
+        // Filter out locations with no customers
+        const filteredData = Object.values(aggregatedData).filter(loc => loc.customerCount > 0);
+        setClusteredData(filteredData);
         
       } catch (error) {
         console.error('Error fetching geographic data:', error)
@@ -252,27 +246,14 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       .hexPolygonResolution(3)
       .hexPolygonMargin(0.7)
       .hexPolygonColor(() => '#3b5e7c')
-      .pointsData(clusteredData.filter(d => d.customerCount > 0))
+      .pointsData(clusteredData)
       .pointLat(d => (d as RegionData).lat)
       .pointLng(d => (d as RegionData).lng)
-      .pointColor(d => {
-        const data = d as RegionData;
-        if (view === 'revenue') {
-          if (data.totalRevenue <= 0) return '#888888';
-          const intensity = Math.min(1, data.totalRevenue / 10000);
-          return `rgba(30, ${100 + intensity * 155}, ${200 + intensity * 55}, 1)`;
-        } else {
-          const intensity = Math.min(1, data.customerCount / 100);
-          return `rgba(${100 + intensity * 155}, 30, ${200 + intensity * 55}, 1)`;
-        }
-      })
+      .pointColor(() => '#4cc9f0')
       .pointRadius(d => {
         const data = d as RegionData;
-        if (view === 'revenue') {
-          return Math.max(0.5, Math.min(3, 0.5 + (data.totalRevenue / 5000) * 2.5));
-        } else {
-          return Math.max(0.5, Math.min(3, 0.5 + (data.customerCount / 50) * 2.5));
-        }
+        // Size based on customer count
+        return Math.max(0.8, Math.min(4, 0.8 + (data.customerCount / 20) * 3));
       })
       .pointAltitude(0.01)
       .pointsMerge(false);
@@ -310,79 +291,72 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       // Update the picking ray
       raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
       
-      // Find intersections
-      const intersects = raycasterRef.current.intersectObjects(
-        pointsRef.current.map(item => item.point),
-        true // Include descendants
-      );
+      // Find intersections with all objects in the scene
+      const intersects = raycasterRef.current.intersectObjects(scene.children, true);
       
-      if (intersects.length > 0) {
-        // Find the data for the intersected point
-        const intersectedObject = intersects[0].object;
+      let foundPoint = false;
+      
+      // Check each intersection
+      for (let i = 0; i < intersects.length && !foundPoint; i++) {
+        const intersectedObject = intersects[i].object;
         
         // Find the parent point that contains this object
-        let parentPoint: THREE.Object3D | null = intersectedObject;
-        let foundPoint = false;
+        let currentObject: THREE.Object3D | null = intersectedObject;
         
         // Traverse up to find the parent point
-        while (parentPoint && !foundPoint) {
-          const pointData = pointsRef.current.find(item => item.point === parentPoint);
-          if (pointData) {
-            foundPoint = true;
-            setHoveredRegion(pointData.data);
-            
-            // Calculate screen position for tooltip
-            const position = new THREE.Vector3();
-            intersectedObject.getWorldPosition(position);
-            position.project(cameraRef.current);
-            
-            const x = (position.x * 0.5 + 0.5) * rect.width;
-            const y = (-position.y * 0.5 + 0.5) * rect.height;
-            
-            setTooltipPosition({ x, y });
-            
-            // Highlight the point
-            parentPoint.traverse((child: THREE.Object3D) => {
-              if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshBasicMaterial({
-                  color: 0xff9900,
-                  transparent: true,
-                  opacity: 1
-                });
-              }
-            });
+        while (currentObject && !foundPoint) {
+          for (const pointData of pointsRef.current) {
+            if (pointData.point === currentObject || 
+                (currentObject.parent && pointData.point === currentObject.parent) ||
+                (currentObject.parent && currentObject.parent.parent && pointData.point === currentObject.parent.parent)) {
+              
+              foundPoint = true;
+              setHoveredRegion(pointData.data);
+              
+              // Calculate screen position for tooltip
+              const position = new THREE.Vector3();
+              intersectedObject.getWorldPosition(position);
+              position.project(cameraRef.current);
+              
+              const x = (position.x * 0.5 + 0.5) * rect.width;
+              const y = (-position.y * 0.5 + 0.5) * rect.height;
+              
+              setTooltipPosition({ x, y });
+              
+              // Highlight the point
+              pointData.point.traverse((child: THREE.Object3D) => {
+                if (child instanceof THREE.Mesh) {
+                  child.material = new THREE.MeshBasicMaterial({
+                    color: 0xff9900,
+                    transparent: true,
+                    opacity: 1
+                  });
+                }
+              });
+              
+              break;
+            }
+          }
+          
+          if (!foundPoint && currentObject.parent) {
+            currentObject = currentObject.parent;
           } else {
-            parentPoint = parentPoint.parent;
+            break;
           }
         }
-      } else {
+      }
+      
+      if (!foundPoint) {
         // Reset hover state
         setHoveredRegion(null);
         setTooltipPosition(null);
         
         // Reset all points to their original material
-        pointsRef.current.forEach(({ point, data }) => {
+        pointsRef.current.forEach(({ point }) => {
           point.traverse((child: THREE.Object3D) => {
             if (child instanceof THREE.Mesh) {
-              let pointColor;
-              if (view === 'revenue') {
-                if (data.totalRevenue <= 0) {
-                  pointColor = new THREE.Color(0x888888);
-                } else {
-                  const intensity = Math.min(1, data.totalRevenue / 10000);
-                  pointColor = new THREE.Color(0.1, 0.4 + intensity * 0.6, 0.7 + intensity * 0.3);
-                }
-              } else {
-                const intensity = Math.min(1, data.customerCount / 100);
-                pointColor = new THREE.Color(
-                  (100 + intensity * 155) / 255,
-                  30 / 255,
-                  (200 + intensity * 55) / 255
-                );
-              }
-              
               child.material = new THREE.MeshBasicMaterial({
-                color: pointColor,
+                color: 0x4cc9f0,
                 transparent: true,
                 opacity: 0.9
               });
@@ -445,7 +419,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         controlsRef.current.dispose();
       }
     };
-  }, [clusteredData, isLoading, view]);
+  }, [clusteredData, isLoading]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -459,14 +433,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const renderTopRegions = () => {
     if (clusteredData.length === 0) return null;
     
-    // Sort by revenue or customer count based on view
-    const sortedData = [...clusteredData].sort((a, b) => {
-      if (view === 'revenue') {
-        return b.totalRevenue - a.totalRevenue;
-      } else {
-        return b.customerCount - a.customerCount;
-      }
-    }).slice(0, 5);
+    // Sort by customer count
+    const sortedData = [...clusteredData].sort((a, b) => b.customerCount - a.customerCount).slice(0, 5);
     
     return (
       <div className="mt-4">
@@ -483,10 +451,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                 </span>
               </div>
               <span className="font-medium">
-                {view === 'revenue' 
-                  ? formatCurrency(region.totalRevenue)
-                  : `${region.customerCount} ${region.customerCount === 1 ? 'customer' : 'customers'}`
-                }
+                {region.customerCount} {region.customerCount === 1 ? 'customer' : 'customers'}
               </span>
             </div>
           ))}
@@ -500,7 +465,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     
     return (
       <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3 text-sm text-amber-600 dark:text-amber-400">
-        Your store has customers but no revenue data yet. The map is showing customer locations instead of sales.
+        Your store has customers but no revenue data yet. The map is showing customer locations.
       </div>
     );
   };
@@ -512,68 +477,59 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         <CardDescription>Geographic distribution of customers</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="revenue" className="w-full">
-          <div className="flex justify-between items-center mb-4">
-            <TabsList>
-              <TabsTrigger value="revenue" onClick={() => setView('revenue')} disabled={hasZeroRevenue}>Revenue</TabsTrigger>
-              <TabsTrigger value="customers" onClick={() => setView('customers')}>Customers</TabsTrigger>
-            </TabsList>
+        {isLoading ? (
+          <div className="w-full h-[400px] flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-          
-          {isLoading ? (
-            <div className="w-full h-[400px] flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : error ? (
-            <div className="w-full h-[400px] flex items-center justify-center">
-              <p className="text-destructive">{error}</p>
-            </div>
-          ) : clusteredData.length > 0 ? (
-            <div className="relative">
-              <div 
-                ref={globeContainerRef} 
-                className="w-full h-[400px] rounded-md overflow-hidden relative"
-                style={{ cursor: 'grab' }}
-              >
-                {hoveredRegion && tooltipPosition && (
-                  <div 
-                    className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
-                    style={{
-                      left: `${tooltipPosition.x}px`,
-                      top: `${tooltipPosition.y - 20}px`,
-                      transform: 'translate(-50%, -100%)',
-                      minWidth: '200px',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
-                    }}
-                  >
-                    <div className="font-medium text-sm mb-1">
-                      {hoveredRegion.city}
-                      {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
-                      {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+        ) : error ? (
+          <div className="w-full h-[400px] flex items-center justify-center">
+            <p className="text-destructive">{error}</p>
+          </div>
+        ) : clusteredData.length > 0 ? (
+          <div className="relative">
+            <div 
+              ref={globeContainerRef} 
+              className="w-full h-[400px] rounded-md overflow-hidden relative"
+              style={{ cursor: 'grab' }}
+            >
+              {hoveredRegion && tooltipPosition && (
+                <div 
+                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
+                  style={{
+                    left: `${tooltipPosition.x}px`,
+                    top: `${tooltipPosition.y - 20}px`,
+                    transform: 'translate(-50%, -100%)',
+                    minWidth: '200px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
+                  }}
+                >
+                  <div className="font-medium text-sm mb-1">
+                    {hoveredRegion.city}
+                    {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
+                    {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+                  </div>
+                  <div className="flex justify-between gap-6 mt-1">
+                    <div>
+                      <span className="text-gray-300">Customers:</span>{' '}
+                      <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
                     </div>
-                    <div className="flex justify-between gap-6 mt-1">
-                      <div>
-                        <span className="text-gray-300">Customers:</span>{' '}
-                        <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-300">Revenue:</span>{' '}
-                        <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue)}</span>
-                      </div>
+                    <div>
+                      <span className="text-gray-300">Revenue:</span>{' '}
+                      <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue)}</span>
                     </div>
                   </div>
-                )}
-              </div>
-              
-              {renderZeroRevenueNotice()}
-              {renderTopRegions()}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="w-full h-[400px] flex items-center justify-center">
-              <p className="text-muted-foreground">No geographic data available</p>
-            </div>
-          )}
-        </Tabs>
+            
+            {renderZeroRevenueNotice()}
+            {renderTopRegions()}
+          </div>
+        ) : (
+          <div className="w-full h-[400px] flex items-center justify-center">
+            <p className="text-muted-foreground">No geographic data available</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
