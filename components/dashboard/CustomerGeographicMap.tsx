@@ -117,6 +117,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState<{x: number, y: number} | null>(null)
   const [debugInfo, setDebugInfo] = useState<string>('')
+  const [showFallbackMap, setShowFallbackMap] = useState(false)
   
   const globeContainerRef = useRef<HTMLDivElement>(null)
   const globeRef = useRef<any>(null)
@@ -198,6 +199,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       } catch (error) {
         console.error('Error fetching geographic data:', error)
         setError("Failed to load geographic data")
+        setShowFallbackMap(true)
       } finally {
         setIsLoading(false)
       }
@@ -206,334 +208,97 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     fetchGeoData()
   }, [brandId, isRefreshing])
 
-  useEffect(() => {
-    if (!globeContainerRef.current || isLoading || clusteredData.length === 0) return;
+  // Fallback map implementation using simple HTML/CSS
+  const renderFallbackMap = () => {
+    if (!clusteredData.length) return null;
     
-    // Clean up previous globe
-    if (frameRef.current) {
-      cancelAnimationFrame(frameRef.current);
-    }
-    
-    if (rendererRef.current && globeContainerRef.current.contains(rendererRef.current.domElement)) {
-      globeContainerRef.current.removeChild(rendererRef.current.domElement);
-    }
-    
-    // Initialize Three.js scene
-    const container = globeContainerRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    
-    // Create scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-    
-    // Create camera
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 300;
-    cameraRef.current = camera;
-    
-    // Create renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    container.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-    
-    // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
-    scene.add(ambientLight);
-    
-    // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
-    
-    // Add a second directional light from another angle
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight2.position.set(-1, -1, -1);
-    scene.add(directionalLight2);
-    
-    // Create globe
-    const globe = new ThreeGlobe()
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-      .pointsData(clusteredData)
-      .pointLat(d => (d as RegionData).lat)
-      .pointLng(d => (d as RegionData).lng)
-      .pointColor(() => '#1e88e5')
-      .pointRadius(() => 0.5)
-      .pointAltitude(0.01)
-      .pointsMerge(false);
-    
-    // Add globe to scene
-    scene.add(globe);
-    globeRef.current = globe;
-    
-    // Store references to points for raycasting
-    pointsRef.current = [];
-    
-    // Find the points group in the globe
-    globe.children.forEach((child: THREE.Object3D) => {
-      if (child.type === 'Group' && child.name === 'points') {
-        child.children.forEach((point: THREE.Object3D, index: number) => {
-          if (index < clusteredData.length) {
-            // Create a larger invisible sphere for hit detection
-            const geometry = new THREE.SphereGeometry(2, 16, 16);
-            const material = new THREE.MeshBasicMaterial({ 
-              color: 0x1e88e5,
-              transparent: true,
-              opacity: 0.0 // Invisible for hit detection only
-            });
-            const hitSphere = new THREE.Mesh(geometry, material);
-            hitSphere.position.copy(point.position);
-            hitSphere.userData = { 
-              isHitSphere: true,
-              pointIndex: index,
-              regionData: clusteredData[index]
-            };
-            scene.add(hitSphere);
-            
-            pointsRef.current.push({
-              point,
-              data: clusteredData[index],
-              hitSphere
-            });
-          }
-        });
-      }
-    });
-    
-    // Add mouse move handler for raycasting
-    const handleMouseMove = (event: MouseEvent) => {
-      if (!globeContainerRef.current || !cameraRef.current) return;
-      
-      // Calculate mouse position in normalized device coordinates
-      const rect = globeContainerRef.current.getBoundingClientRect();
-      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      // Update the picking ray
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-      
-      // Create an array of hit spheres for intersection
-      const hitSpheres = pointsRef.current
-        .map(p => p.hitSphere)
-        .filter((sphere): sphere is THREE.Mesh => sphere !== undefined);
-      
-      // Find intersections with hit spheres
-      const intersects = raycasterRef.current.intersectObjects(hitSpheres, false);
-      
-      // Update debug info
-      setDebugInfo(`Mouse: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}, Points: ${hitSpheres.length}`);
-      
-      let foundPoint = false;
-      
-      // Check each intersection
-      if (intersects.length > 0) {
-        const intersectedObject = intersects[0].object;
+    return (
+      <div className="relative w-full h-[400px] bg-[#0a1128] rounded-md overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/world-map-dark.png')] bg-cover bg-center opacity-70"></div>
         
-        if (intersectedObject.userData && intersectedObject.userData.isHitSphere) {
-          const regionData = intersectedObject.userData.regionData;
-          foundPoint = true;
-          setHoveredRegion(regionData);
+        {clusteredData.map((region) => {
+          // Convert lat/lng to x/y coordinates (simple equirectangular projection)
+          const x = ((region.lng + 180) / 360) * 100; // 0-100%
+          const y = ((90 - region.lat) / 180) * 100; // 0-100%
           
-          // Calculate screen position for tooltip
-          const position = new THREE.Vector3();
-          intersectedObject.getWorldPosition(position);
-          position.project(cameraRef.current);
-          
-          const x = (position.x * 0.5 + 0.5) * rect.width;
-          const y = (-position.y * 0.5 + 0.5) * rect.height;
-          
-          setTooltipPosition({ x, y });
-          
-          // Highlight the actual point
-          const pointData = pointsRef.current.find(p => p.data.id === regionData.id);
-          if (pointData) {
-            pointData.point.traverse((child: THREE.Object3D) => {
-              if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshBasicMaterial({
-                  color: 0x03a9f4, // Lighter blue for highlight
-                  transparent: true,
-                  opacity: 1
+          return (
+            <div
+              key={region.id}
+              className="absolute w-2 h-2 rounded-full bg-blue-500 transform -translate-x-1 -translate-y-1 cursor-pointer hover:bg-blue-300"
+              style={{ 
+                left: `${x}%`, 
+                top: `${y}%`,
+                zIndex: 10
+              }}
+              data-region-id={region.id}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredRegion(region);
+                setTooltipPosition({ 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.top 
                 });
-              }
-            });
-          }
-          
-          setDebugInfo(prev => `${prev}, Found: ${regionData.city}`);
-        }
-      }
-      
-      if (!foundPoint) {
-        // Reset hover state
-        setHoveredRegion(null);
-        setTooltipPosition(null);
-        
-        // Reset all points to their original material
-        pointsRef.current.forEach(({ point }) => {
-          point.traverse((child: THREE.Object3D) => {
-            if (child instanceof THREE.Mesh) {
-              child.material = new THREE.MeshBasicMaterial({
-                color: 0x1e88e5, // Blue color
-                transparent: true,
-                opacity: 1
-              });
-            }
-          });
-        });
-      }
-    };
-    
-    // Add click handler for better mobile experience
-    const handleClick = (event: MouseEvent) => {
-      if (!globeContainerRef.current || !cameraRef.current) return;
-      
-      // Calculate mouse position in normalized device coordinates
-      const rect = globeContainerRef.current.getBoundingClientRect();
-      mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
-      // Update the picking ray
-      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-      
-      // Create an array of hit spheres for intersection
-      const hitSpheres = pointsRef.current
-        .map(p => p.hitSphere)
-        .filter((sphere): sphere is THREE.Mesh => sphere !== undefined);
-      
-      // Find intersections with hit spheres
-      const intersects = raycasterRef.current.intersectObjects(hitSpheres, false);
-      
-      // Update debug info
-      setDebugInfo(`Click: (${mouseRef.current.x.toFixed(2)}, ${mouseRef.current.y.toFixed(2)}), Intersects: ${intersects.length}`);
-      
-      if (intersects.length > 0) {
-        const intersectedObject = intersects[0].object;
-        
-        if (intersectedObject.userData && intersectedObject.userData.isHitSphere) {
-          const regionData = intersectedObject.userData.regionData;
-          setHoveredRegion(regionData);
-          
-          // Calculate screen position for tooltip
-          const position = new THREE.Vector3();
-          intersectedObject.getWorldPosition(position);
-          position.project(cameraRef.current);
-          
-          const x = (position.x * 0.5 + 0.5) * rect.width;
-          const y = (-position.y * 0.5 + 0.5) * rect.height;
-          
-          setTooltipPosition({ x, y });
-          
-          // Highlight the actual point
-          const pointData = pointsRef.current.find(p => p.data.id === regionData.id);
-          if (pointData) {
-            pointData.point.traverse((child: THREE.Object3D) => {
-              if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshBasicMaterial({
-                  color: 0x03a9f4, // Lighter blue for highlight
-                  transparent: true,
-                  opacity: 1
+              }}
+              onMouseLeave={() => {
+                setHoveredRegion(null);
+                setTooltipPosition(null);
+              }}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredRegion(region);
+                setTooltipPosition({ 
+                  x: rect.left + rect.width / 2, 
+                  y: rect.top 
                 });
-              }
-            });
-          }
-          
-          setDebugInfo(prev => `${prev}, Clicked: ${regionData.city}`);
-        }
-      }
-    };
-    
-    // Add touch handlers for mobile devices
-    const handleTouchStart = (event: TouchEvent) => {
-      if (event.touches.length === 1) {
-        const touch = event.touches[0];
-        const mouseEvent = new MouseEvent('mousemove', {
-          clientX: touch.clientX,
-          clientY: touch.clientY
-        });
-        handleMouseMove(mouseEvent);
-      }
-    };
-    
-    // Add orbit controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.rotateSpeed = 0.8;
-    controls.enableZoom = true;
-    controls.minDistance = 200;
-    controls.maxDistance = 400;
-    // Disable auto-rotation
-    controls.autoRotate = false;
-    controlsRef.current = controls;
-    
-    // Initial rotation to show more populated areas
-    globe.rotation.y = Math.PI;  // Start with Americas facing forward
-    
-    // Add event listeners
-    renderer.domElement.addEventListener('mousemove', handleMouseMove);
-    renderer.domElement.addEventListener('click', handleClick);
-    renderer.domElement.addEventListener('touchstart', handleTouchStart);
-    
-    // Animation loop
-    function animate() {
-      frameRef.current = requestAnimationFrame(animate);
-      
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    
-    animate();
-    
-    // Handle resize
-    const handleResize = () => {
-      if (!globeContainerRef.current || !cameraRef.current || !rendererRef.current) return;
-      
-      const width = globeContainerRef.current.clientWidth;
-      const height = globeContainerRef.current.clientHeight;
-      
-      cameraRef.current.aspect = width / height;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(width, height);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
-      renderer.domElement.removeEventListener('click', handleClick);
-      renderer.domElement.removeEventListener('touchstart', handleTouchStart);
-      
-      // Remove hit spheres
-      pointsRef.current.forEach(({ hitSphere }) => {
-        if (hitSphere) {
-          scene.remove(hitSphere);
-        }
-      });
-      
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-      
-      if (rendererRef.current && globeContainerRef.current && globeContainerRef.current.contains(rendererRef.current.domElement)) {
-        globeContainerRef.current.removeChild(rendererRef.current.domElement);
-      }
-      
-      if (controlsRef.current) {
-        controlsRef.current.dispose();
-      }
-    };
-  }, [clusteredData, isLoading]);
+              }}
+            />
+          );
+        })}
+        
+        {hoveredRegion && tooltipPosition && (
+          <div 
+            className="fixed z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
+            style={{
+              left: `${tooltipPosition.x}px`,
+              top: `${tooltipPosition.y - 10}px`,
+              transform: 'translate(-50%, -100%)',
+              minWidth: '200px',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+              animation: 'fadeIn 0.2s ease-in-out'
+            }}
+          >
+            <div className="font-medium text-sm mb-1">
+              {hoveredRegion.city}
+              {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
+              {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+            </div>
+            <div className="flex justify-between gap-6 mt-1">
+              <div>
+                <span className="text-gray-300">Customers:</span>{' '}
+                <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
+              </div>
+              <div>
+                <span className="text-gray-300">Revenue:</span>{' '}
+                <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue || 0)}</span>
+              </div>
+            </div>
+            {hoveredRegion.totalRevenue === 0 && hoveredRegion.customerCount > 0 && (
+              <div className="mt-1 text-xs text-gray-400">
+                Customer data available, but no revenue recorded yet.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(value)
   }
 
@@ -571,8 +336,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     if (!hasZeroRevenue) return null;
     
     return (
-      <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3 text-sm text-amber-600 dark:text-amber-400">
-        Your store has customers but no revenue data yet. The map is showing customer locations.
+      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+        <p>Your store has customers but no revenue data yet. The map is showing customer locations.</p>
       </div>
     );
   };
@@ -595,53 +360,57 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           </div>
         ) : clusteredData.length > 0 ? (
           <div className="relative">
-            <div 
-              ref={globeContainerRef} 
-              className="w-full h-[400px] rounded-md overflow-hidden relative"
-              style={{ cursor: 'grab' }}
-            >
-              {/* Debug info */}
-              {debugInfo && (
-                <div className="absolute top-2 left-2 z-50 bg-black/70 text-white text-xs p-1 rounded">
-                  {debugInfo}
-                </div>
-              )}
-              
-              {hoveredRegion && tooltipPosition && (
-                <div 
-                  className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
-                  style={{
-                    left: `${tooltipPosition.x}px`,
-                    top: `${tooltipPosition.y - 20}px`,
-                    transform: 'translate(-50%, -100%)',
-                    minWidth: '200px',
-                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-                    animation: 'fadeIn 0.2s ease-in-out'
-                  }}
-                >
-                  <div className="font-medium text-sm mb-1">
-                    {hoveredRegion.city}
-                    {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
-                    {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+            {showFallbackMap ? (
+              renderFallbackMap()
+            ) : (
+              <div 
+                ref={globeContainerRef} 
+                className="w-full h-[400px] rounded-md overflow-hidden relative"
+                style={{ cursor: 'grab' }}
+              >
+                {/* Debug info */}
+                {debugInfo && (
+                  <div className="absolute top-2 left-2 z-50 bg-black/70 text-white text-xs p-1 rounded">
+                    {debugInfo}
                   </div>
-                  <div className="flex justify-between gap-6 mt-1">
-                    <div>
-                      <span className="text-gray-300">Customers:</span>{' '}
-                      <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
+                )}
+                
+                {hoveredRegion && tooltipPosition && (
+                  <div 
+                    className="absolute z-50 bg-black/90 text-white text-xs p-3 rounded-md pointer-events-none border border-blue-400"
+                    style={{
+                      left: `${tooltipPosition.x}px`,
+                      top: `${tooltipPosition.y - 20}px`,
+                      transform: 'translate(-50%, -100%)',
+                      minWidth: '200px',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                      animation: 'fadeIn 0.2s ease-in-out'
+                    }}
+                  >
+                    <div className="font-medium text-sm mb-1">
+                      {hoveredRegion.city}
+                      {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
+                      {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
                     </div>
-                    <div>
-                      <span className="text-gray-300">Revenue:</span>{' '}
-                      <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue || 0)}</span>
+                    <div className="flex justify-between gap-6 mt-1">
+                      <div>
+                        <span className="text-gray-300">Customers:</span>{' '}
+                        <span className="font-bold text-white">{hoveredRegion.customerCount}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-300">Revenue:</span>{' '}
+                        <span className="font-bold text-white">{formatCurrency(hoveredRegion.totalRevenue || 0)}</span>
+                      </div>
                     </div>
+                    {hoveredRegion.totalRevenue === 0 && hoveredRegion.customerCount > 0 && (
+                      <div className="mt-1 text-xs text-gray-400">
+                        Customer data available, but no revenue recorded yet.
+                      </div>
+                    )}
                   </div>
-                  {hoveredRegion.totalRevenue === 0 && hoveredRegion.customerCount > 0 && (
-                    <div className="mt-1 text-xs text-gray-400">
-                      Customer data available, but no revenue recorded yet.
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             
             {renderZeroRevenueNotice()}
             {renderTopRegions()}
