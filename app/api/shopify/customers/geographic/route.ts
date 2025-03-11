@@ -124,6 +124,31 @@ export async function GET(request: NextRequest) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // First, get the connection IDs for this brand
+    const { data: connections, error: connectionsError } = await supabase
+      .from('platform_connections')
+      .select('id')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'shopify');
+    
+    if (connectionsError) {
+      console.error('Error fetching connections:', connectionsError);
+      return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 });
+    }
+    
+    if (!connections || connections.length === 0) {
+      console.log('No Shopify connections found for brand:', brandId);
+      return NextResponse.json({ 
+        regions: [],
+        totalRevenue: 0,
+        totalCustomers: 0,
+        message: 'No Shopify connections found for this brand'
+      });
+    }
+    
+    const connectionIds = connections.map((c: any) => c.id);
+    console.log(`Found ${connectionIds.length} Shopify connections for brand ${brandId}`);
+
     // Try to get data from the new columns first
     let customers: CustomerData[] = [];
     
@@ -131,8 +156,8 @@ export async function GET(request: NextRequest) {
       // First try with the new columns
       const response = await supabase
         .from('shopify_customers')
-        .select('id, city, state_province, country, total_spent, orders_count, brand_id')
-        .eq('brand_id', brandId)
+        .select('id, city, state_province, country, total_spent, orders_count')
+        .in('connection_id', connectionIds)
         .not('country', 'is', null);
       
       if (!response.error) {
@@ -143,8 +168,8 @@ export async function GET(request: NextRequest) {
         console.log('New columns not found, falling back to default_address extraction');
         const fallbackResponse = await supabase
           .from('shopify_customers')
-          .select('id, default_address, total_spent, orders_count, brand_id')
-          .eq('brand_id', brandId)
+          .select('id, default_address, total_spent, orders_count')
+          .in('connection_id', connectionIds)
           .not('default_address', 'is', null);
         
         if (fallbackResponse.error) {
