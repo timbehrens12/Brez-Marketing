@@ -184,15 +184,27 @@ export async function POST(request: Request) {
       
       // Extract geographic region from default address
       let geographicRegion = null;
+      let city = null;
+      let stateProvince = null;
+      let country = null;
+      
       if (customer.default_address) {
         if (customer.default_address.country) {
+          country = customer.default_address.country;
           geographicRegion = customer.default_address.country;
           
           // Add state/province for more granularity for US/Canada customers
-          if (customer.default_address.province && 
-              (customer.default_address.country === 'United States' || 
-               customer.default_address.country === 'Canada')) {
-            geographicRegion += ` - ${customer.default_address.province}`;
+          if (customer.default_address.province) {
+            stateProvince = customer.default_address.province;
+            if (customer.default_address.country === 'United States' || 
+                customer.default_address.country === 'Canada') {
+              geographicRegion += ` - ${customer.default_address.province}`;
+            }
+          }
+          
+          // Extract city
+          if (customer.default_address.city) {
+            city = customer.default_address.city;
           }
         }
       }
@@ -242,6 +254,9 @@ export async function POST(request: Request) {
         acquisition_source: customer.source_name || null,
         geographic_region: geographicRegion,
         customer_segment: customerSegment,
+        city: city,
+        state_province: stateProvince,
+        country: country,
         last_synced_at: new Date().toISOString()
       };
     });
