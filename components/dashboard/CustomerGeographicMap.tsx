@@ -4,8 +4,15 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MapPin, Globe, Loader2 } from 'lucide-react'
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
+import { MapPin, Globe, Loader2, Users } from 'lucide-react'
+import { 
+  ComposableMap, 
+  Geographies, 
+  Geography, 
+  Marker,
+  GeographyProps,
+  GeographiesProps
+} from 'react-simple-maps'
 import { scaleLinear } from 'd3-scale'
 import { format } from 'date-fns'
 
@@ -30,8 +37,11 @@ const geoUrl = "https://raw.githubusercontent.com/deldersveld/topojson/master/wo
 export function CustomerGeographicMap({ brandId, isRefreshing = false }: CustomerGeographicMapProps) {
   const [data, setData] = useState<RegionData[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [view, setView] = useState<'revenue' | 'customers'>('revenue')
+  const [view, setView] = useState<'revenue' | 'customers'>('customers')
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [totalCustomers, setTotalCustomers] = useState(0)
+  const [hasZeroRevenue, setHasZeroRevenue] = useState(false)
 
   useEffect(() => {
     if (brandId) {
@@ -52,9 +62,21 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       if (!response.ok) {
         throw new Error('Failed to fetch geographic data')
       }
-      const data = await response.json()
-      setData(data.regions || [])
+      const responseData = await response.json()
+      
+      setData(responseData.regions || [])
+      setTotalRevenue(responseData.totalRevenue || 0)
+      setTotalCustomers(responseData.totalCustomers || 0)
       setLastUpdated(new Date())
+      
+      // Check if we have zero revenue but some customers
+      const hasZeroRev = (responseData.totalRevenue || 0) === 0 && (responseData.totalCustomers || 0) > 0
+      setHasZeroRevenue(hasZeroRev)
+      
+      // If we have zero revenue, default to customers view
+      if (hasZeroRev) {
+        setView('customers')
+      }
     } catch (error) {
       console.error('Error fetching geographic data:', error)
     } finally {
@@ -70,14 +92,20 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const getRegionColor = (region: string) => {
     const regionData = data.find(d => d.country === region)
     if (!regionData) return '#1f2937'
+    
+    // If we're in revenue view but have zero revenue, use customer count for coloring
+    if (view === 'revenue' && hasZeroRevenue) {
+      return colorScale(regionData.customers)
+    }
+    
     return colorScale(view === 'revenue' ? regionData.revenue : regionData.customers)
   }
 
   const getTotalValue = () => {
     if (view === 'revenue') {
-      return data.reduce((sum, region) => sum + region.revenue, 0)
+      return totalRevenue
     } else {
-      return data.reduce((sum, region) => sum + region.customers, 0)
+      return totalCustomers
     }
   }
 
@@ -100,8 +128,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
           }}
         >
           <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map(geo => (
+            {({ geographies }: { geographies: Array<any> }) =>
+              geographies.map((geo: any) => (
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
@@ -122,11 +150,14 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             .map((d, i) => (
               <Marker key={i} coordinates={[d.longitude!, d.latitude!]}>
                 <circle
-                  r={Math.max(4, Math.min(10, view === 'revenue' ? d.revenue / 1000 : d.customers / 10))}
+                  r={Math.max(5, Math.min(12, view === 'revenue' && !hasZeroRevenue ? 
+                    d.revenue / Math.max(totalRevenue / 20, 1) : 
+                    d.customers / Math.max(totalCustomers / 10, 1) * 5))}
                   fill="#f97316"
                   stroke="#fff"
                   strokeWidth={1}
                 />
+                <title>{d.region}: {view === 'revenue' ? formatCurrency(d.revenue) : `${d.customers} customer${d.customers !== 1 ? 's' : ''}`}</title>
               </Marker>
             ))}
         </ComposableMap>
@@ -136,7 +167,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
 
   const renderTopRegions = () => {
     const sortedData = [...data].sort((a, b) => 
-      view === 'revenue' 
+      view === 'revenue' && !hasZeroRevenue
         ? b.revenue - a.revenue 
         : b.customers - a.customers
     ).slice(0, 5)
@@ -150,11 +181,11 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2 text-blue-500" />
                 <span className="text-sm text-gray-300">
-                  {region.country}{region.state ? `, ${region.state}` : ''}
+                  {region.city || region.state || region.country}
                 </span>
               </div>
               <span className="text-sm font-medium">
-                {view === 'revenue' 
+                {view === 'revenue' && !hasZeroRevenue
                   ? formatCurrency(region.revenue)
                   : `${region.customers} customer${region.customers !== 1 ? 's' : ''}`
                 }
@@ -166,6 +197,27 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     )
   }
 
+  // Show a notice when we have zero revenue but some customers
+  const renderZeroRevenueNotice = () => {
+    if (!hasZeroRevenue || view !== 'revenue') return null;
+    
+    return (
+      <div className="bg-blue-900/20 border border-blue-800 rounded-md p-3 mb-4">
+        <div className="flex items-start">
+          <Users className="h-5 w-5 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+          <div>
+            <p className="text-sm text-blue-300">
+              Your store has customers but no revenue data yet. This could be because your orders were created in the backend or have $0 value.
+            </p>
+            <p className="text-sm text-blue-300 mt-1">
+              The map is currently showing customer locations instead of revenue.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
       <CardHeader className="pb-2">
@@ -176,7 +228,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               {view === 'revenue' ? 'Sales by region' : 'Customers by region'}
             </CardDescription>
           </div>
-          <Tabs defaultValue="revenue" className="w-[200px]" onValueChange={(v) => setView(v as 'revenue' | 'customers')}>
+          <Tabs defaultValue={hasZeroRevenue ? "customers" : "revenue"} className="w-[200px]" onValueChange={(v) => setView(v as 'revenue' | 'customers')}>
             <TabsList className="bg-[#2A2A2A]">
               <TabsTrigger value="revenue" className="data-[state=active]:bg-blue-600">Revenue</TabsTrigger>
               <TabsTrigger value="customers" className="data-[state=active]:bg-blue-600">Customers</TabsTrigger>
@@ -212,6 +264,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
                 {lastUpdated && `Last updated: ${format(lastUpdated, 'MMM d, yyyy h:mm a')}`}
               </div>
             </div>
+            
+            {renderZeroRevenueNotice()}
+            
             {renderMap()}
             {renderTopRegions()}
           </>

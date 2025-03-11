@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
-import { Users, Loader2 } from 'lucide-react'
+import { Users, Loader2, AlertCircle } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface CustomerSegmentationProps {
   brandId: string
@@ -12,196 +14,154 @@ interface CustomerSegmentationProps {
 }
 
 interface SegmentData {
-  segment: string
-  count: number
-  revenue: number
-  averageOrderValue: number
+  name: string
+  value: number
   color: string
+  description: string
 }
 
 export function CustomerSegmentation({ brandId, isRefreshing = false }: CustomerSegmentationProps) {
   const [data, setData] = useState<SegmentData[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [view, setView] = useState<'count' | 'revenue'>('count')
+  const [view, setView] = useState<'count' | 'percentage'>('percentage')
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [totalCustomers, setTotalCustomers] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (brandId) {
-      fetchSegmentationData()
+      fetchSegmentData()
     }
   }, [brandId])
 
   useEffect(() => {
     if (isRefreshing) {
-      fetchSegmentationData()
+      fetchSegmentData()
     }
   }, [isRefreshing])
 
-  const fetchSegmentationData = async () => {
+  const fetchSegmentData = async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const response = await fetch(`/api/shopify/customers/segments?brandId=${brandId}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch segmentation data')
+        throw new Error('Failed to fetch segment data')
       }
       const responseData = await response.json()
       
-      // Assign colors to segments
-      const segmentColors: Record<string, string> = {
-        'VIP': '#f97316', // Orange
-        'Loyal': '#3b82f6', // Blue
-        'Returning': '#10b981', // Green
-        'New': '#8b5cf6', // Purple
-        'At Risk': '#ef4444', // Red
-        'Inactive': '#6b7280', // Gray
+      if (responseData.segments && responseData.segments.length > 0) {
+        setData(responseData.segments)
+        setTotalCustomers(responseData.totalCustomers || 0)
+      } else {
+        // If no segments are returned, create default segments
+        setData(createDefaultSegments(responseData.totalCustomers || 0))
+        setTotalCustomers(responseData.totalCustomers || 0)
       }
       
-      const formattedData = responseData.segments.map((segment: any) => ({
-        ...segment,
-        color: segmentColors[segment.segment] || '#6b7280'
-      }))
-      
-      setData(formattedData)
+      setLastUpdated(new Date())
     } catch (error) {
-      console.error('Error fetching segmentation data:', error)
+      console.error('Error fetching segment data:', error)
+      setError('Failed to load customer segments. Please try again later.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value)
+  // Create default segments if no data is available
+  const createDefaultSegments = (total: number): SegmentData[] => {
+    if (total === 0) return [];
+    
+    return [
+      {
+        name: 'New Customers',
+        value: total,
+        color: '#3b82f6',
+        description: 'Customers who have recently joined'
+      }
+    ];
   }
 
-  const formatPercentage = (value: number, total: number) => {
-    if (total === 0) return '0%'
-    return `${Math.round((value / total) * 100)}%`
+  const formatPercentage = (value: number) => {
+    return `${Math.round(value * 100)}%`
   }
 
-  const getTotalCustomers = () => {
-    return data.reduce((sum, segment) => sum + segment.count, 0)
-  }
+  const renderCustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-[#2A2A2A] p-3 border border-[#3A3A3A] rounded-md shadow-lg">
+          <p className="font-medium text-white">{data.name}</p>
+          <p className="text-gray-300 text-sm">{data.description}</p>
+          <div className="flex justify-between mt-2">
+            <span className="text-gray-400 text-sm">Customers:</span>
+            <span className="text-white text-sm font-medium">{data.value.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400 text-sm">Percentage:</span>
+            <span className="text-white text-sm font-medium">
+              {formatPercentage(data.value / totalCustomers)}
+            </span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
-  const getTotalRevenue = () => {
-    return data.reduce((sum, segment) => sum + segment.revenue, 0)
-  }
-
-  const renderPieChart = () => {
-    const chartData = data.map(segment => ({
-      name: segment.segment,
-      value: view === 'count' ? segment.count : segment.revenue,
-      color: segment.color
-    }))
-
+  const renderNoDataMessage = () => {
     return (
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={100}
-              innerRadius={60}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value: number) => 
-                view === 'count' 
-                  ? `${value.toLocaleString()} customers` 
-                  : formatCurrency(value)
-              }
-            />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="h-[300px] flex flex-col items-center justify-center text-gray-500">
+        <Users className="h-16 w-16 mb-4 opacity-20" />
+        <p>No customer segment data available</p>
+        <p className="text-sm mt-2">Sync customer data to see segmentation insights</p>
       </div>
-    )
-  }
+    );
+  };
 
-  const renderSegmentTable = () => {
-    const totalValue = view === 'count' ? getTotalCustomers() : getTotalRevenue()
+  const renderErrorMessage = () => {
+    return (
+      <div className="h-[300px] flex flex-col items-center justify-center text-gray-500">
+        <AlertCircle className="h-16 w-16 mb-4 text-amber-500/50" />
+        <p className="text-amber-500">{error}</p>
+        <p className="text-sm mt-2">Try refreshing the data or check your connection</p>
+      </div>
+    );
+  };
+
+  const renderLimitedDataMessage = () => {
+    if (totalCustomers > 5) return null;
     
     return (
-      <div className="mt-4">
-        <div className="grid grid-cols-3 gap-2 text-xs text-gray-400 mb-2">
-          <div>Segment</div>
-          <div className="text-right">
-            {view === 'count' ? 'Customers' : 'Revenue'}
+      <div className="bg-blue-900/20 border border-blue-800 rounded-md p-3 mb-4">
+        <div className="flex items-start">
+          <Users className="h-5 w-5 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+          <div>
+            <p className="text-sm text-blue-300">
+              Limited customer data available. More detailed segmentation will appear as your customer base grows.
+            </p>
           </div>
-          <div className="text-right">% of Total</div>
-        </div>
-        <div className="space-y-2">
-          {data.map((segment, i) => (
-            <div key={i} className="grid grid-cols-3 gap-2 items-center">
-              <div className="flex items-center">
-                <div 
-                  className="h-3 w-3 rounded-full mr-2" 
-                  style={{ backgroundColor: segment.color }}
-                />
-                <span className="text-sm text-gray-300">{segment.segment}</span>
-              </div>
-              <div className="text-sm text-right">
-                {view === 'count' 
-                  ? segment.count.toLocaleString()
-                  : formatCurrency(segment.revenue)
-                }
-              </div>
-              <div className="text-sm text-right text-gray-400">
-                {formatPercentage(
-                  view === 'count' ? segment.count : segment.revenue, 
-                  totalValue
-                )}
-              </div>
-            </div>
-          ))}
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-white text-lg">Customer Segments</CardTitle>
+            <CardTitle className="text-white text-lg">Customer Segmentation</CardTitle>
             <CardDescription className="text-gray-400">
-              Breakdown of customer segments
+              Customer groups based on behavior
             </CardDescription>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setView('count')}
-              className={`px-3 py-1 text-xs rounded-md ${
-                view === 'count' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-[#2A2A2A] text-gray-400 hover:bg-[#333]'
-              }`}
-            >
-              By Count
-            </button>
-            <button
-              onClick={() => setView('revenue')}
-              className={`px-3 py-1 text-xs rounded-md ${
-                view === 'revenue' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-[#2A2A2A] text-gray-400 hover:bg-[#333]'
-              }`}
-            >
-              By Revenue
-            </button>
-          </div>
+          <Tabs defaultValue="percentage" className="w-[200px]" onValueChange={(v) => setView(v as 'count' | 'percentage')}>
+            <TabsList className="bg-[#2A2A2A]">
+              <TabsTrigger value="percentage" className="data-[state=active]:bg-blue-600">Percentage</TabsTrigger>
+              <TabsTrigger value="count" className="data-[state=active]:bg-blue-600">Count</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </CardHeader>
       <CardContent>
@@ -214,30 +174,63 @@ export function CustomerSegmentation({ brandId, isRefreshing = false }: Customer
               <Skeleton className="h-4 w-full bg-[#2A2A2A]" />
             </div>
           </div>
+        ) : error ? (
+          renderErrorMessage()
         ) : data.length > 0 ? (
           <>
             <div className="flex justify-between items-center mb-4">
               <div>
                 <div className="text-2xl font-bold text-white">
-                  {view === 'count' 
-                    ? getTotalCustomers().toLocaleString()
-                    : formatCurrency(getTotalRevenue())
-                  }
+                  {totalCustomers.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-400">
-                  {view === 'count' ? 'Total Customers' : 'Total Revenue'}
+                  Total Customers
                 </div>
               </div>
+              <div className="text-xs text-gray-500">
+                {lastUpdated && `Last updated: ${format(lastUpdated, 'MMM d, yyyy h:mm a')}`}
+              </div>
             </div>
-            {renderPieChart()}
-            {renderSegmentTable()}
+            
+            {renderLimitedDataMessage()}
+            
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => view === 'percentage' ? formatPercentage(percent) : ''}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={renderCustomTooltip} />
+                  <Legend 
+                    layout="vertical" 
+                    verticalAlign="middle" 
+                    align="right"
+                    formatter={(value, entry, index) => {
+                      const item = data[index];
+                      return (
+                        <span className="text-gray-300">
+                          {value} {view === 'count' ? `(${item.value.toLocaleString()})` : `(${formatPercentage(item.value / totalCustomers)})`}
+                        </span>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </>
         ) : (
-          <div className="h-[300px] flex flex-col items-center justify-center text-gray-500">
-            <Users className="h-16 w-16 mb-4 opacity-20" />
-            <p>No segmentation data available</p>
-            <p className="text-sm mt-2">Sync customer data to see segmentation insights</p>
-          </div>
+          renderNoDataMessage()
         )}
       </CardContent>
     </Card>
