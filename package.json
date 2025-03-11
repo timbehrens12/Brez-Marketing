@@ -64,6 +64,7 @@
     "embla-carousel-react": "8.5.1",
     "express": "latest",
     "facebook-nodejs-business-sdk": "latest",
+    "globe.gl": "^2.41.1",
     "google-ads-api": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",

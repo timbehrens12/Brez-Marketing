@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,6 +9,61 @@ import { format } from 'date-fns'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+// We'll use a client-side only component for the Globe
+const GlobeComponent = ({ data, containerWidth, onHover }: any) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [globe, setGlobe] = useState<any>(null);
+
+  useEffect(() => {
+    // Only import and initialize globe.gl on the client
+    if (typeof window !== 'undefined') {
+      import('globe.gl').then(({ default: Globe }) => {
+        if (!containerRef.current) return;
+        
+        // Initialize the globe - Globe is a constructor, so we need to use 'new'
+        const globeInstance = new Globe(containerRef.current)
+          .globeImageUrl("//unpkg.com/three-globe/example/img/earth-blue-marble.jpg")
+          .backgroundColor("#111")
+          .width(containerWidth || 800)
+          .height(400)
+          .pointsData(data)
+          .pointLat('lat')
+          .pointLng('lng')
+          .pointColor('color')
+          .pointRadius('size')
+          .pointAltitude(0.01)
+          .pointsMerge(false)
+          .onPointHover(onHover);
+        
+        // Auto-rotate
+        globeInstance.controls().autoRotate = true;
+        globeInstance.controls().autoRotateSpeed = 0.5;
+        
+        // Set initial camera position
+        globeInstance.pointOfView({ lat: 39.6, lng: -98.5, altitude: 2.5 });
+        
+        setGlobe(globeInstance);
+      });
+    }
+    
+    // Cleanup
+    return () => {
+      if (globe) {
+        globe._destructor();
+      }
+    };
+  }, []);
+  
+  // Update data when it changes
+  useEffect(() => {
+    if (globe && data) {
+      globe.pointsData(data);
+    }
+  }, [globe, data]);
+
+  return <div ref={containerRef} className="w-full h-full" />;
+};
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -96,7 +151,9 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [view, setView] = useState<'revenue' | 'customers'>('revenue')
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [totalCustomers, setTotalCustomers] = useState(0)
-  const [mapImageLoaded, setMapImageLoaded] = useState(false)
+  const [hoveredRegion, setHoveredRegion] = useState<RegionData | null>(null)
+  
+  const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (!brandId) return
@@ -206,12 +263,18 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     }
   });
 
-  // Filter to only US locations for the map
-  const usLocations = sortedData.filter(loc => 
-    loc.country === 'United States' || 
-    loc.country === 'US' || 
-    loc.country === 'USA'
-  );
+  // Prepare data for globe visualization
+  const globeData = clusteredData.map(d => ({
+    lat: d.lat,
+    lng: d.lng,
+    size: view === 'revenue' 
+      ? Math.max(0.2, Math.min(1.5, 0.2 + (d.totalRevenue / 5000)))
+      : Math.max(0.2, Math.min(1.5, 0.2 + (d.customerCount / 20))),
+    color: view === 'revenue'
+      ? d.totalRevenue > 0 ? '#3b82f6' : '#6b7280'
+      : '#8b5cf6',
+    data: d
+  }));
 
   return (
     <Card className="col-span-3">
@@ -238,49 +301,44 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             </div>
           ) : clusteredData.length > 0 ? (
             <div className="space-y-6">
-              {/* Simple US Map with Dots */}
-              <div className="relative w-full h-[300px] bg-gray-900 rounded-md overflow-hidden">
-                {/* US Map Background */}
-                <div className="absolute inset-0 opacity-70">
-                  <img 
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Map_of_USA_with_state_names.svg" 
-                    alt="US Map" 
-                    className="w-full h-full object-cover"
-                    onLoad={() => setMapImageLoaded(true)}
+              {/* Globe Visualization */}
+              <div ref={containerRef} className="relative w-full h-[400px] bg-gray-900 rounded-md overflow-hidden">
+                {typeof window !== 'undefined' && (
+                  <GlobeComponent 
+                    data={globeData}
+                    containerWidth={containerRef.current?.clientWidth}
+                    onHover={(point: any) => {
+                      if (point) {
+                        setHoveredRegion(point.data);
+                      } else {
+                        setHoveredRegion(null);
+                      }
+                    }}
                   />
-                </div>
+                )}
                 
-                {/* Dots for locations */}
-                {mapImageLoaded && usLocations.map((location) => {
-                  // Simple mapping from lat/lng to x/y coordinates (approximate for US)
-                  const x = ((location.lng + 125) / 60) * 100; // Convert longitude to percentage
-                  const y = ((50 - location.lat) / 25) * 100;  // Convert latitude to percentage
-                  
-                  // Size based on data
-                  const size = view === 'revenue' 
-                    ? Math.max(8, Math.min(24, 8 + (location.totalRevenue / 1000)))
-                    : Math.max(8, Math.min(24, 8 + (location.customerCount)));
-                  
-                  // Color based on data
-                  const color = view === 'revenue'
-                    ? location.totalRevenue > 0 ? '#3b82f6' : '#6b7280'
-                    : '#8b5cf6';
-                    
-                  return (
-                    <div 
-                      key={location.id}
-                      className="absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 hover:ring-2 hover:ring-white"
-                      style={{
-                        left: `${x}%`,
-                        top: `${y}%`,
-                        width: `${size}px`,
-                        height: `${size}px`,
-                        backgroundColor: color,
-                      }}
-                      title={`${location.city}, ${location.state}: ${view === 'revenue' ? formatCurrency(location.totalRevenue) : location.customerCount + ' customers'}`}
-                    />
-                  );
-                })}
+                {/* Tooltip */}
+                {hoveredRegion && (
+                  <div 
+                    className="absolute z-50 bg-black/80 text-white text-xs p-2 rounded pointer-events-none border border-gray-600"
+                    style={{
+                      left: '50%',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      minWidth: '180px'
+                    }}
+                  >
+                    <div className="font-medium">
+                      {hoveredRegion.city}
+                      {hoveredRegion.state ? `, ${hoveredRegion.state}` : ''}
+                      {hoveredRegion.country && hoveredRegion.country !== 'United States' ? `, ${hoveredRegion.country}` : ''}
+                    </div>
+                    <div className="flex justify-between gap-4 mt-1">
+                      <span>Customers: <strong>{hoveredRegion.customerCount}</strong></span>
+                      <span>Revenue: <strong>{formatCurrency(hoveredRegion.totalRevenue)}</strong></span>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {renderZeroRevenueNotice()}
