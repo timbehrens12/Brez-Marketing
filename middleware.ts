@@ -21,9 +21,7 @@ export default authMiddleware({
     "/api/metrics/meta",
     "/api/cron/meta-sync",
     "/api/debug/meta-metrics",
-    "/api/analytics/meta/campaigns",
-    "/api/shopify/inventory/sync",
-    "/api/shopify/products/performance/sync"
+    "/api/analytics/meta/campaigns"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",

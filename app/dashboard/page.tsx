@@ -28,8 +28,6 @@ import { useSupabase } from '@/lib/hooks/useSupabase'
 import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
-import { ProductPerformanceWidget } from '@/components/dashboard/ProductPerformanceWidget'
-import { ProductPerformanceSyncButton } from '@/components/dashboard/ProductPerformanceSyncButton'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
