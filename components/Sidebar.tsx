@@ -7,6 +7,7 @@ import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, File
 import { UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 import { CustomSignOutButton } from "./CustomSignOutButton"
+import Image from "next/image"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -31,10 +32,13 @@ export function Sidebar({ className }: SidebarProps) {
       <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
         <div className="p-6 flex-1">
           <div className="mb-8">
-            <img 
-              src="/favicon-32x32.png" 
+            <Image 
+              src="/logo.png" 
               alt="Brez Logo" 
-              className="h-8 w-auto" 
+              width={120}
+              height={32}
+              className="h-8 w-auto"
+              style={{ objectFit: "contain" }}
             />
           </div>
           <nav className="space-y-0.5 opacity-50">
@@ -57,10 +61,13 @@ export function Sidebar({ className }: SidebarProps) {
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
       <div className="p-6 flex-1">
         <div className="mb-8 flex items-center justify-between">
-          <img 
-            src="/favicon-32x32.png" 
+          <Image 
+            src="/logo.png" 
             alt="Brez Logo" 
-            className="h-8 w-auto" 
+            width={120}
+            height={32}
+            className="h-8 w-auto"
+            style={{ objectFit: "contain" }}
           />
           <UserButton 
             appearance={{
