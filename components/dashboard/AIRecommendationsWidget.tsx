@@ -37,6 +37,9 @@ export function AIRecommendationsWidget({ brandId }: AIRecommendationsWidgetProp
     setIsLoading(true)
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch('/api/ai/recommendations', {
         method: 'POST',
         headers: {
@@ -45,21 +48,44 @@ export function AIRecommendationsWidget({ brandId }: AIRecommendationsWidgetProp
         body: JSON.stringify({
           brandId,
           area
-        })
-      })
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch recommendations')
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch recommendations');
       }
       
-      const data = await response.json()
-      setRecommendations(data)
+      const data = await response.json();
+      setRecommendations(data);
     } catch (error) {
-      console.error('Error fetching AI recommendations:', error)
-      toast.error('Failed to generate recommendations. Please try again later.')
+      console.error('Error fetching AI recommendations:', error);
+      
+      // Check if it's an abort error (timeout)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Request timed out. The server is taking too long to respond.');
+      } else {
+        toast.error('Failed to generate recommendations. Please try again later.');
+      }
+      
+      // Set fallback recommendations
+      setRecommendations({
+        recommendations: [
+          {
+            title: "Service Temporarily Unavailable",
+            channel: "general",
+            targetAudience: "store owner",
+            message: "Our AI recommendation service is currently experiencing high demand. Please try again in a few minutes.",
+            implementation: ["Refresh the recommendations tab", "Try a different recommendation category"],
+            expectedOutcome: "Get AI-powered marketing recommendations"
+          }
+        ]
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
   

@@ -29,6 +29,9 @@ export function AIInsightsWidget({ brandId, dateRange }: AIInsightsWidgetProps) 
     setFocusArea(area)
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch('/api/ai/insights', {
         method: 'POST',
         headers: {
@@ -41,21 +44,49 @@ export function AIInsightsWidget({ brandId, dateRange }: AIInsightsWidgetProps) 
             from: dateRange.from.toISOString(),
             to: dateRange.to.toISOString()
           }
-        })
-      })
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch insights')
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch insights');
       }
       
-      const data = await response.json()
-      setInsights(data)
+      const data = await response.json();
+      setInsights(data);
     } catch (error) {
-      console.error('Error fetching AI insights:', error)
-      toast.error('Failed to generate insights. Please try again later.')
+      console.error('Error fetching AI insights:', error);
+      
+      // Check if it's an abort error (timeout)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        toast.error('Request timed out. The server is taking too long to respond.');
+      } else {
+        toast.error('Failed to generate insights. Please try again later.');
+      }
+      
+      // Set fallback insights
+      setInsights({
+        summary: "Unable to generate insights at this time.",
+        insights: [
+          {
+            title: "Service Temporarily Unavailable",
+            description: "Our AI analysis service is currently experiencing high demand. Please try again in a few minutes."
+          }
+        ],
+        opportunities: [],
+        risks: [],
+        recommendations: [
+          {
+            title: "Try Again Later",
+            description: "This is a temporary issue. Please try refreshing the insights in a moment."
+          }
+        ]
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
   

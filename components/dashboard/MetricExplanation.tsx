@@ -35,6 +35,9 @@ export function MetricExplanation({
     setIsLoading(true)
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const response = await fetch('/api/ai/explain', {
         method: 'POST',
         headers: {
@@ -48,8 +51,11 @@ export function MetricExplanation({
             change: metricChange
           },
           historicalData
-        })
+        }),
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -60,7 +66,14 @@ export function MetricExplanation({
       setExplanation(data.explanation)
     } catch (error) {
       console.error('Error fetching metric explanation:', error)
-      toast.error('Failed to generate explanation. Please try again later.')
+      
+      // Check if it's an abort error (timeout)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setExplanation(`${metricName} is ${metricValue} with a ${metricChange}% change. Analysis timed out.`)
+      } else {
+        setExplanation(`Unable to analyze ${metricName} at this time. Please try again later.`)
+        toast.error('Failed to generate explanation. Please try again later.')
+      }
     } finally {
       setIsLoading(false)
     }

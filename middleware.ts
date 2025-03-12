@@ -21,7 +21,10 @@ export default authMiddleware({
     "/api/metrics/meta",
     "/api/cron/meta-sync",
     "/api/debug/meta-metrics",
-    "/api/analytics/meta/campaigns"
+    "/api/analytics/meta/campaigns",
+    "/api/ai/insights",
+    "/api/ai/recommendations",
+    "/api/ai/explain"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",

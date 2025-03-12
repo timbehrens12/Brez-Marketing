@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Get connection for this brand
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      .select('*')
+      .select('id, shop')
       .eq('brand_id', brandId)
       .eq('platform_type', 'shopify')
       .single();
@@ -73,13 +73,14 @@ export async function POST(request: NextRequest) {
     // Fetch relevant data based on focusArea
     let data: any = {};
     
-    // Fetch sales data
+    // Fetch sales data - limit to 50 most recent orders
     if (focusArea === 'overall' || focusArea === 'sales') {
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
-        .select('*')
+        .select('id, total_price, created_at, line_items')
         .eq('connection_id', connection.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
       
       if (!salesError && salesData) {
         data.sales = salesData;
@@ -97,12 +98,13 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Fetch customer data
+    // Fetch customer data - limit to 50 customers
     if (focusArea === 'overall' || focusArea === 'customers') {
       const { data: customerData, error: customerError } = await supabase
         .from('shopify_customers')
-        .select('*')
-        .eq('connection_id', connection.id);
+        .select('id, is_returning_customer, total_spent, orders_count')
+        .eq('connection_id', connection.id)
+        .limit(50);
       
       if (!customerError && customerData) {
         data.customers = customerData;
@@ -122,13 +124,15 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Fetch product data
+    // Fetch product data - limit to 30 most recent orders
     if (focusArea === 'overall' || focusArea === 'products') {
       // Get product data from orders
       const { data: orderData, error: orderError } = await supabase
         .from('shopify_orders')
         .select('line_items')
-        .eq('connection_id', connection.id);
+        .eq('connection_id', connection.id)
+        .order('created_at', { ascending: false })
+        .limit(30);
       
       if (!orderError && orderData) {
         // Extract and aggregate product data from line items
@@ -159,12 +163,13 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Fetch inventory data
+    // Fetch inventory data - limit to 50 items
     if (focusArea === 'overall' || focusArea === 'inventory') {
       const { data: inventoryData, error: inventoryError } = await supabase
         .from('shopify_inventory')
-        .select('*')
-        .eq('connection_id', connection.id);
+        .select('id, product_title, inventory_quantity')
+        .eq('connection_id', connection.id)
+        .limit(50);
       
       if (!inventoryError && inventoryData) {
         data.inventory = inventoryData;
@@ -191,6 +196,34 @@ export async function POST(request: NextRequest) {
     // Add date range information
     data.dateRange = dateRange || { from: 'last 30 days', to: 'today' };
     
+    // Check if we have enough data to generate insights
+    const hasData = (
+      (data.sales && data.sales.length > 0) ||
+      (data.customers && data.customers.length > 0) ||
+      (data.products && data.products.length > 0) ||
+      (data.inventory && data.inventory.length > 0)
+    );
+    
+    if (!hasData) {
+      return NextResponse.json({
+        summary: "Not enough data available to generate insights.",
+        insights: [
+          {
+            title: "Insufficient Data",
+            description: "We need more data to generate meaningful insights. Please connect your store and ensure you have orders, customers, or inventory data."
+          }
+        ],
+        opportunities: [],
+        risks: [],
+        recommendations: [
+          {
+            title: "Add More Data",
+            description: "Connect your store and sync your data to enable AI-powered insights."
+          }
+        ]
+      });
+    }
+    
     // Generate insights using GPT-4
     const insights = await generateEcommerceInsights(data, focusArea);
     
@@ -198,9 +231,24 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Error generating AI insights:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate insights', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    
+    // Return a user-friendly error response
+    return NextResponse.json({
+      summary: "We encountered an issue while generating insights.",
+      insights: [
+        {
+          title: "Analysis Interrupted",
+          description: "Our AI analysis service is currently experiencing high demand. Please try again in a few minutes."
+        }
+      ],
+      opportunities: [],
+      risks: [],
+      recommendations: [
+        {
+          title: "Try Again Later",
+          description: "This is a temporary issue. Please try refreshing the insights in a moment."
+        }
+      ]
+    });
   }
 } 
