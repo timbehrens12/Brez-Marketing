@@ -304,24 +304,24 @@ export default function AIDashboardPage() {
               {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
             </Button>
           </div>
+          
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 shadow-xl mt-6">
+            <TabsContent value="insights" className="mt-0">
+              <AIInsightsWidget 
+                brandId={selectedBrandId || ''} 
+                dateRange={dateRange}
+                focusArea={focusArea}
+              />
+            </TabsContent>
+            
+            <TabsContent value="recommendations" className="mt-0">
+              <AIRecommendationsWidget 
+                brandId={selectedBrandId || ''}
+                focusArea={focusArea}
+              />
+            </TabsContent>
+          </div>
         </Tabs>
-      </div>
-      
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 shadow-xl">
-        <TabsContent value="insights" className="mt-0">
-          <AIInsightsWidget 
-            brandId={selectedBrandId || ''} 
-            dateRange={dateRange}
-            focusArea={focusArea}
-          />
-        </TabsContent>
-        
-        <TabsContent value="recommendations" className="mt-0">
-          <AIRecommendationsWidget 
-            brandId={selectedBrandId || ''}
-            focusArea={focusArea}
-          />
-        </TabsContent>
       </div>
     </div>
   )
