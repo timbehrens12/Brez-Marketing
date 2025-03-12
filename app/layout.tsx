@@ -18,12 +18,9 @@ export const metadata: Metadata = {
   title: "Brez Dashboard",
   description: "E-commerce analytics dashboard",
   icons: {
-    icon: [
-      { url: "https://i.imgur.com/hK44KGT.png", sizes: "32x32", type: "image/png" },
-      { url: "https://i.imgur.com/hK44KGT.png", sizes: "16x16", type: "image/png" }
-    ],
-    shortcut: "https://i.imgur.com/hK44KGT.png",
-    apple: { url: "https://i.imgur.com/hK44KGT.png", sizes: "180x180", type: "image/png" }
+    icon: "https://i.imgur.com/RfOm55P.png",
+    shortcut: "https://i.imgur.com/RfOm55P.png",
+    apple: "https://i.imgur.com/RfOm55P.png",
   }
 }
 
