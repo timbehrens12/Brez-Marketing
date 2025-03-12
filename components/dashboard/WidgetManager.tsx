@@ -16,6 +16,8 @@ import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
 import { CustomerSegmentation } from "@/components/dashboard/CustomerSegmentation"
 import { CustomerLifetimeValue } from "@/components/dashboard/CustomerLifetimeValue"
+import { ProductPerformanceWidget } from "@/components/dashboard/ProductPerformanceWidget"
+import { ProductPerformanceSyncButton } from "@/components/dashboard/ProductPerformanceSyncButton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface WidgetManagerProps {
@@ -233,6 +235,27 @@ export function WidgetManager({
                 isRefreshing={isRefreshingData} 
               />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Product Performance Widgets - Only show when Shopify tab is active */}
+      {activeTab === "shopify" && platformStatus.shopify && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-semibold text-white">Product Performance</h2>
+              <ProductPerformanceSyncButton 
+                connectionId={connections.find(c => c.platform_type === 'shopify' && c.status === 'active')?.id || ''} 
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-6">
+            <ProductPerformanceWidget 
+              brandId={brandId} 
+              isRefreshing={isRefreshingData} 
+            />
           </div>
         </div>
       )}
