@@ -25,14 +25,14 @@ export const metadata: Metadata = {
         type: "image/png"
       },
       {
-        url: "https://i.imgur.com/hK44KGT.png",
+        url: "https://i.imgur.com/RfOm55P.png",
         sizes: "64x64",
         type: "image/png"
       }
     ],
-    shortcut: "https://i.imgur.com/hK44KGT.png",
+    shortcut: "https://i.imgur.com/RfOm55P.png",
     apple: {
-      url: "https://i.imgur.com/hK44KGT.png",
+      url: "https://i.imgur.com/RfOm55P.png",
       sizes: "180x180",
       type: "image/png"
     }
