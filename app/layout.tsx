@@ -19,12 +19,11 @@ export const metadata: Metadata = {
   description: "E-commerce analytics dashboard",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-16x16.png", sizes: "16x16" },
-      { url: "/favicon-32x32.png", sizes: "32x32" }
+      { url: "https://i.imgur.com/hK44KGT.png", sizes: "32x32", type: "image/png" },
+      { url: "https://i.imgur.com/hK44KGT.png", sizes: "16x16", type: "image/png" }
     ],
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.ico"
+    shortcut: "https://i.imgur.com/hK44KGT.png",
+    apple: { url: "https://i.imgur.com/hK44KGT.png", sizes: "180x180", type: "image/png" }
   }
 }
 
