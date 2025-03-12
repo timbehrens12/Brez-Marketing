@@ -3,13 +3,14 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles } from "lucide-react"
 import { UserButton, useAuth } from "@clerk/nextjs"
 import { Button } from "./ui/button"
 import { CustomSignOutButton } from "./CustomSignOutButton"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "AI Intelligence", href: "/ai-dashboard", icon: Sparkles },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart2 },
   { name: "Customers", href: "/customers", icon: Users },

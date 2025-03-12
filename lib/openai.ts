@@ -54,25 +54,57 @@ function truncateMessage(message: string, maxLength: number): string {
     try {
       const data = JSON.parse(message);
       
-      // Truncate arrays if they exist
-      if (data.sales && Array.isArray(data.sales) && data.sales.length > 10) {
-        data.sales = data.sales.slice(0, 10);
-        data.sales.push({ note: `${data.sales.length - 10} more items truncated` });
-      }
-      
-      if (data.customers && Array.isArray(data.customers) && data.customers.length > 10) {
-        data.customers = data.customers.slice(0, 10);
-        data.customers.push({ note: `${data.customers.length - 10} more items truncated` });
-      }
-      
-      if (data.products && Array.isArray(data.products) && data.products.length > 10) {
-        data.products = data.products.slice(0, 10);
-        data.products.push({ note: `${data.products.length - 10} more items truncated` });
-      }
-      
-      if (data.inventory && Array.isArray(data.inventory) && data.inventory.length > 10) {
-        data.inventory = data.inventory.slice(0, 10);
-        data.inventory.push({ note: `${data.inventory.length - 10} more items truncated` });
+      // Handle new data structure with platforms
+      if (data.platforms) {
+        // Truncate Shopify data if it exists
+        if (data.platforms.shopify) {
+          if (data.platforms.shopify.sales && Array.isArray(data.platforms.shopify.sales) && data.platforms.shopify.sales.length > 10) {
+            data.platforms.shopify.sales = data.platforms.shopify.sales.slice(0, 10);
+            data.platforms.shopify.sales.push({ note: `${data.platforms.shopify.sales.length - 10} more items truncated` });
+          }
+          
+          if (data.platforms.shopify.customers && Array.isArray(data.platforms.shopify.customers) && data.platforms.shopify.customers.length > 10) {
+            data.platforms.shopify.customers = data.platforms.shopify.customers.slice(0, 10);
+            data.platforms.shopify.customers.push({ note: `${data.platforms.shopify.customers.length - 10} more items truncated` });
+          }
+          
+          if (data.platforms.shopify.products && Array.isArray(data.platforms.shopify.products) && data.platforms.shopify.products.length > 10) {
+            data.platforms.shopify.products = data.platforms.shopify.products.slice(0, 10);
+            data.platforms.shopify.products.push({ note: `${data.platforms.shopify.products.length - 10} more items truncated` });
+          }
+          
+          if (data.platforms.shopify.inventory && Array.isArray(data.platforms.shopify.inventory) && data.platforms.shopify.inventory.length > 10) {
+            data.platforms.shopify.inventory = data.platforms.shopify.inventory.slice(0, 10);
+            data.platforms.shopify.inventory.push({ note: `${data.platforms.shopify.inventory.length - 10} more items truncated` });
+          }
+        }
+        
+        // Truncate Meta data if it exists
+        if (data.platforms.meta && data.platforms.meta.adData && Array.isArray(data.platforms.meta.adData) && data.platforms.meta.adData.length > 10) {
+          data.platforms.meta.adData = data.platforms.meta.adData.slice(0, 10);
+          data.platforms.meta.adData.push({ note: `${data.platforms.meta.adData.length - 10} more items truncated` });
+        }
+      } else {
+        // Handle legacy data structure
+        if (data.sales && Array.isArray(data.sales) && data.sales.length > 10) {
+          data.sales = data.sales.slice(0, 10);
+          data.sales.push({ note: `${data.sales.length - 10} more items truncated` });
+        }
+        
+        if (data.customers && Array.isArray(data.customers) && data.customers.length > 10) {
+          data.customers = data.customers.slice(0, 10);
+          data.customers.push({ note: `${data.customers.length - 10} more items truncated` });
+        }
+        
+        if (data.products && Array.isArray(data.products) && data.products.length > 10) {
+          data.products = data.products.slice(0, 10);
+          data.products.push({ note: `${data.products.length - 10} more items truncated` });
+        }
+        
+        if (data.inventory && Array.isArray(data.inventory) && data.inventory.length > 10) {
+          data.inventory = data.inventory.slice(0, 10);
+          data.inventory.push({ note: `${data.inventory.length - 10} more items truncated` });
+        }
       }
       
       return JSON.stringify(data);
@@ -147,29 +179,66 @@ export async function generateEcommerceInsights(
 function prepareDataForAnalysis(data: any, focusArea: string): any {
   const result = { ...data };
   
-  // Limit the number of items in arrays
-  if (result.sales && Array.isArray(result.sales)) {
-    result.sales = result.sales.slice(0, 20);
-  }
-  
-  if (result.customers && Array.isArray(result.customers)) {
-    result.customers = result.customers.slice(0, 20);
-  }
-  
-  if (result.products && Array.isArray(result.products)) {
-    result.products = result.products.slice(0, 20);
-  }
-  
-  if (result.inventory && Array.isArray(result.inventory)) {
-    result.inventory = result.inventory.slice(0, 20);
-  }
-  
-  // Keep only relevant data for the focus area to reduce payload size
-  if (focusArea !== 'overall') {
-    if (focusArea !== 'sales') delete result.sales;
-    if (focusArea !== 'customers') delete result.customers;
-    if (focusArea !== 'products') delete result.products;
-    if (focusArea !== 'inventory') delete result.inventory;
+  // Handle new data structure with platforms
+  if (result.platforms) {
+    // Process Shopify data
+    if (result.platforms.shopify) {
+      // Limit the number of items in arrays
+      if (result.platforms.shopify.sales && Array.isArray(result.platforms.shopify.sales)) {
+        result.platforms.shopify.sales = result.platforms.shopify.sales.slice(0, 20);
+      }
+      
+      if (result.platforms.shopify.customers && Array.isArray(result.platforms.shopify.customers)) {
+        result.platforms.shopify.customers = result.platforms.shopify.customers.slice(0, 20);
+      }
+      
+      if (result.platforms.shopify.products && Array.isArray(result.platforms.shopify.products)) {
+        result.platforms.shopify.products = result.platforms.shopify.products.slice(0, 20);
+      }
+      
+      if (result.platforms.shopify.inventory && Array.isArray(result.platforms.shopify.inventory)) {
+        result.platforms.shopify.inventory = result.platforms.shopify.inventory.slice(0, 20);
+      }
+      
+      // Keep only relevant data for the focus area to reduce payload size
+      if (focusArea !== 'overall') {
+        if (focusArea !== 'sales') delete result.platforms.shopify.sales;
+        if (focusArea !== 'customers') delete result.platforms.shopify.customers;
+        if (focusArea !== 'products') delete result.platforms.shopify.products;
+        if (focusArea !== 'inventory') delete result.platforms.shopify.inventory;
+      }
+    }
+    
+    // Process Meta data
+    if (result.platforms.meta && result.platforms.meta.adData && Array.isArray(result.platforms.meta.adData)) {
+      result.platforms.meta.adData = result.platforms.meta.adData.slice(0, 20);
+    }
+  } else {
+    // Handle legacy data structure
+    // Limit the number of items in arrays
+    if (result.sales && Array.isArray(result.sales)) {
+      result.sales = result.sales.slice(0, 20);
+    }
+    
+    if (result.customers && Array.isArray(result.customers)) {
+      result.customers = result.customers.slice(0, 20);
+    }
+    
+    if (result.products && Array.isArray(result.products)) {
+      result.products = result.products.slice(0, 20);
+    }
+    
+    if (result.inventory && Array.isArray(result.inventory)) {
+      result.inventory = result.inventory.slice(0, 20);
+    }
+    
+    // Keep only relevant data for the focus area to reduce payload size
+    if (focusArea !== 'overall') {
+      if (focusArea !== 'sales') delete result.sales;
+      if (focusArea !== 'customers') delete result.customers;
+      if (focusArea !== 'products') delete result.products;
+      if (focusArea !== 'inventory') delete result.inventory;
+    }
   }
   
   return result;

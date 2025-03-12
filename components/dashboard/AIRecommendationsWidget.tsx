@@ -24,12 +24,41 @@ import { toast } from 'sonner'
 
 interface AIRecommendationsWidgetProps {
   brandId: string
+  focusArea?: 'overall' | 'sales' | 'customers' | 'products' | 'inventory'
 }
 
-export function AIRecommendationsWidget({ brandId }: AIRecommendationsWidgetProps) {
+export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendationsWidgetProps) {
   const [recommendations, setRecommendations] = useState<AIRecommendations | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
+  
+  // Map focus area to recommendation area if provided
+  useEffect(() => {
+    if (focusArea) {
+      let recommendationArea = 'email';
+      
+      // Map focus areas to recommendation areas
+      switch (focusArea) {
+        case 'sales':
+          recommendationArea = 'pricing';
+          break;
+        case 'products':
+          recommendationArea = 'product';
+          break;
+        case 'customers':
+          recommendationArea = 'email';
+          break;
+        case 'inventory':
+          recommendationArea = 'product';
+          break;
+        default:
+          recommendationArea = 'email';
+      }
+      
+      setActiveTab(recommendationArea);
+      fetchRecommendations(recommendationArea);
+    }
+  }, [focusArea, brandId]);
   
   const fetchRecommendations = async (area: string = 'email') => {
     if (!brandId) return

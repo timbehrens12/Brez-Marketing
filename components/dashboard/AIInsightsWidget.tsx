@@ -14,13 +14,21 @@ interface AIInsightsWidgetProps {
     from: Date
     to: Date
   }
+  focusArea?: 'overall' | 'sales' | 'customers' | 'products' | 'inventory'
 }
 
-export function AIInsightsWidget({ brandId, dateRange }: AIInsightsWidgetProps) {
+export function AIInsightsWidget({ brandId, dateRange, focusArea: externalFocusArea }: AIInsightsWidgetProps) {
   const [insights, setInsights] = useState<AIInsights | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-  const [focusArea, setFocusArea] = useState<'overall' | 'sales' | 'customers' | 'products' | 'inventory'>('overall')
+  const [focusArea, setFocusArea] = useState<'overall' | 'sales' | 'customers' | 'products' | 'inventory'>(externalFocusArea || 'overall')
+  
+  // Update internal focus area when external prop changes
+  useEffect(() => {
+    if (externalFocusArea) {
+      setFocusArea(externalFocusArea)
+    }
+  }, [externalFocusArea])
   
   const fetchInsights = async (area: 'overall' | 'sales' | 'customers' | 'products' | 'inventory' = 'overall') => {
     if (!brandId) return
