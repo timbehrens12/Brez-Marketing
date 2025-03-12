@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase"
 import { PlatformConnection } from "@/types/platformConnection"
 import { Metrics } from "@/types/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { DollarSign, TrendingUp, Eye, MousePointer, ShoppingBag, Users } from "lucide-react"
+import { DollarSign, TrendingUp, Eye, MousePointer, ShoppingBag, Users, Lightbulb, Sparkles } from "lucide-react"
 import Image from "next/image"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
@@ -16,6 +16,8 @@ import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
 import { CustomerSegmentation } from "@/components/dashboard/CustomerSegmentation"
 import { CustomerLifetimeValue } from "@/components/dashboard/CustomerLifetimeValue"
+import { AIInsightsWidget } from "@/components/dashboard/AIInsightsWidget"
+import { AIRecommendationsWidget } from "@/components/dashboard/AIRecommendationsWidget"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface WidgetManagerProps {
@@ -49,6 +51,7 @@ export function WidgetManager({
   const [activeTab, setActiveTab] = useState<string>("shopify")
   const [connections, setConnections] = useState<PlatformConnection[]>(existingConnections || [])
   const [customerDataTab, setCustomerDataTab] = useState<string>("geography")
+  const [aiTab, setAiTab] = useState<string>("insights")
 
   useEffect(() => {
     if (existingConnections?.length > 0) {
@@ -120,6 +123,7 @@ export function WidgetManager({
           refreshing={isRefreshingData}
           data={[]}
           platform="meta"
+          brandId={brandId}
         />
 
         <MetricCard
@@ -144,6 +148,7 @@ export function WidgetManager({
           refreshing={isRefreshingData}
           data={[]}
           platform="meta"
+          brandId={brandId}
         />
 
         <MetricCard
@@ -168,6 +173,7 @@ export function WidgetManager({
           refreshing={isRefreshingData}
           data={[]}
           platform="meta"
+          brandId={brandId}
         />
 
         <MetricCard
@@ -192,11 +198,43 @@ export function WidgetManager({
           refreshing={isRefreshingData}
           data={[]}
           platform="meta"
+          brandId={brandId}
         />
       </PlatformTabs>
       
       {/* Only show Meta widgets when Meta tab is active */}
       {activeTab === "meta" && children}
+      
+      {/* AI Insights & Recommendations - Show on all tabs */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-400" />
+            AI-Powered Marketing Intelligence
+          </h2>
+          <Tabs value={aiTab} onValueChange={setAiTab} className="w-auto">
+            <TabsList className="bg-[#2A2A2A]">
+              <TabsTrigger value="insights" className="data-[state=active]:bg-blue-600">Insights</TabsTrigger>
+              <TabsTrigger value="recommendations" className="data-[state=active]:bg-blue-600">Recommendations</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6">
+          {aiTab === "insights" && (
+            <AIInsightsWidget 
+              brandId={brandId} 
+              dateRange={dateRange}
+            />
+          )}
+          
+          {aiTab === "recommendations" && (
+            <AIRecommendationsWidget 
+              brandId={brandId} 
+            />
+          )}
+        </div>
+      </div>
       
       {/* Customer Data Widgets - Only show when Shopify tab is active */}
       {activeTab === "shopify" && platformStatus.shopify && (

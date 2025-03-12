@@ -84,6 +84,7 @@ interface MetaMetrics {
 interface MetaContentProps {
   metrics: MetaMetrics
   dateRange: DateRange | undefined
+  brandId: string
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
@@ -100,7 +101,7 @@ function MetricSkeleton() {
   )
 }
 
-export function MetaContent({ metrics, dateRange }: MetaContentProps) {
+export function MetaContent({ metrics, dateRange, brandId }: MetaContentProps) {
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [metaData, setMetaData] = useState<MetaAdsData | null>(null)
@@ -214,6 +215,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
                 comparisonValue: day.clicks
               })) || []}
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+              brandId={brandId}
             />
             <MetricCard
               title={
@@ -237,6 +239,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               platform="meta"
               data={[]}
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+              brandId={brandId}
             />
             <MetricCard
               title={
@@ -260,6 +263,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               platform="meta"
               data={[]}
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+              brandId={brandId}
             />
             <MetricCard
               title={
@@ -284,6 +288,7 @@ export function MetaContent({ metrics, dateRange }: MetaContentProps) {
               platform="meta"
               data={[]}
               className={`${darkCardClass} [&_*]:text-white [&_.text-muted-foreground]:text-white/60`}
+              brandId={brandId}
             />
           </div>
 

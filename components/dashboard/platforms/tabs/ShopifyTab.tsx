@@ -235,6 +235,7 @@ export function ShopifyTab({
             platform="shopify"
             dateRange={dateRange}
             infoTooltip="Total revenue from all orders in the selected period"
+            brandId={brandId}
           />
           <MetricCard
             title={
@@ -260,6 +261,7 @@ export function ShopifyTab({
             platform="shopify"
             dateRange={dateRange}
             infoTooltip="Total number of orders placed in the selected period"
+            brandId={brandId}
           />
           <MetricCard
             title={
@@ -287,6 +289,7 @@ export function ShopifyTab({
             platform="shopify"
             dateRange={dateRange}
             infoTooltip="Average value of orders in the selected period"
+            brandId={brandId}
           />
           <MetricCard
             title={
@@ -312,6 +315,7 @@ export function ShopifyTab({
             platform="shopify"
             dateRange={dateRange}
             infoTooltip="Total number of units sold in the selected period"
+            brandId={brandId}
           />
         </div>
         

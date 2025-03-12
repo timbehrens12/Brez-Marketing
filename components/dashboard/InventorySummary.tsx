@@ -163,6 +163,7 @@ export function InventorySummary({
           refreshing={isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
+          brandId={brandId}
         />
         
         {/* Product Inventory Levels Widget */}
@@ -233,6 +234,7 @@ export function InventorySummary({
           refreshing={isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
+          brandId={brandId}
         />
         
         <MetricCard
@@ -258,6 +260,7 @@ export function InventorySummary({
           refreshing={isRefreshingData}
           platform="shopify"
           hidePercentageChange={true}
+          brandId={brandId}
         />
       </div>
     </div>

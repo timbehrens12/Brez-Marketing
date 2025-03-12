@@ -10,6 +10,7 @@ import { useMemo } from "react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { TrendingUp, TrendingDown, Info, Minus, Loader2 } from "lucide-react"
 import { MetricLineChart } from "./MetricLineChart"
+import { MetricExplanation } from '@/components/dashboard/MetricExplanation'
 
 interface MetricCardProps {
   title: string | React.ReactNode
@@ -30,6 +31,7 @@ interface MetricCardProps {
   emptyState?: string
   icon?: React.ReactNode
   hidePercentageChange?: boolean
+  brandId?: string
 }
 
 export function MetricCard({
@@ -51,7 +53,8 @@ export function MetricCard({
   emptyState,
   icon,
   hidePercentageChange = false,
-}: MetricCardProps) {
+  brandId,
+}: MetricCardProps & { brandId?: string }) {
   // Force everything to be numbers
   const safeValue = typeof value === 'number' ? value : Number(value) || 0
   const safeChange = typeof change === 'number' ? change : Number(change) || 0
@@ -332,6 +335,15 @@ export function MetricCard({
             {icon && <div className="mr-2">{icon}</div>}
             <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
               {title}
+              {brandId && (
+                <MetricExplanation 
+                  brandId={brandId}
+                  metricName={typeof title === 'string' ? title : 'this metric'}
+                  metricValue={typeof value === 'number' ? value : 0}
+                  metricChange={change}
+                  historicalData={data}
+                />
+              )}
               {infoTooltip && (
                 <TooltipProvider>
                   <Tooltip>

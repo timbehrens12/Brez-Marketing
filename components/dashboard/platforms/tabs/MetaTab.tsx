@@ -91,6 +91,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Total amount spent on Meta ads in the selected period"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -116,6 +117,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Number of times your ads were displayed to users"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -141,6 +143,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Number of clicks on your ads"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -167,6 +170,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Return on Ad Spend - revenue generated per dollar spent on ads"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -192,6 +196,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Click-Through Rate - percentage of impressions that resulted in clicks"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -217,6 +222,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Cost Per Click - average cost for each click on your ads"
+          brandId={brandId}
         />
         <MetricCard
           title={
@@ -242,6 +248,7 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Number of actions taken after viewing or clicking your ads"
+          brandId={brandId}
         />
       </div>
     </div>
