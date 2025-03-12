@@ -18,9 +18,13 @@ export const metadata: Metadata = {
   title: "Brez Dashboard",
   description: "E-commerce analytics dashboard",
   icons: {
-    icon: "https://i.imgur.com/hK44KGT.png",
-    shortcut: "https://i.imgur.com/hK44KGT.png",
-    apple: "https://i.imgur.com/hK44KGT.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16" },
+      { url: "/favicon-32x32.png", sizes: "32x32" }
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ico"
   }
 }
 
