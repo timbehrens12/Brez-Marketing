@@ -32,42 +32,33 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('email')
   
-  // Map focus area to recommendation area if provided
+  // Map focus areas to recommendation types
+  const getRecommendationArea = () => {
+    if (!focusArea || focusArea === 'overall') return 'email';
+    if (focusArea === 'sales') return 'email';
+    if (focusArea === 'customers') return 'email';
+    if (focusArea === 'products') return 'product';
+    if (focusArea === 'inventory') return 'pricing';
+    return 'email';
+  };
+
   useEffect(() => {
-    if (focusArea) {
-      let recommendationArea = 'email';
-      
-      // Map focus areas to recommendation areas
-      switch (focusArea) {
-        case 'sales':
-          recommendationArea = 'pricing';
-          break;
-        case 'products':
-          recommendationArea = 'product';
-          break;
-        case 'customers':
-          recommendationArea = 'email';
-          break;
-        case 'inventory':
-          recommendationArea = 'product';
-          break;
-        default:
-          recommendationArea = 'email';
-      }
-      
-      setActiveTab(recommendationArea);
-      fetchRecommendations(recommendationArea);
+    if (brandId) {
+      const area = getRecommendationArea();
+      setActiveTab(area);
+      fetchRecommendations(area);
     }
-  }, [focusArea, brandId]);
-  
+  }, [brandId, focusArea]);
+
   const fetchRecommendations = async (area: string = 'email') => {
     if (!brandId) return
     
     setIsLoading(true)
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      // Create an AbortController to handle timeouts
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
       const response = await fetch('/api/ai/recommendations', {
         method: 'POST',
@@ -79,49 +70,41 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
           area
         }),
         signal: controller.signal
-      });
+      })
       
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch recommendations');
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch recommendations')
       }
       
-      const data = await response.json();
-      setRecommendations(data);
+      const data = await response.json()
+      setRecommendations(data)
     } catch (error) {
-      console.error('Error fetching AI recommendations:', error);
+      console.error('Error fetching recommendations:', error)
       
       // Check if it's an abort error (timeout)
       if (error instanceof DOMException && error.name === 'AbortError') {
-        toast.error('Request timed out. The server is taking too long to respond.');
+        toast.error('AI recommendations request timed out. Please try again later.')
+        
+        // Set fallback recommendations
+        setRecommendations({
+          recommendations: []
+        })
       } else {
-        toast.error('Failed to generate recommendations. Please try again later.');
+        toast.error('Failed to fetch AI recommendations. Please try again later.')
+        
+        // Set fallback recommendations
+        setRecommendations({
+          recommendations: []
+        })
       }
-      
-      // Set fallback recommendations
-      setRecommendations({
-        recommendations: [
-          {
-            title: "Service Temporarily Unavailable",
-            channel: "general",
-            targetAudience: "store owner",
-            message: "Our AI recommendation service is currently experiencing high demand. Please try again in a few minutes.",
-            implementation: ["Refresh the recommendations tab", "Try a different recommendation category"],
-            expectedOutcome: "Get AI-powered marketing recommendations"
-          }
-        ]
-      });
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
-  
-  useEffect(() => {
-    fetchRecommendations()
-  }, [brandId])
-  
+
   const handleTabChange = (value: string) => {
     setActiveTab(value)
     fetchRecommendations(value)
@@ -488,8 +471,66 @@ export function AIRecommendationsWidget({ brandId, focusArea }: AIRecommendation
               </div>
             </div>
           ) : (
-            <div>
-              {recommendations.recommendations.map(renderRecommendation)}
+            <div className="space-y-4">
+              {activeTab === 'email' && recommendations.recommendations
+                .filter(item => isEmailCampaign(item))
+                .map((item, index) => (
+                  <div key={index}>{renderRecommendation(item)}</div>
+                ))}
+              
+              {activeTab === 'social' && recommendations.recommendations
+                .filter(item => isSocialCampaign(item))
+                .map((item, index) => (
+                  <div key={index}>{renderRecommendation(item)}</div>
+                ))}
+              
+              {activeTab === 'product' && recommendations.recommendations
+                .filter(item => isProductRecommendation(item))
+                .map((item, index) => (
+                  <div key={index}>{renderRecommendation(item)}</div>
+                ))}
+              
+              {activeTab === 'pricing' && recommendations.recommendations
+                .filter(item => isPricingRecommendation(item))
+                .map((item, index) => (
+                  <div key={index}>{renderRecommendation(item)}</div>
+                ))}
+              
+              {activeTab === 'general' && recommendations.recommendations
+                .filter(item => isMarketingRecommendation(item))
+                .map((item, index) => (
+                  <div key={index}>{renderRecommendation(item)}</div>
+                ))}
+              
+              {activeTab === 'email' && !recommendations.recommendations.some(item => isEmailCampaign(item)) && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No email recommendations available</p>
+                </div>
+              )}
+              
+              {activeTab === 'social' && !recommendations.recommendations.some(item => isSocialCampaign(item)) && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No social media recommendations available</p>
+                </div>
+              )}
+              
+              {activeTab === 'product' && !recommendations.recommendations.some(item => isProductRecommendation(item)) && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No product recommendations available</p>
+                </div>
+              )}
+              
+              {activeTab === 'pricing' && !recommendations.recommendations.some(item => isPricingRecommendation(item)) && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No pricing recommendations available</p>
+                </div>
+              )}
+              
+              {activeTab === 'general' && !recommendations.recommendations.some(item => isMarketingRecommendation(item)) && (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No general recommendations available</p>
+                </div>
+              )}
             </div>
           )}
         </Tabs>

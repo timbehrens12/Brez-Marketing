@@ -17,6 +17,11 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Brez Dashboard",
   description: "E-commerce analytics dashboard",
+  icons: {
+    icon: "https://i.imgur.com/hK44KGT.png",
+    shortcut: "https://i.imgur.com/hK44KGT.png",
+    apple: "https://i.imgur.com/hK44KGT.png",
+  }
 }
 
 export default function RootLayout({

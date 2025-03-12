@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@clerk/nextjs"
 import { useBrandContext } from '@/lib/context/BrandContext'
-import { DateRangePicker } from "@/components/DateRangePicker"
-import { startOfDay, endOfDay, subDays } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AIInsightsWidget } from "@/components/dashboard/AIInsightsWidget"
 import { AIRecommendationsWidget } from "@/components/dashboard/AIRecommendationsWidget"
@@ -21,15 +19,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function AIDashboardPage() {
   const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: startOfDay(subDays(new Date(), 30)),
-    to: endOfDay(new Date()),
-  })
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isLoadingConnections, setIsLoadingConnections] = useState(true)
   const [activeTab, setActiveTab] = useState("insights")
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [focusArea, setFocusArea] = useState<'overall' | 'sales' | 'customers' | 'products' | 'inventory'>('overall')
+  // Always use 'overall' focus area
+  const focusArea = 'overall'
 
   useEffect(() => {
     if (selectedBrandId) {
@@ -118,56 +113,6 @@ export default function AIDashboardPage() {
     )
   }
 
-  const renderFocusAreaSelector = () => {
-    return (
-      <div className="mb-6">
-        <h3 className="text-sm font-medium mb-2 text-gray-400">Focus Area</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button 
-            variant={focusArea === 'overall' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFocusArea('overall')}
-            className={focusArea === 'overall' ? "bg-blue-600 hover:bg-blue-700" : ""}
-          >
-            Overall
-          </Button>
-          <Button 
-            variant={focusArea === 'sales' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFocusArea('sales')}
-            className={focusArea === 'sales' ? "bg-blue-600 hover:bg-blue-700" : ""}
-          >
-            Sales
-          </Button>
-          <Button 
-            variant={focusArea === 'customers' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFocusArea('customers')}
-            className={focusArea === 'customers' ? "bg-blue-600 hover:bg-blue-700" : ""}
-          >
-            Customers
-          </Button>
-          <Button 
-            variant={focusArea === 'products' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFocusArea('products')}
-            className={focusArea === 'products' ? "bg-blue-600 hover:bg-blue-700" : ""}
-          >
-            Products
-          </Button>
-          <Button 
-            variant={focusArea === 'inventory' ? "default" : "outline"} 
-            size="sm"
-            onClick={() => setFocusArea('inventory')}
-            className={focusArea === 'inventory' ? "bg-blue-600 hover:bg-blue-700" : ""}
-          >
-            Inventory
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   const handleBrandSelect = (brandId: string) => {
     setSelectedBrandId(brandId)
   }
@@ -187,7 +132,16 @@ export default function AIDashboardPage() {
         
         <div className="flex flex-col sm:flex-row gap-4">
           <BrandSelector onSelect={handleBrandSelect} />
-          <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="bg-gray-800 hover:bg-gray-700"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
+          </Button>
         </div>
       </div>
       
@@ -198,35 +152,16 @@ export default function AIDashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Brain className="h-5 w-5 text-blue-400" />
-              Cross-Platform Analysis
+              AI Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-300">
-              Our AI analyzes data from all your connected platforms to provide holistic insights.
+              Our AI analyzes your data across all platforms to provide actionable insights.
             </p>
           </CardContent>
           <CardFooter>
             <Button variant="link" className="text-blue-400 p-0 h-auto text-xs">
-              Learn more <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </CardFooter>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-purple-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-purple-400" />
-              Smart Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-300">
-              Discover hidden patterns and opportunities in your data that you might have missed.
-            </p>
-          </CardContent>
-          <CardFooter>
-            <Button variant="link" className="text-purple-400 p-0 h-auto text-xs">
               Learn more <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </CardFooter>
@@ -241,11 +176,30 @@ export default function AIDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-300">
-              Get actionable recommendations to increase sales, improve marketing ROI, and grow your business.
+              Discover untapped opportunities to grow your business based on your data.
             </p>
           </CardContent>
           <CardFooter>
             <Button variant="link" className="text-green-400 p-0 h-auto text-xs">
+              Learn more <ArrowRight className="h-3 w-3 ml-1" />
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-900/40 to-violet-900/40 border-purple-800">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-purple-400" />
+              Smart Recommendations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-300">
+              Get personalized recommendations to optimize your marketing strategy.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button variant="link" className="text-purple-400 p-0 h-auto text-xs">
               Learn more <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </CardFooter>
@@ -271,8 +225,6 @@ export default function AIDashboardPage() {
         </Card>
       </div>
       
-      {renderFocusAreaSelector()}
-      
       <div className="flex justify-between items-center mb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-between items-center">
@@ -292,24 +244,16 @@ export default function AIDashboardPage() {
                 Recommendations
               </TabsTrigger>
             </TabsList>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="bg-gray-800 hover:bg-gray-700"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
-            </Button>
           </div>
           
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 shadow-xl mt-6">
             <TabsContent value="insights" className="mt-0">
               <AIInsightsWidget 
                 brandId={selectedBrandId || ''} 
-                dateRange={dateRange}
+                dateRange={{
+                  from: new Date(new Date().setDate(new Date().getDate() - 30)),
+                  to: new Date()
+                }}
                 focusArea={focusArea}
               />
             </TabsContent>
