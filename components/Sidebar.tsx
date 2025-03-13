@@ -29,14 +29,15 @@ export function Sidebar({ className }: SidebarProps) {
   if (!isLoaded || !userId) {
     return (
       <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col`}>
-        <div className="p-6 flex-1">
-          <div className="mb-8">
-            <img 
-              src="/brand/logo.png" 
-              alt="Brez Logo" 
-              className="h-14 w-auto object-contain mx-auto" 
-            />
-          </div>
+        <div className="p-6 text-center">
+          <img 
+            src="/brand/logo.png" 
+            alt="Brez Logo" 
+            className="h-16 w-auto object-contain mx-auto" 
+          />
+        </div>
+        <div className="border-t border-[#2A2A2A] mb-6"></div>
+        <div className="px-6 flex-1">
           <nav className="space-y-0.5 opacity-50">
             <div
               className={cn(
@@ -66,22 +67,15 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full`}>
-      <div className="p-6 flex-1">
-        <div className="mb-8 flex items-center justify-between">
-          <img 
-            src="/brand/logo.png" 
-            alt="Brez Logo" 
-            className="h-14 w-auto object-contain" 
-          />
-          <UserButton 
-            appearance={{
-              elements: {
-                userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
-                userButtonTrigger: "rounded-full"
-              }
-            }}
-          />
-        </div>
+      <div className="p-6 text-center">
+        <img 
+          src="/brand/logo.png" 
+          alt="Brez Logo" 
+          className="h-16 w-auto object-contain mx-auto" 
+        />
+      </div>
+      <div className="border-t border-[#2A2A2A] mb-6"></div>
+      <div className="px-6 flex-1">
         <nav className="space-y-0.5">
           {navItems.map((item) => (
             <Link
@@ -102,6 +96,17 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="p-4 mt-auto border-t border-[#2A2A2A]">
+        <div className="flex items-center gap-3 mb-3">
+          <UserButton 
+            appearance={{
+              elements: {
+                userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
+                userButtonTrigger: "rounded-full"
+              }
+            }}
+          />
+          <span className="text-sm text-gray-400">Your Account</span>
+        </div>
         <CustomSignOutButton />
       </div>
     </aside>

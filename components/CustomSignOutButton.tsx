@@ -2,14 +2,10 @@
 
 import { useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
-import { Button } from "./ui/button"
 import { LogOut } from "lucide-react"
+import { Button } from "./ui/button"
 
-interface CustomSignOutButtonProps {
-  className?: string
-}
-
-export function CustomSignOutButton({ className }: CustomSignOutButtonProps) {
+export function CustomSignOutButton() {
   const { signOut } = useClerk()
   const router = useRouter()
 
@@ -21,12 +17,13 @@ export function CustomSignOutButton({ className }: CustomSignOutButtonProps) {
   }
 
   return (
-    <Button 
-      variant="ghost" 
-      className={`w-full flex items-center gap-2 text-gray-400 hover:text-white hover:bg-[#2A2A2A] ${className}`}
+    <Button
+      variant="ghost"
+      size="sm"
+      className="w-full justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
       onClick={handleSignOut}
     >
-      <LogOut className="h-4 w-4" />
+      <LogOut className="mr-3 h-4 w-4" />
       Sign Out
     </Button>
   )
