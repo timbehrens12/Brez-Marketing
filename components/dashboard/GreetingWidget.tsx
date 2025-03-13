@@ -331,6 +331,21 @@ export function GreetingWidget({
       if (revenueGrowth < -20) {
         alerts.push('Revenue showing significant decline')
       }
+      
+      // AOV alerts
+      const currentAOV = periodData.today.ordersCount > 0 ? 
+        periodData.today.totalSales / periodData.today.ordersCount : 0
+      const monthlyAOV = periodData.month.ordersCount > 0 ? 
+        periodData.month.totalSales / periodData.month.ordersCount : 0
+      
+      if (currentAOV > 0 && monthlyAOV > 0 && currentAOV < monthlyAOV * 0.7) {
+        alerts.push('Average order value declining')
+      }
+      
+      // Order frequency alerts
+      if (periodData.week.ordersCount < 5 && periodData.month.ordersCount > 20) {
+        alerts.push('Order frequency has dropped this week')
+      }
     }
 
     if (hasMeta && metrics.adSpend > 0) {
@@ -341,6 +356,12 @@ export function GreetingWidget({
       if (metrics.ctr < 0.01) {
         alerts.push('Critical: Low ad engagement')
       }
+      if (metrics.adSpend > 500 && metrics.roas < 1.5) {
+        alerts.push('High ad spend with low return')
+      }
+      if (metrics.conversionRate && metrics.conversionRate < 0.01) {
+        alerts.push('Ad traffic not converting')
+      }
     }
 
     console.log('Alerts:', alerts);
@@ -349,9 +370,9 @@ export function GreetingWidget({
     // Combine all insights
     let summaryText = summaryParts.join('')
     
-    // Add priority alerts if any
+    // Add priority alerts if any, renamed to "Action Items"
     if (alerts.length > 0) {
-      summaryText += `Priority items: ${alerts.join(', ')}.`
+      summaryText += `Action Items: ${alerts.join('. ')}.`
     }
 
     // Add recommendation for incomplete data
@@ -479,17 +500,21 @@ export function GreetingWidget({
               </div>
             )}
 
-            {/* Priority Items Section */}
-            {summary && summary.includes("Priority items:") && (
+            {/* Action Items Section */}
+            {summary && summary.includes("Action Items:") && (
               <div className="mt-4 bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
                 <h4 className="text-amber-400 text-sm font-medium flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4" />
-                  Priority Items
+                  Action Items
                 </h4>
                 <ul className="text-gray-300 text-sm space-y-1 pl-6 list-disc">
-                  {summary.split("Priority items:")[1].split(".")[0].split(",").map((item, index) => (
-                    <li key={index}>{item.trim()}</li>
-                  ))}
+                  {summary
+                    .split("Action Items:")[1]
+                    .split(".")
+                    .filter(item => item.trim().length > 0)
+                    .map((item, index) => (
+                      <li key={index}>{item.trim()}</li>
+                    ))}
                 </ul>
               </div>
             )}
@@ -514,7 +539,7 @@ export function GreetingWidget({
             </div>
 
             {/* Summary Text (excluding priority items which are now in their own section) */}
-            {summary && !summary.includes("Priority items:") && (
+            {summary && !summary.includes("Action Items:") && (
               <p className="text-gray-400 mt-4">
                 {summary}
               </p>

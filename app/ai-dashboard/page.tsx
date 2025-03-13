@@ -6,7 +6,6 @@ import { useBrandContext } from '@/lib/context/BrandContext'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AIInsightsWidget } from "@/components/dashboard/AIInsightsWidget"
 import { AIRecommendationsWidget } from "@/components/dashboard/AIRecommendationsWidget"
-import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { supabase } from "@/lib/supabase"
 import { PlatformConnection } from '@/types/platformConnection'
 import { Sparkles, Brain, Lightbulb, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, RefreshCw } from "lucide-react"
@@ -16,7 +15,6 @@ import BrandSelector from '@/components/BrandSelector'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { defaultMetrics, Metrics } from "@/types/metrics"
 
 export default function AIDashboardPage() {
   const { userId, isLoaded } = useAuth()
@@ -27,14 +25,10 @@ export default function AIDashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   // Always use 'overall' focus area
   const focusArea = 'overall'
-  // Add metrics state for the greeting widget
-  const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
 
   useEffect(() => {
     if (selectedBrandId) {
       loadConnections()
-      // Fetch basic metrics for the greeting widget
-      fetchBasicMetrics()
     }
   }, [selectedBrandId])
   
@@ -123,21 +117,6 @@ export default function AIDashboardPage() {
     setSelectedBrandId(brandId)
   }
 
-  // Add function to fetch basic metrics for the greeting widget
-  const fetchBasicMetrics = async () => {
-    if (!selectedBrandId) return
-    
-    try {
-      const response = await fetch(`/api/metrics?brandId=${selectedBrandId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setMetrics(data)
-      }
-    } catch (error) {
-      console.error('Error fetching metrics for greeting:', error)
-    }
-  }
-
   return (
     <div className="container mx-auto py-6 max-w-7xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -165,15 +144,6 @@ export default function AIDashboardPage() {
           </Button>
         </div>
       </div>
-      
-      {selectedBrandId && (
-        <GreetingWidget 
-          brandId={selectedBrandId}
-          brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
-          metrics={metrics}
-          connections={connections}
-        />
-      )}
       
       {renderConnectionStatus()}
       
