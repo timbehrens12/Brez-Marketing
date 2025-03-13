@@ -2,16 +2,24 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, TrendingUp, AlertTriangle, Lightbulb } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Metrics } from "@/types/metrics"
 import { PlatformConnection } from "@/types/platformConnection"
+import { supabase } from "@/lib/supabase"
+import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
 
 interface GreetingWidgetProps {
   brandId: string
   brandName: string
   metrics: Metrics
   connections: PlatformConnection[]
+}
+
+interface PeriodMetrics {
+  totalSales: number
+  ordersCount: number
+  averageOrderValue: number
 }
 
 export function GreetingWidget({ 
@@ -23,7 +31,16 @@ export function GreetingWidget({
   const { user } = useUser()
   const [greeting, setGreeting] = useState("")
   const [summary, setSummary] = useState("")
-  const [insightType, setInsightType] = useState<"neutral" | "positive" | "negative" | "tip">("neutral")
+  const [isLoading, setIsLoading] = useState(true)
+  const [periodData, setPeriodData] = useState<{
+    today: PeriodMetrics,
+    week: PeriodMetrics,
+    month: PeriodMetrics
+  }>({
+    today: { totalSales: 0, ordersCount: 0, averageOrderValue: 0 },
+    week: { totalSales: 0, ordersCount: 0, averageOrderValue: 0 },
+    month: { totalSales: 0, ordersCount: 0, averageOrderValue: 0 }
+  })
 
   // Set the greeting based on time of day
   useEffect(() => {
@@ -38,185 +55,221 @@ export function GreetingWidget({
     }
   }, [])
 
+  // Fetch data for different time periods
+  useEffect(() => {
+    const fetchPeriodData = async () => {
+      if (!brandId || !connections.length) {
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      
+      try {
+        const shopifyConnection = connections.find(c => 
+          c.platform_type === 'shopify' && c.status === 'active'
+        )
+        
+        if (!shopifyConnection) {
+          setIsLoading(false)
+          return
+        }
+        
+        const today = new Date()
+        
+        // Define time periods
+        const periods = {
+          today: {
+            from: startOfDay(today),
+            to: endOfDay(today)
+          },
+          week: {
+            from: startOfWeek(today, { weekStartsOn: 1 }),
+            to: endOfWeek(today, { weekStartsOn: 1 })
+          },
+          month: {
+            from: startOfMonth(today),
+            to: endOfMonth(today)
+          }
+        }
+        
+        // Fetch data for each period
+        const results = {
+          today: await fetchPeriodMetrics(shopifyConnection.id, periods.today.from, periods.today.to),
+          week: await fetchPeriodMetrics(shopifyConnection.id, periods.week.from, periods.week.to),
+          month: await fetchPeriodMetrics(shopifyConnection.id, periods.month.from, periods.month.to)
+        }
+        
+        setPeriodData(results)
+      } catch (error) {
+        console.error('Error fetching period data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchPeriodData()
+  }, [brandId, connections])
+
+  // Function to fetch metrics for a specific period
+  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
+    try {
+      const { data: orders, error } = await supabase
+        .from('shopify_orders')
+        .select('*')
+        .eq('connection_id', connectionId)
+        .gte('created_at', from.toISOString())
+        .lte('created_at', to.toISOString())
+      
+      if (error) throw error
+      
+      if (!orders || orders.length === 0) {
+        return { totalSales: 0, ordersCount: 0, averageOrderValue: 0 }
+      }
+      
+      const totalSales = orders.reduce((sum: number, order: { total_price: string | number }) => {
+        const price = typeof order.total_price === 'string' 
+          ? parseFloat(order.total_price) 
+          : (order.total_price || 0)
+        return sum + price
+      }, 0)
+      
+      const ordersCount = orders.length
+      const averageOrderValue = ordersCount > 0 ? totalSales / ordersCount : 0
+      
+      return {
+        totalSales,
+        ordersCount,
+        averageOrderValue
+      }
+    } catch (error) {
+      console.error('Error fetching period metrics:', error)
+      return { totalSales: 0, ordersCount: 0, averageOrderValue: 0 }
+    }
+  }
+
   // Generate summary based on metrics
   useEffect(() => {
-    if (!metrics || !brandName) {
-      setSummary("Welcome to your marketing dashboard. Connect your platforms to see insights.")
-      setInsightType("neutral")
+    if (isLoading) {
+      setSummary("Loading your brand snapshot...")
+      return
+    }
+    
+    if (!brandName) {
+      setSummary("Welcome to your marketing dashboard. Select a brand to see insights.")
       return
     }
 
     const hasShopify = connections.some(c => c.platform_type === 'shopify' && c.status === 'active')
     const hasMeta = connections.some(c => c.platform_type === 'meta' && c.status === 'active')
     
-    // Generate a variety of insights that could be shown
-    const possibleInsights = []
+    if (!hasShopify && !hasMeta) {
+      setSummary(`Welcome to ${brandName}'s dashboard. Connect your platforms to see AI-powered insights.`)
+      return
+    }
     
-    // Overall business health insights
+    let summaryText = ""
+    
+    // Add Shopify insights if connected
     if (hasShopify) {
-      // Revenue insights
-      if (metrics.totalSales > 0) {
-        possibleInsights.push({
-          text: `${brandName} has generated $${metrics.totalSales.toLocaleString(undefined, {maximumFractionDigits: 0})} in revenue with ${metrics.ordersPlaced} orders. Your average order value is $${metrics.averageOrderValue.toFixed(2)}.`,
-          type: "neutral"
-        })
-      }
+      // Calculate daily averages for comparison
+      const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
+      const weeklyAverage = periodData.week.totalSales / 7
+      const isWeekStronger = weeklyAverage > dailyAverage
+      const weekVsMonth = ((weeklyAverage - dailyAverage) / dailyAverage) * 100
       
-      // AOV insights
-      if (metrics.averageOrderValue > 0) {
-        const aovBenchmark = 75 // Example benchmark
-        if (metrics.averageOrderValue > aovBenchmark) {
-          possibleInsights.push({
-            text: `Your average order value of $${metrics.averageOrderValue.toFixed(2)} is strong. Consider upselling premium products to leverage this trend.`,
-            type: "positive"
-          })
+      // Today's performance with context
+      if (periodData.today.ordersCount > 0) {
+        const todayVsWeek = ((periodData.today.totalSales - weeklyAverage) / weeklyAverage) * 100
+        summaryText += `Today's sales: ${formatCurrency(periodData.today.totalSales)} (${periodData.today.ordersCount} order${periodData.today.ordersCount !== 1 ? 's' : ''})`
+        if (Math.abs(todayVsWeek) > 10) {
+          summaryText += ` - ${todayVsWeek > 0 ? 'above' : 'below'} your weekly average. `
         } else {
-          possibleInsights.push({
-            text: `Try increasing your average order value of $${metrics.averageOrderValue.toFixed(2)} with bundle offers or free shipping thresholds.`,
-            type: "tip"
-          })
+          summaryText += " - in line with your weekly average. "
+        }
+      } else {
+        summaryText += "No orders yet today. "
+      }
+      
+      // Weekly performance with trend
+      if (periodData.week.ordersCount > 0) {
+        summaryText += `This week: ${formatCurrency(periodData.week.totalSales)} (${periodData.week.ordersCount} order${periodData.week.ordersCount !== 1 ? 's' : ''})`
+        if (Math.abs(weekVsMonth) > 10) {
+          summaryText += ` - ${weekVsMonth > 0 ? 'above' : 'below'} your monthly average. `
+        } else {
+          summaryText += " - in line with your monthly average. "
         }
       }
       
-      // Customer segment insights
-      if (metrics.customerSegments) {
-        const returningRatio = metrics.customerSegments.returningCustomers / 
-          (metrics.customerSegments.newCustomers + metrics.customerSegments.returningCustomers) || 0
-        
-        if (returningRatio > 0.5) {
-          possibleInsights.push({
-            text: `${Math.round(returningRatio * 100)}% of your customers are returning customers - your retention strategy is working well!`,
-            type: "positive"
-          })
-        } else if (metrics.customerSegments.newCustomers > 0) {
-          possibleInsights.push({
-            text: `You're attracting new customers well, but only ${Math.round(returningRatio * 100)}% are returning. Consider a loyalty program to improve retention.`,
-            type: "tip"
-          })
+      // Monthly performance and AOV
+      if (periodData.month.ordersCount > 5) {
+        const aov = periodData.month.averageOrderValue
+        summaryText += `Monthly AOV: ${formatCurrency(aov)}`
+        if (aov > 100) {
+          summaryText += " - strong performance. "
+        } else if (aov < 50) {
+          summaryText += " - room for improvement. "
+        } else {
+          summaryText += ". "
         }
-      }
-      
-      // Top product insights
-      if (metrics.topProducts && metrics.topProducts.length > 0) {
-        const topProduct = metrics.topProducts[0]
-        possibleInsights.push({
-          text: `Your best-selling product is "${topProduct.title || 'Unknown'}" with ${topProduct.quantity} units sold. Consider featuring it prominently in your marketing.`,
-          type: "positive"
-        })
       }
     }
     
-    // Meta ad insights
+    // Add Meta insights if connected
     if (hasMeta && metrics.adSpend > 0) {
-      // ROAS insights
-      if (metrics.roas > 0) {
-        if (metrics.roas > 4) {
-          possibleInsights.push({
-            text: `Your Meta ads are performing exceptionally well with a ROAS of ${metrics.roas.toFixed(2)}x. Consider increasing your ad budget to scale these results.`,
-            type: "positive"
-          })
-        } else if (metrics.roas < 2) {
-          possibleInsights.push({
-            text: `Your Meta ads ROAS is ${metrics.roas.toFixed(2)}x. Review your targeting and creative to improve performance.`,
-            type: "negative"
-          })
-        } else {
-          possibleInsights.push({
-            text: `Your Meta ads have a healthy ROAS of ${metrics.roas.toFixed(2)}x. Continue testing new audiences to optimize further.`,
-            type: "neutral"
-          })
-        }
+      summaryText += `Meta ads: ${formatCurrency(metrics.adSpend)} spent with ${metrics.roas.toFixed(1)}x ROAS`
+      if (metrics.roas > 3) {
+        summaryText += " - excellent performance. "
+      } else if (metrics.roas > 2) {
+        summaryText += " - good performance. "
+      } else if (metrics.roas > 1) {
+        summaryText += " - positive but could improve. "
+      } else {
+        summaryText += " - needs optimization. "
       }
+    }
+    
+    // Add overall brand health summary
+    if (hasShopify && periodData.month.ordersCount > 5) {
+      const monthlyRevenue = periodData.month.totalSales
+      const weeklyRevenue = periodData.week.totalSales
+      const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
       
-      // CTR insights
-      if (metrics.ctr > 0) {
-        const ctrPercentage = (metrics.ctr * 100).toFixed(2)
-        if (metrics.ctr > 0.02) { // 2% is generally good
-          possibleInsights.push({
-            text: `Your Meta ads have a strong click-through rate of ${ctrPercentage}%. Your creative is resonating with your audience.`,
-            type: "positive"
-          })
-        } else {
-          possibleInsights.push({
-            text: `Your Meta ads click-through rate is ${ctrPercentage}%. Try refreshing your ad creative to improve engagement.`,
-            type: "tip"
-          })
-        }
+      if (Math.abs(revenueGrowth) > 10) {
+        summaryText += `Your ${revenueGrowth > 0 ? 'revenue is trending up' : 'revenue is trending down'} ${Math.abs(revenueGrowth).toFixed(0)}% compared to last month. `
       }
     }
     
-    // General business tips
-    possibleInsights.push({
-      text: `Looking to grow ${brandName}? The AI Intelligence section can provide personalized marketing recommendations based on your data.`,
-      type: "tip"
-    })
-    
-    if (hasShopify && hasMeta) {
-      possibleInsights.push({
-        text: `You've connected both Shopify and Meta - great job! This gives you a complete view of your customer journey from ad to purchase.`,
-        type: "positive"
-      })
-    } else if (!hasShopify && !hasMeta) {
-      possibleInsights.push({
-        text: `Connect your Shopify store and Meta Ads account to get the most out of your dashboard and unlock AI-powered insights.`,
-        type: "tip"
-      })
-    } else if (hasShopify && !hasMeta) {
-      possibleInsights.push({
-        text: `Connect your Meta Ads account to track your marketing performance alongside your Shopify sales data.`,
-        type: "tip"
-      })
-    } else if (!hasShopify && hasMeta) {
-      possibleInsights.push({
-        text: `Connect your Shopify store to see how your Meta Ads are driving actual sales and revenue.`,
-        type: "tip"
-      })
+    // If we have no meaningful data yet
+    if (summaryText.trim() === "") {
+      summaryText = `Welcome to ${brandName}'s dashboard. We're waiting for more data to provide insights.`
     }
     
-    // Select a random insight from the possible insights
-    if (possibleInsights.length > 0) {
-      const randomIndex = Math.floor(Math.random() * possibleInsights.length)
-      const selectedInsight = possibleInsights[randomIndex]
-      setSummary(selectedInsight.text)
-      setInsightType(selectedInsight.type as "neutral" | "positive" | "negative" | "tip")
-    } else {
-      setSummary(`Welcome to ${brandName}'s dashboard. Explore your metrics to gain insights into your business performance.`)
-      setInsightType("neutral")
-    }
-  }, [metrics, brandName, connections])
+    setSummary(summaryText)
+  }, [isLoading, brandName, connections, periodData, metrics])
 
-  const getIconForInsightType = () => {
-    switch (insightType) {
-      case "positive":
-        return <TrendingUp className="h-5 w-5 text-green-400" />
-      case "negative":
-        return <AlertTriangle className="h-5 w-5 text-amber-400" />
-      case "tip":
-        return <Lightbulb className="h-5 w-5 text-blue-400" />
-      default:
-        return <Sparkles className="h-5 w-5 text-blue-400" />
-    }
+  // Helper function to format currency
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value)
   }
-
-  const getBackgroundForInsightType = () => {
-    switch (insightType) {
-      case "positive":
-        return "bg-green-500/20"
-      case "negative":
-        return "bg-amber-500/20"
-      case "tip":
-        return "bg-blue-500/20"
-      default:
-        return "bg-blue-500/20"
-    }
+  
+  // Helper function to get days in current month
+  const getDaysInCurrentMonth = (): number => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   }
 
   return (
     <Card className="bg-gradient-to-r from-gray-900 to-gray-800 border-gray-700 mb-6">
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
-          <div className={`${getBackgroundForInsightType()} rounded-full p-2 mt-1`}>
-            {getIconForInsightType()}
+          <div className="bg-blue-500/20 rounded-full p-2 mt-1">
+            <Sparkles className="h-5 w-5 text-blue-400" />
           </div>
           <div>
             <h3 className="text-lg font-medium mb-1">
