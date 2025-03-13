@@ -16,7 +16,7 @@ export default function HomePage() {
         <img 
           src="/brand/logo.png" 
           alt="Brez Logo" 
-          className="h-12 w-auto object-contain mx-auto mb-4" 
+          className="h-16 w-auto object-contain mx-auto mb-6" 
         />
         <p className="text-gray-400 mb-6">Redirecting to dashboard...</p>
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mx-auto"></div>

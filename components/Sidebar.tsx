@@ -28,13 +28,13 @@ export function Sidebar({ className }: SidebarProps) {
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
     return (
-      <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
+      <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col`}>
         <div className="p-6 flex-1">
           <div className="mb-8">
             <img 
               src="/brand/logo.png" 
               alt="Brez Logo" 
-              className="h-8 w-auto object-contain" 
+              className="h-14 w-auto object-contain mx-auto" 
             />
           </div>
           <nav className="space-y-0.5 opacity-50">
@@ -49,18 +49,29 @@ export function Sidebar({ className }: SidebarProps) {
             </div>
           </nav>
         </div>
+        <div className="p-4 mt-auto border-t border-[#2A2A2A]">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+            disabled
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            Sign In
+          </Button>
+        </div>
       </aside>
     )
   }
 
   return (
-    <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
+    <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full`}>
       <div className="p-6 flex-1">
         <div className="mb-8 flex items-center justify-between">
           <img 
             src="/brand/logo.png" 
             alt="Brez Logo" 
-            className="h-8 w-auto object-contain" 
+            className="h-14 w-auto object-contain" 
           />
           <UserButton 
             appearance={{
@@ -90,7 +101,7 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
       </div>
       
-      <div className="p-4 border-t border-[#2A2A2A]">
+      <div className="p-4 mt-auto border-t border-[#2A2A2A]">
         <CustomSignOutButton />
       </div>
     </aside>

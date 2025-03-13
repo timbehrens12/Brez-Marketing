@@ -606,7 +606,7 @@ export default function DashboardPage() {
               <img 
                 src="/brand/logo.png" 
                 alt="Brez Logo" 
-                className="h-16 w-auto object-contain mx-auto mb-4" 
+                className="h-20 w-auto object-contain mx-auto mb-6" 
               />
               <p className="text-gray-400">Sign in to access your dashboard</p>
             </div>
