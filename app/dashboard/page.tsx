@@ -32,6 +32,7 @@ import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
+import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 
 interface WidgetData {
   shopify?: any;
@@ -718,6 +719,15 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {selectedBrandId && (
+        <GreetingWidget 
+          brandId={selectedBrandId}
+          brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
+          metrics={metrics}
+          connections={connections}
+        />
+      )}
 
       {selectedBrandId ? (
         <>
