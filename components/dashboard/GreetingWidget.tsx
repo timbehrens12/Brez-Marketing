@@ -168,81 +168,48 @@ export function GreetingWidget({
       return
     }
     
-    let summaryText = ""
+    let summaryText = `You've connected ${[
+      hasShopify && 'Shopify',
+      hasMeta && 'Meta'
+    ].filter(Boolean).join(' and ')} - great job! `
+
+    // Quick platform status overview
+    const platformStatus = []
     
-    // Add Shopify insights if connected
     if (hasShopify) {
-      // Calculate daily averages for comparison
-      const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
-      const weeklyAverage = periodData.week.totalSales / 7
-      const isWeekStronger = weeklyAverage > dailyAverage
-      const weekVsMonth = ((weeklyAverage - dailyAverage) / dailyAverage) * 100
-      
-      // Today's performance with context
       if (periodData.today.ordersCount > 0) {
-        const todayVsWeek = ((periodData.today.totalSales - weeklyAverage) / weeklyAverage) * 100
-        summaryText += `Today's sales: ${formatCurrency(periodData.today.totalSales)} (${periodData.today.ordersCount} order${periodData.today.ordersCount !== 1 ? 's' : ''})`
-        if (Math.abs(todayVsWeek) > 10) {
-          summaryText += ` - ${todayVsWeek > 0 ? 'above' : 'below'} your weekly average. `
-        } else {
-          summaryText += " - in line with your weekly average. "
-        }
+        platformStatus.push(`Shopify: ${periodData.today.ordersCount} order${periodData.today.ordersCount !== 1 ? 's' : ''} today (${formatCurrency(periodData.today.totalSales)})`)
+      } else if (periodData.week.ordersCount > 0) {
+        platformStatus.push(`Shopify: ${periodData.week.ordersCount} orders this week`)
       } else {
-        summaryText += "No orders yet today. "
-      }
-      
-      // Weekly performance with trend
-      if (periodData.week.ordersCount > 0) {
-        summaryText += `This week: ${formatCurrency(periodData.week.totalSales)} (${periodData.week.ordersCount} order${periodData.week.ordersCount !== 1 ? 's' : ''})`
-        if (Math.abs(weekVsMonth) > 10) {
-          summaryText += ` - ${weekVsMonth > 0 ? 'above' : 'below'} your monthly average. `
-        } else {
-          summaryText += " - in line with your monthly average. "
-        }
-      }
-      
-      // Monthly performance and AOV
-      if (periodData.month.ordersCount > 5) {
-        const aov = periodData.month.averageOrderValue
-        summaryText += `Monthly AOV: ${formatCurrency(aov)}`
-        if (aov > 100) {
-          summaryText += " - strong performance. "
-        } else if (aov < 50) {
-          summaryText += " - room for improvement. "
-        } else {
-          summaryText += ". "
-        }
+        platformStatus.push('Shopify: No recent orders')
       }
     }
     
-    // Add Meta insights if connected
     if (hasMeta && metrics.adSpend > 0) {
-      summaryText += `Meta ads: ${formatCurrency(metrics.adSpend)} spent with ${metrics.roas.toFixed(1)}x ROAS`
-      if (metrics.roas > 3) {
-        summaryText += " - excellent performance. "
-      } else if (metrics.roas > 2) {
-        summaryText += " - good performance. "
-      } else if (metrics.roas > 1) {
-        summaryText += " - positive but could improve. "
-      } else {
-        summaryText += " - needs optimization. "
-      }
+      platformStatus.push(`Meta: ${metrics.roas.toFixed(1)}x ROAS on ${formatCurrency(metrics.adSpend)} ad spend`)
+    } else if (hasMeta) {
+      platformStatus.push('Meta: Connected but no active campaigns')
     }
-    
-    // Add overall brand health summary
+
+    if (platformStatus.length > 0) {
+      summaryText += platformStatus.join(' • ')
+    }
+
+    // Add customer journey insight if both platforms are connected
+    if (hasShopify && hasMeta) {
+      summaryText += ` This gives you a complete view of your customer journey from ad to purchase.`
+    }
+
+    // Add quick performance highlight if we have enough data
     if (hasShopify && periodData.month.ordersCount > 5) {
       const monthlyRevenue = periodData.month.totalSales
       const weeklyRevenue = periodData.week.totalSales
       const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
-      
+
       if (Math.abs(revenueGrowth) > 10) {
-        summaryText += `Your ${revenueGrowth > 0 ? 'revenue is trending up' : 'revenue is trending down'} ${Math.abs(revenueGrowth).toFixed(0)}% compared to last month. `
+        summaryText += ` Revenue is trending ${revenueGrowth > 0 ? 'up' : 'down'} ${Math.abs(revenueGrowth).toFixed(0)}% this month.`
       }
-    }
-    
-    // If we have no meaningful data yet
-    if (summaryText.trim() === "") {
-      summaryText = `Welcome to ${brandName}'s dashboard. We're waiting for more data to provide insights.`
     }
     
     setSummary(summaryText)
