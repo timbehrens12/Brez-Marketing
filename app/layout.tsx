@@ -18,24 +18,29 @@ export const metadata: Metadata = {
   title: "Brez Dashboard",
   description: "E-commerce analytics dashboard",
   icons: {
-    icon: [
+    icon: "/brand/favicon.ico",
+    shortcut: "/brand/favicon-32x32.png",
+    apple: "/brand/apple-touch-icon.png",
+    other: [
       {
-        url: "https://i.imgur.com/RfOm55P.png",
-        sizes: "32x32",
-        type: "image/png"
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        url: "/brand/favicon-16x16.png",
       },
       {
-        url: "https://i.imgur.com/RfOm55P.png",
-        sizes: "64x64",
-        type: "image/png"
-      }
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        url: "/brand/favicon-32x32.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        sizes: "96x96",
+        url: "/brand/favicon-96x96.png",
+      },
     ],
-    shortcut: "https://i.imgur.com/RfOm55P.png",
-    apple: {
-      url: "https://i.imgur.com/RfOm55P.png",
-      sizes: "180x180",
-      type: "image/png"
-    }
   }
 }
 

@@ -31,7 +31,7 @@ export function Sidebar({ className }: SidebarProps) {
       <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
         <div className="p-6 flex-1">
           <div className="mb-8">
-            <img src="https://i.imgur.com/hK44KGT.png" alt="Brez Logo" className="h-8" />
+            <img src="/brand/logo.png" alt="Brez Logo" className="h-8" />
           </div>
           <nav className="space-y-0.5 opacity-50">
             <div
@@ -53,7 +53,7 @@ export function Sidebar({ className }: SidebarProps) {
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A]`}>
       <div className="p-6 flex-1">
         <div className="mb-8 flex items-center justify-between">
-          <img src="https://i.imgur.com/hK44KGT.png" alt="Brez Logo" className="h-8" />
+          <img src="/brand/logo.png" alt="Brez Logo" className="h-8" />
           <UserButton 
             appearance={{
               elements: {
