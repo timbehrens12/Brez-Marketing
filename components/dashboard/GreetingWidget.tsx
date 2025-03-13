@@ -42,6 +42,24 @@ export function GreetingWidget({
     month: { totalSales: 0, ordersCount: 0, averageOrderValue: 0 }
   })
 
+  // Helper function to get days in current month
+  const getDaysInCurrentMonth = (): number => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  }
+
+  // Calculate platform status
+  const hasShopify = connections.some(c => c.platform_type === 'shopify' && c.status === 'active')
+  const hasMeta = connections.some(c => c.platform_type === 'meta' && c.status === 'active')
+
+  // Calculate performance metrics
+  const monthlyRevenue = periodData.month.totalSales
+  const weeklyRevenue = periodData.week.totalSales
+  const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
+  const weeklyAverage = periodData.week.totalSales / 7
+  const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
+  const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
+
   // Set the greeting based on time of day
   useEffect(() => {
     const hour = new Date().getHours()
@@ -353,12 +371,6 @@ export function GreetingWidget({
       maximumFractionDigits: 0
     }).format(value)
   }
-  
-  // Helper function to get days in current month
-  const getDaysInCurrentMonth = (): number => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  }
 
   return (
     <Card className="bg-gradient-to-r from-gray-900 to-gray-800 border-gray-700 mb-6">
@@ -367,13 +379,80 @@ export function GreetingWidget({
           <div className="bg-blue-500/20 rounded-full p-2 mt-1">
             <Sparkles className="h-5 w-5 text-blue-400" />
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="text-lg font-medium mb-1">
               {greeting}, {user?.firstName || "there"}!
             </h3>
-            <p className="text-gray-400">
+            
+            {/* Daily Sales Snapshot */}
+            {hasShopify && periodData.today && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Today's Revenue */}
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Today's Revenue</div>
+                  <div className="text-xl font-semibold text-white">
+                    {formatCurrency(periodData.today.totalSales)}
+                  </div>
+                  {Math.abs(todayVsAverage) > 0 && (
+                    <div className={`text-xs flex items-center mt-1 ${todayVsAverage > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {todayVsAverage > 0 ? '↑' : '↓'} {Math.abs(todayVsAverage).toFixed(1)}% vs daily avg
+                    </div>
+                  )}
+                </div>
+
+                {/* Orders Today */}
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Orders Today</div>
+                  <div className="text-xl font-semibold text-white">
+                    {periodData.today.ordersCount}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {periodData.today.ordersCount > 0 ? `${formatCurrency(periodData.today.totalSales / periodData.today.ordersCount)} AOV` : 'No orders yet'}
+                  </div>
+                </div>
+
+                {/* Weekly Performance */}
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">This Week</div>
+                  <div className="text-xl font-semibold text-white">
+                    {formatCurrency(periodData.week.totalSales)}
+                  </div>
+                  {Math.abs(revenueGrowth) > 0 && (
+                    <div className={`text-xs flex items-center mt-1 ${revenueGrowth > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {revenueGrowth > 0 ? '↑' : '↓'} {Math.abs(revenueGrowth).toFixed(1)}% vs monthly avg
+                    </div>
+                  )}
+                </div>
+
+                {/* Monthly Progress */}
+                <div className="bg-gray-800/50 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Monthly Progress</div>
+                  <div className="text-xl font-semibold text-white">
+                    {formatCurrency(periodData.month.totalSales)}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {getDaysInCurrentMonth() - new Date().getDate()} days remaining
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Summary Text */}
+            <p className="text-gray-400 mt-4">
               {summary}
             </p>
+
+            {/* Platform Status */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasShopify ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
+                <div className="w-2 h-2 rounded-full bg-current"></div>
+                Shopify {hasShopify ? 'Connected' : 'Not Connected'}
+              </div>
+              <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasMeta ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>
+                <div className="w-2 h-2 rounded-full bg-current"></div>
+                Meta Ads {hasMeta ? 'Connected' : 'Not Connected'}
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
