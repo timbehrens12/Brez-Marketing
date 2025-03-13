@@ -33,6 +33,7 @@ import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
+import { AINotification } from "@/components/dashboard/AINotification"
 
 interface WidgetData {
   shopify?: any;
@@ -726,6 +727,12 @@ export default function DashboardPage() {
           brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
           metrics={metrics}
           connections={connections}
+        />
+      )}
+
+      {selectedBrandId && (
+        <AINotification 
+          lastAnalyzedDate={new Date()} // You can replace this with actual last analysis date from your backend
         />
       )}
 
