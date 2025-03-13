@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Sparkles } from "lucide-react"
+import { Sparkles, AlertTriangle, BrainCircuit, ArrowRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Metrics } from "@/types/metrics"
 import { PlatformConnection } from "@/types/platformConnection"
 import { supabase } from "@/lib/supabase"
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface GreetingWidgetProps {
   brandId: string
@@ -437,10 +439,86 @@ export function GreetingWidget({
               </div>
             )}
 
-            {/* Summary Text */}
-            <p className="text-gray-400 mt-4">
-              {summary}
-            </p>
+            {/* Meta Ads Data (only shown when connected and has data) */}
+            {hasMeta && metrics.adSpend > 0 && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Ad Spend */}
+                <div className="bg-blue-900/30 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Ad Spend</div>
+                  <div className="text-xl font-semibold text-white">
+                    {formatCurrency(metrics.adSpend)}
+                  </div>
+                </div>
+
+                {/* ROAS */}
+                <div className="bg-blue-900/30 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">ROAS</div>
+                  <div className="text-xl font-semibold text-white">
+                    {metrics.roas ? `${metrics.roas.toFixed(1)}x` : 'N/A'}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {metrics.roas > 3 ? 'Excellent' : metrics.roas > 2 ? 'Good' : metrics.roas > 1 ? 'Average' : 'Needs improvement'}
+                  </div>
+                </div>
+
+                {/* CTR */}
+                <div className="bg-blue-900/30 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Click-Through Rate</div>
+                  <div className="text-xl font-semibold text-white">
+                    {metrics.ctr ? `${(metrics.ctr * 100).toFixed(2)}%` : 'N/A'}
+                  </div>
+                </div>
+
+                {/* Conversion Rate */}
+                <div className="bg-blue-900/30 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">Conversion Rate</div>
+                  <div className="text-xl font-semibold text-white">
+                    {metrics.conversionRate ? `${(metrics.conversionRate * 100).toFixed(2)}%` : 'N/A'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Priority Items Section */}
+            {summary && summary.includes("Priority items:") && (
+              <div className="mt-4 bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
+                <h4 className="text-amber-400 text-sm font-medium flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Priority Items
+                </h4>
+                <ul className="text-gray-300 text-sm space-y-1 pl-6 list-disc">
+                  {summary.split("Priority items:")[1].split(".")[0].split(",").map((item, index) => (
+                    <li key={index}>{item.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* AI Analysis Notification */}
+            <div className="mt-4 bg-indigo-900/20 border border-indigo-800/30 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-indigo-500/20 rounded-full p-1.5">
+                  <BrainCircuit className="h-4 w-4 text-indigo-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-300">Your daily AI analysis is ready to view</p>
+                  <p className="text-xs text-gray-500">Last analyzed: {new Date().toLocaleDateString()} at 12:00 AM</p>
+                </div>
+              </div>
+              <Link href="/ai-dashboard">
+                <Button variant="outline" size="sm" className="bg-indigo-800/50 border-indigo-700 hover:bg-indigo-700 text-indigo-200">
+                  View Analysis
+                  <ArrowRight className="ml-2 h-3 w-3" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* Summary Text (excluding priority items which are now in their own section) */}
+            {summary && !summary.includes("Priority items:") && (
+              <p className="text-gray-400 mt-4">
+                {summary}
+              </p>
+            )}
 
             {/* Platform Status */}
             <div className="mt-4 flex flex-wrap gap-2">
