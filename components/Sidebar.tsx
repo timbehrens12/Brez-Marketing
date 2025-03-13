@@ -33,7 +33,7 @@ export function Sidebar({ className }: SidebarProps) {
           <img 
             src="https://i.imgur.com/hK44KGT.png" 
             alt="Brez Logo" 
-            className="h-16 w-auto object-contain mx-auto" 
+            className="h-12 w-auto object-contain mx-auto" 
           />
         </div>
         <div className="border-t border-[#2A2A2A] mb-6"></div>
@@ -71,7 +71,7 @@ export function Sidebar({ className }: SidebarProps) {
         <img 
           src="https://i.imgur.com/hK44KGT.png" 
           alt="Brez Logo" 
-          className="h-16 w-auto object-contain mx-auto" 
+          className="h-12 w-auto object-contain mx-auto" 
         />
       </div>
       <div className="border-t border-[#2A2A2A] mb-6"></div>
@@ -95,15 +95,17 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
       </div>
       
-      <div className="py-3 px-4 mt-auto border-t border-[#2A2A2A] flex items-center justify-between">
-        <UserButton 
-          appearance={{
-            elements: {
-              userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
-              userButtonTrigger: "rounded-full"
-            }
-          }}
-        />
+      <div className="py-3 px-4 mt-auto border-t border-[#2A2A2A]">
+        <div className="flex items-center justify-between mb-2">
+          <UserButton 
+            appearance={{
+              elements: {
+                userButtonBox: "hover:bg-[#2A2A2A] rounded-full",
+                userButtonTrigger: "rounded-full"
+              }
+            }}
+          />
+        </div>
         <CustomSignOutButton />
       </div>
     </aside>
