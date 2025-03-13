@@ -167,49 +167,139 @@ export function GreetingWidget({
       setSummary(`Welcome to ${brandName}'s dashboard. Connect your platforms to see AI-powered insights.`)
       return
     }
-    
-    let summaryText = `You've connected ${[
-      hasShopify && 'Shopify',
-      hasMeta && 'Meta'
-    ].filter(Boolean).join(' and ')} - great job! `
 
-    // Quick platform status overview
-    const platformStatus = []
+    let summaryParts = []
     
+    // Shopify Performance Analysis
     if (hasShopify) {
+      const monthlyRevenue = periodData.month.totalSales
+      const weeklyRevenue = periodData.week.totalSales
+      const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
+      const weeklyAverage = periodData.week.totalSales / 7
+      const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
+      const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
+
+      let shopifyInsight = ""
+      
+      // Revenue Performance
+      if (periodData.today.totalSales > 0) {
+        shopifyInsight += `Revenue at ${formatCurrency(periodData.today.totalSales)} today `
+        if (Math.abs(todayVsAverage) > 10) {
+          shopifyInsight += `(${todayVsAverage > 0 ? '+' : ''}${todayVsAverage.toFixed(0)}% vs. daily average). `
+        } else {
+          shopifyInsight += "(on track with daily average). "
+        }
+      }
+
+      // Sales Volume
       if (periodData.today.ordersCount > 0) {
-        platformStatus.push(`Shopify: ${periodData.today.ordersCount} order${periodData.today.ordersCount !== 1 ? 's' : ''} today (${formatCurrency(periodData.today.totalSales)})`)
-      } else if (periodData.week.ordersCount > 0) {
-        platformStatus.push(`Shopify: ${periodData.week.ordersCount} orders this week`)
-      } else {
-        platformStatus.push('Shopify: No recent orders')
+        shopifyInsight += `${periodData.today.ordersCount} orders processed `
+        const aov = periodData.today.totalSales / periodData.today.ordersCount
+        if (aov > periodData.month.averageOrderValue * 1.2) {
+          shopifyInsight += `with strong AOV of ${formatCurrency(aov)}. `
+        } else if (aov < periodData.month.averageOrderValue * 0.8) {
+          shopifyInsight += `with below-average AOV of ${formatCurrency(aov)} - consider upsell opportunities. `
+        } else {
+          shopifyInsight += `at typical AOV of ${formatCurrency(aov)}. `
+        }
+      }
+
+      // Weekly and Monthly Context
+      if (periodData.week.ordersCount > 20) {  // Only show if we have significant data
+        shopifyInsight += `Weekly revenue of ${formatCurrency(weeklyRevenue)} `
+        if (Math.abs(revenueGrowth) > 10) {
+          shopifyInsight += `trending ${revenueGrowth > 0 ? 'up' : 'down'} ${Math.abs(revenueGrowth).toFixed(0)}% vs. monthly average. `
+        } else {
+          shopifyInsight += `maintaining consistent performance. `
+        }
+      }
+
+      if (shopifyInsight) {
+        summaryParts.push(shopifyInsight)
       }
     }
-    
+
+    // Meta Ads Performance Analysis
     if (hasMeta && metrics.adSpend > 0) {
-      platformStatus.push(`Meta: ${metrics.roas.toFixed(1)}x ROAS on ${formatCurrency(metrics.adSpend)} ad spend`)
-    } else if (hasMeta) {
-      platformStatus.push('Meta: Connected but no active campaigns')
+      let metaInsight = ""
+      
+      // ROAS Analysis
+      if (metrics.roas > 0) {
+        metaInsight += `Meta campaigns achieving ${metrics.roas.toFixed(1)}x ROAS on ${formatCurrency(metrics.adSpend)} spend `
+        if (metrics.roas > 3) {
+          metaInsight += `- exceptional performance. `
+        } else if (metrics.roas > 2) {
+          metaInsight += `- strong performance. `
+        } else if (metrics.roas > 1) {
+          metaInsight += `- room for optimization. `
+        } else {
+          metaInsight += `- urgent optimization needed. `
+        }
+      }
+
+      // Campaign Performance
+      if (metrics.ctr) {
+        const ctr = metrics.ctr * 100
+        if (ctr > 2) {
+          metaInsight += `CTR of ${ctr.toFixed(1)}% indicates strong ad engagement. `
+        } else if (ctr < 1) {
+          metaInsight += `CTR of ${ctr.toFixed(1)}% suggests ad creative review needed. `
+        }
+      }
+
+      if (metrics.conversionRate) {
+        const cvr = metrics.conversionRate * 100
+        if (cvr < 1) {
+          metaInsight += `Low conversion rate of ${cvr.toFixed(1)}% - consider landing page optimization. `
+        }
+      }
+
+      if (metaInsight) {
+        summaryParts.push(metaInsight)
+      }
     }
 
-    if (platformStatus.length > 0) {
-      summaryText += platformStatus.join(' • ')
-    }
-
-    // Add customer journey insight if both platforms are connected
-    if (hasShopify && hasMeta) {
-      summaryText += ` This gives you a complete view of your customer journey from ad to purchase.`
-    }
-
-    // Add quick performance highlight if we have enough data
-    if (hasShopify && periodData.month.ordersCount > 5) {
+    // Priority Alerts
+    const alerts = []
+    
+    if (hasShopify) {
+      // Inventory alerts
+      const lowStockThreshold = 5 // We can make this configurable later
+      const lowStockCount = metrics.topProducts?.filter(p => p.quantity <= lowStockThreshold).length || 0
+      if (lowStockCount > 0) {
+        alerts.push(`${lowStockCount} products need inventory attention`)
+      }
+      
+      // Sales trend alerts
       const monthlyRevenue = periodData.month.totalSales
       const weeklyRevenue = periodData.week.totalSales
       const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
-
-      if (Math.abs(revenueGrowth) > 10) {
-        summaryText += ` Revenue is trending ${revenueGrowth > 0 ? 'up' : 'down'} ${Math.abs(revenueGrowth).toFixed(0)}% this month.`
+      if (revenueGrowth < -20) {
+        alerts.push('Revenue showing significant decline')
       }
+    }
+
+    if (hasMeta && metrics.adSpend > 0) {
+      // Ad performance alerts
+      if (metrics.roas < 1) {
+        alerts.push('Ad campaigns underperforming')
+      }
+      if (metrics.ctr < 0.01) {
+        alerts.push('Critical: Low ad engagement')
+      }
+    }
+
+    // Combine all insights
+    let summaryText = summaryParts.join('')
+    
+    // Add priority alerts if any
+    if (alerts.length > 0) {
+      summaryText += `Priority items: ${alerts.join(', ')}.`
+    }
+
+    // Add recommendation for incomplete data
+    if (!summaryText) {
+      summaryText = `${brandName} dashboard initialized. Gathering performance data to generate insights.`
     }
     
     setSummary(summaryText)
