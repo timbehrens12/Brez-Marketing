@@ -4,9 +4,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles } from "lucide-react"
-import { UserButton, useAuth } from "@clerk/nextjs"
+import { UserButton, useAuth, useClerk } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
-import { CustomSignOutButton } from "./CustomSignOutButton"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -24,6 +24,8 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname()
   const { userId, isLoaded } = useAuth()
+  const { signOut } = useClerk()
+  const router = useRouter()
   
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
@@ -95,8 +97,8 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
       </div>
       
-      <div className="py-3 px-4 mt-auto border-t border-[#2A2A2A]">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-4 mt-auto border-t border-[#2A2A2A]">
+        <div className="flex items-center">
           <UserButton 
             appearance={{
               elements: {
@@ -105,8 +107,16 @@ export function Sidebar({ className }: SidebarProps) {
               }
             }}
           />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 ml-2 justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+            onClick={() => signOut(() => router.push("/dashboard"))}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
         </div>
-        <CustomSignOutButton />
       </div>
     </aside>
   )
