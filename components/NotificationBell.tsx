@@ -44,7 +44,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
       case 'alert':
         return "bg-amber-500/20 text-amber-400"
       default:
-        return "bg-blue-500/20 text-blue-400"
+        return "bg-gray-700/80 text-gray-300"
     }
   }
   
@@ -58,7 +58,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium flex items-center justify-center text-white">
+            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-gray-700 text-[10px] font-medium flex items-center justify-center text-white">
               {unreadCount}
             </span>
           )}
@@ -142,7 +142,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="h-6 text-xs bg-indigo-900/30 hover:bg-indigo-800/50 text-indigo-300"
+                              className="h-6 text-xs bg-gray-800/80 hover:bg-gray-700 text-gray-300"
                             >
                               View
                               <ArrowRight className="ml-1 h-3 w-3" />
@@ -153,7 +153,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                     </div>
                   </div>
                   {!notification.read && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-500 rounded-r-full" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gray-600 rounded-r-full" />
                   )}
                 </div>
               ))}
