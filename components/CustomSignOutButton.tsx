@@ -20,11 +20,10 @@ export function CustomSignOutButton() {
     <Button
       variant="ghost"
       size="sm"
-      className="w-full justify-start text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+      className="text-gray-400 hover:text-white hover:bg-[#2A2A2A] px-3"
       onClick={handleSignOut}
     >
-      <LogOut className="mr-3 h-4 w-4" />
-      Sign Out
+      <LogOut className="h-4 w-4" />
     </Button>
   )
 } 
