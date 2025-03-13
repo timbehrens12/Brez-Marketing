@@ -150,6 +150,14 @@ export function GreetingWidget({
 
   // Generate summary based on metrics
   useEffect(() => {
+    console.log('GreetingWidget Data:', {
+      periodData,
+      metrics,
+      connections,
+      hasShopify: connections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
+      hasMeta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
+    });
+
     if (isLoading) {
       setSummary("Loading your brand snapshot...")
       return
@@ -172,12 +180,27 @@ export function GreetingWidget({
     
     // Shopify Performance Analysis
     if (hasShopify) {
+      console.log('Shopify Data:', {
+        today: periodData.today,
+        week: periodData.week,
+        month: periodData.month
+      });
+
       const monthlyRevenue = periodData.month.totalSales
       const weeklyRevenue = periodData.week.totalSales
       const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
       const weeklyAverage = periodData.week.totalSales / 7
       const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
       const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
+
+      console.log('Calculated Metrics:', {
+        monthlyRevenue,
+        weeklyRevenue,
+        dailyAverage,
+        weeklyAverage,
+        revenueGrowth,
+        todayVsAverage
+      });
 
       let shopifyInsight = ""
       
@@ -214,6 +237,8 @@ export function GreetingWidget({
         }
       }
 
+      console.log('Shopify Insight:', shopifyInsight);
+
       if (shopifyInsight) {
         summaryParts.push(shopifyInsight)
       }
@@ -221,6 +246,13 @@ export function GreetingWidget({
 
     // Meta Ads Performance Analysis
     if (hasMeta && metrics.adSpend > 0) {
+      console.log('Meta Data:', {
+        adSpend: metrics.adSpend,
+        roas: metrics.roas,
+        ctr: metrics.ctr,
+        conversionRate: metrics.conversionRate
+      });
+
       let metaInsight = ""
       
       // ROAS Analysis
@@ -253,6 +285,8 @@ export function GreetingWidget({
           metaInsight += `Low conversion rate of ${cvr.toFixed(1)}% - consider landing page optimization. `
         }
       }
+
+      console.log('Meta Insight:', metaInsight);
 
       if (metaInsight) {
         summaryParts.push(metaInsight)
@@ -289,6 +323,9 @@ export function GreetingWidget({
       }
     }
 
+    console.log('Alerts:', alerts);
+    console.log('Summary Parts:', summaryParts);
+
     // Combine all insights
     let summaryText = summaryParts.join('')
     
@@ -301,6 +338,8 @@ export function GreetingWidget({
     if (!summaryText) {
       summaryText = `${brandName} dashboard initialized. Gathering performance data to generate insights.`
     }
+    
+    console.log('Final Summary:', summaryText);
     
     setSummary(summaryText)
   }, [isLoading, brandName, connections, periodData, metrics])
