@@ -34,6 +34,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
+import { NotificationBell } from "@/components/NotificationBell"
+import { useNotifications } from "@/contexts/NotificationContext"
 
 interface WidgetData {
   shopify?: any;
@@ -87,6 +89,7 @@ function formatDate(date: Date | undefined): string {
 export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
   const { brands, selectedBrandId, setSelectedBrandId } = useBrandContext()
+  const { addNotification } = useNotifications()
   const [dateRange, setDateRange] = useState({
     from: startOfDay(new Date()),
     to: endOfDay(new Date()),
@@ -519,6 +522,13 @@ export default function DashboardPage() {
     await fetchAllData()
     setLastRefreshed(new Date())
     
+    // Add a notification about the refresh
+    addNotification({
+      title: "Dashboard Refreshed",
+      message: "Your dashboard data has been updated with the latest metrics",
+      type: "system"
+    })
+    
     // Show success toast
     toast({
       title: "Data refreshed",
@@ -670,6 +680,8 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
+            <NotificationBell className="mr-1" />
+            
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -727,12 +739,6 @@ export default function DashboardPage() {
           brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
           metrics={metrics}
           connections={connections}
-        />
-      )}
-
-      {selectedBrandId && (
-        <AINotification 
-          lastAnalyzedDate={new Date()} // You can replace this with actual last analysis date from your backend
         />
       )}
 

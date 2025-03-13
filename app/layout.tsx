@@ -11,6 +11,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { BrandProvider } from '@/lib/context/BrandContext'
 import { ClerkProvider } from '@clerk/nextjs'
 import { MetricsProvider } from '@/lib/contexts/MetricsContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -135,16 +136,18 @@ export default function RootLayout({
           <ClerkProvider>
             <BrandProvider>
               <MetricsProvider>
-                <WidgetProvider>
-                  <AuthProvider>
-                    <div className="flex h-screen overflow-hidden">
-                      <Sidebar className="w-64 flex-shrink-0" />
-                      <main className="flex-1 overflow-y-auto">
-                        {children}
-                      </main>
-                    </div>
-                  </AuthProvider>
-                </WidgetProvider>
+                <NotificationProvider>
+                  <WidgetProvider>
+                    <AuthProvider>
+                      <div className="flex h-screen overflow-hidden">
+                        <Sidebar className="w-64 flex-shrink-0" />
+                        <main className="flex-1 overflow-y-auto">
+                          {children}
+                        </main>
+                      </div>
+                    </AuthProvider>
+                  </WidgetProvider>
+                </NotificationProvider>
               </MetricsProvider>
             </BrandProvider>
           </ClerkProvider>
