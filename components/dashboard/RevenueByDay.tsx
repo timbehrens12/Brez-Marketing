@@ -549,119 +549,121 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             Sales by hour of the day (adjusted to your local timezone: {userTimeZone})
           </div>
           
-          {/* AM Hours (12am-11am) */}
-          <div className="mb-2 flex-1 flex flex-col">
-            <div className="text-xs font-medium text-gray-300 mb-1">AM</div>
-            <div className="grid grid-cols-12 gap-2 flex-1 h-full">
-              {displayData.slice(0, 12).map((item, index) => {
-                const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
-                const hasRevenue = item.revenue > 0;
-                
-                return (
-                  <div 
-                    key={index}
-                    className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-24 transition-all duration-200",
-                      isCurrentHour 
-                        ? "border-2 border-gray-500 shadow-md" 
-                        : "border border-gray-700 bg-[#111111]"
-                    )}
-                  >
-                    <div className={cn(
-                      "text-center py-1 text-xs font-medium",
-                      isCurrentHour 
-                        ? "bg-gray-500 text-white" 
-                        : "bg-[#222222] text-gray-200"
-                    )}>
-                      {item.displayDate}
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col justify-end p-1">
-                      {hasRevenue ? (
-                        <>
-                          <div className="relative h-32 w-full flex flex-col justify-end mb-1">
-                            <div 
-                              style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-t bg-emerald-500/80"
-                            ></div>
-                          </div>
-                          
-                          <div className="text-center text-xs font-medium text-emerald-500">
-                            {renderRevenueValue(item.revenue)}
-                          </div>
-                          {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-400">
-                              {item.count} order{item.count !== 1 ? 's' : ''}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                          No sales
-                        </div>
+          <div className="flex flex-col flex-1">
+            {/* AM Hours (12am-11am) */}
+            <div className="flex-1 flex flex-col mb-2">
+              <div className="text-xs font-medium text-gray-300 mb-1">AM</div>
+              <div className="grid grid-cols-12 gap-2 flex-1 h-[calc(50%-1rem)]">
+                {displayData.slice(0, 12).map((item, index) => {
+                  const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
+                  const hasRevenue = item.revenue > 0;
+                  
+                  return (
+                    <div 
+                      key={index}
+                      className={cn(
+                        "flex flex-col rounded-md overflow-hidden flex-1 transition-all duration-200",
+                        isCurrentHour 
+                          ? "border-2 border-gray-500 shadow-md" 
+                          : "border border-gray-700 bg-[#111111]"
                       )}
+                    >
+                      <div className={cn(
+                        "text-center py-1 text-xs font-medium",
+                        isCurrentHour 
+                          ? "bg-gray-500 text-white" 
+                          : "bg-[#222222] text-gray-200"
+                      )}>
+                        {item.displayDate}
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col justify-end p-1">
+                        {hasRevenue ? (
+                          <>
+                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[40px]">
+                              <div 
+                                style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                                className="w-full rounded-t bg-emerald-500/80"
+                              ></div>
+                            </div>
+                            
+                            <div className="text-center text-xs font-medium text-emerald-500">
+                              {renderRevenueValue(item.revenue)}
+                            </div>
+                            {item.count > 0 && (
+                              <div className="text-center text-xs text-gray-400">
+                                {item.count} order{item.count !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                            No sales
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          
-          {/* PM Hours (12pm-11pm) */}
-          <div className="flex-1 flex flex-col">
-            <div className="text-xs font-medium text-gray-300 mb-1">PM</div>
-            <div className="grid grid-cols-12 gap-2 flex-1 h-full">
-              {displayData.slice(12, 24).map((item, index) => {
-                const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
-                const hasRevenue = item.revenue > 0;
-                
-                return (
-                  <div 
-                    key={index + 12}
-                    className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-24 transition-all duration-200",
-                      isCurrentHour 
-                        ? "border-2 border-gray-500 shadow-md" 
-                        : "border border-gray-700 bg-[#111111]"
-                    )}
-                  >
-                    <div className={cn(
-                      "text-center py-1 text-xs font-medium",
-                      isCurrentHour 
-                        ? "bg-gray-500 text-white" 
-                        : "bg-[#222222] text-gray-200"
-                    )}>
-                      {item.displayDate}
-                    </div>
-                    
-                    <div className="flex-1 flex flex-col justify-end p-1">
-                      {hasRevenue ? (
-                        <>
-                          <div className="relative h-32 w-full flex flex-col justify-end mb-1">
-                            <div 
-                              style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
-                              className="w-full rounded-t bg-emerald-500/80"
-                            ></div>
-                          </div>
-                          
-                          <div className="text-center text-xs font-medium text-emerald-500">
-                            {renderRevenueValue(item.revenue)}
-                          </div>
-                          {item.count > 0 && (
-                            <div className="text-center text-xs text-gray-400">
-                              {item.count} order{item.count !== 1 ? 's' : ''}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500 text-xs">
-                          No sales
-                        </div>
+            
+            {/* PM Hours (12pm-11pm) */}
+            <div className="flex-1 flex flex-col">
+              <div className="text-xs font-medium text-gray-300 mb-1">PM</div>
+              <div className="grid grid-cols-12 gap-2 flex-1 h-[calc(50%-1rem)]">
+                {displayData.slice(12, 24).map((item, index) => {
+                  const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
+                  const hasRevenue = item.revenue > 0;
+                  
+                  return (
+                    <div 
+                      key={index + 12}
+                      className={cn(
+                        "flex flex-col rounded-md overflow-hidden flex-1 transition-all duration-200",
+                        isCurrentHour 
+                          ? "border-2 border-gray-500 shadow-md" 
+                          : "border border-gray-700 bg-[#111111]"
                       )}
+                    >
+                      <div className={cn(
+                        "text-center py-1 text-xs font-medium",
+                        isCurrentHour 
+                          ? "bg-gray-500 text-white" 
+                          : "bg-[#222222] text-gray-200"
+                      )}>
+                        {item.displayDate}
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col justify-end p-1">
+                        {hasRevenue ? (
+                          <>
+                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[40px]">
+                              <div 
+                                style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
+                                className="w-full rounded-t bg-emerald-500/80"
+                              ></div>
+                            </div>
+                            
+                            <div className="text-center text-xs font-medium text-emerald-500">
+                              {renderRevenueValue(item.revenue)}
+                            </div>
+                            {item.count > 0 && (
+                              <div className="text-center text-xs text-gray-400">
+                                {item.count} order{item.count !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-500 text-xs">
+                            No sales
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -696,7 +698,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="relative h-24 w-full flex flex-col justify-end mb-1">
+                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[60px]">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-t bg-emerald-500/80"
@@ -820,7 +822,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="relative h-24 w-full flex flex-col justify-end mb-1">
+                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[60px]">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-t bg-emerald-500/80"
