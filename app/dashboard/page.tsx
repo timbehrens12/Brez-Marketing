@@ -100,7 +100,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   
   // Split loading state into initial loading and data refreshing
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isInitialLoading, setIsInitialLoading] = useState(false) // Start with false to avoid initial flash
   const [isLoading, setIsLoading] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
@@ -124,6 +124,26 @@ export default function DashboardPage() {
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState('');
   const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
+
+  // Set initial loading state only when needed
+  useEffect(() => {
+    if (isLoaded && userId && selectedBrandId && !lastRefreshed) {
+      setIsInitialLoading(true);
+    }
+  }, [isLoaded, userId, selectedBrandId, lastRefreshed]);
+
+  // Add a useEffect to ensure isInitialLoading is set to false after a timeout
+  useEffect(() => {
+    // Set a timeout to ensure we don't get stuck in loading state
+    const loadingTimeout = setTimeout(() => {
+      if (isInitialLoading) {
+        console.log('Loading timeout reached, forcing loading state to complete')
+        setIsInitialLoading(false)
+      }
+    }, 3000) // 3 seconds max loading time
+    
+    return () => clearTimeout(loadingTimeout)
+  }, [isInitialLoading])
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -388,19 +408,6 @@ export default function DashboardPage() {
     c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
   )
 
-  // Add a useEffect to ensure isInitialLoading is set to false after a timeout
-  useEffect(() => {
-    // Set a timeout to ensure we don't get stuck in loading state
-    const loadingTimeout = setTimeout(() => {
-      if (isInitialLoading) {
-        console.log('Loading timeout reached, forcing loading state to complete')
-        setIsInitialLoading(false)
-      }
-    }, 10000) // 10 seconds max loading time
-    
-    return () => clearTimeout(loadingTimeout)
-  }, [isInitialLoading])
-
   // Update the fetchAllData function to handle loading states properly
   const fetchAllData = async () => {
     // If this is a refresh (not initial load), set isLoading instead of isInitialLoading
@@ -540,7 +547,7 @@ export default function DashboardPage() {
     }
     
     setIsRefreshing(true)
-    setIsLoading(true) // Set loading state for widgets
+    setIsRefreshingData(true) // Use isRefreshingData instead of isLoading
     
     // Show toast to inform user that refresh is happening
     toast({
@@ -567,7 +574,7 @@ export default function DashboardPage() {
     })
     
     setIsRefreshing(false)
-    setIsLoading(false)
+    setIsRefreshingData(false)
     
     // Set cooldown
     setRefreshCooldown(true)
@@ -617,12 +624,14 @@ export default function DashboardPage() {
       if (selectedBrandId) {
         console.log('Periodic dashboard data refresh triggered')
         try {
+          // For periodic refreshes, use isRefreshingData instead of isLoading
+          // to avoid disrupting the UI
+          setIsRefreshingData(true);
           fetchAllData();
           setLastRefreshed(new Date());
         } catch (error) {
           console.error('Error during periodic refresh:', error);
           // Ensure loading states are reset even if there's an error
-          setIsLoading(false);
           setIsRefreshingData(false);
         }
       }

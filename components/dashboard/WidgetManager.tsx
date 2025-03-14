@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
-import { WidgetLoadingOverlay } from "@/components/WidgetLoadingOverlay"
 
 interface WidgetManagerProps {
   dateRange: {
@@ -112,8 +111,8 @@ export function WidgetManager({
             icon={<DollarSign className="h-4 w-4" />}
             brandId={brandId}
             data={[]}
+            loading={isLoading}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
         
         <div className="relative">
@@ -125,8 +124,8 @@ export function WidgetManager({
             brandId={brandId}
             prefix=""
             data={[]}
+            loading={isLoading}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
         
         <div className="relative">
@@ -137,8 +136,8 @@ export function WidgetManager({
             icon={<TrendingUp className="h-4 w-4" />}
             brandId={brandId}
             data={[]}
+            loading={isLoading}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
         
         <div className="relative">
@@ -151,8 +150,8 @@ export function WidgetManager({
             prefix=""
             suffix="%"
             data={[]}
+            loading={isLoading}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
       </div>
 
@@ -162,7 +161,6 @@ export function WidgetManager({
             brandId={brandId}
             isRefreshing={isLoading}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
         
         <div className="relative h-[400px]">
@@ -171,7 +169,6 @@ export function WidgetManager({
             isRefreshing={isLoading}
             dateRange={dateRange}
           />
-          <WidgetLoadingOverlay isLoading={isLoading} />
         </div>
       </div>
 
@@ -188,7 +185,6 @@ export function WidgetManager({
               brandId={brandId}
               isRefreshing={isLoading}
             />
-            <WidgetLoadingOverlay isLoading={isLoading} />
           </TabsContent>
           
           <TabsContent value="segments" className="relative">
@@ -196,7 +192,6 @@ export function WidgetManager({
               brandId={brandId}
               isRefreshing={isLoading}
             />
-            <WidgetLoadingOverlay isLoading={isLoading} />
           </TabsContent>
           
           <TabsContent value="lifetime" className="relative">
@@ -204,7 +199,6 @@ export function WidgetManager({
               brandId={brandId}
               isRefreshing={isLoading}
             />
-            <WidgetLoadingOverlay isLoading={isLoading} />
           </TabsContent>
         </Tabs>
       </div>
