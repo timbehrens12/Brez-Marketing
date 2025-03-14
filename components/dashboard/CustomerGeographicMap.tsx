@@ -12,6 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts'
 import { cn } from "@/lib/utils"
+import { CustomerSyncButton } from './CustomerSyncButton'
+import { useSupabase } from '@/lib/hooks/useSupabase'
+import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -129,27 +132,28 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [clusteredData, setClusteredData] = useState<RegionData[]>([]);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
+  const [dataSource, setDataSource] = useState<string>('loading');
+  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const supabase = useSupabase();
   const [activeTab, setActiveTab] = useState('chart');
   const [sortColumn, setSortColumn] = useState<'city' | 'customerCount' | 'totalRevenue'>('totalRevenue');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [dataSource, setDataSource] = useState<string>('loading');
   const [message, setMessage] = useState<string | null>(null);
 
   const fetchGeoData = async () => {
     setLoading(true);
     setError(null);
-    setMessage(null);
     
     try {
+      // Get the Shopify connection ID
+      const shopifyConnectionId = await getShopifyConnectionId();
+      setConnectionId(shopifyConnectionId);
+      
       const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`);
       const data = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch geographic data');
-      }
-      
-      if (data.message) {
-        setMessage(data.message);
       }
       
       if (data.dataSource) {
@@ -162,64 +166,28 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         setTotalRevenue(0);
         setTotalCustomers(0);
         setError('No geographic data found. Please sync your customers first.');
-        setLoading(false);
         return;
       }
       
       // Process the data
       const rawLocations: RegionData[] = data.locations.map((loc: any) => ({
         id: loc.id || `${loc.city}-${loc.state}-${loc.country}`,
-        city: loc.city || '',
-        state: loc.state || '',
-        country: loc.country || '',
+        city: loc.city,
+        state: loc.state,
+        country: loc.country,
         lat: loc.lat,
         lng: loc.lng,
-        customerCount: loc.customerCount,
-        totalRevenue: loc.totalRevenue
+        customerCount: loc.customerCount || 0,
+        totalRevenue: loc.totalRevenue || 0
       }));
       
       setLocations(rawLocations);
-      setTotalRevenue(data.totalRevenue || 0);
+      setClusteredData(rawLocations);
       setTotalCustomers(data.totalCustomers || 0);
-      
-      // Cluster the data by metro areas
-      const metroAreas = new Map<string, RegionData>();
-      const otherLocations: RegionData[] = [];
-      
-      for (const location of rawLocations) {
-        const metroArea = findMetroArea(location.city);
-        
-        if (metroArea && METRO_AREAS[metroArea]) {
-          const metroKey = `metro-${metroArea}`;
-          
-          if (!metroAreas.has(metroKey)) {
-            metroAreas.set(metroKey, {
-              id: metroKey,
-              city: metroArea,
-              state: location.state,
-              country: location.country,
-              lat: METRO_AREAS[metroArea].center.lat,
-              lng: METRO_AREAS[metroArea].center.lng,
-              customerCount: 0,
-              totalRevenue: 0
-            });
-          }
-          
-          const metro = metroAreas.get(metroKey)!;
-          metro.customerCount += location.customerCount;
-          metro.totalRevenue += location.totalRevenue;
-        } else {
-          otherLocations.push(location);
-        }
-      }
-      
-      // Combine metro areas and other locations
-      const clustered = [...metroAreas.values(), ...otherLocations];
-      setClusteredData(clustered);
-      
-    } catch (err) {
-      console.error('Error fetching geographic data:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setTotalRevenue(data.totalRevenue || 0);
+    } catch (error) {
+      console.error('Error fetching geographic data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch geographic data');
     } finally {
       setLoading(false);
     }
@@ -229,27 +197,30 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     if (brandId) {
       fetchGeoData();
     }
-  }, [brandId]);
+  }, [brandId, isRefreshing]);
   
-  useEffect(() => {
-    if (isRefreshing) {
-      fetchGeoData();
+  // Add a function to get the Shopify connection ID
+  const getShopifyConnectionId = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('platform_connections')
+        .select('id')
+        .eq('brand_id', brandId)
+        .eq('platform_type', 'shopify')
+        .eq('status', 'active')
+        .single();
+      
+      if (error) {
+        console.error('Error fetching Shopify connection:', error);
+        return null;
+      }
+      
+      return data?.id || null;
+    } catch (error) {
+      console.error('Error in getShopifyConnectionId:', error);
+      return null;
     }
-  }, [isRefreshing]);
-  
-  // Listen for customer data refresh events
-  useEffect(() => {
-    const handleRefresh = () => {
-      console.log('Customer data refreshed, updating geographic map');
-      fetchGeoData();
-    };
-    
-    window.addEventListener('refreshCustomerData', handleRefresh);
-    
-    return () => {
-      window.removeEventListener('refreshCustomerData', handleRefresh);
-    };
-  }, []);
+  };
   
   const handleSort = (column: 'city' | 'customerCount' | 'totalRevenue') => {
     if (sortColumn === column) {

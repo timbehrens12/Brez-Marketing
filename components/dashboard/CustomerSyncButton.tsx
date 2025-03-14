@@ -5,21 +5,32 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { useSupabase } from '@/lib/hooks/useSupabase'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface CustomerSyncButtonProps {
-  connectionId: string
+  brandId: string
+  connectionId?: string
   className?: string
 }
 
-export function CustomerSyncButton({ connectionId, className }: CustomerSyncButtonProps) {
+export function CustomerSyncButton({ brandId, connectionId, className }: CustomerSyncButtonProps) {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [showErrorDialog, setShowErrorDialog] = useState(false)
   const [syncDetails, setSyncDetails] = useState<any>(null)
+  const [showShopUrlDialog, setShowShopUrlDialog] = useState(false)
+  const [shopUrl, setShopUrl] = useState('')
+  const supabase = useSupabase()
 
   const handleSync = async () => {
-    if (isSyncing) return
-    
+    if (!connectionId) {
+      toast.error('No Shopify connection found')
+      return
+    }
+
     setIsSyncing(true)
     setSyncError(null)
     setSyncDetails(null)
@@ -43,20 +54,16 @@ export function CustomerSyncButton({ connectionId, className }: CustomerSyncButt
       setSyncDetails(data)
       
       if (!response.ok) {
-        const errorMessage = data.error || 'Failed to sync customer data'
-        console.error('Sync error:', errorMessage)
+        console.error('Customer sync error:', data)
         
-        if (data.details) {
-          console.error('Error details:', data.details)
+        // Check if the error is related to missing shop URL
+        if (data.error === 'Invalid connection data' && data.details?.includes('Shop URL is missing')) {
+          setSyncError('Shop URL is missing. Please provide your Shopify store URL to fix this issue.')
+          setShowShopUrlDialog(true)
+          return
         }
         
-        if (data.solution) {
-          console.info('Suggested solution:', data.solution)
-        }
-        
-        setSyncError(errorMessage)
-        setShowErrorDialog(true)
-        throw new Error(errorMessage)
+        throw new Error(data.error || 'Failed to sync customers')
       }
       
       if (data.count === 0) {
@@ -100,6 +107,48 @@ export function CustomerSyncButton({ connectionId, className }: CustomerSyncButt
     }
   }
 
+  const handleFixConnection = async () => {
+    if (!connectionId || !shopUrl) {
+      toast.error('Connection ID and Shop URL are required')
+      return
+    }
+
+    setIsSyncing(true)
+    setSyncError(null)
+
+    try {
+      // Clean up the shop URL (remove https:// if present)
+      const cleanShopUrl = shopUrl.replace(/^https?:\/\//, '')
+      
+      const response = await fetch('/api/shopify/customers/fix-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          connectionId,
+          shopUrl: cleanShopUrl
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Fix connection error:', data)
+        throw new Error(data.error || 'Failed to fix connection')
+      }
+
+      toast.success('Connection fixed and customer sync started successfully!')
+      setShowShopUrlDialog(false)
+    } catch (error) {
+      console.error('Error fixing connection:', error)
+      setSyncError(error instanceof Error ? error.message : 'Failed to fix connection')
+      toast.error(`Fix Connection Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   const closeErrorDialog = () => {
     setShowErrorDialog(false)
   }
@@ -118,7 +167,7 @@ export function CustomerSyncButton({ connectionId, className }: CustomerSyncButt
         variant="outline" 
         size="sm" 
         className={className}
-        disabled={isSyncing}
+        disabled={isSyncing || !connectionId}
       >
         {isSyncing ? (
           <>
@@ -165,6 +214,51 @@ export function CustomerSyncButton({ connectionId, className }: CustomerSyncButt
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Shop URL Dialog */}
+      <Dialog open={showShopUrlDialog} onOpenChange={setShowShopUrlDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fix Shopify Connection</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Your Shopify connection is missing the shop URL. Please enter your Shopify store URL to fix this issue.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="shopUrl">Shopify Store URL</Label>
+              <Input
+                id="shopUrl"
+                placeholder="your-store.myshopify.com"
+                value={shopUrl}
+                onChange={(e) => setShopUrl(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowShopUrlDialog(false)}
+              disabled={isSyncing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleFixConnection}
+              disabled={isSyncing || !shopUrl}
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Fixing...
+                </>
+              ) : (
+                'Fix & Sync'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 } 

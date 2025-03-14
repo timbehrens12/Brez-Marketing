@@ -202,281 +202,212 @@ const US_CITY_COORDINATES: Record<string, { lat: number, lng: number }> = {
 type CustomerData = any;
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const brandId = searchParams.get('brandId');
+
+  if (!brandId) {
+    console.error('Missing brandId in request');
+    return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
+  }
+
+  console.log('Fetching geographic data for brand:', brandId);
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const brandId = searchParams.get('brandId');
-    
-    if (!brandId) {
-      console.error('Missing brandId parameter');
-      return NextResponse.json({ 
-        error: 'Brand ID is required',
-        locations: [],
-        totalRevenue: 0,
-        totalCustomers: 0
-      }, { status: 400 });
-    }
-    
-    console.log('Fetching geographic data for brand:', brandId);
-    
     // Initialize Supabase client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get all active Shopify connections for this brand
+    // Get connection IDs for this brand
     const { data: connections, error: connectionsError } = await supabase
       .from('platform_connections')
-      .select('id')
+      .select('id, shop')
       .eq('brand_id', brandId)
       .eq('platform_type', 'shopify')
       .eq('status', 'active');
-    
+
     if (connectionsError) {
       console.error('Error fetching connections:', connectionsError);
       return NextResponse.json({ 
-        error: 'Failed to fetch connections',
-        details: connectionsError.message,
-        locations: [],
-        totalRevenue: 0,
-        totalCustomers: 0
+        error: 'Failed to fetch connections', 
+        details: connectionsError.message 
       }, { status: 500 });
     }
-    
+
     if (!connections || connections.length === 0) {
       console.log('No active Shopify connections found for brand:', brandId);
       return NextResponse.json({ 
+        error: 'No active Shopify connections found',
+        solution: 'Please connect your Shopify store in the settings page',
         locations: [],
-        totalRevenue: 0,
         totalCustomers: 0,
-        message: 'No active Shopify connections found'
-      });
+        totalRevenue: 0
+      }, { status: 404 });
     }
-    
-    const connectionIds = connections.map(conn => conn.id);
-    console.log('Found connection IDs:', connectionIds);
-    
-    // Try to get customer data from the new columns first
+
+    // Log the connections for debugging
+    console.log('Found connections:', connections.map(c => ({ id: c.id, shop: c.shop })));
+
+    // Check if any connection is missing shop URL
+    const missingShopConnections = connections.filter(c => !c.shop);
+    if (missingShopConnections.length > 0) {
+      console.warn('Some connections are missing shop URL:', missingShopConnections.map(c => c.id));
+    }
+
+    // Get all connection IDs
+    const connectionIds = connections.map(c => c.id);
+
+    // First try to get customer data from the shopify_customers table
     let { data: customers, error: customersError } = await supabase
       .from('shopify_customers')
-      .select('id, city, state_province, country, total_spent, orders_count, connection_id')
+      .select('id, city, state_province, country, total_spent, orders_count, lat, lng, connection_id')
       .in('connection_id', connectionIds);
-    
-    let dataSource = 'customer_location';
-    
-    if (customersError || !customers || customers.length === 0) {
-      console.log('No data found in shopify_customers table or error occurred:', customersError?.message);
-      console.log('Falling back to default_address field...');
-      
-      // Fall back to using the default_address field
-      const { data: fallbackCustomers, error: fallbackError } = await supabase
-        .from('shopify_customers')
-        .select('id, default_address, total_spent, orders_count, connection_id')
-        .in('connection_id', connectionIds);
-      
-      if (fallbackError || !fallbackCustomers || fallbackCustomers.length === 0) {
-        console.log('No customer data found in default_address field either:', fallbackError?.message);
-        
-        // Log the number of customers in the database for debugging
-        const { count, error: countError } = await supabase
-          .from('shopify_customers')
-          .select('*', { count: 'exact', head: true });
-        
-        if (countError) {
-          console.error('Error counting customers:', countError);
-        } else {
-          console.log(`Total customers in database: ${count || 0}`);
-        }
-        
-        return NextResponse.json({ 
-          locations: [],
-          totalRevenue: 0,
-          totalCustomers: 0,
-          message: 'No geographic data found. Please sync your customers first.',
-          dataSource: 'none'
-        });
-      }
-      
-      // Process customers from default_address field
-      customers = fallbackCustomers.map(customer => {
-        const address = customer.default_address;
-        return {
-          id: customer.id,
-          city: address?.city || null,
-          state_province: address?.province || null,
-          country: address?.country || null,
-          total_spent: customer.total_spent || 0,
-          orders_count: customer.orders_count || 0,
-          connection_id: customer.connection_id
-        };
+
+    // Check if the shopify_customers table exists
+    if (customersError && customersError.message.includes('relation "shopify_customers" does not exist')) {
+      console.error('shopify_customers table does not exist');
+      return NextResponse.json({ 
+        error: 'Customer data table does not exist',
+        solution: 'Please sync your customers to create the necessary tables',
+        locations: [],
+        totalCustomers: 0,
+        totalRevenue: 0
+      }, { status: 404 });
+    }
+
+    if (customersError) {
+      console.error('Error fetching customers:', customersError);
+      return NextResponse.json({ 
+        error: 'Failed to fetch customer data', 
+        details: customersError.message 
+      }, { status: 500 });
+    }
+
+    // If no customers found, return empty response
+    if (!customers || customers.length === 0) {
+      console.log('No customer data found for brand:', brandId);
+      return NextResponse.json({ 
+        error: 'No customer data found',
+        solution: 'Please sync your customers from Shopify',
+        locations: [],
+        totalCustomers: 0,
+        totalRevenue: 0
       });
-      
-      dataSource = 'default_address';
     }
-    
-    // Log a sample of the customer data for debugging
-    if (customers.length > 0) {
-      console.log(`Found ${customers.length} customers with geographic data`);
-      console.log('Sample customer data:', customers[0]);
-    } else {
-      console.log('No customers found with geographic data');
-    }
-    
-    // Group customers by location
-    const locationMap = new Map();
-    
+
+    // Log sample customer data for debugging
+    console.log('Sample customer data:', customers.slice(0, 3));
+
+    // Create a map to aggregate customer counts and revenue by location
+    const locationMap = new Map<string, {
+      city: string;
+      state: string;
+      country: string;
+      lat: number | null;
+      lng: number | null;
+      customerCount: number;
+      totalRevenue: number;
+    }>();
+
+    // Process customer data
+    let totalCustomers = 0;
+    let totalRevenue = 0;
+    let dataSource = 'customer_location';
+
     for (const customer of customers) {
-      // Skip customers with no location data
+      totalCustomers++;
+      
+      // Parse revenue value
+      const revenue = typeof customer.total_spent === 'string' 
+        ? parseFloat(customer.total_spent) 
+        : (customer.total_spent || 0);
+      
+      totalRevenue += revenue;
+
+      // Skip customers without location data
       if (!customer.city && !customer.state_province && !customer.country) {
         continue;
       }
+
+      const locationKey = `${customer.city || ''}|${customer.state_province || ''}|${customer.country || ''}`;
       
-      // Create a location key
-      const locationKey = [
-        customer.city || '',
-        customer.state_province || '',
-        customer.country || ''
-      ].filter(Boolean).join(', ');
-      
-      if (!locationKey) continue;
-      
-      // Get or create location entry
       if (!locationMap.has(locationKey)) {
         locationMap.set(locationKey, {
-          id: locationKey,
           city: customer.city || '',
           state: customer.state_province || '',
           country: customer.country || '',
-          lat: null,
-          lng: null,
+          lat: customer.lat || null,
+          lng: customer.lng || null,
           customerCount: 0,
           totalRevenue: 0
         });
       }
-      
-      // Update location data
-      const location = locationMap.get(locationKey);
-      location.customerCount += 1;
-      location.totalRevenue += parseFloat(customer.total_spent) || 0;
+
+      const location = locationMap.get(locationKey)!;
+      location.customerCount++;
+      location.totalRevenue += revenue;
     }
-    
-    // Convert to array and assign coordinates
+
+    // Convert the map to an array
     let locations = Array.from(locationMap.values());
-    
-    // Log the locations before processing
-    console.log(`Generated ${locations.length} unique locations before coordinate assignment`);
-    
-    // Assign coordinates to locations
+
+    // Assign coordinates to locations that don't have them
     for (const location of locations) {
-      // Try to find coordinates based on city for US cities
-      if (location.city && location.country === 'United States' && US_CITY_COORDINATES[location.city]) {
-        location.lat = US_CITY_COORDINATES[location.city].lat;
-        location.lng = US_CITY_COORDINATES[location.city].lng;
-        continue;
-      }
-      
-      // Try to find coordinates based on state/province
-      if (location.state) {
-        if (location.country === 'United States' && US_STATE_COORDINATES[location.state]) {
+      if (!location.lat || !location.lng) {
+        // Try to find coordinates based on city, state, or country
+        if (location.city && US_CITY_COORDINATES[location.city]) {
+          location.lat = US_CITY_COORDINATES[location.city].lat;
+          location.lng = US_CITY_COORDINATES[location.city].lng;
+        } else if (location.state && US_STATE_COORDINATES[location.state]) {
           location.lat = US_STATE_COORDINATES[location.state].lat;
           location.lng = US_STATE_COORDINATES[location.state].lng;
-          continue;
+        } else if (location.country && COUNTRY_COORDINATES[location.country]) {
+          location.lat = COUNTRY_COORDINATES[location.country].lat;
+          location.lng = COUNTRY_COORDINATES[location.country].lng;
+        } else {
+          // Default to center of the world if no coordinates found
+          location.lat = 0;
+          location.lng = 0;
         }
-        
-        if (location.country === 'Canada' && CANADA_PROVINCE_COORDINATES[location.state]) {
-          location.lat = CANADA_PROVINCE_COORDINATES[location.state].lat;
-          location.lng = CANADA_PROVINCE_COORDINATES[location.state].lng;
-          continue;
-        }
-      }
-      
-      // Try to find coordinates based on country
-      if (location.country && COUNTRY_COORDINATES[location.country]) {
-        location.lat = COUNTRY_COORDINATES[location.country].lat;
-        location.lng = COUNTRY_COORDINATES[location.country].lng;
-        continue;
-      }
-      
-      // If no coordinates found, use a default (center of the world)
-      if (!location.lat || !location.lng) {
-        location.lat = 0;
-        location.lng = 0;
       }
     }
-    
-    // Log the locations after processing
-    console.log(`Processed ${locations.length} locations with coordinates`);
-    
-    // Calculate totals
-    const totalRevenue = locations.reduce((sum, location) => sum + location.totalRevenue, 0);
-    const totalCustomers = locations.reduce((sum, location) => sum + location.customerCount, 0);
-    
+
+    // Filter out locations with no coordinates
+    locations = locations.filter(loc => loc.lat !== null && loc.lng !== null);
+
     // If no locations with coordinates, add a default location
     if (locations.length === 0) {
-      console.log('No locations found, adding default location');
-      
       // Add Houston as a default location
-      locations = [{
-        id: 'default',
+      locations.push({
         city: 'Houston',
         state: 'Texas',
         country: 'United States',
         lat: 29.7604,
         lng: -95.3698,
-        customerCount: 1,
-        totalRevenue: 100
-      }];
-      
-      return NextResponse.json({ 
-        locations,
-        totalRevenue: 100,
-        totalCustomers: 1,
-        message: 'No geographic data found. Using default location.',
-        dataSource: 'default'
+        customerCount: totalCustomers > 0 ? totalCustomers : 1,
+        totalRevenue: totalRevenue > 0 ? totalRevenue : 100
       });
     }
-    
-    // Ensure key cities are represented if we have real data
-    // This is to make sure the map looks populated
-    const ensureCities = ['Houston', 'New York', 'Los Angeles', 'Chicago', 'Miami'];
-    const existingCities = new Set(locations.map(loc => loc.city));
-    
-    for (const city of ensureCities) {
-      if (!existingCities.has(city) && US_CITY_COORDINATES[city]) {
-        console.log(`Adding ${city} as a supplementary location`);
-        
-        // Add the city with a small fraction of the total
-        locations.push({
-          id: `supplementary-${city}`,
-          city: city,
-          state: city === 'Houston' ? 'Texas' : 
-                 city === 'New York' ? 'New York' : 
-                 city === 'Los Angeles' ? 'California' : 
-                 city === 'Chicago' ? 'Illinois' : 
-                 city === 'Miami' ? 'Florida' : '',
-          country: 'United States',
-          lat: US_CITY_COORDINATES[city].lat,
-          lng: US_CITY_COORDINATES[city].lng,
-          customerCount: Math.max(1, Math.floor(totalCustomers * 0.05)),
-          totalRevenue: Math.max(10, totalRevenue * 0.05)
-        });
-      }
-    }
-    
-    return NextResponse.json({ 
+
+    // Add IDs to locations
+    locations = locations.map((loc, index) => ({
+      id: `loc-${index}`,
+      ...loc
+    }));
+
+    console.log(`Returning ${locations.length} locations with ${totalCustomers} customers and $${totalRevenue} revenue`);
+
+    return NextResponse.json({
       locations,
-      totalRevenue,
       totalCustomers,
+      totalRevenue,
       dataSource
     });
-    
   } catch (error) {
     console.error('Error in geographic data API:', error);
     return NextResponse.json({ 
-      error: 'Failed to fetch geographic data',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      locations: [],
-      totalRevenue: 0,
-      totalCustomers: 0
+      error: 'Failed to process geographic data', 
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 
