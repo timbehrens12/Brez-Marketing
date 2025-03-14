@@ -153,17 +153,20 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
   const [totalCustomers, setTotalCustomers] = useState(0)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [displayCount, setDisplayCount] = useState(10)
+  const [dataSource, setDataSource] = useState<string | null>(null)
   
   const fetchGeoData = async () => {
     setIsLoading(true)
     setError(null)
     try {
+      console.log(`Fetching geographic data for brand ID: ${brandId}`)
       const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`)
       if (!response.ok) {
         throw new Error(`Error fetching geographic data: ${response.statusText}`)
       }
       
       const data = await response.json()
+      console.log('Geographic data response:', data)
       
       if (!data.locations || data.locations.length === 0) {
         setError("No geographic data found")
@@ -174,6 +177,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       // Set total values
       setTotalRevenue(data.totalRevenue || 0)
       setTotalCustomers(data.totalCustomers || 0)
+      setDataSource(data.dataSource || null)
       
       // Check if all revenue values are zero
       const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0
@@ -194,7 +198,7 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         const metroArea = findMetroArea(loc.city, lat, lng);
         
         return {
-          id: `${metroArea}-${loc.state}-${loc.country}`,
+          id: `${metroArea || loc.city}-${loc.state}-${loc.country}`,
           city: metroArea || loc.city, // Use metro area name instead of original city, fallback to original if empty
           state: loc.state,
           country: loc.country,
@@ -209,6 +213,8 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
       const aggregatedData: Record<string, RegionData> = {};
       
       processedData.forEach((loc: RegionData) => {
+        if (!loc.city) return; // Skip entries with no city
+        
         const key = `${loc.city}-${loc.state}-${loc.country}`;
         
         if (!aggregatedData[key]) {
@@ -219,7 +225,10 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
         }
       });
       
-      setClusteredData(Object.values(aggregatedData));
+      const finalData = Object.values(aggregatedData);
+      console.log(`Processed ${finalData.length} unique locations from ${processedData.length} raw locations`);
+      
+      setClusteredData(finalData);
       
     } catch (error) {
       console.error('Error fetching geographic data:', error)
@@ -249,6 +258,16 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
     return (
       <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3 text-sm text-amber-600 dark:text-amber-400">
         Your store has customers but no revenue data yet. The chart is showing customer locations instead of sales.
+      </div>
+    );
+  };
+
+  const renderDataSourceNotice = () => {
+    if (!dataSource || dataSource === 'unknown') return null;
+    
+    return (
+      <div className="mt-2 text-xs text-gray-500">
+        Data source: {dataSource === 'new_columns' ? 'Customer location data' : 'Customer address data'}
       </div>
     );
   };
@@ -341,11 +360,25 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
             >
               Customers
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7 px-2 rounded text-gray-300 hover:bg-gray-800 hover:text-white"
+              onClick={toggleSortOrder}
+            >
+              {sortOrder === 'desc' ? '↓ Highest' : '↑ Lowest'}
+            </Button>
           </div>
         </div>
         <CardDescription className="text-sm text-gray-400">
           View customer distribution by location
+          {totalCustomers > 0 && (
+            <span className="ml-1">
+              ({totalCustomers} customers, {formatCurrency(totalRevenue)} total)
+            </span>
+          )}
         </CardDescription>
+        {renderDataSourceNotice()}
       </CardHeader>
       <CardContent className="flex-1 p-4 overflow-hidden">
         <Tabs defaultValue="chart" className="h-full flex flex-col">
@@ -372,94 +405,112 @@ export function CustomerGeographicMap({ brandId, isRefreshing = false }: Custome
               </Button>
             </div>
           ) : clusteredData.length > 0 ? (
-            <div className="space-y-6">
-              {/* Bar Chart */}
-              <div className="w-full h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={chartData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                    barSize={20}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis 
-                      dataKey="name" 
-                      angle={-45} 
-                      textAnchor="end" 
-                      height={70} 
-                      tick={{ fill: '#888', fontSize: 12 }}
-                    />
-                    <YAxis 
-                      tick={{ fill: '#888' }}
-                      tickFormatter={(value) => view === 'revenue' 
-                        ? formatCurrency(value).replace('$', '') 
-                        : value.toString()
-                      }
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar 
-                      dataKey={view === 'revenue' ? 'revenue' : 'customers'} 
-                      fill={view === 'revenue' ? '#3b82f6' : '#8b5cf6'}
-                      radius={[4, 4, 0, 0]}
+            <div className="h-full">
+              <TabsContent value="chart" className="space-y-6 h-full">
+                {/* Bar Chart */}
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                      barSize={20}
                     >
-                      {chartData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={view === 'revenue' 
-                            ? (entry.revenue > 0 ? '#3b82f6' : '#6b7280') 
-                            : '#8b5cf6'
-                          } 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={70} 
+                        tick={{ fill: '#888', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#888' }}
+                        tickFormatter={(value) => view === 'revenue' 
+                          ? formatCurrency(value).replace('$', '') 
+                          : value.toString()
+                        }
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar 
+                        dataKey={view === 'revenue' ? 'revenue' : 'customers'} 
+                        fill={view === 'revenue' ? '#3b82f6' : '#8b5cf6'}
+                        radius={[4, 4, 0, 0]}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={view === 'revenue' 
+                              ? (entry.revenue > 0 ? '#3b82f6' : '#6b7280') 
+                              : '#8b5cf6'
+                            } 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Show more/less buttons */}
+                <div className="flex justify-center gap-2">
+                  {displayCount > 5 && (
+                    <Button variant="outline" size="sm" onClick={handleShowLess}>
+                      Show Less
+                    </Button>
+                  )}
+                  {displayCount < clusteredData.length && (
+                    <Button variant="outline" size="sm" onClick={handleShowMore}>
+                      Show More
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
               
-              {/* Data Table */}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Location</TableHead>
-                      <TableHead className="text-right">Customers</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedData.slice(0, displayCount).map((region) => (
-                      <TableRow key={region.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center">
-                            <MapPin className="h-3 w-3 mr-2 text-muted-foreground" />
-                            <span>
-                              {region.city}
-                              {region.state ? `, ${region.state}` : ''}
-                              {region.country && region.country !== 'United States' ? `, ${region.country}` : ''}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">{region.customerCount}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(region.totalRevenue)}</TableCell>
+              <TabsContent value="table" className="h-full overflow-auto">
+                {/* Data Table */}
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Location</TableHead>
+                        <TableHead className="text-right">Customers</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              
-              {/* Show more/less buttons */}
-              <div className="flex justify-center gap-2">
-                {displayCount > 5 && (
-                  <Button variant="outline" size="sm" onClick={handleShowLess}>
-                    Show Less
-                  </Button>
-                )}
-                {displayCount < clusteredData.length && (
-                  <Button variant="outline" size="sm" onClick={handleShowMore}>
-                    Show More
-                  </Button>
-                )}
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedData.slice(0, displayCount).map((region) => (
+                        <TableRow key={region.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center">
+                              <MapPin className="h-3 w-3 mr-2 text-muted-foreground" />
+                              <span>
+                                {region.city}
+                                {region.state ? `, ${region.state}` : ''}
+                                {region.country && region.country !== 'United States' ? `, ${region.country}` : ''}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{region.customerCount}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(region.totalRevenue)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* Show more/less buttons */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {displayCount > 5 && (
+                    <Button variant="outline" size="sm" onClick={handleShowLess}>
+                      Show Less
+                    </Button>
+                  )}
+                  {displayCount < clusteredData.length && (
+                    <Button variant="outline" size="sm" onClick={handleShowMore}>
+                      Show More
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
             </div>
           ) : (
             <div className="w-full h-[400px] flex flex-col items-center justify-center">

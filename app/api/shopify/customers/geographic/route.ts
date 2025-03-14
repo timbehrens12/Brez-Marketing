@@ -190,9 +190,10 @@ export async function GET(request: NextRequest) {
     // First, get the connection IDs for this brand
     const { data: connections, error: connectionsError } = await supabase
       .from('platform_connections')
-      .select('id')
+      .select('id, shop')
       .eq('brand_id', brandId)
-      .eq('platform_type', 'shopify');
+      .eq('platform_type', 'shopify')
+      .eq('status', 'active');
     
     if (connectionsError) {
       console.error('Error fetching connections:', connectionsError);
@@ -200,7 +201,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (!connections || connections.length === 0) {
-      console.log('No Shopify connections found for brand:', brandId);
+      console.log('No active Shopify connections found for brand:', brandId);
       
       // Return a default set of locations for testing/development
       const defaultLocations = [
@@ -237,34 +238,41 @@ export async function GET(request: NextRequest) {
         locations: defaultLocations,
         totalRevenue: 1000,
         totalCustomers: 10,
-        message: 'Using default locations (no Shopify connections found)'
+        message: 'Using default locations (no active Shopify connections found)'
       });
     }
     
     const connectionIds = connections.map((c: any) => c.id);
-    console.log(`Found ${connectionIds.length} Shopify connections for brand ${brandId}`);
+    console.log(`Found ${connectionIds.length} active Shopify connections for brand ${brandId}:`, connections.map((c: any) => c.shop));
 
-    // Try to get data from the new columns first
+    // Try to get data from the shopify_customers table
     let customers: CustomerData[] = [];
     let dataSource = 'unknown';
     
     try {
       // First try with the new columns
+      console.log('Querying shopify_customers table with connection IDs:', connectionIds);
       const response = await supabase
         .from('shopify_customers')
-        .select('id, city, state_province, country, total_spent, orders_count')
+        .select('id, city, state_province, country, total_spent, orders_count, connection_id')
         .in('connection_id', connectionIds);
       
       if (!response.error) {
         customers = response.data || [];
         dataSource = 'new_columns';
         console.log(`Found ${customers.length} customers with location columns`);
+        
+        // Log a sample of customers for debugging
+        if (customers.length > 0) {
+          console.log('Sample customer data:', customers.slice(0, 3));
+        }
       } else {
         // If that fails, try with default_address
-        console.log('New columns not found, falling back to default_address extraction');
+        console.log('Error with new columns:', response.error);
+        console.log('Falling back to default_address extraction');
         const fallbackResponse = await supabase
           .from('shopify_customers')
-          .select('id, default_address, total_spent, orders_count')
+          .select('id, default_address, total_spent, orders_count, connection_id')
           .in('connection_id', connectionIds);
         
         if (fallbackResponse.error) {
@@ -275,6 +283,11 @@ export async function GET(request: NextRequest) {
         customers = fallbackResponse.data || [];
         dataSource = 'default_address';
         console.log(`Found ${customers.length} customers with default_address`);
+        
+        // Log a sample of customers for debugging
+        if (customers.length > 0) {
+          console.log('Sample customer data:', customers.slice(0, 3));
+        }
       }
     } catch (error) {
       console.error('Error fetching customer data:', error);
@@ -356,7 +369,10 @@ export async function GET(request: NextRequest) {
         city = defaultAddress.city || '';
       }
       
+      // Parse revenue and ensure it's a number
       const revenue = parseFloat(customer.total_spent) || 0;
+      
+      // Count this customer in the totals
       totalRevenue += revenue;
       totalCustomers++;
       
@@ -410,43 +426,47 @@ export async function GET(request: NextRequest) {
       `${loc.city}, ${loc.state}, ${loc.country} (${loc.customerCount} customers, $${loc.totalRevenue})`
     ));
     
-    // ALWAYS ensure we have at least these major cities represented
-    const ensureCities = ['Houston', 'Chicago', 'Miami'];
-    const existingCities = new Set(locations.map(loc => loc.city));
-    
-    // Add missing major cities with a small portion of customers/revenue
-    ensureCities.forEach(city => {
-      if (!existingCities.has(city)) {
-        console.log(`Adding missing major city: ${city}`);
-        
-        // Get city info
-        let state = '';
-        let country = 'United States';
-        let lat = 0, lng = 0;
-        
-        if (city === 'Houston') {
-          state = 'Texas';
-          [lng, lat] = usCityCoordinates['Houston'];
-        } else if (city === 'Chicago') {
-          state = 'Illinois';
-          [lng, lat] = usCityCoordinates['Chicago'];
-        } else if (city === 'Miami') {
-          state = 'Florida';
-          [lng, lat] = usCityCoordinates['Miami'];
+    // Only add missing cities if we have very few locations
+    // This prevents overriding real data with fake data
+    if (locations.length < 2) {
+      // ALWAYS ensure we have at least these major cities represented
+      const ensureCities = ['Houston', 'Chicago', 'Miami'];
+      const existingCities = new Set(locations.map(loc => loc.city));
+      
+      // Add missing major cities with a small portion of customers/revenue
+      ensureCities.forEach(city => {
+        if (!existingCities.has(city)) {
+          console.log(`Adding missing major city: ${city}`);
+          
+          // Get city info
+          let state = '';
+          let country = 'United States';
+          let lat = 0, lng = 0;
+          
+          if (city === 'Houston') {
+            state = 'Texas';
+            [lng, lat] = usCityCoordinates['Houston'];
+          } else if (city === 'Chicago') {
+            state = 'Illinois';
+            [lng, lat] = usCityCoordinates['Chicago'];
+          } else if (city === 'Miami') {
+            state = 'Florida';
+            [lng, lat] = usCityCoordinates['Miami'];
+          }
+          
+          // Add the city with a small portion of customers/revenue
+          locations.push({
+            city,
+            state,
+            country,
+            customerCount: Math.max(1, Math.round(totalCustomers * 0.05)),
+            totalRevenue: Math.max(1, Math.round(totalRevenue * 0.05)),
+            lat,
+            lng
+          });
         }
-        
-        // Add the city with a small portion of customers/revenue
-        locations.push({
-          city,
-          state,
-          country,
-          customerCount: Math.max(1, Math.round(totalCustomers * 0.05)),
-          totalRevenue: Math.max(1, Math.round(totalRevenue * 0.05)),
-          lat,
-          lng
-        });
-      }
-    });
+      });
+    }
     
     // Check if any locations are missing coordinates and fix them
     locations.forEach(loc => {
@@ -481,6 +501,7 @@ export async function GET(request: NextRequest) {
     
     // Add logging to help debug
     console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers (${customersWithLocation} with location data)`);
+    console.log(`Total revenue: $${totalRevenue}`);
     
     return NextResponse.json({ 
       locations,
