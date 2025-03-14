@@ -22,6 +22,7 @@ interface MetricCardProps {
   className?: string
   loading?: boolean
   refreshing?: boolean
+  initialLoading?: boolean
   valueFormat?: "number" | "percentage" | "currency"
   platform?: string
   infoTooltip?: string
@@ -44,6 +45,7 @@ export function MetricCard({
   className,
   loading = false,
   refreshing = false,
+  initialLoading = false,
   valueFormat = "number",
   platform = "shopify",
   infoTooltip,
@@ -90,16 +92,61 @@ export function MetricCard({
     return data && data.length > 0;
   }, [data, dateRange]);
 
-  if (loading) {
+  // Move PlatformIcon function here, before it's used
+  const PlatformIcon = () => {
+    switch (platform) {
+      case "Shopify":
+        return (
+          <img
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Di8NeCzywloJqM3PWXj5VGVChVgmxi.png"
+            alt="Shopify"
+            className="h-4 w-4"
+          />
+        )
+      case "Meta Ads":
+        return (
+          <img
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png"
+            alt="Meta"
+            className="h-4 w-4"
+          />
+        )
+      case "TikTok Ads":
+        return (
+          <img
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-kQNBaAXHdkQfjbkUEzr7W0yvQmt22Z.png"
+            alt="TikTok"
+            className="h-4 w-4"
+          />
+        )
+      case "Google Ads":
+        return (
+          <img
+            src="https://i.imgur.com/TavV4UJ.png"
+            alt="Google Ads"
+            className="h-4 w-4"
+          />
+        )
+      default:
+        return null
+    }
+  }
+
+  // Update the loading condition to check for initialLoading
+  if (initialLoading) {
     return (
       <Card className={cn("bg-[#111111] text-white border-[#222222]", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Skeleton className="h-4 w-[100px]" />
-          <Skeleton className="h-4 w-[60px]" />
+          <div className="flex items-center space-x-2">
+            {icon && <div className="mr-2">{icon}</div>}
+            <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+              {title}
+            </CardTitle>
+            {platform && <PlatformIcon />}
+          </div>
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-[120px] mb-4" />
-          <Skeleton className="h-[80px] w-full" />
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </CardContent>
       </Card>
     )
@@ -143,45 +190,6 @@ export function MetricCard({
     titleString.includes('Stock') || 
     titleString.includes('Out of Stock') || 
     titleString.includes('Low Stock');
-
-  const PlatformIcon = () => {
-    switch (platform) {
-      case "Shopify":
-        return (
-          <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Di8NeCzywloJqM3PWXj5VGVChVgmxi.png"
-            alt="Shopify"
-            className="h-4 w-4"
-          />
-        )
-      case "Meta Ads":
-        return (
-          <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-xNnLSFG1hEPttp3zbiVUSkeeKN3EXY.png"
-            alt="Meta"
-            className="h-4 w-4"
-          />
-        )
-      case "TikTok Ads":
-        return (
-          <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-kQNBaAXHdkQfjbkUEzr7W0yvQmt22Z.png"
-            alt="TikTok"
-            className="h-4 w-4"
-          />
-        )
-      case "Google Ads":
-        return (
-          <img
-            src="https://i.imgur.com/TavV4UJ.png"
-            alt="Google Ads"
-            className="h-4 w-4"
-          />
-        )
-      default:
-        return null
-    }
-  }
 
   // Add a function to find the most recent day with data
   const findMostRecentDayWithData = () => {
@@ -366,10 +374,7 @@ export function MetricCard({
       <CardContent className="p-4 pt-2">
         <div className="text-2xl font-bold text-white">
           {refreshing ? (
-            <div className="flex items-center space-x-2">
-              <div className="h-6 w-6 animate-pulse bg-gray-700 rounded-full"></div>
-              <div className="h-6 w-20 animate-pulse bg-gray-700 rounded"></div>
-            </div>
+            <>{prefix}{formattedValue}{suffix}</>
           ) : (
             <>{prefix}{formattedValue}{suffix}</>
           )}

@@ -25,6 +25,7 @@ interface ShopifyTabProps {
   metrics: Metrics
   isLoading: boolean
   isRefreshingData?: boolean
+  initialDataLoad?: boolean
 }
 
 interface SafeMetrics extends Omit<Metrics, 'revenueByDay' | 'topProducts' | 'customerSegments' | 'dailyData'> {
@@ -44,10 +45,11 @@ export function ShopifyTab({
   brandId,
   metrics,
   isLoading,
-  isRefreshingData = false
+  isRefreshingData = false,
+  initialDataLoad = false
 }: ShopifyTabProps) {
   if (!connection) return <div>No Shopify connection found</div>
-  if (isLoading) return <div className="flex items-center justify-center p-6">Loading metrics...</div>
+  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-blue-500 mr-2" /> Loading metrics...</div>
 
   const safeMetrics: SafeMetrics = {
     ...metrics,

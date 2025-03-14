@@ -24,6 +24,7 @@ interface PlatformTabsProps {
   metrics: Metrics
   isLoading: boolean
   isRefreshingData?: boolean
+  initialDataLoad?: boolean
   brandId: string
   connections: PlatformConnection[]
   children?: React.ReactNode
@@ -47,6 +48,7 @@ export function PlatformTabs({
   metrics, 
   isLoading,
   isRefreshingData = false,
+  initialDataLoad = false,
   brandId, 
   connections, 
   children,
@@ -247,6 +249,7 @@ export function PlatformTabs({
             metrics={safeMetrics}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
+            initialDataLoad={initialDataLoad}
           />
         ) : (
           <div className="text-center py-8 text-gray-400">
@@ -264,6 +267,7 @@ export function PlatformTabs({
           metrics={metrics}
           isLoading={isLoading}
           isRefreshingData={isRefreshingData}
+          initialDataLoad={initialDataLoad}
           brandId={brandId}
         />
       </TabsContent>

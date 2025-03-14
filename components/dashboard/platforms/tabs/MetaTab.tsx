@@ -13,6 +13,7 @@ interface MetaTabProps {
   metrics: any
   isLoading: boolean
   isRefreshingData?: boolean
+  initialDataLoad?: boolean
   brandId: string
 }
 
@@ -28,7 +29,7 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
-export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = false, brandId }: MetaTabProps) {
+export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = false, initialDataLoad = false, brandId }: MetaTabProps) {
   const [metaData, setMetaData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +61,16 @@ export function MetaTab({ dateRange, metrics, isLoading, isRefreshingData = fals
   // Use either the passed metrics or the fetched data
   const data = metrics || metaData || {}
   const hasData = data && Object.keys(data).length > 0
+
+  // Show a loading spinner when initialDataLoad is true
+  if (initialDataLoad) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Activity className="h-8 w-8 animate-spin text-blue-500 mr-3" />
+        <span className="text-gray-300">Loading Meta Ads data...</span>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">

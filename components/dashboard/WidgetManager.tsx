@@ -30,6 +30,7 @@ interface WidgetManagerProps {
   metrics: Metrics;
   isLoading: boolean;
   isRefreshingData?: boolean;
+  initialDataLoad?: boolean;
   platformStatus: {
     shopify: boolean;
     meta: boolean;
@@ -44,6 +45,7 @@ export function WidgetManager({
   metrics, 
   isLoading,
   isRefreshingData = false,
+  initialDataLoad = false,
   platformStatus,
   existingConnections,
   children
@@ -97,6 +99,7 @@ export function WidgetManager({
         metrics={metrics}
         isLoading={isLoading}
         isRefreshingData={isRefreshingData}
+        initialDataLoad={initialDataLoad}
         brandId={brandId}
         connections={connections}
         onTabChange={handleTabChange}
@@ -121,6 +124,7 @@ export function WidgetManager({
           change={metrics.adSpendGrowth || 0}
           loading={isLoading}
           refreshing={isRefreshingData}
+          initialLoading={initialDataLoad}
           data={[]}
           platform="meta"
           brandId={brandId}
@@ -146,6 +150,7 @@ export function WidgetManager({
           change={metrics.roasGrowth || 0}
           loading={isLoading}
           refreshing={isRefreshingData}
+          initialLoading={initialDataLoad}
           data={[]}
           platform="meta"
           brandId={brandId}
@@ -171,6 +176,7 @@ export function WidgetManager({
           change={metrics.impressionGrowth || 0}
           loading={isLoading}
           refreshing={isRefreshingData}
+          initialLoading={initialDataLoad}
           data={[]}
           platform="meta"
           brandId={brandId}
@@ -196,6 +202,7 @@ export function WidgetManager({
           change={metrics.ctrGrowth || 0}
           loading={isLoading}
           refreshing={isRefreshingData}
+          initialLoading={initialDataLoad}
           data={[]}
           platform="meta"
           brandId={brandId}

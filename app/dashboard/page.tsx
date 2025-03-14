@@ -98,6 +98,7 @@ export default function DashboardPage() {
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
   const [isLoading, setIsLoading] = useState(true)
+  const [initialDataLoad, setInitialDataLoad] = useState(true)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -388,8 +389,13 @@ export default function DashboardPage() {
   const fetchAllData = async () => {
     if (!selectedBrandId) return
     
-    // Use isRefreshingData instead of isLoading for refreshes
-    setIsRefreshingData(true)
+    // Use isRefreshingData for refreshes, but set isLoading for initial load
+    if (initialDataLoad) {
+      setIsLoading(true);
+    } else {
+      setIsRefreshingData(true);
+    }
+
     try {
       // Fetch Shopify data
       if (activePlatforms.shopify && shopifyConnection) {
@@ -492,7 +498,13 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
-      setIsRefreshingData(false)
+      // Set initialDataLoad to false after the first load completes
+      if (initialDataLoad) {
+        setInitialDataLoad(false);
+        setIsLoading(false);
+      } else {
+        setIsRefreshingData(false);
+      }
     }
   }
 
@@ -733,7 +745,13 @@ export default function DashboardPage() {
         />
       )}
 
-      {selectedBrandId ? (
+      {selectedBrandId && initialDataLoad ? (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-400 text-lg">Loading dashboard data...</p>
+          <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+        </div>
+      ) : selectedBrandId ? (
         <>
           <WidgetManager 
             dateRange={dateRange} 
@@ -741,6 +759,7 @@ export default function DashboardPage() {
             metrics={metrics}
             isLoading={isLoading}
             isRefreshingData={isRefreshingData}
+            initialDataLoad={initialDataLoad}
             platformStatus={activePlatforms}
             existingConnections={connections}
           >
