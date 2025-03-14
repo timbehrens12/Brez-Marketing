@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, BarChart2, Users, Settings, LogOut, FileText, Sparkles, Loader2 } from "lucide-react"
 import { UserButton, useAuth, useClerk } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { Button } from "./ui/button"
+import { useState, useEffect } from "react"
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -26,17 +27,46 @@ export function Sidebar({ className }: SidebarProps) {
   const { userId, isLoaded } = useAuth()
   const { signOut } = useClerk()
   const router = useRouter()
+  const [isAppLoading, setIsAppLoading] = useState(true)
+  
+  // Set up a timer to detect if the app is taking too long to load
+  useEffect(() => {
+    // Start with loading state
+    setIsAppLoading(true)
+    
+    // After 1 second, check if auth is loaded
+    const timer = setTimeout(() => {
+      if (isLoaded) {
+        setIsAppLoading(false)
+      }
+    }, 1000)
+    
+    // After 5 seconds, assume app is loaded regardless
+    const fallbackTimer = setTimeout(() => {
+      setIsAppLoading(false)
+    }, 5000)
+    
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(fallbackTimer)
+    }
+  }, [isLoaded])
   
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
     return (
       <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden`}>
-        <div className="p-6 text-center">
+        <div className="p-6 text-center relative">
           <img 
             src="https://i.imgur.com/hK44KGT.png" 
             alt="Brez Logo" 
             className="h-12 w-auto object-contain mx-auto" 
           />
+          {isAppLoading && (
+            <div className="absolute top-6 right-6">
+              <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+            </div>
+          )}
         </div>
         <div className="border-t border-[#2A2A2A] mb-6"></div>
         <div className="px-6 flex-1">
@@ -69,12 +99,17 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-y-auto`}>
-      <div className="p-6 text-center">
+      <div className="p-6 text-center relative">
         <img 
           src="https://i.imgur.com/hK44KGT.png" 
           alt="Brez Logo" 
           className="h-12 w-auto object-contain mx-auto" 
         />
+        {isAppLoading && (
+          <div className="absolute top-6 right-6">
+            <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+          </div>
+        )}
       </div>
       <div className="border-t border-[#2A2A2A] mb-6"></div>
       <div className="px-6 flex-1">

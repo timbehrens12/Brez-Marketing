@@ -388,6 +388,19 @@ export default function DashboardPage() {
     c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
   )
 
+  // Add a useEffect to ensure isInitialLoading is set to false after a timeout
+  useEffect(() => {
+    // Set a timeout to ensure we don't get stuck in loading state
+    const loadingTimeout = setTimeout(() => {
+      if (isInitialLoading) {
+        console.log('Loading timeout reached, forcing loading state to complete')
+        setIsInitialLoading(false)
+      }
+    }, 10000) // 10 seconds max loading time
+    
+    return () => clearTimeout(loadingTimeout)
+  }, [isInitialLoading])
+
   // Update the fetchAllData function to handle loading states properly
   const fetchAllData = async () => {
     // If this is a refresh (not initial load), set isLoading instead of isInitialLoading
@@ -395,7 +408,13 @@ export default function DashboardPage() {
       setIsLoading(true)
     }
     
-    if (!selectedBrandId) return
+    if (!selectedBrandId) {
+      // If no brand is selected, we should still exit loading state
+      setIsInitialLoading(false)
+      setIsLoading(false)
+      setIsRefreshingData(false)
+      return
+    }
     
     // Use isRefreshingData instead of isLoading for refreshes
     setIsRefreshingData(true)
@@ -501,13 +520,12 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
+      // Always ensure loading states are reset
       setIsRefreshingData(false)
+      setIsInitialLoading(false)
+      setIsLoading(false)
+      setLastRefreshed(new Date())
     }
-    
-    // When complete, update both loading states
-    setIsInitialLoading(false)
-    setIsLoading(false)
-    setLastRefreshed(new Date())
   }
 
   // Update the refresh function
@@ -579,16 +597,34 @@ export default function DashboardPage() {
     // Initial fetch - ensure this runs immediately when the component mounts
     if (selectedBrandId) {
       console.log('Initial dashboard data load triggered')
-      fetchAllData();
-      setLastRefreshed(new Date());
+      try {
+        fetchAllData();
+        setLastRefreshed(new Date());
+      } catch (error) {
+        console.error('Error during initial data load:', error);
+        // Ensure loading states are reset even if there's an error
+        setIsInitialLoading(false);
+        setIsLoading(false);
+        setIsRefreshingData(false);
+      }
+    } else {
+      // If no brand is selected, we should still exit loading state
+      setIsInitialLoading(false);
     }
     
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
       if (selectedBrandId) {
         console.log('Periodic dashboard data refresh triggered')
-        fetchAllData();
-        setLastRefreshed(new Date());
+        try {
+          fetchAllData();
+          setLastRefreshed(new Date());
+        } catch (error) {
+          console.error('Error during periodic refresh:', error);
+          // Ensure loading states are reset even if there's an error
+          setIsLoading(false);
+          setIsRefreshingData(false);
+        }
       }
     }, 300000); // Refresh every 5 minutes
     

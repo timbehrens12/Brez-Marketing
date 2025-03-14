@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react"
 
 export function FullPageLoading() {
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] flex flex-col items-center justify-center z-50">
+    <div className="absolute inset-0 bg-[#0A0A0A] flex flex-col items-center justify-center z-10">
       <img 
         src="/brand/logo.png" 
         alt="Brez Logo" 
