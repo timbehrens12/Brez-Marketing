@@ -1,5 +1,16 @@
 "use client"
 
+/**
+ * Dashboard Page
+ * 
+ * Loading behavior:
+ * 1. When a brand is first selected, initialDataLoad is set to true
+ * 2. When initialDataLoad is true, a full-screen loading spinner is shown
+ * 3. After data is loaded, initialDataLoad is set to false
+ * 4. For subsequent refreshes, only the corner loading indicator is shown
+ * 5. Manual refreshes using the refresh button always use the corner loading indicator
+ */
+
 import { useState, useEffect } from "react"
 import { useAuth, SignIn } from "@clerk/nextjs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -165,6 +176,9 @@ export default function DashboardPage() {
     const handleBrandSelected = async (event: CustomEvent) => {
       const brandId = event.detail.brandId
       console.log('Selected brand:', brandId)
+      
+      // Set initialDataLoad to true when a brand is selected
+      setInitialDataLoad(true)
 
       // Fetch platform connections from Supabase
       const { data: connections, error } = await supabase
@@ -392,8 +406,12 @@ export default function DashboardPage() {
     // Use isRefreshingData for refreshes, but set isLoading for initial load
     if (initialDataLoad) {
       setIsLoading(true);
+      // Make sure we're not also setting isRefreshingData
+      setIsRefreshingData(false);
     } else {
       setIsRefreshingData(true);
+      // Make sure we're not also setting isLoading
+      setIsLoading(false);
     }
 
     try {
@@ -527,6 +545,9 @@ export default function DashboardPage() {
     
     setIsRefreshing(true)
     
+    // For manual refreshes, we don't want to show the full-screen loader
+    setInitialDataLoad(false)
+    
     // Show toast to inform user that refresh is happening
     toast({
       title: "Refreshing data",
@@ -578,17 +599,14 @@ export default function DashboardPage() {
 
   // Set up periodic data refresh
   useEffect(() => {
-    // Initial fetch - ensure this runs immediately when the component mounts
-    if (selectedBrandId) {
-      console.log('Initial dashboard data load triggered')
-      fetchAllData();
-      setLastRefreshed(new Date());
-    }
+    // Don't do initial fetch here - we'll do it in the selectedBrandId effect
     
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
       if (selectedBrandId) {
         console.log('Periodic dashboard data refresh triggered')
+        // For periodic refreshes, we don't want to show the full-screen loader
+        setInitialDataLoad(false);
         fetchAllData();
         setLastRefreshed(new Date());
       }
@@ -600,7 +618,11 @@ export default function DashboardPage() {
 
   // Add a new effect to trigger data load when brand is selected
   useEffect(() => {
-    if (selectedBrandId && !isRefreshingData && !isLoading) {
+    if (selectedBrandId) {
+      // Always set initialDataLoad to true when a brand is first selected or changed
+      setInitialDataLoad(true);
+      
+      // Then trigger data load
       console.log('Brand selected, triggering data load')
       fetchAllData();
     }
@@ -748,7 +770,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {initialDataLoad ? (
+      {selectedBrandId && initialDataLoad ? (
         <div className="flex flex-col items-center justify-center py-16">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-gray-400 text-lg">Loading dashboard data...</p>
