@@ -11,10 +11,6 @@ import { AlertCircle } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts'
-import { cn } from "@/lib/utils"
-import { CustomerSyncButton } from './CustomerSyncButton'
-import { useSupabase } from '@/lib/hooks/useSupabase'
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps'
 
 interface CustomerGeographicMapProps {
   brandId: string
@@ -101,315 +97,332 @@ const METRO_AREAS: Record<string, { center: { lat: number, lng: number }, suburb
 };
 
 // Calculate distance between two points in km
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Radius of the earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lng2 - lng1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c; // Distance in km
+  return R * c;
 }
 
 // Find metro area for a city
-function findMetroArea(city: string | null | undefined): string | null {
-  if (!city) return null;
+function findMetroArea(city: string, lat: number, lng: number): string {
+  // Normalize city name for case-insensitive comparison
+  const normalizedCity = city?.toLowerCase() || '';
   
+  // Check if city is a known suburb (case-insensitive)
   for (const [metro, data] of Object.entries(METRO_AREAS)) {
-    if (city.toLowerCase() === metro.toLowerCase() || data.suburbs.some(s => city.toLowerCase() === s.toLowerCase())) {
+    if (data.suburbs.some(suburb => suburb.toLowerCase() === normalizedCity)) {
       return metro;
     }
   }
-  return null;
+  
+  // Check if city is within 50km of a metro center
+  for (const [metro, data] of Object.entries(METRO_AREAS)) {
+    const distance = calculateDistance(lat, lng, data.center.lat, data.center.lng);
+    if (distance < 50) {
+      return metro;
+    }
+  }
+  
+  // If not a suburb or near a metro, return the original city name
+  return city;
 }
 
 export function CustomerGeographicMap({ brandId, isRefreshing = false }: CustomerGeographicMapProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [locations, setLocations] = useState<RegionData[]>([]);
-  const [clusteredData, setClusteredData] = useState<RegionData[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [totalCustomers, setTotalCustomers] = useState(0);
-  const [dataSource, setDataSource] = useState<string>('loading');
-  const [connectionId, setConnectionId] = useState<string | null>(null);
-  const supabase = useSupabase();
-  const [activeTab, setActiveTab] = useState('chart');
-  const [sortColumn, setSortColumn] = useState<'city' | 'customerCount' | 'totalRevenue'>('totalRevenue');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [message, setMessage] = useState<string | null>(null);
-
-  const fetchGeoData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Get the Shopify connection ID
-      const shopifyConnectionId = await getShopifyConnectionId();
-      setConnectionId(shopifyConnectionId);
-      
-      const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch geographic data');
-      }
-      
-      if (data.dataSource) {
-        setDataSource(data.dataSource);
-      }
-      
-      if (!data.locations || data.locations.length === 0) {
-        setLocations([]);
-        setClusteredData([]);
-        setTotalRevenue(0);
-        setTotalCustomers(0);
-        setError('No geographic data found. Please sync your customers first.');
-        return;
-      }
-      
-      // Process the data
-      const rawLocations: RegionData[] = data.locations.map((loc: any) => ({
-        id: loc.id || `${loc.city}-${loc.state}-${loc.country}`,
-        city: loc.city,
-        state: loc.state,
-        country: loc.country,
-        lat: loc.lat,
-        lng: loc.lng,
-        customerCount: loc.customerCount || 0,
-        totalRevenue: loc.totalRevenue || 0
-      }));
-      
-      setLocations(rawLocations);
-      setClusteredData(rawLocations);
-      setTotalCustomers(data.totalCustomers || 0);
-      setTotalRevenue(data.totalRevenue || 0);
-    } catch (error) {
-      console.error('Error fetching geographic data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch geographic data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasZeroRevenue, setHasZeroRevenue] = useState(false)
+  const [clusteredData, setClusteredData] = useState<RegionData[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [view, setView] = useState<'revenue' | 'customers'>('revenue')
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [totalCustomers, setTotalCustomers] = useState(0)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [displayCount, setDisplayCount] = useState(10)
   
   useEffect(() => {
-    if (brandId) {
-      fetchGeoData();
-    }
-  }, [brandId, isRefreshing]);
-  
-  // Add a function to get the Shopify connection ID
-  const getShopifyConnectionId = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('platform_connections')
-        .select('id')
-        .eq('brand_id', brandId)
-        .eq('platform_type', 'shopify')
-        .eq('status', 'active')
-        .single();
-      
-      if (error) {
-        console.error('Error fetching Shopify connection:', error);
-        return null;
+    if (!brandId) return
+
+    const fetchGeoData = async () => {
+      setIsLoading(true)
+      try {
+        const response = await fetch(`/api/shopify/customers/geographic?brandId=${brandId}`)
+        if (!response.ok) {
+          throw new Error(`Error fetching geographic data: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        if (!data.locations || data.locations.length === 0) {
+          setError("No geographic data found")
+          setIsLoading(false)
+          return
+        }
+        
+        // Set total values
+        setTotalRevenue(data.totalRevenue || 0)
+        setTotalCustomers(data.totalCustomers || 0)
+        
+        // Check if all revenue values are zero
+        const hasZeroRev = (data.totalRevenue || 0) === 0 && (data.totalCustomers || 0) > 0
+        setHasZeroRevenue(hasZeroRev)
+        
+        // If we have zero revenue, default to customers view
+        if (hasZeroRev) {
+          setView('customers')
+        }
+        
+        // Process and cluster the data
+        const processedData = data.locations.map((loc: any) => {
+          // Default coordinates for locations without lat/lng
+          const lat = loc.lat || 0;
+          const lng = loc.lng || 0;
+          
+          // Find metro area for city clustering
+          const metroArea = findMetroArea(loc.city, lat, lng);
+          
+          return {
+            id: `${metroArea}-${loc.state}-${loc.country}`,
+            city: metroArea, // Use metro area name instead of original city
+            state: loc.state,
+            country: loc.country,
+            lat: METRO_AREAS[metroArea as keyof typeof METRO_AREAS]?.center.lat || lat,
+            lng: METRO_AREAS[metroArea as keyof typeof METRO_AREAS]?.center.lng || lng,
+            customerCount: loc.customerCount,
+            totalRevenue: loc.totalRevenue
+          };
+        });
+        
+        // Aggregate data by metro area
+        const aggregatedData: Record<string, RegionData> = {};
+        
+        processedData.forEach((loc: RegionData) => {
+          const key = `${loc.city}-${loc.state}-${loc.country}`;
+          
+          if (!aggregatedData[key]) {
+            aggregatedData[key] = { ...loc };
+          } else {
+            aggregatedData[key].customerCount += loc.customerCount;
+            aggregatedData[key].totalRevenue += loc.totalRevenue;
+          }
+        });
+        
+        setClusteredData(Object.values(aggregatedData));
+        
+      } catch (error) {
+        console.error('Error fetching geographic data:', error)
+        setError("Failed to load geographic data")
+      } finally {
+        setIsLoading(false)
       }
-      
-      return data?.id || null;
-    } catch (error) {
-      console.error('Error in getShopifyConnectionId:', error);
-      return null;
     }
-  };
-  
-  const handleSort = (column: 'city' | 'customerCount' | 'totalRevenue') => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
-  
-  const sortedData = [...clusteredData].sort((a, b) => {
-    if (sortColumn === 'city') {
-      const cityA = `${a.city}, ${a.state}, ${a.country}`;
-      const cityB = `${b.city}, ${b.state}, ${b.country}`;
-      return sortDirection === 'asc' 
-        ? cityA.localeCompare(cityB)
-        : cityB.localeCompare(cityA);
-    } else {
-      return sortDirection === 'asc'
-        ? a[sortColumn] - b[sortColumn]
-        : b[sortColumn] - a[sortColumn];
-    }
-  });
-  
-  const formatCurrency = (amount: number) => {
+
+    fetchGeoData()
+  }, [brandId, isRefreshing])
+
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
-  };
-  
-  const getDataSourceLabel = () => {
-    switch (dataSource) {
-      case 'customer_location':
-        return 'Customer Location Data';
-      case 'default_address':
-        return 'Customer Address Data';
-      case 'default':
-        return 'Default Sample Data';
-      case 'none':
-        return 'No Data Available';
-      default:
-        return 'Loading...';
-    }
-  };
-  
-  const renderSortIcon = (column: 'city' | 'customerCount' | 'totalRevenue') => {
-    if (sortColumn !== column) return null;
+    }).format(value)
+  }
+
+  const renderZeroRevenueNotice = () => {
+    if (!hasZeroRevenue) return null;
     
     return (
-      <span className="ml-1">
-        {sortDirection === 'asc' ? '↑' : '↓'}
-      </span>
+      <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-md p-3 text-sm text-amber-600 dark:text-amber-400">
+        Your store has customers but no revenue data yet. The chart is showing customer locations instead of sales.
+      </div>
     );
   };
+
+  // Sort data by revenue or customer count
+  const getSortedData = () => {
+    return [...clusteredData].sort((a, b) => {
+      const compareValue = view === 'revenue' 
+        ? (b.totalRevenue - a.totalRevenue) 
+        : (b.customerCount - a.customerCount);
+      
+      return sortOrder === 'desc' ? compareValue : -compareValue;
+    });
+  };
+
+  const sortedData = getSortedData();
   
-  return (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl font-semibold">Customer Geography</CardTitle>
-            <CardDescription>
-              {loading ? (
-                'Loading customer geographic data...'
-              ) : error ? (
-                error
-              ) : (
-                <div className="space-y-1">
-                  <div>
-                    {totalCustomers} {totalCustomers === 1 ? 'customer' : 'customers'} across {locations.length} {locations.length === 1 ? 'location' : 'locations'} 
-                    {totalRevenue > 0 && ` with ${formatCurrency(totalRevenue)} total revenue`}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Source: {getDataSourceLabel()}
-                    {message && <span className="ml-2 text-amber-500">{message}</span>}
-                  </div>
-                </div>
-              )}
-            </CardDescription>
-          </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[200px]">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="chart">Map</TabsTrigger>
-              <TabsTrigger value="table">Table</TabsTrigger>
-            </TabsList>
-          </Tabs>
+  // Prepare data for the bar chart
+  const chartData = sortedData.slice(0, displayCount).map(location => {
+    const locationName = `${location.city}${location.state ? `, ${location.state.substring(0, 2)}` : ''}`;
+    return {
+      name: locationName,
+      fullName: `${location.city}${location.state ? `, ${location.state}` : ''}${location.country && location.country !== 'United States' ? `, ${location.country}` : ''}`,
+      revenue: location.totalRevenue,
+      customers: location.customerCount
+    };
+  });
+
+  // Custom tooltip for the bar chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-900 border border-gray-700 p-3 rounded-md shadow-lg">
+          <p className="font-medium text-white">{payload[0].payload.fullName}</p>
+          <p className="text-blue-400">Revenue: {formatCurrency(payload[0].payload.revenue)}</p>
+          <p className="text-purple-400">Customers: {payload[0].payload.customers}</p>
         </div>
+      );
+    }
+    return null;
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+  };
+
+  const handleShowMore = () => {
+    setDisplayCount(prev => Math.min(prev + 10, clusteredData.length));
+  };
+
+  const handleShowLess = () => {
+    setDisplayCount(prev => Math.max(prev - 10, 5));
+  };
+
+  return (
+    <Card className="col-span-3">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl font-bold">Customer Geography</CardTitle>
+        <CardDescription>Geographic distribution of customers</CardDescription>
       </CardHeader>
-      <CardContent className="h-[calc(100%-5rem)]">
-        <div className="h-full">
-          {loading ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Loading geographic data...</p>
-              </div>
+      <CardContent>
+        <Tabs defaultValue="revenue" className="w-full">
+          <div className="flex justify-between items-center mb-4">
+            <TabsList>
+              <TabsTrigger value="revenue" onClick={() => setView('revenue')} disabled={hasZeroRevenue}>Revenue</TabsTrigger>
+              <TabsTrigger value="customers" onClick={() => setView('customers')}>Customers</TabsTrigger>
+            </TabsList>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={toggleSortOrder}
+              className="flex items-center gap-1"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              {sortOrder === 'desc' ? 'Highest First' : 'Lowest First'}
+            </Button>
+          </div>
+          
+          {isLoading ? (
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : error ? (
-            <div className="h-full flex items-center justify-center">
-              <Alert variant="destructive" className="max-w-md">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p>{error}</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={fetchGeoData}
-                      className="mt-2"
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : clusteredData.length > 0 ? (
+            <div className="space-y-6">
+              {/* Bar Chart */}
+              <div className="w-full h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                    barSize={20}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end" 
+                      height={70} 
+                      tick={{ fill: '#888', fontSize: 12 }}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#888' }}
+                      tickFormatter={(value) => view === 'revenue' 
+                        ? formatCurrency(value).replace('$', '') 
+                        : value.toString()
+                      }
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar 
+                      dataKey={view === 'revenue' ? 'revenue' : 'customers'} 
+                      fill={view === 'revenue' ? '#3b82f6' : '#8b5cf6'}
+                      radius={[4, 4, 0, 0]}
                     >
-                      Try Again
-                    </Button>
-                  </div>
-                </AlertDescription>
-              </Alert>
+                      {chartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={view === 'revenue' 
+                            ? (entry.revenue > 0 ? '#3b82f6' : '#6b7280') 
+                            : '#8b5cf6'
+                          } 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {renderZeroRevenueNotice()}
+              
+              {/* Data Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Location</TableHead>
+                      <TableHead className="text-right">Customers</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedData.slice(0, displayCount).map((region) => (
+                      <TableRow key={region.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-2 text-muted-foreground" />
+                            <span>
+                              {region.city}
+                              {region.state ? `, ${region.state}` : ''}
+                              {region.country && region.country !== 'United States' ? `, ${region.country}` : ''}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">{region.customerCount}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(region.totalRevenue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Show more/less buttons */}
+              <div className="flex justify-center gap-2">
+                {displayCount > 5 && (
+                  <Button variant="outline" size="sm" onClick={handleShowLess}>
+                    Show Less
+                  </Button>
+                )}
+                {displayCount < clusteredData.length && (
+                  <Button variant="outline" size="sm" onClick={handleShowMore}>
+                    Show More
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="h-full">
-              <TabsContent value="chart" className="h-full">
-                {/* Map visualization goes here */}
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center space-y-2">
-                    <MapPin className="h-8 w-8 mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Map visualization coming soon</p>
-                    <p className="text-xs text-muted-foreground">
-                      {locations.length} locations with {totalCustomers} customers
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="table" className="h-full">
-                <div className="h-full overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead 
-                          className="cursor-pointer"
-                          onClick={() => handleSort('city')}
-                        >
-                          Location {renderSortIcon('city')}
-                        </TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer"
-                          onClick={() => handleSort('customerCount')}
-                        >
-                          Customers {renderSortIcon('customerCount')}
-                        </TableHead>
-                        <TableHead 
-                          className="text-right cursor-pointer"
-                          onClick={() => handleSort('totalRevenue')}
-                        >
-                          Revenue {renderSortIcon('totalRevenue')}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                            No geographic data available
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sortedData.map((location) => (
-                          <TableRow key={location.id}>
-                            <TableCell className="font-medium">
-                              {location.city}
-                              {location.state && <span className="text-muted-foreground">, {location.state}</span>}
-                              {location.country && location.country !== 'United States' && (
-                                <span className="text-muted-foreground">, {location.country}</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">{location.customerCount}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(location.totalRevenue)}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <p className="text-muted-foreground">No geographic data available</p>
             </div>
           )}
-        </div>
+        </Tabs>
       </CardContent>
     </Card>
   );

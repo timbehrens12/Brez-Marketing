@@ -592,7 +592,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                             </div>
                             {item.count > 0 && (
                               <div className="text-center text-xs text-gray-400">
-                                {item.count} {item.count === 1 ? 'order' : 'orders'}
+                                {item.count} order{item.count !== 1 ? 's' : ''}
                               </div>
                             )}
                           </>
@@ -650,7 +650,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                             </div>
                             {item.count > 0 && (
                               <div className="text-center text-xs text-gray-400">
-                                {item.count} {item.count === 1 ? 'order' : 'orders'}
+                                {item.count} order{item.count !== 1 ? 's' : ''}
                               </div>
                             )}
                           </>
@@ -710,7 +710,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       </div>
                       {item.count > 0 && (
                         <div className="text-center text-xs text-gray-400">
-                          {item.count} {item.count === 1 ? 'order' : 'orders'}
+                          {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
                     </>
@@ -760,7 +760,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div
                   key={index}
                   className={cn(
-                    "flex flex-col rounded-sm overflow-hidden min-h-[50px] transition-all duration-200",
+                    "flex flex-col rounded-sm overflow-hidden min-h-[60px] transition-all duration-200",
                     isToday 
                       ? "border border-gray-500 shadow-sm" 
                       : "border border-gray-700 bg-[#111111]"
@@ -782,8 +782,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                           {renderRevenueValue(item.revenue)}
                         </div>
                         {item.count > 0 && (
-                          <div className="text-center text-[10px] text-gray-400">
-                            {item.count} {item.count === 1 ? 'order' : 'orders'}
+                          <div className="text-center text-xs text-gray-400">
+                            {item.count} order{item.count !== 1 ? 's' : ''}
                           </div>
                         )}
                       </>
@@ -841,7 +841,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       </div>
                       {item.count > 0 && (
                         <div className="text-center text-xs text-gray-400">
-                          {item.count} {item.count === 1 ? 'order' : 'orders'}
+                          {item.count} order{item.count !== 1 ? 's' : ''}
                         </div>
                       )}
                     </>

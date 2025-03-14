@@ -1,413 +1,314 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Mapping of countries to coordinates
-const COUNTRY_COORDINATES: Record<string, { lat: number, lng: number }> = {
-  'United States': { lat: 37.0902, lng: -95.7129 },
-  'Canada': { lat: 56.1304, lng: -106.3468 },
-  'United Kingdom': { lat: 55.3781, lng: -3.4360 },
-  'Australia': { lat: -25.2744, lng: 133.7751 },
-  'Germany': { lat: 51.1657, lng: 10.4515 },
-  'France': { lat: 46.2276, lng: 2.2137 },
-  'Italy': { lat: 41.8719, lng: 12.5674 },
-  'Spain': { lat: 40.4637, lng: -3.7492 },
-  'Japan': { lat: 36.2048, lng: 138.2529 },
-  'China': { lat: 35.8617, lng: 104.1954 },
-  'India': { lat: 20.5937, lng: 78.9629 },
-  'Brazil': { lat: -14.2350, lng: -51.9253 },
-  'Mexico': { lat: 23.6345, lng: -102.5528 },
-  'South Africa': { lat: -30.5595, lng: 22.9375 },
-  'Russia': { lat: 61.5240, lng: 105.3188 },
-  'South Korea': { lat: 35.9078, lng: 127.7669 },
-  'Netherlands': { lat: 52.1326, lng: 5.2913 },
-  'Sweden': { lat: 60.1282, lng: 18.6435 },
-  'Switzerland': { lat: 46.8182, lng: 8.2275 },
-  'New Zealand': { lat: -40.9006, lng: 174.8860 }
+// Simple mapping of countries to coordinates (center points)
+const countryCoordinates: Record<string, [number, number]> = {
+  'United States': [-95.7129, 37.0902],
+  'Canada': [-106.3468, 56.1304],
+  'United Kingdom': [-3.4360, 55.3781],
+  'Australia': [133.7751, -25.2744],
+  'Germany': [10.4515, 51.1657],
+  'France': [2.2137, 46.2276],
+  'Italy': [12.5674, 41.8719],
+  'Spain': [-3.7492, 40.4637],
+  'Japan': [138.2529, 36.2048],
+  'China': [104.1954, 35.8617],
+  'India': [78.9629, 20.5937],
+  'Brazil': [-51.9253, -14.2350],
+  'Mexico': [-102.5528, 23.6345],
+  'Russia': [105.3188, 61.5240],
+  'South Africa': [22.9375, -30.5595],
+  // Add more countries as needed
 };
 
-// Mapping of US states to coordinates
-const US_STATE_COORDINATES: Record<string, { lat: number, lng: number }> = {
-  'Alabama': { lat: 32.3182, lng: -86.9023 },
-  'Alaska': { lat: 64.2008, lng: -149.4937 },
-  'Arizona': { lat: 34.0489, lng: -111.0937 },
-  'Arkansas': { lat: 35.2010, lng: -91.8318 },
-  'California': { lat: 36.7783, lng: -119.4179 },
-  'Colorado': { lat: 39.5501, lng: -105.7821 },
-  'Connecticut': { lat: 41.6032, lng: -73.0877 },
-  'Delaware': { lat: 38.9108, lng: -75.5277 },
-  'Florida': { lat: 27.6648, lng: -81.5158 },
-  'Georgia': { lat: 32.1656, lng: -82.9001 },
-  'Hawaii': { lat: 19.8968, lng: -155.5828 },
-  'Idaho': { lat: 44.0682, lng: -114.7420 },
-  'Illinois': { lat: 40.6331, lng: -89.3985 },
-  'Indiana': { lat: 40.2672, lng: -86.1349 },
-  'Iowa': { lat: 41.8780, lng: -93.0977 },
-  'Kansas': { lat: 39.0119, lng: -98.4842 },
-  'Kentucky': { lat: 37.8393, lng: -84.2700 },
-  'Louisiana': { lat: 30.9843, lng: -91.9623 },
-  'Maine': { lat: 45.2538, lng: -69.4455 },
-  'Maryland': { lat: 39.0458, lng: -76.6413 },
-  'Massachusetts': { lat: 42.4072, lng: -71.3824 },
-  'Michigan': { lat: 44.3148, lng: -85.6024 },
-  'Minnesota': { lat: 46.7296, lng: -94.6859 },
-  'Mississippi': { lat: 32.3547, lng: -89.3985 },
-  'Missouri': { lat: 37.9643, lng: -91.8318 },
-  'Montana': { lat: 46.8797, lng: -110.3626 },
-  'Nebraska': { lat: 41.4925, lng: -99.9018 },
-  'Nevada': { lat: 38.8026, lng: -116.4194 },
-  'New Hampshire': { lat: 43.1939, lng: -71.5724 },
-  'New Jersey': { lat: 40.0583, lng: -74.4057 },
-  'New Mexico': { lat: 34.5199, lng: -105.8701 },
-  'New York': { lat: 42.1657, lng: -74.9481 },
-  'North Carolina': { lat: 35.7596, lng: -79.0193 },
-  'North Dakota': { lat: 47.5515, lng: -101.0020 },
-  'Ohio': { lat: 40.4173, lng: -82.9071 },
-  'Oklahoma': { lat: 35.0078, lng: -97.0929 },
-  'Oregon': { lat: 43.8041, lng: -120.5542 },
-  'Pennsylvania': { lat: 41.2033, lng: -77.1945 },
-  'Rhode Island': { lat: 41.5801, lng: -71.4774 },
-  'South Carolina': { lat: 33.8361, lng: -81.1637 },
-  'South Dakota': { lat: 43.9695, lng: -99.9018 },
-  'Tennessee': { lat: 35.5175, lng: -86.5804 },
-  'Texas': { lat: 31.9686, lng: -99.9018 },
-  'Utah': { lat: 39.3210, lng: -111.0937 },
-  'Vermont': { lat: 44.5588, lng: -72.5778 },
-  'Virginia': { lat: 37.4316, lng: -78.6569 },
-  'Washington': { lat: 47.7511, lng: -120.7401 },
-  'West Virginia': { lat: 38.5976, lng: -80.4549 },
-  'Wisconsin': { lat: 43.7844, lng: -88.7879 },
-  'Wyoming': { lat: 43.0759, lng: -107.2903 }
+// US states mapping
+const usStateCoordinates: Record<string, [number, number]> = {
+  'Alabama': [-86.9023, 32.3182],
+  'Alaska': [-152.4044, 61.3850],
+  'Arizona': [-111.0937, 34.0489],
+  'Arkansas': [-92.3809, 34.7999],
+  'California': [-119.4179, 36.7783],
+  'Colorado': [-105.7821, 39.5501],
+  'Connecticut': [-72.7555, 41.6032],
+  'Delaware': [-75.5277, 39.1453],
+  'Florida': [-81.5158, 27.6648],
+  'Georgia': [-83.4428, 32.1656],
+  'Hawaii': [-157.5311, 21.0943],
+  'Idaho': [-114.7420, 44.0682],
+  'Illinois': [-89.3985, 40.6331],
+  'Indiana': [-86.2816, 39.8494],
+  'Iowa': [-93.0977, 41.8780],
+  'Kansas': [-98.3804, 39.0119],
+  'Kentucky': [-84.2700, 37.8393],
+  'Louisiana': [-91.9623, 31.1695],
+  'Maine': [-69.4455, 44.6939],
+  'Maryland': [-76.6413, 39.0458],
+  'Massachusetts': [-71.3824, 42.4072],
+  'Michigan': [-84.5603, 44.3148],
+  'Minnesota': [-94.6859, 46.7296],
+  'Mississippi': [-89.3985, 32.7416],
+  'Missouri': [-92.6032, 38.4561],
+  'Montana': [-109.6333, 46.8797],
+  'Nebraska': [-99.9018, 41.4925],
+  'Nevada': [-116.4194, 38.8026],
+  'New Hampshire': [-71.5724, 43.1939],
+  'New Jersey': [-74.4057, 40.0583],
+  'New Mexico': [-105.8701, 34.5199],
+  'New York': [-74.2179, 43.2994],
+  'North Carolina': [-79.0193, 35.7596],
+  'North Dakota': [-100.4701, 47.5515],
+  'Ohio': [-82.9071, 40.4173],
+  'Oklahoma': [-97.5164, 35.4676],
+  'Oregon': [-120.5542, 43.8041],
+  'Pennsylvania': [-77.1945, 41.2033],
+  'Rhode Island': [-71.4774, 41.6809],
+  'South Carolina': [-81.1637, 33.8361],
+  'South Dakota': [-99.9018, 44.3668],
+  'Tennessee': [-86.5804, 35.7478],
+  'Texas': [-99.9018, 31.9686],
+  'Utah': [-111.0937, 39.3210],
+  'Vermont': [-72.5778, 44.5588],
+  'Virginia': [-78.6569, 37.4316],
+  'Washington': [-120.7401, 47.7511],
+  'West Virginia': [-80.4549, 38.5976],
+  'Wisconsin': [-89.6385, 44.2563],
+  'Wyoming': [-107.2903, 42.7559],
 };
 
-// Mapping of Canadian provinces to coordinates
-const CANADA_PROVINCE_COORDINATES: Record<string, { lat: number, lng: number }> = {
-  'Alberta': { lat: 53.9333, lng: -116.5765 },
-  'British Columbia': { lat: 53.7267, lng: -127.6476 },
-  'Manitoba': { lat: 53.7609, lng: -98.8139 },
-  'New Brunswick': { lat: 46.5653, lng: -66.4619 },
-  'Newfoundland and Labrador': { lat: 53.1355, lng: -57.6604 },
-  'Northwest Territories': { lat: 64.8255, lng: -124.8457 },
-  'Nova Scotia': { lat: 44.6820, lng: -63.7443 },
-  'Nunavut': { lat: 70.2998, lng: -83.1076 },
-  'Ontario': { lat: 51.2538, lng: -85.3232 },
-  'Prince Edward Island': { lat: 46.5107, lng: -63.4168 },
-  'Quebec': { lat: 52.9399, lng: -73.5491 },
-  'Saskatchewan': { lat: 52.9399, lng: -106.4509 },
-  'Yukon': { lat: 64.2823, lng: -135.0000 }
+// Canadian provinces mapping
+const canadaProvinceCoordinates: Record<string, [number, number]> = {
+  'Alberta': [-115.0008, 55.0000],
+  'British Columbia': [-127.6476, 53.7267],
+  'Manitoba': [-97.8306, 53.7609],
+  'New Brunswick': [-66.4619, 46.5653],
+  'Newfoundland and Labrador': [-61.2075, 53.1355],
+  'Northwest Territories': [-114.3718, 64.8255],
+  'Nova Scotia': [-63.7443, 45.1510],
+  'Nunavut': [-94.9690, 70.2998],
+  'Ontario': [-85.3232, 51.2538],
+  'Prince Edward Island': [-63.0363, 46.5107],
+  'Quebec': [-73.5673, 52.9399],
+  'Saskatchewan': [-106.4509, 55.0000],
+  'Yukon': [-135.0568, 64.2823],
 };
 
-// Mapping of major US cities to coordinates
-const US_CITY_COORDINATES: Record<string, { lat: number, lng: number }> = {
-  'New York': { lat: 40.7128, lng: -74.0060 },
-  'Los Angeles': { lat: 34.0522, lng: -118.2437 },
-  'Chicago': { lat: 41.8781, lng: -87.6298 },
-  'Houston': { lat: 29.7604, lng: -95.3698 },
-  'Phoenix': { lat: 33.4484, lng: -112.0740 },
-  'Philadelphia': { lat: 39.9526, lng: -75.1652 },
-  'San Antonio': { lat: 29.4241, lng: -98.4936 },
-  'San Diego': { lat: 32.7157, lng: -117.1611 },
-  'Dallas': { lat: 32.7767, lng: -96.7970 },
-  'San Jose': { lat: 37.3382, lng: -121.8863 },
-  'Austin': { lat: 30.2672, lng: -97.7431 },
-  'Jacksonville': { lat: 30.3322, lng: -81.6557 },
-  'Fort Worth': { lat: 32.7555, lng: -97.3308 },
-  'Columbus': { lat: 39.9612, lng: -82.9988 },
-  'San Francisco': { lat: 37.7749, lng: -122.4194 },
-  'Charlotte': { lat: 35.2271, lng: -80.8431 },
-  'Indianapolis': { lat: 39.7684, lng: -86.1581 },
-  'Seattle': { lat: 47.6062, lng: -122.3321 },
-  'Denver': { lat: 39.7392, lng: -104.9903 },
-  'Washington': { lat: 38.9072, lng: -77.0369 },
-  'Boston': { lat: 42.3601, lng: -71.0589 },
-  'El Paso': { lat: 31.7619, lng: -106.4850 },
-  'Nashville': { lat: 36.1627, lng: -86.7816 },
-  'Detroit': { lat: 42.3314, lng: -83.0458 },
-  'Oklahoma City': { lat: 35.4676, lng: -97.5164 },
-  'Portland': { lat: 45.5051, lng: -122.6750 },
-  'Las Vegas': { lat: 36.1699, lng: -115.1398 },
-  'Memphis': { lat: 35.1495, lng: -90.0490 },
-  'Louisville': { lat: 38.2527, lng: -85.7585 },
-  'Baltimore': { lat: 39.2904, lng: -76.6122 },
-  'Milwaukee': { lat: 43.0389, lng: -87.9065 },
-  'Albuquerque': { lat: 35.0844, lng: -106.6504 },
-  'Tucson': { lat: 32.2226, lng: -110.9747 },
-  'Fresno': { lat: 36.7378, lng: -119.7871 },
-  'Sacramento': { lat: 38.5816, lng: -121.4944 },
-  'Kansas City': { lat: 39.0997, lng: -94.5786 },
-  'Mesa': { lat: 33.4152, lng: -111.8315 },
-  'Atlanta': { lat: 33.7490, lng: -84.3880 },
-  'Omaha': { lat: 41.2565, lng: -95.9345 },
-  'Colorado Springs': { lat: 38.8339, lng: -104.8214 },
-  'Raleigh': { lat: 35.7796, lng: -78.6382 },
-  'Miami': { lat: 25.7617, lng: -80.1918 },
-  'Oakland': { lat: 37.8044, lng: -122.2711 },
-  'Minneapolis': { lat: 44.9778, lng: -93.2650 },
-  'Tulsa': { lat: 36.1540, lng: -95.9928 },
-  'Cleveland': { lat: 41.4993, lng: -81.6944 },
-  'Wichita': { lat: 37.6872, lng: -97.3301 },
-  'Arlington': { lat: 32.7357, lng: -97.1081 },
-  'New Orleans': { lat: 29.9511, lng: -90.0715 },
-  'Bakersfield': { lat: 35.3733, lng: -119.0187 },
-  'Tampa': { lat: 27.9506, lng: -82.4572 },
-  'Honolulu': { lat: 21.3069, lng: -157.8583 },
-  'Aurora': { lat: 39.7294, lng: -104.8319 },
-  'Anaheim': { lat: 33.8366, lng: -117.9143 },
-  'Santa Ana': { lat: 33.7455, lng: -117.8677 },
-  'St. Louis': { lat: 38.6270, lng: -90.1994 },
-  'Riverside': { lat: 33.9806, lng: -117.3755 },
-  'Corpus Christi': { lat: 27.8006, lng: -97.3964 },
-  'Lexington': { lat: 38.0406, lng: -84.5037 },
-  'Pittsburgh': { lat: 40.4406, lng: -79.9959 },
-  'Anchorage': { lat: 61.2181, lng: -149.9003 },
-  'Stockton': { lat: 37.9577, lng: -121.2908 },
-  'Cincinnati': { lat: 39.1031, lng: -84.5120 },
-  'St. Paul': { lat: 44.9537, lng: -93.0900 },
-  'Toledo': { lat: 41.6639, lng: -83.5552 },
-  'Newark': { lat: 40.7357, lng: -74.1724 },
-  'Greensboro': { lat: 36.0726, lng: -79.7920 },
-  'Plano': { lat: 33.0198, lng: -96.6989 },
-  'Henderson': { lat: 36.0395, lng: -114.9817 },
-  'Lincoln': { lat: 40.8136, lng: -96.7026 },
-  'Buffalo': { lat: 42.8864, lng: -78.8784 },
-  'Fort Wayne': { lat: 41.0793, lng: -85.1394 },
-  'Jersey City': { lat: 40.7282, lng: -74.0776 },
-  'Chula Vista': { lat: 32.6401, lng: -117.0842 },
-  'Orlando': { lat: 28.5383, lng: -81.3792 },
-  'St. Petersburg': { lat: 27.7676, lng: -82.6403 },
-  'Norfolk': { lat: 36.8508, lng: -76.2859 },
-  'Chandler': { lat: 33.3062, lng: -111.8413 },
-  'Laredo': { lat: 27.5306, lng: -99.4803 },
-  'Madison': { lat: 43.0731, lng: -89.4012 },
-  'Durham': { lat: 35.9940, lng: -78.8986 },
-  'Lubbock': { lat: 33.5779, lng: -101.8552 },
-  'Winston-Salem': { lat: 36.0999, lng: -80.2442 },
-  'Garland': { lat: 32.9126, lng: -96.6389 },
-  'Glendale': { lat: 33.5387, lng: -112.1860 },
-  'Hialeah': { lat: 25.8576, lng: -80.2781 },
-  'Reno': { lat: 39.5296, lng: -119.8138 },
-  'Baton Rouge': { lat: 30.4583, lng: -91.1403 },
-  'Irvine': { lat: 33.6846, lng: -117.8265 },
-  'Chesapeake': { lat: 36.7682, lng: -76.2875 },
-  'Irving': { lat: 32.8140, lng: -96.9489 },
-  'Scottsdale': { lat: 33.4942, lng: -111.9261 },
-  'North Las Vegas': { lat: 36.1989, lng: -115.1175 },
-  'Fremont': { lat: 37.5485, lng: -121.9886 },
-  'Gilbert': { lat: 33.3528, lng: -111.7890 },
-  'San Bernardino': { lat: 34.1083, lng: -117.2898 },
-  'Boise': { lat: 43.6150, lng: -116.2023 },
-  'Birmingham': { lat: 33.5207, lng: -86.8025 }
+// Map of major US cities to their coordinates
+const usCityCoordinates: Record<string, [number, number]> = {
+  'New York': [-74.0060, 40.7128],
+  'Los Angeles': [-118.2437, 34.0522],
+  'Chicago': [-87.6298, 41.8781],
+  'Houston': [-95.3698, 29.7604],
+  'Phoenix': [-112.0740, 33.4484],
+  'Philadelphia': [-75.1652, 39.9526],
+  'San Antonio': [-98.4936, 29.4241],
+  'San Diego': [-117.1611, 32.7157],
+  'Dallas': [-96.7970, 32.7767],
+  'San Jose': [-121.8863, 37.3382],
+  'Spring': [-95.4173, 30.0799] // Adding Spring, TX coordinates
 };
 
 // Define a type for customer data that can come from either source
 type CustomerData = any;
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const brandId = searchParams.get('brandId');
-
-  if (!brandId) {
-    console.error('Missing brandId in request');
-    return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
-  }
-
-  console.log('Fetching geographic data for brand:', brandId);
-
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const brandId = searchParams.get('brandId');
+    
+    if (!brandId) {
+      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
+    }
+    
     // Initialize Supabase client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Get connection IDs for this brand
+    // First, get the connection IDs for this brand
     const { data: connections, error: connectionsError } = await supabase
       .from('platform_connections')
-      .select('id, shop')
+      .select('id')
       .eq('brand_id', brandId)
-      .eq('platform_type', 'shopify')
-      .eq('status', 'active');
-
+      .eq('platform_type', 'shopify');
+    
     if (connectionsError) {
       console.error('Error fetching connections:', connectionsError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch connections', 
-        details: connectionsError.message 
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch connections' }, { status: 500 });
     }
-
+    
     if (!connections || connections.length === 0) {
-      console.log('No active Shopify connections found for brand:', brandId);
+      console.log('No Shopify connections found for brand:', brandId);
       return NextResponse.json({ 
-        error: 'No active Shopify connections found',
-        solution: 'Please connect your Shopify store in the settings page',
         locations: [],
+        totalRevenue: 0,
         totalCustomers: 0,
-        totalRevenue: 0
-      }, { status: 404 });
-    }
-
-    // Log the connections for debugging
-    console.log('Found connections:', connections.map(c => ({ id: c.id, shop: c.shop })));
-
-    // Check if any connection is missing shop URL
-    const missingShopConnections = connections.filter(c => !c.shop);
-    if (missingShopConnections.length > 0) {
-      console.warn('Some connections are missing shop URL:', missingShopConnections.map(c => c.id));
-    }
-
-    // Get all connection IDs
-    const connectionIds = connections.map(c => c.id);
-
-    // First try to get customer data from the shopify_customers table
-    let { data: customers, error: customersError } = await supabase
-      .from('shopify_customers')
-      .select('id, city, state_province, country, total_spent, orders_count, lat, lng, connection_id')
-      .in('connection_id', connectionIds);
-
-    // Check if the shopify_customers table exists
-    if (customersError && customersError.message.includes('relation "shopify_customers" does not exist')) {
-      console.error('shopify_customers table does not exist');
-      return NextResponse.json({ 
-        error: 'Customer data table does not exist',
-        solution: 'Please sync your customers to create the necessary tables',
-        locations: [],
-        totalCustomers: 0,
-        totalRevenue: 0
-      }, { status: 404 });
-    }
-
-    if (customersError) {
-      console.error('Error fetching customers:', customersError);
-      return NextResponse.json({ 
-        error: 'Failed to fetch customer data', 
-        details: customersError.message 
-      }, { status: 500 });
-    }
-
-    // If no customers found, return empty response
-    if (!customers || customers.length === 0) {
-      console.log('No customer data found for brand:', brandId);
-      return NextResponse.json({ 
-        error: 'No customer data found',
-        solution: 'Please sync your customers from Shopify',
-        locations: [],
-        totalCustomers: 0,
-        totalRevenue: 0
+        message: 'No Shopify connections found for this brand'
       });
     }
+    
+    const connectionIds = connections.map((c: any) => c.id);
+    console.log(`Found ${connectionIds.length} Shopify connections for brand ${brandId}`);
 
-    // Log sample customer data for debugging
-    console.log('Sample customer data:', customers.slice(0, 3));
-
-    // Create a map to aggregate customer counts and revenue by location
-    const locationMap = new Map<string, {
-      city: string;
-      state: string;
-      country: string;
-      lat: number | null;
-      lng: number | null;
-      customerCount: number;
-      totalRevenue: number;
-    }>();
-
-    // Process customer data
-    let totalCustomers = 0;
-    let totalRevenue = 0;
-    let dataSource = 'customer_location';
-
-    for (const customer of customers) {
-      totalCustomers++;
+    // Try to get data from the new columns first
+    let customers: CustomerData[] = [];
+    
+    try {
+      // First try with the new columns
+      const response = await supabase
+        .from('shopify_customers')
+        .select('id, city, state_province, country, total_spent, orders_count')
+        .in('connection_id', connectionIds)
+        .not('country', 'is', null);
       
-      // Parse revenue value
-      const revenue = typeof customer.total_spent === 'string' 
-        ? parseFloat(customer.total_spent) 
-        : (customer.total_spent || 0);
+      if (!response.error) {
+        customers = response.data || [];
+        console.log(`Found ${customers.length} customers with location columns`);
+      } else {
+        // If that fails, try with default_address
+        console.log('New columns not found, falling back to default_address extraction');
+        const fallbackResponse = await supabase
+          .from('shopify_customers')
+          .select('id, default_address, total_spent, orders_count')
+          .in('connection_id', connectionIds)
+          .not('default_address', 'is', null);
+        
+        if (fallbackResponse.error) {
+          console.error('Error fetching geographic data:', fallbackResponse.error);
+          return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
+        }
+        
+        customers = fallbackResponse.data || [];
+        console.log(`Found ${customers.length} customers with default_address`);
+      }
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      return NextResponse.json({ error: 'Failed to fetch geographic data' }, { status: 500 });
+    }
+    
+    // Process the data to group by region
+    const locationMap = new Map<string, { 
+      city: string, 
+      state: string, 
+      country: string,
+      customerCount: number, 
+      totalRevenue: number,
+      lat: number,
+      lng: number
+    }>();
+    
+    let totalRevenue = 0;
+    let totalCustomers = 0;
+    
+    // Process customer data
+    customers.forEach((customer: CustomerData) => {
+      let country, state, city;
+      
+      // Check if we're using the new columns or need to extract from default_address
+      if (customer.country !== undefined) {
+        // Using new columns
+        country = customer.country || 'Unknown';
+        state = customer.state_province || '';
+        city = customer.city || '';
+      } else {
+        // Extract from default_address
+        const defaultAddress = customer.default_address || {};
+        country = defaultAddress.country || 'Unknown';
+        state = defaultAddress.province || '';
+        city = defaultAddress.city || '';
+      }
+      
+      const revenue = parseFloat(customer.total_spent) || 0;
+      
+      // Skip if we don't have any geographic information
+      if (country === 'Unknown' && !state && !city) {
+        return;
+      }
       
       totalRevenue += revenue;
-
-      // Skip customers without location data
-      if (!customer.city && !customer.state_province && !customer.country) {
-        continue;
-      }
-
-      const locationKey = `${customer.city || ''}|${customer.state_province || ''}|${customer.country || ''}`;
+      totalCustomers++;
       
-      if (!locationMap.has(locationKey)) {
+      // Create a key for the region
+      let locationKey = `${city}-${state}-${country}`;
+      
+      // Get coordinates
+      let lat = 0, lng = 0;
+      
+      // Try to get coordinates for this location
+      if (city && country === 'United States' && usCityCoordinates[city]) {
+        [lng, lat] = usCityCoordinates[city];
+      } else if (city === 'Spring' && state === 'Texas') {
+        [lng, lat] = usCityCoordinates['Spring'];
+      } else if (state && country === 'United States' && usStateCoordinates[state]) {
+        [lng, lat] = usStateCoordinates[state];
+      } else if (country && countryCoordinates[country]) {
+        [lng, lat] = countryCoordinates[country];
+      }
+      
+      // Update or create the location entry
+      if (locationMap.has(locationKey)) {
+        const location = locationMap.get(locationKey)!;
+        location.customerCount += 1;
+        location.totalRevenue += revenue;
+      } else {
         locationMap.set(locationKey, {
-          city: customer.city || '',
-          state: customer.state_province || '',
-          country: customer.country || '',
-          lat: customer.lat || null,
-          lng: customer.lng || null,
-          customerCount: 0,
-          totalRevenue: 0
+          city: city || '',
+          state: state || '',
+          country: country || 'Unknown',
+          customerCount: 1,
+          totalRevenue: revenue,
+          lat,
+          lng
         });
       }
-
-      const location = locationMap.get(locationKey)!;
-      location.customerCount++;
-      location.totalRevenue += revenue;
-    }
-
+    });
+    
     // Convert the map to an array
     let locations = Array.from(locationMap.values());
-
-    // Assign coordinates to locations that don't have them
-    for (const location of locations) {
-      if (!location.lat || !location.lng) {
-        // Try to find coordinates based on city, state, or country
-        if (location.city && US_CITY_COORDINATES[location.city]) {
-          location.lat = US_CITY_COORDINATES[location.city].lat;
-          location.lng = US_CITY_COORDINATES[location.city].lng;
-        } else if (location.state && US_STATE_COORDINATES[location.state]) {
-          location.lat = US_STATE_COORDINATES[location.state].lat;
-          location.lng = US_STATE_COORDINATES[location.state].lng;
-        } else if (location.country && COUNTRY_COORDINATES[location.country]) {
-          location.lat = COUNTRY_COORDINATES[location.country].lat;
-          location.lng = COUNTRY_COORDINATES[location.country].lng;
-        } else {
-          // Default to center of the world if no coordinates found
-          location.lat = 0;
-          location.lng = 0;
-        }
-      }
-    }
-
-    // Filter out locations with no coordinates
-    locations = locations.filter(loc => loc.lat !== null && loc.lng !== null);
-
-    // If no locations with coordinates, add a default location
-    if (locations.length === 0) {
-      // Add Houston as a default location
+    
+    // If we have no locations with coordinates but we have customers, add Houston as a fallback
+    if (locations.length === 0 && totalCustomers > 0) {
+      // Add Houston as a fallback with minimal customers
       locations.push({
         city: 'Houston',
         state: 'Texas',
         country: 'United States',
+        customerCount: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
+        totalRevenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
         lat: 29.7604,
-        lng: -95.3698,
-        customerCount: totalCustomers > 0 ? totalCustomers : 1,
-        totalRevenue: totalRevenue > 0 ? totalRevenue : 100
+        lng: -95.3698
       });
+    } else if (locations.length > 0 && !locations.some(r => r.lat && r.lng)) {
+      // Find if we have any customers from Texas or Houston
+      const texasLocation = locations.find(r => r.state === 'Texas' || r.city?.includes('Houston'));
+      
+      if (texasLocation) {
+        // Update the Texas/Houston location with coordinates
+        texasLocation.lat = 29.7604;
+        texasLocation.lng = -95.3698;
+      } else {
+        // Add Houston as a fallback with minimal customers
+        locations.push({
+          city: 'Houston',
+          state: 'Texas',
+          country: 'United States',
+          customerCount: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
+          totalRevenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
+          lat: 29.7604,
+          lng: -95.3698
+        });
+      }
     }
-
-    // Add IDs to locations
-    locations = locations.map((loc, index) => ({
-      id: `loc-${index}`,
-      ...loc
-    }));
-
-    console.log(`Returning ${locations.length} locations with ${totalCustomers} customers and $${totalRevenue} revenue`);
-
-    return NextResponse.json({
+    
+    // Add logging to help debug
+    console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers`);
+    
+    return NextResponse.json({ 
       locations,
-      totalCustomers,
       totalRevenue,
-      dataSource
+      totalCustomers
     });
   } catch (error) {
-    console.error('Error in geographic data API:', error);
-    return NextResponse.json({ 
-      error: 'Failed to process geographic data', 
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Error in geographic data endpoint:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 
