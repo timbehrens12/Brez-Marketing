@@ -152,7 +152,8 @@ export function OverviewTab({
       insights += `we generated ${ordersCount} total purchase${ordersCount !== 1 ? 's' : ''} `;
       
       if (hasMeta) {
-        insights += `across various campaigns, with an average ROAS of ${(metrics.roas || 0).toFixed(2)}x `;
+        const roas = metrics.roas || 0;
+        insights += `across various campaigns, with an average ROAS of ${roas.toFixed(2)}x `;
         insights += `and a total ad spend of ${formatCurrency(metrics.adSpend || 0)}. `;
       } else {
         insights += `with a total revenue of ${formatCurrency(totalSales)} `;
@@ -166,12 +167,16 @@ export function OverviewTab({
         insights += `your Meta Ads generated a total spend of ${formatCurrency(metrics.adSpend || 0)}. `;
       }
       
-      insights += `Meta Ads ${metrics.roasGrowth > 0 ? 'are performing well' : 'need optimization'} `;
-      insights += `with a ROAS of ${(metrics.roas || 0).toFixed(2)}x. `;
+      const roasGrowth = metrics.roasGrowth || 0;
+      const roas = metrics.roas || 0;
+      insights += `Meta Ads ${roasGrowth > 0 ? 'are performing well' : 'need optimization'} `;
+      insights += `with a ROAS of ${roas.toFixed(2)}x. `;
       
-      if (metrics.ctr) {
-        insights += `Your click-through rate is ${(metrics.ctr * 100).toFixed(2)}% `;
-        insights += `${metrics.ctrGrowth > 0 ? 'which is improving' : 'which could be improved'}. `;
+      if (metrics.ctr !== undefined && metrics.ctr !== null) {
+        const ctr = metrics.ctr;
+        const ctrGrowth = metrics.ctrGrowth || 0;
+        insights += `Your click-through rate is ${(ctr * 100).toFixed(2)}% `;
+        insights += `${ctrGrowth > 0 ? 'which is improving' : 'which could be improved'}. `;
       }
     }
     
@@ -406,17 +411,17 @@ export function OverviewTab({
                 <div className="bg-[#222] rounded-lg p-4 mb-4">
                   <h4 className="text-sm font-medium mb-2">Key takeaways:</h4>
                   <ul className="space-y-2 text-sm">
-                    {hasMeta && metrics.roas > 2 && (
+                    {hasMeta && metrics.roas !== undefined && metrics.roas > 2 && (
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>
                           <span className="font-medium">Strong ROAS Performance:</span> Your ads are generating a {(metrics.roas || 0).toFixed(2)}x return on ad spend
-                          {metrics.roasGrowth > 0 ? `, which is ${metrics.roasGrowth.toFixed(1)}% higher than the previous period.` : '.'}
+                          {metrics.roasGrowth !== undefined && metrics.roasGrowth > 0 ? `, which is ${(metrics.roasGrowth || 0).toFixed(1)}% higher than the previous period.` : '.'}
                         </span>
                       </li>
                     )}
                     
-                    {hasMeta && metrics.roas < 2 && (
+                    {hasMeta && metrics.roas !== undefined && metrics.roas < 2 && (
                       <li className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
                         <span>
@@ -426,41 +431,41 @@ export function OverviewTab({
                       </li>
                     )}
                     
-                    {hasShopify && metrics.salesGrowth > 0 && (
+                    {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth > 0 && (
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Revenue Growth:</span> Your sales have increased by {metrics.salesGrowth.toFixed(1)}% compared to the previous period,
+                          <span className="font-medium">Revenue Growth:</span> Your sales have increased by {(metrics.salesGrowth || 0).toFixed(1)}% compared to the previous period,
                           reaching a total of {formatCurrency(metrics.totalSales || 0)}.
                         </span>
                       </li>
                     )}
                     
-                    {hasShopify && metrics.salesGrowth < 0 && (
+                    {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 && (
                       <li className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Revenue Decline:</span> Your sales have decreased by {Math.abs(metrics.salesGrowth).toFixed(1)}% compared to the previous period.
+                          <span className="font-medium">Revenue Decline:</span> Your sales have decreased by {Math.abs(metrics.salesGrowth || 0).toFixed(1)}% compared to the previous period.
                           Consider reviewing your marketing strategy and product offerings.
                         </span>
                       </li>
                     )}
                     
-                    {hasShopify && metrics.aovGrowth > 5 && (
+                    {hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth > 5 && (
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">AOV Improvement:</span> Your average order value has increased by {metrics.aovGrowth.toFixed(1)}% to {formatCurrency(metrics.averageOrderValue || 0)},
+                          <span className="font-medium">AOV Improvement:</span> Your average order value has increased by {(metrics.aovGrowth || 0).toFixed(1)}% to {formatCurrency(metrics.averageOrderValue || 0)},
                           indicating successful upselling or higher-value product purchases.
                         </span>
                       </li>
                     )}
                     
-                    {hasMeta && metrics.ctr && metrics.ctr < 0.01 && (
+                    {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.01 && (
                       <li className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Low Click-Through Rate:</span> Your CTR is currently {(metrics.ctr * 100).toFixed(2)}%, which is below industry average.
+                          <span className="font-medium">Low Click-Through Rate:</span> Your CTR is currently {((metrics.ctr || 0) * 100).toFixed(2)}%, which is below industry average.
                           Consider testing new ad creatives and messaging to improve engagement.
                         </span>
                       </li>
@@ -492,8 +497,8 @@ export function OverviewTab({
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Total Revenue</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.totalSales || 0)}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.salesGrowth > 0 ? "text-green-400" : metrics.salesGrowth < 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.salesGrowth > 0 ? "+" : ""}{metrics.salesGrowth.toFixed(1)}%
+                              <span className={metrics.salesGrowth !== undefined ? (metrics.salesGrowth > 0 ? "text-green-400" : metrics.salesGrowth < 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.salesGrowth !== undefined ? (metrics.salesGrowth > 0 ? "+" : "") + (metrics.salesGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
@@ -501,8 +506,8 @@ export function OverviewTab({
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Orders Placed</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{metrics.ordersPlaced || 0}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.ordersGrowth > 0 ? "text-green-400" : metrics.ordersGrowth < 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.ordersGrowth > 0 ? "+" : ""}{metrics.ordersGrowth.toFixed(1)}%
+                              <span className={metrics.ordersGrowth !== undefined ? (metrics.ordersGrowth > 0 ? "text-green-400" : metrics.ordersGrowth < 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.ordersGrowth !== undefined ? (metrics.ordersGrowth > 0 ? "+" : "") + (metrics.ordersGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
@@ -510,8 +515,8 @@ export function OverviewTab({
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Average Order Value</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.averageOrderValue || 0)}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.aovGrowth > 0 ? "text-green-400" : metrics.aovGrowth < 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.aovGrowth > 0 ? "+" : ""}{metrics.aovGrowth.toFixed(1)}%
+                              <span className={metrics.aovGrowth !== undefined ? (metrics.aovGrowth > 0 ? "text-green-400" : metrics.aovGrowth < 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.aovGrowth !== undefined ? (metrics.aovGrowth > 0 ? "+" : "") + (metrics.aovGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
@@ -524,26 +529,26 @@ export function OverviewTab({
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Total Ad Spend</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.adSpend || 0)}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.adSpendGrowth < 0 ? "text-green-400" : metrics.adSpendGrowth > 0 ? "text-amber-400" : "text-gray-400"}>
-                                {metrics.adSpendGrowth > 0 ? "+" : ""}{metrics.adSpendGrowth.toFixed(1)}%
+                              <span className={metrics.adSpendGrowth !== undefined ? (metrics.adSpendGrowth < 0 ? "text-green-400" : metrics.adSpendGrowth > 0 ? "text-amber-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.adSpendGrowth !== undefined ? (metrics.adSpendGrowth > 0 ? "+" : "") + (metrics.adSpendGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">ROAS (Return on Ad Spend)</td>
-                            <td className="p-2 text-sm text-gray-300 border border-[#333]">{(metrics.roas || 0).toFixed(2)}x</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">{metrics.roas !== undefined ? (metrics.roas || 0).toFixed(2) + "x" : "N/A"}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.roasGrowth > 0 ? "text-green-400" : metrics.roasGrowth < 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.roasGrowth > 0 ? "+" : ""}{metrics.roasGrowth.toFixed(1)}%
+                              <span className={metrics.roasGrowth !== undefined ? (metrics.roasGrowth > 0 ? "text-green-400" : metrics.roasGrowth < 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.roasGrowth !== undefined ? (metrics.roasGrowth > 0 ? "+" : "") + (metrics.roasGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Click Through Rate (CTR)</td>
-                            <td className="p-2 text-sm text-gray-300 border border-[#333]">{((metrics.ctr || 0) * 100).toFixed(2)}%</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">{metrics.ctr !== undefined ? ((metrics.ctr || 0) * 100).toFixed(2) + "%" : "N/A"}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.ctrGrowth > 0 ? "text-green-400" : metrics.ctrGrowth < 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.ctrGrowth > 0 ? "+" : ""}{metrics.ctrGrowth.toFixed(1)}%
+                              <span className={metrics.ctrGrowth !== undefined ? (metrics.ctrGrowth > 0 ? "text-green-400" : metrics.ctrGrowth < 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.ctrGrowth !== undefined ? (metrics.ctrGrowth > 0 ? "+" : "") + (metrics.ctrGrowth || 0).toFixed(1) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
@@ -551,8 +556,8 @@ export function OverviewTab({
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Cost Per Acquisition (CPA)</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.costPerResult || 0)}</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">
-                              <span className={metrics.cprGrowth < 0 ? "text-green-400" : metrics.cprGrowth > 0 ? "text-red-400" : "text-gray-400"}>
-                                {metrics.cprGrowth > 0 ? "+" : ""}{metrics.cprGrowth?.toFixed(1) || "0.0"}%
+                              <span className={metrics.cprGrowth !== undefined ? (metrics.cprGrowth < 0 ? "text-green-400" : metrics.cprGrowth > 0 ? "text-red-400" : "text-gray-400") : "text-gray-400"}>
+                                {metrics.cprGrowth !== undefined ? (metrics.cprGrowth > 0 ? "+" : "") + ((metrics.cprGrowth || 0).toFixed(1)) + "%" : "N/A"}
                               </span>
                             </td>
                           </tr>
@@ -578,18 +583,18 @@ export function OverviewTab({
                       </h4>
                       <ul className="space-y-2 text-sm pl-6">
                         <li className="text-gray-300">
-                          Your Meta ads are currently achieving a ROAS of {(metrics.roas || 0).toFixed(2)}x with a CPA of {formatCurrency(metrics.costPerResult || 0)}.
+                          Your Meta ads are currently achieving a ROAS of {metrics.roas !== undefined ? (metrics.roas || 0).toFixed(2) + "x" : "N/A"} with a CPA of {formatCurrency(metrics.costPerResult || 0)}.
                         </li>
                         <li className="text-gray-300">
-                          Click-through rate is {((metrics.ctr || 0) * 100).toFixed(2)}%, which is 
-                          {metrics.ctr && metrics.ctr > 0.01 ? " good for e-commerce ads" : " below the recommended 1% benchmark"}.
+                          Click-through rate is {metrics.ctr !== undefined ? ((metrics.ctr || 0) * 100).toFixed(2) + "%" : "N/A"}, which is 
+                          {metrics.ctr !== undefined ? (metrics.ctr > 0.01 ? " good for e-commerce ads" : " below the recommended 1% benchmark") : ""}
                         </li>
-                        {metrics.impressions && (
+                        {metrics.impressions !== undefined && (
                           <li className="text-gray-300">
                             Your ads received {metrics.impressions.toLocaleString()} impressions, 
-                            {metrics.impressionGrowth > 0 
-                              ? ` which is ${metrics.impressionGrowth.toFixed(1)}% higher than the previous period.` 
-                              : ` which is ${Math.abs(metrics.impressionGrowth || 0).toFixed(1)}% lower than the previous period.`}
+                            {metrics.impressionGrowth !== undefined ? (metrics.impressionGrowth > 0 
+                              ? ` which is ${(metrics.impressionGrowth || 0).toFixed(1)}% higher than the previous period.` 
+                              : ` which is ${Math.abs(metrics.impressionGrowth || 0).toFixed(1)}% lower than the previous period.`) : ""}
                           </li>
                         )}
                       </ul>
@@ -600,17 +605,17 @@ export function OverviewTab({
                         <span className="text-amber-400">⚠</span> Areas for Improvement:
                       </h4>
                       <ul className="space-y-2 text-sm pl-6">
-                        {metrics.ctr && metrics.ctr < 0.01 && (
+                        {metrics.ctr !== undefined && metrics.ctr < 0.01 && (
                           <li className="text-gray-300">
                             <span className="font-medium">Low CTR:</span> Your click-through rate is below 1%, suggesting that your ad creative or targeting may need optimization.
                           </li>
                         )}
-                        {metrics.roas && metrics.roas < 2 && (
+                        {metrics.roas !== undefined && metrics.roas < 2 && (
                           <li className="text-gray-300">
                             <span className="font-medium">ROAS Optimization:</span> Your return on ad spend is below the target of 2.0x. Consider reviewing your campaign structure and audience targeting.
                           </li>
                         )}
-                        {metrics.costPerResult && metrics.costPerResult > 30 && (
+                        {metrics.costPerResult !== undefined && metrics.costPerResult > 30 && (
                           <li className="text-gray-300">
                             <span className="font-medium">High CPA:</span> Your cost per acquisition is {formatCurrency(metrics.costPerResult)}, which may be impacting your overall profitability.
                           </li>
@@ -635,11 +640,12 @@ export function OverviewTab({
                     </div>
                     <div className="text-gray-300 text-sm">
                       <span className="font-medium">Budget Efficiency:</span> {
-                        metrics.roas > 3 
+                        metrics.roas !== undefined ? (metrics.roas > 3 
                           ? "Your ad spend is highly efficient with strong ROAS. Consider scaling your budget to capture more market share."
                           : metrics.roas > 2
                             ? "Your ad spend is performing well. Maintain current budget levels while optimizing underperforming campaigns."
                             : "Your ad spend efficiency needs improvement. Focus on optimizing campaigns before increasing budget."
+                        ) : "Connect your platforms to see budget efficiency insights."
                       }
                     </div>
                   </div>
@@ -657,19 +663,19 @@ export function OverviewTab({
                   <div>
                     <h4 className="text-sm font-medium mb-2">Strategic Recommendations:</h4>
                     <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                      {hasMeta && metrics.roas > 3 && (
+                      {hasMeta && metrics.roas !== undefined && metrics.roas > 3 && (
                         <li>Increase ad budget by 15-20% to capitalize on strong ROAS performance</li>
                       )}
-                      {hasMeta && metrics.roas < 2 && (
+                      {hasMeta && metrics.roas !== undefined && metrics.roas < 2 && (
                         <li>Review campaign structure and audience targeting to improve ROAS</li>
                       )}
-                      {hasMeta && metrics.ctr && metrics.ctr < 0.01 && (
+                      {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.01 && (
                         <li>Test new ad creatives to improve click-through rates</li>
                       )}
-                      {hasShopify && metrics.aovGrowth < 0 && (
+                      {hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth < 0 && (
                         <li>Implement upsell and cross-sell strategies to increase average order value</li>
                       )}
-                      {hasShopify && metrics.salesGrowth < 0 && (
+                      {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 && (
                         <li>Review product pricing and marketing strategy to address declining sales</li>
                       )}
                       {hasShopify && !hasMeta && (
@@ -685,7 +691,7 @@ export function OverviewTab({
                     <div>
                       <h4 className="text-sm font-medium mb-2">Creative Optimization:</h4>
                       <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                        {metrics.ctr && metrics.ctr < 0.01 && (
+                        {metrics.ctr !== undefined && metrics.ctr < 0.01 && (
                           <li>Develop new hooks and CTAs to improve engagement and click-through rates</li>
                         )}
                         <li>A/B test different ad formats (carousel vs. video vs. static images)</li>

@@ -152,6 +152,10 @@ export function MetricLineChart({
 
   // Format value for tooltip and y-axis
   const formatValue = (value: number) => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return valueFormat === "currency" ? `${valuePrefix}$0${valueSuffix}` : `${valuePrefix}0${valueSuffix}`;
+    }
+    
     switch (valueFormat) {
       case "percentage":
         return `${valuePrefix}${value.toFixed(1)}${valueSuffix}`;
@@ -169,6 +173,10 @@ export function MetricLineChart({
 
   // Format for Y-axis ticks
   const formatYAxis = (value: number) => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return "0";
+    }
+    
     if (valueFormat === "currency") {
       if (value >= 1000000) {
         return `$${(value / 1000000).toFixed(1)}M`;
@@ -192,6 +200,11 @@ export function MetricLineChart({
   // Custom tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const value = payload[0]?.value;
+      if (value === undefined || value === null) {
+        return null;
+      }
+      
       return (
         <div className="bg-[#1a1a1a] border border-[#333] rounded p-2 text-xs shadow-lg">
           <p className="text-gray-300 mb-1">
@@ -200,7 +213,7 @@ export function MetricLineChart({
               : label}
           </p>
           <p className="text-emerald-500 font-medium">
-            {formatValue(payload[0].value)}
+            {formatValue(value)}
           </p>
         </div>
       );
