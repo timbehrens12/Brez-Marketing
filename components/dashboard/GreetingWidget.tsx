@@ -456,11 +456,11 @@ export function GreetingWidget({
   }
 
   return (
-    <Card className="bg-gradient-to-r from-gray-900 to-gray-800 border-gray-700 mb-6">
+    <Card className="bg-gradient-to-r from-[#1A1A1A] to-[#222222] border-[#333] mb-6">
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
-          <div className="bg-blue-500/20 rounded-full p-2 mt-1">
-            <Sparkles className="h-5 w-5 text-blue-400" />
+          <div className="bg-gray-700/20 rounded-full p-2 mt-1">
+            <Sparkles className="h-5 w-5 text-gray-400" />
           </div>
           <div className="flex-1">
             <div className="flex justify-between items-center">
@@ -536,7 +536,7 @@ export function GreetingWidget({
                 {hasMeta && metrics.adSpend > 0 && (
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Ad Spend */}
-                    <div className="bg-blue-900/30 rounded-lg p-3">
+                    <div className="bg-gray-800/50 rounded-lg p-3">
                       <div className="text-xs text-gray-400 mb-1">Ad Spend</div>
                       <div className="text-xl font-semibold text-white">
                         {formatCurrency(metrics.adSpend)}
@@ -544,7 +544,7 @@ export function GreetingWidget({
                     </div>
 
                     {/* ROAS */}
-                    <div className="bg-blue-900/30 rounded-lg p-3">
+                    <div className="bg-gray-800/50 rounded-lg p-3">
                       <div className="text-xs text-gray-400 mb-1">ROAS</div>
                       <div className="text-xl font-semibold text-white">
                         {metrics.roas ? `${metrics.roas.toFixed(1)}x` : 'N/A'}
@@ -555,7 +555,7 @@ export function GreetingWidget({
                     </div>
 
                     {/* CTR */}
-                    <div className="bg-blue-900/30 rounded-lg p-3">
+                    <div className="bg-gray-800/50 rounded-lg p-3">
                       <div className="text-xs text-gray-400 mb-1">Click-Through Rate</div>
                       <div className="text-xl font-semibold text-white">
                         {metrics.ctr ? `${(metrics.ctr * 100).toFixed(2)}%` : 'N/A'}
@@ -563,7 +563,7 @@ export function GreetingWidget({
                     </div>
 
                     {/* Conversion Rate */}
-                    <div className="bg-blue-900/30 rounded-lg p-3">
+                    <div className="bg-gray-800/50 rounded-lg p-3">
                       <div className="text-xs text-gray-400 mb-1">Conversion Rate</div>
                       <div className="text-xl font-semibold text-white">
                         {metrics.conversionRate ? `${(metrics.conversionRate * 100).toFixed(2)}%` : 'N/A'}
