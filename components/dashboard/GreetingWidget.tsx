@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, AlertTriangle, ChevronUp, ChevronDown, Check } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Metrics } from "@/types/metrics"
 import { PlatformConnection } from "@/types/platformConnection"
 import { supabase } from "@/lib/supabase"
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface GreetingWidgetProps {
   brandId: string
@@ -31,7 +32,7 @@ export function GreetingWidget({
 }: GreetingWidgetProps) {
   const { user } = useUser()
   const [greeting, setGreeting] = useState("")
-  const [summary, setSummary] = useState("")
+  const [synopsis, setSynopsis] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
   const [periodData, setPeriodData] = useState<{
@@ -168,268 +169,55 @@ export function GreetingWidget({
     }
   }
 
-  // Generate summary based on metrics
+  // Generate synopsis based on metrics
   useEffect(() => {
-    console.log('GreetingWidget Data:', {
-      periodData,
-      metrics,
-      connections,
-      hasShopify: connections.some(c => c.platform_type === 'shopify' && c.status === 'active'),
-      hasMeta: connections.some(c => c.platform_type === 'meta' && c.status === 'active')
-    });
-
     if (isLoading) {
-      setSummary("Loading your brand snapshot...")
+      setSynopsis("Loading your brand snapshot...")
       return
     }
     
     if (!brandName) {
-      setSummary("Welcome to your marketing dashboard. Select a brand to see insights.")
+      setSynopsis("Welcome to your marketing dashboard. Select a brand to see insights.")
       return
     }
 
-    const hasShopify = connections.some(c => c.platform_type === 'shopify' && c.status === 'active')
-    const hasMeta = connections.some(c => c.platform_type === 'meta' && c.status === 'active')
-    
     if (!hasShopify && !hasMeta) {
-      setSummary(`Welcome to ${brandName}'s dashboard. Connect your platforms to see AI-powered insights.`)
+      setSynopsis(`Welcome to ${brandName}'s dashboard. Connect your platforms to see performance metrics.`)
       return
     }
 
-    let summaryParts = []
-    let alerts = []
+    // Create a simple performance synopsis
+    let synopsisText = ""
     
-    // Add Shopify insights
+    // Overall performance assessment
     if (hasShopify) {
-      // Today's performance
-      if (periodData.today.totalSales > 0) {
-        if (todayVsAverage > 20) {
-          summaryParts.push(`Today's sales are ${Math.abs(todayVsAverage).toFixed(0)}% above your daily average. `)
-        } else if (todayVsAverage < -20) {
-          summaryParts.push(`Today's sales are ${Math.abs(todayVsAverage).toFixed(0)}% below your daily average. `)
-        }
-      }
-      
-      // Weekly trends
-      if (revenueGrowth > 15) {
-        summaryParts.push(`Your weekly revenue is trending ${Math.abs(revenueGrowth).toFixed(0)}% above your monthly average. `)
-      } else if (revenueGrowth < -15) {
-        summaryParts.push(`Your weekly revenue is trending ${Math.abs(revenueGrowth).toFixed(0)}% below your monthly average. `)
-      }
-      
-      // Conversion insights
-      if (metrics.conversionRate > 0) {
-        if (metrics.conversionRateGrowth > 10) {
-          summaryParts.push(`Your store conversion rate has improved by ${metrics.conversionRateGrowth.toFixed(0)}%. `)
-        } else if (metrics.conversionRateGrowth < -10) {
-          summaryParts.push(`Your store conversion rate has decreased by ${Math.abs(metrics.conversionRateGrowth).toFixed(0)}%. `)
-        }
+      if (revenueGrowth > 10) {
+        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
+      } else if (revenueGrowth < -10) {
+        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
+      } else {
+        synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
       }
     }
     
-    // Add Meta insights
+    // Add Meta performance if available
     if (hasMeta && metrics.adSpend > 0) {
-      // ROAS insights
-      if (metrics.roas > 0) {
-        if (metrics.roasGrowth > 15) {
-          summaryParts.push(`Your ad return on spend has improved by ${metrics.roasGrowth.toFixed(0)}%. `)
-        } else if (metrics.roasGrowth < -15) {
-          summaryParts.push(`Your ad return on spend has decreased by ${Math.abs(metrics.roasGrowth).toFixed(0)}%. `)
-        }
+      if (metrics.roas > 2) {
+        synopsisText += `Ad campaigns are performing well with a ${metrics.roas.toFixed(1)}x return on ad spend.`
+      } else if (metrics.roas < 1) {
+        synopsisText += `Ad campaigns need optimization with current ROAS at ${metrics.roas.toFixed(1)}x.`
+      } else {
+        synopsisText += `Ad campaigns are generating a ${metrics.roas.toFixed(1)}x return on ad spend.`
       }
-      
-      // CTR insights
-      if (metrics.ctr > 0) {
-        if (metrics.ctrGrowth > 15) {
-          summaryParts.push(`Your ad click-through rate has improved by ${metrics.ctrGrowth.toFixed(0)}%. `)
-        } else if (metrics.ctrGrowth < -15) {
-          summaryParts.push(`Your ad click-through rate has decreased by ${Math.abs(metrics.ctrGrowth).toFixed(0)}%. `)
-        }
-      }
-    }
-
-    // Generate action items from all available data sources
-    if (hasShopify) {
-      // Inventory alerts
-      const lowStockThreshold = 5 // We can make this configurable later
-      const lowStockCount = metrics.topProducts?.filter(p => p.quantity <= lowStockThreshold).length || 0
-      if (lowStockCount > 0) {
-        const lowStockProducts = metrics.topProducts?.filter(p => p.quantity <= lowStockThreshold).map(p => p.title).slice(0, 2).join(", ")
-        const additionalCount = lowStockCount > 2 ? ` and ${lowStockCount - 2} more` : ""
-        alerts.push({
-          id: `inventory-${Date.now()}`,
-          severity: 'high',
-          message: `Restock inventory for ${lowStockProducts}${additionalCount}`,
-          context: `${lowStockCount} products are below the minimum threshold of ${lowStockThreshold} units`,
-          action: 'Review inventory levels and place orders with suppliers'
-        })
-      }
-      
-      // Sales trend alerts
-      const monthlyRevenue = periodData.month.totalSales
-      const weeklyRevenue = periodData.week.totalSales
-      const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
-      if (revenueGrowth < -20) {
-        alerts.push({
-          id: `revenue-${Date.now()}`,
-          severity: 'high',
-          message: `Revenue down ${Math.abs(revenueGrowth).toFixed(0)}% compared to monthly average`,
-          context: `Weekly revenue of ${formatCurrency(weeklyRevenue)} is significantly below trend`,
-          action: 'Launch a promotional campaign or review pricing strategy'
-        })
-      }
-      
-      // AOV alerts
-      const currentAOV = periodData.today.ordersCount > 0 ? 
-        periodData.today.totalSales / periodData.today.ordersCount : 0
-      const monthlyAOV = periodData.month.ordersCount > 0 ? 
-        periodData.month.totalSales / periodData.month.ordersCount : 0
-      
-      if (currentAOV > 0 && monthlyAOV > 0 && currentAOV < monthlyAOV * 0.7) {
-        alerts.push({
-          id: `aov-${Date.now()}`,
-          severity: 'medium',
-          message: `Average order value down to ${formatCurrency(currentAOV)}`,
-          context: `Current AOV is ${((1 - currentAOV/monthlyAOV) * 100).toFixed(0)}% below your monthly average of ${formatCurrency(monthlyAOV)}`,
-          action: 'Add product bundles or implement upsell strategies'
-        })
-      }
-      
-      // Order frequency alerts
-      if (periodData.week.ordersCount < 5 && periodData.month.ordersCount > 20) {
-        alerts.push({
-          id: `orders-${Date.now()}`,
-          severity: 'medium',
-          message: `Order frequency has dropped significantly this week`,
-          context: `Only ${periodData.week.ordersCount} orders this week compared to a monthly pace of ${Math.round(periodData.month.ordersCount / 4)} per week`,
-          action: 'Send a re-engagement email campaign to recent customers'
-        })
-      }
-    }
-
-    if (hasMeta && metrics.adSpend > 0) {
-      // Ad performance alerts
-      if (metrics.roas < 1) {
-        alerts.push({
-          id: `roas-${Date.now()}`,
-          severity: 'high',
-          message: `Ad campaigns losing money with ${metrics.roas.toFixed(1)}x ROAS`,
-          context: `Spending ${formatCurrency(metrics.adSpend)} with negative return on ad spend`,
-          action: 'Pause underperforming ad sets and reallocate budget'
-        })
-      }
-      if (metrics.ctr < 0.01) {
-        alerts.push({
-          id: `ctr-${Date.now()}`,
-          severity: 'high',
-          message: `Critical: Ad engagement rate below 1%`,
-          context: `CTR of ${(metrics.ctr * 100).toFixed(2)}% indicates ad creative or targeting issues`,
-          action: 'Refresh ad creative and review audience targeting'
-        })
-      }
-      if (metrics.adSpend > 500 && metrics.roas < 1.5) {
-        alerts.push({
-          id: `adspend-${Date.now()}`,
-          severity: 'medium',
-          message: `High ad spend (${formatCurrency(metrics.adSpend)}) with low return`,
-          context: `ROAS of ${metrics.roas.toFixed(1)}x is below target for your current spend level`,
-          action: 'Optimize campaigns or reduce daily budget until performance improves'
-        })
-      }
-      if (metrics.conversionRate && metrics.conversionRate < 0.01) {
-        alerts.push({
-          id: `conversion-${Date.now()}`,
-          severity: 'medium',
-          message: `Ad traffic not converting to sales`,
-          context: `Conversion rate of ${(metrics.conversionRate * 100).toFixed(2)}% indicates landing page or offer issues`,
-          action: 'Review landing pages and optimize checkout experience'
-        })
-      }
-    }
-
-    // Check for additional platform-specific metrics that might not be displayed in the widget
-    if (metrics.customerRetentionRate < 0.3) {
-      alerts.push({
-        id: `retention-${Date.now()}`,
-        severity: 'medium',
-        message: `Low customer retention rate of ${(metrics.customerRetentionRate * 100).toFixed(0)}%`,
-        context: `Most customers are not making repeat purchases`,
-        action: 'Implement a customer loyalty program or post-purchase follow-up'
-      })
     }
     
-    if (metrics.returnRate > 0.1) {
-      alerts.push({
-        id: `returns-${Date.now()}`,
-        severity: 'medium',
-        message: `High product return rate of ${(metrics.returnRate * 100).toFixed(0)}%`,
-        context: `Returns are affecting profitability and customer satisfaction`,
-        action: 'Review product descriptions and quality control processes'
-      })
+    // Default message if we don't have enough data
+    if (!synopsisText) {
+      synopsisText = `${brandName} dashboard initialized. Gathering performance data to generate insights.`
     }
     
-    if (metrics.customerSegments && 
-        metrics.customerSegments.newCustomers > 0 && 
-        metrics.customerSegments.returningCustomers > 0) {
-      const newToReturningRatio = metrics.customerSegments.newCustomers / metrics.customerSegments.returningCustomers;
-      if (newToReturningRatio > 5) {
-        alerts.push({
-          id: `newcust-${Date.now()}`,
-          severity: 'low',
-          message: `Few customers are returning for repeat purchases`,
-          context: `New to returning customer ratio of ${newToReturningRatio.toFixed(1)}:1 indicates retention issues`,
-          action: 'Create a win-back campaign for one-time purchasers'
-        })
-      }
-    }
-
-    console.log('Alerts:', alerts);
-    console.log('Summary Parts:', summaryParts);
-
-    // Combine all insights
-    let summaryText = summaryParts.join('')
-    
-    // Add priority alerts if any, renamed to "Action Items"
-    if (alerts.length > 0) {
-      // Convert the structured alerts to a string format for backward compatibility
-      const alertStrings = alerts.map(alert => alert.message);
-      summaryText += `Action Items: ${alertStrings.join('. ')}.`
-      
-      // Store the structured alerts for rendering
-      setActionItems(alerts as Array<{
-        id: string;
-        severity: 'high' | 'medium' | 'low';
-        message: string;
-        context: string;
-        action: string;
-      }>);
-    } else {
-      setActionItems([]);
-    }
-
-    // Add recommendation for incomplete data
-    if (!summaryText) {
-      summaryText = `${brandName} dashboard initialized. Gathering performance data to generate insights.`
-    }
-    
-    console.log('Final Summary:', summaryText);
-    
-    setSummary(summaryText)
-  }, [isLoading, brandName, connections, periodData, metrics])
-
-  // Add state for action items
-  const [actionItems, setActionItems] = useState<Array<{
-    id: string;
-    severity: 'high' | 'medium' | 'low';
-    message: string;
-    context: string;
-    action: string;
-  }>>([])
-  
-  // Function to handle completing an action item
-  const completeActionItem = (id: string) => {
-    setActionItems(prev => prev.filter(item => item.id !== id))
-  }
+    setSynopsis(synopsisText)
+  }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, revenueGrowth])
 
   // Helper function to format currency
   const formatCurrency = (value: number): string => {
@@ -439,20 +227,6 @@ export function GreetingWidget({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value)
-  }
-
-  // Helper function to get severity color
-  const getSeverityColor = (severity: string) => {
-    switch(severity) {
-      case 'high':
-        return 'text-red-400 bg-red-900/20 border-red-800/30'
-      case 'medium':
-        return 'text-amber-400 bg-amber-900/20 border-amber-800/30'
-      case 'low':
-        return 'text-yellow-400 bg-yellow-900/20 border-yellow-800/30'
-      default:
-        return 'text-amber-400 bg-amber-900/20 border-amber-800/30'
-    }
   }
 
   return (
@@ -479,6 +253,11 @@ export function GreetingWidget({
             
             {!isMinimized && (
               <>
+                {/* Performance Synopsis */}
+                <p className="text-gray-400 mt-2">
+                  {synopsis}
+                </p>
+                
                 {/* Daily Sales Snapshot */}
                 {hasShopify && periodData.today && (
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -572,79 +351,31 @@ export function GreetingWidget({
                   </div>
                 )}
 
-                {/* Action Items Section */}
-                {actionItems.length > 0 && (
-                  <div className="mt-4 bg-gray-800/50 border border-gray-700/50 rounded-lg overflow-hidden">
-                    <div className="bg-gray-800 px-3 py-2 border-b border-gray-700/50 flex items-center justify-between">
-                      <h4 className="text-white text-sm font-medium flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400" />
-                        Action Items
-                      </h4>
-                      <span className="text-xs text-gray-400">{actionItems.length} items requiring attention</span>
+                {/* AI Insights Link */}
+                <div className="mt-4 flex justify-between items-center">
+                  {/* Platform Status */}
+                  <div className="flex flex-wrap gap-2">
+                    <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasShopify ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
+                      <div className="w-2 h-2 rounded-full bg-current"></div>
+                      Shopify {hasShopify ? 'Connected' : 'Not Connected'}
                     </div>
-                    <div className="divide-y divide-gray-700/50">
-                      {actionItems.map((item) => (
-                        <div key={item.id} className={`p-3 ${getSeverityColor(item.severity)}`}>
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <h5 className="font-medium text-sm mb-1">{item.message}</h5>
-                              <p className="text-xs text-gray-300 mb-1">{item.context}</p>
-                              <div className="flex items-center gap-1 text-xs text-gray-400">
-                                <span className="font-medium">Recommended action:</span> {item.action}
-                              </div>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-7 px-2 text-xs bg-gray-800/30 hover:bg-gray-700 border-gray-600"
-                              onClick={() => completeActionItem(item.id)}
-                            >
-                              <Check className="h-3 w-3 mr-1" />
-                              Complete
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasMeta ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>
+                      <div className="w-2 h-2 rounded-full bg-current"></div>
+                      Meta Ads {hasMeta ? 'Connected' : 'Not Connected'}
                     </div>
                   </div>
-                )}
-
-                {/* Legacy Action Items Section - for backward compatibility */}
-                {summary && summary.includes("Action Items:") && actionItems.length === 0 && (
-                  <div className="mt-4 bg-amber-900/20 border border-amber-800/30 rounded-lg p-3">
-                    <h4 className="text-amber-400 text-sm font-medium flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Action Items
-                    </h4>
-                    <ul className="text-gray-300 text-sm space-y-1 pl-6 list-disc">
-                      {summary
-                        .split("Action Items:")[1]
-                        .split(".")
-                        .filter(item => item.trim().length > 0)
-                        .map((item, index) => (
-                          <li key={index}>{item.trim()}</li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Summary Text (excluding priority items which are now in their own section) */}
-                {summary && !summary.includes("Action Items:") && (
-                  <p className="text-gray-400 mt-4">
-                    {summary}
-                  </p>
-                )}
-
-                {/* Platform Status */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasShopify ? 'bg-green-500/20 text-green-400' : 'bg-gray-700 text-gray-400'}`}>
-                    <div className="w-2 h-2 rounded-full bg-current"></div>
-                    Shopify {hasShopify ? 'Connected' : 'Not Connected'}
-                  </div>
-                  <div className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${hasMeta ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}`}>
-                    <div className="w-2 h-2 rounded-full bg-current"></div>
-                    Meta Ads {hasMeta ? 'Connected' : 'Not Connected'}
-                  </div>
+                  
+                  {/* AI Insights Button */}
+                  <Link href="/ai-dashboard">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-xs bg-gray-800/30 hover:bg-gray-700 border-gray-600"
+                    >
+                      View AI Insights
+                      <ArrowRight className="ml-2 h-3 w-3" />
+                    </Button>
+                  </Link>
                 </div>
               </>
             )}
