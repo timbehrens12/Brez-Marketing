@@ -23,15 +23,39 @@ export async function POST(request: Request) {
     
     if (connectionError || !connection) {
       console.error('Error fetching connection:', connectionError);
-      return NextResponse.json({ error: 'Connection not found' }, { status: 404 });
+      return NextResponse.json({ 
+        error: 'Connection not found', 
+        details: connectionError?.message || 'Could not find a Shopify connection with the provided ID'
+      }, { status: 404 });
     }
     
     // Get the shop and access token
-    const { shop, access_token } = connection;
+    const { shop, access_token, status, brand_id, user_id } = connection;
+    
+    console.log('Connection details:', { 
+      shop, 
+      connectionId, 
+      status, 
+      brandId: brand_id,
+      hasAccessToken: !!access_token 
+    });
     
     if (!shop || !access_token) {
       console.error('Invalid connection data - missing shop or access_token');
-      return NextResponse.json({ error: 'Invalid connection data' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'Invalid connection data', 
+        details: !shop ? 'Shop URL is missing' : 'Access token is missing',
+        solution: 'Try disconnecting and reconnecting your Shopify store'
+      }, { status: 400 });
+    }
+    
+    if (status !== 'active') {
+      console.error('Connection is not active:', status);
+      return NextResponse.json({ 
+        error: 'Shopify connection is not active', 
+        details: `Current status: ${status}`,
+        solution: 'Try disconnecting and reconnecting your Shopify store'
+      }, { status: 400 });
     }
     
     console.log('Fetching customers from Shopify shop:', shop);
@@ -40,9 +64,11 @@ export async function POST(request: Request) {
     let url = `https://${shop}/admin/api/2023-04/customers.json?limit=250`;
     let allCustomers: any[] = [];
     let hasNextPage = true;
+    let pageCount = 0;
     
-    while (hasNextPage) {
-      console.log('Fetching customers from:', url);
+    while (hasNextPage && pageCount < 10) { // Limit to 10 pages for safety
+      pageCount++;
+      console.log(`Fetching customers page ${pageCount} from:`, url);
       
       try {
         const response = await fetch(url, {
@@ -55,7 +81,28 @@ export async function POST(request: Request) {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Error fetching customers from Shopify:', errorText);
-          return NextResponse.json({ error: 'Failed to fetch customers from Shopify' }, { status: response.status });
+          
+          // Check for common error patterns
+          if (response.status === 401) {
+            return NextResponse.json({ 
+              error: 'Authentication failed with Shopify', 
+              details: errorText,
+              solution: 'Your access token may have expired. Try disconnecting and reconnecting your Shopify store.'
+            }, { status: 401 });
+          }
+          
+          if (response.status === 429) {
+            return NextResponse.json({ 
+              error: 'Rate limited by Shopify API', 
+              details: errorText,
+              solution: 'Please wait a few minutes and try again.'
+            }, { status: 429 });
+          }
+          
+          return NextResponse.json({ 
+            error: 'Failed to fetch customers from Shopify', 
+            details: errorText
+          }, { status: response.status });
         }
         
         const data = await response.json();
@@ -74,6 +121,14 @@ export async function POST(request: Request) {
         }
         
         const customers = data.customers || [];
+        
+        // Log a sample customer for debugging (with sensitive info redacted)
+        if (customers.length > 0 && pageCount === 1) {
+          const sampleCustomer = { ...customers[0] };
+          if (sampleCustomer.email) sampleCustomer.email = sampleCustomer.email.replace(/^(.{3})(.*)(@.*)$/, '$1***$3');
+          if (sampleCustomer.phone) sampleCustomer.phone = sampleCustomer.phone.replace(/^(.{3})(.*)$/, '$1***');
+          console.log('Sample customer structure:', JSON.stringify(sampleCustomer, null, 2));
+        }
         
         allCustomers = [...allCustomers, ...customers];
         
@@ -224,6 +279,8 @@ export async function POST(request: Request) {
       // Prepare the customer record for Supabase
       return {
         connection_id: connectionId,
+        brand_id: brand_id,
+        user_id: user_id,
         customer_id: customer.id.toString(),
         email: customer.email,
         first_name: customer.first_name,
@@ -272,10 +329,90 @@ export async function POST(request: Request) {
       if (tableCheckError) {
         console.error('Error checking shopify_customers table:', tableCheckError);
         if (tableCheckError.message.includes('relation "shopify_customers" does not exist')) {
-          return NextResponse.json({ 
-            error: 'The shopify_customers table does not exist in the database. Please run the SQL script to create it.', 
-            details: tableCheckError.message 
-          }, { status: 500 });
+          // Create the shopify_customers table if it doesn't exist
+          console.log('Attempting to create shopify_customers table...');
+          
+          try {
+            const { error: createTableError } = await supabase.rpc('create_shopify_customers_table');
+            
+            if (createTableError) {
+              console.error('Error creating shopify_customers table:', createTableError);
+              return NextResponse.json({ 
+                error: 'The shopify_customers table does not exist in the database.', 
+                details: tableCheckError.message,
+                solution: `
+                  Run the following SQL in your Supabase SQL Editor to create the table:
+                  
+                  CREATE TABLE IF NOT EXISTS public.shopify_customers (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    connection_id UUID NOT NULL,
+                    brand_id UUID,
+                    user_id UUID,
+                    customer_id TEXT NOT NULL,
+                    email TEXT,
+                    first_name TEXT,
+                    last_name TEXT,
+                    orders_count INTEGER DEFAULT 0,
+                    total_spent DECIMAL(10, 2) DEFAULT 0,
+                    currency TEXT,
+                    state TEXT,
+                    tags TEXT[],
+                    tax_exempt BOOLEAN DEFAULT false,
+                    phone TEXT,
+                    addresses JSONB,
+                    default_address JSONB,
+                    accepts_marketing BOOLEAN DEFAULT false,
+                    created_at TIMESTAMP WITH TIME ZONE,
+                    updated_at TIMESTAMP WITH TIME ZONE,
+                    last_order_id TEXT,
+                    last_order_date TIMESTAMP WITH TIME ZONE,
+                    note TEXT,
+                    verified_email BOOLEAN DEFAULT false,
+                    multipass_identifier TEXT,
+                    tax_exemptions TEXT[],
+                    lifetime_value DECIMAL(10, 2) DEFAULT 0,
+                    average_order_value DECIMAL(10, 2) DEFAULT 0,
+                    purchase_frequency DECIMAL(10, 2) DEFAULT 0,
+                    days_since_last_order INTEGER,
+                    is_returning_customer BOOLEAN DEFAULT false,
+                    acquisition_source TEXT,
+                    geographic_region TEXT,
+                    customer_segment TEXT,
+                    city TEXT,
+                    state_province TEXT,
+                    country TEXT,
+                    last_synced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    UNIQUE(connection_id, customer_id)
+                  );
+                  
+                  -- Enable RLS
+                  ALTER TABLE public.shopify_customers ENABLE ROW LEVEL SECURITY;
+                  
+                  -- Create a policy for all operations
+                  CREATE POLICY "Allow all operations"
+                    ON public.shopify_customers
+                    FOR ALL
+                    USING (true);
+                  
+                  -- Create indexes
+                  CREATE INDEX IF NOT EXISTS idx_shopify_customers_connection_id ON public.shopify_customers(connection_id);
+                  CREATE INDEX IF NOT EXISTS idx_shopify_customers_customer_id ON public.shopify_customers(customer_id);
+                  CREATE INDEX IF NOT EXISTS idx_shopify_customers_city ON public.shopify_customers(city);
+                  CREATE INDEX IF NOT EXISTS idx_shopify_customers_state_province ON public.shopify_customers(state_province);
+                  CREATE INDEX IF NOT EXISTS idx_shopify_customers_country ON public.shopify_customers(country);
+                `
+              }, { status: 500 });
+            } else {
+              console.log('Successfully created shopify_customers table');
+            }
+          } catch (rpcError) {
+            console.error('RPC error creating table:', rpcError);
+            return NextResponse.json({ 
+              error: 'Failed to create shopify_customers table', 
+              details: rpcError instanceof Error ? rpcError.message : 'Unknown error',
+              solution: 'Please check your Supabase database and ensure you have the necessary permissions.'
+            }, { status: 500 });
+          }
         }
       }
       
@@ -288,6 +425,7 @@ export async function POST(request: Request) {
     const batchSize = 50; // Reduced batch size for better error tracking
     let successCount = 0;
     let errorCount = 0;
+    let errorMessages: string[] = [];
     
     console.log(`Processing customers in batches of ${batchSize}`);
     
@@ -298,8 +436,37 @@ export async function POST(request: Request) {
       
       console.log(`Processing batch ${batchNumber} of ${totalBatches} (${batch.length} customers)`);
       
+      // Try bulk upsert first for efficiency
+      try {
+        const { data: upsertData, error: upsertError } = await supabase
+          .from('shopify_customers')
+          .upsert(batch, { 
+            onConflict: 'connection_id,customer_id',
+            ignoreDuplicates: false
+          });
+        
+        if (upsertError) {
+          console.error('Bulk upsert failed, falling back to individual processing:', upsertError);
+          errorMessages.push(`Bulk upsert error: ${upsertError.message}`);
+          
+          // Fall back to individual processing
+          await processIndividualCustomers(batch);
+        } else {
+          console.log(`Successfully upserted batch ${batchNumber}`);
+          successCount += batch.length;
+        }
+      } catch (batchError) {
+        console.error('Error in batch processing:', batchError);
+        errorMessages.push(`Batch ${batchNumber} error: ${batchError instanceof Error ? batchError.message : 'Unknown error'}`);
+        
+        // Fall back to individual processing
+        await processIndividualCustomers(batch);
+      }
+    }
+    
+    async function processIndividualCustomers(customers: any[]) {
       // For each customer in the batch, upsert (insert or update)
-      for (const customer of batch) {
+      for (const customer of customers) {
         try {
           // Check if customer already exists
           const { data: existingCustomer, error: lookupError } = await supabase
@@ -312,6 +479,7 @@ export async function POST(request: Request) {
           if (lookupError && lookupError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
             console.error('Error looking up customer:', lookupError);
             errorCount++;
+            errorMessages.push(`Lookup error for customer ${customer.customer_id}: ${lookupError.message}`);
             continue;
           }
           
@@ -326,6 +494,7 @@ export async function POST(request: Request) {
             if (updateError) {
               console.error('Error updating customer:', updateError);
               errorCount++;
+              errorMessages.push(`Update error for customer ${customer.customer_id}: ${updateError.message}`);
             } else {
               successCount++;
             }
@@ -342,6 +511,7 @@ export async function POST(request: Request) {
               // Check if this is an RLS policy violation
               if (insertError.message && insertError.message.includes('violates row-level security policy')) {
                 console.error('RLS policy violation detected. You need to add RLS policies to the shopify_customers table.');
+                errorMessages.push(`RLS policy violation for customer ${customer.customer_id}`);
                 
                 // Return a specific error for RLS violations
                 return NextResponse.json({ 
@@ -373,6 +543,7 @@ export async function POST(request: Request) {
               }
               
               errorCount++;
+              errorMessages.push(`Insert error for customer ${customer.customer_id}: ${insertError.message}`);
             } else {
               successCount++;
             }
@@ -380,10 +551,9 @@ export async function POST(request: Request) {
         } catch (customerError) {
           console.error('Error processing customer:', customerError);
           errorCount++;
+          errorMessages.push(`Processing error: ${customerError instanceof Error ? customerError.message : 'Unknown error'}`);
         }
       }
-      
-      console.log(`Completed batch ${batchNumber} of ${totalBatches}`);
     }
     
     console.log(`Customer sync completed: ${successCount} successful, ${errorCount} errors`);
@@ -396,6 +566,7 @@ export async function POST(request: Request) {
     
     if (countError) {
       console.error('Error verifying saved data:', countError);
+      errorMessages.push(`Verification error: ${countError.message}`);
     } else {
       console.log(`Verified ${count} customers in database for connection ${connectionId}`);
     }
@@ -406,7 +577,8 @@ export async function POST(request: Request) {
       count: processedCustomers.length,
       saved: successCount,
       errors: errorCount,
-      verified_count: count
+      verified_count: count,
+      error_details: errorMessages.length > 0 ? errorMessages : undefined
     });
     
   } catch (error) {
