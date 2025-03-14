@@ -592,7 +592,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                             </div>
                             {item.count > 0 && (
                               <div className="text-center text-xs text-gray-400">
-                                {item.count} order{item.count !== 1 ? 's' : ''}
+                                {item.count} {item.count === 1 ? 'order' : 'orders'}
                               </div>
                             )}
                           </>
@@ -650,7 +650,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                             </div>
                             {item.count > 0 && (
                               <div className="text-center text-xs text-gray-400">
-                                {item.count} order{item.count !== 1 ? 's' : ''}
+                                {item.count} {item.count === 1 ? 'order' : 'orders'}
                               </div>
                             )}
                           </>
@@ -710,7 +710,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       </div>
                       {item.count > 0 && (
                         <div className="text-center text-xs text-gray-400">
-                          {item.count} order{item.count !== 1 ? 's' : ''}
+                          {item.count} {item.count === 1 ? 'order' : 'orders'}
                         </div>
                       )}
                     </>
@@ -777,9 +777,16 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   
                   <div className="flex-1 flex flex-col justify-center p-0.5">
                     {hasRevenue ? (
-                      <div className="text-center text-xs font-medium text-emerald-500">
-                        {renderRevenueValue(item.revenue)}
-                      </div>
+                      <>
+                        <div className="text-center text-xs font-medium text-emerald-500">
+                          {renderRevenueValue(item.revenue)}
+                        </div>
+                        {item.count > 0 && (
+                          <div className="text-center text-[10px] text-gray-400">
+                            {item.count} {item.count === 1 ? 'order' : 'orders'}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <div className="flex items-center justify-center h-full text-gray-500 text-[10px]">
                         -
@@ -834,7 +841,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       </div>
                       {item.count > 0 && (
                         <div className="text-center text-xs text-gray-400">
-                          {item.count} order{item.count !== 1 ? 's' : ''}
+                          {item.count} {item.count === 1 ? 'order' : 'orders'}
                         </div>
                       )}
                     </>

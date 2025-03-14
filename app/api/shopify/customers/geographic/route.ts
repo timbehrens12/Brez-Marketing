@@ -265,7 +265,12 @@ export async function GET(request: NextRequest) {
     // Convert the map to an array
     let locations = Array.from(locationMap.values());
     
-    // If we have no locations with coordinates but we have customers, add Houston as a fallback
+    // Log all locations for debugging
+    console.log('All locations before fallback logic:', locations.map(loc => 
+      `${loc.city}, ${loc.state}, ${loc.country} (${loc.customerCount} customers, $${loc.totalRevenue})`
+    ));
+    
+    // If we have no locations with coordinates but we have customers, add a fallback
     if (locations.length === 0 && totalCustomers > 0) {
       // Add Houston as a fallback with minimal customers
       locations.push({
@@ -277,27 +282,41 @@ export async function GET(request: NextRequest) {
         lat: 29.7604,
         lng: -95.3698
       });
-    } else if (locations.length > 0 && !locations.some(r => r.lat && r.lng)) {
-      // Find if we have any customers from Texas or Houston
-      const texasLocation = locations.find(r => r.state === 'Texas' || r.city?.includes('Houston'));
+    } else if (locations.length > 0) {
+      // Check if any locations are missing coordinates
+      const locationsWithoutCoords = locations.filter(loc => !loc.lat && !loc.lng);
       
-      if (texasLocation) {
-        // Update the Texas/Houston location with coordinates
-        texasLocation.lat = 29.7604;
-        texasLocation.lng = -95.3698;
-      } else {
-        // Add Houston as a fallback with minimal customers
-        locations.push({
-          city: 'Houston',
-          state: 'Texas',
-          country: 'United States',
-          customerCount: Math.max(1, Math.round(totalCustomers * 0.1)), // At least 1 customer or 10% of total
-          totalRevenue: Math.max(1, Math.round(totalRevenue * 0.1)), // At least $1 or 10% of total
-          lat: 29.7604,
-          lng: -95.3698
+      if (locationsWithoutCoords.length > 0) {
+        console.log(`Found ${locationsWithoutCoords.length} locations without coordinates`);
+        
+        // Update each location without coordinates
+        locationsWithoutCoords.forEach(loc => {
+          // Try to find coordinates based on city, state, or country
+          if (loc.city && loc.country === 'United States' && usCityCoordinates[loc.city]) {
+            [loc.lng, loc.lat] = usCityCoordinates[loc.city];
+          } else if (loc.state && loc.country === 'United States' && usStateCoordinates[loc.state]) {
+            [loc.lng, loc.lat] = usStateCoordinates[loc.state];
+          } else if (loc.country && countryCoordinates[loc.country]) {
+            [loc.lng, loc.lat] = countryCoordinates[loc.country];
+          } else {
+            // If we still can't find coordinates, use a default based on country
+            if (loc.country === 'United States') {
+              loc.lat = 37.0902;
+              loc.lng = -95.7129;
+            } else {
+              // Default to center of the world if nothing else works
+              loc.lat = 0;
+              loc.lng = 0;
+            }
+          }
         });
       }
     }
+    
+    // Log all locations after processing
+    console.log('All locations after processing:', locations.map(loc => 
+      `${loc.city}, ${loc.state}, ${loc.country} (${loc.customerCount} customers, $${loc.totalRevenue})`
+    ));
     
     // Add logging to help debug
     console.log(`Geographic data: Found ${locations.length} locations from ${totalCustomers} customers`);
