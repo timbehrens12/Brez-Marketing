@@ -47,6 +47,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
+import { OverviewTab } from "@/components/dashboard/platforms/tabs/OverviewTab"
 
 interface WidgetData {
   shopify?: any;
@@ -761,15 +762,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {selectedBrandId && !initialDataLoad && (
-        <GreetingWidget 
-          brandId={selectedBrandId}
-          brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
-          metrics={metrics}
-          connections={connections}
-        />
-      )}
-
       {selectedBrandId && initialDataLoad ? (
         <div className="flex flex-col items-center justify-center py-16">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
@@ -787,6 +779,7 @@ export default function DashboardPage() {
             initialDataLoad={initialDataLoad}
             platformStatus={activePlatforms}
             existingConnections={connections}
+            onTabChange={setActiveTab}
           >
             <div className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -37,6 +37,7 @@ interface WidgetManagerProps {
   };
   existingConnections: PlatformConnection[];
   children?: React.ReactNode;
+  onTabChange?: (value: string) => void;
 }
 
 export function WidgetManager({ 
@@ -48,10 +49,11 @@ export function WidgetManager({
   initialDataLoad = false,
   platformStatus,
   existingConnections,
-  children
+  children,
+  onTabChange
 }: WidgetManagerProps) {
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
-  const [activeTab, setActiveTab] = useState<string>("shopify")
+  const [activeTab, setActiveTab] = useState<string>("overview")
   const [connections, setConnections] = useState<PlatformConnection[]>(existingConnections || [])
   const [customerDataTab, setCustomerDataTab] = useState<string>("geography")
 
@@ -95,6 +97,9 @@ export function WidgetManager({
 
   const handleTabChange = (value: string) => {
     setActiveTab(value)
+    if (onTabChange) {
+      onTabChange(value)
+    }
   }
 
   return (
