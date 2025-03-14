@@ -14,7 +14,7 @@ export default function HomePage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A]">
       <div className="text-center">
         <img 
-          src="/brand/logo.png" 
+          src="https://i.imgur.com/PZCtbwG.png" 
           alt="Brez Logo" 
           className="h-16 w-auto object-contain mx-auto mb-6" 
         />

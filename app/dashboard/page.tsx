@@ -36,7 +36,6 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
-import { FullPageLoading } from "@/components/FullPageLoading"
 
 interface WidgetData {
   shopify?: any;
@@ -98,10 +97,7 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
-  
-  // Split loading state into initial loading and data refreshing
-  const [isInitialLoading, setIsInitialLoading] = useState(false) // Start with false to avoid initial flash
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -124,26 +120,6 @@ export default function DashboardPage() {
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState('');
   const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
-
-  // Set initial loading state only when needed
-  useEffect(() => {
-    if (isLoaded && userId && selectedBrandId && !lastRefreshed) {
-      setIsInitialLoading(true);
-    }
-  }, [isLoaded, userId, selectedBrandId, lastRefreshed]);
-
-  // Add a useEffect to ensure isInitialLoading is set to false after a timeout
-  useEffect(() => {
-    // Set a timeout to ensure we don't get stuck in loading state
-    const loadingTimeout = setTimeout(() => {
-      if (isInitialLoading) {
-        console.log('Loading timeout reached, forcing loading state to complete')
-        setIsInitialLoading(false)
-      }
-    }, 3000) // 3 seconds max loading time
-    
-    return () => clearTimeout(loadingTimeout)
-  }, [isInitialLoading])
 
   // Load initial connections when component mounts
   useEffect(() => {
@@ -408,20 +384,9 @@ export default function DashboardPage() {
     c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
   )
 
-  // Update the fetchAllData function to handle loading states properly
+  // Modify the fetchAllData function to use isRefreshingData instead of isLoading
   const fetchAllData = async () => {
-    // If this is a refresh (not initial load), set isLoading instead of isInitialLoading
-    if (!isInitialLoading) {
-      setIsLoading(true)
-    }
-    
-    if (!selectedBrandId) {
-      // If no brand is selected, we should still exit loading state
-      setIsInitialLoading(false)
-      setIsLoading(false)
-      setIsRefreshingData(false)
-      return
-    }
+    if (!selectedBrandId) return
     
     // Use isRefreshingData instead of isLoading for refreshes
     setIsRefreshingData(true)
@@ -527,16 +492,15 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
-      // Always ensure loading states are reset
       setIsRefreshingData(false)
-      setIsInitialLoading(false)
-      setIsLoading(false)
-      setLastRefreshed(new Date())
     }
   }
 
-  // Update the refresh function
+  // Modify the refresh function to use isRefreshingData and add cooldown
   const refresh = async () => {
+    if (isRefreshing) return
+    
+    // Check if we're in cooldown period
     if (refreshCooldown) {
       toast({
         title: "Refresh cooldown active",
@@ -547,7 +511,6 @@ export default function DashboardPage() {
     }
     
     setIsRefreshing(true)
-    setIsRefreshingData(true) // Use isRefreshingData instead of isLoading
     
     // Show toast to inform user that refresh is happening
     toast({
@@ -574,7 +537,6 @@ export default function DashboardPage() {
     })
     
     setIsRefreshing(false)
-    setIsRefreshingData(false)
     
     // Set cooldown
     setRefreshCooldown(true)
@@ -604,36 +566,16 @@ export default function DashboardPage() {
     // Initial fetch - ensure this runs immediately when the component mounts
     if (selectedBrandId) {
       console.log('Initial dashboard data load triggered')
-      try {
-        fetchAllData();
-        setLastRefreshed(new Date());
-      } catch (error) {
-        console.error('Error during initial data load:', error);
-        // Ensure loading states are reset even if there's an error
-        setIsInitialLoading(false);
-        setIsLoading(false);
-        setIsRefreshingData(false);
-      }
-    } else {
-      // If no brand is selected, we should still exit loading state
-      setIsInitialLoading(false);
+      fetchAllData();
+      setLastRefreshed(new Date());
     }
     
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
       if (selectedBrandId) {
         console.log('Periodic dashboard data refresh triggered')
-        try {
-          // For periodic refreshes, use isRefreshingData instead of isLoading
-          // to avoid disrupting the UI
-          setIsRefreshingData(true);
-          fetchAllData();
-          setLastRefreshed(new Date());
-        } catch (error) {
-          console.error('Error during periodic refresh:', error);
-          // Ensure loading states are reset even if there's an error
-          setIsRefreshingData(false);
-        }
+        fetchAllData();
+        setLastRefreshed(new Date());
       }
     }, 300000); // Refresh every 5 minutes
     
@@ -674,7 +616,7 @@ export default function DashboardPage() {
           <div className="w-full max-w-md px-8 py-10 rounded-xl shadow-2xl bg-gradient-to-b from-[#1A1A1A] to-[#222] border border-[#333]">
             <div className="mb-8 text-center">
               <img 
-                src="/brand/logo.png" 
+                src="https://i.imgur.com/PZCtbwG.png" 
                 alt="Brez Logo" 
                 className="h-20 w-auto object-contain mx-auto mb-6" 
               />
@@ -716,11 +658,6 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }
-
-  // Show full page loading during initial load
-  if (isInitialLoading && isLoaded && userId) {
-    return <FullPageLoading />
   }
 
   return (
