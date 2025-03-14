@@ -564,9 +564,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
                         ? "border-2 border-gray-500 shadow-md" 
-                        : hasRevenue
-                          ? "border border-emerald-500/30 bg-[#1a1a1a]"
-                          : "border border-gray-700 bg-[#111111]"
+                        : "border border-gray-700 bg-[#111111]"
                     )}
                   >
                     <div className={cn(
@@ -624,9 +622,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
                       isCurrentHour 
                         ? "border-2 border-gray-500 shadow-md" 
-                        : hasRevenue
-                          ? "border border-emerald-500/30 bg-[#1a1a1a]"
-                          : "border border-gray-700 bg-[#111111]"
+                        : "border border-gray-700 bg-[#111111]"
                     )}
                   >
                     <div className={cn(
@@ -685,9 +681,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isToday 
                     ? "border-2 border-gray-500 shadow-md" 
-                    : hasRevenue
-                      ? "border border-emerald-500/30 bg-[#1a1a1a]"
-                      : "border border-gray-700 bg-[#111111]"
+                    : "border border-gray-700 bg-[#111111]"
                 )}
               >
                 <div className={cn(
@@ -767,9 +761,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     "flex flex-col rounded-sm overflow-hidden min-h-[30px] transition-all duration-200",
                     isToday 
                       ? "border border-gray-500 shadow-sm" 
-                      : hasRevenue
-                        ? "border border-emerald-500/30 bg-[#1a1a1a]"
-                        : "border border-gray-700 bg-[#111111]"
+                      : "border border-gray-700 bg-[#111111]"
                   )}
                 >
                   <div className={cn(
@@ -813,9 +805,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
                   isCurrentMonth 
                     ? "border-2 border-gray-500 shadow-md" 
-                    : hasRevenue
-                      ? "border border-emerald-500/30 bg-[#1a1a1a]"
-                      : "border border-gray-700 bg-[#111111]"
+                    : "border border-gray-700 bg-[#111111]"
                 )}
               >
                 <div className={cn(
