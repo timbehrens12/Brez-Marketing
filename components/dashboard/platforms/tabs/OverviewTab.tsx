@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RevenueCalendarNew } from "@/components/dashboard/RevenueCalendarNew"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { DollarSign, TrendingUp, Calendar, ChevronUp, ChevronDown, ArrowRight, AlertTriangle, CheckCircle, BarChart2 } from "lucide-react"
@@ -65,33 +65,62 @@ export function OverviewTab({
 
   // Get date ranges for different timeframes
   const getTimeframeRange = () => {
-    const now = new Date()
-    
     if (synopsisTimeframe === 'monthly') {
-      // Previous month
-      const prevMonth = subMonths(now, 1)
+      // Use the actual date range from props if it spans roughly a month
+      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 25 && daysDiff <= 31) {
+        return {
+          from: dateRange.from,
+          to: dateRange.to,
+          label: format(dateRange.from, 'MMMM yyyy')
+        };
+      }
+      
+      // Otherwise use the previous month
+      const prevMonth = subMonths(new Date(), 1);
       return {
         from: startOfMonth(prevMonth),
         to: endOfMonth(prevMonth),
         label: format(prevMonth, 'MMMM yyyy')
-      }
+      };
     } else if (synopsisTimeframe === 'weekly') {
-      // Previous week (Monday-Sunday)
-      const prevWeek = subWeeks(now, 1)
+      // Use the actual date range from props if it spans roughly a week
+      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 5 && daysDiff <= 8) {
+        return {
+          from: dateRange.from,
+          to: dateRange.to,
+          label: `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+        };
+      }
+      
+      // Otherwise use the previous week
+      const prevWeek = subWeeks(new Date(), 1);
       return {
         from: startOfWeek(prevWeek, { weekStartsOn: 1 }),
         to: endOfWeek(prevWeek, { weekStartsOn: 1 }),
         label: `${format(startOfWeek(prevWeek, { weekStartsOn: 1 }), 'MMM d')} - ${format(endOfWeek(prevWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}`
-      }
+      };
     } else {
-      // Today
-      return {
-        from: now,
-        to: now,
-        label: 'Today'
+      // Daily - use today's date or the selected date if it's just one day
+      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff === 0) {
+        return {
+          from: dateRange.from,
+          to: dateRange.to,
+          label: format(dateRange.from, 'MMMM d, yyyy')
+        };
       }
+      
+      // Otherwise use today
+      const today = new Date();
+      return {
+        from: today,
+        to: today,
+        label: 'Today'
+      };
     }
-  }
+  };
 
   const timeframe = getTimeframeRange()
 
@@ -108,28 +137,58 @@ export function OverviewTab({
   // Generate performance insights based on metrics
   const generatePerformanceInsights = () => {
     if (!hasShopify && !hasMeta) {
-      return "Connect your platforms to see performance insights."
+      return "Connect your platforms to see performance insights.";
     }
 
-    let insights = ""
+    let insights = "";
+    const daysDiff = Math.round((timeframe.to.getTime() - timeframe.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
     if (hasShopify) {
-      const totalSales = metrics.totalSales || 0
-      const ordersCount = metrics.ordersPlaced || 0
-      const aov = metrics.averageOrderValue || 0
+      const totalSales = metrics.totalSales || 0;
+      const ordersCount = metrics.ordersPlaced || 0;
+      const aov = metrics.averageOrderValue || 0;
       
-      insights += `Over the last ${synopsisTimeframe === 'monthly' ? '30' : synopsisTimeframe === 'weekly' ? '7' : '1'} days, `
-      insights += `we generated ${ordersCount} total purchases across various campaigns, `
-      insights += `with an average ROAS of ${(metrics.roas || 0).toFixed(2)}x and a total ad spend of ${formatCurrency(metrics.adSpend || 0)}. `
+      insights += `Over the selected ${daysDiff} day${daysDiff !== 1 ? 's' : ''}, `;
+      insights += `we generated ${ordersCount} total purchase${ordersCount !== 1 ? 's' : ''} `;
+      
+      if (hasMeta) {
+        insights += `across various campaigns, with an average ROAS of ${(metrics.roas || 0).toFixed(2)}x `;
+        insights += `and a total ad spend of ${formatCurrency(metrics.adSpend || 0)}. `;
+      } else {
+        insights += `with a total revenue of ${formatCurrency(totalSales)} `;
+        insights += `and an average order value of ${formatCurrency(aov)}. `;
+      }
     }
     
     if (hasMeta) {
-      insights += `Meta Ads ${metrics.roasGrowth > 0 ? 'are performing well' : 'need optimization'} `
-      insights += `with a ROAS of ${(metrics.roas || 0).toFixed(2)}x. `
+      if (!hasShopify) {
+        insights += `Over the selected ${daysDiff} day${daysDiff !== 1 ? 's' : ''}, `;
+        insights += `your Meta Ads generated a total spend of ${formatCurrency(metrics.adSpend || 0)}. `;
+      }
+      
+      insights += `Meta Ads ${metrics.roasGrowth > 0 ? 'are performing well' : 'need optimization'} `;
+      insights += `with a ROAS of ${(metrics.roas || 0).toFixed(2)}x. `;
+      
+      if (metrics.ctr) {
+        insights += `Your click-through rate is ${(metrics.ctr * 100).toFixed(2)}% `;
+        insights += `${metrics.ctrGrowth > 0 ? 'which is improving' : 'which could be improved'}. `;
+      }
     }
     
-    return insights
-  }
+    return insights;
+  };
+
+  // Process revenue data for RevenueByDay
+  const processRevenueData = () => {
+    if (!metrics.revenueByDay || metrics.revenueByDay.length === 0) {
+      return [];
+    }
+    
+    return metrics.revenueByDay.map(d => ({
+      date: d.date,
+      revenue: d.amount || 0
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -167,12 +226,29 @@ export function OverviewTab({
             change={metrics.salesGrowth || 0}
             loading={isLoading}
             refreshing={isRefreshingData}
-            data={metrics.revenueByDay?.map(item => ({ 
-              date: item.date, 
-              value: item.amount 
-            })) || []}
+            data={metrics.revenueByDay?.map(item => {
+              // Ensure we have proper time information for today's data
+              if (item.date) {
+                const itemDate = new Date(item.date);
+                const today = new Date();
+                
+                // If this is today's data, include the hour in the date string
+                if (itemDate.toDateString() === today.toDateString()) {
+                  return {
+                    date: format(itemDate, "yyyy-MM-dd'T'HH:mm:ss"),
+                    value: item.amount || 0
+                  };
+                }
+              }
+              
+              return { 
+                date: item.date, 
+                value: item.amount || 0 
+              };
+            }) || []}
             platform="shopify"
             brandId={brandId}
+            dateRange={dateRange}
           />
         )}
         
@@ -330,11 +406,12 @@ export function OverviewTab({
                 <div className="bg-[#222] rounded-lg p-4 mb-4">
                   <h4 className="text-sm font-medium mb-2">Key takeaways:</h4>
                   <ul className="space-y-2 text-sm">
-                    {hasMeta && metrics.roas > 3 && (
+                    {hasMeta && metrics.roas > 2 && (
                       <li className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Best Performing Campaign:</span> {brandName}/Adv+ Catalog (ROAS {(metrics.roas || 0).toFixed(2)}x, CPA ${(metrics.costPerResult || 0).toFixed(2)})
+                          <span className="font-medium">Strong ROAS Performance:</span> Your ads are generating a {(metrics.roas || 0).toFixed(2)}x return on ad spend
+                          {metrics.roasGrowth > 0 ? `, which is ${metrics.roasGrowth.toFixed(1)}% higher than the previous period.` : '.'}
                         </span>
                       </li>
                     )}
@@ -343,16 +420,48 @@ export function OverviewTab({
                       <li className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Underperforming Campaign:</span> {brandName}/New Strat - ABO (ROAS 1.27x, CPA $47.56)
+                          <span className="font-medium">ROAS Needs Improvement:</span> Your current ROAS is {(metrics.roas || 0).toFixed(2)}x, which is below the target of 2.0x.
+                          Consider optimizing your ad campaigns or creative assets.
                         </span>
                       </li>
                     )}
                     
-                    {hasMeta && (
+                    {hasShopify && metrics.salesGrowth > 0 && (
                       <li className="flex items-start gap-2">
-                        <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                         <span>
-                          <span className="font-medium">Scaling Opportunity:</span> Cold Conv CBO campaigns are performing at a 1.72x ROAS, indicating room for optimization
+                          <span className="font-medium">Revenue Growth:</span> Your sales have increased by {metrics.salesGrowth.toFixed(1)}% compared to the previous period,
+                          reaching a total of {formatCurrency(metrics.totalSales || 0)}.
+                        </span>
+                      </li>
+                    )}
+                    
+                    {hasShopify && metrics.salesGrowth < 0 && (
+                      <li className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium">Revenue Decline:</span> Your sales have decreased by {Math.abs(metrics.salesGrowth).toFixed(1)}% compared to the previous period.
+                          Consider reviewing your marketing strategy and product offerings.
+                        </span>
+                      </li>
+                    )}
+                    
+                    {hasShopify && metrics.aovGrowth > 5 && (
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium">AOV Improvement:</span> Your average order value has increased by {metrics.aovGrowth.toFixed(1)}% to {formatCurrency(metrics.averageOrderValue || 0)},
+                          indicating successful upselling or higher-value product purchases.
+                        </span>
+                      </li>
+                    )}
+                    
+                    {hasMeta && metrics.ctr && metrics.ctr < 0.01 && (
+                      <li className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                        <span>
+                          <span className="font-medium">Low Click-Through Rate:</span> Your CTR is currently {(metrics.ctr * 100).toFixed(2)}%, which is below industry average.
+                          Consider testing new ad creatives and messaging to improve engagement.
                         </span>
                       </li>
                     )}
@@ -372,7 +481,8 @@ export function OverviewTab({
                     <thead>
                       <tr className="bg-[#222]">
                         <th className="text-left p-2 text-sm font-medium text-gray-300 border border-[#333]">Metric</th>
-                        <th className="text-left p-2 text-sm font-medium text-gray-300 border border-[#333]">This {synopsisTimeframe === 'monthly' ? 'Month' : synopsisTimeframe === 'weekly' ? 'Week' : 'Day'}</th>
+                        <th className="text-left p-2 text-sm font-medium text-gray-300 border border-[#333]">Value</th>
+                        <th className="text-left p-2 text-sm font-medium text-gray-300 border border-[#333]">Change</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -381,14 +491,29 @@ export function OverviewTab({
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Total Revenue</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.totalSales || 0)}</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.salesGrowth > 0 ? "text-green-400" : metrics.salesGrowth < 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.salesGrowth > 0 ? "+" : ""}{metrics.salesGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Orders Placed</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{metrics.ordersPlaced || 0}</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.ordersGrowth > 0 ? "text-green-400" : metrics.ordersGrowth < 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.ordersGrowth > 0 ? "+" : ""}{metrics.ordersGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Average Order Value</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.averageOrderValue || 0)}</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.aovGrowth > 0 ? "text-green-400" : metrics.aovGrowth < 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.aovGrowth > 0 ? "+" : ""}{metrics.aovGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                         </>
                       )}
@@ -398,18 +523,38 @@ export function OverviewTab({
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Total Ad Spend</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.adSpend || 0)}</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.adSpendGrowth < 0 ? "text-green-400" : metrics.adSpendGrowth > 0 ? "text-amber-400" : "text-gray-400"}>
+                                {metrics.adSpendGrowth > 0 ? "+" : ""}{metrics.adSpendGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">ROAS (Return on Ad Spend)</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{(metrics.roas || 0).toFixed(2)}x</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.roasGrowth > 0 ? "text-green-400" : metrics.roasGrowth < 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.roasGrowth > 0 ? "+" : ""}{metrics.roasGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Click Through Rate (CTR)</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{((metrics.ctr || 0) * 100).toFixed(2)}%</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.ctrGrowth > 0 ? "text-green-400" : metrics.ctrGrowth < 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.ctrGrowth > 0 ? "+" : ""}{metrics.ctrGrowth.toFixed(1)}%
+                              </span>
+                            </td>
                           </tr>
                           <tr>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">Cost Per Acquisition (CPA)</td>
                             <td className="p-2 text-sm text-gray-300 border border-[#333]">{formatCurrency(metrics.costPerResult || 0)}</td>
+                            <td className="p-2 text-sm text-gray-300 border border-[#333]">
+                              <span className={metrics.cprGrowth < 0 ? "text-green-400" : metrics.cprGrowth > 0 ? "text-red-400" : "text-gray-400"}>
+                                {metrics.cprGrowth > 0 ? "+" : ""}{metrics.cprGrowth?.toFixed(1) || "0.0"}%
+                              </span>
+                            </td>
                           </tr>
                         </>
                       )}
@@ -429,26 +574,47 @@ export function OverviewTab({
                   <div className="space-y-4">
                     <div>
                       <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <span className="text-green-400">●</span> Best Performing Audiences:
+                        <span className="text-green-400">●</span> Performance Analysis:
                       </h4>
                       <ul className="space-y-2 text-sm pl-6">
                         <li className="text-gray-300">
-                          <span className="font-medium">Adv+ Catalog</span> has the highest ROAS (8.34x) and lowest CPA ($7.81). This audience should receive additional budget allocation.
+                          Your Meta ads are currently achieving a ROAS of {(metrics.roas || 0).toFixed(2)}x with a CPA of {formatCurrency(metrics.costPerResult || 0)}.
                         </li>
                         <li className="text-gray-300">
-                          <span className="font-medium">Cold Conv - ABO</span> campaigns are performing decently with a 3.34x ROAS, indicating a strong audience segment to optimize further.
+                          Click-through rate is {((metrics.ctr || 0) * 100).toFixed(2)}%, which is 
+                          {metrics.ctr && metrics.ctr > 0.01 ? " good for e-commerce ads" : " below the recommended 1% benchmark"}.
                         </li>
+                        {metrics.impressions && (
+                          <li className="text-gray-300">
+                            Your ads received {metrics.impressions.toLocaleString()} impressions, 
+                            {metrics.impressionGrowth > 0 
+                              ? ` which is ${metrics.impressionGrowth.toFixed(1)}% higher than the previous period.` 
+                              : ` which is ${Math.abs(metrics.impressionGrowth || 0).toFixed(1)}% lower than the previous period.`}
+                          </li>
+                        )}
                       </ul>
                     </div>
                     
                     <div>
                       <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <span className="text-red-400">✕</span> Low-Performing Audiences:
+                        <span className="text-amber-400">⚠</span> Areas for Improvement:
                       </h4>
                       <ul className="space-y-2 text-sm pl-6">
-                        <li className="text-gray-300">
-                          <span className="font-medium">New Strat ABO</span> campaigns have a high CPA ($47.56) and low ROAS (1.27x). Testing new creatives or audience segments may help.
-                        </li>
+                        {metrics.ctr && metrics.ctr < 0.01 && (
+                          <li className="text-gray-300">
+                            <span className="font-medium">Low CTR:</span> Your click-through rate is below 1%, suggesting that your ad creative or targeting may need optimization.
+                          </li>
+                        )}
+                        {metrics.roas && metrics.roas < 2 && (
+                          <li className="text-gray-300">
+                            <span className="font-medium">ROAS Optimization:</span> Your return on ad spend is below the target of 2.0x. Consider reviewing your campaign structure and audience targeting.
+                          </li>
+                        )}
+                        {metrics.costPerResult && metrics.costPerResult > 30 && (
+                          <li className="text-gray-300">
+                            <span className="font-medium">High CPA:</span> Your cost per acquisition is {formatCurrency(metrics.costPerResult)}, which may be impacting your overall profitability.
+                          </li>
+                        )}
                       </ul>
                     </div>
                   </div>
@@ -468,7 +634,13 @@ export function OverviewTab({
                       <span className="text-gray-300 text-sm">Total Budget Spent: {formatCurrency(metrics.adSpend || 0)}</span>
                     </div>
                     <div className="text-gray-300 text-sm">
-                      <span className="font-medium">Path to Success:</span> Focus on scaling Adv+ Catalog and Cold Conv - ABO, which have high ROAS.
+                      <span className="font-medium">Budget Efficiency:</span> {
+                        metrics.roas > 3 
+                          ? "Your ad spend is highly efficient with strong ROAS. Consider scaling your budget to capture more market share."
+                          : metrics.roas > 2
+                            ? "Your ad spend is performing well. Maintain current budget levels while optimizing underperforming campaigns."
+                            : "Your ad spend efficiency needs improvement. Focus on optimizing campaigns before increasing budget."
+                      }
                     </div>
                   </div>
                 </div>
@@ -483,14 +655,22 @@ export function OverviewTab({
                 
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Scaling Plan:</h4>
+                    <h4 className="text-sm font-medium mb-2">Strategic Recommendations:</h4>
                     <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                      {hasMeta && (
-                        <>
-                          <li>Increase Adv+ Catalog spend by 15-20% since it's the best-performing campaign</li>
-                          <li>Optimize Cold Conv - ABO campaigns for improved efficiency</li>
-                          <li>Consider ADV+ for automated scaling while maintaining manual ABO testing</li>
-                        </>
+                      {hasMeta && metrics.roas > 3 && (
+                        <li>Increase ad budget by 15-20% to capitalize on strong ROAS performance</li>
+                      )}
+                      {hasMeta && metrics.roas < 2 && (
+                        <li>Review campaign structure and audience targeting to improve ROAS</li>
+                      )}
+                      {hasMeta && metrics.ctr && metrics.ctr < 0.01 && (
+                        <li>Test new ad creatives to improve click-through rates</li>
+                      )}
+                      {hasShopify && metrics.aovGrowth < 0 && (
+                        <li>Implement upsell and cross-sell strategies to increase average order value</li>
+                      )}
+                      {hasShopify && metrics.salesGrowth < 0 && (
+                        <li>Review product pricing and marketing strategy to address declining sales</li>
                       )}
                       {hasShopify && !hasMeta && (
                         <li>Consider implementing Meta Ads to drive additional traffic and sales</li>
@@ -503,17 +683,19 @@ export function OverviewTab({
                   
                   {hasMeta && (
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Creative Direction:</h4>
+                      <h4 className="text-sm font-medium mb-2">Creative Optimization:</h4>
                       <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                        <li>Test new hooks & CTAs to improve CTR (currently below 1%)</li>
+                        {metrics.ctr && metrics.ctr < 0.01 && (
+                          <li>Develop new hooks and CTAs to improve engagement and click-through rates</li>
+                        )}
                         <li>A/B test different ad formats (carousel vs. video vs. static images)</li>
-                        <li>Use urgency-driven messaging (limited-time offers, bundle deals)</li>
+                        <li>Implement urgency-driven messaging (limited-time offers, bundle deals)</li>
                       </ul>
                     </div>
                   )}
                   
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Additional Growth Strategies:</h4>
+                    <h4 className="text-sm font-medium mb-2">Growth Opportunities:</h4>
                     <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
                       {hasMeta && (
                         <>
@@ -539,8 +721,12 @@ export function OverviewTab({
         <div className="mt-6">
           <h3 className="text-xl font-semibold text-white mb-4">Revenue Calendar</h3>
           <Card className="bg-[#111111] border-[#222222]">
-            <CardContent className="h-[520px] p-0">
-              <RevenueCalendarNew 
+            <CardHeader className="py-2">
+              <CardTitle className="text-white"></CardTitle>
+            </CardHeader>
+            <CardContent className="h-[520px]">
+              <RevenueByDay 
+                data={processRevenueData()} 
                 brandId={brandId}
                 isRefreshing={isRefreshingData}
               />
