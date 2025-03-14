@@ -117,6 +117,14 @@ export function RevenueCalendarNew({ brandId, isRefreshing = false }: RevenueCal
     fetchSalesData();
   }, [brandId, timeFrame]);
   
+  // Add a new effect to trigger refresh when isRefreshing changes to true
+  useEffect(() => {
+    if (isRefreshing && brandId) {
+      console.log('RevenueCalendarNew: Manual refresh triggered');
+      fetchSalesData();
+    }
+  }, [isRefreshing, brandId]);
+  
   // Handle time frame change
   const handleTimeFrameChange = (value: TimeFrame) => {
     setTimeFrame(value);

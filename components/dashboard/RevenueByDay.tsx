@@ -216,6 +216,14 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     };
   }, [brandId]);
   
+  // Add a new effect to trigger refresh when isRefreshing changes to true
+  useEffect(() => {
+    if (isRefreshing && brandId) {
+      console.log('Revenue Calendar: Manual refresh triggered');
+      fetchSalesData();
+    }
+  }, [isRefreshing, brandId]);
+  
   // Handle timeframe change
   const handleTimeFrameChange = (value: TimeFrame) => {
     console.log('Changing timeframe to:', value);
