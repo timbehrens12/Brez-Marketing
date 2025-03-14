@@ -7,7 +7,7 @@ import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
 import { DateRange } from "react-day-picker"
 import { MetaContent } from "@/components/dashboard/platforms/MetaContent"
 import { supabase } from "@/lib/supabase"
-import BrandSelector from '@/components/BrandSelector'
+import BrandSelector from "@/components/BrandSelector"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { defaultMetrics, type Metrics, type CustomerSegments } from '@/types/metrics'
 import type { MetaMetrics } from '@/types/metrics'
@@ -665,18 +665,11 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-          <select
-            value={selectedBrandId || ''}
-            onChange={(e) => setSelectedBrandId(e.target.value || null)}
-            className="bg-[#2A2A2A] border-[#333] text-white rounded-md p-2"
-          >
-            <option value="">Select a brand</option>
-            {brands.map(brand => (
-              <option key={brand.id} value={brand.id}>
-                {brand.name}
-              </option>
-            ))}
-          </select>
+          <BrandSelector 
+            onSelect={(brandId) => setSelectedBrandId(brandId || null)}
+            selectedBrandId={selectedBrandId}
+            className="w-48"
+          />
           
           <TooltipProvider>
             <Tooltip>
