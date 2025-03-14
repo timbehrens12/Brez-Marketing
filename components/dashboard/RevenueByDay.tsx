@@ -551,7 +551,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
           
           <div className="flex flex-col flex-1">
             {/* AM Hours (12am-11am) */}
-            <div className="flex-1 flex flex-col mb-2">
+            <div className="flex-1 flex flex-col mb-2 min-h-[45%]">
               <div className="text-xs font-medium text-gray-300 mb-1">AM</div>
               <div className="grid grid-cols-12 gap-2 flex-1 h-[calc(50%-1rem)]">
                 {displayData.slice(0, 12).map((item, index) => {
@@ -562,7 +562,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     <div 
                       key={index}
                       className={cn(
-                        "flex flex-col rounded-md overflow-hidden flex-1 transition-all duration-200",
+                        "flex flex-col rounded-md overflow-hidden flex-1 min-h-[150px] transition-all duration-200",
                         isCurrentHour 
                           ? "border-2 border-gray-500 shadow-md" 
                           : "border border-gray-700 bg-[#111111]"
@@ -580,7 +580,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div className="flex-1 flex flex-col justify-end p-1">
                         {hasRevenue ? (
                           <>
-                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[40px]">
+                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[120px]">
                               <div 
                                 style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                                 className="w-full rounded-t bg-emerald-500/80"
@@ -609,7 +609,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             </div>
             
             {/* PM Hours (12pm-11pm) */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-[45%]">
               <div className="text-xs font-medium text-gray-300 mb-1">PM</div>
               <div className="grid grid-cols-12 gap-2 flex-1 h-[calc(50%-1rem)]">
                 {displayData.slice(12, 24).map((item, index) => {
@@ -620,7 +620,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     <div 
                       key={index + 12}
                       className={cn(
-                        "flex flex-col rounded-md overflow-hidden flex-1 transition-all duration-200",
+                        "flex flex-col rounded-md overflow-hidden flex-1 min-h-[150px] transition-all duration-200",
                         isCurrentHour 
                           ? "border-2 border-gray-500 shadow-md" 
                           : "border border-gray-700 bg-[#111111]"
@@ -638,7 +638,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                       <div className="flex-1 flex flex-col justify-end p-1">
                         {hasRevenue ? (
                           <>
-                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[40px]">
+                            <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[120px]">
                               <div 
                                 style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                                 className="w-full rounded-t bg-emerald-500/80"
@@ -680,7 +680,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
               <div 
                 key={index}
                 className={cn(
-                  "flex flex-col rounded-md overflow-hidden h-full transition-all duration-200",
+                  "flex flex-col rounded-md overflow-hidden h-full min-h-[300px] transition-all duration-200",
                   isToday 
                     ? "border-2 border-gray-500 shadow-md" 
                     : "border border-gray-700 bg-[#111111]"
@@ -695,10 +695,10 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   {item.displayDate}
                 </div>
                 
-                <div className="flex-1 flex flex-col justify-end p-2">
+                <div className="flex-1 flex flex-col justify-end p-2 h-full">
                   {hasRevenue ? (
                     <>
-                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[60px]">
+                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[200px]">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-t bg-emerald-500/80"
@@ -760,7 +760,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div
                   key={index}
                   className={cn(
-                    "flex flex-col rounded-sm overflow-hidden min-h-[50px] transition-all duration-200",
+                    "flex flex-col rounded-sm overflow-hidden min-h-[100px] transition-all duration-200",
                     isToday 
                       ? "border border-gray-500 shadow-sm" 
                       : "border border-gray-700 bg-[#111111]"
@@ -822,7 +822,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[60px]">
+                      <div className="flex-1 w-full flex flex-col justify-end mb-1 min-h-[100px]">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-t bg-emerald-500/80"
@@ -876,8 +876,8 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
   };
   
   return (
-    <Card className="h-full bg-[#111111] border-gray-800">
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col bg-[#111111] border-gray-800">
+      <CardHeader className="pb-2 flex-shrink-0">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold text-white">Revenue Calendar</CardTitle>
           <div className="flex space-x-1">
@@ -940,7 +940,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         </CardDescription>
       </CardHeader>
       
-      <div className="flex-1 px-3 pb-3 pt-2 overflow-hidden flex flex-col">
+      <div className="flex-1 px-3 pb-3 pt-2 overflow-hidden flex flex-col h-full">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
