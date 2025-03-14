@@ -131,7 +131,7 @@ export default function RootLayout({
           }
         `}</style>
       </head>
-      <body className={cn("min-h-screen bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
+      <body className={cn("h-screen overflow-hidden bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ClerkProvider>
             <BrandProvider>
@@ -139,9 +139,9 @@ export default function RootLayout({
                 <NotificationProvider>
                   <WidgetProvider>
                     <AuthProvider>
-                      <div className="flex h-screen overflow-hidden">
-                        <Sidebar className="w-64 flex-shrink-0" />
-                        <main className="flex-1 overflow-y-auto">
+                      <div className="flex h-screen overflow-hidden fixed inset-0">
+                        <Sidebar className="w-64 flex-shrink-0 h-screen sticky top-0" />
+                        <main className="flex-1 overflow-y-auto h-screen">
                           {children}
                         </main>
                       </div>

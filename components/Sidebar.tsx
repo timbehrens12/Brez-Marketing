@@ -30,7 +30,7 @@ export function Sidebar({ className }: SidebarProps) {
   // If auth is not loaded yet or user is not authenticated, render a simplified sidebar
   if (!isLoaded || !userId) {
     return (
-      <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col`}>
+      <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-hidden`}>
         <div className="p-6 text-center">
           <img 
             src="https://i.imgur.com/hK44KGT.png" 
@@ -68,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
   }
 
   return (
-    <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full`}>
+    <aside className={`${className} bg-[#1A1A1A] border-r border-[#2A2A2A] flex flex-col h-full overflow-y-auto`}>
       <div className="p-6 text-center">
         <img 
           src="https://i.imgur.com/hK44KGT.png" 
