@@ -36,6 +36,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
+import { FullPageLoading } from "@/components/FullPageLoading"
 
 interface WidgetData {
   shopify?: any;
@@ -97,7 +98,10 @@ export default function DashboardPage() {
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [widgetData, setWidgetData] = useState<WidgetData | null>(null)
   const [metrics, setMetrics] = useState<Metrics>(defaultMetrics)
-  const [isLoading, setIsLoading] = useState(true)
+  
+  // Split loading state into initial loading and data refreshing
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [activePlatforms, setPlatformStatus] = useState({
     shopify: false,
     meta: false
@@ -384,8 +388,13 @@ export default function DashboardPage() {
     c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
   )
 
-  // Modify the fetchAllData function to use isRefreshingData instead of isLoading
+  // Update the fetchAllData function to handle loading states properly
   const fetchAllData = async () => {
+    // If this is a refresh (not initial load), set isLoading instead of isInitialLoading
+    if (!isInitialLoading) {
+      setIsLoading(true)
+    }
+    
     if (!selectedBrandId) return
     
     // Use isRefreshingData instead of isLoading for refreshes
@@ -494,13 +503,15 @@ export default function DashboardPage() {
     } finally {
       setIsRefreshingData(false)
     }
+    
+    // When complete, update both loading states
+    setIsInitialLoading(false)
+    setIsLoading(false)
+    setLastRefreshed(new Date())
   }
 
-  // Modify the refresh function to use isRefreshingData and add cooldown
+  // Update the refresh function
   const refresh = async () => {
-    if (isRefreshing) return
-    
-    // Check if we're in cooldown period
     if (refreshCooldown) {
       toast({
         title: "Refresh cooldown active",
@@ -511,6 +522,7 @@ export default function DashboardPage() {
     }
     
     setIsRefreshing(true)
+    setIsLoading(true) // Set loading state for widgets
     
     // Show toast to inform user that refresh is happening
     toast({
@@ -537,6 +549,7 @@ export default function DashboardPage() {
     })
     
     setIsRefreshing(false)
+    setIsLoading(false)
     
     // Set cooldown
     setRefreshCooldown(true)
@@ -658,6 +671,11 @@ export default function DashboardPage() {
         </div>
       </div>
     )
+  }
+
+  // Show full page loading during initial load
+  if (isInitialLoading && isLoaded && userId) {
+    return <FullPageLoading />
   }
 
   return (
