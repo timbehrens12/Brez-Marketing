@@ -402,8 +402,8 @@ export function MetricCard({
           </div>
         )}
         
-        {/* Add the line chart */}
-        {showChart && !refreshing && !loading && (
+        {/* Add the line chart - keep it visible during refreshes */}
+        {showChart && !loading && (
           <MetricLineChart 
             data={safeData}
             dateRange={dateRange}

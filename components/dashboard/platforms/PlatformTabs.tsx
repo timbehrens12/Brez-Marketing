@@ -54,9 +54,15 @@ export function PlatformTabs({
   children,
   onTabChange 
 }: PlatformTabsProps) {
+  const [activeTab, setActiveTab] = useState<string>("shopify")
+  const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
-  const [activeTab, setActiveTab] = useState<string>("shopify")
+
+  // Don't render anything during initial data load
+  if (initialDataLoad) {
+    return null;
+  }
 
   // Update selectedConnection when connections change
   useEffect(() => {

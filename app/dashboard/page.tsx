@@ -498,13 +498,16 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
-      // Set initialDataLoad to false after the first load completes
+      // Always set initialDataLoad to false after the first load completes, regardless of success or failure
       if (initialDataLoad) {
         setInitialDataLoad(false);
         setIsLoading(false);
       } else {
         setIsRefreshingData(false);
       }
+      
+      // Set the last refreshed timestamp
+      setLastRefreshed(new Date());
     }
   }
 
@@ -736,7 +739,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {selectedBrandId && (
+      {selectedBrandId && !initialDataLoad && (
         <GreetingWidget 
           brandId={selectedBrandId}
           brandName={brands.find(b => b.id === selectedBrandId)?.name || ""}
@@ -745,7 +748,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {selectedBrandId && initialDataLoad ? (
+      {initialDataLoad ? (
         <div className="flex flex-col items-center justify-center py-16">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
           <p className="text-gray-400 text-lg">Loading dashboard data...</p>

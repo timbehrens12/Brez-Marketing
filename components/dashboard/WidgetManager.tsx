@@ -55,6 +55,12 @@ export function WidgetManager({
   const [connections, setConnections] = useState<PlatformConnection[]>(existingConnections || [])
   const [customerDataTab, setCustomerDataTab] = useState<string>("geography")
 
+  // Don't render anything during initial data load
+  // This is redundant with the check in the dashboard page, but added as a safeguard
+  if (initialDataLoad) {
+    return null;
+  }
+
   useEffect(() => {
     if (existingConnections?.length > 0) {
       setConnections(existingConnections)
