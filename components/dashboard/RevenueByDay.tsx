@@ -544,15 +544,15 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       return (
-        <div className="flex flex-col h-full">
-          <div className="text-xs text-gray-400 mb-3">
+        <div className="flex flex-col h-full flex-1">
+          <div className="text-xs text-gray-400 mb-2">
             Sales by hour of the day (adjusted to your local timezone: {userTimeZone})
           </div>
           
           {/* AM Hours (12am-11am) */}
-          <div className="mb-4">
-            <div className="text-xs font-medium text-gray-300 mb-2">AM</div>
-            <div className="grid grid-cols-12 gap-2">
+          <div className="mb-2 flex-1 flex flex-col">
+            <div className="text-xs font-medium text-gray-300 mb-1">AM</div>
+            <div className="grid grid-cols-12 gap-2 flex-1 h-full">
               {displayData.slice(0, 12).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
                 const hasRevenue = item.revenue > 0;
@@ -561,7 +561,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index}
                     className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
+                      "flex flex-col rounded-md overflow-hidden h-24 transition-all duration-200",
                       isCurrentHour 
                         ? "border-2 border-gray-500 shadow-md" 
                         : "border border-gray-700 bg-[#111111]"
@@ -579,7 +579,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     <div className="flex-1 flex flex-col justify-end p-1">
                       {hasRevenue ? (
                         <>
-                          <div className="relative h-full w-full flex flex-col justify-end mb-1">
+                          <div className="relative h-32 w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                               className="w-full rounded-t bg-emerald-500/80"
@@ -608,9 +608,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
           </div>
           
           {/* PM Hours (12pm-11pm) */}
-          <div>
-            <div className="text-xs font-medium text-gray-300 mb-2">PM</div>
-            <div className="grid grid-cols-12 gap-2">
+          <div className="flex-1 flex flex-col">
+            <div className="text-xs font-medium text-gray-300 mb-1">PM</div>
+            <div className="grid grid-cols-12 gap-2 flex-1 h-full">
               {displayData.slice(12, 24).map((item, index) => {
                 const isCurrentHour = (item as WeeklyOrMonthlyDisplayItem).isToday;
                 const hasRevenue = item.revenue > 0;
@@ -619,7 +619,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                   <div 
                     key={index + 12}
                     className={cn(
-                      "flex flex-col rounded-md overflow-hidden h-20 transition-all duration-200",
+                      "flex flex-col rounded-md overflow-hidden h-24 transition-all duration-200",
                       isCurrentHour 
                         ? "border-2 border-gray-500 shadow-md" 
                         : "border border-gray-700 bg-[#111111]"
@@ -637,7 +637,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                     <div className="flex-1 flex flex-col justify-end p-1">
                       {hasRevenue ? (
                         <>
-                          <div className="relative h-full w-full flex flex-col justify-end mb-1">
+                          <div className="relative h-32 w-full flex flex-col justify-end mb-1">
                             <div 
                               style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                               className="w-full rounded-t bg-emerald-500/80"
@@ -669,7 +669,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else if (timeFrame === 'weekly') {
       // Weekly view - 7 days in a row
       return (
-        <div className="grid grid-cols-7 gap-2 h-full">
+        <div className="grid grid-cols-7 gap-2 h-full flex-1">
           {displayData.map((item, index) => {
             const isToday = (item as WeeklyOrMonthlyDisplayItem).isToday;
             const hasRevenue = item.revenue > 0;
@@ -733,7 +733,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
       const emptyCells = Array.from({ length: startDayOfWeek }, (_, i) => ({ isEmpty: true, index: i }));
       
       return (
-        <div className="h-full flex flex-col">
+        <div className="h-full flex-1 flex flex-col">
           <div className="grid grid-cols-7 gap-0.5 mb-1">
             {daysOfWeek.map((day, index) => (
               <div key={index} className="text-center text-xs font-medium text-gray-400">
@@ -742,7 +742,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             ))}
           </div>
           
-          <div className="grid grid-cols-7 gap-0.5 flex-1">
+          <div className="grid grid-cols-7 gap-0.5 flex-1 h-full">
             {/* Empty cells for days before the first of the month */}
             {emptyCells.map(({ index }) => (
               <div key={`empty-${index}`} className="bg-transparent"></div>
@@ -758,7 +758,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div
                   key={index}
                   className={cn(
-                    "flex flex-col rounded-sm overflow-hidden min-h-[30px] transition-all duration-200",
+                    "flex flex-col rounded-sm overflow-hidden min-h-[50px] transition-all duration-200",
                     isToday 
                       ? "border border-gray-500 shadow-sm" 
                       : "border border-gray-700 bg-[#111111]"
@@ -793,7 +793,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
     } else {
       // Yearly view - 12 months in a grid
       return (
-        <div className="grid grid-cols-4 gap-2 h-full">
+        <div className="grid grid-cols-4 gap-2 h-full flex-1">
           {displayData.map((item, index) => {
             const isCurrentMonth = (item as YearlyDisplayItem).isCurrentMonth;
             const hasRevenue = item.revenue > 0;
@@ -820,7 +820,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
                 <div className="flex-1 flex flex-col justify-end p-2">
                   {hasRevenue ? (
                     <>
-                      <div className="relative h-16 w-full flex flex-col justify-end mb-1">
+                      <div className="relative h-24 w-full flex flex-col justify-end mb-1">
                         <div 
                           style={{ height: `${Math.max(5, Math.min(100, (item.revenue / maxRevenue) * 100))}%` }}
                           className="w-full rounded-t bg-emerald-500/80"
@@ -938,7 +938,7 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
         </CardDescription>
       </CardHeader>
       
-      <div className="flex-1 px-3 pb-3 pt-2 overflow-hidden">
+      <div className="flex-1 px-3 pb-3 pt-2 overflow-hidden flex flex-col">
         {isLoading ? (
           <div className="h-full flex items-center justify-center">
             <div className="flex flex-col items-center">
@@ -959,7 +959,9 @@ export function RevenueByDay({ data: initialData, brandId, isRefreshing = false 
             </div>
           </div>
         ) : (
-          renderCalendarContent()
+          <div className="h-full flex-1 flex flex-col">
+            {renderCalendarContent()}
+          </div>
         )}
       </div>
       
