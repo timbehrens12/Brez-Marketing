@@ -70,19 +70,43 @@ export function OverviewTab({
       return [];
     }
     
-    // CRITICAL FIX: Simply pass through the original date string from the API
-    // This matches the approach used in ShopifyTab.tsx which is working correctly
+    console.log("Original revenue data:", metrics.revenueByDay);
+    
+    // Process each data point
     return metrics.revenueByDay.map(item => {
       if (!item.date) return { date: new Date().toISOString(), value: 0 };
       
-      // Log for debugging
-      console.log(`Processing revenue data: ${item.date} = $${item.amount || 0}`);
-      
-      // Simply return the original date string and amount
-      return {
-        date: item.date, // Use the original date string directly without any conversion
-        value: item.amount || 0
-      };
+      try {
+        // Parse the original date
+        const originalDate = new Date(item.date);
+        
+        // Get the hour from the date (this is the key part)
+        const hour = originalDate.getHours();
+        
+        // Format the hour as "1pm", "2pm", etc. - this is what the MetricCard component expects
+        let hourFormatted;
+        if (hour === 0) {
+          hourFormatted = "12am";
+        } else if (hour < 12) {
+          hourFormatted = `${hour}am`;
+        } else if (hour === 12) {
+          hourFormatted = "12pm";
+        } else {
+          hourFormatted = `${hour - 12}pm`;
+        }
+        
+        // Log for debugging
+        console.log(`Processing revenue data: ${item.date}, hour: ${hour}, formatted: ${hourFormatted}`);
+        
+        // Return the data in the format expected by MetricCard
+        return {
+          date: hourFormatted, // Use the formatted hour string
+          value: item.amount || 0
+        };
+      } catch (error) {
+        console.error("Error processing date:", error, item);
+        return { date: new Date().toISOString(), value: 0 };
+      }
     });
   };
 
