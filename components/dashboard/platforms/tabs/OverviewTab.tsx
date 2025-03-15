@@ -6,13 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { DollarSign, TrendingUp, Calendar, ChevronUp, ChevronDown, ArrowRight, AlertTriangle, CheckCircle, BarChart2 } from "lucide-react"
+import { DollarSign, TrendingUp, Calendar, ChevronUp, ChevronDown, ArrowRight, AlertTriangle, CheckCircle, BarChart2, FileText } from "lucide-react"
 import { Metrics } from "@/types/metrics"
 import { PlatformConnection } from "@/types/platformConnection"
 import Image from "next/image"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from "@clerk/nextjs"
-import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks } from "date-fns"
+import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -63,63 +63,55 @@ export function OverviewTab({
     }
   }
 
-  // Get date ranges for different timeframes
+  const processRevenueData = () => {
+    // If we have revenue data, map it to the format expected by MetricCard
+    if (metrics.revenueByDay && metrics.revenueByDay.length > 0) {
+      // Check if we're looking at today's data
+      const isToday = dateRange.from && dateRange.to && 
+                      isSameDay(dateRange.from, new Date()) && 
+                      isSameDay(dateRange.to, new Date());
+      
+      // Return data in the format expected by MetricCard
+      return metrics.revenueByDay.map(item => {
+        // Parse the date from the item
+        const itemDate = new Date(item.date);
+        
+        // For today's data, preserve the hour information
+        if (isToday) {
+          return {
+            date: format(itemDate, "yyyy-MM-dd'T'HH:mm:ss"),
+            value: item.amount || 0
+          };
+        }
+        
+        // For other dates, just use the date part
+        return {
+          date: format(itemDate, "yyyy-MM-dd"),
+          value: item.amount || 0
+        };
+      });
+    }
+    
+    // Return empty array if no data
+    return [];
+  };
+
+  // Get the timeframe range for the performance report
   const getTimeframeRange = () => {
-    if (synopsisTimeframe === 'monthly') {
-      // Use the actual date range from props if it spans roughly a month
-      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff >= 25 && daysDiff <= 31) {
-        return {
-          from: dateRange.from,
-          to: dateRange.to,
-          label: format(dateRange.from, 'MMMM yyyy')
-        };
-      }
-      
-      // Otherwise use the previous month
-      const prevMonth = subMonths(new Date(), 1);
-      return {
-        from: startOfMonth(prevMonth),
-        to: endOfMonth(prevMonth),
-        label: format(prevMonth, 'MMMM yyyy')
-      };
-    } else if (synopsisTimeframe === 'weekly') {
-      // Use the actual date range from props if it spans roughly a week
-      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff >= 5 && daysDiff <= 8) {
-        return {
-          from: dateRange.from,
-          to: dateRange.to,
-          label: `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
-        };
-      }
-      
-      // Otherwise use the previous week
-      const prevWeek = subWeeks(new Date(), 1);
-      return {
-        from: startOfWeek(prevWeek, { weekStartsOn: 1 }),
-        to: endOfWeek(prevWeek, { weekStartsOn: 1 }),
-        label: `${format(startOfWeek(prevWeek, { weekStartsOn: 1 }), 'MMM d')} - ${format(endOfWeek(prevWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}`
-      };
-    } else {
-      // Daily - use today's date or the selected date if it's just one day
-      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff === 0) {
-        return {
-          from: dateRange.from,
-          to: dateRange.to,
-          label: format(dateRange.from, 'MMMM d, yyyy')
-        };
-      }
-      
-      // Otherwise use today
-      const today = new Date();
-      return {
-        from: today,
-        to: today,
+    if (!dateRange.from || !dateRange.to) {
+      return { 
+        from: new Date(), 
+        to: new Date(),
         label: 'Today'
       };
     }
+    
+    // Use the actual date range from props
+    return {
+      from: dateRange.from,
+      to: dateRange.to,
+      label: `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+    };
   };
 
   const timeframe = getTimeframeRange()
@@ -141,6 +133,7 @@ export function OverviewTab({
     }
 
     let insights = "";
+    const timeframe = getTimeframeRange();
     const daysDiff = Math.round((timeframe.to.getTime() - timeframe.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
     if (hasShopify) {
@@ -183,8 +176,8 @@ export function OverviewTab({
     return insights;
   };
 
-  // Process revenue data for RevenueByDay
-  const processRevenueData = () => {
+  // Process revenue data for RevenueByDay component
+  const processRevenueDataForCalendar = () => {
     if (!metrics.revenueByDay || metrics.revenueByDay.length === 0) {
       return [];
     }
@@ -209,51 +202,20 @@ export function OverviewTab({
       
       {/* Key Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Shopify Total Sales */}
-        {hasShopify && (
+        {/* Shopify Total Revenue */}
+        {platformStatus.shopify && (
           <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <div className="relative w-5 h-5 flex items-center justify-center">
-                  <Image 
-                    src="https://i.imgur.com/cnCcupx.png" 
-                    alt="Shopify logo" 
-                    width={18} 
-                    height={18} 
-                    className="object-contain"
-                  />
-                </div>
-                <span className="ml-0.5">Total Revenue</span>
-                <DollarSign className="h-4 w-4" />
-              </div>
-            }
-            value={`$${(metrics.totalSales || 0).toLocaleString()}`}
+            title="Shopify Total Revenue"
+            value={metrics.totalSales || 0}
             change={metrics.salesGrowth || 0}
+            data={processRevenueData()}
+            valueFormat="currency"
+            prefix="$"
+            platform="Shopify"
             loading={isLoading}
             refreshing={isRefreshingData}
-            data={metrics.revenueByDay?.map(item => {
-              // Ensure we have proper time information for today's data
-              if (item.date) {
-                const itemDate = new Date(item.date);
-                const today = new Date();
-                
-                // If this is today's data, include the hour in the date string
-                if (itemDate.toDateString() === today.toDateString()) {
-                  return {
-                    date: format(itemDate, "yyyy-MM-dd'T'HH:mm:ss"),
-                    value: item.amount || 0
-                  };
-                }
-              }
-              
-              return { 
-                date: item.date, 
-                value: item.amount || 0 
-              };
-            }) || []}
-            platform="shopify"
-            brandId={brandId}
             dateRange={dateRange}
+            brandId={brandId}
           />
         )}
         
@@ -359,17 +321,21 @@ export function OverviewTab({
                 <span>Performance Report</span>
               </CardTitle>
               <CardDescription className="text-gray-400 mt-1">
-                {timeframe.label}
+                {getTimeframeRange().label}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Tabs value={synopsisTimeframe} onValueChange={(v) => setSynopsisTimeframe(v as any)} className="w-auto">
-                <TabsList className="bg-[#2A2A2A]">
-                  <TabsTrigger value="monthly" className="data-[state=active]:bg-blue-600">Monthly</TabsTrigger>
-                  <TabsTrigger value="weekly" className="data-[state=active]:bg-blue-600">Weekly</TabsTrigger>
-                  <TabsTrigger value="daily" className="data-[state=active]:bg-blue-600">Daily</TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-8 bg-[#222222] border-[#333333] hover:bg-[#333333] text-gray-300"
+                onClick={() => {
+                  // Implement export functionality
+                }}
+              >
+                <FileText className="h-3.5 w-3.5 mr-1.5" />
+                Export
+              </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -724,15 +690,15 @@ export function OverviewTab({
       
       {/* Revenue Calendar */}
       {hasShopify && (
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold text-white mb-4">Revenue Calendar</h3>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">Revenue Calendar</h3>
           <Card className="bg-[#111111] border-[#222222]">
             <CardHeader className="py-2">
               <CardTitle className="text-white"></CardTitle>
             </CardHeader>
             <CardContent className="h-[520px]">
               <RevenueByDay 
-                data={processRevenueData()} 
+                data={processRevenueDataForCalendar()} 
                 brandId={brandId}
                 isRefreshing={isRefreshingData}
               />
