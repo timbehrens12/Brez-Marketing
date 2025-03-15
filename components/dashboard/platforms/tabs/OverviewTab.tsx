@@ -12,7 +12,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import Image from "next/image"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from "@clerk/nextjs"
-import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay } from "date-fns"
+import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay, isToday } from "date-fns"
 import { formatInTimeZone, toZonedTime } from "date-fns-tz"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -68,32 +68,41 @@ export function OverviewTab({
     // If we have revenue data, map it to the format expected by MetricCard
     if (metrics.revenueByDay && metrics.revenueByDay.length > 0) {
       // Check if we're looking at today's data
-      const isToday = dateRange.from && dateRange.to && 
-                      isSameDay(dateRange.from, new Date()) && 
-                      isSameDay(dateRange.to, new Date());
+      const isViewingToday = dateRange.from && dateRange.to && 
+                      isToday(dateRange.from) && 
+                      isToday(dateRange.to);
       
       // Get the user's timezone
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       
       // Return data in the format expected by MetricCard
       return metrics.revenueByDay.map(item => {
-        // Parse the date from the item
-        const itemDate = new Date(item.date);
+        if (!item.date) return { date: new Date().toISOString(), value: 0 };
         
-        // For today's data, preserve the hour information and convert to user's timezone
-        if (isToday) {
+        try {
+          // Parse the date from the item
+          const itemDate = new Date(item.date);
+          
+          // Convert to user's timezone regardless of whether it's today or not
           const zonedDate = toZonedTime(itemDate, userTimeZone);
+          
+          // For today's data, preserve the hour information
+          if (isViewingToday) {
+            return {
+              date: formatInTimeZone(zonedDate, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
+              value: item.amount || 0
+            };
+          }
+          
+          // For other dates, just use the date part but still in user's timezone
           return {
-            date: formatInTimeZone(zonedDate, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
+            date: formatInTimeZone(zonedDate, userTimeZone, "yyyy-MM-dd"),
             value: item.amount || 0
           };
+        } catch (error) {
+          console.error("Error processing date:", error);
+          return { date: new Date().toISOString(), value: 0 };
         }
-        
-        // For other dates, just use the date part
-        return {
-          date: format(itemDate, "yyyy-MM-dd"),
-          value: item.amount || 0
-        };
       });
     }
     
@@ -103,6 +112,7 @@ export function OverviewTab({
 
   // Get the timeframe range for the performance report
   const getTimeframeRange = () => {
+    // Default fallback if no dates are provided
     if (!dateRange.from || !dateRange.to) {
       return { 
         from: new Date(), 
@@ -113,40 +123,26 @@ export function OverviewTab({
     
     // For the synopsis widget, use the selected timeframe
     if (synopsisTimeframe === 'monthly') {
-      // Use the actual date range from props if it spans roughly a month
-      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff >= 25 && daysDiff <= 31) {
-        return {
-          from: dateRange.from,
-          to: dateRange.to,
-          label: format(dateRange.from, 'MMMM yyyy')
-        };
-      }
-      
-      // Otherwise use the current month
+      // Use the current month
       const currentMonth = new Date();
+      const startOfCurrentMonth = startOfMonth(currentMonth);
+      const endOfCurrentMonth = endOfMonth(currentMonth);
+      
       return {
-        from: startOfMonth(currentMonth),
-        to: endOfMonth(currentMonth),
+        from: startOfCurrentMonth,
+        to: endOfCurrentMonth,
         label: format(currentMonth, 'MMMM yyyy')
       };
     } else if (synopsisTimeframe === 'weekly') {
-      // Use the actual date range from props if it spans roughly a week
-      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
-      if (daysDiff >= 5 && daysDiff <= 8) {
-        return {
-          from: dateRange.from,
-          to: dateRange.to,
-          label: `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
-        };
-      }
-      
-      // Otherwise use the current week
+      // Use the current week
       const currentWeek = new Date();
+      const startOfCurrentWeek = startOfWeek(currentWeek, { weekStartsOn: 1 }); // Monday as start of week
+      const endOfCurrentWeek = endOfWeek(currentWeek, { weekStartsOn: 1 });
+      
       return {
-        from: startOfWeek(currentWeek, { weekStartsOn: 1 }),
-        to: endOfWeek(currentWeek, { weekStartsOn: 1 }),
-        label: `${format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d')} - ${format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}`
+        from: startOfCurrentWeek,
+        to: endOfCurrentWeek,
+        label: `${format(startOfCurrentWeek, 'MMM d')} - ${format(endOfCurrentWeek, 'MMM d, yyyy')}`
       };
     } else if (synopsisTimeframe === 'daily') {
       // Use today's date
@@ -184,44 +180,139 @@ export function OverviewTab({
       return "Connect your platforms to see performance insights.";
     }
 
-    let insights = "";
     const timeframe = getTimeframeRange();
     const daysDiff = Math.round((timeframe.to.getTime() - timeframe.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
+    // Determine the period type for more natural language
+    let periodType = "period";
+    if (synopsisTimeframe === 'monthly') periodType = "month";
+    else if (synopsisTimeframe === 'weekly') periodType = "week";
+    else if (synopsisTimeframe === 'daily') periodType = "day";
+    
+    let insights = "";
+    
+    // Shopify insights
     if (hasShopify) {
       const totalSales = metrics.totalSales || 0;
       const ordersCount = metrics.ordersPlaced || 0;
       const aov = metrics.averageOrderValue || 0;
+      const salesGrowth = metrics.salesGrowth || 0;
+      const ordersGrowth = metrics.ordersGrowth || 0;
+      const aovGrowth = metrics.aovGrowth || 0;
       
-      insights += `Over the selected ${daysDiff} day${daysDiff !== 1 ? 's' : ''}, `;
-      insights += `we generated ${ordersCount} total purchase${ordersCount !== 1 ? 's' : ''} `;
+      // Start with a personalized greeting
+      insights += `Your business ${salesGrowth > 0 ? 'showed positive growth' : 'faced some challenges'} this ${periodType}. `;
       
-      if (hasMeta) {
-        const roas = metrics.roas || 0;
-        insights += `across various campaigns, with an average ROAS of ${roas.toFixed(2)}x `;
-        insights += `and a total ad spend of ${formatCurrency(metrics.adSpend || 0)}. `;
+      // Revenue performance
+      if (salesGrowth > 15) {
+        insights += `Revenue performance was exceptional with ${formatCurrency(totalSales)} in total sales, representing a strong ${salesGrowth.toFixed(1)}% increase. `;
+      } else if (salesGrowth > 5) {
+        insights += `Revenue showed healthy growth at ${formatCurrency(totalSales)}, up ${salesGrowth.toFixed(1)}% from the previous ${periodType}. `;
+      } else if (salesGrowth > 0) {
+        insights += `Revenue was stable at ${formatCurrency(totalSales)}, with a modest ${salesGrowth.toFixed(1)}% increase. `;
+      } else if (salesGrowth > -10) {
+        insights += `Revenue dipped slightly to ${formatCurrency(totalSales)}, down ${Math.abs(salesGrowth).toFixed(1)}% compared to the previous ${periodType}. `;
       } else {
-        insights += `with a total revenue of ${formatCurrency(totalSales)} `;
-        insights += `and an average order value of ${formatCurrency(aov)}. `;
+        insights += `Revenue experienced a significant decline to ${formatCurrency(totalSales)}, down ${Math.abs(salesGrowth).toFixed(1)}% - this requires immediate attention. `;
+      }
+      
+      // Order volume insights
+      if (ordersGrowth > 10) {
+        insights += `Customer engagement was strong with ${ordersCount} orders (${ordersGrowth.toFixed(1)}% increase). `;
+      } else if (ordersGrowth > 0) {
+        insights += `You received ${ordersCount} orders, a ${ordersGrowth.toFixed(1)}% increase from the previous ${periodType}. `;
+      } else if (ordersGrowth > -10) {
+        insights += `Order volume decreased slightly to ${ordersCount} (${Math.abs(ordersGrowth).toFixed(1)}% decrease). `;
+      } else {
+        insights += `Order volume dropped significantly to ${ordersCount}, down ${Math.abs(ordersGrowth).toFixed(1)}% - we should investigate the cause. `;
+      }
+      
+      // AOV insights
+      if (aovGrowth > 10) {
+        insights += `Your average order value increased substantially to ${formatCurrency(aov)} (+${aovGrowth.toFixed(1)}%), suggesting successful upselling or premium product performance. `;
+      } else if (aovGrowth > 0) {
+        insights += `Average order value rose to ${formatCurrency(aov)}, a positive sign for your product strategy. `;
+      } else if (aovGrowth > -10) {
+        insights += `Average order value decreased slightly to ${formatCurrency(aov)}, which may indicate increased competition or discount usage. `;
+      } else {
+        insights += `Average order value fell to ${formatCurrency(aov)}, a ${Math.abs(aovGrowth).toFixed(1)}% decrease that warrants review of your pricing and product mix. `;
       }
     }
     
+    // Meta Ads insights
     if (hasMeta) {
-      if (!hasShopify) {
-        insights += `Over the selected ${daysDiff} day${daysDiff !== 1 ? 's' : ''}, `;
-        insights += `your Meta Ads generated a total spend of ${formatCurrency(metrics.adSpend || 0)}. `;
+      const adSpend = metrics.adSpend || 0;
+      const adSpendGrowth = metrics.adSpendGrowth || 0;
+      const roas = metrics.roas || 0;
+      const roasGrowth = metrics.roasGrowth || 0;
+      const ctr = metrics.ctr || 0;
+      const ctrGrowth = metrics.ctrGrowth || 0;
+      const impressions = metrics.impressions || 0;
+      const impressionGrowth = metrics.impressionGrowth || 0;
+      
+      insights += `\n\nRegarding your advertising performance, `;
+      
+      // ROAS insights
+      if (roas > 4) {
+        insights += `your Meta campaigns are delivering exceptional results with a ${roas.toFixed(2)}x ROAS `;
+        if (roasGrowth > 0) {
+          insights += `(improved by ${roasGrowth.toFixed(1)}%). `;
+        } else {
+          insights += `(though down ${Math.abs(roasGrowth).toFixed(1)}% from previous ${periodType}). `;
+        }
+      } else if (roas > 2) {
+        insights += `your Meta campaigns are performing well with a ${roas.toFixed(2)}x ROAS, `;
+        if (roasGrowth > 0) {
+          insights += `showing positive growth of ${roasGrowth.toFixed(1)}%. `;
+        } else {
+          insights += `though it's decreased by ${Math.abs(roasGrowth).toFixed(1)}% from the previous ${periodType}. `;
+        }
+      } else if (roas > 1) {
+        insights += `your Meta campaigns are profitable but with room for improvement at ${roas.toFixed(2)}x ROAS. `;
+      } else {
+        insights += `your Meta campaigns are currently unprofitable with a ${roas.toFixed(2)}x ROAS, requiring immediate optimization. `;
       }
       
-      const roasGrowth = metrics.roasGrowth || 0;
-      const roas = metrics.roas || 0;
-      insights += `Meta Ads ${roasGrowth > 0 ? 'are performing well' : 'need optimization'} `;
-      insights += `with a ROAS of ${roas.toFixed(2)}x. `;
+      // Ad spend insights
+      insights += `You invested ${formatCurrency(adSpend)} in advertising this ${periodType}, `;
+      if (adSpendGrowth > 10) {
+        insights += `a significant increase of ${adSpendGrowth.toFixed(1)}%. `;
+      } else if (adSpendGrowth > 0) {
+        insights += `a slight increase of ${adSpendGrowth.toFixed(1)}%. `;
+      } else if (adSpendGrowth > -10) {
+        insights += `a slight decrease of ${Math.abs(adSpendGrowth).toFixed(1)}%. `;
+      } else {
+        insights += `a substantial decrease of ${Math.abs(adSpendGrowth).toFixed(1)}%. `;
+      }
       
-      if (metrics.ctr !== undefined && metrics.ctr !== null) {
-        const ctr = metrics.ctr;
-        const ctrGrowth = metrics.ctrGrowth || 0;
-        insights += `Your click-through rate is ${(ctr * 100).toFixed(2)}% `;
-        insights += `${ctrGrowth > 0 ? 'which is improving' : 'which could be improved'}. `;
+      // CTR and engagement insights
+      if (ctr > 0.02) {
+        insights += `Your click-through rate of ${(ctr * 100).toFixed(2)}% is above industry average, `;
+      } else if (ctr > 0.01) {
+        insights += `Your click-through rate of ${(ctr * 100).toFixed(2)}% is around industry average, `;
+      } else {
+        insights += `Your click-through rate of ${(ctr * 100).toFixed(2)}% is below industry average, `;
+      }
+      
+      if (ctrGrowth > 0) {
+        insights += `and it's improved by ${ctrGrowth.toFixed(1)}%, indicating stronger creative performance. `;
+      } else {
+        insights += `and it's decreased by ${Math.abs(ctrGrowth).toFixed(1)}%, suggesting creative refresh may be needed. `;
+      }
+      
+      // Audience reach insights
+      if (impressions > 100000) {
+        insights += `Your ads reached a substantial audience with ${impressions.toLocaleString()} impressions `;
+      } else if (impressions > 10000) {
+        insights += `Your ads reached a moderate audience with ${impressions.toLocaleString()} impressions `;
+      } else {
+        insights += `Your ads had limited reach with only ${impressions.toLocaleString()} impressions `;
+      }
+      
+      if (impressionGrowth > 0) {
+        insights += `(up ${impressionGrowth.toFixed(1)}%).`;
+      } else {
+        insights += `(down ${Math.abs(impressionGrowth).toFixed(1)}%).`;
       }
     }
     
@@ -425,77 +516,51 @@ export function OverviewTab({
               
               {/* Executive Summary */}
               <div>
-                <h3 className="text-md font-medium flex items-center gap-2 mb-3">
-                  <span className="bg-blue-500 text-white w-5 h-5 rounded-md flex items-center justify-center text-xs">1</span>
-                  Executive Summary
-                </h3>
-                <p className="text-gray-300 text-sm mb-4">
-                  {generatePerformanceInsights()}
-                </p>
-                
-                <div className="bg-[#222] rounded-lg p-4 mb-4">
-                  <h4 className="text-sm font-medium mb-2">Key takeaways:</h4>
-                  <ul className="space-y-2 text-sm">
-                    {hasMeta && metrics.roas !== undefined && metrics.roas > 2 && (
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">Strong ROAS Performance:</span> Your ads are generating a {(metrics.roas || 0).toFixed(2)}x return on ad spend
-                          {metrics.roasGrowth !== undefined && metrics.roasGrowth > 0 ? `, which is ${(metrics.roasGrowth || 0).toFixed(1)}% higher than the previous period.` : '.'}
-                        </span>
-                      </li>
-                    )}
-                    
-                    {hasMeta && metrics.roas !== undefined && metrics.roas < 2 && (
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">ROAS Needs Improvement:</span> Your current ROAS is {(metrics.roas || 0).toFixed(2)}x, which is below the target of 2.0x.
-                          Consider optimizing your ad campaigns or creative assets.
-                        </span>
-                      </li>
-                    )}
-                    
-                    {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth > 0 && (
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">Revenue Growth:</span> Your sales have increased by {(metrics.salesGrowth || 0).toFixed(1)}% compared to the previous period,
-                          reaching a total of {formatCurrency(metrics.totalSales || 0)}.
-                        </span>
-                      </li>
-                    )}
-                    
-                    {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 && (
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">Revenue Decline:</span> Your sales have decreased by {Math.abs(metrics.salesGrowth || 0).toFixed(1)}% compared to the previous period.
-                          Consider reviewing your marketing strategy and product offerings.
-                        </span>
-                      </li>
-                    )}
-                    
-                    {hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth > 5 && (
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">AOV Improvement:</span> Your average order value has increased by {(metrics.aovGrowth || 0).toFixed(1)}% to {formatCurrency(metrics.averageOrderValue || 0)},
-                          indicating successful upselling or higher-value product purchases.
-                        </span>
-                      </li>
-                    )}
-                    
-                    {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.01 && (
-                      <li className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="font-medium">Low Click-Through Rate:</span> Your CTR is currently {((metrics.ctr || 0) * 100).toFixed(2)}%, which is below industry average.
-                          Consider testing new ad creatives and messaging to improve engagement.
-                        </span>
-                      </li>
-                    )}
-                  </ul>
+                <h3 className="text-lg font-semibold text-white mb-3">Executive Summary</h3>
+                <div className="bg-[#1A1A1A] border border-[#333] rounded-md p-4">
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    {generatePerformanceInsights()}
+                  </p>
+                  
+                  {/* Key Takeaways */}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-white mb-2">Key Takeaways:</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                      {hasShopify && metrics.salesGrowth !== undefined && (
+                        <li>
+                          {metrics.salesGrowth > 0 
+                            ? `Revenue is growing at ${metrics.salesGrowth.toFixed(1)}%, indicating positive business momentum.` 
+                            : `Revenue has decreased by ${Math.abs(metrics.salesGrowth).toFixed(1)}%, requiring attention to sales strategies.`}
+                        </li>
+                      )}
+                      
+                      {hasShopify && metrics.aovGrowth !== undefined && (
+                        <li>
+                          {metrics.aovGrowth > 0 
+                            ? `Average order value increased by ${metrics.aovGrowth.toFixed(1)}%, suggesting successful upselling or higher-value product sales.` 
+                            : `Average order value decreased by ${Math.abs(metrics.aovGrowth).toFixed(1)}%, indicating potential pricing or product mix issues.`}
+                        </li>
+                      )}
+                      
+                      {hasMeta && metrics.roas !== undefined && (
+                        <li>
+                          {metrics.roas > 2 
+                            ? `ROAS of ${metrics.roas.toFixed(2)}x shows strong advertising efficiency.` 
+                            : metrics.roas > 1 
+                              ? `ROAS of ${metrics.roas.toFixed(2)}x is profitable but has room for optimization.` 
+                              : `ROAS of ${metrics.roas.toFixed(2)}x indicates unprofitable ad spend requiring immediate attention.`}
+                        </li>
+                      )}
+                      
+                      {hasMeta && metrics.ctr !== undefined && (
+                        <li>
+                          {metrics.ctr > 0.02 
+                            ? `CTR of ${(metrics.ctr * 100).toFixed(2)}% is above industry average, indicating strong creative and targeting.` 
+                            : `CTR of ${(metrics.ctr * 100).toFixed(2)}% suggests opportunity to improve ad creative and audience targeting.`}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
               </div>
               
@@ -596,53 +661,59 @@ export function OverviewTab({
               {/* Audience Performance Insights */}
               {hasMeta && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-3">
-                    <span className="bg-blue-500 text-white w-5 h-5 rounded-md flex items-center justify-center text-xs">3</span>
-                    Audience Performance Insights
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <span className="text-green-400">●</span> Performance Analysis:
-                      </h4>
-                      <ul className="space-y-2 text-sm pl-6">
-                        <li className="text-gray-300">
-                          Your Meta ads are currently achieving a ROAS of {metrics.roas !== undefined ? (metrics.roas || 0).toFixed(2) + "x" : "N/A"} with a CPA of {formatCurrency(metrics.costPerResult || 0)}.
-                        </li>
-                        <li className="text-gray-300">
-                          Click-through rate is {metrics.ctr !== undefined ? ((metrics.ctr || 0) * 100).toFixed(2) + "%" : "N/A"}, which is 
-                          {metrics.ctr !== undefined ? (metrics.ctr > 0.01 ? " good for e-commerce ads" : " below the recommended 1% benchmark") : ""}
-                        </li>
-                        {metrics.impressions !== undefined && (
-                          <li className="text-gray-300">
-                            Your ads received {metrics.impressions.toLocaleString()} impressions, 
-                            {metrics.impressionGrowth !== undefined ? (metrics.impressionGrowth > 0 
-                              ? ` which is ${(metrics.impressionGrowth || 0).toFixed(1)}% higher than the previous period.` 
-                              : ` which is ${Math.abs(metrics.impressionGrowth || 0).toFixed(1)}% lower than the previous period.`) : ""}
-                          </li>
+                  <h3 className="text-lg font-semibold text-white mb-3">Audience Performance Insights</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Performance Analysis */}
+                    <div className="bg-[#1A1A1A] border border-[#333] rounded-md p-4">
+                      <h4 className="text-sm font-semibold text-white mb-2">Performance Analysis</h4>
+                      <p className="text-sm text-gray-300 mb-3">
+                        Your current ROAS is {(metrics.roas || 0).toFixed(2)}x with a CPA of ${(metrics.costPerResult || 0).toFixed(2)}. 
+                        {metrics.ctr !== undefined && (
+                          <> Your CTR of {(metrics.ctr * 100).toFixed(2)}% is {metrics.ctr > 0.02 ? 'above' : metrics.ctr > 0.01 ? 'at' : 'below'} the recommended benchmark.</>
+                        )}
+                      </p>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                        {metrics.roas !== undefined && metrics.roas > 2 && (
+                          <li>Your top-performing campaigns are delivering strong returns, with ROAS exceeding 2x benchmark.</li>
+                        )}
+                        {metrics.impressions !== undefined && metrics.impressions > 0 && (
+                          <li>Your ads reached approximately {metrics.impressions.toLocaleString()} potential customers during this period.</li>
+                        )}
+                        {metrics.clicks !== undefined && metrics.clicks > 0 && (
+                          <li>Generated {metrics.clicks.toLocaleString()} clicks, driving targeted traffic to your store.</li>
+                        )}
+                        {metrics.conversions !== undefined && metrics.conversions > 0 && (
+                          <li>Achieved {metrics.conversions} conversions from Meta ad campaigns.</li>
                         )}
                       </ul>
                     </div>
                     
-                    <div>
-                      <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                        <span className="text-amber-400">⚠</span> Areas for Improvement:
-                      </h4>
-                      <ul className="space-y-2 text-sm pl-6">
-                        {metrics.ctr !== undefined && metrics.ctr < 0.01 && (
-                          <li className="text-gray-300">
-                            <span className="font-medium">Low CTR:</span> Your click-through rate is below 1%, suggesting that your ad creative or targeting may need optimization.
+                    {/* Areas for Improvement */}
+                    <div className="bg-[#1A1A1A] border border-[#333] rounded-md p-4">
+                      <h4 className="text-sm font-semibold text-white mb-2">Areas for Improvement</h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                        {metrics.ctr !== undefined && metrics.ctr < 0.015 && (
+                          <li>
+                            <span className="font-medium text-amber-400">Low CTR:</span> Your click-through rate of {(metrics.ctr * 100).toFixed(2)}% 
+                            is below optimal levels. Consider refreshing ad creative and refining audience targeting.
                           </li>
                         )}
                         {metrics.roas !== undefined && metrics.roas < 2 && (
-                          <li className="text-gray-300">
-                            <span className="font-medium">ROAS Optimization:</span> Your return on ad spend is below the target of 2.0x. Consider reviewing your campaign structure and audience targeting.
+                          <li>
+                            <span className="font-medium text-amber-400">ROAS Optimization:</span> Current return of {metrics.roas.toFixed(2)}x 
+                            {metrics.roas < 1 ? ' is unprofitable and' : ''} requires campaign restructuring to improve efficiency.
                           </li>
                         )}
                         {metrics.costPerResult !== undefined && metrics.costPerResult > 30 && (
-                          <li className="text-gray-300">
-                            <span className="font-medium">High CPA:</span> Your cost per acquisition is {formatCurrency(metrics.costPerResult)}, which may be impacting your overall profitability.
+                          <li>
+                            <span className="font-medium text-amber-400">High CPA:</span> Cost per acquisition of ${metrics.costPerResult.toFixed(2)} 
+                            is above target. Focus on improving conversion rate optimization and audience refinement.
+                          </li>
+                        )}
+                        {metrics.impressions !== undefined && metrics.impressionGrowth !== undefined && metrics.impressionGrowth < 0 && (
+                          <li>
+                            <span className="font-medium text-amber-400">Declining Reach:</span> Impressions decreased by {Math.abs(metrics.impressionGrowth).toFixed(1)}%. 
+                            Consider expanding audience targeting or increasing budget to maintain visibility.
                           </li>
                         )}
                       </ul>
@@ -654,24 +725,49 @@ export function OverviewTab({
               {/* Budget Allocation & Scaling Insights */}
               {hasMeta && (
                 <div>
-                  <h3 className="text-md font-medium flex items-center gap-2 mb-3">
-                    <span className="bg-blue-500 text-white w-5 h-5 rounded-md flex items-center justify-center text-xs">4</span>
-                    Budget Allocation & Scaling Insights
-                  </h3>
-                  
-                  <div className="bg-[#222] rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-gray-300 text-sm">Total Budget Spent: {formatCurrency(metrics.adSpend || 0)}</span>
-                    </div>
-                    <div className="text-gray-300 text-sm">
-                      <span className="font-medium">Budget Efficiency:</span> {
-                        metrics.roas !== undefined ? (metrics.roas > 3 
-                          ? "Your ad spend is highly efficient with strong ROAS. Consider scaling your budget to capture more market share."
-                          : metrics.roas > 2
-                            ? "Your ad spend is performing well. Maintain current budget levels while optimizing underperforming campaigns."
-                            : "Your ad spend efficiency needs improvement. Focus on optimizing campaigns before increasing budget."
-                        ) : "Connect your platforms to see budget efficiency insights."
-                      }
+                  <h3 className="text-lg font-semibold text-white mb-3">Budget Allocation & Scaling Insights</h3>
+                  <div className="bg-[#1A1A1A] border border-[#333] rounded-md p-4">
+                    <p className="text-sm text-gray-300 mb-3">
+                      Total budget spent this period: {formatCurrency(metrics.adSpend || 0)}. 
+                      Budget efficiency is {metrics.roas !== undefined && metrics.roas > 2 ? 'excellent' : metrics.roas !== undefined && metrics.roas > 1 ? 'acceptable' : 'concerning'} 
+                      with a ROAS of {(metrics.roas || 0).toFixed(2)}x.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-white mb-2">Budget Recommendations</h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                          {metrics.roas !== undefined && metrics.roas > 3 && (
+                            <li>
+                              <span className="font-medium text-green-400">Scaling Opportunity:</span> With ROAS exceeding 3x, 
+                              consider increasing budget by 15-25% to capitalize on high-performing campaigns.
+                            </li>
+                          )}
+                          {metrics.roas !== undefined && metrics.roas > 1.5 && metrics.roas <= 3 && (
+                            <li>
+                              <span className="font-medium text-blue-400">Maintain & Optimize:</span> Current ROAS is profitable. 
+                              Maintain budget while optimizing targeting and creative to improve efficiency.
+                            </li>
+                          )}
+                          {metrics.roas !== undefined && metrics.roas < 1.5 && (
+                            <li>
+                              <span className="font-medium text-amber-400">Restructure Required:</span> Consider reducing budget by 20-30% 
+                              while restructuring campaigns to improve performance before scaling.
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-white mb-2">Campaign Distribution</h4>
+                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-300">
+                          <li>
+                            <span className="font-medium">Prospecting vs. Retargeting:</span> Recommend 70/30 split for balanced acquisition and conversion.
+                          </li>
+                          <li>
+                            <span className="font-medium">Platform Allocation:</span> Based on current performance, focus budget on 
+                            {metrics.roas !== undefined && metrics.roas > 2 ? ' high-ROAS campaigns' : ' improving campaign structure'}.
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -679,66 +775,122 @@ export function OverviewTab({
               
               {/* Next Steps & Recommendations */}
               <div>
-                <h3 className="text-md font-medium flex items-center gap-2 mb-3">
-                  <span className="bg-blue-500 text-white w-5 h-5 rounded-md flex items-center justify-center text-xs">{hasMeta ? '5' : '3'}</span>
-                  Next Steps & Recommendations
-                </h3>
-                
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Strategic Recommendations:</h4>
-                    <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                      {hasMeta && metrics.roas !== undefined && metrics.roas > 3 && (
-                        <li>Increase ad budget by 15-20% to capitalize on strong ROAS performance</li>
-                      )}
-                      {hasMeta && metrics.roas !== undefined && metrics.roas < 2 && (
-                        <li>Review campaign structure and audience targeting to improve ROAS</li>
-                      )}
-                      {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.01 && (
-                        <li>Test new ad creatives to improve click-through rates</li>
-                      )}
-                      {hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth < 0 && (
-                        <li>Implement upsell and cross-sell strategies to increase average order value</li>
-                      )}
-                      {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 && (
-                        <li>Review product pricing and marketing strategy to address declining sales</li>
-                      )}
-                      {hasShopify && !hasMeta && (
-                        <li>Consider implementing Meta Ads to drive additional traffic and sales</li>
-                      )}
-                      {!hasShopify && !hasMeta && (
-                        <li>Connect your platforms to receive personalized recommendations</li>
-                      )}
-                    </ul>
-                  </div>
-                  
-                  {hasMeta && (
+                <h3 className="text-lg font-semibold text-white mb-3">Next Steps & Recommendations</h3>
+                <div className="bg-[#1A1A1A] border border-[#333] rounded-md p-4">
+                  <div className="space-y-4">
+                    {/* Strategic Recommendations */}
                     <div>
-                      <h4 className="text-sm font-medium mb-2">Creative Optimization:</h4>
-                      <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                        {metrics.ctr !== undefined && metrics.ctr < 0.01 && (
-                          <li>Develop new hooks and CTAs to improve engagement and click-through rates</li>
+                      <h4 className="text-sm font-semibold text-white mb-2">Strategic Recommendations</h4>
+                      <ul className="list-disc pl-5 space-y-2 text-sm text-gray-300">
+                        {hasShopify && (
+                          <>
+                            <li className="flex items-start">
+                              <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <span>
+                                <span className="font-medium text-white">Product Strategy:</span>{' '}
+                                {metrics.aovGrowth !== undefined && metrics.aovGrowth < 0 
+                                  ? 'Review product pricing and bundling strategies to increase average order value, which has declined by ' + Math.abs(metrics.aovGrowth).toFixed(1) + '%.'
+                                  : 'Continue promoting your top-selling products while introducing complementary items to increase cart value.'}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <span>
+                                <span className="font-medium text-white">Customer Retention:</span>{' '}
+                                Implement a post-purchase email sequence to encourage repeat purchases and reviews, targeting the {metrics.ordersPlaced || 0} customers who ordered this period.
+                              </span>
+                            </li>
+                          </>
                         )}
-                        <li>A/B test different ad formats (carousel vs. video vs. static images)</li>
-                        <li>Implement urgency-driven messaging (limited-time offers, bundle deals)</li>
+                        
+                        {hasMeta && (
+                          <>
+                            <li className="flex items-start">
+                              <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <span>
+                                <span className="font-medium text-white">Campaign Optimization:</span>{' '}
+                                {metrics.roas !== undefined && metrics.roas < 2 
+                                  ? 'Restructure underperforming campaigns with ROAS below 2x, focusing on audience refinement and creative testing.'
+                                  : 'Scale budget for top-performing campaigns while maintaining the current targeting strategy that\'s delivering strong results.'}
+                              </span>
+                            </li>
+                            <li className="flex items-start">
+                              <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <span>
+                                <span className="font-medium text-white">Creative Refresh:</span>{' '}
+                                {metrics.ctr !== undefined && metrics.ctr < 0.015 
+                                  ? 'Develop new ad creative to address the below-average CTR of ' + (metrics.ctr * 100).toFixed(2) + '%, focusing on stronger hooks and visuals.'
+                                  : 'Continue testing new creative variations to maintain strong engagement and prevent ad fatigue.'}
+                              </span>
+                            </li>
+                          </>
+                        )}
+                        
+                        <li className="flex items-start">
+                          <ArrowRight className="h-4 w-4 text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <span>
+                            <span className="font-medium text-white">Analytics Focus:</span>{' '}
+                            Schedule a detailed performance review to analyze customer journey touchpoints and identify conversion optimization opportunities.
+                          </span>
+                        </li>
                       </ul>
                     </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Growth Opportunities:</h4>
-                    <ul className="space-y-2 text-sm pl-6 list-disc text-gray-300">
-                      {hasMeta && (
-                        <>
-                          <li>Implement retargeting campaigns for users who didn't convert</li>
-                          <li>Build Lookalike Audiences (1%) of past customers to expand reach</li>
-                        </>
-                      )}
-                      <li>Utilize email/SMS marketing to boost conversion rates</li>
-                      {hasShopify && (
-                        <li>Optimize product pages for higher conversion rates</li>
-                      )}
-                    </ul>
+                    
+                    {/* Action Items */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-white mb-2">Priority Action Items</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-start">
+                          <div className="bg-blue-900/30 text-blue-400 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">1</div>
+                          <div>
+                            <p className="text-sm text-white font-medium">
+                              {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 
+                                ? 'Address Revenue Decline' 
+                                : hasMeta && metrics.roas !== undefined && metrics.roas < 1.5 
+                                  ? 'Improve Ad Campaign Efficiency'
+                                  : 'Capitalize on Growth Opportunities'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {hasShopify && metrics.salesGrowth !== undefined && metrics.salesGrowth < 0 
+                                ? `Implement targeted promotions to reverse the ${Math.abs(metrics.salesGrowth).toFixed(1)}% revenue decline.` 
+                                : hasMeta && metrics.roas !== undefined && metrics.roas < 1.5 
+                                  ? `Restructure campaigns to improve the current ROAS of ${metrics.roas.toFixed(2)}x.`
+                                  : `Develop a scaling strategy to build on current performance metrics.`}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-blue-900/30 text-blue-400 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">2</div>
+                          <div>
+                            <p className="text-sm text-white font-medium">
+                              {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.015 
+                                ? 'Creative Refresh' 
+                                : hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth < 0 
+                                  ? 'Increase Average Order Value'
+                                  : 'Enhance Customer Experience'}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {hasMeta && metrics.ctr !== undefined && metrics.ctr < 0.015 
+                                ? `Develop and test new ad creative to improve the below-average CTR of ${(metrics.ctr * 100).toFixed(2)}%.` 
+                                : hasShopify && metrics.aovGrowth !== undefined && metrics.aovGrowth < 0 
+                                  ? `Implement product bundling and upsell strategies to reverse the ${Math.abs(metrics.aovGrowth).toFixed(1)}% AOV decline.`
+                                  : `Optimize the customer journey to improve conversion rates and customer satisfaction.`}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start">
+                          <div className="bg-blue-900/30 text-blue-400 rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0">3</div>
+                          <div>
+                            <p className="text-sm text-white font-medium">Schedule Strategy Review</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Book a comprehensive strategy session to analyze this period's performance and plan optimizations for the coming month.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
