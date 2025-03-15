@@ -80,25 +80,19 @@ export function OverviewTab({
         if (!item.date) return { date: new Date().toISOString(), value: 0 };
         
         try {
-          // CRITICAL FIX: We need to properly handle the timezone conversion
+          // CRITICAL FIX: We need to PRESERVE the original time from the API
+          // The issue was that we were converting the time incorrectly
           
-          // Step 1: Parse the original date string as UTC
-          // This ensures we start with the correct base time
+          // Step 1: Parse the original date string WITHOUT timezone conversion
+          // This ensures we keep the original time (1 PM)
           const originalDate = new Date(item.date);
-          console.log("Original date from API:", originalDate.toString()); // Debug log
+          console.log("Original date from API:", item.date, "parsed as:", originalDate.toString()); // Debug log
           
-          // Step 2: Create a date string that explicitly includes the user's timezone
-          // This is the key step - we need to format the date in the user's local timezone
-          const localDateString = formatInTimeZone(
-            originalDate,
-            userTimeZone,
-            "yyyy-MM-dd'T'HH:mm:ssXXX" // Include timezone offset in the string
-          );
-          console.log("Formatted local date:", localDateString); // Debug log
-          
-          // Step 3: Return the properly formatted date with the value
+          // Step 2: Just use the original ISO string directly
+          // This is the key fix - we're NOT doing any timezone conversion
+          // which was causing the time to shift from 1 PM to 7 PM
           return {
-            date: localDateString,
+            date: item.date, // Use the original date string directly
             value: item.amount || 0
           };
         } catch (error) {
