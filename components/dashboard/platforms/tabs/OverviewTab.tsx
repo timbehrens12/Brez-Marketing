@@ -12,7 +12,7 @@ import { PlatformConnection } from "@/types/platformConnection"
 import Image from "next/image"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from "@clerk/nextjs"
-import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay, isToday } from "date-fns"
+import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay, isToday, parseISO } from "date-fns"
 import { formatInTimeZone, toZonedTime } from "date-fns-tz"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -72,44 +72,35 @@ export function OverviewTab({
     
     console.log("Original revenue data:", metrics.revenueByDay);
     
+    // Get the user's timezone
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
     // Process each data point - format matches what MetricLineChart expects
     return metrics.revenueByDay.map(item => {
       if (!item.date) return { date: new Date().toISOString(), value: 0 };
       
       try {
-        // Ensure we have a proper date string in ISO format
-        let dateStr = item.date;
-        if (typeof dateStr === 'object' && dateStr !== null) {
-          // If it's a Date object, convert to ISO string
-          try {
-            dateStr = (dateStr as Date).toISOString();
-          } catch (error) {
-            console.error('Error converting date object to ISO string:', error);
-            dateStr = new Date().toISOString(); // Fallback to current date
-          }
-        } else if (typeof dateStr !== 'string') {
-          // If it's neither a string nor a Date, use current date
-          dateStr = new Date().toISOString();
-        } else {
-          // Validate the string date
-          try {
-            const testDate = new Date(dateStr);
-            if (isNaN(testDate.getTime())) {
-              console.error('Invalid date string:', dateStr);
-              dateStr = new Date().toISOString(); // Fallback to current date
-            }
-          } catch (error) {
-            console.error('Error validating date string:', error);
-            dateStr = new Date().toISOString(); // Fallback to current date
-          }
-        }
+        // Parse the original date from the API
+        const orderDate = parseISO(item.date);
         
-        // Log for debugging
-        console.log(`Processing revenue data: ${dateStr} = $${item.amount || 0}`);
+        // Convert to the user's local timezone
+        const zonedDate = toZonedTime(orderDate, userTimeZone);
+        
+        // Format directly in the target timezone for debugging
+        const localTimeStr = formatInTimeZone(orderDate, userTimeZone, 'yyyy-MM-dd HH:mm:ss');
+        
+        // Log detailed conversion information
+        console.log(`Revenue data conversion:
+          - Original ISO: ${item.date}
+          - Parsed UTC: ${format(orderDate, 'yyyy-MM-dd HH:mm:ss')}
+          - Formatted in ${userTimeZone}: ${localTimeStr}
+          - Amount: ${item.amount || 0}
+        `);
         
         // Return the data in the format expected by MetricCard
+        // IMPORTANT: Use the original date string directly to preserve the time
         return {
-          date: dateStr, // Use the ISO date string
+          date: item.date,
           value: item.amount || 0
         };
       } catch (error) {
