@@ -72,35 +72,44 @@ export function OverviewTab({
     
     console.log("Original revenue data:", metrics.revenueByDay);
     
-    // Process each data point
+    // Process each data point - format matches what MetricLineChart expects
     return metrics.revenueByDay.map(item => {
       if (!item.date) return { date: new Date().toISOString(), value: 0 };
       
       try {
-        // Parse the original date
-        const originalDate = new Date(item.date);
-        
-        // Get the hour from the date (this is the key part)
-        const hour = originalDate.getHours();
-        
-        // Format the hour as "1pm", "2pm", etc. - this is what the MetricCard component expects
-        let hourFormatted;
-        if (hour === 0) {
-          hourFormatted = "12am";
-        } else if (hour < 12) {
-          hourFormatted = `${hour}am`;
-        } else if (hour === 12) {
-          hourFormatted = "12pm";
+        // Ensure we have a proper date string in ISO format
+        let dateStr = item.date;
+        if (typeof dateStr === 'object' && dateStr !== null) {
+          // If it's a Date object, convert to ISO string
+          try {
+            dateStr = (dateStr as Date).toISOString();
+          } catch (error) {
+            console.error('Error converting date object to ISO string:', error);
+            dateStr = new Date().toISOString(); // Fallback to current date
+          }
+        } else if (typeof dateStr !== 'string') {
+          // If it's neither a string nor a Date, use current date
+          dateStr = new Date().toISOString();
         } else {
-          hourFormatted = `${hour - 12}pm`;
+          // Validate the string date
+          try {
+            const testDate = new Date(dateStr);
+            if (isNaN(testDate.getTime())) {
+              console.error('Invalid date string:', dateStr);
+              dateStr = new Date().toISOString(); // Fallback to current date
+            }
+          } catch (error) {
+            console.error('Error validating date string:', error);
+            dateStr = new Date().toISOString(); // Fallback to current date
+          }
         }
         
         // Log for debugging
-        console.log(`Processing revenue data: ${item.date}, hour: ${hour}, formatted: ${hourFormatted}`);
+        console.log(`Processing revenue data: ${dateStr} = $${item.amount || 0}`);
         
         // Return the data in the format expected by MetricCard
         return {
-          date: hourFormatted, // Use the formatted hour string
+          date: dateStr, // Use the ISO date string
           value: item.amount || 0
         };
       } catch (error) {
