@@ -73,24 +73,32 @@ export function OverviewTab({
     try {
       // Get the user's timezone
       const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log("User timezone:", userTimeZone); // Debug log
       
       // Process each data point
       return metrics.revenueByDay.map(item => {
         if (!item.date) return { date: new Date().toISOString(), value: 0 };
         
         try {
-          // CRITICAL FIX: The issue is that the date string from the API might already include timezone info
-          // We need to parse it correctly to preserve the original time
+          // CRITICAL FIX: We need to properly handle the timezone conversion
           
-          // First, create a date object from the string
-          const itemDate = new Date(item.date);
+          // Step 1: Parse the original date string as UTC
+          // This ensures we start with the correct base time
+          const originalDate = new Date(item.date);
+          console.log("Original date from API:", originalDate.toString()); // Debug log
           
-          // Format the date in ISO format with the EXACT same hour/minute/second
-          // This ensures we preserve the original time (1pm stays as 1pm)
-          const formattedDate = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}T${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}:${String(itemDate.getSeconds()).padStart(2, '0')}`;
+          // Step 2: Create a date string that explicitly includes the user's timezone
+          // This is the key step - we need to format the date in the user's local timezone
+          const localDateString = formatInTimeZone(
+            originalDate,
+            userTimeZone,
+            "yyyy-MM-dd'T'HH:mm:ssXXX" // Include timezone offset in the string
+          );
+          console.log("Formatted local date:", localDateString); // Debug log
           
+          // Step 3: Return the properly formatted date with the value
           return {
-            date: formattedDate,
+            date: localDateString,
             value: item.amount || 0
           };
         } catch (error) {
