@@ -13,6 +13,7 @@ import Image from "next/image"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useUser } from "@clerk/nextjs"
 import { format, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, subWeeks, isSameDay } from "date-fns"
+import { formatInTimeZone, toZonedTime } from "date-fns-tz"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -71,15 +72,19 @@ export function OverviewTab({
                       isSameDay(dateRange.from, new Date()) && 
                       isSameDay(dateRange.to, new Date());
       
+      // Get the user's timezone
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
       // Return data in the format expected by MetricCard
       return metrics.revenueByDay.map(item => {
         // Parse the date from the item
         const itemDate = new Date(item.date);
         
-        // For today's data, preserve the hour information
+        // For today's data, preserve the hour information and convert to user's timezone
         if (isToday) {
+          const zonedDate = toZonedTime(itemDate, userTimeZone);
           return {
-            date: format(itemDate, "yyyy-MM-dd'T'HH:mm:ss"),
+            date: formatInTimeZone(zonedDate, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
             value: item.amount || 0
           };
         }
@@ -106,7 +111,54 @@ export function OverviewTab({
       };
     }
     
-    // Use the actual date range from props
+    // For the synopsis widget, use the selected timeframe
+    if (synopsisTimeframe === 'monthly') {
+      // Use the actual date range from props if it spans roughly a month
+      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 25 && daysDiff <= 31) {
+        return {
+          from: dateRange.from,
+          to: dateRange.to,
+          label: format(dateRange.from, 'MMMM yyyy')
+        };
+      }
+      
+      // Otherwise use the current month
+      const currentMonth = new Date();
+      return {
+        from: startOfMonth(currentMonth),
+        to: endOfMonth(currentMonth),
+        label: format(currentMonth, 'MMMM yyyy')
+      };
+    } else if (synopsisTimeframe === 'weekly') {
+      // Use the actual date range from props if it spans roughly a week
+      const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff >= 5 && daysDiff <= 8) {
+        return {
+          from: dateRange.from,
+          to: dateRange.to,
+          label: `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+        };
+      }
+      
+      // Otherwise use the current week
+      const currentWeek = new Date();
+      return {
+        from: startOfWeek(currentWeek, { weekStartsOn: 1 }),
+        to: endOfWeek(currentWeek, { weekStartsOn: 1 }),
+        label: `${format(startOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d')} - ${format(endOfWeek(currentWeek, { weekStartsOn: 1 }), 'MMM d, yyyy')}`
+      };
+    } else if (synopsisTimeframe === 'daily') {
+      // Use today's date
+      const today = new Date();
+      return {
+        from: today,
+        to: today,
+        label: 'Today'
+      };
+    }
+    
+    // Default: use the actual date range from props
     return {
       from: dateRange.from,
       to: dateRange.to,
@@ -325,10 +377,17 @@ export function OverviewTab({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <Tabs value={synopsisTimeframe} onValueChange={(v) => setSynopsisTimeframe(v as any)} className="w-auto">
+                <TabsList className="bg-[#2A2A2A]">
+                  <TabsTrigger value="monthly" className="data-[state=active]:bg-blue-600">Monthly</TabsTrigger>
+                  <TabsTrigger value="weekly" className="data-[state=active]:bg-blue-600">Weekly</TabsTrigger>
+                  <TabsTrigger value="daily" className="data-[state=active]:bg-blue-600">Daily</TabsTrigger>
+                </TabsList>
+              </Tabs>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-xs h-8 bg-[#222222] border-[#333333] hover:bg-[#333333] text-gray-300"
+                className="text-xs h-8 bg-[#222222] border-[#333333] hover:bg-[#333333] text-gray-300 ml-2"
                 onClick={() => {
                   // Implement export functionality
                 }}
@@ -356,7 +415,7 @@ export function OverviewTab({
                 <div className="flex flex-col space-y-2">
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Calendar className="h-4 w-4" />
-                    <span>Reporting Period: {format(timeframe.from, 'MMM d')} – {format(timeframe.to, 'MMM d, yyyy')}</span>
+                    <span>Reporting Period: {format(getTimeframeRange().from, 'MMM d')} – {format(getTimeframeRange().to, 'MMM d, yyyy')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <span>Client Name: {brandName}</span>
