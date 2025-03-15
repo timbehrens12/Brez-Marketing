@@ -79,17 +79,18 @@ export function OverviewTab({
         if (!item.date) return { date: new Date().toISOString(), value: 0 };
         
         try {
-          // Parse the date from the item - CRITICAL: We need to preserve the original time
-          // The issue was that we were losing the hour information when formatting
+          // CRITICAL FIX: The issue is that the date string from the API might already include timezone info
+          // We need to parse it correctly to preserve the original time
+          
+          // First, create a date object from the string
           const itemDate = new Date(item.date);
           
-          // Convert to user's local timezone
-          const localDate = toZonedTime(itemDate, userTimeZone);
+          // Format the date in ISO format with the EXACT same hour/minute/second
+          // This ensures we preserve the original time (1pm stays as 1pm)
+          const formattedDate = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}T${String(itemDate.getHours()).padStart(2, '0')}:${String(itemDate.getMinutes()).padStart(2, '0')}:${String(itemDate.getSeconds()).padStart(2, '0')}`;
           
-          // ALWAYS include the full time information (hour, minute, second)
-          // This ensures the hour is preserved (e.g., 1pm stays as 1pm)
           return {
-            date: formatInTimeZone(localDate, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
+            date: formattedDate,
             value: item.amount || 0
           };
         } catch (error) {
