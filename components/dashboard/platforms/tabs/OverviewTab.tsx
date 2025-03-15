@@ -70,40 +70,20 @@ export function OverviewTab({
       return [];
     }
     
-    try {
-      // Get the user's timezone
-      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      console.log("User timezone:", userTimeZone); // Debug log
+    // CRITICAL FIX: Simply pass through the original date string from the API
+    // This matches the approach used in ShopifyTab.tsx which is working correctly
+    return metrics.revenueByDay.map(item => {
+      if (!item.date) return { date: new Date().toISOString(), value: 0 };
       
-      // Process each data point
-      return metrics.revenueByDay.map(item => {
-        if (!item.date) return { date: new Date().toISOString(), value: 0 };
-        
-        try {
-          // CRITICAL FIX: We need to PRESERVE the original time from the API
-          // The issue was that we were converting the time incorrectly
-          
-          // Step 1: Parse the original date string WITHOUT timezone conversion
-          // This ensures we keep the original time (1 PM)
-          const originalDate = new Date(item.date);
-          console.log("Original date from API:", item.date, "parsed as:", originalDate.toString()); // Debug log
-          
-          // Step 2: Just use the original ISO string directly
-          // This is the key fix - we're NOT doing any timezone conversion
-          // which was causing the time to shift from 1 PM to 7 PM
-          return {
-            date: item.date, // Use the original date string directly
-            value: item.amount || 0
-          };
-        } catch (error) {
-          console.error("Error processing date:", error, item);
-          return { date: new Date().toISOString(), value: 0 };
-        }
-      });
-    } catch (error) {
-      console.error("Error in processRevenueData:", error);
-      return [];
-    }
+      // Log for debugging
+      console.log(`Processing revenue data: ${item.date} = $${item.amount || 0}`);
+      
+      // Simply return the original date string and amount
+      return {
+        date: item.date, // Use the original date string directly without any conversion
+        value: item.amount || 0
+      };
+    });
   };
 
   // Get the timeframe range for the performance report
