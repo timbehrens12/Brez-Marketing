@@ -787,6 +787,7 @@ export default function DashboardPage() {
             initialDataLoad={initialDataLoad}
             platformStatus={activePlatforms}
             existingConnections={connections}
+            brands={brands}
           >
             <div className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -37,6 +37,7 @@ interface WidgetManagerProps {
   };
   existingConnections: PlatformConnection[];
   children?: React.ReactNode;
+  brands?: Array<{ id: string, name: string }>;
 }
 
 export function WidgetManager({ 
@@ -48,7 +49,8 @@ export function WidgetManager({
   initialDataLoad = false,
   platformStatus,
   existingConnections,
-  children
+  children,
+  brands = []
 }: WidgetManagerProps) {
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
   const [activeTab, setActiveTab] = useState<string>("shopify")
@@ -109,6 +111,7 @@ export function WidgetManager({
         brandId={brandId}
         connections={connections}
         onTabChange={handleTabChange}
+        brands={brands}
       >
         <MetricCard
           title={

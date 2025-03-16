@@ -15,6 +15,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
+import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
+import { AINotification } from "@/components/dashboard/AINotification"
 
 interface PlatformTabsProps {
   platforms: {
@@ -32,6 +34,7 @@ interface PlatformTabsProps {
   connections: PlatformConnection[]
   children?: React.ReactNode
   onTabChange?: (value: string) => void
+  brands?: Array<{ id: string, name: string }>
 }
 
 // Add type for Supabase order
@@ -55,7 +58,8 @@ export function PlatformTabs({
   brandId, 
   connections, 
   children,
-  onTabChange 
+  onTabChange,
+  brands = []
 }: PlatformTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("site")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
@@ -288,6 +292,17 @@ export function PlatformTabs({
 
       <TabsContent value="site" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg">
+          {/* Greeting Widget */}
+          <GreetingWidget 
+            brandId={brandId}
+            brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
+            metrics={safeMetrics}
+            connections={connections}
+          />
+          
+          {/* AI Notification */}
+          <AINotification lastAnalyzedDate={new Date()} />
+          
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-white">Site Overview</h3>
           </div>
