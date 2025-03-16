@@ -342,22 +342,6 @@ export function ShopifyTab({
           isRefreshingData={isRefreshingData}
         />
       </div>
-
-      {/* Revenue Calendar - Full Width */}
-      <div className="w-full">
-        <Card className="bg-[#111111] border-[#222222]">
-          <CardHeader className="py-2">
-            <CardTitle className="text-white"></CardTitle>
-          </CardHeader>
-          <CardContent className="h-[520px]">
-            <RevenueByDay 
-              data={safeMetrics.revenueByDay} 
-              brandId={brandId}
-              isRefreshing={isRefreshingData}
-            />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 } 
