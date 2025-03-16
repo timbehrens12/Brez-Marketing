@@ -9,9 +9,12 @@ import { PlatformConnection } from "@/types/platformConnection"
 import { useEffect, useState } from "react"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { defaultMetrics } from "@/lib/defaultMetrics"
-import { ShoppingBag, Facebook } from "lucide-react"
+import { ShoppingBag, Facebook, DollarSign } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { MetricCard } from "@/components/metrics/MetricCard"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 
 interface PlatformTabsProps {
   platforms: {
@@ -54,7 +57,7 @@ export function PlatformTabs({
   children,
   onTabChange 
 }: PlatformTabsProps) {
-  const [activeTab, setActiveTab] = useState<string>("shopify")
+  const [activeTab, setActiveTab] = useState<string>("site")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
@@ -91,7 +94,7 @@ export function PlatformTabs({
   };
 
   return (
-    <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
+    <Tabs defaultValue="site" className="w-full" onValueChange={handleValueChange}>
       <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
         <TooltipProvider>
           <Tooltip>
@@ -285,7 +288,58 @@ export function PlatformTabs({
 
       <TabsContent value="site" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg">
-          {/* Content will be added later */}
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-white">Site Overview</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1 mb-4">
+            <MetricCard
+              title={
+                <div className="flex items-center gap-2">
+                  <div className="relative w-4 h-4">
+                    <Image 
+                      src="https://i.imgur.com/PZCtbwG.png" 
+                      alt="Brez logo" 
+                      width={16} 
+                      height={16} 
+                      className="object-contain"
+                    />
+                  </div>
+                  <span>Total Sales</span>
+                  <DollarSign className="h-4 w-4" />
+                </div>
+              }
+              value={safeMetrics.totalSales || 0}
+              change={safeMetrics.salesGrowth || 0}
+              prefix="$"
+              valueFormat="currency"
+              data={safeMetrics.salesData || []}
+              loading={isLoading}
+              refreshing={isRefreshingData}
+              platform="shopify"
+              dateRange={dateRange}
+              infoTooltip="Total revenue from all orders in the selected period"
+              brandId={brandId}
+            />
+          </div>
+          
+          {/* Revenue Calendar - Full Width */}
+          <div className="w-full mt-6">
+            <Card className="bg-[#111111] border-[#222222]">
+              <CardHeader className="py-2">
+                <CardTitle className="text-white"></CardTitle>
+              </CardHeader>
+              <CardContent className="h-[520px]">
+                <RevenueByDay 
+                  data={(safeMetrics.revenueByDay || []).map(d => ({
+                    date: d.date,
+                    revenue: d.amount || 0
+                  }))} 
+                  brandId={brandId}
+                  isRefreshing={isRefreshingData}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </TabsContent>
 
