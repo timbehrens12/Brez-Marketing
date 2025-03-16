@@ -3,14 +3,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
 import { MetaTab } from "./tabs/MetaTab"
-import { OverviewTab } from "./tabs/OverviewTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"
 import { PlatformConnection } from "@/types/platformConnection"
 import { useEffect, useState } from "react"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { defaultMetrics } from "@/lib/defaultMetrics"
-import { ShoppingBag, Facebook, LayoutDashboard } from "lucide-react"
+import { ShoppingBag, Facebook } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -55,7 +54,7 @@ export function PlatformTabs({
   children,
   onTabChange 
 }: PlatformTabsProps) {
-  const [activeTab, setActiveTab] = useState<string>("overview")
+  const [activeTab, setActiveTab] = useState<string>("shopify")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
   const supabase = useSupabase()
   const [selectedConnection, setSelectedConnection] = useState<PlatformConnection | null>(null)
@@ -92,15 +91,15 @@ export function PlatformTabs({
   };
 
   return (
-    <Tabs defaultValue="overview" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[700px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
+    <Tabs defaultValue="shopify" className="w-full" onValueChange={handleValueChange}>
+      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <TabsTrigger 
-                value="overview" 
+                value="site" 
                 className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
-                  activeTab === "overview" 
+                  activeTab === "site" 
                     ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
                     : "hover:bg-[#222]"
                 }`}
@@ -108,29 +107,29 @@ export function PlatformTabs({
                 <div className="flex items-center justify-center">
                   <div 
                     className={`relative w-10 h-10 flex items-center justify-center ${
-                      activeTab === "overview" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(59,130,246,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(59,130,246,0.5)]"
+                      activeTab === "site" 
+                        ? "filter drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] animate-glow-pulse" 
+                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.5)]"
                     }`}
-                    style={activeTab === "overview" ? { '--glow-color': '59, 130, 246' } as React.CSSProperties : {}}
+                    style={activeTab === "site" ? { '--glow-color': '255, 255, 255' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/PZCtbwG.png" 
-                      alt="Dashboard logo" 
+                      alt="Brez Logo" 
                       width={36} 
                       height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "overview" ? "scale-110" : ""}`}
+                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "site" ? "scale-110" : ""}`}
                     />
                   </div>
                 </div>
               </TabsTrigger>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Overview</p>
+              <p>Brez</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -284,16 +283,10 @@ export function PlatformTabs({
         </TooltipProvider>
       </TabsList>
 
-      <TabsContent value="overview" className="mt-8">
-        <OverviewTab
-          brandId={brandId}
-          dateRange={dateRange}
-          metrics={safeMetrics}
-          isLoading={isLoading}
-          isRefreshingData={isRefreshingData}
-          connections={connections}
-          platformStatus={platforms}
-        />
+      <TabsContent value="site" className="mt-8">
+        <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg">
+          {/* Content will be added later */}
+        </div>
       </TabsContent>
 
       <TabsContent value="shopify" className="mt-8">
