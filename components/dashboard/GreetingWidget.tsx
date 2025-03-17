@@ -94,7 +94,7 @@ interface PerformanceReport {
   preparedBy: string
 }
 
-type ReportPeriod = 'daily' | 'weekly' | 'monthly'
+type ReportPeriod = 'daily' | 'monthly'
 
 export function GreetingWidget({ 
   brandId, 
@@ -109,24 +109,10 @@ export function GreetingWidget({
   const [isMinimized, setIsMinimized] = useState(false)
   const [periodData, setPeriodData] = useState<{
     today: PeriodMetrics,
-    week: PeriodMetrics,
     month: PeriodMetrics,
     previousMonth: PeriodMetrics
   }>({
     today: { 
-      totalSales: 0, 
-      ordersCount: 0, 
-      averageOrderValue: 0,
-      conversionRate: 0,
-      customerCount: 0,
-      newCustomers: 0,
-      returningCustomers: 0,
-      adSpend: 0,
-      roas: 0,
-      ctr: 0,
-      cpc: 0
-    },
-    week: { 
       totalSales: 0, 
       ordersCount: 0, 
       averageOrderValue: 0,
@@ -167,7 +153,6 @@ export function GreetingWidget({
     }
   })
   const [monthlyReport, setMonthlyReport] = useState<PerformanceReport | null>(null)
-  const [weeklyReport, setWeeklyReport] = useState<PerformanceReport | null>(null)
   const [dailyReport, setDailyReport] = useState<PerformanceReport | null>(null)
   const [hasEnoughData, setHasEnoughData] = useState<boolean>(true)
   const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('monthly')
@@ -200,10 +185,8 @@ export function GreetingWidget({
 
   // Calculate performance metrics
   const monthlyRevenue = periodData.month.totalSales
-  const weeklyRevenue = periodData.week.totalSales
   const dailyAverage = periodData.month.totalSales / getDaysInMonth(new Date())
-  const weeklyAverage = periodData.week.totalSales / 7
-  const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
+  const revenueGrowth = ((monthlyRevenue - dailyAverage) / dailyAverage) * 100
 
   // Set the greeting based on time of day
   useEffect(() => {
@@ -230,20 +213,6 @@ export function GreetingWidget({
       from.setHours(0, 0, 0, 0)
       to = new Date(from)
       to.setHours(23, 59, 59, 999)
-    } else if (period === 'weekly') {
-      // Last complete week (Monday-Sunday)
-      const dayOfWeek = now.getDay() // 0 is Sunday, 1 is Monday, etc.
-      const daysFromLastSunday = dayOfWeek === 0 ? 7 : dayOfWeek
-      
-      // Go back to last Sunday
-      to = new Date(now)
-      to.setDate(now.getDate() - daysFromLastSunday)
-      to.setHours(23, 59, 59, 999)
-      
-      // From last Monday (6 days before last Sunday)
-      from = new Date(to)
-      from.setDate(to.getDate() - 6)
-      from.setHours(0, 0, 0, 0)
     } else {
       // Last complete month
       const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
@@ -268,17 +237,6 @@ export function GreetingWidget({
       prevFrom.setDate(prevFrom.getDate() - 1)
       const prevTo = new Date(prevFrom)
       prevTo.setHours(23, 59, 59, 999)
-      return { from: prevFrom, to: prevTo }
-    } else if (period === 'weekly') {
-      // Week before last complete week
-      const prevTo = new Date(from)
-      prevTo.setDate(prevTo.getDate() - 1)
-      prevTo.setHours(23, 59, 59, 999)
-      
-      const prevFrom = new Date(prevTo)
-      prevFrom.setDate(prevTo.getDate() - 6)
-      prevFrom.setHours(0, 0, 0, 0)
-      
       return { from: prevFrom, to: prevTo }
     } else {
       // Month before last complete month
@@ -318,9 +276,6 @@ export function GreetingWidget({
       if (period === 'daily') {
         currentMetrics = periodData.today
         // Previous day metrics would need to be fetched
-      } else if (period === 'weekly') {
-        currentMetrics = periodData.week
-        // Previous week metrics would need to be fetched
       } else {
         currentMetrics = periodData.month
         previousMetrics = periodData.previousMonth
@@ -362,8 +317,6 @@ export function GreetingWidget({
       let dateRangeStr = ""
       if (period === 'daily') {
         dateRangeStr = `Today, ${currentPeriodDates.from.toLocaleDateString()}`
-      } else if (period === 'weekly') {
-        dateRangeStr = `Last 7 days (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
       } else {
         dateRangeStr = `${getCurrentMonthName()} (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
       }
@@ -515,31 +468,26 @@ export function GreetingWidget({
       
       // Get dates for different periods
       const dailyDates = getPeriodDates('daily')
-      const weeklyDates = getPeriodDates('weekly')
       const monthlyDates = getPeriodDates('monthly')
       const previousMonthDates = getPreviousPeriodDates('monthly')
       
       // Fetch metrics for each period
       const todayMetrics = await fetchPeriodMetrics(shopifyConnection.id, dailyDates.from, dailyDates.to)
-      const weekMetrics = await fetchPeriodMetrics(shopifyConnection.id, weeklyDates.from, weeklyDates.to)
       const monthMetrics = await fetchPeriodMetrics(shopifyConnection.id, monthlyDates.from, monthlyDates.to)
       const previousMonthMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousMonthDates.from, previousMonthDates.to)
       
       // Update state with fetched metrics
       setPeriodData({
         today: todayMetrics,
-        week: weekMetrics,
         month: monthMetrics,
         previousMonth: previousMonthMetrics
       })
       
       // Generate reports for each period
       const dailyReportData = await generateReport('daily')
-      const weeklyReportData = await generateReport('weekly')
       const monthlyReportData = await generateReport('monthly')
       
       if (dailyReportData) setDailyReport(dailyReportData)
-      if (weeklyReportData) setWeeklyReport(weeklyReportData)
       if (monthlyReportData) setMonthlyReport(monthlyReportData)
       
       setHasEnoughData(true) // We have simulated data now
@@ -601,10 +549,10 @@ export function GreetingWidget({
     
     // Overall performance assessment
     if (hasShopify) {
-      if (todayVsAverage > 10) {
-        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(todayVsAverage).toFixed(0)}% above monthly average. `
-      } else if (todayVsAverage < -10) {
-        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(todayVsAverage).toFixed(0)}% below monthly average. `
+      if (revenueGrowth > 10) {
+        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
+      } else if (revenueGrowth < -10) {
+        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
         } else {
         synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
       }
@@ -627,7 +575,7 @@ export function GreetingWidget({
     }
     
     setSynopsis(synopsisText)
-  }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, todayVsAverage])
+  }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, revenueGrowth])
 
   // Helper function to format currency
   const formatCurrency = (value: number): string => {
@@ -652,20 +600,17 @@ export function GreetingWidget({
       try {
         // Get dates for different periods
         const dailyDates = getPeriodDates('daily')
-        const weeklyDates = getPeriodDates('weekly')
         const monthlyDates = getPeriodDates('monthly')
         const previousMonthDates = getPreviousPeriodDates('monthly')
         
         // Generate simulated metrics for each period
         const todayMetrics = await fetchPeriodMetrics('simulation-id', dailyDates.from, dailyDates.to)
-        const weekMetrics = await fetchPeriodMetrics('simulation-id', weeklyDates.from, weeklyDates.to)
         const monthMetrics = await fetchPeriodMetrics('simulation-id', monthlyDates.from, monthlyDates.to)
         const previousMonthMetrics = await fetchPeriodMetrics('simulation-id', previousMonthDates.from, previousMonthDates.to)
         
         // Update state with simulated metrics
         setPeriodData({
           today: todayMetrics,
-          week: weekMetrics,
           month: monthMetrics,
           previousMonth: previousMonthMetrics
         })
@@ -679,14 +624,6 @@ export function GreetingWidget({
           conversionGrowth: 3.8
         });
         
-        const weeklyReportData = await generateSimulatedReport('weekly', weekMetrics, {
-          salesGrowth: 8.3,
-          orderGrowth: 6.7,
-          customerGrowth: 5.2,
-          roasGrowth: -1.5,
-          conversionGrowth: 2.1
-        });
-        
         const monthlyReportData = await generateSimulatedReport('monthly', monthMetrics, {
           salesGrowth: 12.4,
           orderGrowth: 10.8,
@@ -696,7 +633,6 @@ export function GreetingWidget({
         });
         
         if (dailyReportData) setDailyReport(dailyReportData);
-        if (weeklyReportData) setWeeklyReport(weeklyReportData);
         if (monthlyReportData) setMonthlyReport(monthlyReportData);
         
         // Ensure we mark data as available for the simulation
@@ -732,16 +668,6 @@ export function GreetingWidget({
     if (period === 'daily') {
       // Today's date
       dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-    } else if (period === 'weekly') {
-      // Last complete week (Monday-Sunday)
-      const dayOfWeek = now.getDay();
-      const daysFromLastSunday = dayOfWeek === 0 ? 7 : dayOfWeek;
-      const lastSunday = new Date(now);
-      lastSunday.setDate(now.getDate() - daysFromLastSunday);
-      const lastMonday = new Date(lastSunday);
-      lastMonday.setDate(lastSunday.getDate() - 6);
-      
-      dateRangeStr = `${format(lastMonday, 'MMM d')} - ${format(lastSunday, 'MMM d, yyyy')}`;
     } else {
       // Last complete month
       const lastMonth = new Date(now);
@@ -873,39 +799,40 @@ export function GreetingWidget({
   return (
     <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl md:text-3xl font-bold">{getGreeting()}, {userName}</h3>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'daily' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('daily')}
+        <div className="flex items-center space-x-4">
+          <h3 className="text-2xl md:text-3xl font-bold">{getGreeting()}, {userName}</h3>
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="text-gray-400 hover:text-white transition-colors"
           >
-            Today
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'weekly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('weekly')}
-          >
-            Last Week
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'monthly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('monthly')}
-          >
-            Last Month
-          </Button>
+            {isMinimized ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+          </button>
         </div>
+        {!isMinimized && (
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className={currentPeriod === 'daily' ? 'bg-gray-800' : ''}
+              onClick={() => setCurrentPeriod('daily')}
+            >
+              Today
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className={currentPeriod === 'monthly' ? 'bg-gray-800' : ''}
+              onClick={() => setCurrentPeriod('monthly')}
+            >
+              Monthly
+            </Button>
+          </div>
+        )}
       </div>
-      
-      {/* Subtitle showing synopsis */}
-      <p className="text-gray-400 mb-6 text-lg">{synopsis}</p>
-      
-      {!hasEnoughData ? (
+
+      {isMinimized ? (
+        <p className="text-gray-400">Performance Review</p>
+      ) : !hasEnoughData ? (
         <div className="text-center py-6">
           <p className="text-gray-400 mb-4">Limited data available to generate a complete performance report.</p>
           <div className="bg-[#222] p-4 rounded-lg mb-4">
@@ -938,255 +865,38 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'monthly' && monthlyReport ? (
         <div>
-          {/* Report header with client info and prepared by */}
-          <div className="mb-6 border-b border-gray-800 pb-4">
-            <div className="flex items-center mb-1 text-blue-400">
-              <span className="mr-3 text-gray-500">📊</span>
-              <span>Reporting Period: {monthlyReport.dateRange}</span>
-            </div>
-            <div className="flex items-center mb-1 text-purple-400">
-              <span className="mr-3 text-gray-500">👤</span>
-              <span>Client Name: {monthlyReport.clientName}</span>
-            </div>
-            <div className="flex items-center text-gray-400">
-              <span className="mr-3 text-gray-500">👨‍💻</span>
-              <span>Prepared By: {monthlyReport.preparedBy}</span>
-            </div>
-          </div>
-          
-          <h4 className="text-xl font-bold mb-4">Executive Summary</h4>
+          <h4 className="text-xl font-bold mb-4">Monthly Performance Overview</h4>
           <p className="text-gray-400 mb-6">
-            Over the last 30 days, we generated {monthlyReport.totalPurchases} total purchases across various campaigns, with an 
-            average ROAS of {monthlyReport.averageRoas.toFixed(2)}x and a total ad spend of ${monthlyReport.totalAdSpend.toFixed(2)}.
-          </p>
-          
-          <div className="mb-6">
-            <h5 className="font-medium mb-3 text-lg">Key takeaways:</h5>
-            <ul className="space-y-3">
-              <li className="flex items-start">
-                <span className="text-green-500 font-medium mr-2">✓</span>
-                <div>
-                  <span className="font-medium">Best Performing Campaign:</span> {monthlyReport.bestCampaign.name} (ROAS {monthlyReport.bestCampaign.roas.toFixed(2)}x, CPA ${monthlyReport.bestCampaign.cpa.toFixed(2)})
-                </div>
-              </li>
-              <li className="flex items-start">
-                <span className="text-red-500 font-medium mr-2">⚠</span>
-                <div>
-                  <span className="font-medium">Underperforming Campaign:</span> {monthlyReport.underperformingCampaign.name} (ROAS {monthlyReport.underperformingCampaign.roas.toFixed(2)}x, CPA ${monthlyReport.underperformingCampaign.cpa.toFixed(2)})
-                </div>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-500 font-medium mr-2">→</span>
-                <div>
-                  <span className="font-medium">Scaling Opportunity:</span> {monthlyReport.scalingOpportunities[0].name} are performing at a {monthlyReport.scalingOpportunities[0].roas.toFixed(2)}x ROAS, indicating room for optimization
-                </div>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h5 className="font-medium mb-3 text-lg">Key Performance Metrics</h5>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="text-left text-gray-400 pb-2">Metric</th>
-                      <th className="text-right text-gray-400 pb-2">This Month</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Total Ad Spend</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${monthlyReport.totalAdSpend.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Revenue Generated</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${monthlyReport.revenueGenerated.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">ROAS (Return on Ad Spend)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{monthlyReport.averageRoas.toFixed(2)}x</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Click Through Rate (CTR)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{monthlyReport.ctr.toFixed(2)}%</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Cost Per Acquisition (CPA)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${(monthlyReport.totalAdSpend / monthlyReport.totalPurchases).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">New Customers Acquired</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{monthlyReport.newCustomersAcquired}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3 text-lg">Audience Performance Insights</h5>
-              <div className="bg-[#222] p-4 rounded-lg space-y-4">
-                <div>
-                  <h6 className="text-sm font-medium mb-2">Best Performing Audiences:</h6>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <span className="text-green-500 mr-2">•</span>
-                      <div className="flex-1">
-                        <span className="font-medium">{monthlyReport.audienceInsights[0].name}</span> has the highest ROAS ({monthlyReport.audienceInsights[0].roas}x) and lowest CPA (${monthlyReport.audienceInsights[0].cpa}). {monthlyReport.audienceInsights[0].note}
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-blue-500 mr-2">•</span>
-                      <div className="flex-1">
-                        <span className="font-medium">{monthlyReport.audienceInsights[1].name}</span> campaigns are performing decently with a {monthlyReport.audienceInsights[1].roas}x ROAS, {monthlyReport.audienceInsights[1].note}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h6 className="text-sm font-medium mb-2">Low-Performing Audiences:</h6>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <span className="text-red-500 mr-2">×</span>
-                      <div className="flex-1">
-                        <span className="font-medium">{monthlyReport.audienceInsights[2].name}</span> campaigns have a high CPA (${monthlyReport.audienceInsights[2].cpa}) and low ROAS ({monthlyReport.audienceInsights[2].roas}x). {monthlyReport.audienceInsights[2].note}
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <span className="text-yellow-500 mr-2">!</span>
-                      <div className="flex-1">
-                        <span className="font-medium">{monthlyReport.audienceInsights[3].name}</span> are mixed, with {monthlyReport.audienceInsights[3].note}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-6">
-            <h5 className="font-medium mb-3 text-lg">Overall Client Impact & ROI</h5>
-            <div className="space-y-3">
-              <div className="flex items-start">
-                <span className="text-blue-400 mr-2">📊</span>
-                <div>
-                  <span className="font-medium">Total Revenue Generated:</span> ${monthlyReport.revenueGenerated.toFixed(2)}
-                </div>
-              </div>
-              <div className="flex items-start">
-                <span className="text-green-400 mr-2">🏆</span>
-                <div>
-                  <span className="font-medium">Biggest Win:</span> {monthlyReport.bestCampaign.name} campaign dominating at {monthlyReport.bestCampaign.roas.toFixed(2)}x ROAS with the lowest CPA
-                </div>
-              </div>
-              <div className="flex items-start">
-                <span className="text-red-400 mr-2">⚠</span>
-                <div>
-                  <span className="font-medium">Biggest Challenge:</span> High CPA in {monthlyReport.underperformingCampaign.name} and low CTR (&lt;1%) across campaigns, indicating a need for better hooks and creative testing
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
-            <div className="space-y-4">
-              <div>
-                <h6 className="font-medium mb-2">Scaling Plan:</h6>
-                <ul className="space-y-2">
-                  {monthlyReport.nextSteps.slice(0, 3).map((step, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300">{step}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h6 className="font-medium mb-2">Creative Direction:</h6>
-                <ul className="space-y-2">
-                  {monthlyReport.nextSteps.slice(3, 6).map((step, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300">{step}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div>
-                <h6 className="font-medium mb-2">Additional Growth Strategies:</h6>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300">Implement retargeting campaigns for users who didn't convert</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300">Build Lookalike Audiences (1%) of past customers to expand reach</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300">Utilize email/SMS marketing to boost conversion rates</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'weekly' && weeklyReport ? (
-        <div>
-          {/* Report header with client info and prepared by */}
-          <div className="mb-6 border-b border-gray-800 pb-4">
-            <div className="flex items-center mb-1 text-blue-400">
-              <span className="mr-3 text-gray-500">📊</span>
-              <span>Reporting Period: {weeklyReport.dateRange}</span>
-            </div>
-            <div className="flex items-center mb-1 text-purple-400">
-              <span className="mr-3 text-gray-500">👤</span>
-              <span>Client Name: {weeklyReport.clientName}</span>
-            </div>
-            <div className="flex items-center text-gray-400">
-              <span className="mr-3 text-gray-500">👨‍💻</span>
-              <span>Prepared By: {weeklyReport.preparedBy}</span>
-            </div>
-          </div>
-          
-          <h4 className="text-xl font-bold mb-4">Weekly Performance Review</h4>
-          <p className="text-gray-400 mb-6">
-            Here's how your store performed last week compared to the previous week.
+            Here's your store's performance for {monthlyReport.dateRange}, with insights and recommendations.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(weeklyReport.revenueGenerated)}</p>
-              {weeklyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.salesGrowth).toFixed(1)}% from previous week
+              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
+              {monthlyReport.periodComparison.salesGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from last month
                 </p>
               )}
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.totalPurchases}</p>
-              {weeklyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.orderGrowth).toFixed(1)}% from previous week
+              <h5 className="text-sm text-gray-400 mb-1">ROAS</h5>
+              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(2)}x</p>
+              {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from last month
                 </p>
               )}
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.averageRoas.toFixed(1)}x</p>
-              {weeklyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.roasGrowth).toFixed(1)}% from previous week
+              <h5 className="text-sm text-gray-400 mb-1">New Customers</h5>
+              <p className="text-2xl font-semibold">{monthlyReport.newCustomersAcquired}</p>
+              {monthlyReport.periodComparison.customerGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.customerGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.customerGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.customerGrowth).toFixed(1)}% from last month
                 </p>
               )}
             </div>
@@ -1194,139 +904,76 @@ export function GreetingWidget({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3 text-lg">Key Performance Metrics</h5>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="text-left text-gray-400 pb-2">Metric</th>
-                      <th className="text-right text-gray-400 pb-2">This Week</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Total Ad Spend</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${weeklyReport.totalAdSpend.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Revenue Generated</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${weeklyReport.revenueGenerated.toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">ROAS (Return on Ad Spend)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.averageRoas.toFixed(2)}x</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Click Through Rate (CTR)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.ctr.toFixed(2)}%</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">Cost Per Acquisition (CPA)</td>
-                      <td className="py-2 border-t border-gray-800 text-right">${(weeklyReport.totalAdSpend / weeklyReport.totalPurchases).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 border-t border-gray-800">New Customers Acquired</td>
-                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.newCustomersAcquired}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <div>
               <h5 className="font-medium mb-3 text-lg">Campaign Performance</h5>
               <div className="bg-[#222] p-4 rounded-lg space-y-4">
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{weeklyReport.bestCampaign.name}</span>
-                    <span className="text-sm text-green-500">ROAS: {weeklyReport.bestCampaign.roas.toFixed(2)}x</span>
+                    <span className="text-sm font-medium">{monthlyReport.bestCampaign.name}</span>
+                    <span className="text-sm text-green-500">ROAS: {monthlyReport.bestCampaign.roas.toFixed(2)}x</span>
                   </div>
                   <div className="w-full bg-gray-700 h-2 rounded-full">
                     <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
                   </div>
                   <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>CPA: ${weeklyReport.bestCampaign.cpa.toFixed(2)}</span>
-                    <span>CTR: {weeklyReport.bestCampaign.ctr?.toFixed(2)}%</span>
+                    <span>CPA: ${monthlyReport.bestCampaign.cpa.toFixed(2)}</span>
+                    <span>CTR: {monthlyReport.bestCampaign.ctr?.toFixed(2)}%</span>
                   </div>
                 </div>
                 
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Retargeting - Abandoned Cart</span>
-                    <span className="text-sm text-green-500">ROAS: 2.8x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '73%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{weeklyReport.underperformingCampaign.name}</span>
-                    <span className="text-sm text-red-500">ROAS: {weeklyReport.underperformingCampaign.roas.toFixed(2)}x</span>
+                    <span className="text-sm font-medium">{monthlyReport.underperformingCampaign.name}</span>
+                    <span className="text-sm text-red-500">ROAS: {monthlyReport.underperformingCampaign.roas.toFixed(2)}x</span>
                   </div>
                   <div className="w-full bg-gray-700 h-2 rounded-full">
                     <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
                   </div>
                   <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>CPA: ${weeklyReport.underperformingCampaign.cpa.toFixed(2)}</span>
-                    <span>CTR: {weeklyReport.underperformingCampaign.ctr?.toFixed(2)}%</span>
+                    <span>CPA: ${monthlyReport.underperformingCampaign.cpa.toFixed(2)}</span>
+                    <span>CTR: {monthlyReport.underperformingCampaign.ctr?.toFixed(2)}%</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div className="mb-6">
-            <h5 className="font-medium mb-3 text-lg">Audience Performance Insights</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-3">Best Performing Audiences</h6>
-                <div className="space-y-3">
-                  {weeklyReport.audienceInsights.slice(0, 2).map((insight, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className={`${index === 0 ? 'text-green-500' : 'text-blue-500'} mr-2`}>•</span>
-                      <div>
-                        <span className="font-medium">{insight.name}</span>
-                        {insight.roas && <span className="text-sm text-gray-400 ml-1">(ROAS: {insight.roas.toFixed(2)}x)</span>}
-                        {insight.note && <p className="text-xs text-gray-400 mt-0.5">{insight.note}</p>}
-                      </div>
+            
+            <div>
+              <h5 className="font-medium mb-3 text-lg">Audience Insights</h5>
+              <div className="bg-[#222] p-4 rounded-lg space-y-4">
+                {monthlyReport.audienceInsights.slice(0, 3).map((insight, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">{insight.name}</span>
+                      {insight.roas && (
+                        <span className={`text-sm ${insight.performance === 'Best Performing' ? 'text-green-500' : insight.performance === 'Underperforming' ? 'text-red-500' : 'text-blue-500'}`}>
+                          ROAS: {insight.roas.toFixed(2)}x
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-3">Top Recommendations</h6>
-                <div className="space-y-2">
-                  {weeklyReport.nextSteps.slice(0, 3).map((step, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-sm text-gray-300">{step}</span>
-                    </div>
-                  ))}
-                </div>
+                    <p className="text-xs text-gray-400">{insight.note}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-3 text-lg text-blue-400">Week-over-Week Insights</h5>
+            <h5 className="font-medium mb-3 text-lg text-blue-400">Recommendations & Next Steps</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-3">Key Takeaways</h6>
+                <h6 className="text-sm font-medium mb-3">Strategic Actions</h6>
                 <ul className="space-y-2">
-                  {weeklyReport.takeaways.slice(0, 3).map((takeaway, index) => (
+                  {monthlyReport.nextSteps.slice(0, 3).map((step, index) => (
                     <li key={index} className="flex items-start">
                       <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-sm text-gray-300">{takeaway}</span>
+                      <span className="text-sm text-gray-300">{step}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-3">Ad Creative Suggestions</h6>
+                <h6 className="text-sm font-medium mb-3">Creative Optimization</h6>
                 <ul className="space-y-2">
-                  {weeklyReport.adCreativeSuggestions.slice(0, 3).map((suggestion, index) => (
+                  {monthlyReport.adCreativeSuggestions.slice(0, 3).map((suggestion, index) => (
                     <li key={index} className="flex items-start">
                       <span className="text-blue-400 mr-2">•</span>
                       <span className="text-sm text-gray-300">{suggestion}</span>
@@ -1339,22 +986,6 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
-          {/* Report header with client info and prepared by */}
-          <div className="mb-6 border-b border-gray-800 pb-4">
-            <div className="flex items-center mb-1 text-blue-400">
-              <span className="mr-3 text-gray-500">📊</span>
-              <span>Reporting Period: {dailyReport.dateRange}</span>
-            </div>
-            <div className="flex items-center mb-1 text-purple-400">
-              <span className="mr-3 text-gray-500">👤</span>
-              <span>Client Name: {dailyReport.clientName}</span>
-            </div>
-            <div className="flex items-center text-gray-400">
-              <span className="mr-3 text-gray-500">👨‍💻</span>
-              <span>Prepared By: {dailyReport.preparedBy}</span>
-            </div>
-          </div>
-          
           <h4 className="text-xl font-bold mb-4">Today's Performance</h4>
           <p className="text-gray-400 mb-4">
             Here's how your store is performing today compared to yesterday.
@@ -1365,17 +996,17 @@ export function GreetingWidget({
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+              <h5 className="text-sm text-gray-400 mb-1">Today's Revenue</h5>
               <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
               {dailyReport.periodComparison.salesGrowth !== 0 && (
                 <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% vs yesterday
                 </p>
               )}
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+              <h5 className="text-sm text-gray-400 mb-1">Orders Today</h5>
               <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
               <div className="flex items-center mt-1">
                 <div className="h-2 w-full bg-gray-700 rounded-full">
@@ -1411,53 +1042,8 @@ export function GreetingWidget({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3 text-lg">Today vs. Yesterday</h5>
-              <div className="bg-[#222] p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Revenue</span>
-                  <div className="text-right">
-                    <span className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</span>
-                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Orders</span>
-                  <div className="text-right">
-                    <span className="text-sm font-medium">{dailyReport.totalPurchases}</span>
-                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Ad Spend</span>
-                  <div className="text-right">
-                    <span className="text-sm font-medium">${dailyReport.totalAdSpend.toFixed(2)}</span>
-                    <span className="text-xs ml-2 text-blue-400">
-                      {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">ROAS</span>
-                  <div className="text-right">
-                    <span className="text-sm font-medium">{dailyReport.averageRoas.toFixed(2)}x</span>
-                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3 text-lg">Campaign Insights</h5>
-              <div className="bg-[#222] p-4 rounded-lg space-y-3">
+              <h5 className="font-medium mb-3 text-lg">Campaign Performance Today</h5>
+              <div className="bg-[#222] p-4 rounded-lg space-y-4">
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-medium">{dailyReport.bestCampaign.name}</span>
@@ -1465,16 +1051,6 @@ export function GreetingWidget({
                   </div>
                   <div className="w-full bg-gray-700 h-2 rounded-full">
                     <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{dailyReport.scalingOpportunities[0].name}</span>
-                    <span className="text-sm text-blue-500">ROAS: {dailyReport.scalingOpportunities[0].roas.toFixed(2)}x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
                   </div>
                 </div>
                 
@@ -1489,24 +1065,27 @@ export function GreetingWidget({
                 </div>
               </div>
             </div>
+            
+            <div>
+              <h5 className="font-medium mb-3 text-lg">Quick Actions</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <div className="space-y-3">
+                  {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
+                    <div key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-sm text-gray-300">{recommendation}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-3 text-lg text-blue-400">Today's Recommendations</h5>
+            <h5 className="font-medium mb-3 text-lg text-blue-400">Today's Highlights</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-2">Immediate Actions</h6>
-                <ul className="space-y-2">
-                  {dailyReport.recommendations.slice(0, 3).map((recommendation, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-sm text-gray-300">{recommendation}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-2">Top Products Today</h6>
+                <h6 className="text-sm font-medium mb-2">Top Performing Products</h6>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Summer T-Shirt Collection</span>
@@ -1522,11 +1101,29 @@ export function GreetingWidget({
                   </div>
                 </div>
               </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-2">Key Metrics vs Yesterday</h6>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Conversion Rate</span>
+                    <span className={dailyReport.periodComparison.conversionGrowth > 0 ? 'text-green-500' : 'text-red-500'}>
+                      {dailyReport.periodComparison.conversionGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.conversionGrowth).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Average Order Value</span>
+                    <span>${(dailyReport.revenueGenerated / dailyReport.totalPurchases).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Total Ad Spend</span>
+                    <span>${dailyReport.totalAdSpend.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       ) : (
-        // Fallback when no report is available for the selected period
         <div className="text-center py-6">
           <p className="text-gray-400 mb-4">No data available for the selected period.</p>
           <p className="text-gray-500 text-sm">
