@@ -203,7 +203,6 @@ export function GreetingWidget({
   const weeklyRevenue = periodData.week.totalSales
   const dailyAverage = periodData.month.totalSales / getDaysInMonth(new Date())
   const weeklyAverage = periodData.week.totalSales / 7
-  const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
   const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
 
   // Set the greeting based on time of day
@@ -602,10 +601,10 @@ export function GreetingWidget({
     
     // Overall performance assessment
     if (hasShopify) {
-      if (revenueGrowth > 10) {
-        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
-      } else if (revenueGrowth < -10) {
-        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
+      if (todayVsAverage > 10) {
+        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(todayVsAverage).toFixed(0)}% above monthly average. `
+      } else if (todayVsAverage < -10) {
+        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(todayVsAverage).toFixed(0)}% below monthly average. `
         } else {
         synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
       }
@@ -628,7 +627,7 @@ export function GreetingWidget({
     }
     
     setSynopsis(synopsisText)
-  }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, revenueGrowth])
+  }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, todayVsAverage])
 
   // Helper function to format currency
   const formatCurrency = (value: number): string => {
