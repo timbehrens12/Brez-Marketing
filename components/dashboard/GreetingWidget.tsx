@@ -40,6 +40,42 @@ interface PerformanceReport {
   totalAdSpend: number
   averageRoas: number
   revenueGenerated: number
+  
+  // Platform-specific data
+  platformRevenue: {
+    meta: number
+    shopify: number
+    google?: number
+    tiktok?: number
+    organic?: number
+  }
+  platformAdSpend: {
+    meta: number
+    google?: number
+    tiktok?: number
+    total: number
+  }
+  
+  // Multiple wins and challenges
+  bestCampaigns: {
+    name: string
+    roas: number
+    cpa: number
+    ctr?: number
+    conversions?: number
+    platform: string
+  }[]
+  
+  underperformingCampaigns: {
+    name: string
+    roas: number
+    cpa: number
+    ctr?: number
+    conversions?: number
+    platform: string
+  }[]
+  
+  // For backward compatibility
   bestCampaign: {
     name: string
     roas: number
@@ -54,6 +90,7 @@ interface PerformanceReport {
     ctr?: number
     conversions?: number
   }
+  
   bestAudience: {
     name: string
     roas: number
@@ -92,6 +129,9 @@ interface PerformanceReport {
   }
   clientName: string
   preparedBy: string
+  
+  // AI analysis flag to show this is AI-generated
+  aiAnalyzed: boolean
 }
 
 type ReportPeriod = 'daily' | 'monthly'
@@ -345,6 +385,59 @@ export function GreetingWidget({
         totalAdSpend: currentMetrics.adSpend,
         averageRoas: currentMetrics.roas,
         revenueGenerated: currentMetrics.totalSales,
+        
+        // Platform specific revenue and ad spend
+        platformRevenue: {
+          meta: currentMetrics.totalSales * 0.65, // 65% from Meta
+          shopify: currentMetrics.totalSales * 0.35, // 35% direct/organic
+          google: currentMetrics.totalSales * 0.05, // 5% from Google
+          organic: currentMetrics.totalSales * 0.30 // 30% organic
+        },
+        platformAdSpend: {
+          meta: currentMetrics.adSpend * 0.85, // 85% on Meta
+          google: currentMetrics.adSpend * 0.15, // 15% on Google
+          total: currentMetrics.adSpend
+        },
+        
+        // Multiple best and underperforming campaigns
+        bestCampaigns: [
+          {
+            name: "Top Campaign",
+            roas: currentMetrics.roas * 1.2, // Example: 20% better than average
+            cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1),
+            ctr: currentMetrics.ctr * 1.15, // Example: 15% better than average
+            conversions: Math.round(currentMetrics.newCustomers * 0.7), // Example: 70% of new customers
+            platform: "Meta"
+          },
+          {
+            name: "Secondary Campaign",
+            roas: currentMetrics.roas * 1.1, // Example: 10% better than average
+            cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 0.9,
+            ctr: currentMetrics.ctr * 1.05,
+            conversions: Math.round(currentMetrics.newCustomers * 0.2),
+            platform: "Meta"
+          }
+        ],
+        underperformingCampaigns: [
+          {
+            name: "Underperforming Campaign",
+            roas: currentMetrics.roas * 0.7, // Example: 30% worse than average
+            cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 1.4, // 40% higher CPA
+            ctr: currentMetrics.ctr * 0.8, // Example: 20% worse than average
+            conversions: Math.round(currentMetrics.newCustomers * 0.2), // Example: 20% of new customers
+            platform: "Meta"
+          },
+          {
+            name: "Experimental Campaign",
+            roas: currentMetrics.roas * 0.5,
+            cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 1.8,
+            ctr: currentMetrics.ctr * 0.6,
+            conversions: Math.round(currentMetrics.newCustomers * 0.1),
+            platform: "Google"
+          }
+        ],
+        
+        // For backward compatibility
         bestCampaign: {
           name: "Top Campaign",
           roas: currentMetrics.roas * 1.2, // Example: 20% better than average
@@ -359,6 +452,7 @@ export function GreetingWidget({
           ctr: currentMetrics.ctr * 0.8, // Example: 20% worse than average
           conversions: Math.round(currentMetrics.newCustomers * 0.2) // Example: 20% of new customers
         },
+        
         bestAudience: {
           name: "Best Performing Audience",
           roas: currentMetrics.roas * 1.3, // Example: 30% better than average
@@ -383,18 +477,21 @@ export function GreetingWidget({
           conversionGrowth
         },
         clientName: "Yordy",
-        preparedBy: "Carson Knutson"
+        preparedBy: "Carson Knutson",
+        
+        // AI analysis flag to show this is AI-generated
+        aiAnalyzed: true
       }
       
       return report
-      } catch (error) {
+    } catch (error) {
       console.error(`Error generating ${period} report:`, error)
       return null
-      } finally {
-        setIsLoading(false)
-      }
+    } finally {
+      setIsLoading(false)
     }
-    
+  }
+  
   // Function to fetch metrics for a specific period - SIMULATION VERSION
   const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
     // SIMULATION CODE: Instead of actually fetching from supabase, we'll return simulated data
@@ -701,6 +798,70 @@ export function GreetingWidget({
       "Try new hooks focusing on problem/solution framework"
     ];
     
+    // Platform-specific revenue breakdown
+    const metaRevenue = metrics.totalSales * 0.65; // 65% from Meta
+    const shopifyRevenue = metrics.totalSales * 0.35; // 35% direct/organic
+    
+    // Platform-specific ad spend
+    const metaAdSpend = metrics.adSpend * 0.85; // 85% on Meta
+    const googleAdSpend = metrics.adSpend * 0.15; // 15% on Google
+    
+    // Multiple best performing campaigns
+    const bestCampaigns = [
+      {
+        name: "Brez/Yordy - Adv+ Catalog",
+        roas: 8.34,
+        cpa: 7.81,
+        ctr: 1.27,
+        conversions: Math.round(metrics.newCustomers * 0.35),
+        platform: "Meta"
+      },
+      {
+        name: "Product Collection - Carousel",
+        roas: 4.71,
+        cpa: 12.35,
+        ctr: 1.05,
+        conversions: Math.round(metrics.newCustomers * 0.25),
+        platform: "Meta"
+      },
+      {
+        name: "Branded Search Campaign",
+        roas: 6.89,
+        cpa: 8.44,
+        ctr: 3.52,
+        conversions: Math.round(metrics.newCustomers * 0.15),
+        platform: "Google"
+      }
+    ];
+    
+    // Multiple underperforming campaigns
+    const underperformingCampaigns = [
+      {
+        name: "Brez/Yordy - New Strat - ABO",
+        roas: 1.27,
+        cpa: 47.56,
+        ctr: 0.83,
+        conversions: Math.round(metrics.newCustomers * 0.12),
+        platform: "Meta"
+      },
+      {
+        name: "Cold Traffic - Interest Targeting",
+        roas: 0.88,
+        cpa: 62.15,
+        ctr: 0.64,
+        conversions: Math.round(metrics.newCustomers * 0.08),
+        platform: "Meta"
+      },
+      {
+        name: "Display Network Awareness",
+        roas: 0.52,
+        cpa: 85.73,
+        ctr: 0.31,
+        conversions: Math.round(metrics.newCustomers * 0.05),
+        platform: "Google"
+      }
+    ];
+    
     // Create the report with simulated data
     const report: PerformanceReport = {
       dateRange: dateRangeStr,
@@ -708,20 +869,28 @@ export function GreetingWidget({
       totalAdSpend: metrics.adSpend,
       averageRoas: metrics.roas,
       revenueGenerated: metrics.totalSales,
-      bestCampaign: {
-        name: "Brez/Yordy - Adv+ Catalog",
-        roas: 8.34,
-        cpa: 7.81,
-        ctr: 1.27,
-        conversions: Math.round(metrics.newCustomers * 0.35)
+      
+      // Platform specific revenue and ad spend
+      platformRevenue: {
+        meta: metaRevenue,
+        shopify: shopifyRevenue,
+        google: googleAdSpend,
+        organic: metrics.totalSales * 0.30 // 30% organic
       },
-      underperformingCampaign: {
-        name: "Brez/Yordy - New Strat - ABO",
-        roas: 1.27,
-        cpa: 47.56,
-        ctr: 0.83,
-        conversions: Math.round(metrics.newCustomers * 0.15)
+      platformAdSpend: {
+        meta: metaAdSpend,
+        google: googleAdSpend,
+        total: metrics.adSpend
       },
+      
+      // Multiple best and underperforming campaigns
+      bestCampaigns,
+      underperformingCampaigns,
+      
+      // For backward compatibility
+      bestCampaign: bestCampaigns[0],
+      underperformingCampaign: underperformingCampaigns[0],
+      
       bestAudience: {
         name: "Adv+ Catalog",
         roas: 8.34,
@@ -778,7 +947,10 @@ export function GreetingWidget({
       ],
       periodComparison: comparison,
       clientName: "Yordy",
-      preparedBy: "Carson Knutson"
+      preparedBy: "Carson Knutson",
+      
+      // Indicate that this report is AI-analyzed
+      aiAnalyzed: true
     };
     
     return report;
@@ -1030,128 +1202,196 @@ export function GreetingWidget({
             </div>
           </div>
           
-          {/* Revenue Breakdown Section */}
+          {/* Client Impact Section */}
           <div className="mb-6">
-            <h5 className="font-semibold mb-3 text-lg">Revenue & Ad Performance by Platform</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#222] p-5 rounded-xl">
-                <h6 className="text-sm font-medium text-gray-200 mb-3">Meta Ads Performance</h6>
-                <div className="space-y-4">
+            <h5 className="font-semibold mb-3 text-lg">Overall Impact & Revenue Breakdown</h5>
+            <div className="bg-[#222] p-5 rounded-xl">
+              {/* Revenue Breakdown Section */}
+              <div className="mb-6">
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Revenue by Source</h6>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-400">Revenue Generated</span>
-                      <span className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.65).toFixed(2)}</span>
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">📊</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Total Revenue</span>
                     </div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-400">Ad Spend</span>
-                      <span className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.7).toFixed(2)}</span>
+                    <p className="text-xl font-semibold text-white">${monthlyReport.revenueGenerated.toFixed(2)}</p>
+                  </div>
+                  
+                  {/* Platform-specific revenue cards */}
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">
+                          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
+                          </svg>
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Meta Revenue</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">ROAS</span>
-                      <span className="text-sm font-medium text-green-400">{(monthlyReport.averageRoas * 1.1).toFixed(2)}x</span>
+                      <p className="text-md font-semibold text-white">${monthlyReport.platformRevenue.meta.toFixed(2)}</p>
+                      <p className="text-xs text-gray-400 self-end">{((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(1)}%</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">
+                          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 108 8 8 8 0 00-8-8zm-2 12h4v-6h-4v6zm0-8h4V6h-4v2z" />
+                          </svg>
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Google Revenue</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-md font-semibold text-white">${monthlyReport.platformRevenue.google?.toFixed(2) || "0.00"}</p>
+                      <p className="text-xs text-gray-400 self-end">{((monthlyReport.platformRevenue.google || 0) / monthlyReport.revenueGenerated * 100).toFixed(1)}%</p>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">
+                          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M20.067 8.478c.492.88.556 2.014.3 3.327-.74 3.806-3.276 5.073-6.456 5.073h-.729l-1.336 7.679h-2.898l-.366-2.103h-2.798l.937-5.576h2.798l.574-3.309c-1.718-1.302-2.798-3.305-2.798-5.545C7.295 3.936 9.715 1 12.812 1c3.098 0 5.518 2.936 5.518 6.571 0 .312-.033.615-.08.907h1.817zm-8.73 11.42h3.582l.366 2.103h-3.582l-.366-2.103z" />
+                          </svg>
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Organic Revenue</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-md font-semibold text-white">${monthlyReport.platformRevenue.organic?.toFixed(2) || "0.00"}</p>
+                      <p className="text-xs text-gray-400 self-end">{((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(1)}%</p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-[#222] p-5 rounded-xl">
-                <h6 className="text-sm font-medium text-gray-200 mb-3">Google Ads Performance</h6>
-                <div className="space-y-4">
+              {/* Ad Spend Section */}
+              <div className="mb-6">
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Ad Spend Breakdown</h6>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-400">Revenue Generated</span>
-                      <span className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.35).toFixed(2)}</span>
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
+                        <span className="text-red-400">💰</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Total Ad Spend</span>
                     </div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-400">Ad Spend</span>
-                      <span className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.3).toFixed(2)}</span>
+                    <p className="text-xl font-semibold text-white">${monthlyReport.totalAdSpend.toFixed(2)}</p>
+                  </div>
+                  
+                  {/* Platform-specific ad spend cards */}
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">
+                          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z" />
+                          </svg>
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-200">Meta Ad Spend</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-400">ROAS</span>
-                      <span className="text-sm font-medium text-yellow-400">{(monthlyReport.averageRoas * 0.9).toFixed(2)}x</span>
+                      <p className="text-md font-semibold text-white">${monthlyReport.platformAdSpend.meta.toFixed(2)}</p>
+                      <p className="text-xs text-gray-400 self-end">{((monthlyReport.platformAdSpend.meta / monthlyReport.totalAdSpend) * 100).toFixed(1)}%</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Client Impact Section with Multiple Wins/Challenges */}
-          <div className="mb-6">
-            <h5 className="font-semibold mb-3 text-lg">Performance Highlights</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#222] p-5 rounded-xl">
-                <h6 className="text-sm font-medium text-gray-200 mb-3 flex items-center">
-                  <CheckCircle2 className="h-4 w-4 mr-2 text-green-400" />
-                  Top Performing Areas
-                </h6>
-                <div className="space-y-3">
+                  
                   <div className="p-3 bg-[#2A2A2A] rounded-lg">
                     <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
-                        <span className="text-green-400">🏆</span>
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                        <span className="text-blue-400">
+                          <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                            <path d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm0 2a8 8 0 108 8 8 8 0 00-8-8zm-2 12h4v-6h-4v6zm0-8h4V6h-4v2z" />
+                          </svg>
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{monthlyReport.bestCampaign.name}</p>
-                        <p className="text-xs text-gray-400">ROAS: {monthlyReport.bestCampaign.roas.toFixed(2)}x</p>
-                      </div>
+                      <span className="text-sm font-medium text-gray-200">Google Ad Spend</span>
                     </div>
-                  </div>
-                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
-                        <span className="text-green-400">📈</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">High CTR Campaigns</p>
-                        <p className="text-xs text-gray-400">CTR: {(monthlyReport.ctr * 1.2).toFixed(2)}%</p>
-                      </div>
+                    <div className="flex justify-between">
+                      <p className="text-md font-semibold text-white">${monthlyReport.platformAdSpend.google?.toFixed(2) || "0.00"}</p>
+                      <p className="text-xs text-gray-400 self-end">{((monthlyReport.platformAdSpend.google || 0) / monthlyReport.totalAdSpend * 100).toFixed(1)}%</p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-[#222] p-5 rounded-xl">
-                <h6 className="text-sm font-medium text-gray-200 mb-3 flex items-center">
-                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
-                  Areas for Improvement
-                </h6>
-                <div className="space-y-3">
-                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
-                        <span className="text-red-400">⚠</span>
+              {/* Multiple Biggest Win Section */}
+              <div className="mb-4">
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Top Performing Campaigns</h6>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {monthlyReport.bestCampaigns.map((campaign, index) => (
+                    <div key={index} className="p-3 bg-[#2A2A2A] rounded-lg">
+                      <div className="flex justify-between mb-1">
+                        <div>
+                          <span className="text-sm font-medium text-white">{campaign.name}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
+                            {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
+                          </div>
+                        </div>
+                        <span className="text-sm text-green-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{monthlyReport.underperformingCampaign.name}</p>
-                        <p className="text-xs text-gray-400">ROAS: {monthlyReport.underperformingCampaign.roas.toFixed(2)}x</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
-                        <span className="text-red-400">📉</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">Low Converting Audiences</p>
-                        <p className="text-xs text-gray-400">Conv. Rate: {(monthlyReport.conversionRate * 0.7).toFixed(2)}%</p>
+                      <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
+                        ></div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
+              
+              {/* Multiple Biggest Challenge Section */}
+              <div>
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Underperforming Campaigns</h6>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {monthlyReport.underperformingCampaigns.map((campaign, index) => (
+                    <div key={index} className="p-3 bg-[#2A2A2A] rounded-lg">
+                      <div className="flex justify-between mb-1">
+                        <div>
+                          <span className="text-sm font-medium text-white">{campaign.name}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
+                            {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
+                          </div>
+                        </div>
+                        <span className="text-sm text-red-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
+                      </div>
+                      <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                        <div 
+                          className="bg-red-500 h-2 rounded-full" 
+                          style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* AI analysis indicator */}
+              {monthlyReport.aiAnalyzed && (
+                <div className="mt-4 flex items-center justify-end text-xs text-gray-500">
+                  <Sparkles className="h-3 w-3 mr-1 text-blue-400" />
+                  Analysis powered by AI
+                </div>
+              )}
             </div>
           </div>
           
           {/* Recommendations Section */}
           <div>
-            <div className="flex justify-between items-center mb-3">
-              <h5 className="font-semibold text-lg text-blue-400">Next Steps & Recommendations</h5>
-              <Link href="/ai-dashboard" className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
-                See Full Analysis <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </div>
+            <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
             <div className="bg-[#222] p-5 rounded-xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
@@ -1199,6 +1439,18 @@ export function GreetingWidget({
                   </ul>
                 </div>
               </div>
+              
+              {/* See More Link */}
+              <div className="mt-6 text-center">
+                <Link 
+                  href="/ai-dashboard" 
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  See more AI-powered recommendations
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -1212,134 +1464,216 @@ export function GreetingWidget({
             </span>
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Today's Revenue</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
-              {dailyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% vs yesterday
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Today</h5>
-              <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
-              <div className="flex items-center mt-1">
-                <div className="h-2 w-full bg-gray-700 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-500 rounded-full" 
-                    style={{ width: `${Math.min(100, (dailyReport.totalPurchases / 20) * 100)}%` }}
-                  ></div>
+          {/* Revenue Breakdown Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Revenue cards */}
+            <div>
+              <h5 className="text-lg font-medium mb-3">Revenue</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <h6 className="text-sm text-gray-400 mb-1">Today's Revenue</h6>
+                    <p className="text-xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
+                    {dailyReport.periodComparison.salesGrowth !== 0 && (
+                      <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% vs yesterday
+                      </p>
+                    )}
+                  </div>
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <h6 className="text-sm text-gray-400 mb-1">From Ads</h6>
+                    <p className="text-xl font-semibold">{formatCurrency(dailyReport.platformRevenue?.meta || 0)}</p>
+                    <p className="text-xs text-gray-500">
+                      {((dailyReport.platformRevenue?.meta || 0) / dailyReport.revenueGenerated * 100).toFixed(0)}% of total
+                    </p>
+                  </div>
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <h6 className="text-sm text-gray-400 mb-1">Ad Spend</h6>
+                    <p className="text-xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
+                    <p className="text-xs text-gray-500">
+                      ROAS: {dailyReport.averageRoas.toFixed(1)}x
+                    </p>
+                  </div>
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <h6 className="text-sm text-gray-400 mb-1">Organic Sales</h6>
+                    <p className="text-xl font-semibold">{formatCurrency(dailyReport.platformRevenue?.organic || 0)}</p>
+                    <p className="text-xs text-gray-500">
+                      {((dailyReport.platformRevenue?.organic || 0) / dailyReport.revenueGenerated * 100).toFixed(0)}% of total
+                    </p>
+                  </div>
                 </div>
-                <span className="ml-2 text-xs text-gray-400">
-                  {Math.round((dailyReport.totalPurchases / 20) * 100)}% of daily goal
-                </span>
               </div>
             </div>
             
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Performance</h5>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">ROAS:</span>
-                  <span className="text-sm font-medium">{dailyReport.averageRoas.toFixed(2)}x</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">CTR:</span>
-                  <span className="text-sm font-medium">{dailyReport.ctr.toFixed(2)}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">CPA:</span>
-                  <span className="text-sm font-medium">${(dailyReport.totalAdSpend / dailyReport.totalPurchases).toFixed(2)}</span>
+            {/* Orders and conversion cards */}
+            <div>
+              <h5 className="text-lg font-medium mb-3">Orders & Conversions</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <h6 className="text-sm text-gray-400">Orders Today</h6>
+                      <span className="text-lg font-semibold">{dailyReport.totalPurchases}</span>
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <div className="h-2 w-full bg-gray-700 rounded-full">
+                        <div 
+                          className="h-2 bg-blue-500 rounded-full" 
+                          style={{ width: `${Math.min(100, (dailyReport.totalPurchases / 20) * 100)}%` }}
+                        ></div>
+                      </div>
+                      <span className="ml-2 text-xs text-gray-400">
+                        {Math.round((dailyReport.totalPurchases / 20) * 100)}% of daily goal
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#2A2A2A] p-3 rounded-lg">
+                    <div className="flex justify-between">
+                      <h6 className="text-sm text-gray-400">Conversion Rate</h6>
+                      <span className="text-md font-medium">{dailyReport.conversionRate.toFixed(2)}%</span>
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <h6 className="text-sm text-gray-400">Ad CTR</h6>
+                      <span className="text-md font-medium">{dailyReport.ctr.toFixed(2)}%</span>
+                    </div>
+                    <div className="flex justify-between mt-2">
+                      <h6 className="text-sm text-gray-400">CPA</h6>
+                      <span className="text-md font-medium">${(dailyReport.totalAdSpend / dailyReport.totalPurchases).toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           
+          {/* Campaign performance section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3 text-lg">Campaign Performance Today</h5>
+              <h5 className="font-medium mb-3 text-lg text-green-500">Top Performing Campaigns</h5>
               <div className="bg-[#222] p-4 rounded-lg space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{dailyReport.bestCampaign.name}</span>
-                    <span className="text-sm text-green-500">ROAS: {dailyReport.bestCampaign.roas.toFixed(2)}x</span>
+                {dailyReport.bestCampaigns?.map((campaign, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between mb-1">
+                      <div>
+                        <span className="text-sm font-medium text-white">{campaign.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
+                          {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
+                        </div>
+                      </div>
+                      <span className="text-sm text-green-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full" 
+                        style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                ))}
+                {!dailyReport.bestCampaigns && (
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">{dailyReport.bestCampaign.name}</span>
+                      <span className="text-sm text-green-500">ROAS: {dailyReport.bestCampaign.roas.toFixed(2)}x</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                    </div>
                   </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{dailyReport.underperformingCampaign.name}</span>
-                    <span className="text-sm text-red-500">ROAS: {dailyReport.underperformingCampaign.roas.toFixed(2)}x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3 text-lg">Quick Actions</h5>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <div className="space-y-3">
-                  {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-sm text-gray-300">{recommendation}</span>
+              <h5 className="font-medium mb-3 text-lg text-red-500">Underperforming Campaigns</h5>
+              <div className="bg-[#222] p-4 rounded-lg space-y-4">
+                {dailyReport.underperformingCampaigns?.map((campaign, index) => (
+                  <div key={index}>
+                    <div className="flex justify-between mb-1">
+                      <div>
+                        <span className="text-sm font-medium text-white">{campaign.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
+                          {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
+                        </div>
+                      </div>
+                      <span className="text-sm text-red-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                      <div 
+                        className="bg-red-500 h-2 rounded-full" 
+                        style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+                {!dailyReport.underperformingCampaigns && (
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">{dailyReport.underperformingCampaign.name}</span>
+                      <span className="text-sm text-red-500">ROAS: {dailyReport.underperformingCampaign.roas.toFixed(2)}x</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
+                      <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
-          <div>
-            <h5 className="font-medium mb-3 text-lg text-blue-400">Today's Highlights</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-2">Top Performing Products</h6>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Summer T-Shirt Collection</span>
-                    <span>8 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Beach Tote Bag</span>
-                    <span>6 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Sunglasses - Aviator</span>
-                    <span>5 units</span>
-                  </div>
+          {/* Recommendations Section */}
+          <div className="mb-6">
+            <h5 className="font-semibold mb-3 text-lg text-blue-400">Actions & Recommendations</h5>
+            <div className="bg-[#222] p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h6 className="font-medium mb-2 text-white">Quick Actions</h6>
+                  <ul className="space-y-2">
+                    {dailyReport.recommendations.slice(0, 3).map((rec, index) => (
+                      <li key={index} className="flex items-start text-sm">
+                        <span className="text-blue-400 mr-2">•</span>
+                        <span className="text-gray-300">{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h6 className="font-medium mb-2 text-white">Key Insights</h6>
+                  <ul className="space-y-2">
+                    {dailyReport.takeaways.slice(0, 3).map((insight, index) => (
+                      <li key={index} className="flex items-start text-sm">
+                        <span className="text-blue-400 mr-2">•</span>
+                        <span className="text-gray-300">{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <h6 className="text-sm font-medium mb-2">Key Metrics vs Yesterday</h6>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Conversion Rate</span>
-                    <span className={dailyReport.periodComparison.conversionGrowth > 0 ? 'text-green-500' : 'text-red-500'}>
-                      {dailyReport.periodComparison.conversionGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.conversionGrowth).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Average Order Value</span>
-                    <span>${(dailyReport.revenueGenerated / dailyReport.totalPurchases).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Total Ad Spend</span>
-                    <span>${dailyReport.totalAdSpend.toFixed(2)}</span>
-                  </div>
-                </div>
+              
+              {/* See More Link */}
+              <div className="mt-6 text-center">
+                <Link 
+                  href="/ai-dashboard" 
+                  className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  See more AI-powered recommendations
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
               </div>
             </div>
           </div>
+          
+          {/* AI analysis indicator */}
+          {dailyReport.aiAnalyzed && (
+            <div className="flex items-center justify-end text-xs text-gray-500 mt-4">
+              <Sparkles className="h-3 w-3 mr-1 text-blue-400" />
+              Analysis powered by AI
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-6">
