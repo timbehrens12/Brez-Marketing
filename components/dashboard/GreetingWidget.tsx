@@ -34,37 +34,50 @@ interface PeriodMetrics {
   cpc: number
 }
 
+interface CampaignPerformance {
+  name: string
+  roas: number
+  cpa: number
+  ctr: number
+  conversions: number
+  spend: number
+}
+
+interface AudiencePerformance {
+  name: string
+  roas: number
+  cpa: number
+  ctr?: number
+  conversions?: number
+  notes?: string
+}
+
 interface PerformanceReport {
   dateRange: string
   totalPurchases: number
   totalAdSpend: number
   averageRoas: number
   revenueGenerated: number
-  bestCampaign: {
-    name: string
+  bestCampaign: CampaignPerformance
+  underperformingCampaign: CampaignPerformance
+  scalingOpportunity: {
+    campaign: string
     roas: number
-    cpa: number
-    ctr?: number
-    conversions?: number
+    notes: string
   }
-  underperformingCampaign: {
-    name: string
-    roas: number
-    cpa: number
-    ctr?: number
-    conversions?: number
+  audiencePerformance: {
+    best: AudiencePerformance[]
+    low: AudiencePerformance[]
   }
-  bestAudience: {
-    name: string
-    roas: number
-    cpa: number
+  budgetAllocation: {
+    totalSpent: number
+    recommendations: string[]
   }
-  ctr: number
-  cpc: number
-  conversionRate: number
-  newCustomersAcquired: number
-  recommendations: string[]
-  takeaways: string[]
+  creativeDirection: {
+    ctr: number
+    recommendations: string[]
+  }
+  additionalStrategies: string[]
   periodComparison: {
     salesGrowth: number
     orderGrowth: number
@@ -153,6 +166,7 @@ export function GreetingWidget({
   const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('monthly')
   const [userName, setUserName] = useState<string>("")
   const supabase = createClientComponentClient()
+  const [currentReport, setCurrentReport] = useState<PerformanceReport | null>(null)
 
   // Get greeting based on time of day
   const getGreeting = (): string => {
@@ -277,7 +291,7 @@ export function GreetingWidget({
       }
       
       setHasEnoughData(true)
-      
+
       setIsLoading(true)
       
       // Calculate growth rates
@@ -336,30 +350,77 @@ export function GreetingWidget({
         averageRoas: currentMetrics.roas,
         revenueGenerated: currentMetrics.totalSales,
         bestCampaign: {
-          name: "Top Campaign",
-          roas: currentMetrics.roas * 1.2, // Example: 20% better than average
-          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1),
-          ctr: currentMetrics.ctr * 1.15, // Example: 15% better than average
-          conversions: Math.round(currentMetrics.newCustomers * 0.7) // Example: 70% of new customers
+          name: "Brez/Yordy - Adv+ Catalog",
+          roas: 8.34,
+          cpa: 7.81,
+          ctr: 1.27,
+          conversions: 81,
+          spend: 632.61
         },
         underperformingCampaign: {
-          name: "Underperforming Campaign",
-          roas: currentMetrics.roas * 0.7, // Example: 30% worse than average
-          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 1.4, // 40% higher CPA
-          ctr: currentMetrics.ctr * 0.8, // Example: 20% worse than average
-          conversions: Math.round(currentMetrics.newCustomers * 0.2) // Example: 20% of new customers
+          name: "Brez/Yordy - New Strat - ABO",
+          roas: 1.27,
+          cpa: 47.96,
+          ctr: 0.83,
+          conversions: 44,
+          spend: 2110.24
         },
-        bestAudience: {
-          name: "Best Performing Audience",
-          roas: currentMetrics.roas * 1.3, // Example: 30% better than average
-          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 0.7 // 30% lower CPA
+        scalingOpportunity: {
+          campaign: "Cold Conv CBO",
+          roas: 1.72,
+          notes: "campaigns are performing at a 1.72X ROAS, indicating room for optimization"
         },
-        ctr: currentMetrics.ctr,
-        cpc: currentMetrics.cpc,
-        conversionRate: currentMetrics.conversionRate,
-        newCustomersAcquired: currentMetrics.newCustomers,
-        recommendations,
-        takeaways,
+        audiencePerformance: {
+          best: [
+            {
+              name: "Adv+ Catalog",
+              roas: 8.34,
+              cpa: 7.81,
+              notes: "has the highest ROAS (8.34X) and lowest CPA ($7.81). This audience should receive additional budget allocation."
+            },
+            {
+              name: "Cold Conv - ABO",
+              roas: 3.34,
+              cpa: 22.45,
+              notes: "campaigns are performing decently with a 3.34X ROAS, indicating a strong audience segment to optimize further."
+            }
+          ],
+          low: [
+            {
+              name: "New Strat ABO",
+              roas: 1.27,
+              cpa: 47.96,
+              notes: "campaigns have a high CPA ($47.96) and low ROAS (1.27X). Testing new creatives or audience segments may help."
+            },
+            {
+              name: "Cold Interest-Based Audiences",
+              roas: 1.15,
+              cpa: 37.00,
+              notes: "are mixed, with some converting well while others struggle with CPA above $37"
+            }
+          ]
+        },
+        budgetAllocation: {
+          totalSpent: currentMetrics.adSpend,
+          recommendations: [
+            "Increase Adv+ Catalog spend by 15-20% since it's the best-performing campaign",
+            "Optimize Cold Conv - ABO campaigns for improved efficiency",
+            "Consider ADV+ for automated scaling while maintaining manual ABO testing"
+          ]
+        },
+        creativeDirection: {
+          ctr: 0.85,
+          recommendations: [
+            "Test new hooks & CTAs to improve CTR (currently below 1%)",
+            "A/B test different formats (carousel vs. video vs. static images)",
+            "Use urgency-driven messaging (limited-time offers, bundle deals)"
+          ]
+        },
+        additionalStrategies: [
+          "Implement retargeting campaigns for users who didn't convert",
+          "Build Lookalike Audiences (1%) of past customers to expand reach",
+          "Utilize email/SMS marketing to boost conversion rates"
+        ],
         periodComparison: {
           salesGrowth,
           orderGrowth,
@@ -434,6 +495,7 @@ export function GreetingWidget({
   const fetchPeriodData = async () => {
     if (!brandId || connections.length === 0) {
       setIsLoading(false)
+      setHasEnoughData(false)
       return
     }
 
@@ -652,72 +714,92 @@ export function GreetingWidget({
   const generateSimulatedReport = async (
     period: ReportPeriod, 
     metrics: PeriodMetrics, 
-    comparison: {
-      salesGrowth: number;
-      orderGrowth: number;
-      customerGrowth: number;
-      roasGrowth: number;
-      conversionGrowth: number;
-    }
+    comparison: any
   ): Promise<PerformanceReport> => {
-    
-    // Generate period-specific date range string
-    let dateRangeStr = "";
-    const now = new Date();
-    
-    if (period === 'daily') {
-      dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-    } else if (period === 'weekly') {
-      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      dateRangeStr = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
-    } else {
-      const monthStart = startOfMonth(now);
-      const monthEnd = endOfMonth(now);
-      dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`;
-    }
-    
-    // Generate recommendations and takeaways
-    const recommendations = generateRecommendations(metrics, comparison);
-    const takeaways = generateTakeaways(metrics, comparison);
-    
-    // Create the report with simulated data
-    const report: PerformanceReport = {
-      dateRange: dateRangeStr,
-      totalPurchases: metrics.ordersCount,
-      totalAdSpend: metrics.adSpend,
-      averageRoas: metrics.roas,
-      revenueGenerated: metrics.totalSales,
+    const report = {
+      dateRange: "Feb 11th - Mar 12th",
+      totalPurchases: 447,
+      totalAdSpend: 10137.03,
+      averageRoas: 2.59,
+      revenueGenerated: 26260.15,
       bestCampaign: {
-        name: "Summer Collection",
-        roas: 3.2,
-        cpa: 22.50,
-        ctr: 2.7,
-        conversions: Math.round(metrics.newCustomers * 0.35)
+        name: "Brez/Yordy - Adv+ Catalog",
+        roas: 8.34,
+        cpa: 7.81,
+        ctr: 1.27,
+        conversions: 81,
+        spend: 632.61
       },
       underperformingCampaign: {
-        name: "Google Search - Non-Brand",
-        roas: 0.9,
-        cpa: 48.75,
-        ctr: 1.2,
-        conversions: Math.round(metrics.newCustomers * 0.15)
+        name: "Brez/Yordy - New Strat - ABO",
+        roas: 1.27,
+        cpa: 47.96,
+        ctr: 0.83,
+        conversions: 44,
+        spend: 2110.24
       },
-      bestAudience: {
-        name: "Previous Customers",
-        roas: 4.1,
-        cpa: 18.25
+      scalingOpportunity: {
+        campaign: "Cold Conv CBO",
+        roas: 1.72,
+        notes: "campaigns are performing at a 1.72X ROAS, indicating room for optimization"
       },
-      ctr: metrics.ctr,
-      cpc: metrics.cpc,
-      conversionRate: metrics.conversionRate,
-      newCustomersAcquired: metrics.newCustomers,
-      recommendations,
-      takeaways,
+      audiencePerformance: {
+        best: [
+          {
+            name: "Adv+ Catalog",
+            roas: 8.34,
+            cpa: 7.81,
+            notes: "has the highest ROAS (8.34X) and lowest CPA ($7.81). This audience should receive additional budget allocation."
+          },
+          {
+            name: "Cold Conv - ABO",
+            roas: 3.34,
+            cpa: 22.45,
+            notes: "campaigns are performing decently with a 3.34X ROAS, indicating a strong audience segment to optimize further."
+          }
+        ],
+        low: [
+          {
+            name: "New Strat ABO",
+            roas: 1.27,
+            cpa: 47.96,
+            notes: "campaigns have a high CPA ($47.96) and low ROAS (1.27X). Testing new creatives or audience segments may help."
+          },
+          {
+            name: "Cold Interest-Based Audiences",
+            roas: 1.15,
+            cpa: 37.00,
+            notes: "are mixed, with some converting well while others struggle with CPA above $37"
+          }
+        ]
+      },
+      budgetAllocation: {
+        totalSpent: 10137.03,
+        recommendations: [
+          "Increase Adv+ Catalog spend by 15-20% since it's the best-performing campaign",
+          "Optimize Cold Conv - ABO campaigns for improved efficiency",
+          "Consider ADV+ for automated scaling while maintaining manual ABO testing"
+        ]
+      },
+      creativeDirection: {
+        ctr: 0.85,
+        recommendations: [
+          "Test new hooks & CTAs to improve CTR (currently below 1%)",
+          "A/B test different formats (carousel vs. video vs. static images)",
+          "Use urgency-driven messaging (limited-time offers, bundle deals)"
+        ]
+      },
+      additionalStrategies: [
+        "Implement retargeting campaigns for users who didn't convert",
+        "Build Lookalike Audiences (1%) of past customers to expand reach",
+        "Utilize email/SMS marketing to boost conversion rates"
+      ],
       periodComparison: comparison
-    };
-    
+    }
+
+    setCurrentReport(report);
     return report;
-  };
+  }
 
   if (isLoading) {
     return (
@@ -732,461 +814,175 @@ export function GreetingWidget({
   }
 
   return (
-    <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">{getGreeting()}, {userName}</h3>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'daily' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('daily')}
-          >
-            Today
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'weekly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('weekly')}
-          >
-            This Week
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'monthly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('monthly')}
-          >
-            Last Month
-          </Button>
-        </div>
+    <div className="space-y-6 p-6">
+      {/* Larger greeting text */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold text-white mb-2">
+          {getGreeting()}, {brandName}
+        </h1>
+        <p className="text-gray-400 text-lg">
+          Here's your {currentPeriod} performance report
+        </p>
       </div>
-      
-      {!hasEnoughData ? (
-        <div className="text-center py-6">
-          <p className="text-gray-400 mb-4">Limited data available to generate a complete performance report.</p>
-          <div className="bg-[#222] p-4 rounded-lg mb-4">
-            <h4 className="font-medium mb-2">Available Information</h4>
-            <p className="text-sm text-gray-300 mb-3">
-              We're showing a limited report based on the data available. For a more comprehensive analysis:
-            </p>
-            <ul className="space-y-2">
-              {!connections.some(c => c.platform_type === 'shopify' && c.status === 'active') && (
-                <li className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">Connect your Shopify store to see sales performance metrics</span>
-                </li>
-              )}
-              {!connections.some(c => c.platform_type === 'meta' && c.status === 'active') && (
-                <li className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">Connect Meta Ads to see advertising performance metrics</span>
-                </li>
-              )}
-              <li className="flex items-start">
-                <span className="text-blue-400 mr-2">•</span>
-                <span className="text-gray-300">Continue processing orders to build historical data for trend analysis</span>
-              </li>
-            </ul>
-          </div>
-          <p className="text-gray-500 text-sm">
-            We'll automatically update your report as more data becomes available.
-          </p>
+
+      {isLoading ? (
+        <div className="animate-pulse space-y-4">
+          {/* ... loading states ... */}
         </div>
-      ) : currentPeriod === 'monthly' && monthlyReport ? (
-        <div>
-          <h4 className="font-medium text-lg mb-2">Monthly Performance Review</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store performed in {getCurrentMonthName()} compared to {getPreviousMonthName()}.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
-              {monthlyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
-              {monthlyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-              {monthlyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h5 className="font-medium mb-3">Platform Performance</h5>
-              <div className="space-y-3">
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Shopify</span>
-                    <span className="text-sm text-green-500">+12.4%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>Orders: {monthlyReport.totalPurchases}</span>
-                    <span>Revenue: {formatCurrency(monthlyReport.revenueGenerated)}</span>
-                  </div>
-                </div>
-                
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Meta Ads</span>
-                    <span className="text-sm text-green-500">+8.7%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '68%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>ROAS: 2.8x</span>
-                    <span>CPC: ${(monthlyReport.cpc).toFixed(2)}</span>
-                  </div>
-                </div>
-                
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Ads</span>
-                    <span className="text-sm text-red-500">-3.2%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>ROAS: 1.9x</span>
-                    <span>CPC: $2.45</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {monthlyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Strategic Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {monthlyReport.recommendations.map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 3 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'weekly' && weeklyReport ? (
-        <div>
-          <h4 className="font-medium text-lg mb-2">Weekly Performance Review</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store performed in the last 7 days compared to the previous week.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(weeklyReport.revenueGenerated)}</p>
-              {weeklyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.salesGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.totalPurchases}</p>
-              {weeklyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.orderGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.averageRoas.toFixed(1)}x</p>
-              {weeklyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.roasGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h5 className="font-medium mb-3">Campaign Performance</h5>
-              
-              <div className="bg-[#222] p-4 rounded-lg space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Summer Collection</span>
-                    <span className="text-sm text-green-500">ROAS: 3.2x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Retargeting - Abandoned Cart</span>
-                    <span className="text-sm text-green-500">ROAS: 2.8x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '73%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Brand Terms</span>
-                    <span className="text-sm text-green-500">ROAS: 2.1x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Non-Brand</span>
-                    <span className="text-sm text-red-500">ROAS: 0.9x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {weeklyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {weeklyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'daily' && dailyReport ? (
-        <div>
-          <h4 className="font-medium text-lg mb-2">Today's Performance</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store is performing today compared to yesterday.
-            <span className="text-yellow-400 ml-2">
-              <span className="font-medium">Last updated:</span> {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            </span>
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
-              {dailyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
-              <div className="flex items-center mt-1">
-                <div className="h-2 w-full bg-gray-700 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-500 rounded-full" 
-                    style={{ width: `${Math.min(100, (dailyReport.totalPurchases / 20) * 100)}%` }}
-                  ></div>
-                </div>
-                <span className="ml-2 text-xs text-gray-400">
-                  {Math.round((dailyReport.totalPurchases / 20) * 100)}% of daily goal
-                </span>
-              </div>
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Live Metrics</h5>
-              <div className="space-y-2 mt-2">
-                <div className="flex justify-between text-sm">
-                  <span>Active Visitors:</span>
-                  <span className="font-medium">24</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Carts Created:</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Ad Clicks Today:</span>
-                  <span className="font-medium">143</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h5 className="font-medium mb-3">Hourly Breakdown</h5>
-              <div className="bg-[#222] p-4 rounded-lg h-[200px] relative">
-                {/* Simulated hourly chart */}
-                <div className="absolute bottom-0 left-0 w-full h-[160px] flex items-end px-2">
-                  {Array.from({length: 12}).map((_, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-6 bg-blue-500 rounded-t"
-                        style={{
-                          height: `${Math.max(4, Math.min(140, index === 5 ? 120 : index === 6 ? 95 : index === 7 ? 80 : index === 8 ? 105 : index % 3 === 0 ? 50 : 30 + Math.random() * 50))}px`
-                        }}
-                      ></div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {(index + 9) % 12 === 0 ? '12' : (index + 9) % 12}{(index + 9) < 12 ? 'am' : 'pm'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="absolute top-2 left-3 text-xs text-gray-400">
-                  Revenue by hour
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3">Platform Activity</h5>
-              <div className="bg-[#222] p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Shopify</div>
-                    <div className="text-xs text-gray-400">{dailyReport.totalPurchases} orders today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</div>
-                    <div className="text-xs text-green-500">+{dailyReport.periodComparison.salesGrowth.toFixed(1)}%</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Meta Ads</div>
-                    <div className="text-xs text-gray-400">87 clicks today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$186.32 spent</div>
-                    <div className="text-xs text-green-500">ROAS: 2.8x</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Google Ads</div>
-                    <div className="text-xs text-gray-400">56 clicks today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$134.78 spent</div>
-                    <div className="text-xs text-red-500">ROAS: 1.9x</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <h5 className="font-medium mb-2">Today's Top Products</h5>
-                <div className="bg-[#222] p-3 rounded-lg space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Summer T-Shirt Collection</span>
-                    <span>8 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Beach Tote Bag</span>
-                    <span>6 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Sunglasses - Aviator</span>
-                    <span>5 units</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Real-Time Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className="rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 bg-blue-500/20 text-blue-400">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      ) : !hasEnoughData ? (
+        <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+          {/* ... insufficient data message ... */}
         </div>
       ) : (
-        // Fallback when no report is available for the selected period
-        <div className="text-center py-6">
-          <p className="text-gray-400 mb-4">No data available for the selected period.</p>
-          <p className="text-gray-500 text-sm">
-            Try selecting a different time period or check back later as more data becomes available.
-          </p>
+        <div className="space-y-6">
+          {/* Executive Summary */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <h2 className="text-lg font-medium text-white mb-4">Executive Summary</h2>
+            <p className="text-gray-300 mb-4">
+              Over the last {currentPeriod === 'monthly' ? '30 days' : currentPeriod === 'weekly' ? '7 days' : '24 hours'}, 
+              we generated {currentReport?.totalPurchases} total purchases across various campaigns, with an
+              average ROAS of {currentReport?.averageRoas.toFixed(2)}x and a total ad spend of {formatCurrency(currentReport?.totalAdSpend || 0)}.
+            </p>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-gray-400">Key takeaways:</h3>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400">•</span>
+                  <span>Best Performing Campaign: {currentReport?.bestCampaign.name} (ROAS {currentReport?.bestCampaign.roas}X, CPA ${currentReport?.bestCampaign.cpa})</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">•</span>
+                  <span>Underperforming Campaign: {currentReport?.underperformingCampaign.name} (ROAS {currentReport?.underperformingCampaign.roas}X, CPA ${currentReport?.underperformingCampaign.cpa})</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400">•</span>
+                  <span>Scaling Opportunity: {currentReport?.scalingOpportunity.campaign} campaigns are performing at a {currentReport?.scalingOpportunity.roas}X ROAS, indicating room for optimization</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Key Performance Metrics */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <h2 className="text-lg font-medium text-white mb-4">Key Performance Metrics (Month-over-Month Comparison)</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr>
+                      <td className="py-2 text-gray-400">Total Ad Spend</td>
+                      <td className="py-2 text-right">{formatCurrency(currentReport?.totalAdSpend || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-gray-400">Revenue Generated</td>
+                      <td className="py-2 text-right">{formatCurrency(currentReport?.revenueGenerated || 0)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-gray-400">ROAS (Return on Ad Spend)</td>
+                      <td className="py-2 text-right">{currentReport?.averageRoas.toFixed(2)}X</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr>
+                      <td className="py-2 text-gray-400">Click-Through Rate (CTR)</td>
+                      <td className="py-2 text-right">
+                        {currentReport?.creativeDirection?.ctr ? 
+                          `${(currentReport.creativeDirection.ctr * 100).toFixed(2)}%` : 
+                          '-'
+                        }
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-gray-400">Cost Per Acquisition (CPA)</td>
+                      <td className="py-2 text-right">${currentReport?.bestCampaign.cpa.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-gray-400">Conversion Rate</td>
+                      <td className="py-2 text-right">
+                        {currentReport?.totalPurchases ? 
+                          `${((currentReport.totalPurchases / (currentReport.totalPurchases * 100)) * 100).toFixed(2)}%` : 
+                          '-'
+                        }
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Audience Performance Insights */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <h2 className="text-lg font-medium text-white mb-4">Audience Performance Insights</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Best Performing Audiences:</h3>
+                <ul className="space-y-2 text-sm">
+                  {currentReport?.audiencePerformance.best.map((audience, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-green-400">•</span>
+                      <span>{audience.name} has the highest ROAS ({audience.roas}X) and lowest CPA (${audience.cpa}). {audience.notes}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Low-Performing Audiences:</h3>
+                <ul className="space-y-2 text-sm">
+                  {currentReport?.audiencePerformance.low.map((audience, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-red-400">•</span>
+                      <span>{audience.name} campaigns have {audience.notes}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Next Steps & Recommendations */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <h2 className="text-lg font-medium text-white mb-4">Next Steps & Recommendations</h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Scaling Plan:</h3>
+                <ul className="space-y-2 text-sm">
+                  {currentReport?.budgetAllocation.recommendations.map((rec, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-blue-400">•</span>
+                      <span>{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Creative Direction:</h3>
+                <ul className="space-y-2 text-sm">
+                  {currentReport?.creativeDirection.recommendations.map((rec, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-purple-400">•</span>
+                      <span>{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-400 mb-2">Additional Growth Strategies:</h3>
+                <ul className="space-y-2 text-sm">
+                  {currentReport?.additionalStrategies.map((strategy, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-yellow-400">•</span>
+                      <span>{strategy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
