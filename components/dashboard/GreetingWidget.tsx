@@ -575,12 +575,149 @@ export function GreetingWidget({
     }).format(value)
   }
   
+  // When component loads, trigger the data load
   useEffect(() => {
     if (user) {
       setUserName(user.firstName || "")
     }
-    fetchPeriodData()
-  }, [brandId, connections])
+    
+    // Force loading of simulated data and ensure reports are created
+    const loadSimulatedData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Get dates for different periods
+        const dailyDates = getPeriodDates('daily')
+        const weeklyDates = getPeriodDates('weekly')
+        const monthlyDates = getPeriodDates('monthly')
+        const previousMonthDates = getPreviousPeriodDates('monthly')
+        
+        // Generate simulated metrics for each period
+        const todayMetrics = await fetchPeriodMetrics('simulation-id', dailyDates.from, dailyDates.to)
+        const weekMetrics = await fetchPeriodMetrics('simulation-id', weeklyDates.from, weeklyDates.to)
+        const monthMetrics = await fetchPeriodMetrics('simulation-id', monthlyDates.from, monthlyDates.to)
+        const previousMonthMetrics = await fetchPeriodMetrics('simulation-id', previousMonthDates.from, previousMonthDates.to)
+        
+        // Update state with simulated metrics
+        setPeriodData({
+          today: todayMetrics,
+          week: weekMetrics,
+          month: monthMetrics,
+          previousMonth: previousMonthMetrics
+        })
+        
+        // Set reports based on the simulated data
+        const dailyReportData = await generateSimulatedReport('daily', todayMetrics, { 
+          salesGrowth: 15.7,
+          orderGrowth: 12.3,
+          customerGrowth: 8.5,
+          roasGrowth: 4.2,
+          conversionGrowth: 3.8
+        });
+        
+        const weeklyReportData = await generateSimulatedReport('weekly', weekMetrics, {
+          salesGrowth: 8.3,
+          orderGrowth: 6.7,
+          customerGrowth: 5.2,
+          roasGrowth: -1.5,
+          conversionGrowth: 2.1
+        });
+        
+        const monthlyReportData = await generateSimulatedReport('monthly', monthMetrics, {
+          salesGrowth: 12.4,
+          orderGrowth: 10.8,
+          customerGrowth: 14.3,
+          roasGrowth: 7.9,
+          conversionGrowth: 6.2
+        });
+        
+        if (dailyReportData) setDailyReport(dailyReportData);
+        if (weeklyReportData) setWeeklyReport(weeklyReportData);
+        if (monthlyReportData) setMonthlyReport(monthlyReportData);
+        
+        // Ensure we mark data as available for the simulation
+        setHasEnoughData(true);
+      } catch (error) {
+        console.error('Error generating simulated data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Always run the simulation data for the demo
+    loadSimulatedData();
+  }, []);
+
+  // Function to generate simulated reports
+  const generateSimulatedReport = async (
+    period: ReportPeriod, 
+    metrics: PeriodMetrics, 
+    comparison: {
+      salesGrowth: number;
+      orderGrowth: number;
+      customerGrowth: number;
+      roasGrowth: number;
+      conversionGrowth: number;
+    }
+  ): Promise<PerformanceReport> => {
+    
+    // Generate period-specific date range string
+    let dateRangeStr = "";
+    const now = new Date();
+    
+    if (period === 'daily') {
+      dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
+    } else if (period === 'weekly') {
+      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+      dateRangeStr = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+    } else {
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`;
+    }
+    
+    // Generate recommendations and takeaways
+    const recommendations = generateRecommendations(metrics, comparison);
+    const takeaways = generateTakeaways(metrics, comparison);
+    
+    // Create the report with simulated data
+    const report: PerformanceReport = {
+      dateRange: dateRangeStr,
+      totalPurchases: metrics.ordersCount,
+      totalAdSpend: metrics.adSpend,
+      averageRoas: metrics.roas,
+      revenueGenerated: metrics.totalSales,
+      bestCampaign: {
+        name: "Summer Collection",
+        roas: 3.2,
+        cpa: 22.50,
+        ctr: 2.7,
+        conversions: Math.round(metrics.newCustomers * 0.35)
+      },
+      underperformingCampaign: {
+        name: "Google Search - Non-Brand",
+        roas: 0.9,
+        cpa: 48.75,
+        ctr: 1.2,
+        conversions: Math.round(metrics.newCustomers * 0.15)
+      },
+      bestAudience: {
+        name: "Previous Customers",
+        roas: 4.1,
+        cpa: 18.25
+      },
+      ctr: metrics.ctr,
+      cpc: metrics.cpc,
+      conversionRate: metrics.conversionRate,
+      newCustomersAcquired: metrics.newCustomers,
+      recommendations,
+      takeaways,
+      periodComparison: comparison
+    };
+    
+    return report;
+  };
 
   if (isLoading) {
     return (
