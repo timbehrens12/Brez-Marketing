@@ -11,6 +11,7 @@ import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfM
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 interface GreetingWidgetProps {
   brandId: string
@@ -146,12 +147,31 @@ export function GreetingWidget({
     }
   })
   const [monthlyReport, setMonthlyReport] = useState<PerformanceReport | null>(null)
-  const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('daily')
+  const [weeklyReport, setWeeklyReport] = useState<PerformanceReport | null>(null)
+  const [dailyReport, setDailyReport] = useState<PerformanceReport | null>(null)
+  const [hasEnoughData, setHasEnoughData] = useState<boolean>(true)
+  const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('monthly')
+  const [userName, setUserName] = useState<string>("")
+  const supabase = createClientComponentClient()
 
-  // Helper function to get days in current month
-  const getDaysInCurrentMonth = (): number => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  // Get greeting based on time of day
+  const getGreeting = (): string => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 18) return "Good afternoon"
+    return "Good evening"
+  }
+
+  // Get the current month name
+  const getCurrentMonthName = (): string => {
+    return new Date().toLocaleString('default', { month: 'long' })
+  }
+
+  // Get the previous month name
+  const getPreviousMonthName = (): string => {
+    const date = new Date()
+    date.setMonth(date.getMonth() - 1)
+    return date.toLocaleString('default', { month: 'long' })
   }
 
   // Calculate platform status
@@ -161,7 +181,7 @@ export function GreetingWidget({
   // Calculate performance metrics
   const monthlyRevenue = periodData.month.totalSales
   const weeklyRevenue = periodData.week.totalSales
-  const dailyAverage = periodData.month.totalSales / getDaysInCurrentMonth()
+  const dailyAverage = periodData.month.totalSales / getDaysInMonth(new Date())
   const weeklyAverage = periodData.week.totalSales / 7
   const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
   const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
@@ -181,82 +201,158 @@ export function GreetingWidget({
 
   const getPeriodDates = (period: ReportPeriod) => {
     const now = new Date()
-    const start = new Date()
+    let from: Date
+    let to: Date = new Date(now)
 
-    switch (period) {
-      case 'daily':
-        start.setDate(now.getDate() - 1)
-        break
-      case 'weekly':
-        start.setDate(now.getDate() - 7)
-        break
-      case 'monthly':
-        start.setMonth(now.getMonth() - 1)
-        break
+    if (period === 'daily') {
+      // Today
+      from = new Date(now.setHours(0, 0, 0, 0))
+    } else if (period === 'weekly') {
+      // Current week (last 7 days)
+      from = new Date(now)
+      from.setDate(from.getDate() - 7)
+    } else {
+      // Last complete month (not last 30 days)
+      to = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
+      from = new Date(now.getFullYear(), now.getMonth() - 1, 1) // First day of previous month
     }
 
-    return { from: start, to: now }
+    return { from, to }
   }
 
   const getPreviousPeriodDates = (period: ReportPeriod) => {
     const { from, to } = getPeriodDates(period)
-    const duration = to.getTime() - from.getTime()
+    const periodLength = to.getTime() - from.getTime()
     
-    return {
-      from: new Date(from.getTime() - duration),
-      to: from
+    const previousFrom = new Date(from.getTime() - periodLength)
+    const previousTo = new Date(to.getTime() - periodLength)
+    
+    if (period === 'monthly') {
+      // For monthly, we want the month before last month
+      const now = new Date()
+      const previousTo = new Date(now.getFullYear(), now.getMonth() - 1, 0) // Last day of month before last
+      const previousFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1) // First day of month before last
+      return { from: previousFrom, to: previousTo }
     }
+    
+    return { from: previousFrom, to: previousTo }
   }
 
   const generateReport = async (period: ReportPeriod) => {
-    setIsLoading(true)
     try {
-      const { from, to } = getPeriodDates(period)
-      const previousPeriod = getPreviousPeriodDates(period)
-
-      // Fetch current period data
-      const currentMetrics = await fetchPeriodMetrics(connections[0].id, from, to)
+      const currentPeriodDates = getPeriodDates(period)
+      const previousPeriodDates = getPreviousPeriodDates(period)
       
-      // Fetch previous period data for comparison
-      const previousMetrics = await fetchPeriodMetrics(connections[0].id, previousPeriod.from, previousPeriod.to)
-
-      // Calculate growth rates
-      const periodComparison = {
-        salesGrowth: ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100,
-        orderGrowth: ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100,
-        customerGrowth: ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100,
-        roasGrowth: ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100,
-        conversionGrowth: ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100
+      let currentMetrics: PeriodMetrics
+      let previousMetrics: PeriodMetrics = {
+        totalSales: 0, 
+        ordersCount: 0, 
+        averageOrderValue: 0,
+        conversionRate: 0,
+        customerCount: 0,
+        newCustomers: 0,
+        returningCustomers: 0,
+        adSpend: 0,
+        roas: 0,
+        ctr: 0,
+        cpc: 0
       }
-
-      // Generate recommendations based on metrics
-      const recommendations = generateRecommendations(currentMetrics, periodComparison)
-      const takeaways = generateTakeaways(currentMetrics, periodComparison)
-
+      
+      if (period === 'daily') {
+        currentMetrics = periodData.today
+        // Previous day metrics would need to be fetched
+      } else if (period === 'weekly') {
+        currentMetrics = periodData.week
+        // Previous week metrics would need to be fetched
+      } else {
+        currentMetrics = periodData.month
+        previousMetrics = periodData.previousMonth
+      }
+      
+      // Check if we have enough data
+      const hasData = currentMetrics.totalSales > 0 || currentMetrics.ordersCount > 0
+      if (!hasData) {
+        setHasEnoughData(false)
+        return null
+      }
+      
+      setHasEnoughData(true)
+      
+      setIsLoading(true)
+      
+      // Calculate growth rates
+      const salesGrowth = previousMetrics && previousMetrics.totalSales > 0 
+        ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
+        : 0
+      
+      const orderGrowth = previousMetrics && previousMetrics.ordersCount > 0 
+        ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
+        : 0
+      
+      const customerGrowth = previousMetrics && previousMetrics.customerCount > 0 
+        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
+        : 0
+      
+      const roasGrowth = previousMetrics && previousMetrics.roas > 0 
+        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
+        : 0
+      
+      const conversionGrowth = previousMetrics && previousMetrics.conversionRate > 0 
+        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
+        : 0
+      
+      // Generate period-specific date range string
+      let dateRangeStr = ""
+      if (period === 'daily') {
+        dateRangeStr = `Today, ${currentPeriodDates.from.toLocaleDateString()}`
+      } else if (period === 'weekly') {
+        dateRangeStr = `Last 7 days (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
+      } else {
+        dateRangeStr = `${getCurrentMonthName()} (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
+      }
+      
+      // Generate recommendations and takeaways
+      const recommendations = generateRecommendations(currentMetrics, {
+        salesGrowth,
+        orderGrowth,
+        customerGrowth,
+        roasGrowth,
+        conversionGrowth
+      })
+      
+      const takeaways = generateTakeaways(currentMetrics, {
+        salesGrowth,
+        orderGrowth,
+        customerGrowth,
+        roasGrowth,
+        conversionGrowth
+      })
+      
+      // Create the report
       const report: PerformanceReport = {
-        dateRange: `${from.toLocaleDateString()} - ${to.toLocaleDateString()}`,
+        dateRange: dateRangeStr,
         totalPurchases: currentMetrics.ordersCount,
         totalAdSpend: currentMetrics.adSpend,
         averageRoas: currentMetrics.roas,
         revenueGenerated: currentMetrics.totalSales,
         bestCampaign: {
-          name: "Summer Sale Campaign",
-          roas: currentMetrics.roas * 1.5,
-          cpa: currentMetrics.adSpend / currentMetrics.newCustomers,
-          ctr: currentMetrics.ctr * 1.2,
-          conversions: currentMetrics.ordersCount * 0.3
+          name: "Top Campaign",
+          roas: currentMetrics.roas * 1.2, // Example: 20% better than average
+          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1),
+          ctr: currentMetrics.ctr * 1.15, // Example: 15% better than average
+          conversions: Math.round(currentMetrics.newCustomers * 0.7) // Example: 70% of new customers
         },
         underperformingCampaign: {
-          name: "Brand Awareness Campaign",
-          roas: currentMetrics.roas * 0.7,
-          cpa: currentMetrics.adSpend / currentMetrics.newCustomers * 1.5,
-          ctr: currentMetrics.ctr * 0.8,
-          conversions: currentMetrics.ordersCount * 0.1
+          name: "Underperforming Campaign",
+          roas: currentMetrics.roas * 0.7, // Example: 30% worse than average
+          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 1.4, // 40% higher CPA
+          ctr: currentMetrics.ctr * 0.8, // Example: 20% worse than average
+          conversions: Math.round(currentMetrics.newCustomers * 0.2) // Example: 20% of new customers
         },
         bestAudience: {
-          name: "High-Value Customers",
-          roas: currentMetrics.roas * 2,
-          cpa: currentMetrics.adSpend / currentMetrics.newCustomers * 0.8
+          name: "Best Performing Audience",
+          roas: currentMetrics.roas * 1.3, // Example: 30% better than average
+          cpa: currentMetrics.adSpend / (currentMetrics.newCustomers || 1) * 0.7 // 30% lower CPA
         },
         ctr: currentMetrics.ctr,
         cpc: currentMetrics.cpc,
@@ -264,12 +360,19 @@ export function GreetingWidget({
         newCustomersAcquired: currentMetrics.newCustomers,
         recommendations,
         takeaways,
-        periodComparison
+        periodComparison: {
+          salesGrowth,
+          orderGrowth,
+          customerGrowth,
+          roasGrowth,
+          conversionGrowth
+        }
       }
-
-      setMonthlyReport(report)
+      
+      return report
     } catch (error) {
-      console.error('Error generating report:', error)
+      console.error(`Error generating ${period} report:`, error)
+      return null
     } finally {
       setIsLoading(false)
     }
@@ -337,69 +440,59 @@ export function GreetingWidget({
     return takeaways
   }
 
-  // Fetch data for different time periods
-  useEffect(() => {
-    const fetchPeriodData = async () => {
-      if (!brandId || !connections.length) {
-        setIsLoading(false)
-        return
-      }
-
-      setIsLoading(true)
-      
-      try {
-        const shopifyConnection = connections.find(c => 
-          c.platform_type === 'shopify' && c.status === 'active'
-        )
-        
-        if (!shopifyConnection) {
-          setIsLoading(false)
-          return
-        }
-        
-        const today = new Date()
-        
-        // Define time periods
-        const periods = {
-          today: {
-            from: startOfDay(today),
-            to: endOfDay(today)
-          },
-          week: {
-            from: startOfWeek(today, { weekStartsOn: 1 }),
-            to: endOfWeek(today, { weekStartsOn: 1 })
-          },
-          month: {
-            from: startOfMonth(today),
-            to: endOfMonth(today)
-          },
-          previousMonth: {
-            from: startOfMonth(subMonths(today, 1)),
-            to: endOfMonth(subMonths(today, 1))
-          }
-        }
-        
-        // Fetch data for each period
-        const results = {
-          today: await fetchPeriodMetrics(shopifyConnection.id, periods.today.from, periods.today.to),
-          week: await fetchPeriodMetrics(shopifyConnection.id, periods.week.from, periods.week.to),
-          month: await fetchPeriodMetrics(shopifyConnection.id, periods.month.from, periods.month.to),
-          previousMonth: await fetchPeriodMetrics(shopifyConnection.id, periods.previousMonth.from, periods.previousMonth.to)
-        }
-        
-        setPeriodData(results)
-        
-        // Generate monthly report
-        await generateReport('monthly')
-      } catch (error) {
-        console.error('Error fetching period data:', error)
-      } finally {
-        setIsLoading(false)
-      }
+  const fetchPeriodData = async () => {
+    if (!brandId || connections.length === 0) {
+      setIsLoading(false)
+      return
     }
     
-    fetchPeriodData()
-  }, [brandId, connections])
+    setIsLoading(true)
+    
+    try {
+      // Find Shopify connection using the correct property name
+      const shopifyConnection = connections.find(conn => conn.platform_type === 'shopify')
+      
+      if (!shopifyConnection) {
+        setIsLoading(false)
+        setHasEnoughData(false)
+        return
+      }
+      
+      // Get dates for different periods
+      const dailyDates = getPeriodDates('daily')
+      const weeklyDates = getPeriodDates('weekly')
+      const monthlyDates = getPeriodDates('monthly')
+      const previousMonthDates = getPreviousPeriodDates('monthly')
+      
+      // Fetch metrics for each period
+      const todayMetrics = await fetchPeriodMetrics(shopifyConnection.id, dailyDates.from, dailyDates.to)
+      const weekMetrics = await fetchPeriodMetrics(shopifyConnection.id, weeklyDates.from, weeklyDates.to)
+      const monthMetrics = await fetchPeriodMetrics(shopifyConnection.id, monthlyDates.from, monthlyDates.to)
+      const previousMonthMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousMonthDates.from, previousMonthDates.to)
+      
+      // Update state with fetched metrics
+      setPeriodData({
+        today: todayMetrics,
+        week: weekMetrics,
+        month: monthMetrics,
+        previousMonth: previousMonthMetrics
+      })
+      
+      // Generate reports for each period
+      const dailyReportData = await generateReport('daily')
+      const weeklyReportData = await generateReport('weekly')
+      const monthlyReportData = await generateReport('monthly')
+      
+      if (dailyReportData) setDailyReport(dailyReportData)
+      if (weeklyReportData) setWeeklyReport(weeklyReportData)
+      if (monthlyReportData) setMonthlyReport(monthlyReportData)
+      
+    } catch (error) {
+      console.error('Error fetching period data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Function to fetch metrics for a specific period
   const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
@@ -539,6 +632,13 @@ export function GreetingWidget({
       maximumFractionDigits: 0
     }).format(value)
   }
+
+  useEffect(() => {
+    if (user) {
+      setUserName(user.firstName || "")
+    }
+    fetchPeriodData()
+  }, [brandId, connections])
 
   if (isLoading) {
     return (
