@@ -222,19 +222,39 @@ export function GreetingWidget({
   const getPeriodDates = (period: ReportPeriod) => {
     const now = new Date()
     let from: Date
-    let to: Date = new Date(now)
+    let to: Date
 
     if (period === 'daily') {
-      // Today
-      from = new Date(now.setHours(0, 0, 0, 0))
-    } else if (period === 'weekly') {
-      // Current week (last 7 days)
+      // Yesterday (since we're showing "today" compared to "yesterday")
       from = new Date(now)
-      from.setDate(from.getDate() - 7)
+      from.setDate(from.getDate() - 1)
+      from.setHours(0, 0, 0, 0)
+      to = new Date(from)
+      to.setHours(23, 59, 59, 999)
+    } else if (period === 'weekly') {
+      // Last complete week (Monday-Sunday)
+      const dayOfWeek = now.getDay() // 0 is Sunday, 1 is Monday, etc.
+      const daysFromLastSunday = dayOfWeek === 0 ? 7 : dayOfWeek
+      
+      // Go back to last Sunday
+      to = new Date(now)
+      to.setDate(now.getDate() - daysFromLastSunday)
+      to.setHours(23, 59, 59, 999)
+      
+      // From last Monday (6 days before last Sunday)
+      from = new Date(to)
+      from.setDate(to.getDate() - 6)
+      from.setHours(0, 0, 0, 0)
     } else {
-      // Last complete month (not last 30 days)
-      to = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
-      from = new Date(now.getFullYear(), now.getMonth() - 1, 1) // First day of previous month
+      // Last complete month
+      const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+      const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      
+      from = new Date(firstDayOfLastMonth)
+      from.setHours(0, 0, 0, 0)
+      
+      to = new Date(lastDayOfLastMonth)
+      to.setHours(23, 59, 59, 999)
     }
 
     return { from, to }
@@ -242,20 +262,38 @@ export function GreetingWidget({
 
   const getPreviousPeriodDates = (period: ReportPeriod) => {
     const { from, to } = getPeriodDates(period)
-    const periodLength = to.getTime() - from.getTime()
     
-    const previousFrom = new Date(from.getTime() - periodLength)
-    const previousTo = new Date(to.getTime() - periodLength)
-    
-    if (period === 'monthly') {
-      // For monthly, we want the month before last month
-      const now = new Date()
-      const previousTo = new Date(now.getFullYear(), now.getMonth() - 1, 0) // Last day of month before last
-      const previousFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1) // First day of month before last
-      return { from: previousFrom, to: previousTo }
+    if (period === 'daily') {
+      // Day before yesterday
+      const prevFrom = new Date(from)
+      prevFrom.setDate(prevFrom.getDate() - 1)
+      const prevTo = new Date(prevFrom)
+      prevTo.setHours(23, 59, 59, 999)
+      return { from: prevFrom, to: prevTo }
+    } else if (period === 'weekly') {
+      // Week before last complete week
+      const prevTo = new Date(from)
+      prevTo.setDate(prevTo.getDate() - 1)
+      prevTo.setHours(23, 59, 59, 999)
+      
+      const prevFrom = new Date(prevTo)
+      prevFrom.setDate(prevTo.getDate() - 6)
+      prevFrom.setHours(0, 0, 0, 0)
+      
+      return { from: prevFrom, to: prevTo }
+    } else {
+      // Month before last complete month
+      const lastDayOfTwoMonthsAgo = new Date(from.getFullYear(), from.getMonth(), 0)
+      const firstDayOfTwoMonthsAgo = new Date(from.getFullYear(), from.getMonth() - 1, 1)
+      
+      const prevFrom = new Date(firstDayOfTwoMonthsAgo)
+      prevFrom.setHours(0, 0, 0, 0)
+      
+      const prevTo = new Date(lastDayOfTwoMonthsAgo)
+      prevTo.setHours(23, 59, 59, 999)
+      
+      return { from: prevFrom, to: prevTo }
     }
-    
-    return { from: previousFrom, to: previousTo }
   }
 
   const generateReport = async (period: ReportPeriod) => {
@@ -693,17 +731,25 @@ export function GreetingWidget({
     const now = new Date();
     
     if (period === 'daily') {
+      // Today's date
       dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
     } else if (period === 'weekly') {
-      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      dateRangeStr = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+      // Last complete week (Monday-Sunday)
+      const dayOfWeek = now.getDay();
+      const daysFromLastSunday = dayOfWeek === 0 ? 7 : dayOfWeek;
+      const lastSunday = new Date(now);
+      lastSunday.setDate(now.getDate() - daysFromLastSunday);
+      const lastMonday = new Date(lastSunday);
+      lastMonday.setDate(lastSunday.getDate() - 6);
+      
+      dateRangeStr = `${format(lastMonday, 'MMM d')} - ${format(lastSunday, 'MMM d, yyyy')}`;
     } else {
-      // For monthly, use a format like "Feb 11th - Mar 12th" to match screenshot
-      const previousMonth = subMonths(now, 1);
-      const monthStart = new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 11);
-      const monthEnd = new Date(now.getFullYear(), now.getMonth(), 12);
-      dateRangeStr = `${format(monthStart, 'MMM d')} - ${format(monthEnd, 'MMM d')}`;
+      // Last complete month
+      const lastMonth = new Date(now);
+      lastMonth.setDate(0); // Last day of previous month
+      const firstDayOfLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+      
+      dateRangeStr = `${format(firstDayOfLastMonth, 'MMMM yyyy')}`;
     }
     
     // Generate recommendations and takeaways
@@ -844,7 +890,7 @@ export function GreetingWidget({
             className={currentPeriod === 'weekly' ? 'bg-gray-800' : ''}
             onClick={() => setCurrentPeriod('weekly')}
           >
-            This Week
+            Last Week
           </Button>
           <Button 
             variant="outline" 
@@ -1094,9 +1140,25 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'weekly' && weeklyReport ? (
         <div>
-          <h4 className="font-medium text-lg mb-2">Weekly Performance Review</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store performed in the last 7 days compared to the previous week.
+          {/* Report header with client info and prepared by */}
+          <div className="mb-6 border-b border-gray-800 pb-4">
+            <div className="flex items-center mb-1 text-blue-400">
+              <span className="mr-3 text-gray-500">📊</span>
+              <span>Reporting Period: {weeklyReport.dateRange}</span>
+            </div>
+            <div className="flex items-center mb-1 text-purple-400">
+              <span className="mr-3 text-gray-500">👤</span>
+              <span>Client Name: {weeklyReport.clientName}</span>
+            </div>
+            <div className="flex items-center text-gray-400">
+              <span className="mr-3 text-gray-500">👨‍💻</span>
+              <span>Prepared By: {weeklyReport.preparedBy}</span>
+            </div>
+          </div>
+          
+          <h4 className="text-xl font-bold mb-4">Weekly Performance Review</h4>
+          <p className="text-gray-400 mb-6">
+            Here's how your store performed last week compared to the previous week.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1133,16 +1195,59 @@ export function GreetingWidget({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Campaign Performance</h5>
-              
+              <h5 className="font-medium mb-3 text-lg">Key Performance Metrics</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-gray-400 pb-2">Metric</th>
+                      <th className="text-right text-gray-400 pb-2">This Week</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">Total Ad Spend</td>
+                      <td className="py-2 border-t border-gray-800 text-right">${weeklyReport.totalAdSpend.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">Revenue Generated</td>
+                      <td className="py-2 border-t border-gray-800 text-right">${weeklyReport.revenueGenerated.toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">ROAS (Return on Ad Spend)</td>
+                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.averageRoas.toFixed(2)}x</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">Click Through Rate (CTR)</td>
+                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.ctr.toFixed(2)}%</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">Cost Per Acquisition (CPA)</td>
+                      <td className="py-2 border-t border-gray-800 text-right">${(weeklyReport.totalAdSpend / weeklyReport.totalPurchases).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 border-t border-gray-800">New Customers Acquired</td>
+                      <td className="py-2 border-t border-gray-800 text-right">{weeklyReport.newCustomersAcquired}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-3 text-lg">Campaign Performance</h5>
               <div className="bg-[#222] p-4 rounded-lg space-y-4">
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Summer Collection</span>
-                    <span className="text-sm text-green-500">ROAS: 3.2x</span>
+                    <span className="text-sm font-medium">{weeklyReport.bestCampaign.name}</span>
+                    <span className="text-sm text-green-500">ROAS: {weeklyReport.bestCampaign.roas.toFixed(2)}x</span>
                   </div>
                   <div className="w-full bg-gray-700 h-2 rounded-full">
                     <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>CPA: ${weeklyReport.bestCampaign.cpa.toFixed(2)}</span>
+                    <span>CTR: {weeklyReport.bestCampaign.ctr?.toFixed(2)}%</span>
                   </div>
                 </div>
                 
@@ -1158,58 +1263,100 @@ export function GreetingWidget({
                 
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Brand Terms</span>
-                    <span className="text-sm text-green-500">ROAS: 2.1x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Non-Brand</span>
-                    <span className="text-sm text-red-500">ROAS: 0.9x</span>
+                    <span className="text-sm font-medium">{weeklyReport.underperformingCampaign.name}</span>
+                    <span className="text-sm text-red-500">ROAS: {weeklyReport.underperformingCampaign.roas.toFixed(2)}x</span>
                   </div>
                   <div className="w-full bg-gray-700 h-2 rounded-full">
                     <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
                   </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>CPA: ${weeklyReport.underperformingCampaign.cpa.toFixed(2)}</span>
+                    <span>CTR: {weeklyReport.underperformingCampaign.ctr?.toFixed(2)}%</span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {weeklyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
+          </div>
+          
+          <div className="mb-6">
+            <h5 className="font-medium mb-3 text-lg">Audience Performance Insights</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-3">Best Performing Audiences</h6>
+                <div className="space-y-3">
+                  {weeklyReport.audienceInsights.slice(0, 2).map((insight, index) => (
+                    <div key={index} className="flex items-start">
+                      <span className={`${index === 0 ? 'text-green-500' : 'text-blue-500'} mr-2`}>•</span>
+                      <div>
+                        <span className="font-medium">{insight.name}</span>
+                        {insight.roas && <span className="text-sm text-gray-400 ml-1">(ROAS: {insight.roas.toFixed(2)}x)</span>}
+                        {insight.note && <p className="text-xs text-gray-400 mt-0.5">{insight.note}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-3">Top Recommendations</h6>
+                <div className="space-y-2">
+                  {weeklyReport.nextSteps.slice(0, 3).map((step, index) => (
+                    <div key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-sm text-gray-300">{step}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-3">Recommendations</h5>
+            <h5 className="font-medium mb-3 text-lg text-blue-400">Week-over-Week Insights</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {weeklyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-3">Key Takeaways</h6>
+                <ul className="space-y-2">
+                  {weeklyReport.takeaways.slice(0, 3).map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-sm text-gray-300">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-3">Ad Creative Suggestions</h6>
+                <ul className="space-y-2">
+                  {weeklyReport.adCreativeSuggestions.slice(0, 3).map((suggestion, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-sm text-gray-300">{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
-          <h4 className="font-medium text-lg mb-2">Today's Performance</h4>
+          {/* Report header with client info and prepared by */}
+          <div className="mb-6 border-b border-gray-800 pb-4">
+            <div className="flex items-center mb-1 text-blue-400">
+              <span className="mr-3 text-gray-500">📊</span>
+              <span>Reporting Period: {dailyReport.dateRange}</span>
+            </div>
+            <div className="flex items-center mb-1 text-purple-400">
+              <span className="mr-3 text-gray-500">👤</span>
+              <span>Client Name: {dailyReport.clientName}</span>
+            </div>
+            <div className="flex items-center text-gray-400">
+              <span className="mr-3 text-gray-500">👨‍💻</span>
+              <span>Prepared By: {dailyReport.preparedBy}</span>
+            </div>
+          </div>
+          
+          <h4 className="text-xl font-bold mb-4">Today's Performance</h4>
           <p className="text-gray-400 mb-4">
             Here's how your store is performing today compared to yesterday.
             <span className="text-yellow-400 ml-2">
@@ -1245,19 +1392,19 @@ export function GreetingWidget({
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Live Metrics</h5>
-              <div className="space-y-2 mt-2">
-                <div className="flex justify-between text-sm">
-                  <span>Active Visitors:</span>
-                  <span className="font-medium">24</span>
+              <h5 className="text-sm text-gray-400 mb-1">Ad Performance</h5>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm">ROAS:</span>
+                  <span className="text-sm font-medium">{dailyReport.averageRoas.toFixed(2)}x</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Carts Created:</span>
-                  <span className="font-medium">8</span>
+                <div className="flex justify-between">
+                  <span className="text-sm">CTR:</span>
+                  <span className="text-sm font-medium">{dailyReport.ctr.toFixed(2)}%</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span>Ad Clicks Today:</span>
-                  <span className="font-medium">143</span>
+                <div className="flex justify-between">
+                  <span className="text-sm">CPA:</span>
+                  <span className="text-sm font-medium">${(dailyReport.totalAdSpend / dailyReport.totalPurchases).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -1265,70 +1412,103 @@ export function GreetingWidget({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Hourly Breakdown</h5>
-              <div className="bg-[#222] p-4 rounded-lg h-[200px] relative">
-                {/* Simulated hourly chart */}
-                <div className="absolute bottom-0 left-0 w-full h-[160px] flex items-end px-2">
-                  {Array.from({length: 12}).map((_, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-6 bg-blue-500 rounded-t"
-                        style={{
-                          height: `${Math.max(4, Math.min(140, index === 5 ? 120 : index === 6 ? 95 : index === 7 ? 80 : index === 8 ? 105 : index % 3 === 0 ? 50 : 30 + Math.random() * 50))}px`
-                        }}
-                      ></div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {(index + 9) % 12 === 0 ? '12' : (index + 9) % 12}{(index + 9) < 12 ? 'am' : 'pm'}
-                      </div>
-                    </div>
-                  ))}
+              <h5 className="font-medium mb-3 text-lg">Today vs. Yesterday</h5>
+              <div className="bg-[#222] p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Revenue</span>
+                  <div className="text-right">
+                    <span className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</span>
+                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
-                <div className="absolute top-2 left-3 text-xs text-gray-400">
-                  Revenue by hour
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Orders</span>
+                  <div className="text-right">
+                    <span className="text-sm font-medium">{dailyReport.totalPurchases}</span>
+                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Ad Spend</span>
+                  <div className="text-right">
+                    <span className="text-sm font-medium">${dailyReport.totalAdSpend.toFixed(2)}</span>
+                    <span className="text-xs ml-2 text-blue-400">
+                      {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">ROAS</span>
+                  <div className="text-right">
+                    <span className="text-sm font-medium">{dailyReport.averageRoas.toFixed(2)}x</span>
+                    <span className={`text-xs ml-2 ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3">Platform Activity</h5>
+              <h5 className="font-medium mb-3 text-lg">Campaign Insights</h5>
               <div className="bg-[#222] p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Shopify</div>
-                    <div className="text-xs text-gray-400">{dailyReport.totalPurchases} orders today</div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">{dailyReport.bestCampaign.name}</span>
+                    <span className="text-sm text-green-500">ROAS: {dailyReport.bestCampaign.roas.toFixed(2)}x</span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</div>
-                    <div className="text-xs text-green-500">+{dailyReport.periodComparison.salesGrowth.toFixed(1)}%</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Meta Ads</div>
-                    <div className="text-xs text-gray-400">87 clicks today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$186.32 spent</div>
-                    <div className="text-xs text-green-500">ROAS: 2.8x</div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
                   </div>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Google Ads</div>
-                    <div className="text-xs text-gray-400">56 clicks today</div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">{dailyReport.scalingOpportunities[0].name}</span>
+                    <span className="text-sm text-blue-500">ROAS: {dailyReport.scalingOpportunities[0].roas.toFixed(2)}x</span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$134.78 spent</div>
-                    <div className="text-xs text-red-500">ROAS: 1.9x</div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">{dailyReport.underperformingCampaign.name}</span>
+                    <span className="text-sm text-red-500">ROAS: {dailyReport.underperformingCampaign.roas.toFixed(2)}x</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
                   </div>
                 </div>
               </div>
-              
-              <div className="mt-4">
-                <h5 className="font-medium mb-2">Today's Top Products</h5>
-                <div className="bg-[#222] p-3 rounded-lg space-y-2">
+            </div>
+          </div>
+          
+          <div>
+            <h5 className="font-medium mb-3 text-lg text-blue-400">Today's Recommendations</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-2">Immediate Actions</h6>
+                <ul className="space-y-2">
+                  {dailyReport.recommendations.slice(0, 3).map((recommendation, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-sm text-gray-300">{recommendation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h6 className="text-sm font-medium mb-2">Top Products Today</h6>
+                <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Summer T-Shirt Collection</span>
                     <span>8 units</span>
@@ -1343,22 +1523,6 @@ export function GreetingWidget({
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Real-Time Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className="rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 bg-blue-500/20 text-blue-400">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
