@@ -53,7 +53,7 @@ export function WidgetManager({
   brands = []
 }: WidgetManagerProps) {
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
-  const [activeTab, setActiveTab] = useState<string>("shopify")
+  const [activeTab, setActiveTab] = useState<string>("site")
   const [connections, setConnections] = useState<PlatformConnection[]>(existingConnections || [])
   const [customerDataTab, setCustomerDataTab] = useState<string>("geography")
 

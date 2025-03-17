@@ -356,21 +356,6 @@ export function PlatformTabs({
               </CardContent>
             </Card>
           </div>
-          
-          {/* Customer Geography Map - Full Width */}
-          <div className="w-full mt-6">
-            <Card className="bg-[#111111] border-[#222222]">
-              <CardHeader className="py-4">
-                <CardTitle className="text-white">Customer Geography</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CustomerGeographicMap 
-                  brandId={brandId}
-                  isRefreshing={isRefreshingData}
-                />
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </TabsContent>
 
