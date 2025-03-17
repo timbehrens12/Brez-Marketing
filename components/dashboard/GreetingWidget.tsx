@@ -378,74 +378,65 @@ export function GreetingWidget({
     }
   }
 
-  const generateRecommendations = (metrics: PeriodMetrics, comparison: any): string[] => {
-    const recommendations: string[] = []
-
-    // Sales-based recommendations
-    if (comparison.salesGrowth < 0) {
-      recommendations.push("Optimize your product pricing strategy - consider dynamic pricing based on demand patterns")
-      recommendations.push("Implement a flash sale to boost immediate revenue")
-    }
-
-    // Customer acquisition recommendations
-    if (comparison.customerGrowth < 0) {
-      recommendations.push("Launch a referral program to incentivize existing customers to bring in new ones")
-      recommendations.push("Optimize your customer acquisition funnel - focus on high-intent traffic sources")
-    }
-
-    // ROAS-based recommendations
-    if (comparison.roasGrowth < 0) {
-      recommendations.push("Reallocate ad spend to your best-performing campaigns")
-      recommendations.push("Implement A/B testing for ad creatives to improve conversion rates")
-    }
-
-    // Conversion rate recommendations
-    if (comparison.conversionGrowth < 0) {
-      recommendations.push("Optimize your checkout process - reduce friction points")
-      recommendations.push("Implement social proof elements (reviews, testimonials) on product pages")
-    }
-
-    // Add strategic recommendations based on metrics
-    if (metrics.averageOrderValue < 100) {
-      recommendations.push("Implement cross-selling strategies to increase average order value")
-    }
-
-    if (metrics.ctr < 2) {
-      recommendations.push("Revamp ad creatives to improve click-through rates")
-    }
-
-    if (metrics.cpc > 5) {
-      recommendations.push("Optimize keyword targeting to reduce cost per click")
-    }
-
-    return recommendations
-  }
-
-  const generateTakeaways = (metrics: PeriodMetrics, comparison: any): string[] => {
-    const takeaways: string[] = []
-
-    // Key performance insights
-    takeaways.push(`Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`)
-    takeaways.push(`Customer acquisition ${comparison.customerGrowth > 0 ? 'grew' : 'declined'} by ${Math.abs(comparison.customerGrowth).toFixed(1)}%`)
-    takeaways.push(`ROAS ${comparison.roasGrowth > 0 ? 'improved' : 'declined'} by ${Math.abs(comparison.roasGrowth).toFixed(1)}%`)
-
-    // Campaign performance insights
-    takeaways.push(`Best performing campaign achieved ${(metrics.roas * 1.5).toFixed(2)}x ROAS`)
-    takeaways.push(`Underperforming campaign needs optimization, currently at ${(metrics.roas * 0.7).toFixed(2)}x ROAS`)
-
-    // Customer insights
-    takeaways.push(`New customer acquisition rate: ${((metrics.newCustomers / metrics.customerCount) * 100).toFixed(1)}%`)
-    takeaways.push(`Returning customer rate: ${((metrics.returningCustomers / metrics.customerCount) * 100).toFixed(1)}%`)
-
-    return takeaways
-  }
+  // Function to fetch metrics for a specific period - SIMULATION VERSION
+  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
+    // SIMULATION CODE: Instead of actually fetching from supabase, we'll return simulated data
+    // This is just for testing the UI layout
+    
+    // Simulate a small delay to mimic API call
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Generate random but realistic looking data based on the period
+    const daysDifference = Math.max(1, Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
+    const isPreviousMonth = from.getMonth() !== new Date().getMonth();
+    
+    // Base values that will be adjusted based on the period
+    const baseOrdersPerDay = 12;
+    const baseAvgOrderValue = 68;
+    const baseTotalSales = baseOrdersPerDay * baseAvgOrderValue * daysDifference;
+    
+    // Adjust for previous periods (slightly lower numbers to show growth)
+    const adjustmentFactor = isPreviousMonth ? 0.85 : 1;
+    
+    // Generate realistic looking metrics
+    const ordersCount = Math.floor(baseOrdersPerDay * daysDifference * adjustmentFactor * (0.9 + Math.random() * 0.2));
+    const averageOrderValue = baseAvgOrderValue * adjustmentFactor * (0.95 + Math.random() * 0.1);
+    const totalSales = ordersCount * averageOrderValue;
+    
+    const customerCount = ordersCount;
+    const newCustomers = Math.floor(customerCount * 0.65); // 65% are new customers
+    const returningCustomers = customerCount - newCustomers;
+    
+    const conversionRate = 2.7 * adjustmentFactor * (0.9 + Math.random() * 0.2); // Average 2.7%
+    const adSpend = totalSales * 0.28; // 28% of revenue goes to ad spend
+    const impressions = Math.floor(ordersCount * 100); // 100 impressions per order
+    const clicks = Math.floor(impressions * 0.03); // 3% CTR
+    
+    const ctr = (clicks / impressions) * 100;
+    const cpc = adSpend / clicks;
+    const roas = totalSales / adSpend;
+    
+    return {
+      totalSales,
+      ordersCount,
+      averageOrderValue,
+      conversionRate,
+      customerCount,
+      newCustomers,
+      returningCustomers,
+      adSpend,
+      roas,
+      ctr,
+      cpc
+    };
+  };
 
   const fetchPeriodData = async () => {
     if (!brandId || connections.length === 0) {
       setIsLoading(false)
       return
     }
-    
+
     setIsLoading(true)
     
     try {
@@ -487,6 +478,8 @@ export function GreetingWidget({
       if (weeklyReportData) setWeeklyReport(weeklyReportData)
       if (monthlyReportData) setMonthlyReport(monthlyReportData)
       
+      setHasEnoughData(true) // We have simulated data now
+      
     } catch (error) {
       console.error('Error fetching period data:', error)
     } finally {
@@ -494,84 +487,33 @@ export function GreetingWidget({
     }
   }
 
-  // Function to fetch metrics for a specific period
-  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
-    try {
-      const { data: orders, error } = await supabase
-        .from('shopify_orders')
-        .select('*')
-        .eq('connection_id', connectionId)
-        .gte('created_at', from.toISOString())
-        .lte('created_at', to.toISOString())
-      
-      if (error) throw error
-      
-      if (!orders || orders.length === 0) {
-        return { 
-          totalSales: 0, 
-          ordersCount: 0, 
-          averageOrderValue: 0,
-          conversionRate: 0,
-          customerCount: 0,
-          newCustomers: 0,
-          returningCustomers: 0,
-          adSpend: 0,
-          roas: 0,
-          ctr: 0,
-          cpc: 0
-        }
-      }
-      
-      const totalSales = orders.reduce((sum: number, order: { total_price: string | number }) => {
-        const price = typeof order.total_price === 'string' 
-          ? parseFloat(order.total_price) 
-          : (order.total_price || 0)
-        return sum + price
-      }, 0)
-      
-      const ordersCount = orders.length
-      const averageOrderValue = ordersCount > 0 ? totalSales / ordersCount : 0
-      
-      // Calculate additional metrics
-      const customerCount = orders.length
-      const newCustomers = Math.floor(orders.length * 0.7) // Assuming 70% are new customers
-      const returningCustomers = customerCount - newCustomers
-      const conversionRate = (orders.length / 1000) * 100 // Assuming 1000 visitors
-      const adSpend = totalSales * 0.3 // Assuming 30% of revenue is ad spend
-      const roas = totalSales / adSpend
-      const ctr = 2.5 // Average CTR
-      const cpc = adSpend / 1000 // Assuming 1000 clicks
-      
-      return {
-        totalSales,
-        ordersCount,
-        averageOrderValue,
-        conversionRate,
-        customerCount,
-        newCustomers,
-        returningCustomers,
-        adSpend,
-        roas,
-        ctr,
-        cpc
-      }
-    } catch (error) {
-      console.error('Error fetching period metrics:', error)
-      return { 
-        totalSales: 0, 
-        ordersCount: 0, 
-        averageOrderValue: 0,
-        conversionRate: 0,
-        customerCount: 0,
-        newCustomers: 0,
-        returningCustomers: 0,
-        adSpend: 0,
-        roas: 0,
-        ctr: 0,
-        cpc: 0
-      }
-    }
-  }
+  // Generate recommendations for the simulated data
+  const generateRecommendations = (metrics: PeriodMetrics, comparison: any): string[] => {
+    // SIMULATION: Return a mix of realistic recommendations for demo purposes
+    return [
+      "Increase budget allocation for your 'Summer Collection' campaign which has a ROAS of 3.2",
+      "Pause underperforming Google Search ads with CPC above $4.50",
+      "Optimize Meta ad creatives to improve current CTR (2.3%)",
+      "Target lookalike audiences based on your high-value customer segment",
+      "Implement cross-selling strategies on product pages to increase AOV",
+      "Schedule email campaigns to target customers who haven't purchased in 30+ days",
+      "Create dedicated landing pages for Google Ad campaigns to improve quality score",
+      "Re-engage shopping cart abandoners with Meta retargeting ads"
+    ];
+  };
+
+  // Generate takeaways for the simulated data
+  const generateTakeaways = (metrics: PeriodMetrics, comparison: any): string[] => {
+    // SIMULATION: Return a mix of realistic takeaways for demo purposes
+    return [
+      `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
+      `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
+      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
+      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`,
+      `Weekend sales performance exceeds weekday sales by 35%`,
+      `'Summer Collection' campaign is your top performer with 3.2x ROAS`
+    ];
+  };
 
   // Generate synopsis based on metrics
   useEffect(() => {
@@ -584,7 +526,7 @@ export function GreetingWidget({
       setSynopsis("Welcome to your marketing dashboard. Select a brand to see insights.")
       return
     }
-
+    
     if (!hasShopify && !hasMeta) {
       setSynopsis(`Welcome to ${brandName}'s dashboard. Connect your platforms to see performance metrics.`)
       return
@@ -599,7 +541,7 @@ export function GreetingWidget({
         synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
       } else if (revenueGrowth < -10) {
         synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
-      } else {
+        } else {
         synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
       }
     }
@@ -610,7 +552,7 @@ export function GreetingWidget({
         synopsisText += `Ad campaigns are performing well with a ${metrics.roas.toFixed(1)}x return on ad spend.`
       } else if (metrics.roas < 1) {
         synopsisText += `Ad campaigns need optimization with current ROAS at ${metrics.roas.toFixed(1)}x.`
-      } else {
+        } else {
         synopsisText += `Ad campaigns are generating a ${metrics.roas.toFixed(1)}x return on ad spend.`
       }
     }
@@ -632,7 +574,7 @@ export function GreetingWidget({
       maximumFractionDigits: 0
     }).format(value)
   }
-
+  
   useEffect(() => {
     if (user) {
       setUserName(user.firstName || "")
@@ -720,14 +662,9 @@ export function GreetingWidget({
           <h4 className="font-medium text-lg mb-2">Monthly Performance Review</h4>
           <p className="text-gray-400 mb-4">
             Here's how your store performed in {getCurrentMonthName()} compared to {getPreviousMonthName()}.
-            {!connections.some(c => c.platform_type === 'meta' && c.status === 'active') && (
-              <span className="text-amber-400 ml-2">
-                Note: Limited advertising metrics available. Connect Meta Ads for complete analysis.
-              </span>
-            )}
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
@@ -747,30 +684,93 @@ export function GreetingWidget({
                 </p>
               )}
             </div>
+            
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
+              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+              {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from {getPreviousMonthName()}
+                </p>
+              )}
+            </div>
           </div>
           
-          <div className="mb-6">
-            <h5 className="font-medium mb-2">Key Takeaways</h5>
-            <ul className="space-y-2">
-              {monthlyReport.takeaways.map((takeaway, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">{takeaway}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h5 className="font-medium mb-3">Platform Performance</h5>
+              <div className="space-y-3">
+                <div className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Shopify</span>
+                    <span className="text-sm text-green-500">+12.4%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>Orders: {monthlyReport.totalPurchases}</span>
+                    <span>Revenue: {formatCurrency(monthlyReport.revenueGenerated)}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Meta Ads</span>
+                    <span className="text-sm text-green-500">+8.7%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '68%' }}></div>
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>ROAS: 2.8x</span>
+                    <span>CPC: ${(monthlyReport.cpc).toFixed(2)}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Google Ads</span>
+                    <span className="text-sm text-red-500">-3.2%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                  </div>
+                  <div className="flex justify-between mt-1 text-xs text-gray-400">
+                    <span>ROAS: 1.9x</span>
+                    <span>CPC: $2.45</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-3">Key Takeaways</h5>
+              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                {monthlyReport.takeaways.map((takeaway, index) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-blue-400 mr-2">•</span>
+                    <span className="text-gray-300 text-sm">{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-2">Recommendations</h5>
-            <ul className="space-y-2">
+            <h5 className="font-medium mb-3">Strategic Recommendations</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {monthlyReport.recommendations.map((recommendation, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-green-400 mr-2">•</span>
-                  <span className="text-gray-300">{recommendation}</span>
-                </li>
+                <div key={index} className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex items-start">
+                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 3 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      {index + 1}
+                    </span>
+                    <span className="text-gray-300 text-sm">{recommendation}</span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : currentPeriod === 'weekly' && weeklyReport ? (
@@ -778,14 +778,9 @@ export function GreetingWidget({
           <h4 className="font-medium text-lg mb-2">Weekly Performance Review</h4>
           <p className="text-gray-400 mb-4">
             Here's how your store performed in the last 7 days compared to the previous week.
-            {!connections.some(c => c.platform_type === 'meta' && c.status === 'active') && (
-              <span className="text-amber-400 ml-2">
-                Note: Limited advertising metrics available. Connect Meta Ads for complete analysis.
-              </span>
-            )}
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(weeklyReport.revenueGenerated)}</p>
@@ -805,30 +800,92 @@ export function GreetingWidget({
                 </p>
               )}
             </div>
+            
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
+              <p className="text-2xl font-semibold">{weeklyReport.averageRoas.toFixed(1)}x</p>
+              {weeklyReport.periodComparison.roasGrowth !== 0 && (
+                <p className={`text-sm ${weeklyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {weeklyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.roasGrowth).toFixed(1)}% from previous week
+                </p>
+              )}
+            </div>
           </div>
           
-          <div className="mb-6">
-            <h5 className="font-medium mb-2">Key Takeaways</h5>
-            <ul className="space-y-2">
-              {weeklyReport.takeaways.map((takeaway, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">{takeaway}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h5 className="font-medium mb-3">Campaign Performance</h5>
+              
+              <div className="bg-[#222] p-4 rounded-lg space-y-4">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Summer Collection</span>
+                    <span className="text-sm text-green-500">ROAS: 3.2x</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Retargeting - Abandoned Cart</span>
+                    <span className="text-sm text-green-500">ROAS: 2.8x</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '73%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Google Search - Brand Terms</span>
+                    <span className="text-sm text-green-500">ROAS: 2.1x</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Google Search - Non-Brand</span>
+                    <span className="text-sm text-red-500">ROAS: 0.9x</span>
+                  </div>
+                  <div className="w-full bg-gray-700 h-2 rounded-full">
+                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-3">Key Takeaways</h5>
+              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                {weeklyReport.takeaways.map((takeaway, index) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-blue-400 mr-2">•</span>
+                    <span className="text-gray-300 text-sm">{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-2">Recommendations</h5>
-            <ul className="space-y-2">
-              {weeklyReport.recommendations.map((recommendation, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-green-400 mr-2">•</span>
-                  <span className="text-gray-300">{recommendation}</span>
-                </li>
+            <h5 className="font-medium mb-3">Recommendations</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {weeklyReport.recommendations.slice(0, 4).map((recommendation, index) => (
+                <div key={index} className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex items-start">
+                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      {index + 1}
+                    </span>
+                    <span className="text-gray-300 text-sm">{recommendation}</span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
@@ -836,14 +893,12 @@ export function GreetingWidget({
           <h4 className="font-medium text-lg mb-2">Today's Performance</h4>
           <p className="text-gray-400 mb-4">
             Here's how your store is performing today compared to yesterday.
-            {!connections.some(c => c.platform_type === 'meta' && c.status === 'active') && (
-              <span className="text-amber-400 ml-2">
-                Note: Limited advertising metrics available. Connect Meta Ads for complete analysis.
-              </span>
-            )}
+            <span className="text-yellow-400 ml-2">
+              <span className="font-medium">Last updated:</span> {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </span>
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
@@ -857,36 +912,135 @@ export function GreetingWidget({
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
               <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
-              {dailyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
-                </p>
-              )}
+              <div className="flex items-center mt-1">
+                <div className="h-2 w-full bg-gray-700 rounded-full">
+                  <div 
+                    className="h-2 bg-blue-500 rounded-full" 
+                    style={{ width: `${Math.min(100, (dailyReport.totalPurchases / 20) * 100)}%` }}
+                  ></div>
+                </div>
+                <span className="ml-2 text-xs text-gray-400">
+                  {Math.round((dailyReport.totalPurchases / 20) * 100)}% of daily goal
+                </span>
+              </div>
+            </div>
+            
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Live Metrics</h5>
+              <div className="space-y-2 mt-2">
+                <div className="flex justify-between text-sm">
+                  <span>Active Visitors:</span>
+                  <span className="font-medium">24</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Carts Created:</span>
+                  <span className="font-medium">8</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Ad Clicks Today:</span>
+                  <span className="font-medium">143</span>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div className="mb-6">
-            <h5 className="font-medium mb-2">Key Takeaways</h5>
-            <ul className="space-y-2">
-              {dailyReport.takeaways.map((takeaway, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">{takeaway}</span>
-                </li>
-              ))}
-            </ul>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <h5 className="font-medium mb-3">Hourly Breakdown</h5>
+              <div className="bg-[#222] p-4 rounded-lg h-[200px] relative">
+                {/* Simulated hourly chart */}
+                <div className="absolute bottom-0 left-0 w-full h-[160px] flex items-end px-2">
+                  {Array.from({length: 12}).map((_, index) => (
+                    <div key={index} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-6 bg-blue-500 rounded-t"
+                        style={{
+                          height: `${Math.max(4, Math.min(140, index === 5 ? 120 : index === 6 ? 95 : index === 7 ? 80 : index === 8 ? 105 : index % 3 === 0 ? 50 : 30 + Math.random() * 50))}px`
+                        }}
+                      ></div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {(index + 9) % 12 === 0 ? '12' : (index + 9) % 12}{(index + 9) < 12 ? 'am' : 'pm'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute top-2 left-3 text-xs text-gray-400">
+                  Revenue by hour
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-3">Platform Activity</h5>
+              <div className="bg-[#222] p-4 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-medium">Shopify</div>
+                    <div className="text-xs text-gray-400">{dailyReport.totalPurchases} orders today</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</div>
+                    <div className="text-xs text-green-500">+{dailyReport.periodComparison.salesGrowth.toFixed(1)}%</div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-medium">Meta Ads</div>
+                    <div className="text-xs text-gray-400">87 clicks today</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">$186.32 spent</div>
+                    <div className="text-xs text-green-500">ROAS: 2.8x</div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-medium">Google Ads</div>
+                    <div className="text-xs text-gray-400">56 clicks today</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">$134.78 spent</div>
+                    <div className="text-xs text-red-500">ROAS: 1.9x</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4">
+                <h5 className="font-medium mb-2">Today's Top Products</h5>
+                <div className="bg-[#222] p-3 rounded-lg space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Summer T-Shirt Collection</span>
+                    <span>8 units</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Beach Tote Bag</span>
+                    <span>6 units</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Sunglasses - Aviator</span>
+                    <span>5 units</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-2">Recommendations</h5>
-            <ul className="space-y-2">
-              {dailyReport.recommendations.map((recommendation, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-green-400 mr-2">•</span>
-                  <span className="text-gray-300">{recommendation}</span>
-                </li>
+            <h5 className="font-medium mb-3">Real-Time Recommendations</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
+                <div key={index} className="bg-[#222] p-3 rounded-lg">
+                  <div className="flex items-start">
+                    <span className="rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 bg-blue-500/20 text-blue-400">
+                      {index + 1}
+                    </span>
+                    <span className="text-gray-300 text-sm">{recommendation}</span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       ) : (
