@@ -186,34 +186,79 @@ export function GreetingWidget({
       return
     }
 
-    // Create a simple performance synopsis
-    let synopsisText = ""
+    // Get the previous month's date range
+    const today = new Date()
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+    const dateRange = `${format(lastMonth, 'MMM d')} - ${format(lastMonthEnd, 'MMM d')}`
+
+    // Create detailed performance synopsis
+    let synopsisText = `Monthly Performance Report\n\n`
+    synopsisText += `Reporting Period: ${dateRange}\n\n`
     
-    // Overall performance assessment
+    // Executive Summary
+    synopsisText += `Executive Summary:\n`
     if (hasShopify) {
-      if (revenueGrowth > 10) {
-        synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
-      } else if (revenueGrowth < -10) {
-        synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
+      synopsisText += `Over the last month, we generated ${periodData.month.ordersCount} total purchases `
+      if (hasMeta && metrics.adSpend > 0) {
+        synopsisText += `across various campaigns, with an average ROAS of ${metrics.roas.toFixed(2)}x `
+        synopsisText += `and a total ad spend of ${formatCurrency(metrics.adSpend)}.\n\n`
       } else {
-        synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
+        synopsisText += `with a total revenue of ${formatCurrency(periodData.month.totalSales)}.\n\n`
       }
     }
+
+    // Key Takeaways
+    synopsisText += `Key Takeaways:\n`
     
-    // Add Meta performance if available
-    if (hasMeta && metrics.adSpend > 0) {
+    // Best Performing Areas
+    if (hasShopify && hasMeta) {
+      if (metrics.roas > 2.5) {
+        synopsisText += `• Best Performing: Ad campaigns are excelling with a ${metrics.roas.toFixed(2)}x ROAS `
+        synopsisText += `(CPA: ${formatCurrency(metrics.costPerResult)})\n`
+      }
+      
+      if (metrics.conversionRate > 0.02) {
+        synopsisText += `• Strong Conversion Rate: ${(metrics.conversionRate * 100).toFixed(2)}% across campaigns\n`
+      }
+    }
+
+    // Underperforming Areas
+    if (hasMeta) {
+      if (metrics.roas < 1.5) {
+        synopsisText += `• Needs Improvement: Current ROAS at ${metrics.roas.toFixed(2)}x indicates room for optimization\n`
+      }
+      if (metrics.ctr < 0.01) {
+        synopsisText += `• Low Engagement: CTR below 1% (${(metrics.ctr * 100).toFixed(2)}%) across campaigns\n`
+      }
+    }
+
+    // Scaling Opportunities
+    if (hasShopify && hasMeta) {
       if (metrics.roas > 2) {
-        synopsisText += `Ad campaigns are performing well with a ${metrics.roas.toFixed(1)}x return on ad spend.`
-      } else if (metrics.roas < 1) {
-        synopsisText += `Ad campaigns need optimization with current ROAS at ${metrics.roas.toFixed(1)}x.`
-      } else {
-        synopsisText += `Ad campaigns are generating a ${metrics.roas.toFixed(1)}x return on ad spend.`
+        synopsisText += `• Scaling Opportunity: High-performing campaigns (${metrics.roas.toFixed(2)}x ROAS) `
+        synopsisText += `suggest room for budget expansion\n`
       }
     }
-    
-    // Default message if we don't have enough data
-    if (!synopsisText) {
-      synopsisText = `${brandName} dashboard initialized. Gathering performance data to generate insights.`
+
+    // Recommendations
+    synopsisText += `\nRecommended Actions:\n`
+    if (hasMeta) {
+      if (metrics.roas < 1.5) {
+        synopsisText += `• Review and optimize underperforming ad campaigns\n`
+      }
+      if (metrics.ctr < 0.01) {
+        synopsisText += `• Test new creative formats to improve engagement\n`
+      }
+      if (metrics.roas > 2) {
+        synopsisText += `• Consider increasing budget for best-performing campaigns\n`
+      }
+    }
+    if (hasShopify) {
+      if (periodData.month.ordersCount > 0) {
+        synopsisText += `• Focus on customer retention strategies\n`
+        synopsisText += `• Analyze top-performing products for scaling opportunities\n`
+      }
     }
     
     setSynopsis(synopsisText)
@@ -254,9 +299,29 @@ export function GreetingWidget({
             {!isMinimized && (
               <>
                 {/* Performance Synopsis */}
-                <p className="text-gray-400 mt-2">
-                  {synopsis}
-                </p>
+                <div className="mt-4 text-gray-300 whitespace-pre-line">
+                  {synopsis.split('\n').map((line, index) => {
+                    if (line.startsWith('Monthly Performance Report')) {
+                      return <h4 key={index} className="text-lg font-semibold text-white mb-2">{line}</h4>
+                    }
+                    if (line.startsWith('Reporting Period:')) {
+                      return <p key={index} className="text-sm text-gray-400 mb-4">{line}</p>
+                    }
+                    if (line.startsWith('Executive Summary:')) {
+                      return <h5 key={index} className="text-md font-medium text-white mt-2 mb-2">{line}</h5>
+                    }
+                    if (line.startsWith('Key Takeaways:')) {
+                      return <h5 key={index} className="text-md font-medium text-white mt-4 mb-2">{line}</h5>
+                    }
+                    if (line.startsWith('Recommended Actions:')) {
+                      return <h5 key={index} className="text-md font-medium text-white mt-4 mb-2">{line}</h5>
+                    }
+                    if (line.startsWith('•')) {
+                      return <p key={index} className="text-sm ml-2 mb-1">{line}</p>
+                    }
+                    return <p key={index} className="text-sm mb-1">{line}</p>
+                  })}
+                </div>
                 
                 {/* Daily Sales Snapshot */}
                 {hasShopify && periodData.today && (
