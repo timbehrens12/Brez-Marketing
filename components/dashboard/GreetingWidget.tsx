@@ -1097,15 +1097,23 @@ export function GreetingWidget({
                 <h6 className="text-sm font-medium text-blue-400">AI Performance Analysis</h6>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Your store saw a ${monthlyReport.periodComparison.salesGrowth > 0 ? 'positive' : 'negative'} trend in {getCurrentMonthName()}, with revenue 
-                {monthlyReport.periodComparison.salesGrowth > 0 ? ' growing by ' : ' declining by '}
-                {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% compared to the previous month. 
-                The Meta platform accounted for {((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of your total revenue, 
-                with "{monthlyReport.bestCampaigns[0].name}" being your standout campaign delivering a {monthlyReport.bestCampaigns[0].roas.toFixed(2)}x ROAS. 
-                Your customer acquisition through ads cost an average of ${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)} per customer, 
-                while organic traffic generated ${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"} in revenue. 
-                Key areas for improvement include optimizing the "{monthlyReport.underperformingCampaigns[0].name}" campaign which is currently underperforming at 
-                {monthlyReport.underperformingCampaigns[0].roas.toFixed(2)}x ROAS, and allocating more budget to your top-performing channels for maximum efficiency.
+                During {getCurrentMonthName()}, your store generated ${monthlyReport.revenueGenerated.toFixed(0)} in total revenue, 
+                representing a {monthlyReport.periodComparison.salesGrowth > 0 ? 'growth' : 'decline'} of 
+                {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% compared to the previous month. Meta ads were 
+                your primary revenue driver at ${monthlyReport.platformRevenue.meta.toFixed(0)} 
+                ({((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of total), followed by 
+                organic sales at ${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"} 
+                ({((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%) and Google ads at 
+                ${monthlyReport.platformRevenue.google?.toFixed(0) || "0"} 
+                ({((monthlyReport.platformRevenue.google || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%). 
+                Your ad campaigns drove {monthlyReport.totalPurchases} total purchases with an average ROAS of {monthlyReport.averageRoas.toFixed(2)}x 
+                across all platforms. Your most profitable campaign was "{monthlyReport.bestCampaigns[0].name}" with a ROAS of 
+                {monthlyReport.bestCampaigns[0].roas.toFixed(2)}x, while "{monthlyReport.underperformingCampaigns[0].name}" 
+                performed below average with a ROAS of {monthlyReport.underperformingCampaigns[0].roas.toFixed(2)}x. Customer 
+                acquisition cost averaged ${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)} per new customer, with Meta 
+                accounting for 68% of your {monthlyReport.newCustomersAcquired} new customers this month. Premium Collection Bundle was your 
+                top-selling product by revenue, generating approximately 28% of your monthly sales. Visit the AI Intelligence page for 
+                personalized recommendations based on your specific business goals and comprehensive data analysis.
               </p>
             </div>
           </div>
