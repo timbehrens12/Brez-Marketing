@@ -17,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
+import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
 
 interface PlatformTabsProps {
   platforms: {
@@ -349,6 +350,21 @@ export function PlatformTabs({
                     date: d.date,
                     revenue: d.amount || 0
                   }))} 
+                  brandId={brandId}
+                  isRefreshing={isRefreshingData}
+                />
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Customer Geography Map - Full Width */}
+          <div className="w-full mt-6">
+            <Card className="bg-[#111111] border-[#222222]">
+              <CardHeader className="py-4">
+                <CardTitle className="text-white">Customer Geography</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CustomerGeographicMap 
                   brandId={brandId}
                   isRefreshing={isRefreshingData}
                 />
