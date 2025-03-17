@@ -1079,12 +1079,12 @@ export function GreetingWidget({
                 )}
               </div>
               <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                <p className="text-xs text-gray-400 mb-1">Conversion Rate</p>
-                <p className="text-xl font-semibold text-white">{monthlyReport.conversionRate.toFixed(2)}%</p>
-                {monthlyReport.periodComparison.conversionGrowth !== 0 && (
-                  <p className={`text-xs flex items-center ${monthlyReport.periodComparison.conversionGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {monthlyReport.periodComparison.conversionGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(monthlyReport.periodComparison.conversionGrowth).toFixed(1)}%
+                <p className="text-xs text-gray-400 mb-1">Average ROAS</p>
+                <p className="text-xl font-semibold text-white">{monthlyReport.averageRoas.toFixed(2)}x</p>
+                {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                  <p className={`text-xs flex items-center ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {monthlyReport.periodComparison.roasGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                    {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}%
                   </p>
                 )}
               </div>
@@ -1111,147 +1111,67 @@ export function GreetingWidget({
             </div>
           </div>
           
-          {/* Combined Revenue & Campaign Performance Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Revenue Breakdown */}
-            <div>
-              <h5 className="font-semibold mb-3 text-lg">Revenue Sources</h5>
-              <div className="bg-[#222] p-5 rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-white">Total Revenue: ${monthlyReport.revenueGenerated.toFixed(0)}</span>
-                  <span className="text-xs text-gray-400">by platform</span>
-                </div>
-                
-                {/* Revenue breakdown by platform */}
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Meta Ads</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">${monthlyReport.platformRevenue.meta.toFixed(0)}</span>
-                        <span className="text-xs text-gray-400 ml-2">({((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100}%` }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Google Ads</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">${monthlyReport.platformRevenue.google?.toFixed(0) || "0"}</span>
-                        <span className="text-xs text-gray-400 ml-2">({((monthlyReport.platformRevenue.google || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `${((monthlyReport.platformRevenue.google || 0) / monthlyReport.revenueGenerated) * 100}%` }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Organic</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"}</span>
-                        <span className="text-xs text-gray-400 ml-2">({((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full">
-                      <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated) * 100}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Ad Spend Summary */}
-                <div className="mt-5 pt-4 border-t border-gray-800">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium text-white">Ad Spend</span>
-                    <span className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400">
-                    <span>Meta: ${monthlyReport.platformAdSpend.meta.toFixed(0)} ({((monthlyReport.platformAdSpend.meta / monthlyReport.totalAdSpend) * 100).toFixed(0)}%)</span>
-                    <span>Google: ${monthlyReport.platformAdSpend.google?.toFixed(0) || "0"} ({((monthlyReport.platformAdSpend.google || 0) / monthlyReport.totalAdSpend * 100).toFixed(0)}%)</span>
-                  </div>
+          {/* Detailed AI Performance Analysis */}
+          <div className="mt-6">
+            <h5 className="font-semibold mb-3 text-lg text-blue-400">
+              <div className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2" />
+                AI Performance Analysis
+              </div>
+            </h5>
+            <div className="bg-[#222] p-5 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-white">
+                  Analysis for {monthlyReport?.dateRange || "the past month"}
+                </span>
+                <div className="flex items-center text-xs text-blue-400">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI-generated insights
                 </div>
               </div>
-            </div>
-            
-            {/* Campaign Performance */}
-            <div>
-              <h5 className="font-semibold mb-3 text-lg">Campaign Performance</h5>
-              <div className="bg-[#222] p-5 rounded-xl">
-                {/* Top Campaigns */}
-                <h6 className="text-sm font-medium text-green-500 mb-3">Top Performers</h6>
-                <div className="space-y-4 mb-5">
-                  {monthlyReport.bestCampaigns.slice(0, 2).map((campaign, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between mb-1">
-                        <div>
-                          <span className="text-sm font-medium text-white">{campaign.name}</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
-                            {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
-                          </div>
-                        </div>
-                        <span className="text-sm text-green-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
-                      </div>
-                      <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full" 
-                          style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+
+              <div className="space-y-4 text-sm text-gray-300">
+                <p>
+                  During {monthlyReport?.dateRange || "the past month"}, your store generated <span className="font-medium text-white">${monthlyReport?.revenueGenerated.toFixed(0) || "0"}</span> in revenue from <span className="font-medium text-white">{monthlyReport?.totalPurchases || "0"}</span> orders, with Meta ads contributing <span className="font-medium text-white">${monthlyReport?.platformRevenue.meta.toFixed(0) || "0"}</span> ({((monthlyReport?.platformRevenue.meta || 0) / (monthlyReport?.revenueGenerated || 1) * 100).toFixed(0)}%) and organic sales contributing <span className="font-medium text-white">${monthlyReport?.platformRevenue.organic?.toFixed(0) || "0"}</span> ({((monthlyReport?.platformRevenue.organic || 0) / (monthlyReport?.revenueGenerated || 1) * 100).toFixed(0)}%).
+                </p>
                 
-                {/* Underperforming Campaigns */}
-                <h6 className="text-sm font-medium text-red-500 mb-3">Needs Improvement</h6>
-                <div className="space-y-4">
-                  {monthlyReport.underperformingCampaigns.slice(0, 2).map((campaign, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between mb-1">
-                        <div>
-                          <span className="text-sm font-medium text-white">{campaign.name}</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs bg-gray-700 rounded-md px-1 py-0.5 text-gray-300">{campaign.platform}</span>
-                            {campaign.ctr && <span className="text-xs text-gray-400">CTR: {campaign.ctr.toFixed(2)}%</span>}
-                          </div>
-                        </div>
-                        <span className="text-sm text-red-500 font-medium">ROAS: {campaign.roas.toFixed(2)}x</span>
-                      </div>
-                      <div className="w-full bg-gray-800 h-2 rounded-full mt-2">
-                        <div 
-                          className="bg-red-500 h-2 rounded-full" 
-                          style={{ width: `${Math.min(100, campaign.roas * 10)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  ))}
+                <p>
+                  Your ad campaigns achieved an average ROAS of <span className="font-medium text-white">{monthlyReport?.averageRoas.toFixed(2) || "0.00"}x</span>, which is <span className={`font-medium ${(monthlyReport?.periodComparison.roasGrowth || 0) > 0 ? 'text-green-500' : 'text-red-500'}`}>{Math.abs(monthlyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% {(monthlyReport?.periodComparison.roasGrowth || 0) > 0 ? 'higher' : 'lower'}</span> than the previous period. The total ad spend was <span className="font-medium text-white">${monthlyReport?.totalAdSpend.toFixed(0) || "0"}</span>, with <span className="font-medium text-white">${monthlyReport?.platformAdSpend.meta.toFixed(0) || "0"}</span> ({((monthlyReport?.platformAdSpend.meta || 0) / (monthlyReport?.totalAdSpend || 1) * 100).toFixed(0)}%) allocated to Meta Ads.
+                </p>
+
+                <div className="pt-4 border-t border-gray-800">
+                  <h6 className="font-medium mb-3 text-white">Campaign Performance Insights:</h6>
+                  <ul className="space-y-2 list-disc pl-5">
+                    <li>Your top-performing campaign "<span className="font-medium text-white">{monthlyReport?.bestCampaigns[0]?.name || "Campaign"}</span>" achieved a ROAS of <span className="font-medium text-green-500">{monthlyReport?.bestCampaigns[0]?.roas.toFixed(2) || "0.00"}x</span> on the {monthlyReport?.bestCampaigns[0]?.platform || "Meta"} platform, making it your most efficient channel for customer acquisition.</li>
+                    <li>The "<span className="font-medium text-white">{monthlyReport?.underperformingCampaigns[0]?.name || "Campaign"}</span>" campaign underperformed with a ROAS of <span className="font-medium text-red-500">{monthlyReport?.underperformingCampaigns[0]?.roas.toFixed(2) || "0.00"}x</span>, suggesting potential optimization opportunities.</li>
+                    <li>Meta ads drove <span className="font-medium text-white">{((monthlyReport?.platformRevenue.meta || 0) / (monthlyReport?.revenueGenerated || 1) * 100).toFixed(0)}%</span> of your total revenue, indicating strong performance on this platform.</li>
+                    <li>Your order volume {(monthlyReport?.periodComparison.orderGrowth || 0) > 0 ? 'grew' : 'decreased'} by <span className={`font-medium ${(monthlyReport?.periodComparison.orderGrowth || 0) > 0 ? 'text-green-500' : 'text-red-500'}`}>{Math.abs(monthlyReport?.periodComparison.orderGrowth || 0).toFixed(1)}%</span> compared to the previous period.</li>
+                  </ul>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800">
+                  <h6 className="font-medium mb-3 text-white">Key Trends Identified:</h6>
+                  <ul className="space-y-2 list-disc pl-5">
+                    {monthlyReport?.takeaways.slice(0, 3).map((takeaway, index) => (
+                      <li key={index}>{takeaway}</li>
+                    ))}
+                    <li>The data indicates that scaling your top-performing campaigns while optimizing or pausing underperforming ones could significantly improve your overall marketing efficiency.</li>
+                  </ul>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800 text-center">
+                  <p className="mb-3 text-gray-400">
+                    This analysis is automatically generated using AI based on your connected platform data. For more detailed insights and actionable recommendations:
+                  </p>
+                  <Link 
+                    href="/ai-dashboard" 
+                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    View Complete AI Analysis
+                  </Link>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          {/* Simplified Next Steps & Recommendations Section */}
-          <div>
-            <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
-            <div className="bg-[#222] p-5 rounded-xl text-center">
-              <div className="mb-4">
-                <Sparkles className="h-5 w-5 text-blue-400 mx-auto mb-2" />
-                <p className="text-gray-300 mb-1">View AI-powered recommendations to improve your marketing performance</p>
-                <p className="text-xs text-gray-500">Based on your campaign data and performance trends</p>
-              </div>
-              <Link 
-                href="/ai-dashboard" 
-                className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                See AI-powered recommendations
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Link>
             </div>
           </div>
         </div>
@@ -1370,23 +1290,66 @@ export function GreetingWidget({
             </div>
           </div>
           
-          {/* Simplified Next Steps & Recommendations Section */}
-          <div>
-            <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
-            <div className="bg-[#222] p-5 rounded-xl text-center">
-              <div className="mb-4">
-                <Sparkles className="h-5 w-5 text-blue-400 mx-auto mb-2" />
-                <p className="text-gray-300 mb-1">View AI-powered recommendations to improve your marketing performance</p>
-                <p className="text-xs text-gray-500">Based on your campaign data and performance trends</p>
+          {/* Detailed AI Performance Analysis */}
+          <div className="mt-6">
+            <h5 className="font-semibold mb-3 text-lg text-blue-400">
+              <div className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2" />
+                AI Performance Analysis
               </div>
-              <Link 
-                href="/ai-dashboard" 
-                className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                See AI-powered recommendations
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Link>
+            </h5>
+            <div className="bg-[#222] p-5 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-white">
+                  Analysis for {dailyReport?.dateRange || "Today"}
+                </span>
+                <div className="flex items-center text-xs text-blue-400">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI-generated insights
+                </div>
+              </div>
+
+              <div className="space-y-4 text-sm text-gray-300">
+                <p>
+                  Today, your store generated <span className="font-medium text-white">${dailyReport?.revenueGenerated.toFixed(0) || "0"}</span> in revenue from <span className="font-medium text-white">{dailyReport?.totalPurchases || "0"}</span> orders, representing a <span className={`font-medium ${(dailyReport?.periodComparison.salesGrowth || 0) > 0 ? 'text-green-500' : 'text-red-500'}`}>{Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% {(dailyReport?.periodComparison.salesGrowth || 0) > 0 ? 'increase' : 'decrease'}</span> compared to yesterday. Meta ads contributed <span className="font-medium text-white">${dailyReport?.platformRevenue.meta.toFixed(0) || "0"}</span> ({((dailyReport?.platformRevenue.meta || 0) / (dailyReport?.revenueGenerated || 1) * 100).toFixed(0)}%) to today's revenue.
+                </p>
+                
+                <p>
+                  Your ad campaigns today achieved an average ROAS of <span className="font-medium text-white">{dailyReport?.averageRoas.toFixed(2) || "0.00"}x</span>, with a total ad spend of <span className="font-medium text-white">${dailyReport?.totalAdSpend.toFixed(0) || "0"}</span>. This represents a <span className={`font-medium ${(dailyReport?.periodComparison.roasGrowth || 0) > 0 ? 'text-green-500' : 'text-red-500'}`}>{Math.abs(dailyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% {(dailyReport?.periodComparison.roasGrowth || 0) > 0 ? 'improvement' : 'decline'}</span> in ROAS compared to yesterday.
+                </p>
+
+                <div className="pt-4 border-t border-gray-800">
+                  <h6 className="font-medium mb-3 text-white">Today's Key Insights:</h6>
+                  <ul className="space-y-2 list-disc pl-5">
+                    <li>Your "<span className="font-medium text-white">{dailyReport?.bestCampaigns?.[0]?.name || dailyReport?.bestCampaign.name || "Campaign"}</span>" campaign is performing exceptionally well with a ROAS of <span className="font-medium text-green-500">{(dailyReport?.bestCampaigns?.[0]?.roas || dailyReport?.bestCampaign.roas || 0).toFixed(2)}x</span>.</li>
+                    <li>The "<span className="font-medium text-white">{dailyReport?.underperformingCampaigns?.[0]?.name || dailyReport?.underperformingCampaign.name || "Campaign"}</span>" campaign requires attention with a low ROAS of <span className="font-medium text-red-500">{(dailyReport?.underperformingCampaigns?.[0]?.roas || dailyReport?.underperformingCampaign.roas || 0).toFixed(2)}x</span>.</li>
+                    <li>Organic traffic contributed <span className="font-medium text-white">${dailyReport?.platformRevenue.organic?.toFixed(0) || "0"}</span> ({((dailyReport?.platformRevenue.organic || 0) / (dailyReport?.revenueGenerated || 1) * 100).toFixed(0)}%) to today's revenue, highlighting the importance of your organic channels.</li>
+                    <li>Your clickthrough rate (CTR) of <span className="font-medium text-white">{dailyReport?.ctr.toFixed(2) || "0.00"}%</span> indicates the effectiveness of your ad creative and targeting.</li>
+                  </ul>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800">
+                  <h6 className="font-medium mb-3 text-white">Quick Insights:</h6>
+                  <ul className="space-y-2 list-disc pl-5">
+                    {dailyReport?.takeaways.slice(0, 3).map((takeaway, index) => (
+                      <li key={index}>{takeaway}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800 text-center">
+                  <p className="mb-3 text-gray-400">
+                    This analysis is automatically generated using AI based on today's performance data. For more detailed insights and actionable recommendations:
+                  </p>
+                  <Link 
+                    href="/ai-dashboard" 
+                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    View Complete AI Analysis
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
