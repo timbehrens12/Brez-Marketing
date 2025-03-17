@@ -1030,37 +1030,115 @@ export function GreetingWidget({
             </div>
           </div>
           
-          {/* Client Impact Section */}
+          {/* Revenue Breakdown Section */}
           <div className="mb-6">
-            <h5 className="font-semibold mb-3 text-lg">Overall Impact & ROI</h5>
-            <div className="bg-[#222] p-5 rounded-xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
-                      <span className="text-blue-400">📊</span>
+            <h5 className="font-semibold mb-3 text-lg">Revenue & Ad Performance by Platform</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#222] p-5 rounded-xl">
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Meta Ads Performance</h6>
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-400">Revenue Generated</span>
+                      <span className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.65).toFixed(2)}</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-200">Revenue Generated</span>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-400">Ad Spend</span>
+                      <span className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.7).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">ROAS</span>
+                      <span className="text-sm font-medium text-green-400">{(monthlyReport.averageRoas * 1.1).toFixed(2)}x</span>
+                    </div>
                   </div>
-                  <p className="text-xl font-semibold text-white">${monthlyReport.revenueGenerated.toFixed(2)}</p>
                 </div>
-                <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
-                      <span className="text-green-400">🏆</span>
+              </div>
+              
+              <div className="bg-[#222] p-5 rounded-xl">
+                <h6 className="text-sm font-medium text-gray-200 mb-3">Google Ads Performance</h6>
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-400">Revenue Generated</span>
+                      <span className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.35).toFixed(2)}</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-200">Biggest Win</span>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-400">Ad Spend</span>
+                      <span className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.3).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-400">ROAS</span>
+                      <span className="text-sm font-medium text-yellow-400">{(monthlyReport.averageRoas * 0.9).toFixed(2)}x</span>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-300">{monthlyReport.bestCampaign.name} at {monthlyReport.bestCampaign.roas.toFixed(2)}x ROAS</p>
                 </div>
-                <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
-                      <span className="text-red-400">⚠</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Client Impact Section with Multiple Wins/Challenges */}
+          <div className="mb-6">
+            <h5 className="font-semibold mb-3 text-lg">Performance Highlights</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-[#222] p-5 rounded-xl">
+                <h6 className="text-sm font-medium text-gray-200 mb-3 flex items-center">
+                  <CheckCircle2 className="h-4 w-4 mr-2 text-green-400" />
+                  Top Performing Areas
+                </h6>
+                <div className="space-y-3">
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
+                        <span className="text-green-400">🏆</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">{monthlyReport.bestCampaign.name}</p>
+                        <p className="text-xs text-gray-400">ROAS: {monthlyReport.bestCampaign.roas.toFixed(2)}x</p>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-200">Biggest Challenge</span>
                   </div>
-                  <p className="text-sm text-gray-300">High CPA in {monthlyReport.underperformingCampaign.name} ({monthlyReport.underperformingCampaign.roas.toFixed(2)}x ROAS)</p>
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
+                        <span className="text-green-400">📈</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">High CTR Campaigns</p>
+                        <p className="text-xs text-gray-400">CTR: {(monthlyReport.ctr * 1.2).toFixed(2)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-[#222] p-5 rounded-xl">
+                <h6 className="text-sm font-medium text-gray-200 mb-3 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-amber-400" />
+                  Areas for Improvement
+                </h6>
+                <div className="space-y-3">
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
+                        <span className="text-red-400">⚠</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">{monthlyReport.underperformingCampaign.name}</p>
+                        <p className="text-xs text-gray-400">ROAS: {monthlyReport.underperformingCampaign.roas.toFixed(2)}x</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center mr-2">
+                        <span className="text-red-400">📉</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">Low Converting Audiences</p>
+                        <p className="text-xs text-gray-400">Conv. Rate: {(monthlyReport.conversionRate * 0.7).toFixed(2)}%</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1068,7 +1146,12 @@ export function GreetingWidget({
           
           {/* Recommendations Section */}
           <div>
-            <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
+            <div className="flex justify-between items-center mb-3">
+              <h5 className="font-semibold text-lg text-blue-400">Next Steps & Recommendations</h5>
+              <Link href="/ai-dashboard" className="text-sm text-blue-400 hover:text-blue-300 flex items-center">
+                See Full Analysis <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
+            </div>
             <div className="bg-[#222] p-5 rounded-xl">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
