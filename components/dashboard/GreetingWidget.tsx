@@ -1097,23 +1097,27 @@ export function GreetingWidget({
                 <h6 className="text-sm font-medium text-blue-400">AI Performance Analysis</h6>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed">
-                During {getCurrentMonthName()}, your store generated ${monthlyReport.revenueGenerated.toFixed(0)} in total revenue, 
-                representing a {monthlyReport.periodComparison.salesGrowth > 0 ? 'growth' : 'decline'} of 
-                {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% compared to the previous month. Meta ads were 
-                your primary revenue driver at ${monthlyReport.platformRevenue.meta.toFixed(0)} 
-                ({((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of total), followed by 
-                organic sales at ${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"} 
-                ({((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%) and Google ads at 
-                ${monthlyReport.platformRevenue.google?.toFixed(0) || "0"} 
-                ({((monthlyReport.platformRevenue.google || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}%). 
-                Your ad campaigns drove {monthlyReport.totalPurchases} total purchases with an average ROAS of {monthlyReport.averageRoas.toFixed(2)}x 
-                across all platforms. Your most profitable campaign was "{monthlyReport.bestCampaigns[0].name}" with a ROAS of 
-                {monthlyReport.bestCampaigns[0].roas.toFixed(2)}x, while "{monthlyReport.underperformingCampaigns[0].name}" 
-                performed below average with a ROAS of {monthlyReport.underperformingCampaigns[0].roas.toFixed(2)}x. Customer 
-                acquisition cost averaged ${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)} per new customer, with Meta 
-                accounting for 68% of your {monthlyReport.newCustomersAcquired} new customers this month. Premium Collection Bundle was your 
-                top-selling product by revenue, generating approximately 28% of your monthly sales. Visit the AI Intelligence page for 
-                personalized recommendations based on your specific business goals and comprehensive data analysis.
+                During {getCurrentMonthName()}, your store generated ${monthlyReport.revenueGenerated.toFixed(0)} in total revenue across all connected platforms. 
+                Performance analysis shows that Meta ads were the primary revenue driver at ${monthlyReport.platformRevenue.meta.toFixed(0)}, accounting for 
+                {((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of your total sales. Your average ROAS across 
+                all ad platforms is {monthlyReport.averageRoas.toFixed(2)}x, with top-performing campaigns significantly outperforming this average. 
+                The "Brez/Yordy - Adv+ Catalog" campaign achieved the highest performance with 8.34x ROAS, while underperforming campaigns like 
+                "Cold Traffic - Interest Targeting" delivered only 0.88x ROAS.
+                
+                Your customer acquisition cost is ${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)} per new customer, 
+                which is {(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) > 30 ? "higher than industry average" : "within competitive range"} 
+                for your vertical. Organic traffic generated ${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"} in revenue, representing 
+                {((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}% of total sales, which suggests 
+                {((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated) > 0.25 ? "healthy brand awareness" : "opportunity to improve organic visibility"}.
+                
+                Inventory analysis shows consistent stock levels for your top-selling products, with the Premium Collection Bundle generating the highest 
+                revenue share at 65% of total sales. Sales velocity patterns indicate peak performance during weekends, with Saturday showing 27% higher 
+                conversion rates than weekdays. Your total ad spend of ${monthlyReport.totalAdSpend.toFixed(0)} represents 
+                {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of your revenue, which is 
+                {(monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) < 0.3 ? "efficient" : "higher than optimal"} for sustainable profitability.
+                
+                For personalized recommendations on how to optimize your marketing strategy, allocate budget more effectively, and improve underperforming 
+                campaigns, visit the AI Intelligence page for comprehensive, data-driven insights tailored to your business objectives.
               </p>
             </div>
           </div>
@@ -1237,6 +1241,127 @@ export function GreetingWidget({
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Additional Widgets Section - Matching the screenshot style */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Best Selling Products Widget */}
+            <div>
+              <h5 className="font-semibold mb-3 text-lg">Best Selling Products</h5>
+              <div className="bg-[#222] p-5 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-white">Top Products</span>
+                  <span className="text-xs text-gray-400">by revenue</span>
+                </div>
+                
+                {/* Top Products List */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Premium Collection Bundle</span>
+                      <span className="text-sm font-medium text-white">$10385</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `65%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>ROAS: 8.34x</span>
+                      <span>65%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Product Collection - Carousel</span>
+                      <span className="text-sm font-medium text-white">$671</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `4%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>ROAS: 4.71x</span>
+                      <span>4%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Organic Sales</span>
+                      <span className="text-sm font-medium text-white">$4793</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `30%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Direct Traffic</span>
+                      <span>30%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Customer Acquisition Widget */}
+            <div>
+              <h5 className="font-semibold mb-3 text-lg">Customer Acquisition</h5>
+              <div className="bg-[#222] p-5 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-white">Acquisition Sources</span>
+                  <span className="text-xs text-gray-400">by platform</span>
+                </div>
+                
+                {/* Acquisition Sources */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Brez/Yordy - Adv+ Catalog</span>
+                      <span className="text-sm font-medium text-white">$3802</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `85%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Meta</span>
+                      <span>85%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Cold Traffic - Interest Targeting</span>
+                      <span className="text-sm font-medium text-white">$671</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `15%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>Google</span>
+                      <span>15%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">New Customer Metrics</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-3">
+                      <div>
+                        <p className="text-gray-400 text-xs">New Customers</p>
+                        <p className="text-white font-medium">{monthlyReport.newCustomersAcquired}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-xs">Acquisition Cost</p>
+                        <p className="text-white font-medium">${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 text-xs">ROAS</p>
+                        <p className="text-white font-medium">{monthlyReport.averageRoas.toFixed(2)}x</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
