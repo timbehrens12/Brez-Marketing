@@ -104,6 +104,24 @@ export function GreetingWidget({
   metrics, 
   connections 
 }: GreetingWidgetProps) {
+  // Helper function to create empty metrics
+  const createEmptyMetrics = (): PeriodMetrics => {
+    return {
+      totalSales: 0,
+      ordersCount: 0,
+      averageOrderValue: 0,
+      conversionRate: 0,
+      customerCount: 0,
+      newCustomers: 0,
+      returningCustomers: 0,
+      adSpend: 0,
+      roas: 0,
+      ctr: 0,
+      cpc: 0
+    }
+  }
+
+  // Component state
   const { user } = useUser()
   const [greeting, setGreeting] = useState("")
   const [synopsis, setSynopsis] = useState("Loading your brand snapshot...")
@@ -150,7 +168,6 @@ export function GreetingWidget({
     roasGrowth: 0,
     conversionGrowth: 0
   })
-  const [hasMeta, setHasMeta] = useState(false)
 
   // Handle tab change
   const handlePeriodChange = (value: ReportPeriod) => {
@@ -1137,23 +1154,6 @@ export function GreetingWidget({
       setSynopsis("Error loading your brand snapshot.")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  // Helper function to create empty metrics
-  const createEmptyMetrics = (): PeriodMetrics => {
-    return {
-      totalSales: 0,
-      ordersCount: 0,
-      averageOrderValue: 0,
-      conversionRate: 0,
-      customerCount: 0,
-      newCustomers: 0,
-      returningCustomers: 0,
-      adSpend: 0,
-      roas: 0,
-      ctr: 0,
-      cpc: 0
     }
   }
 
