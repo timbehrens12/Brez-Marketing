@@ -1253,7 +1253,7 @@ export function GreetingWidget({
               <h5 className="font-semibold mb-3 text-lg">Best Selling Products</h5>
               <div className="bg-[#222] p-5 rounded-xl">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-white">Top Products</span>
+                  <span className="text-sm font-medium text-white">Shopify Store Products</span>
                   <span className="text-xs text-gray-400">by revenue</span>
                 </div>
                 
@@ -1261,42 +1261,42 @@ export function GreetingWidget({
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Premium Collection Bundle</span>
+                      <span className="text-sm text-gray-300">Premium Skincare Set</span>
                       <span className="text-sm font-medium text-white">$10385</span>
                     </div>
                     <div className="w-full bg-gray-800 h-2 rounded-full">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: `65%` }}></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>ROAS: 8.34x</span>
+                      <span>189 units sold</span>
                       <span>65%</span>
                     </div>
                   </div>
                   
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Product Collection - Carousel</span>
+                      <span className="text-sm text-gray-300">Facial Cleansing Brush</span>
                       <span className="text-sm font-medium text-white">$671</span>
                     </div>
                     <div className="w-full bg-gray-800 h-2 rounded-full">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: `4%` }}></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>ROAS: 4.71x</span>
+                      <span>72 units sold</span>
                       <span>4%</span>
                     </div>
                   </div>
                   
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Organic Sales</span>
+                      <span className="text-sm text-gray-300">Anti-Aging Night Cream</span>
                       <span className="text-sm font-medium text-white">$4793</span>
                     </div>
                     <div className="w-full bg-gray-800 h-2 rounded-full">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: `30%` }}></div>
                     </div>
                     <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>Direct Traffic</span>
+                      <span>312 units sold</span>
                       <span>30%</span>
                     </div>
                   </div>
