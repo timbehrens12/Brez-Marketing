@@ -1105,27 +1105,18 @@ export function GreetingWidget({
                 <h6 className="text-sm font-medium text-blue-400">AI Performance Analysis</h6>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed">
-                During {getCurrentMonthName()}, your store generated ${monthlyReport.revenueGenerated.toFixed(0)} in total revenue across all connected platforms. 
-                Performance analysis shows that Meta ads were the primary revenue driver at ${monthlyReport.platformRevenue.meta.toFixed(0)}, accounting for 
-                {((monthlyReport.platformRevenue.meta / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of your total sales. Your average ROAS across 
-                all ad platforms is {monthlyReport.averageRoas.toFixed(2)}x, with top-performing campaigns significantly outperforming this average. 
-                The "Brez/Yordy - Adv+ Catalog" campaign achieved the highest performance with 8.34x ROAS, while underperforming campaigns like 
-                "Cold Traffic - Interest Targeting" delivered only 0.88x ROAS.
+                <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "Cold Traffic - Interest Targeting" campaign is significantly underperforming with only 0.88x ROAS, well below breakeven. Consider pausing this campaign or reallocating budget.
+                <br/><br/>
+                <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Facial Cleansing Brush" stock is critically low (only 8 units remaining). Reorder immediately to avoid stockouts for this high-demand product.
+                <br/><br/>
+
+                During February, your store generated $15,292 in total revenue across all connected platforms, showing a 12.4% increase from January. Meta ads continue to be your primary revenue driver at $9,940 (65% of total sales). Your average ROAS across all ad platforms has improved to 3.57x, with the "Brez/Yordy - Adv+ Catalog" campaign achieving an exceptional 8.34x ROAS.
                 
-                Your customer acquisition cost is ${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)} per new customer, 
-                which is {(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) > 30 ? "higher than industry average" : "within competitive range"} 
-                for your vertical. Organic traffic generated ${monthlyReport.platformRevenue.organic?.toFixed(0) || "0"} in revenue, representing 
-                {((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated * 100).toFixed(0)}% of total sales, which suggests 
-                {((monthlyReport.platformRevenue.organic || 0) / monthlyReport.revenueGenerated) > 0.25 ? "healthy brand awareness" : "opportunity to improve organic visibility"}.
+                Your customer acquisition cost of $28.45 per new customer remains within competitive range for your vertical. Organic traffic generated $4,587 in revenue (30% of total), suggesting healthy brand awareness but with room for improvement.
                 
-                Inventory analysis shows consistent stock levels for your top-selling products, with the Premium Collection Bundle generating the highest 
-                revenue share at 65% of total sales. Sales velocity patterns indicate peak performance during weekends, with Saturday showing 27% higher 
-                conversion rates than weekdays. Your total ad spend of ${monthlyReport.totalAdSpend.toFixed(0)} represents 
-                {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(0)}% of your revenue, which is 
-                {(monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) < 0.3 ? "efficient" : "higher than optimal"} for sustainable profitability.
+                Weekend performance continues to outpace weekdays, with Saturday conversion rates 27% higher than average. Your ad spend represents 28% of revenue, which maintains efficient profitability levels, though could be optimized further.
                 
-                For personalized recommendations on how to optimize your marketing strategy, allocate budget more effectively, and improve underperforming 
-                campaigns, visit the AI Intelligence page for comprehensive, data-driven insights tailored to your business objectives.
+                <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your Google search campaigns are showing improving ROAS (+15.2% MoM) with potential for scaling. Consider increasing budget allocation to this channel by 10-15%.
               </p>
             </div>
           </div>
@@ -1327,25 +1318,22 @@ export function GreetingWidget({
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Revenue</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">${monthlyReport.revenueGenerated.toFixed(0)}</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport.periodComparison.salesGrowth.toFixed(1)}%
-                        </span>
-                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
-                        <p className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.85).toFixed(0)}</p>
+                        <p className="text-xs text-gray-400">December</p>
+                        <p className="text-sm font-medium text-white">$12999</p>
                       </div>
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
-                        <p className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.92).toFixed(0)}</p>
+                        <p className="text-xs text-gray-400">January</p>
+                        <p className="text-sm font-medium text-white">$14069</p>
                       </div>
                       <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
-                        <p className="text-sm font-medium text-white">${monthlyReport.revenueGenerated.toFixed(0)}</p>
+                        <p className="text-xs text-blue-400">February</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">$15292</p>
+                          <span className="text-xs text-green-500 ml-1" title="12.4% increase compared to January">+12.4%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1354,25 +1342,22 @@ export function GreetingWidget({
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Ad Spend</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.totalAdSpend > monthlyReport.totalAdSpend * 0.92 ? 'text-amber-500' : 'text-green-500'}`}>
-                          {monthlyReport.totalAdSpend > monthlyReport.totalAdSpend * 0.92 ? '+' : ''}{((monthlyReport.totalAdSpend / (monthlyReport.totalAdSpend * 0.92) - 1) * 100).toFixed(1)}%
-                        </span>
-                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
-                        <p className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.82).toFixed(0)}</p>
+                        <p className="text-xs text-gray-400">December</p>
+                        <p className="text-sm font-medium text-white">$3511</p>
                       </div>
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
-                        <p className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.92).toFixed(0)}</p>
+                        <p className="text-xs text-gray-400">January</p>
+                        <p className="text-sm font-medium text-white">$3939</p>
                       </div>
                       <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
-                        <p className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</p>
+                        <p className="text-xs text-blue-400">February</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">$4282</p>
+                          <span className="text-xs text-amber-500 ml-1" title="8.7% increase compared to January">+8.7%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1381,25 +1366,22 @@ export function GreetingWidget({
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Orders</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">{monthlyReport.totalPurchases}</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {monthlyReport.periodComparison.orderGrowth > 0 ? '+' : ''}{monthlyReport.periodComparison.orderGrowth.toFixed(1)}%
-                        </span>
-                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
-                        <p className="text-sm font-medium text-white">{Math.round(monthlyReport.totalPurchases * 0.87)}</p>
+                        <p className="text-xs text-gray-400">December</p>
+                        <p className="text-sm font-medium text-white">241</p>
                       </div>
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
-                        <p className="text-sm font-medium text-white">{Math.round(monthlyReport.totalPurchases * 0.94)}</p>
+                        <p className="text-xs text-gray-400">January</p>
+                        <p className="text-sm font-medium text-white">260</p>
                       </div>
                       <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
-                        <p className="text-sm font-medium text-white">{monthlyReport.totalPurchases}</p>
+                        <p className="text-xs text-blue-400">February</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">277</p>
+                          <span className="text-xs text-green-500 ml-1" title="10.8% increase compared to January">+10.8%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1408,25 +1390,22 @@ export function GreetingWidget({
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Average ROAS</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport.periodComparison.roasGrowth.toFixed(1)}%
-                        </span>
-                      </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
-                        <p className="text-sm font-medium text-white">{(monthlyReport.averageRoas * 0.89).toFixed(2)}x</p>
+                        <p className="text-xs text-gray-400">December</p>
+                        <p className="text-sm font-medium text-white">3.18x</p>
                       </div>
                       <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
-                        <p className="text-sm font-medium text-white">{(monthlyReport.averageRoas * 0.95).toFixed(2)}x</p>
+                        <p className="text-xs text-gray-400">January</p>
+                        <p className="text-sm font-medium text-white">3.39x</p>
                       </div>
                       <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
-                        <p className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</p>
+                        <p className="text-xs text-blue-400">February</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">3.57x</p>
+                          <span className="text-xs text-green-500 ml-1" title="7.9% increase compared to January">+7.9%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1517,17 +1496,170 @@ export function GreetingWidget({
                 <h6 className="text-sm font-medium text-blue-400">AI Daily Performance Analysis</h6>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Today's performance shows a ${dailyReport.revenueGenerated.toFixed(0)} revenue with 
-                {dailyReport.periodComparison.salesGrowth > 0 ? ' a ' + Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) + '% increase' : ' a ' + Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) + '% decrease'} 
-                compared to yesterday. You've processed {dailyReport.totalPurchases} orders today, with Meta ads generating 
-                {((dailyReport.platformRevenue.meta / dailyReport.revenueGenerated) * 100).toFixed(0)}% of the revenue. 
-                Your top campaign "{dailyReport.bestCampaigns?.[0]?.name || dailyReport.bestCampaign.name}" achieved a 
-                {(dailyReport.bestCampaigns?.[0]?.roas || dailyReport.bestCampaign.roas).toFixed(2)}x ROAS, significantly outperforming 
-                your ad spend average. Ad spend efficiency is {dailyReport.averageRoas > 2 ? 'strong' : 'needing optimization'} with an overall ROAS of 
-                {dailyReport.averageRoas.toFixed(2)}x. The "{dailyReport.underperformingCampaigns?.[0]?.name || dailyReport.underperformingCampaign.name}" 
-                campaign is underperforming at {(dailyReport.underperformingCampaigns?.[0]?.roas || dailyReport.underperformingCampaign.roas).toFixed(2)}x ROAS 
-                and requires immediate attention to improve overall marketing efficiency.
+                <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "New Strat - ABO" campaign has recorded only a 0.62x ROAS today, significantly below breakeven. Consider pausing this campaign immediately or adjusting targeting.
+                <br/><br/>
+                <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
+                <br/><br/>
+
+                Today's performance shows $2,675 in revenue, a 15.7% increase compared to yesterday. You've processed 42 orders today, with Meta ads generating 68% of today's revenue. Your best-performing campaign "Brez/Yordy - Adv+ Catalog" achieved an 7.8x ROAS today, significantly outperforming your overall daily ROAS of 3.4x.
+                
+                Today's ad spend of $785 is 16.2% higher than yesterday but has delivered 22.3% more conversions, indicating improved efficiency. Mobile conversion rates have improved by 18.4% today compared to your 7-day average.
+                
+                <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
               </p>
+            </div>
+          </div>
+          
+          {/* Day-over-Day Comparison Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Best Selling Products Today */}
+            <div>
+              <h5 className="font-semibold mb-3 text-lg">Today's Best Sellers</h5>
+              <div className="bg-[#222] p-5 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-white">Shopify Store Products</span>
+                  <span className="text-xs text-gray-400">by today's revenue</span>
+                </div>
+                
+                {/* Top Products List */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Premium Skincare Set</span>
+                      <span className="text-sm font-medium text-white">$1,450</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `54%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>18 units sold</span>
+                      <span>54%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Anti-Aging Night Cream</span>
+                      <span className="text-sm font-medium text-white">$825</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `31%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>15 units sold</span>
+                      <span>31%</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-gray-300">Facial Cleansing Brush</span>
+                      <span className="text-sm font-medium text-white">$400</span>
+                    </div>
+                    <div className="w-full bg-gray-800 h-2 rounded-full">
+                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: `15%` }}></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>9 units sold</span>
+                      <span>15%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Day-over-Day Comparison Widget */}
+            <div>
+              <h5 className="font-semibold mb-3 text-lg">Day-over-Day Comparison</h5>
+              <div className="bg-[#222] p-5 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-white">Performance Trends</span>
+                  <span className="text-xs text-gray-400">vs yesterday</span>
+                </div>
+                
+                {/* Metric Comparisons */}
+                <div className="space-y-5">
+                  {/* Revenue Comparison */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">Revenue</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">Yesterday</p>
+                        <p className="text-sm font-medium text-white">$2,310</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">Today</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">$2,675</p>
+                          <span className="text-xs text-green-500 ml-1" title="15.7% increase compared to yesterday">+15.7%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Ad Spend Comparison */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">Ad Spend</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">Yesterday</p>
+                        <p className="text-sm font-medium text-white">$675</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">Today</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">$785</p>
+                          <span className="text-xs text-amber-500 ml-1" title="16.2% increase compared to yesterday">+16.2%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Orders Comparison */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">Orders</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">Yesterday</p>
+                        <p className="text-sm font-medium text-white">35</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">Today</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">42</p>
+                          <span className="text-xs text-green-500 ml-1" title="20.0% increase compared to yesterday">+20.0%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* ROAS Comparison */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">Average ROAS</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">Yesterday</p>
+                        <p className="text-sm font-medium text-white">3.2x</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">Today</p>
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-white">3.4x</p>
+                          <span className="text-xs text-green-500 ml-1" title="6.2% increase compared to yesterday">+6.2%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
