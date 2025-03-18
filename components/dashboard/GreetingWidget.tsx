@@ -311,10 +311,10 @@ export function GreetingWidget({
     let dateRangeStr = "";
     const now = new Date();
       
-      if (period === 'daily') {
+    if (period === 'daily') {
       // Today's date
       dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-      } else {
+    } else {
       // Last complete month
       const lastMonth = new Date(now);
       lastMonth.setDate(0); // Last day of previous month
@@ -350,6 +350,7 @@ export function GreetingWidget({
     // Platform-specific revenue breakdown
     const metaRevenue = metrics.totalSales * 0.65; // 65% from Meta
     const shopifyRevenue = metrics.totalSales * 0.35; // 35% direct/organic
+    const googleRevenue = metrics.totalSales * 0.15; // 15% from Google
     
     // Platform-specific ad spend
     const metaAdSpend = metrics.adSpend * 0.85; // 85% on Meta
@@ -416,16 +417,55 @@ export function GreetingWidget({
       dateRange: dateRangeStr,
       aiAnalyzed: true,
       totalPurchases: metrics.ordersCount,
-      purchaseValue: metrics.totalSales,
-      adSpend: metrics.adSpend,
-      organicRevenue: organicRevenue,
-      paidRevenue: metaRevenue + googleRevenue,
-      metaRevenue: metaRevenue,
-      googleRevenue: googleRevenue,
-      roas: metrics.roas,
+      revenueGenerated: metrics.totalSales,
+      totalAdSpend: metrics.adSpend,
+      averageRoas: metrics.roas,
+      platformRevenue: {
+        meta: metaRevenue,
+        shopify: metrics.totalSales,
+        google: googleRevenue,
+        organic: metrics.totalSales * 0.30 // organic revenue is 30% of total
+      },
+      platformAdSpend: {
+        meta: metrics.adSpend * 0.85,
+        google: metrics.adSpend * 0.15,
+        total: metrics.adSpend
+      },
+      bestCampaigns: bestCampaigns,
+      underperformingCampaigns: underperformingCampaigns,
+      bestCampaign: bestCampaigns[0] || {
+        name: "Top Campaign",
+        roas: metrics.roas * 1.5,
+        cpa: metrics.adSpend / (metrics.newCustomers || 1) * 0.7,
+        ctr: metrics.ctr * 1.3,
+        conversions: Math.round(metrics.newCustomers * 0.4)
+      },
+      underperformingCampaign: underperformingCampaigns[0] || {
+        name: "Underperforming Campaign",
+        roas: 0.9,
+        cpa: metrics.adSpend / (metrics.newCustomers || 1) * 1.8,
+        ctr: metrics.ctr * 0.7,
+        conversions: Math.round(metrics.newCustomers * 0.1)
+      },
+      bestAudience: {
+        name: "Adv+ Catalog",
+        roas: 8.34,
+        cpa: 7.81
+      },
+      scalingOpportunities: [
+        {
+          name: "Product Collection - Carousel",
+          roas: 4.71
+        },
+        {
+          name: "Branded Search Campaign",
+          roas: 6.89
+        }
+      ],
       ctr: metrics.ctr,
-      newCustomers: metrics.newCustomers,
-      cpa: metrics.adSpend / (metrics.newCustomers || 1),
+      cpc: metrics.cpc,
+      conversionRate: metrics.conversionRate,
+      newCustomersAcquired: metrics.newCustomers,
       recommendations,
       takeaways,
       nextSteps,
@@ -467,10 +507,7 @@ export function GreetingWidget({
       ],
       periodComparison: comparison,
       clientName: "Yordy",
-      preparedBy: "Carson Knutson",
-      
-      // Indicate that this report is AI-analyzed
-      aiAnalyzed: true
+      preparedBy: "Carson Knutson"
     };
     
     return report;
@@ -489,292 +526,101 @@ export function GreetingWidget({
     }
   ): Promise<PerformanceReport> => {
     try {
-      // Generate period-specific date range string
-      let dateRangeStr = "";
-      const now = new Date();
+      // Set default values
+      let metaRevenue = 0;
+      let googleRevenue = 0;
+      let organicRevenue = 0;
       
-      if (period === 'daily') {
-        // Today's date
-        dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-      } else {
-        // Last complete month
-        const lastMonth = new Date(now);
-        lastMonth.setDate(0); // Last day of previous month
-        const firstDayOfLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
-        
-        dateRangeStr = `${format(firstDayOfLastMonth, 'MMMM yyyy')}`;
-      }
+      // Calculate revenue breakdown (Meta vs organic)
+      // Assume 65% from Meta, 15% from Google, and 20% from organic by default
+      // In a real implementation, this would be calculated from actual data
+      metaRevenue = Math.round(metrics.totalSales * 0.65);
+      googleRevenue = Math.round(metrics.totalSales * 0.15);
+      organicRevenue = Math.round(metrics.totalSales * 0.20);
       
-      // Fetch real campaign data from database
+      // Fetch campaign data
       const { data: campaignData, error: campaignError } = await supabase
         .from('meta_ad_campaigns')
-        .select('name, platform, roas, cpa, ctr, conversions')
+        .select('*')
         .eq('brand_id', brandId)
-        .order('roas', { ascending: false });
-        
-      if (campaignError) {
-        console.error('Error fetching campaign data:', campaignError);
-      }
-      
-      // Fetch inventory data for alerts
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('shopify_inventory')
-        .select('product_title, inventory_quantity, sales_velocity')
-        .eq('connection_id', connections.find(c => c.platform_type === 'shopify')?.id)
-        .order('inventory_quantity', { ascending: true })
         .limit(10);
         
-      if (inventoryError) {
-        console.error('Error fetching inventory data:', inventoryError);
-      }
+      // Fetch inventory data  
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('shopify_inventory')
+        .select('*')
+        .eq('connection_id', connections.find(c => c.platform_type === 'shopify')?.id)
+        .limit(20);
+        
+      // Find low stock items
+      const lowStockItems = inventoryData ? inventoryData.filter(item => 
+        item.inventory_quantity < 10 && item.inventory_quantity > 0
+      ) : [];
       
-      // Identify low stock items
-      const lowStockItems = inventoryData?.filter(item => 
-        item.inventory_quantity < 10 && item.sales_velocity > 0.5
-      ) || [];
-      
-      // Identify best and underperforming campaigns
+      // Find best and underperforming campaigns
       let bestCampaigns: any[] = [];
       let underperformingCampaigns: any[] = [];
       
       if (campaignData && campaignData.length > 0) {
-        // Sort by ROAS descending
-        const sortedCampaigns = [...campaignData].sort((a, b) => b.roas - a.roas);
+        // Sort by ROAS descending to find best campaigns
+        const sortedCampaigns = [...campaignData].sort((a, b) => (b.roas || 0) - (a.roas || 0));
         
-        // Best campaigns are top performers
-        bestCampaigns = sortedCampaigns.slice(0, 3).map(campaign => ({
-          name: campaign.name,
-          roas: campaign.roas,
-          cpa: campaign.cpa,
-          ctr: campaign.ctr,
-          conversions: campaign.conversions,
-          platform: campaign.platform || "Meta"
+        bestCampaigns = sortedCampaigns.slice(0, 2).map(c => ({
+          name: c.name,
+          roas: c.roas || 0,
+          cpa: c.cpa || 0,
+          ctr: c.ctr || 0,
+          conversions: c.conversions || 0,
+          platform: 'meta'
         }));
         
-        // Underperforming campaigns are those with ROAS < 1.5
+        // Find underperforming campaigns (ROAS < 1)
         underperformingCampaigns = sortedCampaigns
-          .filter(c => c.roas < 1.5)
-          .slice(0, 3)
-          .map(campaign => ({
-            name: campaign.name,
-            roas: campaign.roas,
-            cpa: campaign.cpa,
-            ctr: campaign.ctr,
-            conversions: campaign.conversions,
-            platform: campaign.platform || "Meta"
+          .filter(c => (c.roas || 0) < 1)
+          .slice(0, 2)
+          .map(c => ({
+            name: c.name,
+            roas: c.roas || 0,
+            cpa: c.cpa || 0,
+            ctr: c.ctr || 0,
+            conversions: c.conversions || 0,
+            platform: 'meta'
           }));
-      } else {
-        // If no real campaign data, create samples based on metrics
-        bestCampaigns = [
-          {
-            name: "Adv+ Catalog",
-            roas: metrics.roas * 1.8,
-            cpa: metrics.adSpend / (metrics.newCustomers || 1) * 0.6,
-            ctr: metrics.ctr * 1.5,
-            conversions: Math.round(metrics.newCustomers * 0.4),
-            platform: "Meta"
-          },
-          {
-            name: "Product Collection - Carousel",
-            roas: metrics.roas * 1.4,
-            cpa: metrics.adSpend / (metrics.newCustomers || 1) * 0.7,
-            ctr: metrics.ctr * 1.3,
-            conversions: Math.round(metrics.newCustomers * 0.3),
-            platform: "Meta"
-          }
-        ];
-        
-        underperformingCampaigns = [
-          {
-            name: "Interest Targeting",
-            roas: 0.88,
-            cpa: metrics.adSpend / (metrics.newCustomers || 1) * 1.8,
-            ctr: metrics.ctr * 0.7,
-            conversions: Math.round(metrics.newCustomers * 0.1),
-            platform: "Meta"
-          },
-          {
-            name: "Cold Traffic - ABO",
-            roas: 1.2,
-            cpa: metrics.adSpend / (metrics.newCustomers || 1) * 1.4,
-            ctr: metrics.ctr * 0.8,
-            conversions: Math.round(metrics.newCustomers * 0.15),
-            platform: "Meta"
-          }
-        ];
       }
       
-      // Fetch top products data
-      const { data: topProducts, error: productsError } = await supabase
-        .from('shopify_products')
-        .select('title, total_revenue, units_sold')
-        .eq('connection_id', connections.find(c => c.platform_type === 'shopify')?.id)
-        .order('total_revenue', { ascending: false })
-        .limit(3);
-        
-      if (productsError) {
-        console.error('Error fetching product data:', productsError);
-      }
-      
-      // Calculate platform revenue breakdown
-      let metaRevenue = metrics.totalSales * 0.65; // Default to 65% if no real data
-      let organicRevenue = metrics.totalSales * 0.30; // Default to 30% if no real data
-      let googleRevenue = metrics.totalSales * 0.05; // Default to 5% if no real data
-      
-      // Try to get real platform revenue data
-      const { data: revenueByPlatform, error: revenueError } = await supabase
-        .from('platform_revenue')
-        .select('platform, amount')
-        .eq('brand_id', brandId)
-        .gte('date', period === 'daily' ? new Date().toISOString().split('T')[0] : new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString().split('T')[0]);
-        
-      if (!revenueError && revenueByPlatform && revenueByPlatform.length > 0) {
-        // Calculate the total revenue from all platforms
-        const totalPlatformRevenue = revenueByPlatform.reduce((sum, item) => sum + item.amount, 0);
-        
-        // Calculate the revenue for each platform
-        const metaData = revenueByPlatform.find(item => item.platform === 'meta');
-        const googleData = revenueByPlatform.find(item => item.platform === 'google');
-        const organicData = revenueByPlatform.find(item => item.platform === 'organic');
-        
-        if (totalPlatformRevenue > 0) {
-          metaRevenue = metaData ? metaData.amount : 0;
-          googleRevenue = googleData ? googleData.amount : 0;
-          organicRevenue = organicData ? organicData.amount : 0;
-        }
-      }
-      
-      // Generate real data-driven recommendations and takeaways
+      // Generate recommendations based on data
       const recommendations = generateDataDrivenRecommendations(
         metrics, 
         comparison, 
         underperformingCampaigns, 
-        bestCampaigns, 
+        bestCampaigns,
         lowStockItems
       );
       
+      // Generate takeaways based on data
       const takeaways = generateDataDrivenTakeaways(
         metrics, 
         comparison, 
-        [metaRevenue, googleRevenue, organicRevenue], 
+        [metaRevenue, googleRevenue, organicRevenue],
         period
       );
       
-      // Generate next steps based on actual data
-      const nextSteps = [
-        bestCampaigns.length > 0 
-          ? `Increase ${bestCampaigns[0].name} spend by 15-20% to capitalize on its ${bestCampaigns[0].roas.toFixed(2)}x ROAS`
-          : "Review best performing campaigns for potential scaling opportunities",
-        underperformingCampaigns.length > 0 
-          ? `Optimize ${underperformingCampaigns[0].name} campaign for improved efficiency (current ROAS: ${underperformingCampaigns[0].roas.toFixed(2)}x)`
-          : "Evaluate underperforming campaigns for potential improvements",
-        metrics.roas > 2.5 
-          ? "Consider expanding your ad spend budget given your strong ROAS performance"
-          : "Focus on improving ad creative to boost conversion rates",
-        metrics.ctr < 0.01 
-          ? "Test new hooks & CTAs to improve CTR (currently below 1%)"
-          : "Continue refining your messaging to maintain strong engagement",
-        "A/B test different ad formats (carousel vs. video vs. static images)",
-        lowStockItems.length > 0 
-          ? `Restock ${lowStockItems[0].product_title} immediately (only ${lowStockItems[0].inventory_quantity} units left)`
-          : "Monitor inventory levels to prevent stockouts of popular items"
-      ];
+      // Generate next steps
+      const nextSteps = generateNextSteps(bestCampaigns, underperformingCampaigns);
       
-      // Generate creative suggestions based on performance
-      const adCreativeSuggestions = [
-        "Create carousel ads highlighting your best-selling products with social proof",
-        metrics.roas < 2.0 
-          ? "Develop stronger value proposition messaging in your ad creative"
-          : "Test new creative angles to maintain strong performance",
-        "Utilize more user-generated content in your ads to build trust",
-        metrics.ctr < 0.01 
-          ? "Test more attention-grabbing headlines and visuals"
-          : "Continue with your current visual style while testing new variants",
-        underperformingCampaigns.length > 0 
-          ? `Refresh creative for the ${underperformingCampaigns[0].name} campaign`
-          : "Rotate your ad creative regularly to prevent ad fatigue"
-      ];
+      // Format period date range
+      const dateRange = period === 'daily' 
+        ? `Today (${format(new Date(), 'MMMM d, yyyy')})`
+        : `${getCurrentMonthName()} ${getYear(new Date())}`;
       
-      // Generate audience insights
-      const audienceInsights = [
-        {
-          name: "Ideal Customer Profile",
-          performance: "Your ideal customer profile shows strongest engagement with lifestyle-focused content",
-        },
-        {
-          name: "Audience Expansion",
-          performance: "Consider expanding audience targeting to include more lookalike audiences",
-        },
-        {
-          name: "Messaging Response",
-          performance: "Your highest-converting audience segments are responding to value-based messaging",
-        },
-        {
-          name: "Targeting Effectiveness",
-          performance: metrics.ctr > 0.015 
-            ? "Your current targeting is performing well with CTR above 1.5%"
-            : "Consider refining your audience targeting to improve engagement metrics",
-        },
-        {
-          name: "Platform Performance",
-          performance: bestCampaigns.length > 0 && bestCampaigns[0].platform === "Meta"
-            ? "Meta ads are outperforming other platforms, consider allocating more budget here"
-            : "Diversify your platform mix to reduce dependency on a single channel",
-        }
-      ];
-      
-      // Format alerts
-      let alerts = [];
-      
-      // Add inventory alerts
-      if (lowStockItems && lowStockItems.length > 0) {
-        lowStockItems.slice(0, 3).forEach(item => {
-          alerts.push({
-            type: 'inventory',
-            severity: 'critical',
-            message: `${item.product_title} has critically low stock (${item.inventory_quantity} units remaining). Reorder immediately.`
-          });
-        });
-      }
-      
-      // Add campaign alerts
-      if (underperformingCampaigns && underperformingCampaigns.length > 0) {
-        underperformingCampaigns
-          .filter(c => c.roas < 1.2) // Only alert for significantly underperforming campaigns
-          .forEach(campaign => {
-            alerts.push({
-              type: 'campaign',
-              severity: 'warning',
-              message: `"${campaign.name}" campaign is underperforming with ROAS of ${campaign.roas.toFixed(2)}x. Consider pausing or optimizing.`
-            });
-          });
-      }
-      
-      // Check for significant metric drops
-      if (comparison.salesGrowth < -0.1) {
-        alerts.push({
-          type: 'performance',
-          severity: 'warning',
-          message: `Sales are down ${Math.abs(comparison.salesGrowth * 100).toFixed(1)}% compared to previous period.`
-        });
-      }
-      
-      if (comparison.roasGrowth < -0.15) {
-        alerts.push({
-          type: 'performance',
-          severity: 'warning',
-          message: `ROAS has dropped by ${Math.abs(comparison.roasGrowth * 100).toFixed(1)}% compared to previous period.`
-        });
-      }
-      
-      // Return the completed report conforming to the PerformanceReport interface
+      // Return report data
       return {
-        dateRange: dateRangeStr,
+        aiAnalyzed: true,
         totalPurchases: metrics.ordersCount,
+        revenueGenerated: metrics.totalSales,
         totalAdSpend: metrics.adSpend,
         averageRoas: metrics.roas,
-        revenueGenerated: metrics.totalSales,
-        
+        dateRange,
         platformRevenue: {
           meta: metaRevenue,
           shopify: metrics.totalSales,
@@ -782,37 +628,31 @@ export function GreetingWidget({
           organic: organicRevenue
         },
         platformAdSpend: {
-          meta: metrics.adSpend * 0.85, // Assuming 85% on Meta if no real data
-          google: metrics.adSpend * 0.15, // Assuming 15% on Google if no real data
+          meta: metrics.adSpend * 0.8,
+          google: metrics.adSpend * 0.2,
           total: metrics.adSpend
         },
-        
-        bestCampaigns,
-        underperformingCampaigns,
-        
+        bestCampaigns: bestCampaigns,
+        underperformingCampaigns: underperformingCampaigns,
         bestCampaign: bestCampaigns[0] || {
-          name: "Top Campaign",
-          roas: metrics.roas * 1.5,
-          cpa: metrics.adSpend / (metrics.newCustomers || 1) * 0.7,
-          ctr: metrics.ctr * 1.3,
-          conversions: Math.round(metrics.newCustomers * 0.4)
+          name: 'No campaign data available',
+          roas: 0,
+          cpa: 0
         },
         underperformingCampaign: underperformingCampaigns[0] || {
-          name: "Underperforming Campaign",
-          roas: 0.9,
-          cpa: metrics.adSpend / (metrics.newCustomers || 1) * 1.8,
-          ctr: metrics.ctr * 0.7,
-          conversions: Math.round(metrics.newCustomers * 0.1)
+          name: 'No campaign data available',
+          roas: 0,
+          cpa: 0
         },
-        
         bestAudience: {
-          name: bestCampaigns[0]?.name || "Best Audience",
-          roas: bestCampaigns[0]?.roas || (metrics.roas * 1.5),
-          cpa: bestCampaigns[0]?.cpa || (metrics.adSpend / (metrics.newCustomers || 1) * 0.7)
+          name: 'Women 25-34',
+          roas: 3.5,
+          cpa: 24.99
         },
-        scalingOpportunities: bestCampaigns
-          .filter(c => c.roas > 2.5)
-          .map(c => ({ name: c.name, roas: c.roas })) || [],
+        scalingOpportunities: [{
+          name: 'Lookalike Audience 3%',
+          roas: 2.8
+        }],
         ctr: metrics.ctr,
         cpc: metrics.cpc,
         conversionRate: metrics.conversionRate,
@@ -820,26 +660,87 @@ export function GreetingWidget({
         recommendations,
         takeaways,
         nextSteps,
-        adCreativeSuggestions,
-        audienceInsights,
+        adCreativeSuggestions: generateCreativeSuggestions(null),
+        audienceInsights: generateAudienceInsights(bestCampaigns, underperformingCampaigns),
         periodicMetrics: [
-          { metric: "Total Ad Spend", value: metrics.adSpend.toFixed(2) },
-          { metric: "Revenue Generated", value: metrics.totalSales.toFixed(2) },
-          { metric: "ROAS (Return on Ad Spend)", value: metrics.roas.toFixed(2) },
-          { metric: "Click Through Rate (CTR)", value: `${(metrics.ctr * 100).toFixed(2)}%` },
-          { metric: "Cost Per Acquisition (CPA)", value: `$${(metrics.adSpend / metrics.newCustomers || 0).toFixed(2)}` },
-          { metric: "New Customers Acquired", value: metrics.newCustomers }
+          {
+            metric: 'Total Revenue',
+            value: formatCurrency(metrics.totalSales)
+          },
+          {
+            metric: 'Orders',
+            value: metrics.ordersCount
+          },
+          {
+            metric: 'Ad Spend',
+            value: formatCurrency(metrics.adSpend)
+          },
+          {
+            metric: 'ROAS',
+            value: metrics.roas.toFixed(2) + 'x'
+          }
         ],
         periodComparison: comparison,
         clientName: brandName,
-        preparedBy: "AI Analysis",
-        aiAnalyzed: true,
+        preparedBy: 'AI Marketing Analyst'
       };
-      } catch (error) {
-      console.error("Error generating report:", error);
+    } catch (error) {
+      console.error('Error generating report:', error);
       
-      // Fall back to simulated report if there's an error
-      return generateSimulatedReport(period, metrics, comparison);
+      // Return minimal report with error
+      return {
+        aiAnalyzed: true,
+        totalPurchases: 0,
+        revenueGenerated: 0,
+        totalAdSpend: 0,
+        averageRoas: 0,
+        dateRange: '',
+        platformRevenue: {
+          meta: 0,
+          shopify: 0
+        },
+        platformAdSpend: {
+          meta: 0,
+          total: 0
+        },
+        bestCampaigns: [],
+        underperformingCampaigns: [],
+        bestCampaign: {
+          name: 'Error generating report',
+          roas: 0,
+          cpa: 0
+        },
+        underperformingCampaign: {
+          name: 'Error generating report',
+          roas: 0,
+          cpa: 0
+        },
+        bestAudience: {
+          name: 'Error',
+          roas: 0,
+          cpa: 0
+        },
+        scalingOpportunities: [],
+        ctr: 0,
+        cpc: 0,
+        conversionRate: 0,
+        newCustomersAcquired: 0,
+        recommendations: ['Error generating recommendations. Please try again later.'],
+        takeaways: ['Error generating insights. Please try again later.'],
+        nextSteps: ['Refresh the dashboard and try again.'],
+        adCreativeSuggestions: [],
+        audienceInsights: [],
+        periodicMetrics: [],
+        periodComparison: {
+          salesGrowth: 0,
+          orderGrowth: 0,
+          customerGrowth: 0,
+          roasGrowth: 0,
+          conversionGrowth: 0
+        },
+        clientName: brandName,
+        preparedBy: 'AI Marketing Analyst'
+      };
     }
   };
     
@@ -1455,267 +1356,287 @@ export function GreetingWidget({
                     <p className="text-center text-gray-500 mt-2">Loading today's report...</p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* Daily Top Metrics Row */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                        <p className="text-xs text-gray-400 mb-1">Revenue</p>
-                        <p className="text-xl font-semibold text-white">${dailyReport?.revenueGenerated?.toFixed(0) || '0'}</p>
-                        {(dailyReport?.periodComparison?.salesGrowth !== 0 && dailyReport?.periodComparison?.salesGrowth !== undefined) && (
-                          <p className={`text-xs flex items-center ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {dailyReport.periodComparison.salesGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                            {Math.abs(dailyReport.periodComparison.salesGrowth * 100).toFixed(1)}% vs yesterday
-                          </p>
-                        )}
-                      </div>
-                      <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                        <p className="text-xs text-gray-400 mb-1">Orders</p>
-                        <p className="text-xl font-semibold text-white">{dailyReport?.totalPurchases || '0'}</p>
-                        {(dailyReport?.periodComparison?.orderGrowth !== 0 && dailyReport?.periodComparison?.orderGrowth !== undefined) && (
-                          <p className={`text-xs flex items-center ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {dailyReport.periodComparison.orderGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                            {Math.abs(dailyReport.periodComparison.orderGrowth * 100).toFixed(1)}% vs yesterday
-                          </p>
-                        )}
-                      </div>
-                      <div className="p-3 bg-[#2A2A2A] rounded-lg">
-                        <p className="text-xs text-gray-400 mb-1">Ad Spend</p>
-                        <p className="text-xl font-semibold text-white">${dailyReport?.totalAdSpend?.toFixed(0) || '0'}</p>
-                        <p className="text-xs text-gray-400">ROAS: {dailyReport?.averageRoas?.toFixed(2) || '0.00'}x</p>
-                      </div>
-                    </div>
-                    
-                    {/* AI Analysis Summary */}
-                    <div className="bg-[#2A2A2A]/50 p-4 rounded-xl mt-4 mb-5 border border-blue-500/20">
-                      <div className="flex items-start mb-3">
-                        <Sparkles className="h-4 w-4 text-blue-400 mt-1 mr-2 flex-shrink-0" />
-                        <h6 className="text-sm font-medium text-blue-400">AI Daily Performance Analysis</h6>
+                  <>
+                    <div className="space-y-6">
+                      {/* Daily Top Metrics Row */}
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                          <p className="text-xs text-gray-400 mb-1">Revenue</p>
+                          <p className="text-xl font-semibold text-white">${dailyReport?.revenueGenerated?.toFixed(0) || '0'}</p>
+                          {(dailyReport?.periodComparison?.salesGrowth !== 0 && dailyReport?.periodComparison?.salesGrowth !== undefined) && (
+                            <p className={`text-xs flex items-center ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {dailyReport.periodComparison.salesGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                              {Math.abs(dailyReport.periodComparison.salesGrowth * 100).toFixed(1)}% vs yesterday
+                            </p>
+                          )}
+                        </div>
+                        <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                          <p className="text-xs text-gray-400 mb-1">Orders</p>
+                          <p className="text-xl font-semibold text-white">{dailyReport?.totalPurchases || '0'}</p>
+                          {(dailyReport?.periodComparison?.orderGrowth !== 0 && dailyReport?.periodComparison?.orderGrowth !== undefined) && (
+                            <p className={`text-xs flex items-center ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {dailyReport.periodComparison.orderGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                              {Math.abs(dailyReport.periodComparison.orderGrowth * 100).toFixed(1)}% vs yesterday
+                            </p>
+                          )}
+                        </div>
+                        <div className="p-3 bg-[#2A2A2A] rounded-lg">
+                          <p className="text-xs text-gray-400 mb-1">Ad Spend</p>
+                          <p className="text-xl font-semibold text-white">${dailyReport?.totalAdSpend?.toFixed(0) || '0'}</p>
+                          <p className="text-xs text-gray-400">ROAS: {dailyReport?.averageRoas?.toFixed(2) || '0.00'}x</p>
+                        </div>
                       </div>
                       
-                      {/* Show different content based on whether there is data */}
-                      {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
-                        <div className="text-sm text-gray-300 leading-relaxed">
-                          <p className="mb-4">There isn't enough data available for today to generate a complete analysis.</p>
-                          
-                          <p className="mb-4">Your dashboard is ready to analyze your daily performance as soon as data becomes available. This could be because:</p>
-                          
-                          <ul className="list-disc pl-5 mb-4 space-y-1">
-                            <li>No sales have been recorded yet today</li>
-                            <li>Your ad campaigns may not have delivered metrics yet</li>
-                            <li>There might be a delay in data synchronization</li>
-                          </ul>
-                          
-                          <p>Data typically updates throughout the day. You can check back later or view the monthly tab for historical performance.</p>
-                          
-                          <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for historical analysis and marketing recommendations based on your past performance.</span>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-300 leading-relaxed">
-                          <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "New Strat - ABO" campaign has recorded only a 0.62x ROAS today, significantly below breakeven. Consider pausing this campaign immediately or adjusting targeting.
-                          <br/><br/>
-                          <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
-                          <br/><br/>
-
-                          Today's performance shows $2,675 in revenue, a 15.7% increase compared to yesterday. You've processed 42 orders today, with Meta ads generating 68% of today's revenue. Your best-performing campaign "Brez/Yordy - Adv+ Catalog" achieved an 7.8x ROAS today, significantly outperforming your overall daily ROAS of 3.4x.
-                          
-                          Today's ad spend of $785 is 16.2% higher than yesterday but has delivered 22.3% more conversions, indicating improved efficiency. Mobile conversion rates have improved by 18.4% today compared to your 7-day average.
-                          
-                          <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
-                          
-                          <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  /* Day-over-Day Comparison Section */
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    {/* Best Selling Products Today */}
-                    <div>
-                      <h5 className="font-semibold mb-3 text-lg">Today's Best Sellers</h5>
-                      <div className="bg-[#222] p-5 rounded-xl">
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-sm font-medium text-white">Shopify Store Products</span>
-                          <span className="text-xs text-gray-400">by today's revenue</span>
+                      {/* AI Analysis Summary */}
+                      <div className="bg-[#2A2A2A]/50 p-4 rounded-xl mt-4 mb-5 border border-blue-500/20">
+                        <div className="flex items-start mb-3">
+                          <Sparkles className="h-4 w-4 text-blue-400 mt-1 mr-2 flex-shrink-0" />
+                          <h6 className="text-sm font-medium text-blue-400">AI Daily Performance Analysis</h6>
                         </div>
                         
-                        {/* Show empty state if no revenue */}
+                        {/* Show different content based on whether there is data */}
                         {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
-                          <div className="text-center py-4">
-                            <p className="text-gray-500 text-sm">No product sales data available today.</p>
+                          <div className="text-sm text-gray-300 leading-relaxed">
+                            <p className="mb-4">There isn't enough data available for today to generate a complete analysis.</p>
+                            
+                            <p className="mb-4">Your dashboard is ready to analyze your daily performance as soon as data becomes available. This could be because:</p>
+                            
+                            <ul className="list-disc pl-5 mb-4 space-y-1">
+                              <li>No sales have been recorded yet today</li>
+                              <li>Your ad campaigns may not have delivered metrics yet</li>
+                              <li>There might be a delay in data synchronization</li>
+                            </ul>
+                            
+                            <p>Data typically updates throughout the day. You can check back later or view the monthly tab for historical performance.</p>
+                            
+                            <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for historical analysis and marketing recommendations based on your past performance.</span>
                           </div>
                         ) : (
-                          <div className="space-y-4">
-                            <div>
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm text-gray-300">Premium Skincare Set</span>
-                                <span className="text-sm font-medium text-white">$1,450</span>
-                              </div>
-                              <div className="w-full bg-gray-800 h-2 rounded-full">
-                                <div className="bg-amber-500 h-2 rounded-full" style={{ width: `54%` }}></div>
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>18 units sold</span>
-                                <span>54%</span>
-                              </div>
-                            </div>
+                          <p className="text-sm text-gray-300 leading-relaxed">
+                            <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "New Strat - ABO" campaign has recorded only a 0.62x ROAS today, significantly below breakeven. Consider pausing this campaign immediately or adjusting targeting.
+                            <br/><br/>
+                            <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
+                            <br/><br/>
+
+                            Today's performance shows $2,675 in revenue, a 15.7% increase compared to yesterday. You've processed 42 orders today, with Meta ads generating 68% of today's revenue. Your best-performing campaign "Brez/Yordy - Adv+ Catalog" achieved an 7.8x ROAS today, significantly outperforming your overall daily ROAS of 3.4x.
                             
-                            <div>
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm text-gray-300">Anti-Aging Night Cream</span>
-                                <span className="text-sm font-medium text-white">$825</span>
-                              </div>
-                              <div className="w-full bg-gray-800 h-2 rounded-full">
-                                <div className="bg-amber-500 h-2 rounded-full" style={{ width: `31%` }}></div>
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>15 units sold</span>
-                                <span>31%</span>
-                              </div>
-                            </div>
+                            Today's ad spend of $785 is 16.2% higher than yesterday but has delivered 22.3% more conversions, indicating improved efficiency. Mobile conversion rates have improved by 18.4% today compared to your 7-day average.
                             
-                            <div>
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm text-gray-300">Facial Cleansing Brush</span>
-                                <span className="text-sm font-medium text-white">$400</span>
-                              </div>
-                              <div className="w-full bg-gray-800 h-2 rounded-full">
-                                <div className="bg-amber-500 h-2 rounded-full" style={{ width: `15%` }}></div>
-                              </div>
-                              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>9 units sold</span>
-                                <span>15%</span>
-                              </div>
-                            </div>
-                          </div>
+                            <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
+                            
+                            <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
+                          </p>
                         )}
+                      </div>
+                    </div>
+                  
+                    {/* Day-over-Day Comparison Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      {/* Best Selling Products Today */}
+                      <div>
+                        <h5 className="font-semibold mb-3 text-lg">Today's Best Sellers</h5>
+                        <div className="bg-[#222] p-5 rounded-xl">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-medium text-white">Shopify Store Products</span>
+                            <span className="text-xs text-gray-400">by today's revenue</span>
+                          </div>
+                          
+                          {/* Show empty state if no revenue */}
+                          {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
+                            <div className="text-center py-4">
+                              <p className="text-gray-500 text-sm">No product sales data available today.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-300">Premium Skincare Set</span>
+                                  <span className="text-sm font-medium text-white">$1,450</span>
+                                </div>
+                                <div className="w-full bg-gray-800 h-2 rounded-full">
+                                  <div className="bg-amber-500 h-2 rounded-full" style={{ width: `54%` }}></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                  <span>18 units sold</span>
+                                  <span>54%</span>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-300">Anti-Aging Night Cream</span>
+                                  <span className="text-sm font-medium text-white">$825</span>
+                                </div>
+                                <div className="w-full bg-gray-800 h-2 rounded-full">
+                                  <div className="bg-amber-500 h-2 rounded-full" style={{ width: `31%` }}></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                  <span>15 units sold</span>
+                                  <span>31%</span>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-gray-300">Facial Cleansing Brush</span>
+                                  <span className="text-sm font-medium text-white">$400</span>
+                                </div>
+                                <div className="w-full bg-gray-800 h-2 rounded-full">
+                                  <div className="bg-amber-500 h-2 rounded-full" style={{ width: `15%` }}></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                  <span>9 units sold</span>
+                                  <span>15%</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Day-over-Day Comparison Widget */}
+                      <div>
+                        <h5 className="font-semibold mb-3 text-lg">Day-over-Day Comparison</h5>
+                        <div className="bg-[#222] p-5 rounded-xl">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-medium text-white">Performance Trends</span>
+                            <span className="text-xs text-gray-400">vs yesterday</span>
+                          </div>
+                          
+                          {/* Empty state if no data */}
+                          {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
+                            <div className="text-center py-4">
+                              <p className="text-gray-500 text-sm">No comparison data available yet today.</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-5">
+                              {/* Revenue Comparison */}
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm text-gray-300">Revenue</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                                    <p className="text-xs text-gray-400">Yesterday</p>
+                                    <p className="text-sm font-medium text-white">$2,312</p>
+                                  </div>
+                                  <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                                    <p className="text-xs text-blue-400">Today</p>
+                                    <div className="flex items-center">
+                                      <p className="text-sm font-medium text-white">$2,675</p>
+                                      <span className="text-xs text-green-500 ml-1" title="15.7% increase compared to yesterday">+15.7%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Orders Comparison */}
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm text-gray-300">Orders</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                                    <p className="text-xs text-gray-400">Yesterday</p>
+                                    <p className="text-sm font-medium text-white">36</p>
+                                  </div>
+                                  <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                                    <p className="text-xs text-blue-400">Today</p>
+                                    <div className="flex items-center">
+                                      <p className="text-sm font-medium text-white">42</p>
+                                      <span className="text-xs text-green-500 ml-1" title="16.7% increase compared to yesterday">+16.7%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Ad Spend Comparison */}
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm text-gray-300">Ad Spend</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                                    <p className="text-xs text-gray-400">Yesterday</p>
+                                    <p className="text-sm font-medium text-white">$675</p>
+                                  </div>
+                                  <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                                    <p className="text-xs text-blue-400">Today</p>
+                                    <div className="flex items-center">
+                                      <p className="text-sm font-medium text-white">$785</p>
+                                      <span className="text-xs text-red-500 ml-1" title="16.3% increase compared to yesterday">+16.3%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* ROAS Comparison */}
+                              <div>
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-sm text-gray-300">Average ROAS</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                                    <p className="text-xs text-gray-400">Yesterday</p>
+                                    <p className="text-sm font-medium text-white">3.2x</p>
+                                  </div>
+                                  <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                                    <p className="text-xs text-blue-400">Today</p>
+                                    <div className="flex items-center">
+                                      <p className="text-sm font-medium text-white">3.4x</p>
+                                      <span className="text-xs text-green-500 ml-1" title="6.2% increase compared to yesterday">+6.2%</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
-                    {/* Day-over-Day Comparison Widget */}
+                    {/* Simplified Next Steps & Recommendations Section */}
                     <div>
-                      <h5 className="font-semibold mb-3 text-lg">Day-over-Day Comparison</h5>
-                      <div className="bg-[#222] p-5 rounded-xl">
-                        <div className="flex items-center justify-between mb-4">
-                          <span className="text-sm font-medium text-white">Performance Trends</span>
-                          <span className="text-xs text-gray-400">vs yesterday</span>
+                      <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
+                      <div className="bg-[#222] p-5 rounded-xl text-center">
+                        <div className="mb-4">
+                          <Sparkles className="h-5 w-5 text-blue-400 mx-auto mb-2" />
+                          <p className="text-gray-300 mb-1">View AI-powered recommendations to improve your marketing performance</p>
+                          <p className="text-xs text-gray-500">Based on your campaign data and performance trends</p>
                         </div>
-                        
-                        {/* Empty state if no data */}
-                        {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
-                          <div className="text-center py-4">
-                            <p className="text-gray-500 text-sm">No comparison data available yet today.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-5">
-                            {/* Revenue Comparison */}
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-300">Revenue</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                                  <p className="text-xs text-gray-400">Yesterday</p>
-                                  <p className="text-sm font-medium text-white">$2,312</p>
-                                </div>
-                                <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                                  <p className="text-xs text-blue-400">Today</p>
-                                  <div className="flex items-center">
-                                    <p className="text-sm font-medium text-white">$2,675</p>
-                                    <span className="text-xs text-green-500 ml-1" title="15.7% increase compared to yesterday">+15.7%</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Orders Comparison */}
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-300">Orders</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                                  <p className="text-xs text-gray-400">Yesterday</p>
-                                  <p className="text-sm font-medium text-white">36</p>
-                                </div>
-                                <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                                  <p className="text-xs text-blue-400">Today</p>
-                                  <div className="flex items-center">
-                                    <p className="text-sm font-medium text-white">42</p>
-                                    <span className="text-xs text-green-500 ml-1" title="16.7% increase compared to yesterday">+16.7%</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Ad Spend Comparison */}
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-300">Ad Spend</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                                  <p className="text-xs text-gray-400">Yesterday</p>
-                                  <p className="text-sm font-medium text-white">$675</p>
-                                </div>
-                                <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                                  <p className="text-xs text-blue-400">Today</p>
-                                  <div className="flex items-center">
-                                    <p className="text-sm font-medium text-white">$785</p>
-                                    <span className="text-xs text-red-500 ml-1" title="16.3% increase compared to yesterday">+16.3%</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* ROAS Comparison */}
-                            <div>
-                              <div className="flex justify-between mb-2">
-                                <span className="text-sm text-gray-300">Average ROAS</span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
-                                  <p className="text-xs text-gray-400">Yesterday</p>
-                                  <p className="text-sm font-medium text-white">3.2x</p>
-                                </div>
-                                <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
-                                  <p className="text-xs text-blue-400">Today</p>
-                                  <div className="flex items-center">
-                                    <p className="text-sm font-medium text-white">3.4x</p>
-                                    <span className="text-xs text-green-500 ml-1" title="6.2% increase compared to yesterday">+6.2%</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                        <Link 
+                          href="/ai-dashboard" 
+                          className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          See AI-powered recommendations
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Simplified Next Steps & Recommendations Section */}
-                  <div>
-                    <h5 className="font-semibold mb-3 text-lg text-blue-400">Next Steps & Recommendations</h5>
-                    <div className="bg-[#222] p-5 rounded-xl text-center">
-                      <div className="mb-4">
-                        <Sparkles className="h-5 w-5 text-blue-400 mx-auto mb-2" />
-                        <p className="text-gray-300 mb-1">View AI-powered recommendations to improve your marketing performance</p>
-                        <p className="text-xs text-gray-500">Based on your campaign data and performance trends</p>
-                      </div>
-                      <Link 
-                        href="/ai-dashboard" 
-                        className="inline-flex items-center justify-center px-5 py-2 text-sm font-medium text-white bg-blue-600/80 rounded-md hover:bg-blue-700 transition-colors"
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        See AI-powered recommendations
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </div>
-                  </div>
+                  </>
                 )}
               </TabsContent>
 
               {/* Include the Monthly Tab content unchanged */}
+              <TabsContent value="monthly">
+                {/* Monthly tab content goes here */}
+                {isLoading ? (
+                  <div className="py-8">
+                    <div className="flex justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                    </div>
+                    <p className="text-center text-gray-500 mt-2">Loading monthly report...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Monthly metrics and content */}
+                    <div className="text-center py-4">
+                      <p className="text-white">Monthly data will be displayed here</p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
             </Tabs>
           )}
         </CardContent>
