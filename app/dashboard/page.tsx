@@ -44,6 +44,7 @@ import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
+import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
 

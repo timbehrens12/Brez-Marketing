@@ -16,6 +16,7 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
+import { AINotification } from "@/components/dashboard/AINotification"
 import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
 
 interface PlatformTabsProps {
@@ -301,7 +302,7 @@ export function PlatformTabs({
           />
           
           {/* AI Notification */}
-          {/* AINotification removed as per user request */}
+          <AINotification lastAnalyzedDate={new Date()} />
           
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-white">Site Overview</h3>
