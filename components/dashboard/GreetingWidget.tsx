@@ -1117,6 +1117,8 @@ export function GreetingWidget({
                 Weekend performance continues to outpace weekdays, with Saturday conversion rates 27% higher than average. Your ad spend represents 28% of revenue, which maintains efficient profitability levels, though could be optimized further.
                 
                 <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your Google search campaigns are showing improving ROAS (+15.2% MoM) with potential for scaling. Consider increasing budget allocation to this channel by 10-15%.
+                
+                <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
               </p>
             </div>
           </div>
@@ -1436,7 +1438,15 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
-          <h4 className="text-xl font-bold mb-4">Today's Performance</h4>
+          <div className="flex flex-col mb-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xl font-bold">Today's Performance</h4>
+              <div className="text-xs text-gray-400 bg-[#2A2A2A] px-3 py-1 rounded-md">
+                Today, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Data updates hourly at XX:00</p>
+          </div>
           
           {/* Combined Daily Metrics Card */}
           <div className="bg-[#222] p-5 rounded-xl mb-6">
@@ -1506,6 +1516,8 @@ export function GreetingWidget({
                 Today's ad spend of $785 is 16.2% higher than yesterday but has delivered 22.3% more conversions, indicating improved efficiency. Mobile conversion rates have improved by 18.4% today compared to your 7-day average.
                 
                 <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
+                
+                <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
               </p>
             </div>
           </div>
