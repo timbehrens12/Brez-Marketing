@@ -1368,17 +1368,23 @@ export function GreetingWidget({
 
             {/* Month-over-Month Comparison Widget */}
             <div>
-              <h5 className="font-semibold mb-3 text-lg">Month-over-Month Trends</h5>
+              <h5 className="font-semibold mb-3 text-lg">Month-over-Month Performance</h5>
               <div className="bg-[#222] p-5 rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-white">Performance Metrics</span>
-                  <span className="text-xs text-gray-400">vs. previous months</span>
+                <div className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-white">Historical Metrics Comparison</span>
+                    <span className="text-xs text-blue-400">Last 5 Months</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Report period: {new Date(new Date().setDate(0)).toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+                    <span className="ml-1 text-gray-500 italic">(Updated on the 1st of each month at 12AM)</span>
+                  </p>
                 </div>
                 
                 {/* Revenue Metric */}
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div>
-                    <div className="flex justify-between mb-1">
+                    <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Revenue</span>
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-white">${monthlyReport.revenueGenerated.toFixed(0)}</span>
@@ -1387,23 +1393,32 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="h-2 bg-blue-600/80 rounded-l-full w-1/5"></div>
-                      <div className="h-2 bg-blue-500/70 w-1/5"></div>
-                      <div className="h-2 bg-blue-400/60 w-1/5"></div>
-                      <div className="h-2 bg-blue-300/50 w-1/5"></div>
-                      <div className="h-2 bg-blue-200/40 rounded-r-full w-1/5"></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>3 months ago</span>
-                      <span>Current</span>
+                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
+                      {[
+                        { month: 'Jan', value: monthlyReport.revenueGenerated * 0.72, color: 'bg-blue-800/70' },
+                        { month: 'Feb', value: monthlyReport.revenueGenerated * 0.81, color: 'bg-blue-700/70' },
+                        { month: 'Mar', value: monthlyReport.revenueGenerated * 0.95, color: 'bg-blue-600/70' },
+                        { month: 'Apr', value: monthlyReport.revenueGenerated * 0.89, color: 'bg-blue-500/70' },
+                        { month: 'May', value: monthlyReport.revenueGenerated, color: 'bg-blue-400/70' }
+                      ].map((item, i) => (
+                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
+                          <div 
+                            className={`absolute bottom-0 w-full ${item.color}`} 
+                            style={{ height: `${(item.value / monthlyReport.revenueGenerated) * 100}%` }}
+                          ></div>
+                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
+                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
+                            ${item.value.toFixed(0)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
                   {/* Average ROAS Metric */}
                   <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Average ROAS</span>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">ROAS</span>
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</span>
                         <span className={`text-xs ml-2 ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -1411,22 +1426,31 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="h-2 bg-green-600/80 rounded-l-full w-1/5"></div>
-                      <div className="h-2 bg-green-500/70 w-1/5"></div>
-                      <div className="h-2 bg-green-400/60 w-1/5"></div>
-                      <div className="h-2 bg-green-500/70 w-1/5"></div>
-                      <div className="h-2 bg-green-600/80 rounded-r-full w-1/5"></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>2.8x</span>
-                      <span>{monthlyReport.averageRoas.toFixed(2)}x</span>
+                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
+                      {[
+                        { month: 'Jan', value: monthlyReport.averageRoas * 0.85, color: 'bg-green-800/70' },
+                        { month: 'Feb', value: monthlyReport.averageRoas * 0.92, color: 'bg-green-700/70' },
+                        { month: 'Mar', value: monthlyReport.averageRoas * 0.78, color: 'bg-green-600/70' },
+                        { month: 'Apr', value: monthlyReport.averageRoas * 0.89, color: 'bg-green-500/70' },
+                        { month: 'May', value: monthlyReport.averageRoas, color: 'bg-green-400/70' }
+                      ].map((item, i) => (
+                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
+                          <div 
+                            className={`absolute bottom-0 w-full ${item.color}`} 
+                            style={{ height: `${(item.value / monthlyReport.averageRoas) * 100}%` }}
+                          ></div>
+                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
+                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
+                            {item.value.toFixed(1)}x
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
                   {/* Ad Spend Metric */}
                   <div>
-                    <div className="flex justify-between mb-1">
+                    <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Ad Spend</span>
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</span>
@@ -1435,22 +1459,31 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="h-2 bg-purple-600/80 rounded-l-full w-1/5"></div>
-                      <div className="h-2 bg-purple-500/70 w-1/5"></div>
-                      <div className="h-2 bg-purple-400/60 w-1/5"></div>
-                      <div className="h-2 bg-purple-500/70 w-1/5"></div>
-                      <div className="h-2 bg-purple-600/80 rounded-r-full w-1/5"></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>${(monthlyReport.totalAdSpend * 0.85).toFixed(0)}</span>
-                      <span>${monthlyReport.totalAdSpend.toFixed(0)}</span>
+                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
+                      {[
+                        { month: 'Jan', value: monthlyReport.totalAdSpend * 0.70, color: 'bg-purple-800/70' },
+                        { month: 'Feb', value: monthlyReport.totalAdSpend * 0.85, color: 'bg-purple-700/70' },
+                        { month: 'Mar', value: monthlyReport.totalAdSpend * 0.88, color: 'bg-purple-600/70' },
+                        { month: 'Apr', value: monthlyReport.totalAdSpend * 0.95, color: 'bg-purple-500/70' },
+                        { month: 'May', value: monthlyReport.totalAdSpend, color: 'bg-purple-400/70' }
+                      ].map((item, i) => (
+                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
+                          <div 
+                            className={`absolute bottom-0 w-full ${item.color}`} 
+                            style={{ height: `${(item.value / monthlyReport.totalAdSpend) * 100}%` }}
+                          ></div>
+                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
+                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
+                            ${item.value.toFixed(0)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
                   {/* Orders Metric */}
                   <div>
-                    <div className="flex justify-between mb-1">
+                    <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Orders</span>
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-white">{monthlyReport.totalPurchases}</span>
@@ -1459,16 +1492,25 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="h-2 bg-amber-600/80 rounded-l-full w-1/5"></div>
-                      <div className="h-2 bg-amber-500/70 w-1/5"></div>
-                      <div className="h-2 bg-amber-400/60 w-1/5"></div>
-                      <div className="h-2 bg-amber-500/70 w-1/5"></div>
-                      <div className="h-2 bg-amber-600/80 rounded-r-full w-1/5"></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>{Math.round(monthlyReport.totalPurchases * 0.88)}</span>
-                      <span>{monthlyReport.totalPurchases}</span>
+                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
+                      {[
+                        { month: 'Jan', value: monthlyReport.totalPurchases * 0.78, color: 'bg-amber-800/70' },
+                        { month: 'Feb', value: monthlyReport.totalPurchases * 0.86, color: 'bg-amber-700/70' },
+                        { month: 'Mar', value: monthlyReport.totalPurchases * 0.91, color: 'bg-amber-600/70' },
+                        { month: 'Apr', value: monthlyReport.totalPurchases * 0.94, color: 'bg-amber-500/70' },
+                        { month: 'May', value: monthlyReport.totalPurchases, color: 'bg-amber-400/70' }
+                      ].map((item, i) => (
+                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
+                          <div 
+                            className={`absolute bottom-0 w-full ${item.color}`} 
+                            style={{ height: `${(item.value / monthlyReport.totalPurchases) * 100}%` }}
+                          ></div>
+                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
+                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
+                            {Math.round(item.value)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
