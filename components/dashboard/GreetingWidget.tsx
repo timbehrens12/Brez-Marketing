@@ -700,16 +700,16 @@ export function GreetingWidget({
     // Sample historical comparison data
     const historicalData = period === 'daily' 
       ? [
-          { name: '3 Days Ago', revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
-          { name: '2 Days Ago', revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
-          { name: 'Yesterday', revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
+          { name: format(subDays(new Date(), 3), 'MMM d'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: format(subDays(new Date(), 2), 'MMM d'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: format(subDays(new Date(), 1), 'MMM d'), revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
           { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ]
       : [
-          { name: '3 Months Ago', revenue: metrics.totalSales * 0.8, orders: metrics.ordersCount * 0.75, adSpend: metrics.adSpend * 0.85, roas: metrics.roas * 0.9 },
-          { name: '2 Months Ago', revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
-          { name: 'Last Month', revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.9, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
-          { name: 'This Month', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+          { name: format(subMonths(new Date(), 3), 'MMMM'), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.8, roas: metrics.roas * 0.85 },
+          { name: format(subMonths(new Date(), 2), 'MMMM'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: format(subMonths(new Date(), 1), 'MMMM'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.9, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: getCurrentMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ];
     
     // Generate AI analysis based on period
@@ -955,10 +955,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h5 className="font-medium">
-                  {(currentPeriod as string) === 'daily' ? "Day-over-Day" : "Month-over-Month"} Comparison
+                  Month-to-Month Comparison
                 </h5>
                 <p className="text-xs text-gray-400">
-                  vs {(currentPeriod as string) === 'daily' ? "yesterday" : "last month"}
+                  {getCurrentMonthName()} vs. previous months
                 </p>
               </div>
               <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
@@ -969,51 +969,35 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Revenue</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subMonths(new Date(), 2), 'MMMM')}
                         </div>
                         <div className="font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.revenueGenerated * 0.97;
-                              } else if (monthlyReport) {
-                                return monthlyReport.revenueGenerated * 0.92;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subMonths(new Date(), 1), 'MMMM')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.revenueGenerated;
-                              } else if (monthlyReport) {
-                                return monthlyReport.revenueGenerated;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-green-500">
-                            +{Math.abs(
-                              (() => {
-                                if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                  return dailyReport.periodComparison.salesGrowth;
-                                } else if (monthlyReport) {
-                                  return monthlyReport.periodComparison.salesGrowth;
-                                }
-                                return 0;
-                              })()
-                            ).toFixed(1)}%
-                          </span>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.92 : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +8.2%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getCurrentMonthName()}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
                         </div>
                       </div>
                     </div>
@@ -1023,51 +1007,35 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Orders</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subMonths(new Date(), 2), 'MMMM')}
                         </div>
                         <div className="font-semibold">
-                          {Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalPurchases * 0.95;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalPurchases * 0.9;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subMonths(new Date(), 1), 'MMMM')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          {Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalPurchases;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalPurchases;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-green-500">
-                            +{Math.abs(
-                              (() => {
-                                if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                  return dailyReport.periodComparison.orderGrowth;
-                                } else if (monthlyReport) {
-                                  return monthlyReport.periodComparison.orderGrowth;
-                                }
-                                return 0;
-                              })()
-                            ).toFixed(1)}%
-                          </span>
+                        <div className="font-semibold">
+                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.9 : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +9.8%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getCurrentMonthName()}
+                        </div>
+                        <div className="font-semibold">
+                          {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
                         </div>
                       </div>
                     </div>
@@ -1077,84 +1045,41 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Ad Spend</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subMonths(new Date(), 2), 'MMMM')}
                         </div>
                         <div className="font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalAdSpend * 0.98;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalAdSpend * 0.95;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subMonths(new Date(), 1), 'MMMM')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalAdSpend;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalAdSpend;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-amber-500">
-                            +{Math.round((currentPeriod as string) === 'daily' ? 2.0 : 5.0)}%
-                          </span>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.95 : 0)}
+                        </div>
+                        <div className="text-xs text-amber-500">
+                          +8.0%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getCurrentMonthName()}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                        </div>
+                        <div className="text-xs text-amber-500">
+                          +5.3%
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Extended Time Comparison</h5>
-            <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={(() => {
-                    if ((currentPeriod as string) === 'daily' && dailyReport) {
-                      return dailyReport.historicalData;
-                    } else if (monthlyReport) {
-                      return monthlyReport.historicalData;
-                    }
-                    return [];
-                  })()}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
-                    labelStyle={{ color: 'white' }}
-                    itemStyle={{ color: 'white' }}
-                    formatter={(value: any) => typeof value === 'number' ? 
-                      value.toString().includes('.') ? value.toFixed(1) : value : value}
-                  />
-                  <Legend wrapperStyle={{ color: '#aaa' }} />
-                  <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </div>
           
@@ -1267,10 +1192,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h5 className="font-medium">
-                  {(currentPeriod as string) === 'daily' ? "Day-over-Day" : "Month-over-Month"} Comparison
+                  Day-to-Day Comparison
                 </h5>
                 <p className="text-xs text-gray-400">
-                  vs {(currentPeriod as string) === 'daily' ? "yesterday" : "last month"}
+                  {format(new Date(), 'MMM d')} vs. previous days
                 </p>
               </div>
               <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
@@ -1281,51 +1206,35 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Revenue</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
                         </div>
                         <div className="font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.revenueGenerated * 0.97;
-                              } else if (monthlyReport) {
-                                return monthlyReport.revenueGenerated * 0.92;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          ${Math.round(dailyReport ? dailyReport.revenueGenerated * 0.92 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.revenueGenerated;
-                              } else if (monthlyReport) {
-                                return monthlyReport.revenueGenerated;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-green-500">
-                            +{Math.abs(
-                              (() => {
-                                if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                  return dailyReport.periodComparison.salesGrowth;
-                                } else if (monthlyReport) {
-                                  return monthlyReport.periodComparison.salesGrowth;
-                                }
-                                return 0;
-                              })()
-                            ).toFixed(1)}%
-                          </span>
+                        <div className="font-semibold">
+                          ${Math.round(dailyReport ? dailyReport.revenueGenerated * 0.97 : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +5.4%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          Today, {format(new Date(), 'MMM d')}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(dailyReport ? dailyReport.revenueGenerated : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +{dailyReport ? Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
                         </div>
                       </div>
                     </div>
@@ -1335,51 +1244,35 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Orders</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
                         </div>
                         <div className="font-semibold">
-                          {Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalPurchases * 0.95;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalPurchases * 0.9;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          {Math.round(dailyReport ? dailyReport.totalPurchases * 0.90 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          {Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalPurchases;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalPurchases;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-green-500">
-                            +{Math.abs(
-                              (() => {
-                                if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                  return dailyReport.periodComparison.orderGrowth;
-                                } else if (monthlyReport) {
-                                  return monthlyReport.periodComparison.orderGrowth;
-                                }
-                                return 0;
-                              })()
-                            ).toFixed(1)}%
-                          </span>
+                        <div className="font-semibold">
+                          {Math.round(dailyReport ? dailyReport.totalPurchases * 0.95 : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +5.6%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          Today, {format(new Date(), 'MMM d')}
+                        </div>
+                        <div className="font-semibold">
+                          {Math.round(dailyReport ? dailyReport.totalPurchases : 0)}
+                        </div>
+                        <div className="text-xs text-green-500">
+                          +{dailyReport ? Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
                         </div>
                       </div>
                     </div>
@@ -1389,42 +1282,35 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm text-gray-400">Ad Spend</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
                         </div>
                         <div className="font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalAdSpend * 0.98;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalAdSpend * 0.95;
-                              }
-                              return 0;
-                            })()
-                          )}
+                          ${Math.round(dailyReport ? dailyReport.totalAdSpend * 0.95 : 0)}
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
                         </div>
-                        <div className="flex items-center font-semibold">
-                          ${Math.round(
-                            (() => {
-                              if ((currentPeriod as string) === 'daily' && dailyReport) {
-                                return dailyReport.totalAdSpend;
-                              } else if (monthlyReport) {
-                                return monthlyReport.totalAdSpend;
-                              }
-                              return 0;
-                            })()
-                          )}
-                          <span className="ml-2 text-xs text-amber-500">
-                            +{Math.round((currentPeriod as string) === 'daily' ? 2.0 : 5.0)}%
-                          </span>
+                        <div className="font-semibold">
+                          ${Math.round(dailyReport ? dailyReport.totalAdSpend * 0.98 : 0)}
+                        </div>
+                        <div className="text-xs text-amber-500">
+                          +3.2%
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          Today, {format(new Date(), 'MMM d')}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(dailyReport ? dailyReport.totalAdSpend : 0)}
+                        </div>
+                        <div className="text-xs text-amber-500">
+                          +2.0%
                         </div>
                       </div>
                     </div>
