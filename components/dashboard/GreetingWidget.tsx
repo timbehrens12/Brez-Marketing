@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment } from "react"
 import { useUser } from "@clerk/nextjs"
 import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -591,7 +591,7 @@ export function GreetingWidget({
       // Format period date range
       const dateRange = period === 'daily' 
         ? `Today (${format(new Date(), 'MMMM d, yyyy')})`
-        : `${getCurrentMonthName()} ${getYear(new Date())}`;
+        : `${format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM d')} - ${format(new Date(new Date().getFullYear(), new Date().getMonth(), 0), 'MMMM d, yyyy')}`;
       
       // Return report data
       return {
@@ -664,7 +664,7 @@ export function GreetingWidget({
         clientName: brandName,
         preparedBy: 'AI Marketing Analyst',
         // Add best selling products data
-        bestSellingProducts: bestSellingProducts
+        bestSellingProducts: bestSellingProducts && bestSellingProducts.length > 0 ? bestSellingProducts : []
       };
     } catch (error) {
       console.error('Error generating report:', error);
@@ -2042,7 +2042,7 @@ export function GreetingWidget({
                                             style={{ width: `${Math.min(campaign.roas * 10, 100)}%` }}></div>
           </div>
                                         <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                          <span>${campaign.cpa?.toFixed(2)} CPA</span>
+                                          <span>${campaign.cpa?.toFixed(2) || '-'} CPA</span>
                                           <span>{campaign.conversions || 0} conversions</span>
         </div>
                                       </div>
@@ -2093,16 +2093,22 @@ export function GreetingWidget({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
                                     <p className="text-xs text-gray-400">{getPreviousMonthName()}</p>
-                                    <p className="text-sm font-medium text-white">${Math.round(periodData.previousMonth.totalSales)}</p>
+                                    <p className="text-sm font-medium text-white">${Math.round(periodData.previousMonth.totalSales) || '-'}</p>
                     </div>
                                   <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
                                     <p className="text-xs text-blue-400">{getCurrentMonthName()}</p>
                                     <div className="flex items-center">
-                                      <p className="text-sm font-medium text-white">${Math.round(periodData.month.totalSales)}</p>
-                                      <span className={`text-xs ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}>
-                                        {monthlyReport.periodComparison.salesGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.salesGrowth * 100).toFixed(1)}%
-                                      </span>
-                </div>
+                                      <p className="text-sm font-medium text-white">${Math.round(periodData.month.totalSales) || '-'}</p>
+                                      {periodData.previousMonth.totalSales > 0 ? (
+                                        <span className={`text-xs ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}>
+                                          {monthlyReport.periodComparison.salesGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.salesGrowth * 100).toFixed(1)}%
+                                        </span>
+                                      ) : periodData.month.totalSales > 0 ? (
+                                        <span className="text-xs text-green-500 ml-1">New</span>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 ml-1">-</span>
+                                      )}
+                                    </div>
                 </div>
               </div>
             </div>
@@ -2115,17 +2121,22 @@ export function GreetingWidget({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
                                     <p className="text-xs text-gray-400">{getPreviousMonthName()}</p>
-                                    <p className="text-sm font-medium text-white">{periodData.previousMonth.ordersCount}</p>
+                                    <p className="text-sm font-medium text-white">{Math.round(periodData.previousMonth.ordersCount) || '-'}</p>
                   </div>
                                   <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
                                     <p className="text-xs text-blue-400">{getCurrentMonthName()}</p>
                                     <div className="flex items-center">
-                                      <p className="text-sm font-medium text-white">{periodData.month.ordersCount}</p>
-                                      <span className={`text-xs ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}
-                                        title={`${Math.abs(monthlyReport.periodComparison.orderGrowth * 100).toFixed(1)}% ${monthlyReport.periodComparison.orderGrowth > 0 ? 'increase' : 'decrease'} compared to last month`}>
-                                        {monthlyReport.periodComparison.orderGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.orderGrowth * 100).toFixed(1)}%
-                                      </span>
-                </div>
+                                      <p className="text-sm font-medium text-white">{Math.round(periodData.month.ordersCount) || '-'}</p>
+                                      {periodData.previousMonth.ordersCount > 0 ? (
+                                        <span className={`text-xs ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}>
+                                          {monthlyReport.periodComparison.orderGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.orderGrowth * 100).toFixed(1)}%
+                                        </span>
+                                      ) : periodData.month.ordersCount > 0 ? (
+                                        <span className="text-xs text-green-500 ml-1">New</span>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 ml-1">-</span>
+                                      )}
+                                    </div>
                   </div>
                   </div>
                 </div>
@@ -2161,18 +2172,24 @@ export function GreetingWidget({
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
                                     <p className="text-xs text-gray-400">{getPreviousMonthName()}</p>
-                                    <p className="text-sm font-medium text-white">{periodData.previousMonth.roas.toFixed(1)}x</p>
+                                    <p className="text-sm font-medium text-white">{periodData.previousMonth.roas > 0 ? periodData.previousMonth.roas.toFixed(1) + 'x' : '-'}</p>
                   </div>
                                   <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
                                     <p className="text-xs text-blue-400">{getCurrentMonthName()}</p>
                                     <div className="flex items-center">
-                                      <p className="text-sm font-medium text-white">{periodData.month.roas.toFixed(1)}x</p>
-                                      <span className={`text-xs ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}>
-                                        {monthlyReport.periodComparison.roasGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.roasGrowth * 100).toFixed(1)}%
-                                      </span>
+                                      <p className="text-sm font-medium text-white">{periodData.month.roas > 0 ? periodData.month.roas.toFixed(1) + 'x' : '-'}</p>
+                                      {periodData.previousMonth.roas > 0 && periodData.month.roas > 0 ? (
+                                        <span className={`text-xs ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'} ml-1`}>
+                                          {monthlyReport.periodComparison.roasGrowth > 0 ? '+' : '-'}{Math.abs(monthlyReport.periodComparison.roasGrowth * 100).toFixed(1)}%
+                                        </span>
+                                      ) : periodData.month.roas > 0 ? (
+                                        <span className="text-xs text-green-500 ml-1">New</span>
+                                      ) : (
+                                        <span className="text-xs text-gray-500 ml-1">-</span>
+                                      )}
+                                    </div>
                   </div>
                 </div>
-              </div>
                               </div>
                             </div>
                           )}
