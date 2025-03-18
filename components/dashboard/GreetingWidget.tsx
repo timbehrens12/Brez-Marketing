@@ -212,10 +212,10 @@ export function GreetingWidget({
     return new Date().toLocaleString('default', { month: 'long' })
   }
 
-  // Get the previous month name
-  const getPreviousMonthName = (): string => {
+  // Get a previous month name with an optional offset
+  const getPreviousMonthName = (offset = 0): string => {
     const date = new Date()
-    date.setMonth(date.getMonth() - 1)
+    date.setMonth(date.getMonth() - (1 + offset))
     return date.toLocaleString('default', { month: 'long' })
   }
 
@@ -1037,7 +1037,15 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'monthly' && monthlyReport ? (
         <div>
-          <h4 className="text-xl font-bold mb-4">Monthly Performance Summary</h4>
+          <div className="flex flex-col mb-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xl font-bold">Monthly Performance Summary</h4>
+              <div className="text-xs text-gray-400 bg-[#2A2A2A] px-3 py-1 rounded-md">
+                {getPreviousMonthName()} 1st - {getPreviousMonthName()} {new Date(new Date().getFullYear(), new Date().getMonth(), 0).getDate()}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Data updates every 1st of the month at 12:00 AM</p>
+          </div>
           
           {/* Executive Summary Card */}
           <div className="bg-[#222] p-6 rounded-xl mb-6">
@@ -1304,85 +1312,18 @@ export function GreetingWidget({
               </div>
             </div>
             
-            {/* Customer Acquisition Widget */}
-            <div>
-              <h5 className="font-semibold mb-3 text-lg">Customer Acquisition</h5>
-              <div className="bg-[#222] p-5 rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-white">Acquisition Sources</span>
-                  <span className="text-xs text-gray-400">by platform</span>
-                </div>
-                
-                {/* Acquisition Sources */}
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Brez/Yordy - Adv+ Catalog</span>
-                      <span className="text-sm font-medium text-white">$3802</span>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full">
-                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: `85%` }}></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>Meta</span>
-                      <span>85%</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">Cold Traffic - Interest Targeting</span>
-                      <span className="text-sm font-medium text-white">$671</span>
-                    </div>
-                    <div className="w-full bg-gray-800 h-2 rounded-full">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: `15%` }}></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>Google</span>
-                      <span>15%</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm text-gray-300">New Customer Metrics</span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-3">
-                      <div>
-                        <p className="text-gray-400 text-xs">New Customers</p>
-                        <p className="text-white font-medium">{monthlyReport.newCustomersAcquired}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">Acquisition Cost</p>
-                        <p className="text-white font-medium">${(monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 text-xs">ROAS</p>
-                        <p className="text-white font-medium">{monthlyReport.averageRoas.toFixed(2)}x</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Month-over-Month Comparison Widget */}
             <div>
-              <h5 className="font-semibold mb-3 text-lg">Month-over-Month Performance</h5>
+              <h5 className="font-semibold mb-3 text-lg">Month-over-Month Comparison</h5>
               <div className="bg-[#222] p-5 rounded-xl">
-                <div className="mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-white">Historical Metrics Comparison</span>
-                    <span className="text-xs text-blue-400">Last 5 Months</span>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Report period: {new Date(new Date().setDate(0)).toLocaleDateString('default', { month: 'long', year: 'numeric' })}
-                    <span className="ml-1 text-gray-500 italic">(Updated on the 1st of each month at 12AM)</span>
-                  </p>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-white">Performance Trends</span>
+                  <span className="text-xs text-gray-400">last 3 months</span>
                 </div>
                 
-                {/* Revenue Metric */}
-                <div className="space-y-6">
+                {/* Metric Comparisons */}
+                <div className="space-y-5">
+                  {/* Revenue Comparison */}
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Revenue</span>
@@ -1393,95 +1334,50 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
-                      {[
-                        { month: 'Jan', value: monthlyReport.revenueGenerated * 0.72, color: 'bg-blue-800/70' },
-                        { month: 'Feb', value: monthlyReport.revenueGenerated * 0.81, color: 'bg-blue-700/70' },
-                        { month: 'Mar', value: monthlyReport.revenueGenerated * 0.95, color: 'bg-blue-600/70' },
-                        { month: 'Apr', value: monthlyReport.revenueGenerated * 0.89, color: 'bg-blue-500/70' },
-                        { month: 'May', value: monthlyReport.revenueGenerated, color: 'bg-blue-400/70' }
-                      ].map((item, i) => (
-                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
-                          <div 
-                            className={`absolute bottom-0 w-full ${item.color}`} 
-                            style={{ height: `${(item.value / monthlyReport.revenueGenerated) * 100}%` }}
-                          ></div>
-                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
-                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
-                            ${item.value.toFixed(0)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Average ROAS Metric */}
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-gray-300">ROAS</span>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport.periodComparison.roasGrowth.toFixed(1)}%
-                        </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
+                        <p className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.85).toFixed(0)}</p>
+                      </div>
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
+                        <p className="text-sm font-medium text-white">${(monthlyReport.revenueGenerated * 0.92).toFixed(0)}</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
+                        <p className="text-sm font-medium text-white">${monthlyReport.revenueGenerated.toFixed(0)}</p>
                       </div>
                     </div>
-                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
-                      {[
-                        { month: 'Jan', value: monthlyReport.averageRoas * 0.85, color: 'bg-green-800/70' },
-                        { month: 'Feb', value: monthlyReport.averageRoas * 0.92, color: 'bg-green-700/70' },
-                        { month: 'Mar', value: monthlyReport.averageRoas * 0.78, color: 'bg-green-600/70' },
-                        { month: 'Apr', value: monthlyReport.averageRoas * 0.89, color: 'bg-green-500/70' },
-                        { month: 'May', value: monthlyReport.averageRoas, color: 'bg-green-400/70' }
-                      ].map((item, i) => (
-                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
-                          <div 
-                            className={`absolute bottom-0 w-full ${item.color}`} 
-                            style={{ height: `${(item.value / monthlyReport.averageRoas) * 100}%` }}
-                          ></div>
-                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
-                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
-                            {item.value.toFixed(1)}x
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                   
-                  {/* Ad Spend Metric */}
+                  {/* Ad Spend Comparison */}
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Ad Spend</span>
                       <div className="flex items-center">
                         <span className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</span>
-                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-blue-500' : 'text-blue-400'}`}>
-                          {monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{(monthlyReport.periodComparison.salesGrowth * 0.8).toFixed(1)}%
+                        <span className={`text-xs ml-2 ${monthlyReport.totalAdSpend > monthlyReport.totalAdSpend * 0.92 ? 'text-amber-500' : 'text-green-500'}`}>
+                          {monthlyReport.totalAdSpend > monthlyReport.totalAdSpend * 0.92 ? '+' : ''}{((monthlyReport.totalAdSpend / (monthlyReport.totalAdSpend * 0.92) - 1) * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
-                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
-                      {[
-                        { month: 'Jan', value: monthlyReport.totalAdSpend * 0.70, color: 'bg-purple-800/70' },
-                        { month: 'Feb', value: monthlyReport.totalAdSpend * 0.85, color: 'bg-purple-700/70' },
-                        { month: 'Mar', value: monthlyReport.totalAdSpend * 0.88, color: 'bg-purple-600/70' },
-                        { month: 'Apr', value: monthlyReport.totalAdSpend * 0.95, color: 'bg-purple-500/70' },
-                        { month: 'May', value: monthlyReport.totalAdSpend, color: 'bg-purple-400/70' }
-                      ].map((item, i) => (
-                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
-                          <div 
-                            className={`absolute bottom-0 w-full ${item.color}`} 
-                            style={{ height: `${(item.value / monthlyReport.totalAdSpend) * 100}%` }}
-                          ></div>
-                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
-                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
-                            ${item.value.toFixed(0)}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
+                        <p className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.82).toFixed(0)}</p>
+                      </div>
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
+                        <p className="text-sm font-medium text-white">${(monthlyReport.totalAdSpend * 0.92).toFixed(0)}</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
+                        <p className="text-sm font-medium text-white">${monthlyReport.totalAdSpend.toFixed(0)}</p>
+                      </div>
                     </div>
                   </div>
                   
-                  {/* Orders Metric */}
+                  {/* Orders Comparison */}
                   <div>
                     <div className="flex justify-between mb-2">
                       <span className="text-sm text-gray-300">Orders</span>
@@ -1492,25 +1388,46 @@ export function GreetingWidget({
                         </span>
                       </div>
                     </div>
-                    <div className="h-10 w-full bg-gray-800 rounded-lg flex overflow-hidden">
-                      {[
-                        { month: 'Jan', value: monthlyReport.totalPurchases * 0.78, color: 'bg-amber-800/70' },
-                        { month: 'Feb', value: monthlyReport.totalPurchases * 0.86, color: 'bg-amber-700/70' },
-                        { month: 'Mar', value: monthlyReport.totalPurchases * 0.91, color: 'bg-amber-600/70' },
-                        { month: 'Apr', value: monthlyReport.totalPurchases * 0.94, color: 'bg-amber-500/70' },
-                        { month: 'May', value: monthlyReport.totalPurchases, color: 'bg-amber-400/70' }
-                      ].map((item, i) => (
-                        <div key={i} className="relative h-full" style={{ width: '20%' }}>
-                          <div 
-                            className={`absolute bottom-0 w-full ${item.color}`} 
-                            style={{ height: `${(item.value / monthlyReport.totalPurchases) * 100}%` }}
-                          ></div>
-                          <div className="absolute bottom-0 w-full text-center text-[10px] text-gray-400 mb-[-18px]">{item.month}</div>
-                          <div className="absolute top-0 w-full text-center text-[10px] text-gray-400 mt-1">
-                            {Math.round(item.value)}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
+                        <p className="text-sm font-medium text-white">{Math.round(monthlyReport.totalPurchases * 0.87)}</p>
+                      </div>
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
+                        <p className="text-sm font-medium text-white">{Math.round(monthlyReport.totalPurchases * 0.94)}</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
+                        <p className="text-sm font-medium text-white">{monthlyReport.totalPurchases}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* ROAS Comparison */}
+                  <div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-300">Average ROAS</span>
+                      <div className="flex items-center">
+                        <span className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</span>
+                        <span className={`text-xs ml-2 ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          {monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport.periodComparison.roasGrowth.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(2)}</p>
+                        <p className="text-sm font-medium text-white">{(monthlyReport.averageRoas * 0.89).toFixed(2)}x</p>
+                      </div>
+                      <div className="bg-[#2A2A2A] px-3 py-2 rounded-md">
+                        <p className="text-xs text-gray-400">{getPreviousMonthName(1)}</p>
+                        <p className="text-sm font-medium text-white">{(monthlyReport.averageRoas * 0.95).toFixed(2)}x</p>
+                      </div>
+                      <div className="bg-blue-900/30 border border-blue-800/20 px-3 py-2 rounded-md">
+                        <p className="text-xs text-blue-400">{getPreviousMonthName()}</p>
+                        <p className="text-sm font-medium text-white">{monthlyReport.averageRoas.toFixed(2)}x</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1546,7 +1463,7 @@ export function GreetingWidget({
           <div className="bg-[#222] p-5 rounded-xl mb-6">
             <div className="flex items-center justify-between mb-4">
               <h5 className="font-semibold text-lg text-white">Daily Overview</h5>
-              {dailyReport?.aiAnalyzed && (
+              {dailyReport.aiAnalyzed && (
                 <div className="flex items-center text-xs text-gray-500">
                   <Sparkles className="h-3 w-3 mr-1 text-blue-400" />
                   AI-powered analysis
@@ -1558,36 +1475,36 @@ export function GreetingWidget({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
               <div className="p-3 bg-[#2A2A2A] rounded-lg">
                 <p className="text-xs text-gray-400 mb-1">Revenue</p>
-                <p className="text-xl font-semibold text-white">${dailyReport?.revenueGenerated?.toFixed(0) || "0"}</p>
-                {dailyReport?.periodComparison?.salesGrowth !== 0 && (
-                  <p className={`text-xs flex items-center ${dailyReport?.periodComparison?.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {dailyReport?.periodComparison?.salesGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(dailyReport?.periodComparison?.salesGrowth || 0).toFixed(1)}% vs yesterday
+                <p className="text-xl font-semibold text-white">${dailyReport.revenueGenerated.toFixed(0)}</p>
+                {dailyReport.periodComparison.salesGrowth !== 0 && (
+                  <p className={`text-xs flex items-center ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport.periodComparison.salesGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                    {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% vs yesterday
                   </p>
                 )}
               </div>
               <div className="p-3 bg-[#2A2A2A] rounded-lg">
                 <p className="text-xs text-gray-400 mb-1">Orders</p>
-                <p className="text-xl font-semibold text-white">{dailyReport?.totalPurchases || 0}</p>
-                {dailyReport?.periodComparison?.orderGrowth !== 0 && (
-                  <p className={`text-xs flex items-center ${dailyReport?.periodComparison?.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {dailyReport?.periodComparison?.orderGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(dailyReport?.periodComparison?.orderGrowth || 0).toFixed(1)}% vs yesterday
+                <p className="text-xl font-semibold text-white">{dailyReport.totalPurchases}</p>
+                {dailyReport.periodComparison.orderGrowth !== 0 && (
+                  <p className={`text-xs flex items-center ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport.periodComparison.orderGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                    {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% vs yesterday
                   </p>
                 )}
               </div>
               <div className="p-3 bg-[#2A2A2A] rounded-lg">
                 <p className="text-xs text-gray-400 mb-1">Ad Spend</p>
-                <p className="text-xl font-semibold text-white">${dailyReport?.totalAdSpend?.toFixed(0) || "0"}</p>
-                <p className="text-xs text-gray-400">ROAS: {dailyReport?.averageRoas?.toFixed(2) || "0.00"}x</p>
+                <p className="text-xl font-semibold text-white">${dailyReport.totalAdSpend.toFixed(0)}</p>
+                <p className="text-xs text-gray-400">ROAS: {dailyReport.averageRoas.toFixed(2)}x</p>
               </div>
               <div className="p-3 bg-[#2A2A2A] rounded-lg">
                 <p className="text-xs text-gray-400 mb-1">Average ROAS</p>
-                <p className="text-xl font-semibold text-white">{dailyReport?.averageRoas?.toFixed(2) || "0.00"}x</p>
-                {dailyReport?.periodComparison?.roasGrowth !== 0 && (
-                  <p className={`text-xs flex items-center ${dailyReport?.periodComparison?.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {dailyReport?.periodComparison?.roasGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(dailyReport?.periodComparison?.roasGrowth || 0).toFixed(1)}%
+                <p className="text-xl font-semibold text-white">{dailyReport.averageRoas.toFixed(2)}x</p>
+                {dailyReport.periodComparison.roasGrowth !== 0 && (
+                  <p className={`text-xs flex items-center ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport.periodComparison.roasGrowth > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                    {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}%
                   </p>
                 )}
               </div>
@@ -1600,17 +1517,15 @@ export function GreetingWidget({
                 <h6 className="text-sm font-medium text-blue-400">AI Daily Performance Analysis</h6>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed">
-                Today's performance shows a ${dailyReport?.revenueGenerated?.toFixed(0) || "0"} revenue with 
-                {dailyReport?.periodComparison?.salesGrowth > 0 
-                  ? ' a ' + Math.abs(dailyReport?.periodComparison?.salesGrowth || 0).toFixed(1) + '% increase' 
-                  : ' a ' + Math.abs(dailyReport?.periodComparison?.salesGrowth || 0).toFixed(1) + '% decrease'} 
-                compared to yesterday. You've processed {dailyReport?.totalPurchases || 0} orders today, with Meta ads generating 
-                {(((dailyReport?.platformRevenue?.meta || 0) / (dailyReport?.revenueGenerated || 1)) * 100).toFixed(0)}% of the revenue. 
-                Your top campaign "{dailyReport?.bestCampaigns?.[0]?.name || dailyReport?.bestCampaign?.name || "Top Campaign"}" achieved a 
-                {((dailyReport?.bestCampaigns?.[0]?.roas || dailyReport?.bestCampaign?.roas || 0)).toFixed(2)}x ROAS, significantly outperforming 
-                your ad spend average. Ad spend efficiency is {(dailyReport?.averageRoas || 0) > 2 ? 'strong' : 'needing optimization'} with an overall ROAS of 
-                {dailyReport?.averageRoas?.toFixed(2) || "0.00"}x. The "{dailyReport?.underperformingCampaigns?.[0]?.name || dailyReport?.underperformingCampaign?.name || "Underperforming Campaign"}" 
-                campaign is underperforming at {((dailyReport?.underperformingCampaigns?.[0]?.roas || dailyReport?.underperformingCampaign?.roas || 0)).toFixed(2)}x ROAS 
+                Today's performance shows a ${dailyReport.revenueGenerated.toFixed(0)} revenue with 
+                {dailyReport.periodComparison.salesGrowth > 0 ? ' a ' + Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) + '% increase' : ' a ' + Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) + '% decrease'} 
+                compared to yesterday. You've processed {dailyReport.totalPurchases} orders today, with Meta ads generating 
+                {((dailyReport.platformRevenue.meta / dailyReport.revenueGenerated) * 100).toFixed(0)}% of the revenue. 
+                Your top campaign "{dailyReport.bestCampaigns?.[0]?.name || dailyReport.bestCampaign.name}" achieved a 
+                {(dailyReport.bestCampaigns?.[0]?.roas || dailyReport.bestCampaign.roas).toFixed(2)}x ROAS, significantly outperforming 
+                your ad spend average. Ad spend efficiency is {dailyReport.averageRoas > 2 ? 'strong' : 'needing optimization'} with an overall ROAS of 
+                {dailyReport.averageRoas.toFixed(2)}x. The "{dailyReport.underperformingCampaigns?.[0]?.name || dailyReport.underperformingCampaign.name}" 
+                campaign is underperforming at {(dailyReport.underperformingCampaigns?.[0]?.roas || dailyReport.underperformingCampaign.roas).toFixed(2)}x ROAS 
                 and requires immediate attention to improve overall marketing efficiency.
               </p>
             </div>
