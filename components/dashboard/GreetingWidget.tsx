@@ -74,7 +74,7 @@ interface PerformanceReport {
   }
 }
 
-type ReportPeriod = 'daily' | 'weekly' | 'monthly'
+type ReportPeriod = 'daily' | 'monthly'
 
 export function GreetingWidget({ 
   brandId, 
@@ -147,7 +147,6 @@ export function GreetingWidget({
     }
   })
   const [monthlyReport, setMonthlyReport] = useState<PerformanceReport | null>(null)
-  const [weeklyReport, setWeeklyReport] = useState<PerformanceReport | null>(null)
   const [dailyReport, setDailyReport] = useState<PerformanceReport | null>(null)
   const [hasEnoughData, setHasEnoughData] = useState<boolean>(true)
   const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('monthly')
@@ -180,10 +179,8 @@ export function GreetingWidget({
 
   // Calculate performance metrics
   const monthlyRevenue = periodData.month.totalSales
-  const weeklyRevenue = periodData.week.totalSales
   const dailyAverage = periodData.month.totalSales / getDaysInMonth(new Date())
-  const weeklyAverage = periodData.week.totalSales / 7
-  const revenueGrowth = ((weeklyRevenue * 4 - monthlyRevenue) / monthlyRevenue) * 100
+  const revenueGrowth = ((periodData.today.totalSales * 30 - monthlyRevenue) / monthlyRevenue) * 100
   const todayVsAverage = ((periodData.today.totalSales - dailyAverage) / dailyAverage) * 100
 
   // Set the greeting based on time of day
@@ -207,10 +204,6 @@ export function GreetingWidget({
     if (period === 'daily') {
       // Today
       from = new Date(now.setHours(0, 0, 0, 0))
-    } else if (period === 'weekly') {
-      // Current week (last 7 days)
-      from = new Date(now)
-      from.setDate(from.getDate() - 7)
     } else {
       // Last complete month (not last 30 days)
       to = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
@@ -261,9 +254,6 @@ export function GreetingWidget({
       if (period === 'daily') {
         currentMetrics = periodData.today
         // Previous day metrics would need to be fetched
-      } else if (period === 'weekly') {
-        currentMetrics = periodData.week
-        // Previous week metrics would need to be fetched
       } else {
         currentMetrics = periodData.month
         previousMetrics = periodData.previousMonth
@@ -305,8 +295,6 @@ export function GreetingWidget({
       let dateRangeStr = ""
       if (period === 'daily') {
         dateRangeStr = `Today, ${currentPeriodDates.from.toLocaleDateString()}`
-      } else if (period === 'weekly') {
-        dateRangeStr = `Last 7 days (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
       } else {
         dateRangeStr = `${getCurrentMonthName()} (${currentPeriodDates.from.toLocaleDateString()} - ${currentPeriodDates.to.toLocaleDateString()})`
       }
@@ -451,31 +439,39 @@ export function GreetingWidget({
       
       // Get dates for different periods
       const dailyDates = getPeriodDates('daily')
-      const weeklyDates = getPeriodDates('weekly')
       const monthlyDates = getPeriodDates('monthly')
       const previousMonthDates = getPreviousPeriodDates('monthly')
       
       // Fetch metrics for each period
       const todayMetrics = await fetchPeriodMetrics(shopifyConnection.id, dailyDates.from, dailyDates.to)
-      const weekMetrics = await fetchPeriodMetrics(shopifyConnection.id, weeklyDates.from, weeklyDates.to)
       const monthMetrics = await fetchPeriodMetrics(shopifyConnection.id, monthlyDates.from, monthlyDates.to)
       const previousMonthMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousMonthDates.from, previousMonthDates.to)
       
       // Update state with fetched metrics
       setPeriodData({
         today: todayMetrics,
-        week: weekMetrics,
+        week: {
+          totalSales: 0, 
+          ordersCount: 0, 
+          averageOrderValue: 0,
+          conversionRate: 0,
+          customerCount: 0,
+          newCustomers: 0,
+          returningCustomers: 0,
+          adSpend: 0,
+          roas: 0,
+          ctr: 0,
+          cpc: 0
+        },
         month: monthMetrics,
         previousMonth: previousMonthMetrics
       })
       
       // Generate reports for each period
       const dailyReportData = await generateReport('daily')
-      const weeklyReportData = await generateReport('weekly')
       const monthlyReportData = await generateReport('monthly')
       
       if (dailyReportData) setDailyReport(dailyReportData)
-      if (weeklyReportData) setWeeklyReport(weeklyReportData)
       if (monthlyReportData) setMonthlyReport(monthlyReportData)
       
       setHasEnoughData(true) // We have simulated data now
@@ -588,20 +584,30 @@ export function GreetingWidget({
       try {
         // Get dates for different periods
         const dailyDates = getPeriodDates('daily')
-        const weeklyDates = getPeriodDates('weekly')
         const monthlyDates = getPeriodDates('monthly')
         const previousMonthDates = getPreviousPeriodDates('monthly')
         
         // Generate simulated metrics for each period
         const todayMetrics = await fetchPeriodMetrics('simulation-id', dailyDates.from, dailyDates.to)
-        const weekMetrics = await fetchPeriodMetrics('simulation-id', weeklyDates.from, weeklyDates.to)
         const monthMetrics = await fetchPeriodMetrics('simulation-id', monthlyDates.from, monthlyDates.to)
         const previousMonthMetrics = await fetchPeriodMetrics('simulation-id', previousMonthDates.from, previousMonthDates.to)
         
         // Update state with simulated metrics
         setPeriodData({
           today: todayMetrics,
-          week: weekMetrics,
+          week: {
+            totalSales: 0, 
+            ordersCount: 0, 
+            averageOrderValue: 0,
+            conversionRate: 0,
+            customerCount: 0,
+            newCustomers: 0,
+            returningCustomers: 0,
+            adSpend: 0,
+            roas: 0,
+            ctr: 0,
+            cpc: 0
+          },
           month: monthMetrics,
           previousMonth: previousMonthMetrics
         })
@@ -615,14 +621,6 @@ export function GreetingWidget({
           conversionGrowth: 3.8
         });
         
-        const weeklyReportData = await generateSimulatedReport('weekly', weekMetrics, {
-          salesGrowth: 8.3,
-          orderGrowth: 6.7,
-          customerGrowth: 5.2,
-          roasGrowth: -1.5,
-          conversionGrowth: 2.1
-        });
-        
         const monthlyReportData = await generateSimulatedReport('monthly', monthMetrics, {
           salesGrowth: 12.4,
           orderGrowth: 10.8,
@@ -632,7 +630,6 @@ export function GreetingWidget({
         });
         
         if (dailyReportData) setDailyReport(dailyReportData);
-        if (weeklyReportData) setWeeklyReport(weeklyReportData);
         if (monthlyReportData) setMonthlyReport(monthlyReportData);
         
         // Ensure we mark data as available for the simulation
@@ -667,10 +664,6 @@ export function GreetingWidget({
     
     if (period === 'daily') {
       dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-    } else if (period === 'weekly') {
-      const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-      dateRangeStr = `${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
     } else {
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
@@ -743,14 +736,6 @@ export function GreetingWidget({
             onClick={() => setCurrentPeriod('daily')}
           >
             Today
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'weekly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('weekly')}
-          >
-            This Week
           </Button>
           <Button 
             variant="outline" 
@@ -901,121 +886,6 @@ export function GreetingWidget({
                 <div key={index} className="bg-[#222] p-3 rounded-lg">
                   <div className="flex items-start">
                     <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 3 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'weekly' && weeklyReport ? (
-        <div>
-          <h4 className="font-medium text-lg mb-2">Weekly Performance Review</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store performed in the last 7 days compared to the previous week.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(weeklyReport.revenueGenerated)}</p>
-              {weeklyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.salesGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.totalPurchases}</p>
-              {weeklyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.orderGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
-              <p className="text-2xl font-semibold">{weeklyReport.averageRoas.toFixed(1)}x</p>
-              {weeklyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${weeklyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {weeklyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(weeklyReport.periodComparison.roasGrowth).toFixed(1)}% from previous week
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h5 className="font-medium mb-3">Campaign Performance</h5>
-              
-              <div className="bg-[#222] p-4 rounded-lg space-y-4">
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Summer Collection</span>
-                    <span className="text-sm text-green-500">ROAS: 3.2x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '87%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Retargeting - Abandoned Cart</span>
-                    <span className="text-sm text-green-500">ROAS: 2.8x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '73%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Brand Terms</span>
-                    <span className="text-sm text-green-500">ROAS: 2.1x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Search - Non-Brand</span>
-                    <span className="text-sm text-red-500">ROAS: 0.9x</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '30%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {weeklyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {weeklyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
                       {index + 1}
                     </span>
                     <span className="text-gray-300 text-sm">{recommendation}</span>
