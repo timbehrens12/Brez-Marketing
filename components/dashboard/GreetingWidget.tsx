@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
 interface GreetingWidgetProps {
   brandId: string
@@ -72,6 +73,19 @@ interface PerformanceReport {
     roasGrowth: number
     conversionGrowth: number
   }
+  bestSellingProducts?: Array<{
+    name: string
+    revenue: number
+    orders: number
+  }>
+  historicalData?: Array<{
+    name: string
+    revenue: number
+    orders: number
+    adSpend: number
+    roas: number
+  }>
+  aiAnalysis?: string
 }
 
 type ReportPeriod = 'daily' | 'monthly'
@@ -674,6 +688,51 @@ export function GreetingWidget({
     const recommendations = generateRecommendations(metrics, comparison);
     const takeaways = generateTakeaways(metrics, comparison);
     
+    // Sample best-selling products
+    const bestSellingProducts = [
+      { name: "Summer T-Shirt Collection", revenue: 2450, orders: 35 },
+      { name: "Beach Tote Bag", revenue: 1870, orders: 22 },
+      { name: "Sunglasses - Aviator", revenue: 1520, orders: 19 },
+      { name: "Linen Shorts", revenue: 1320, orders: 16 },
+      { name: "Sandals - Unisex", revenue: 980, orders: 14 },
+    ];
+    
+    // Sample historical comparison data
+    const historicalData = period === 'daily' 
+      ? [
+          { name: '3 Days Ago', revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: '2 Days Ago', revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: 'Yesterday', revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
+          { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+        ]
+      : [
+          { name: '3 Months Ago', revenue: metrics.totalSales * 0.8, orders: metrics.ordersCount * 0.75, adSpend: metrics.adSpend * 0.85, roas: metrics.roas * 0.9 },
+          { name: '2 Months Ago', revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: 'Last Month', revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.9, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: 'This Month', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+        ];
+    
+    // Generate AI analysis based on period
+    const aiAnalysis = period === 'daily'
+      ? `Your store is showing strong performance today with revenue of ${formatCurrency(metrics.totalSales)} from ${metrics.ordersCount} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from yesterday. 
+      
+The Summer T-Shirt Collection continues to be your best-selling product line, generating 32% of today's revenue. Beach accessories are also performing well with the Beach Tote Bag and Aviator Sunglasses in the top 3 products.
+
+Your advertising performance shows a ROAS of ${metrics.roas.toFixed(1)}x, which is ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from yesterday. Meta campaigns are outperforming Google campaigns with Meta showing a 3.2x ROAS compared to Google's 1.9x.
+
+Customer behavior analysis shows peak purchasing times between 11am-2pm and 6pm-8pm. Mobile conversion rates continue to lag behind desktop by approximately 25%.
+
+Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - consider restocking these high-performing items within the next 7 days to avoid stockouts during peak sales periods.`
+      : `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume increased by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
+
+Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
+
+Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
+
+Advertising efficiency improved with an overall ROAS of ${metrics.roas.toFixed(1)}x, up ${comparison.roasGrowth.toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
+
+Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`;
+
     // Create the report with simulated data
     const report: PerformanceReport = {
       dateRange: dateRangeStr,
@@ -706,7 +765,10 @@ export function GreetingWidget({
       newCustomersAcquired: metrics.newCustomers,
       recommendations,
       takeaways,
-      periodComparison: comparison
+      periodComparison: comparison,
+      bestSellingProducts: bestSellingProducts,
+      historicalData: historicalData,
+      aiAnalysis: aiAnalysis
     };
     
     return report;
@@ -804,7 +866,7 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'monthly' && monthlyReport ? (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
@@ -826,7 +888,15 @@ export function GreetingWidget({
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend ROI</h5>
+              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
+              <p className="text-sm text-gray-400">
+                {Math.round(monthlyReport.totalAdSpend / monthlyReport.revenueGenerated * 100)}% of revenue
+              </p>
+            </div>
+            
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
               <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
               {monthlyReport.periodComparison.roasGrowth !== 0 && (
                 <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -836,86 +906,93 @@ export function GreetingWidget({
             </div>
           </div>
           
+          {/* AI Analysis Section */}
+          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+            <div className="flex items-center mb-3">
+              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+              <h5 className="font-medium">AI Analysis</h5>
+            </div>
+            <div className="text-sm leading-relaxed whitespace-pre-line">
+              {monthlyReport.aiAnalysis}
+            </div>
+            <div className="mt-4 text-right">
+              <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
+                Get detailed AI intelligence
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Platform Performance</h5>
-              <div className="space-y-3">
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Shopify</span>
-                    <span className="text-sm text-green-500">+12.4%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-green-500 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>Orders: {monthlyReport.totalPurchases}</span>
-                    <span>Revenue: {formatCurrency(monthlyReport.revenueGenerated)}</span>
-                  </div>
-                </div>
-                
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Meta Ads</span>
-                    <span className="text-sm text-green-500">+8.7%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '68%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>ROAS: 2.8x</span>
-                    <span>CPC: ${(monthlyReport.cpc).toFixed(2)}</span>
-                  </div>
-                </div>
-                
-                <div className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">Google Ads</span>
-                    <span className="text-sm text-red-500">-3.2%</span>
-                  </div>
-                  <div className="w-full bg-gray-700 h-2 rounded-full">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                  </div>
-                  <div className="flex justify-between mt-1 text-xs text-gray-400">
-                    <span>ROAS: 1.9x</span>
-                    <span>CPC: $2.45</span>
-                  </div>
-                </div>
+              <h5 className="font-medium mb-3">Best Selling Products</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-xs text-gray-400 border-b border-gray-700">
+                      <th className="pb-2 text-left">Product</th>
+                      <th className="pb-2 text-right">Revenue</th>
+                      <th className="pb-2 text-right">Orders</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthlyReport.bestSellingProducts?.map((product, index) => (
+                      <tr key={index} className="border-b border-gray-800 last:border-0">
+                        <td className="py-3 text-sm">{product.name}</td>
+                        <td className="py-3 text-sm text-right">{formatCurrency(product.revenue)}</td>
+                        <td className="py-3 text-sm text-right">{product.orders}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {monthlyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
+              <h5 className="font-medium mb-3">Historical Comparison</h5>
+              <div className="bg-[#222] p-4 rounded-lg" style={{ height: "350px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={monthlyReport.historicalData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
+                      labelStyle={{ color: 'white' }}
+                      itemStyle={{ color: 'white' }}
+                      formatter={(value: any) => typeof value === 'number' ? 
+                        value.toString().includes('.') ? value.toFixed(1) : value : value}
+                    />
+                    <Legend wrapperStyle={{ color: '#aaa' }} />
+                    <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
           
           <div>
-            <h5 className="font-medium mb-3">Strategic Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {monthlyReport.recommendations.map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className={`rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 ${index < 3 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
+            <h5 className="font-medium mb-3">Key Takeaways</h5>
+            <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+              {monthlyReport.takeaways.map((takeaway, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-blue-400 mr-2">•</span>
+                  <span className="text-gray-300 text-sm">{takeaway}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
@@ -943,120 +1020,93 @@ export function GreetingWidget({
             </div>
             
             <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Live Metrics</h5>
-              <div className="space-y-2 mt-2">
-                <div className="flex justify-between text-sm">
-                  <span>Active Visitors:</span>
-                  <span className="font-medium">24</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Carts Created:</span>
-                  <span className="font-medium">8</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Ad Clicks Today:</span>
-                  <span className="font-medium">143</span>
-                </div>
-              </div>
+              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+              <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
+              <p className="text-sm text-gray-400">
+                {Math.round(dailyReport.totalAdSpend / dailyReport.revenueGenerated * 100)}% of revenue
+              </p>
+            </div>
+            
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+              <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
+              {dailyReport.periodComparison.roasGrowth !== 0 && (
+                <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {/* AI Analysis Section */}
+          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+            <div className="flex items-center mb-3">
+              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+              <h5 className="font-medium">AI Analysis</h5>
+            </div>
+            <div className="text-sm leading-relaxed whitespace-pre-line">
+              {dailyReport.aiAnalysis}
+            </div>
+            <div className="mt-4 text-right">
+              <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
+                Get detailed AI intelligence
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
             </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Hourly Breakdown</h5>
-              <div className="bg-[#222] p-4 rounded-lg h-[200px] relative">
-                {/* Simulated hourly chart */}
-                <div className="absolute bottom-0 left-0 w-full h-[160px] flex items-end px-2">
-                  {Array.from({length: 12}).map((_, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-6 bg-blue-500 rounded-t"
-                        style={{
-                          height: `${Math.max(4, Math.min(140, index === 5 ? 120 : index === 6 ? 95 : index === 7 ? 80 : index === 8 ? 105 : index % 3 === 0 ? 50 : 30 + Math.random() * 50))}px`
-                        }}
-                      ></div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {(index + 9) % 12 === 0 ? '12' : (index + 9) % 12}{(index + 9) < 12 ? 'am' : 'pm'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="absolute top-2 left-3 text-xs text-gray-400">
-                  Revenue by hour
-                </div>
+              <h5 className="font-medium mb-3">Best Selling Products</h5>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-xs text-gray-400 border-b border-gray-700">
+                      <th className="pb-2 text-left">Product</th>
+                      <th className="pb-2 text-right">Revenue</th>
+                      <th className="pb-2 text-right">Orders</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyReport.bestSellingProducts?.map((product, index) => (
+                      <tr key={index} className="border-b border-gray-800 last:border-0">
+                        <td className="py-3 text-sm">{product.name}</td>
+                        <td className="py-3 text-sm text-right">{formatCurrency(product.revenue)}</td>
+                        <td className="py-3 text-sm text-right">{product.orders}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3">Platform Activity</h5>
-              <div className="bg-[#222] p-4 rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Shopify</div>
-                    <div className="text-xs text-gray-400">{dailyReport.totalPurchases} orders today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{formatCurrency(dailyReport.revenueGenerated)}</div>
-                    <div className="text-xs text-green-500">+{dailyReport.periodComparison.salesGrowth.toFixed(1)}%</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Meta Ads</div>
-                    <div className="text-xs text-gray-400">87 clicks today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$186.32 spent</div>
-                    <div className="text-xs text-green-500">ROAS: 2.8x</div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium">Google Ads</div>
-                    <div className="text-xs text-gray-400">56 clicks today</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$134.78 spent</div>
-                    <div className="text-xs text-red-500">ROAS: 1.9x</div>
-                  </div>
-                </div>
+              <h5 className="font-medium mb-3">Historical Comparison</h5>
+              <div className="bg-[#222] p-4 rounded-lg" style={{ height: "350px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={dailyReport.historicalData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
+                      labelStyle={{ color: 'white' }}
+                      itemStyle={{ color: 'white' }}
+                      formatter={(value: any) => typeof value === 'number' ? 
+                        value.toString().includes('.') ? value.toFixed(1) : value : value}
+                    />
+                    <Legend wrapperStyle={{ color: '#aaa' }} />
+                    <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              
-              <div className="mt-4">
-                <h5 className="font-medium mb-2">Today's Top Products</h5>
-                <div className="bg-[#222] p-3 rounded-lg space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Summer T-Shirt Collection</span>
-                    <span>8 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Beach Tote Bag</span>
-                    <span>6 units</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Sunglasses - Aviator</span>
-                    <span>5 units</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Real-Time Recommendations</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {dailyReport.recommendations.slice(0, 4).map((recommendation, index) => (
-                <div key={index} className="bg-[#222] p-3 rounded-lg">
-                  <div className="flex items-start">
-                    <span className="rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2 bg-blue-500/20 text-blue-400">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-300 text-sm">{recommendation}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
