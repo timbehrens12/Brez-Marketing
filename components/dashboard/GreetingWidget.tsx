@@ -372,14 +372,14 @@ export function GreetingWidget({
       }
       
       return report
-      } catch (error) {
+    } catch (error) {
       console.error(`Error generating ${period} report:`, error)
       return null
-      } finally {
-        setIsLoading(false)
-      }
+    } finally {
+      setIsLoading(false)
     }
-    
+  }
+  
   // Function to fetch metrics for a specific period - SIMULATION VERSION
   const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
     // SIMULATION CODE: Instead of actually fetching from supabase, we'll return simulated data
@@ -551,7 +551,7 @@ export function GreetingWidget({
         synopsisText = `${brandName} is performing well with revenue trending ${Math.abs(revenueGrowth).toFixed(0)}% above monthly average. `
       } else if (revenueGrowth < -10) {
         synopsisText = `${brandName} is experiencing a revenue dip, trending ${Math.abs(revenueGrowth).toFixed(0)}% below monthly average. `
-        } else {
+      } else {
         synopsisText = `${brandName} is performing steadily with revenue in line with monthly averages. `
       }
     }
@@ -562,7 +562,7 @@ export function GreetingWidget({
         synopsisText += `Ad campaigns are performing well with a ${metrics.roas.toFixed(1)}x return on ad spend.`
       } else if (metrics.roas < 1) {
         synopsisText += `Ad campaigns need optimization with current ROAS at ${metrics.roas.toFixed(1)}x.`
-        } else {
+      } else {
         synopsisText += `Ad campaigns are generating a ${metrics.roas.toFixed(1)}x return on ad spend.`
       }
     }
@@ -690,11 +690,11 @@ export function GreetingWidget({
     
     // Sample best-selling products
     const bestSellingProducts = [
-      { name: "Summer T-Shirt Collection", revenue: 2450, orders: 35 },
-      { name: "Beach Tote Bag", revenue: 1870, orders: 22 },
-      { name: "Sunglasses - Aviator", revenue: 1520, orders: 19 },
-      { name: "Linen Shorts", revenue: 1320, orders: 16 },
-      { name: "Sandals - Unisex", revenue: 980, orders: 14 },
+      { name: "Test product 4", revenue: 1100, orders: 20 },
+      { name: "Beach Tote Bag", revenue: 870, orders: 18 },
+      { name: "Sunglasses - Aviator", revenue: 620, orders: 16 },
+      { name: "Linen Shorts", revenue: 520, orders: 12 },
+      { name: "Sandals - Unisex", revenue: 480, orders: 10 },
     ];
     
     // Sample historical comparison data
@@ -925,56 +925,236 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Best Selling Products</h5>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-xs text-gray-400 border-b border-gray-700">
-                      <th className="pb-2 text-left">Product</th>
-                      <th className="pb-2 text-right">Revenue</th>
-                      <th className="pb-2 text-right">Orders</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {monthlyReport.bestSellingProducts?.map((product, index) => (
-                      <tr key={index} className="border-b border-gray-800 last:border-0">
-                        <td className="py-3 text-sm">{product.name}</td>
-                        <td className="py-3 text-sm text-right">{formatCurrency(product.revenue)}</td>
-                        <td className="py-3 text-sm text-right">{product.orders}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center mb-3">
+                <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "This Month's"} Best Sellers</h5>
+                <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+              </div>
+              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                  <div key={index} className="mb-4 last:mb-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">{product.name}</span>
+                      <span className="text-sm font-medium">${product.revenue}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-yellow-500 rounded-full" 
+                          style={{ 
+                            width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3">Historical Comparison</h5>
-              <div className="bg-[#222] p-4 rounded-lg" style={{ height: "350px" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={monthlyReport.historicalData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
-                    <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
-                      labelStyle={{ color: 'white' }}
-                      itemStyle={{ color: 'white' }}
-                      formatter={(value: any) => typeof value === 'number' ? 
-                        value.toString().includes('.') ? value.toFixed(1) : value : value}
-                    />
-                    <Legend wrapperStyle={{ color: '#aaa' }} />
-                    <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="flex justify-between items-center mb-3">
+                <h5 className="font-medium">
+                  {(currentPeriod as string) === 'daily' ? "Day-over-Day" : "Month-over-Month"} Comparison
+                </h5>
+                <p className="text-xs text-gray-400">
+                  vs {(currentPeriod as string) === 'daily' ? "yesterday" : "last month"}
+                </p>
               </div>
+              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Revenue</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.revenueGenerated * 0.97;
+                              } else if (monthlyReport) {
+                                return monthlyReport.revenueGenerated * 0.92;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.revenueGenerated;
+                              } else if (monthlyReport) {
+                                return monthlyReport.revenueGenerated;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-green-500">
+                            +{Math.abs(
+                              (() => {
+                                if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                  return dailyReport.periodComparison.salesGrowth;
+                                } else if (monthlyReport) {
+                                  return monthlyReport.periodComparison.salesGrowth;
+                                }
+                                return 0;
+                              })()
+                            ).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Orders</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          {Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalPurchases * 0.95;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalPurchases * 0.9;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          {Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalPurchases;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalPurchases;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-green-500">
+                            +{Math.abs(
+                              (() => {
+                                if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                  return dailyReport.periodComparison.orderGrowth;
+                                } else if (monthlyReport) {
+                                  return monthlyReport.periodComparison.orderGrowth;
+                                }
+                                return 0;
+                              })()
+                            ).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Ad Spend</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalAdSpend * 0.98;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalAdSpend * 0.95;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalAdSpend;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalAdSpend;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-amber-500">
+                            +{Math.round((currentPeriod as string) === 'daily' ? 2.0 : 5.0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h5 className="font-medium mb-3">Extended Time Comparison</h5>
+            <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={(() => {
+                    if ((currentPeriod as string) === 'daily' && dailyReport) {
+                      return dailyReport.historicalData;
+                    } else if (monthlyReport) {
+                      return monthlyReport.historicalData;
+                    }
+                    return [];
+                  })()}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
+                  <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                  <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
+                    labelStyle={{ color: 'white' }}
+                    itemStyle={{ color: 'white' }}
+                    formatter={(value: any) => typeof value === 'number' ? 
+                      value.toString().includes('.') ? value.toFixed(1) : value : value}
+                  />
+                  <Legend wrapperStyle={{ color: '#aaa' }} />
+                  <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
           
@@ -1057,56 +1237,236 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <h5 className="font-medium mb-3">Best Selling Products</h5>
-              <div className="bg-[#222] p-4 rounded-lg">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-xs text-gray-400 border-b border-gray-700">
-                      <th className="pb-2 text-left">Product</th>
-                      <th className="pb-2 text-right">Revenue</th>
-                      <th className="pb-2 text-right">Orders</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyReport.bestSellingProducts?.map((product, index) => (
-                      <tr key={index} className="border-b border-gray-800 last:border-0">
-                        <td className="py-3 text-sm">{product.name}</td>
-                        <td className="py-3 text-sm text-right">{formatCurrency(product.revenue)}</td>
-                        <td className="py-3 text-sm text-right">{product.orders}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center mb-3">
+                <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "This Month's"} Best Sellers</h5>
+                <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+              </div>
+              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                {dailyReport?.bestSellingProducts?.map((product, index) => (
+                  <div key={index} className="mb-4 last:mb-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">{product.name}</span>
+                      <span className="text-sm font-medium">${product.revenue}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-yellow-500 rounded-full" 
+                          style={{ 
+                            width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             
             <div>
-              <h5 className="font-medium mb-3">Historical Comparison</h5>
-              <div className="bg-[#222] p-4 rounded-lg" style={{ height: "350px" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={dailyReport.historicalData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
-                    <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                    <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
-                      labelStyle={{ color: 'white' }}
-                      itemStyle={{ color: 'white' }}
-                      formatter={(value: any) => typeof value === 'number' ? 
-                        value.toString().includes('.') ? value.toFixed(1) : value : value}
-                    />
-                    <Legend wrapperStyle={{ color: '#aaa' }} />
-                    <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="flex justify-between items-center mb-3">
+                <h5 className="font-medium">
+                  {(currentPeriod as string) === 'daily' ? "Day-over-Day" : "Month-over-Month"} Comparison
+                </h5>
+                <p className="text-xs text-gray-400">
+                  vs {(currentPeriod as string) === 'daily' ? "yesterday" : "last month"}
+                </p>
               </div>
+              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Revenue</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.revenueGenerated * 0.97;
+                              } else if (monthlyReport) {
+                                return monthlyReport.revenueGenerated * 0.92;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.revenueGenerated;
+                              } else if (monthlyReport) {
+                                return monthlyReport.revenueGenerated;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-green-500">
+                            +{Math.abs(
+                              (() => {
+                                if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                  return dailyReport.periodComparison.salesGrowth;
+                                } else if (monthlyReport) {
+                                  return monthlyReport.periodComparison.salesGrowth;
+                                }
+                                return 0;
+                              })()
+                            ).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Orders</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          {Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalPurchases * 0.95;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalPurchases * 0.9;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          {Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalPurchases;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalPurchases;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-green-500">
+                            +{Math.abs(
+                              (() => {
+                                if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                  return dailyReport.periodComparison.orderGrowth;
+                                } else if (monthlyReport) {
+                                  return monthlyReport.periodComparison.orderGrowth;
+                                }
+                                return 0;
+                              })()
+                            ).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-400">Ad Spend</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Yesterday" : "Last Month"}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalAdSpend * 0.98;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalAdSpend * 0.95;
+                              }
+                              return 0;
+                            })()
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {(currentPeriod as string) === 'daily' ? "Today" : "This Month"}
+                        </div>
+                        <div className="flex items-center font-semibold">
+                          ${Math.round(
+                            (() => {
+                              if ((currentPeriod as string) === 'daily' && dailyReport) {
+                                return dailyReport.totalAdSpend;
+                              } else if (monthlyReport) {
+                                return monthlyReport.totalAdSpend;
+                              }
+                              return 0;
+                            })()
+                          )}
+                          <span className="ml-2 text-xs text-amber-500">
+                            +{Math.round((currentPeriod as string) === 'daily' ? 2.0 : 5.0)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h5 className="font-medium mb-3">Extended Time Comparison</h5>
+            <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]" style={{ height: "350px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={(() => {
+                    if ((currentPeriod as string) === 'daily' && dailyReport) {
+                      return dailyReport.historicalData;
+                    } else if (monthlyReport) {
+                      return monthlyReport.historicalData;
+                    }
+                    return [];
+                  })()}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                  <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
+                  <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                  <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
+                    labelStyle={{ color: 'white' }}
+                    itemStyle={{ color: 'white' }}
+                    formatter={(value: any) => typeof value === 'number' ? 
+                      value.toString().includes('.') ? value.toFixed(1) : value : value}
+                  />
+                  <Legend wrapperStyle={{ color: '#aaa' }} />
+                  <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
