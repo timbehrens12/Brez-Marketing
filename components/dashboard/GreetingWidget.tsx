@@ -182,9 +182,17 @@ export function GreetingWidget({
 
   // Get the previous month name
   const getPreviousMonthName = (): string => {
-    const date = new Date()
-    date.setMonth(date.getMonth() - 1)
-    return date.toLocaleString('default', { month: 'long' })
+    return format(subMonths(new Date(), 1), 'MMMM');
+  }
+
+  // Get month before previous month name
+  const getTwoMonthsAgoName = (): string => {
+    return format(subMonths(new Date(), 2), 'MMMM');
+  }
+
+  // Get three months ago name
+  const getThreeMonthsAgoName = (): string => {
+    return format(subMonths(new Date(), 3), 'MMMM');
   }
 
   // Calculate platform status
@@ -706,10 +714,9 @@ export function GreetingWidget({
           { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ]
       : [
-          { name: format(subMonths(new Date(), 3), 'MMMM'), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.8, roas: metrics.roas * 0.85 },
-          { name: format(subMonths(new Date(), 2), 'MMMM'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
-          { name: format(subMonths(new Date(), 1), 'MMMM'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.9, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
-          { name: getCurrentMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+          { name: getThreeMonthsAgoName(), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.8, roas: metrics.roas * 0.85 },
+          { name: getTwoMonthsAgoName(), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: getPreviousMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ];
     
     // Generate AI analysis based on period
@@ -958,7 +965,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   Month-to-Month Comparison
                 </h5>
                 <p className="text-xs text-gray-400">
-                  {getCurrentMonthName()} vs. previous months
+                  {getPreviousMonthName()} vs. previous months
                 </p>
               </div>
               <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
@@ -972,26 +979,26 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 2), 'MMMM')}
+                          {getThreeMonthsAgoName()}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getTwoMonthsAgoName()}
                         </div>
                         <div className="font-semibold">
                           ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
                         </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 1), 'MMMM')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.92 : 0)}
-                        </div>
                         <div className="text-xs text-green-500">
-                          +8.2%
+                          +13.3%
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {getCurrentMonthName()}
+                          {getPreviousMonthName()}
                         </div>
                         <div className="font-semibold">
                           ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
@@ -1010,26 +1017,26 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 2), 'MMMM')}
+                          {getThreeMonthsAgoName()}
+                        </div>
+                        <div className="font-semibold">
+                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getTwoMonthsAgoName()}
                         </div>
                         <div className="font-semibold">
                           {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
                         </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 1), 'MMMM')}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.9 : 0)}
-                        </div>
                         <div className="text-xs text-green-500">
-                          +9.8%
+                          +17.1%
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {getCurrentMonthName()}
+                          {getPreviousMonthName()}
                         </div>
                         <div className="font-semibold">
                           {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
@@ -1048,32 +1055,32 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 2), 'MMMM')}
+                          {getThreeMonthsAgoName()}
+                        </div>
+                        <div className="font-semibold">
+                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                        </div>
+                      </div>
+                      <div className="bg-[#1A1A1A] p-2 rounded-md">
+                        <div className="text-xs text-gray-400">
+                          {getTwoMonthsAgoName()}
                         </div>
                         <div className="font-semibold">
                           ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
                         </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subMonths(new Date(), 1), 'MMMM')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.95 : 0)}
-                        </div>
                         <div className="text-xs text-amber-500">
-                          +8.0%
+                          +12.8%
                         </div>
                       </div>
                       <div className="bg-[#1A1A1A] p-2 rounded-md">
                         <div className="text-xs text-gray-400">
-                          {getCurrentMonthName()}
+                          {getPreviousMonthName()}
                         </div>
                         <div className="font-semibold">
                           ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
                         </div>
                         <div className="text-xs text-amber-500">
-                          +5.3%
+                          +13.6%
                         </div>
                       </div>
                     </div>
