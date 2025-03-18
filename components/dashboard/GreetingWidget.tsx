@@ -726,8 +726,22 @@ export function GreetingWidget({
 
   return (
     <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">{getGreeting()}, {userName}</h3>
+      <div className="flex flex-col mb-6">
+        <h3 className="text-2xl font-bold mb-1">{getGreeting()}, {userName}</h3>
+        <p className="text-gray-400">Here's your {currentPeriod === 'daily' ? 'today' : 'monthly'} performance overview</p>
+      </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-xl font-semibold">
+            {currentPeriod === 'daily' ? 'Today\'s Performance' : 'Last Month\'s Performance'} 
+          </h2>
+          <p className="text-gray-400 text-sm">
+            {currentPeriod === 'daily' 
+              ? `${format(new Date(), 'MMMM d, yyyy')}` 
+              : `${format(subMonths(new Date(), 1), 'MMMM 1')} - ${format(subMonths(endOfMonth(new Date()), 1), 'MMMM d, yyyy')}`}
+          </p>
+        </div>
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
@@ -748,6 +762,15 @@ export function GreetingWidget({
         </div>
       </div>
       
+      <div className="bg-[#222] rounded-lg p-3 mb-6 text-xs text-gray-400 flex items-center">
+        <div className="mr-2 text-yellow-400">
+          <AlertTriangle size={14} />
+        </div>
+        {currentPeriod === 'daily' 
+          ? "Today's data is refreshed every 30 minutes. Last update: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          : "Monthly data is compiled on the 1st of each month at 12:00 AM. This ensures complete data for the previous month."}
+      </div>
+
       {!hasEnoughData ? (
         <div className="text-center py-6">
           <p className="text-gray-400 mb-4">Limited data available to generate a complete performance report.</p>
@@ -781,11 +804,6 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'monthly' && monthlyReport ? (
         <div>
-          <h4 className="font-medium text-lg mb-2">Monthly Performance Review</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store performed in {getCurrentMonthName()} compared to {getPreviousMonthName()}.
-          </p>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
@@ -897,14 +915,6 @@ export function GreetingWidget({
         </div>
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
-          <h4 className="font-medium text-lg mb-2">Today's Performance</h4>
-          <p className="text-gray-400 mb-4">
-            Here's how your store is performing today compared to yesterday.
-            <span className="text-yellow-400 ml-2">
-              <span className="font-medium">Last updated:</span> {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            </span>
-          </p>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
