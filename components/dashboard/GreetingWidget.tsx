@@ -841,545 +841,548 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
 
   if (isLoading) {
     return (
-      <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
-        <h3 className="text-xl font-semibold mb-4">{getGreeting()}, {userName}</h3>
-        <div className="animate-pulse space-y-4">
-          <div className="h-24 w-full bg-gray-800 rounded"></div>
-          <div className="h-12 w-2/3 bg-gray-800 rounded"></div>
+      <div className="bg-[#1A1A1A] rounded-lg p-6 shadow-sm text-white">
+        <div className="flex flex-col items-center justify-center p-12">
+          <LoadingSkeleton />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-gradient-to-b from-[#161616] to-[#0A0A0A] rounded-lg p-6 mb-6 border border-[#333]">
-      <div className="mb-5 flex justify-between items-center">
+    <div className="bg-[#1A1A1A] rounded-lg p-6 shadow-sm text-white">
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <h3 className="text-xl font-semibold">{greeting}, {userName || 'there'}</h3>
-          <p className="text-gray-400 text-sm">
-            Here's an overview of your {brandName} store performance
+          <div className="flex items-center">
+            <h3 className="text-lg font-medium">
+              {getGreeting()}, {brandName}
+            </h3>
+            <button 
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="ml-2 p-1 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-[#333]"
+            >
+              {isMinimized ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+          <p className="text-sm text-gray-400 mt-1">
+            {currentPeriod === 'monthly' 
+              ? `Data for ${getPreviousMonthName()}, updated daily`
+              : `Today's data, last updated ${new Date().toLocaleTimeString()}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Tabs value={currentPeriod} onValueChange={(value: string) => setCurrentPeriod(value as ReportPeriod)}>
-            <TabsList className="bg-[#222]">
-              <TabsTrigger 
-                value="daily" 
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-              >
-                Today
-              </TabsTrigger>
-              <TabsTrigger 
-                value="monthly" 
-                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-              >
-                Last Month
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="flex space-x-2">
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-md"
-            onClick={() => setIsMinimized(!isMinimized)}
+            variant={currentPeriod === 'daily' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCurrentPeriod('daily')}
+            className={currentPeriod === 'daily' ? 'bg-blue-600 hover:bg-blue-700' : ''}
           >
-            {isMinimized ? <ChevronDown /> : <ChevronUp />}
+            Daily
+          </Button>
+          <Button
+            variant={currentPeriod === 'monthly' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCurrentPeriod('monthly')}
+            className={currentPeriod === 'monthly' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+          >
+            Monthly
           </Button>
         </div>
       </div>
-
+      
       {!isMinimized && (
-        <>
-          <Separator className="my-4 bg-gray-800" />
+        <AlertBox type="info" className="mb-6">
+          <div className="text-sm">
+            <span className="font-medium">Data Sources:</span> {connections.some(c => c.platform_type === 'shopify') ? 'Shopify' : 'No Shopify connection'} 
+            {connections.some(c => c.platform_type === 'meta') && ', Meta Ads'} 
+            {connections.some(c => c.platform_type === 'google') && ', Google Ads'}
+          </div>
+        </AlertBox>
+      )}
+      
+      {isMinimized ? (
+        <div className="py-2">
+          <p className="text-gray-300 text-sm">
+            {currentPeriod === 'monthly' 
+              ? `${getPreviousMonthName()} Revenue: ${formatCurrency(monthlyReport?.revenueGenerated || 0)} (${monthlyReport?.periodComparison.salesGrowth.toFixed(1)}% from previous month)`
+              : `Today's Revenue: ${formatCurrency(dailyReport?.revenueGenerated || 0)} (${dailyReport?.periodComparison.salesGrowth.toFixed(1)}% from yesterday)`}
+          </p>
+        </div>
+      ) : currentPeriod === 'monthly' && monthlyReport ? (
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
+              {monthlyReport.periodComparison.salesGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
+                </p>
+              )}
+            </div>
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+              <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
+              {monthlyReport.periodComparison.orderGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
+                </p>
+              )}
+            </div>
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
+              <p className="text-sm text-gray-400">
+                {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+              </p>
+            </div>
+            <div className="bg-[#222] p-4 rounded-lg">
+              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+              {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
+                </p>
+              )}
+            </div>
+          </div>
           
-          <AlertBox 
-            title="Data Sources" 
-            type="info"
-            icon={<Info className="h-4 w-4 text-blue-400" />}
-            className="mb-4"
-          >
-            <p className="text-xs text-gray-400">
-              This dashboard updates with latest data from your connected platforms every hour. 
-              <span className="font-medium ml-1">
-                {connections.filter(c => c.status === 'active').length === 0 ? 
-                  'No platforms connected yet.' : 
-                  `Last updated: ${format(new Date(), 'h:mm a')}`
-                }
-              </span>
-            </p>
-          </AlertBox>
+          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+            <div className="flex items-center mb-3">
+              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+              <h5 className="font-medium">Performance Summary</h5>
+            </div>
+            <div className="text-sm leading-relaxed whitespace-pre-line">
+              {monthlyReport.aiAnalysis}
+            </div>
+          </div>
           
-          {currentPeriod === 'monthly' && monthlyReport ? (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
-                  {monthlyReport.periodComparison.salesGrowth !== 0 && (
-                    <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
-                    </p>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-6 mb-6">
+            <div className="md:col-span-2 grid grid-cols-1 gap-6">
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
+                  <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
                 </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-                  <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
-                  {monthlyReport.periodComparison.orderGrowth !== 0 && (
-                    <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
-                    </p>
-                  )}
-                </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-                  <p className="text-sm text-gray-400">
-                    {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                  </p>
-                </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-                  <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-                  {monthlyReport.periodComparison.roasGrowth !== 0 && (
-                    <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-                <div className="flex items-center mb-3">
-                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">Performance Summary</h5>
-                </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {monthlyReport.aiAnalysis}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="md:col-span-2 grid grid-cols-1 gap-6">
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
-                      <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
-                    </div>
-                    <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                      {monthlyReport?.bestSellingProducts?.map((product, index) => (
-                        <div key={index} className="mb-4 last:mb-0">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm">{product.name}</span>
-                            <span className="text-sm font-medium">${product.revenue}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-yellow-500 rounded-full" 
-                                style={{ 
-                                  width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <h5 className="font-medium">Top Performing Campaigns</h5>
-                      <p className="text-xs text-gray-400">by ROAS</p>
-                    </div>
-                    <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">Summer Collection</span>
-                          <span className="text-sm font-medium">3.8x</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full" 
-                              style={{ width: "100%" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">$4,250 spent</span>
-                        </div>
+                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                    <div key={index} className="mb-4 last:mb-0">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">{product.name}</span>
+                        <span className="text-sm font-medium">${product.revenue}</span>
                       </div>
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">Beach Essentials</span>
-                          <span className="text-sm font-medium">3.2x</span>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-yellow-500 rounded-full" 
+                            style={{ 
+                              width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                            }}
+                          ></div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full" 
-                              style={{ width: "84%" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">$2,800 spent</span>
-                        </div>
-                      </div>
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">Returning Customers</span>
-                          <span className="text-sm font-medium">2.9x</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full" 
-                              style={{ width: "76%" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">$1,950 spent</span>
-                        </div>
-                      </div>
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">Weekend Flash Sale</span>
-                          <span className="text-sm font-medium">2.6x</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full" 
-                              style={{ width: "68%" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">$1,200 spent</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">New Arrivals</span>
-                          <span className="text-sm font-medium">2.3x</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-blue-500 rounded-full" 
-                              style={{ width: "60%" }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">$2,400 spent</span>
-                        </div>
+                        <span className="text-xs text-gray-400">{product.orders} units sold</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="md:col-span-1">
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">
-                      Month-to-Month Comparison
-                    </h5>
-                    <p className="text-xs text-gray-400">
-                      {getPreviousMonthName()} vs. previous months
-                    </p>
-                  </div>
-                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
-                    
-                    <div className="space-y-6">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Revenue</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +13.3%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Ad Spend</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
-                            </div>
-                            <div className="text-xs text-amber-500">
-                              +12.8%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
-                            </div>
-                            <div className="text-xs text-amber-500">
-                              +13.6%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Average ROAS</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +11.8%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Orders</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +17.1%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Ad CTR</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +8.2%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +8.7%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Cost Per Acquisition</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              -8.3%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
-                            </div>
-                            <div className="text-xs text-green-500">
-                              -9.1%
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
               
               <div>
-                <h5 className="font-medium mb-3">Key Takeaways</h5>
-                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {monthlyReport.takeaways.map((takeaway, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300 text-sm">{takeaway}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="flex justify-between items-center mb-3">
+                  <h5 className="font-medium">Top Performing Campaigns</h5>
+                  <p className="text-xs text-gray-400">by ROAS</p>
+                </div>
+                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">Summer Collection</span>
+                      <span className="text-sm font-medium">3.8x</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: "100%" }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">$4,250 spent</span>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">Beach Essentials</span>
+                      <span className="text-sm font-medium">3.2x</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: "84%" }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">$2,800 spent</span>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">Returning Customers</span>
+                      <span className="text-sm font-medium">2.9x</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: "76%" }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">$1,950 spent</span>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">Weekend Flash Sale</span>
+                      <span className="text-sm font-medium">2.6x</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: "68%" }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">$1,200 spent</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm">New Arrivals</span>
+                      <span className="text-sm font-medium">2.3x</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-500 rounded-full" 
+                          style={{ width: "60%" }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-gray-400">$2,400 spent</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : currentPeriod === 'daily' && dailyReport ? (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Revenue</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.revenueGenerated || 0)}</p>
-                  {dailyReport?.periodComparison.salesGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday
-                    </p>
-                  )}
-                </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Orders</h5>
-                  <p className="text-2xl font-semibold">{dailyReport?.totalPurchases || 0}</p>
-                  {dailyReport?.periodComparison.orderGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.orderGrowth || 0).toFixed(1)}% from yesterday
-                    </p>
-                  )}
-                </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.totalAdSpend || 0)}</p>
-                  <p className="text-sm text-gray-400">
-                    {(((dailyReport?.totalAdSpend || 0) / (dailyReport?.revenueGenerated || 1)) * 100).toFixed(1)}% of revenue
+              
+              <div className="md:col-span-5">
+                <div className="flex justify-between items-center mb-3">
+                  <h5 className="font-medium">
+                    Month-to-Month Comparison
+                  </h5>
+                  <p className="text-xs text-gray-400">
+                    {getPreviousMonthName()} vs. previous months
                   </p>
                 </div>
-                <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-                  <p className="text-2xl font-semibold">{dailyReport?.averageRoas.toFixed(1) || 'N/A'}x</p>
-                  {dailyReport?.periodComparison.roasGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% from yesterday
-                    </p>
-                  )}
+                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Revenue</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +13.3%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Ad Spend</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                          </div>
+                          <div className="text-xs text-amber-500">
+                            +12.8%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                          </div>
+                          <div className="text-xs text-amber-500">
+                            +13.6%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Average ROAS</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +11.8%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Orders</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +17.1%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Ad CTR</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +8.2%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
+                          </div>
+                          <div className="text-xs text-green-500">
+                            +8.7%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-gray-400">Cost Per Acquisition</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getThreeMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getTwoMonthsAgoName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            -8.3%
+                          </div>
+                        </div>
+                        <div className="bg-[#1A1A1A] p-2 rounded-md">
+                          <div className="text-xs text-gray-400">
+                            {getPreviousMonthName()}
+                          </div>
+                          <div className="font-semibold">
+                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
+                          </div>
+                          <div className="text-xs text-green-500">
+                            -9.1%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              
-              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-                <div className="flex items-center mb-3">
-                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">Performance Summary</h5>
-                </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {dailyReport?.aiAnalysis || 'N/A'}
-                </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium mb-3">Key Takeaways</h5>
+              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                {monthlyReport.takeaways.map((takeaway, index) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-blue-400 mr-2">•</span>
+                    <span className="text-gray-300 text-sm">{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ) : currentPeriod === 'daily' && dailyReport ? (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h5 className="text-sm text-gray-400 mb-1">Revenue</h5>
+                <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.revenueGenerated || 0)}</p>
+                {dailyReport?.periodComparison.salesGrowth !== 0 && (
+                  <p className={`text-sm ${dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday
+                  </p>
+                )}
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h5 className="text-sm text-gray-400 mb-1">Orders</h5>
+                <p className="text-2xl font-semibold">{dailyReport?.totalPurchases || 0}</p>
+                {dailyReport?.periodComparison.orderGrowth !== 0 && (
+                  <p className={`text-sm ${dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.orderGrowth || 0).toFixed(1)}% from yesterday
+                  </p>
+                )}
+              </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+                <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.totalAdSpend || 0)}</p>
+                <p className="text-sm text-gray-400">
+                  {(((dailyReport?.totalAdSpend || 0) / (dailyReport?.revenueGenerated || 1)) * 100).toFixed(1)}% of revenue
+                </p>
+              </div>
+              <div className="bg-[#222] p-4 rounded-lg">
+                <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+                <p className="text-2xl font-semibold">{dailyReport?.averageRoas.toFixed(1) || 'N/A'}x</p>
+                {dailyReport?.periodComparison.roasGrowth !== 0 && (
+                  <p className={`text-sm ${dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% from yesterday
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+              <div className="flex items-center mb-3">
+                <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                <h5 className="font-medium">Performance Summary</h5>
+              </div>
+              <div className="text-sm leading-relaxed whitespace-pre-line">
+                {dailyReport?.aiAnalysis || 'N/A'}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-6 mb-6">
+              <div className="md:col-span-2 grid grid-cols-1 gap-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">Today's Best Sellers</h5>
@@ -1410,6 +1413,90 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 
                 <div>
                   <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">Top Performing Campaigns</h5>
+                    <p className="text-xs text-gray-400">by ROAS</p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Summer Collection</span>
+                        <span className="text-sm font-medium">3.8x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "100%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$4,250 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Beach Essentials</span>
+                        <span className="text-sm font-medium">3.2x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "84%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$2,800 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Returning Customers</span>
+                        <span className="text-sm font-medium">2.9x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "76%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$1,950 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Weekend Flash Sale</span>
+                        <span className="text-sm font-medium">2.6x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "68%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$1,200 spent</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">New Arrivals</span>
+                        <span className="text-sm font-medium">2.3x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "60%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$2,400 spent</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="md:col-span-5">
+                  <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">
                       7-Day Performance
                     </h5>
@@ -1418,8 +1505,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
-                    
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -1435,7 +1520,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                           </tr>
                         </thead>
                         <tbody>
-                          {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
+                          {dailyReport?.historicalData?.slice().reverse().map((day, index, array) => {
                             // Calculate day-over-day changes
                             const prevDay = index < array.length - 1 ? array[index + 1] : null;
                             
@@ -1468,7 +1553,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                                 <td className="text-right py-2">${Math.round(day.adSpend)}</td>
                                 <td className="text-right py-2">
                                   {adSpendChange !== null ? (
-                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-red-500' : adSpendChange < 0 ? 'text-green-500' : 'text-gray-400'}`}>
                                       {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
                                       {Math.abs(adSpendChange).toFixed(1)}%
                                     </span>
@@ -1485,25 +1570,99 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
               </div>
               
-              <div>
-                <h5 className="font-medium mb-3">Key Takeaways</h5>
-                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {dailyReport?.takeaways.map((takeaway, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300 text-sm">{takeaway}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="md:col-span-5">
+                <div className="flex justify-between items-center mb-3">
+                  <h5 className="font-medium">
+                    7-Day Performance
+                  </h5>
+                  <p className="text-xs text-gray-400">
+                    Today vs. previous 6 days
+                  </p>
+                </div>
+                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-gray-400 text-xs border-b border-gray-800">
+                          <th className="pb-2 text-left">Date</th>
+                          <th className="pb-2 text-right">Revenue</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">Orders</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">Ad Spend</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">ROAS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyReport?.historicalData?.slice().reverse().map((day, index, array) => {
+                          // Calculate day-over-day changes
+                          const prevDay = index < array.length - 1 ? array[index + 1] : null;
+                          
+                          // Calculate percentage changes
+                          const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
+                          const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
+                          const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
+                          
+                          return (
+                            <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
+                              <td className="py-2">{day.name}</td>
+                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                              <td className="text-right py-2">
+                                {revenueChange !== null ? (
+                                  <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(revenueChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">{Math.round(day.orders)}</td>
+                              <td className="text-right py-2">
+                                {ordersChange !== null ? (
+                                  <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(ordersChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                              <td className="text-right py-2">
+                                {adSpendChange !== null ? (
+                                  <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-red-500' : adSpendChange < 0 ? 'text-green-500' : 'text-gray-400'}`}>
+                                    {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(adSpendChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12">
-              <LoadingSkeleton />
+            
+            <div>
+              <h5 className="font-medium mb-3">Key Takeaways</h5>
+              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                {dailyReport?.takeaways?.map((takeaway, index) => (
+                  <li key={index} className="flex items-start">
+                    <span className="text-blue-400 mr-2">•</span>
+                    <span className="text-gray-300 text-sm">{takeaway}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          )}
-        </>
-      )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-12">
+            <LoadingSkeleton />
+          </div>
+        )}
+      </div>
     </div>
   )
 } 
