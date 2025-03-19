@@ -23,8 +23,8 @@ export async function GET(request: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        client_id: process.env.SHOPIFY_CLIENT_ID,
-        client_secret: process.env.SHOPIFY_CLIENT_SECRET,
+        client_id: process.env.SHOPIFY_CLIENT_ID || '',
+        client_secret: process.env.SHOPIFY_CLIENT_SECRET || '',
         code,
       }),
     })
