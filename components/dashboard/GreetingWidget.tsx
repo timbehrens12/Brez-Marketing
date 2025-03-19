@@ -948,12 +948,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
                 <div className="text-sm leading-relaxed space-y-4">
                   {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-2">
-                    <p>Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                  <div className="border-b border-gray-800 pb-3">
+                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
                       {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from {getTwoMonthsAgoName()}. Order volume was <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders (<span className={monthlyReport?.periodComparison.orderGrowth && monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {monthlyReport?.periodComparison.orderGrowth && monthlyReport.periodComparison.orderGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.orderGrowth?.toFixed(1)}%
-                    </span>).</p>
+                    </span> change from {getTwoMonthsAgoName()}. You processed <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders with an average order value of <span className="text-white font-medium">${Math.round((monthlyReport?.revenueGenerated || 0) / (monthlyReport?.totalPurchases || 1))}</span>.</p>
+                    
+                    <p>Ad performance resulted in <span className="text-white font-medium">${Math.round(monthlyReport?.totalAdSpend || 0)}</span> in ad spend with a ROAS of <span className={monthlyReport?.averageRoas && monthlyReport.averageRoas > 2 ? 'text-green-400 font-medium' : monthlyReport?.averageRoas && monthlyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
+                      {monthlyReport?.averageRoas?.toFixed(1)}x
+                    </span>, which is <span className={monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.roasGrowth?.toFixed(1)}%
+                    </span> compared to {getTwoMonthsAgoName()}. Customer acquisition cost is <span className="text-white font-medium">${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}</span> per new customer, with <span className="text-white font-medium">{monthlyReport?.newCustomersAcquired}</span> new customers acquired.</p>
                   </div>
                   
                   {/* Positive Highlights section */}
@@ -996,6 +1000,12 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       <li>Implement exit-intent popup with 10% discount at shipping information step to reduce cart abandonment</li>
                       <li>Expand the Summer Collection product line based on consistent performance metrics</li>
                     </ul>
+                    <div className="mt-4 text-right">
+                      <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center justify-end">
+                        See more insights in AI Intelligence
+                        <ArrowRight className="ml-1 h-3 w-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
@@ -1329,12 +1339,14 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
                 <div className="text-sm leading-relaxed space-y-4">
                   {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-2">
-                    <p>Your store generated <span className="text-white font-medium">{formatCurrency(dailyReport?.revenueGenerated || 0)}</span> in revenue today, representing a <span className={dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                  <div className="border-b border-gray-800 pb-3">
+                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(dailyReport?.revenueGenerated || 0)}</span> in revenue today, representing a <span className={dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
                       {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from yesterday. Order volume was <span className="text-white font-medium">{dailyReport?.totalPurchases}</span> orders (<span className={dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.orderGrowth?.toFixed(1)}%
-                    </span>).</p>
+                    </span> change from yesterday. You received <span className="text-white font-medium">{dailyReport?.totalPurchases}</span> orders with an average value of <span className="text-white font-medium">${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}</span>, which is <span className="text-green-400 font-medium">8.3%</span> higher than yesterday.</p>
+                    
+                    <p>Today's ad performance shows <span className="text-white font-medium">${Math.round(dailyReport?.totalAdSpend || 0)}</span> spent across campaigns, achieving a ROAS of <span className={dailyReport?.averageRoas && dailyReport.averageRoas > 2 ? 'text-green-400 font-medium' : dailyReport?.averageRoas && dailyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
+                      {dailyReport?.averageRoas?.toFixed(1)}x
+                    </span>. Traffic patterns show peak activity during 11am-2pm and 6pm-8pm, with <span className="text-white font-medium">{Math.round(dailyReport?.conversionRate || 0)}%</span> overall site conversion rate. The Beach accessories category is your top performer today, with Beach Tote Bags showing inventory concerns.</p>
                   </div>
                   
                   {/* Positive Highlights section */}
@@ -1377,6 +1389,12 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       <li>Investigate mobile checkout issues during the 3-5pm timeframe</li>
                       <li>Schedule additional customer support staff during identified peak hours</li>
                     </ul>
+                    <div className="mt-4 text-right">
+                      <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center justify-end">
+                        See more insights in AI Intelligence
+                        <ArrowRight className="ml-1 h-3 w-3" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
