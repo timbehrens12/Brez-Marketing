@@ -277,31 +277,46 @@ export function GreetingWidget({
     if (period === 'daily') {
       // Today
       from = new Date(now.setHours(0, 0, 0, 0))
+      to = new Date(now)
+      to.setHours(23, 59, 59, 999) // Include the entire day
     } else {
       // Last complete month (not last 30 days)
-      to = new Date(now.getFullYear(), now.getMonth(), 0) // Last day of previous month
-      from = new Date(now.getFullYear(), now.getMonth() - 1, 1) // First day of previous month
+      const lastMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0)
+      const lastMonthFirstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      
+      from = lastMonthFirstDay
+      to = new Date(lastMonthLastDay)
+      to.setHours(23, 59, 59, 999) // Include the entire last day of the month
+      
+      console.log(`Monthly date range: ${from.toISOString()} to ${to.toISOString()}`)
     }
 
     return { from, to }
   }
 
   const getPreviousPeriodDates = (period: ReportPeriod) => {
-    const { from, to } = getPeriodDates(period)
-    const periodLength = to.getTime() - from.getTime()
-    
-    const previousFrom = new Date(from.getTime() - periodLength)
-    const previousTo = new Date(to.getTime() - periodLength)
-    
-    if (period === 'monthly') {
+    if (period === 'daily') {
+      // For daily, we want yesterday
+      const now = new Date()
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      yesterday.setHours(0, 0, 0, 0)
+      
+      const yesterdayEnd = new Date(yesterday)
+      yesterdayEnd.setHours(23, 59, 59, 999)
+      
+      return { from: yesterday, to: yesterdayEnd }
+    } else {
       // For monthly, we want the month before last month
       const now = new Date()
-      const previousTo = new Date(now.getFullYear(), now.getMonth() - 1, 0) // Last day of month before last
-      const previousFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1) // First day of month before last
-      return { from: previousFrom, to: previousTo }
+      const twoMonthsAgoFirstDay = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+      const twoMonthsAgoLastDay = new Date(now.getFullYear(), now.getMonth() - 1, 0)
+      twoMonthsAgoLastDay.setHours(23, 59, 59, 999) // Include the entire last day
+      
+      console.log(`Previous monthly date range: ${twoMonthsAgoFirstDay.toISOString()} to ${twoMonthsAgoLastDay.toISOString()}`)
+      
+      return { from: twoMonthsAgoFirstDay, to: twoMonthsAgoLastDay }
     }
-    
-    return { from: previousFrom, to: previousTo }
   }
 
   const fetchPeriodData = async () => {
@@ -622,7 +637,8 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
 
   // Function to fetch metrics for a specific period - REAL DATA VERSION
   const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
-    console.log(`Fetching metrics for connection ${connectionId} from ${from.toISOString()} to ${to.toISOString()}`);
+    console.log(`Fetching metrics for connection ${connectionId}`);
+    console.log(`Date range: ${from.toISOString()} to ${to.toISOString()}`);
     
     try {
       // Initialize with default values
@@ -630,18 +646,29 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       let ordersCount: number = 0;
       let adSpend: number = 0;
       
+      // Format dates for Supabase queries to ensure consistent timezone handling
+      const fromStr = from.toISOString();
+      const toStr = to.toISOString();
+      
+      console.log(`Formatted date range: ${fromStr} to ${toStr}`);
+      
       // Step 1: Get Shopify sales data
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
         .select('id, total_price, created_at')
         .eq('connection_id', connectionId)
-        .gte('created_at', from.toISOString())
-        .lte('created_at', to.toISOString());
+        .gte('created_at', fromStr)
+        .lte('created_at', toStr);
       
       if (salesError) {
         console.error('Error fetching Shopify orders:', salesError);
       } else if (salesData && salesData.length > 0) {
         console.log(`Found ${salesData.length} Shopify orders for the period`);
+        
+        // Log all order dates to debug timezone issues
+        salesData.forEach(order => {
+          console.log(`Order ID: ${order.id}, Date: ${order.created_at}, Price: ${order.total_price}`);
+        });
         
         // Calculate sales metrics
         totalSales = salesData.reduce((sum, order) => {
@@ -659,15 +686,20 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       // Step 2: Get Meta ad spend data if available
       const { data: adData, error: adError } = await supabase
         .from('meta_ad_insights')
-        .select('spend, impressions, clicks')
+        .select('spend, impressions, clicks, date')
         .eq('connection_id', connectionId)
-        .gte('date', from.toISOString().split('T')[0])
-        .lte('date', to.toISOString().split('T')[0]);
+        .gte('date', fromStr.split('T')[0])
+        .lte('date', toStr.split('T')[0]);
       
       if (adError) {
         console.error('Error fetching Meta ad insights:', adError);
       } else if (adData && adData.length > 0) {
         console.log(`Found ${adData.length} Meta ad insights for the period`);
+        
+        // Log all ad insight dates to debug timezone issues
+        adData.forEach(insight => {
+          console.log(`Ad Insight Date: ${insight.date}, Spend: ${insight.spend}`);
+        });
         
         // Calculate ad metrics
         adSpend = adData.reduce((sum, insight) => {
