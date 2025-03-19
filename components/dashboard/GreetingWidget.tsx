@@ -1004,10 +1004,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
-                    {getPreviousMonthName()} data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
+                    {getPreviousMonthName()} data analysis
                   </p>
                   <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center">
-                    See more insights in AI Intelligence
+                    See more recommendations on the AI Intelligence page
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Link>
                 </div>
@@ -1387,10 +1387,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
-                    Today's data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
+                    Today's data analysis
                   </p>
                   <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center">
-                    See more insights in AI Intelligence
+                    See more recommendations on the AI Intelligence page
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Link>
                 </div>
