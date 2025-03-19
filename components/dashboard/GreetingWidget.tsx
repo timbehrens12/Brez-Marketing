@@ -988,7 +988,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </ul>
                   </div>
                   
-                  {/* Actionable Recommendations section */}
+                  {/* Actionable Recommendations section - Monthly view */}
                   <div>
                     <h6 className="text-blue-400 font-medium flex items-center mb-2">
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
@@ -1000,12 +1000,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       <li>Implement exit-intent popup with 10% discount at shipping information step to reduce cart abandonment</li>
                       <li>Expand the Summer Collection product line based on consistent performance metrics</li>
                     </ul>
-                    <div className="mt-4 text-right">
-                      <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center justify-end">
-                        See more insights in AI Intelligence
-                        <ArrowRight className="ml-1 h-3 w-3" />
-                      </Link>
-                    </div>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
@@ -1377,7 +1371,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </ul>
                   </div>
                   
-                  {/* Actionable Recommendations section */}
+                  {/* Actionable Recommendations section - Daily view */}
                   <div>
                     <h6 className="text-blue-400 font-medium flex items-center mb-2">
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
@@ -1389,12 +1383,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       <li>Investigate mobile checkout issues during the 3-5pm timeframe</li>
                       <li>Schedule additional customer support staff during identified peak hours</li>
                     </ul>
-                    <div className="mt-4 text-right">
-                      <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center justify-end">
-                        See more insights in AI Intelligence
-                        <ArrowRight className="ml-1 h-3 w-3" />
-                      </Link>
-                    </div>
                   </div>
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
