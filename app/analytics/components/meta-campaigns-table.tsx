@@ -9,6 +9,12 @@ import { BarChart2, TrendingUp, AlertCircle, CheckCircle, Clock, Filter } from '
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 interface Campaign {
   id: string;
@@ -35,6 +41,16 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     key: keyof Campaign;
     direction: 'ascending' | 'descending';
   } | null>(null)
+  const [metrics, setMetrics] = useState({
+    ctrChange: 0,
+    roasChange: 0,
+    currentCTR: 0,
+    previousCTR: 0,
+    currentRoas: 0,
+    previousRoas: 0,
+    totalSpend: 0,
+    totalClicks: 0
+  })
 
   useEffect(() => {
     async function fetchCampaigns() {
@@ -55,6 +71,51 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         // If we have real data, use it
         if (data.campaigns && data.campaigns.length > 0) {
           setCampaigns(data.campaigns)
+          
+          // Calculate aggregated metrics
+          if (data.campaigns.length > 0) {
+            const totalClicks = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.clicks, 0);
+            const totalImpressions = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.impressions, 0);
+            const totalSpend = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.spend, 0);
+            const totalRevenue = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.roas * campaign.spend), 0);
+            
+            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+            const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+            
+            // Check if we have comparison data
+            if (data.periodComparison && data.periodComparison.current && data.periodComparison.previous) {
+              const { current, previous } = data.periodComparison;
+              
+              const ctrChange = previous.ctr > 0 
+                ? ((avgCTR - previous.ctr) / previous.ctr) * 100 
+                : 0;
+                
+              const roasChange = previous.roas > 0 
+                ? ((avgRoas - previous.roas) / previous.roas) * 100 
+                : 0;
+                
+              setMetrics({
+                ctrChange,
+                roasChange,
+                currentCTR: avgCTR,
+                previousCTR: previous.ctr,
+                currentRoas: avgRoas,
+                previousRoas: previous.roas,
+                totalSpend,
+                totalClicks
+              });
+            } else {
+              // If no comparison data, at least set the current metrics
+              setMetrics(prev => ({
+                ...prev,
+                currentCTR: avgCTR,
+                currentRoas: avgRoas,
+                totalSpend,
+                totalClicks
+              }));
+            }
+          }
+          
         } else {
           // Otherwise use mock data
           setCampaigns([
@@ -230,9 +291,56 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
             <BarChart2 className="h-5 w-5 text-blue-400" />
             Meta Campaigns
           </CardTitle>
-          <span className="text-xs text-gray-400 bg-[#222] px-2 py-1 rounded">
-            {filteredCampaigns.length} Campaigns
-          </span>
+          <div className="flex items-center gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-xs cursor-help bg-[#222] px-2 py-1 rounded">
+                    {filteredCampaigns.length} Campaigns
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#333] border-[#444]">
+                  <p className="text-xs">
+                    Total spend: ${Math.round(metrics.totalSpend)} | Total clicks: {metrics.totalClicks}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {metrics.ctrChange !== 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={`text-xs cursor-help ${metrics.ctrChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      CTR: {metrics.ctrChange > 0 ? '↑' : '↓'} {Math.abs(metrics.ctrChange).toFixed(1)}%
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[#333] border-[#444]">
+                    <p className="text-xs">
+                      Current: {metrics.currentCTR.toFixed(2)}% vs Previous: {metrics.previousCTR.toFixed(2)}%
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            
+            {metrics.roasChange !== 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={`text-xs cursor-help ${metrics.roasChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ROAS: {metrics.roasChange > 0 ? '↑' : '↓'} {Math.abs(metrics.roasChange).toFixed(1)}%
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-[#333] border-[#444]">
+                    <p className="text-xs">
+                      Current: {metrics.currentRoas.toFixed(1)}x vs Previous: {metrics.previousRoas.toFixed(1)}x
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

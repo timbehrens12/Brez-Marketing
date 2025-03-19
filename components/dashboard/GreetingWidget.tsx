@@ -9,8 +9,14 @@ import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip"
 
 // Define types locally
 type ReportPeriod = 'daily' | 'monthly'
@@ -1156,42 +1162,86 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
           {currentPeriod === 'monthly' && monthlyReport ? (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
-              {monthlyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
-              {monthlyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
+                  {monthlyReport.periodComparison.salesGrowth !== 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {getPreviousMonthName()}: ${Math.round(monthlyReport.revenueGenerated)} vs {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.revenueGenerated / (1 + monthlyReport.periodComparison.salesGrowth / 100))}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+                  <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
+                  {monthlyReport.periodComparison.orderGrowth !== 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {getPreviousMonthName()}: {monthlyReport.totalPurchases} orders vs {getTwoMonthsAgoName()}: {Math.round(monthlyReport.totalPurchases / (1 + monthlyReport.periodComparison.orderGrowth / 100))} orders
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-                  <p className="text-sm text-gray-400">
-                    {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                  </p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-sm text-gray-400 cursor-help">
+                          {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#333] border-[#444]">
+                        <p className="text-xs">
+                          Total ad spend: ${Math.round(monthlyReport.totalAdSpend)} of ${Math.round(monthlyReport.revenueGenerated)} revenue
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-              {monthlyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-          </div>
-          
+                  <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+                  {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {(monthlyReport.averageRoas / (1 + monthlyReport.periodComparison.roasGrowth / 100)).toFixed(1)}x
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              </div>
+              
               <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
@@ -1545,34 +1595,78 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
               {dailyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
-                </p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className={`text-sm cursor-help ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-[#333] border-[#444]">
+                      <p className="text-xs">
+                        Today: ${Math.round(dailyReport.revenueGenerated)} vs Yesterday: ${Math.round(dailyReport.revenueGenerated / (1 + dailyReport.periodComparison.salesGrowth / 100))}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
             <div className="bg-[#222] p-4 rounded-lg">
               <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
               <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
                   {dailyReport.periodComparison.orderGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
-                    </p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            Today: {dailyReport.totalPurchases} orders vs Yesterday: {Math.round(dailyReport.totalPurchases / (1 + dailyReport.periodComparison.orderGrowth / 100))} orders
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-                  <p className="text-sm text-gray-400">
-                    {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                  </p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="text-sm text-gray-400 cursor-help">
+                          {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#333] border-[#444]">
+                        <p className="text-xs">
+                          Total ad spend: ${Math.round(dailyReport.totalAdSpend)} of ${Math.round(dailyReport.revenueGenerated)} revenue
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
                   <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
                   {dailyReport.periodComparison.roasGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
-                    </p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            Today: {dailyReport.averageRoas.toFixed(1)}x vs Yesterday: {(dailyReport.averageRoas / (1 + dailyReport.periodComparison.roasGrowth / 100)).toFixed(1)}x
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
               </div>
             </div>

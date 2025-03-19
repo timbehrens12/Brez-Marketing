@@ -2,13 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { ArrowUpRight, TrendingUp, DollarSign } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 export default function MetaSpendTrends({ brandId }: { brandId: string }) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState({
+    spendChange: 0,
+    roasChange: 0,
+    currentSpend: 0,
+    previousSpend: 0,
+    currentRoas: 0,
+    previousRoas: 0
+  })
 
   useEffect(() => {
     async function fetchData() {
@@ -21,6 +35,31 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
         }
         
         setData(result.dailyData || [])
+        
+        // Calculate percentage changes if we have enough data
+        if (result.dailyData && result.dailyData.length >= 2) {
+          const currentData = result.dailyData.slice(-1)[0];
+          const previousData = result.dailyData.slice(-2)[0];
+          
+          if (currentData && previousData) {
+            const spendChange = previousData.spend > 0 
+              ? ((currentData.spend - previousData.spend) / previousData.spend) * 100 
+              : 0;
+              
+            const roasChange = previousData.roas > 0 
+              ? ((currentData.roas - previousData.roas) / previousData.roas) * 100 
+              : 0;
+              
+            setMetrics({
+              spendChange,
+              roasChange,
+              currentSpend: currentData.spend,
+              previousSpend: previousData.spend,
+              currentRoas: currentData.roas,
+              previousRoas: previousData.roas
+            });
+          }
+        }
       } catch (err) {
         console.error('Error fetching Meta trends:', err)
         setError('Failed to load Meta spend trends data')
@@ -75,9 +114,37 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
             <TrendingUp className="h-5 w-5 text-blue-400" />
             Spend & ROAS Trends
           </CardTitle>
-          <span className="text-xs text-gray-400 bg-[#222] px-2 py-1 rounded">
-            Last 30 Days
-          </span>
+          <div className="flex items-center gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`text-xs cursor-help ${metrics.spendChange > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    Spend: {metrics.spendChange > 0 ? '↑' : '↓'} {Math.abs(metrics.spendChange).toFixed(1)}%
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#333] border-[#444]">
+                  <p className="text-xs">
+                    Today: ${Math.round(metrics.currentSpend)} vs Yesterday: ${Math.round(metrics.previousSpend)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`text-xs cursor-help ${metrics.roasChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ROAS: {metrics.roasChange > 0 ? '↑' : '↓'} {Math.abs(metrics.roasChange).toFixed(1)}%
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#333] border-[#444]">
+                  <p className="text-xs">
+                    Today: {metrics.currentRoas.toFixed(1)}x vs Yesterday: {metrics.previousRoas.toFixed(1)}x
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -94,7 +161,7 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
             />
             <YAxis yAxisId="left" stroke="#8884d8" />
             <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-            <Tooltip 
+            <RechartsTooltip 
               contentStyle={{ 
                 backgroundColor: '#222', 
                 border: '1px solid #444',

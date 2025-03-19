@@ -2,13 +2,36 @@
 
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { BarChart2, TrendingUp } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
+
+// Define interface for meta analytics data
+interface MetaAnalyticItem {
+  campaign_name?: string;
+  spend?: number | string;
+  impressions?: number;
+  clicks?: number;
+  ctr?: number | string;
+}
 
 export default function MetaAdPerformance({ brandId }: { brandId: string }) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState({
+    ctrChange: 0,
+    clicksChange: 0,
+    currentCTR: 0,
+    previousCTR: 0,
+    currentClicks: 0,
+    previousClicks: 0
+  })
 
   useEffect(() => {
     async function fetchData() {
@@ -21,7 +44,7 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
         }
         
         // Ensure data is in the right format
-        const formattedData = (result.data || []).map(item => ({
+        const formattedData = (result.data || []).map((item: MetaAnalyticItem) => ({
           campaign_name: item.campaign_name || 'Unknown Campaign',
           spend: typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend || 0,
           impressions: item.impressions || 0,
@@ -30,6 +53,28 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
         }))
         
         setData(formattedData)
+        
+        // Calculate total metrics and changes if we have data from previous periods
+        if (result.periodComparison) {
+          const { current, previous } = result.periodComparison;
+          
+          const ctrChange = previous.ctr > 0 
+            ? ((current.ctr - previous.ctr) / previous.ctr) * 100 
+            : 0;
+            
+          const clicksChange = previous.clicks > 0 
+            ? ((current.clicks - previous.clicks) / previous.clicks) * 100 
+            : 0;
+            
+          setMetrics({
+            ctrChange,
+            clicksChange,
+            currentCTR: current.ctr,
+            previousCTR: previous.ctr,
+            currentClicks: current.clicks,
+            previousClicks: previous.clicks
+          });
+        }
       } catch (err) {
         console.error('Error fetching Meta analytics:', err)
         setError('Failed to load Meta ad performance data')
@@ -84,9 +129,37 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
             <BarChart2 className="h-5 w-5 text-green-400" />
             Campaign Performance
           </CardTitle>
-          <span className="text-xs text-gray-400 bg-[#222] px-2 py-1 rounded">
-            Active Campaigns
-          </span>
+          <div className="flex items-center gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`text-xs cursor-help ${metrics.clicksChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    Clicks: {metrics.clicksChange > 0 ? '↑' : '↓'} {Math.abs(metrics.clicksChange).toFixed(1)}%
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#333] border-[#444]">
+                  <p className="text-xs">
+                    Today: {Math.round(metrics.currentClicks)} vs Yesterday: {Math.round(metrics.previousClicks)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`text-xs cursor-help ${metrics.ctrChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    CTR: {metrics.ctrChange > 0 ? '↑' : '↓'} {Math.abs(metrics.ctrChange).toFixed(1)}%
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#333] border-[#444]">
+                  <p className="text-xs">
+                    Today: {(metrics.currentCTR * 100).toFixed(2)}% vs Yesterday: {(metrics.previousCTR * 100).toFixed(2)}%
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -95,7 +168,7 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="campaign_name" stroke="#666" />
             <YAxis stroke="#666" />
-            <Tooltip 
+            <RechartsTooltip 
               contentStyle={{ 
                 backgroundColor: '#222', 
                 border: '1px solid #444',
