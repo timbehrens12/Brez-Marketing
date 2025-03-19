@@ -347,6 +347,7 @@ export function GreetingWidget({
       const salesGrowth = previousMetrics && previousMetrics.totalSales > 0 
         ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
         : 0
+      
       const orderGrowth = previousMetrics && previousMetrics.ordersCount > 0 
         ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
         : 0
@@ -494,7 +495,6 @@ export function GreetingWidget({
   const fetchPeriodData = async () => {
     if (!brandId || connections.length === 0) {
       setIsLoading(false)
-      setHasEnoughData(false)
       return
     }
 
@@ -807,7 +807,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       revenueGenerated: metrics.totalSales,
       bestCampaign: {
         name: "Summer Collection",
-        roas: 3.8,
+        roas: 3.2,
         cpa: 22.50,
         ctr: 2.7,
         conversions: Math.round(metrics.newCustomers * 0.35)
@@ -948,48 +948,17 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Performance Summary</h5>
-                    <div className="flex items-center">
-                      <Sparkles className="h-4 w-4 text-indigo-400 mr-1" />
-                      <p className="text-xs text-indigo-400">AI-Generated Insights</p>
-                    </div>
-                  </div>
-                  <div className="bg-[#222] p-4 rounded-lg">
-                    <p className="text-sm text-gray-300 mb-3">
-                      {monthlyReport.aiAnalysis}
-                    </p>
-                    <Link href="/ai-dashboard">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-indigo-400 border-indigo-400/30 hover:bg-indigo-400/10 mt-2"
-                      >
-                        View detailed AI recommendations
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
                 </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Key Takeaways</h5>
-                  </div>
-                  <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                    {monthlyReport?.takeaways.map((takeaway, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-blue-400 mr-2">•</span>
-                        <span className="text-gray-300 text-sm">{takeaway}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {monthlyReport.aiAnalysis}
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
@@ -1020,118 +989,343 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 
                 <div>
                   <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">
+                      Month-to-Month Comparison
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      {getPreviousMonthName()} vs. previous months
+                    </p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Revenue</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +13.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad Spend</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +12.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +13.6%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Average ROAS</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +11.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Orders</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +17.1%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad CTR</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +8.2%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +8.7%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Cost Per Acquisition</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -8.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -9.1%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">Top Performing Campaigns</h5>
                     <p className="text-xs text-gray-400">by ROAS</p>
                   </div>
-                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A] mb-4">
-                    <div className="grid grid-cols-3 gap-4 mb-3 pb-3 border-b border-gray-800">
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Total Ad Spend</div>
-                        <div className="text-lg font-medium">$11,850</div>
-                        <div className="text-xs text-green-400 mt-1">↑ 8.2% from Jan</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Total Revenue</div>
-                        <div className="text-lg font-medium">$32,520</div>
-                        <div className="text-xs text-green-400 mt-1">↑ 12.4% from Jan</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">Avg. ROAS</div>
-                        <div className="text-lg font-medium">2.74x</div>
-                        <div className="text-xs text-green-400 mt-1">↑ 0.18x from Jan</div>
-                      </div>
-                    </div>
-                    <div className="text-xs text-blue-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                      </svg>
-                      <span>February campaign performance improved with optimized targeting</span>
-                    </div>
-                  </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {[
-                      { 
-                        name: "Summer Collection", 
-                        roas: 3.8, 
-                        spend: 2800, 
-                        conversions: 112, 
-                        change: +14.2,
-                        badgeText: "TOP PERFORMER"
-                      },
-                      { 
-                        name: "Return Customer Promo", 
-                        roas: 3.2, 
-                        spend: 1950, 
-                        conversions: 78, 
-                        change: +8.5,
-                        badgeText: "EFFICIENT"
-                      },
-                      { 
-                        name: "Beach Essentials", 
-                        roas: 2.9, 
-                        spend: 2200, 
-                        conversions: 86, 
-                        change: +3.2
-                      },
-                      { 
-                        name: "Holiday Special", 
-                        roas: 2.6, 
-                        spend: 3100, 
-                        conversions: 98, 
-                        change: -1.8
-                      },
-                      { 
-                        name: "New Arrivals", 
-                        roas: 2.1, 
-                        spend: 1800, 
-                        conversions: 64, 
-                        change: -5.4,
-                        badgeText: "NEEDS REVIEW"
-                      }
-                    ].map((campaign, index) => (
-                      <div key={index} className="mb-4 last:mb-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="flex items-center">
-                            <span className="text-sm">{campaign.name}</span>
-                            {campaign.badgeText && (
-                              <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${
-                                campaign.badgeText === "TOP PERFORMER" ? "bg-green-900 text-green-300" :
-                                campaign.badgeText === "EFFICIENT" ? "bg-blue-900 text-blue-300" :
-                                "bg-amber-900 text-amber-300"
-                              }`}>
-                                {campaign.badgeText}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium">{campaign.roas.toFixed(1)}x</span>
-                            <span className={`ml-2 text-xs ${campaign.change >= 0 ? "text-green-400" : "text-red-400"}`}>
-                              {campaign.change >= 0 ? "↑" : "↓"} {Math.abs(campaign.change).toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                campaign.roas >= 3.5 ? "bg-green-500" :
-                                campaign.roas >= 3.0 ? "bg-blue-500" :
-                                campaign.roas >= 2.5 ? "bg-yellow-500" :
-                                "bg-orange-500"
-                              }`}
-                              style={{ width: `${(campaign.roas / 3.8) * 100}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-400">${campaign.spend.toLocaleString()} spent</span>
-                        </div>
-                        <div className="mt-1 flex justify-between text-xs text-gray-500">
-                          <span>{campaign.conversions} conversions</span>
-                          <span>${Math.round(campaign.spend * campaign.roas).toLocaleString()} revenue</span>
-                        </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Summer Collection</span>
+                        <span className="text-sm font-medium">3.8x</span>
                       </div>
-                    ))}
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "100%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$4,250 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Beach Essentials</span>
+                        <span className="text-sm font-medium">3.2x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "84%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$2,800 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Returning Customers</span>
+                        <span className="text-sm font-medium">2.9x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "76%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$1,950 spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Weekend Flash Sale</span>
+                        <span className="text-sm font-medium">2.6x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "68%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$1,200 spent</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">New Arrivals</span>
+                        <span className="text-sm font-medium">2.3x</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full" 
+                            style={{ width: "60%" }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-400">$2,400 spent</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              </div>
+              
+              <div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {monthlyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           ) : currentPeriod === 'daily' && dailyReport ? (
@@ -1139,74 +1333,47 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.revenueGenerated)}</p>
-                  {dailyReport?.periodComparison.salesGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
+                  {dailyReport.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-                  <p className="text-2xl font-semibold">{dailyReport?.totalPurchases}</p>
-                  {dailyReport?.periodComparison.orderGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.orderGrowth).toFixed(1)}% from yesterday
+                  <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
+                  {dailyReport.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.totalAdSpend)}</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
                   <p className="text-sm text-gray-400">
-                    {((dailyReport?.totalAdSpend / dailyReport?.revenueGenerated) * 100).toFixed(1)}% of revenue
+                    {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
                   </p>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-                  <p className="text-2xl font-semibold">{dailyReport?.averageRoas.toFixed(1)}x</p>
-                  {dailyReport?.periodComparison.roasGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport?.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport?.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                  <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
+                  {dailyReport.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <h5 className="font-medium mb-3">Performance Summary</h5>
-                  <div className="bg-[#222] p-4 rounded-lg">
-                    <p className="text-sm text-gray-300 mb-3">
-                      {dailyReport?.aiAnalysis}
-                    </p>
-                    <div className="flex items-center mt-4 mb-2">
-                      <Sparkles className="h-4 w-4 text-indigo-400 mr-2" />
-                      <span className="text-xs text-indigo-400">AI-Generated Insights</span>
-                    </div>
-                    <Link href="/ai-dashboard">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-indigo-400 border-indigo-400/30 hover:bg-indigo-400/10 mt-2"
-                      >
-                        View detailed AI recommendations
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
                 </div>
-                
-                <div>
-                  <h5 className="font-medium mb-3">Key Takeaways</h5>
-                  <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                    {dailyReport?.takeaways?.map((takeaway, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-blue-400 mr-2">•</span>
-                        <span className="text-gray-300 text-sm">{takeaway}</span>
-                      </li>
-                    ))}
-                  </ul>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {dailyReport.aiAnalysis}
                 </div>
               </div>
               
@@ -1241,57 +1408,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Best Performing Ad</h5>
-                    <p className="text-xs text-gray-400">by ROAS</p>
+                    <h5 className="font-medium">
+                      7-Day Performance
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      Today vs. previous 6 days
+                    </p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {dailyReport?.bestCampaign && (
-                      <div>
-                        <div className="flex justify-between items-center">
-                          <h6 className="font-medium">{dailyReport?.bestCampaign?.name}</h6>
-                          <span className="text-green-400 text-xs px-1.5 py-0.5 rounded bg-green-900/30">TOP PERFORMER</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 mt-4">
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">ROAS</p>
-                            <p className="text-lg font-medium">{dailyReport?.bestCampaign?.roas?.toFixed(1)}x</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">CPA</p>
-                            <p className="text-lg font-medium">${dailyReport?.bestCampaign?.cpa?.toFixed(2)}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">CTR</p>
-                            <p className="text-lg font-medium">{dailyReport?.bestCampaign?.ctr?.toFixed(1)}%</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                            <p className="text-lg font-medium">{dailyReport?.bestCampaign?.conversions}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t border-gray-700">
-                          <p className="text-xs text-blue-300 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                            </svg>
-                            <span>This campaign is performing well due to targeted creative and audience optimization.</span>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-6 mb-6">
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">7-Day Performance</h5>
-                    <p className="text-xs text-gray-400">Today vs. previous 6 days</p>
-                  </div>
-                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
@@ -1303,52 +1429,50 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                             <th className="pb-2 text-right">Change</th>
                             <th className="pb-2 text-right">Ad Spend</th>
                             <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">ROAS</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {dailyReport?.historicalData?.map((item, index) => {
+                          {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
                             // Calculate day-over-day changes
-                            const prevDay = dailyReport?.historicalData?.[index + 1];
+                            const prevDay = index < array.length - 1 ? array[index + 1] : null;
                             
-                            const revenueChange = prevDay 
-                              ? ((item.revenue - prevDay.revenue) / prevDay.revenue) * 100 
-                              : 0;
+                            // Calculate percentage changes
+                            const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
+                            const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
+                            const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
                             
-                            const ordersChange = prevDay 
-                              ? ((item.orders - prevDay.orders) / prevDay.orders) * 100 
-                              : 0;
-                            
-                            const adSpendChange = prevDay 
-                              ? ((item.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 
-                              : 0;
-                              
                             return (
-                              <tr key={index} className="border-t border-gray-800">
-                                <td className="py-3">{item.name}</td>
-                                <td className="text-right py-3">${item.revenue.toLocaleString()}</td>
-                                <td className="text-right py-3">
-                                  {index < (dailyReport?.historicalData?.length ?? 0) - 1 && (
-                                    <span className={`text-xs ${revenueChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                      {revenueChange >= 0 ? '↑' : '↓'} {Math.abs(revenueChange).toFixed(1)}%
+                              <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
+                                <td className="py-2">{day.name}</td>
+                                <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                                <td className="text-right py-2">
+                                  {revenueChange !== null ? (
+                                    <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(revenueChange).toFixed(1)}%
                                     </span>
-                                  )}
+                                  ) : "-"}
                                 </td>
-                                <td className="text-right py-3">{item.orders}</td>
-                                <td className="text-right py-3">
-                                  {index < (dailyReport?.historicalData?.length ?? 0) - 1 && (
-                                    <span className={`text-xs ${ordersChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                      {ordersChange >= 0 ? '↑' : '↓'} {Math.abs(ordersChange).toFixed(1)}%
+                                <td className="text-right py-2">{Math.round(day.orders)}</td>
+                                <td className="text-right py-2">
+                                  {ordersChange !== null ? (
+                                    <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(ordersChange).toFixed(1)}%
                                     </span>
-                                  )}
+                                  ) : "-"}
                                 </td>
-                                <td className="text-right py-3">${item.adSpend.toLocaleString()}</td>
-                                <td className="text-right py-3">
-                                  {index < (dailyReport?.historicalData?.length ?? 0) - 1 && (
-                                    <span className={`text-xs ${adSpendChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                      {adSpendChange >= 0 ? '↑' : '↓'} {Math.abs(adSpendChange).toFixed(1)}%
+                                <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                                <td className="text-right py-2">
+                                  {adSpendChange !== null ? (
+                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(adSpendChange).toFixed(1)}%
                                     </span>
-                                  )}
+                                  ) : "-"}
                                 </td>
+                                <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
                               </tr>
                             );
                           })}
@@ -1357,6 +1481,18 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </div>
                   </div>
                 </div>
+              </div>
+              
+              <div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {dailyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           ) : (
