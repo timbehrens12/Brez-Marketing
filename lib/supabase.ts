@@ -1,4 +1,5 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
 
 // Check if Supabase environment variables are configured
@@ -23,34 +24,43 @@ const checkSupabaseConfig = () => {
 const createFallbackClient = () => {
   console.error('Using fallback Supabase client - database operations will fail')
   
-  // Create a self-referencing object
-  const fallbackObj: any = {
-    from: () => {
-      console.error('Using fallback Supabase client - database operations will fail')
-      return {
-        select: () => fallbackObj,
-        insert: () => Promise.reject(new Error('Supabase client initialization failed')),
-        update: () => Promise.reject(new Error('Supabase client initialization failed')),
-        delete: () => Promise.reject(new Error('Supabase client initialization failed')),
-        eq: () => fallbackObj,
-        neq: () => fallbackObj,
-        gt: () => fallbackObj,
-        gte: () => fallbackObj,
-        lt: () => fallbackObj,
-        lte: () => fallbackObj,
-        order: () => fallbackObj,
-        limit: () => fallbackObj,
-        single: () => Promise.reject(new Error('Supabase client initialization failed')),
-        then: () => Promise.reject(new Error('Supabase client initialization failed'))
+  // Create a minimal working client with dummy URL to prevent URL parsing errors
+  try {
+    return createClient(
+      'https://example.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZha2VrZXkiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MTI5MjQ4Miwic3ViIjoiZmFrZWtleSJ9.fake'
+    )
+  } catch (e) {
+    console.error('Failed to create fallback client:', e)
+    
+    // If even that fails, return a pure mock object
+    const fallbackObj: any = {
+      from: () => {
+        console.error('Using fallback Supabase client - database operations will fail')
+        return {
+          select: () => fallbackObj,
+          insert: () => Promise.resolve({ error: new Error('Supabase client initialization failed') }),
+          update: () => Promise.resolve({ error: new Error('Supabase client initialization failed') }),
+          delete: () => Promise.resolve({ error: new Error('Supabase client initialization failed') }),
+          eq: () => fallbackObj,
+          neq: () => fallbackObj,
+          gt: () => fallbackObj,
+          gte: () => fallbackObj,
+          lt: () => fallbackObj,
+          lte: () => fallbackObj,
+          order: () => fallbackObj,
+          limit: () => fallbackObj,
+          single: () => Promise.resolve({ error: new Error('Supabase client initialization failed') }),
+        }
+      },
+      auth: {
+        getSession: () => Promise.resolve(null),
+        signOut: () => Promise.resolve(null)
       }
-    },
-    auth: {
-      getSession: () => Promise.reject(new Error('Supabase client initialization failed')),
-      signOut: () => Promise.reject(new Error('Supabase client initialization failed'))
     }
+    
+    return fallbackObj
   }
-  
-  return fallbackObj
 }
 
 // Initialize the client with error handling
