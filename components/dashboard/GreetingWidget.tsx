@@ -1,11 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Metrics } from "@/types/metrics"
-import { PlatformConnection } from "@/types/platform"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
@@ -13,8 +11,61 @@ import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth } 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertBox } from "@/components/ui/alert-box"
-import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
+
+// Define types locally
+type ReportPeriod = 'daily' | 'monthly'
+
+// Local type definitions
+interface Metrics {
+  totalSales: number
+  conversionRate: number
+  averagePurchaseValue: number
+  roas: number
+  adSpend: number
+}
+
+interface PlatformConnection {
+  id: string
+  platform_type: string
+  status: string
+}
+
+// Define minimal interfaces for the components we need
+interface AlertBoxProps {
+  title?: string
+  type?: 'info' | 'warning' | 'success' | 'error'
+  icon?: React.ReactNode
+  className?: string
+  children: React.ReactNode
+}
+
+export function AlertBox({ title, type = 'info', icon, className, children }: AlertBoxProps) {
+  return (
+    <div className={`rounded-md p-3 bg-blue-950/30 border border-blue-900/50 ${className}`}>
+      <div className="flex items-start">
+        {icon && <div className="mr-3 mt-0.5">{icon}</div>}
+        <div>
+          {title && <div className="font-medium text-sm mb-1">{title}</div>}
+          <div>{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function LoadingSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="h-6 w-1/3 bg-gray-800 rounded mb-4"></div>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-gray-800 h-24 rounded-lg"></div>
+        ))}
+      </div>
+      <div className="h-32 bg-gray-800 rounded-lg mb-6"></div>
+    </div>
+  )
+}
 
 interface GreetingWidgetProps {
   brandId: string
@@ -89,8 +140,6 @@ interface PerformanceReport {
   }>
   aiAnalysis?: string
 }
-
-type ReportPeriod = 'daily' | 'monthly'
 
 export function GreetingWidget({ 
   brandId, 
@@ -895,22 +944,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
               </div>
               
-              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-                <div className="flex items-center mb-3">
-                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">AI Analysis</h5>
-                </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {monthlyReport.aiAnalysis}
-                </div>
-                <div className="mt-4 text-right">
-                  <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
-                    Get detailed AI intelligence
-                    <ArrowRight className="ml-1 h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -1122,22 +1155,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
               </div>
               
-              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-                <div className="flex items-center mb-3">
-                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">AI Analysis</h5>
-                </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {dailyReport.aiAnalysis}
-                </div>
-                <div className="mt-4 text-right">
-                  <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
-                    Get detailed AI intelligence
-                    <ArrowRight className="ml-1 h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -1182,22 +1199,61 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr>
-                            <th className="text-left pb-2 text-gray-400 font-normal">Date</th>
-                            <th className="text-right pb-2 text-gray-400 font-normal">Revenue</th>
-                            <th className="text-right pb-2 text-gray-400 font-normal">Orders</th>
-                            <th className="text-right pb-2 text-gray-400 font-normal">Ad Spend</th>
+                          <tr className="text-gray-400 text-xs border-b border-gray-800">
+                            <th className="pb-2 text-left">Date</th>
+                            <th className="pb-2 text-right">Revenue</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">Orders</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">Ad Spend</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">ROAS</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {dailyReport.historicalData?.slice().reverse().map((day, index) => (
-                            <tr key={index} className={index === 0 ? "bg-gray-900/30" : ""}>
-                              <td className="py-2">{day.name}</td>
-                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
-                              <td className="text-right py-2">{Math.round(day.orders)}</td>
-                              <td className="text-right py-2">${Math.round(day.adSpend)}</td>
-                            </tr>
-                          ))}
+                          {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
+                            // Calculate day-over-day changes
+                            const prevDay = index < array.length - 1 ? array[index + 1] : null;
+                            
+                            // Calculate percentage changes
+                            const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
+                            const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
+                            const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
+                            
+                            return (
+                              <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
+                                <td className="py-2">{day.name}</td>
+                                <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                                <td className="text-right py-2">
+                                  {revenueChange !== null ? (
+                                    <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(revenueChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">{Math.round(day.orders)}</td>
+                                <td className="text-right py-2">
+                                  {ordersChange !== null ? (
+                                    <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(ordersChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                                <td className="text-right py-2">
+                                  {adSpendChange !== null ? (
+                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(adSpendChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
