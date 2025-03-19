@@ -1390,7 +1390,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     Today's data analysis
                   </p>
                   <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center">
-                    See more recommendations on the AI Intelligence page
+                    See more insights in AI Intelligence
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Link>
                 </div>
@@ -1427,26 +1427,32 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
 
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Today's Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by today's revenue</p>
+                    <h5 className="font-medium">Today's Best Campaigns</h5>
+                    <p className="text-xs text-gray-400">by ROAS</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {dailyReport?.bestSellingProducts?.map((product, index) => (
+                    {[
+                      { name: "Summer Collection", roas: 3.8, spend: 220, revenue: 836 },
+                      { name: "Email Retargeting", roas: 3.2, spend: 180, revenue: 576 },
+                      { name: "Beach Accessories", roas: 2.9, spend: 250, revenue: 725 },
+                      { name: "Customer Loyalty", roas: 2.5, spend: 120, revenue: 300 },
+                      { name: "New Arrivals", roas: 2.1, spend: 200, revenue: 420 }
+                    ].map((campaign, index) => (
                       <div key={index} className="mb-4 last:mb-0">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">{product.name}</span>
-                          <span className="text-sm font-medium">${product.revenue}</span>
+                          <span className="text-sm">{campaign.name}</span>
+                          <span className="text-sm font-medium">{campaign.roas.toFixed(1)}x</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-yellow-500 rounded-full" 
-                              style={{ 
-                                width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                            <div
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{
+                                width: `${(campaign.roas / 4) * 100}%`
                               }}
                             ></div>
                           </div>
-                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                          <span className="text-xs text-gray-400">${campaign.spend} spent</span>
                         </div>
                       </div>
                     ))}
