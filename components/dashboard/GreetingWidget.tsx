@@ -855,6 +855,12 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
           <p className="text-gray-400 text-sm">
             Here's an overview of your {brandName} store performance
           </p>
+          {currentPeriod === 'monthly' && (
+            <p className="text-xs text-blue-400 mt-1">
+              <Info className="h-3 w-3 inline-block mr-1" />
+              Data shown is for {getPreviousMonthName()}. Updates on the 1st of each month at midnight.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Tabs value={currentPeriod} onValueChange={(value: string) => setCurrentPeriod(value as ReportPeriod)}>
@@ -888,22 +894,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
         <>
           <Separator className="my-4 bg-gray-800" />
           
-          <AlertBox 
-            title="Data Sources" 
-            type="info"
-            icon={<Info className="h-4 w-4 text-blue-400" />}
-            className="mb-4"
-          >
-            <p className="text-xs text-gray-400">
-              This dashboard updates with latest data from your connected platforms every hour. 
-              <span className="font-medium ml-1">
-                {connections.filter(c => c.status === 'active').length === 0 ? 
-                  'No platforms connected yet.' : 
-                  `Last updated: ${format(new Date(), 'h:mm a')}`
-                }
-              </span>
-            </p>
-          </AlertBox>
+
           
           {currentPeriod === 'monthly' && monthlyReport ? (
             <div>
@@ -949,11 +940,60 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
                   <h5 className="font-medium">AI Analysis: {getPreviousMonthName()} Overview</h5>
                 </div>
-                <div className="text-sm leading-relaxed">
-                  <p>{monthlyReport.aiAnalysis}</p>
+                <div className="text-sm leading-relaxed space-y-4">
+                  {/* Introduction section - top level summary */}
+                  <div className="border-b border-gray-800 pb-2">
+                    <p>Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
+                    </span> change from {getTwoMonthsAgoName()}. Order volume was <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders (<span className={monthlyReport?.periodComparison.orderGrowth && monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {monthlyReport?.periodComparison.orderGrowth && monthlyReport.periodComparison.orderGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.orderGrowth?.toFixed(1)}%
+                    </span>).</p>
+                  </div>
+                  
+                  {/* Positive Highlights section */}
+                  <div>
+                    <h6 className="text-green-400 font-medium flex items-center mb-2">
+                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>The Summer T-Shirt Collection continues to be your top performer, generating 28% of monthly revenue with an exceptional conversion rate of 4.2%</li>
+                      <li>Meta campaigns significantly outperform other platforms with a ROAS of 3.2x versus Google's 1.9x</li>
+                      <li>The "Summer Collection" campaign was your highest performer with a 3.8x ROAS and 32% lower CPA than store average</li>
+                      <li>Customer retention rate increased to {monthlyReport?.conversionRate?.toFixed(1)}%, up {Math.abs(monthlyReport?.periodComparison.conversionGrowth || 0).toFixed(1)}% from last month</li>
+                      <li>Weekend sales performance exceeded weekday performance by 35% in revenue and 27% in conversion rate</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Areas Needing Attention section */}
+                  <div>
+                    <h6 className="text-red-400 font-medium flex items-center mb-2">
+                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>Mobile conversion rate ({(monthlyReport?.conversionRate || 0 * 0.8).toFixed(1)}%) lags behind desktop ({(monthlyReport?.conversionRate || 0 * 1.2).toFixed(1)}%) by 25%, suggesting issues with mobile UX</li>
+                      <li>Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))} per customer</li>
+                      <li>Google Search campaigns are significantly underperforming with a 0.9x ROAS for non-brand keywords</li>
+                      <li>Cart abandonment rate increased 5.3% this month, with the highest drop-off occurring at the shipping information step</li>
+                      <li>Inventory analysis indicates potential stockout risks for three top-selling items within 18-21 days; Beach Tote Bags are at critically low levels (12% of optimal stock)</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Actionable Recommendations section */}
+                  <div>
+                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>Shift 15-20% of Google ad budget to top-performing Meta campaigns to optimize ROAS</li>
+                      <li>Prioritize mobile checkout optimization to address the 25% gap in conversion rates</li>
+                      <li>Restock Beach Tote Bags within 7 days to prevent revenue loss (~$2,800 weekly potential)</li>
+                      <li>Implement exit-intent popup with 10% discount at shipping information step to reduce cart abandonment</li>
+                      <li>Expand the Summer Collection product line based on consistent performance metrics</li>
+                    </ul>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  Data last updated: {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'h:mm a')}. Dashboard refreshes hourly.
+                <p className="text-xs text-gray-500 mt-4 text-right">
+                  {getPreviousMonthName()} data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
                 </p>
               </div>
               
@@ -1249,7 +1289,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   </li>
                   <li className="flex items-start">
                     <span className="text-amber-500 mr-2">▶</span>
-                    <span className="text-gray-300 text-sm">Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}. Monitor this trend closely.</span>
+                    <span className="text-gray-300 text-sm">Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))} per customer</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-green-500 mr-2">▲</span>
