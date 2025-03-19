@@ -19,21 +19,9 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   
-  // Initialize with AI analysis notification
+  // Initialize with empty notifications
   useEffect(() => {
-    const now = new Date()
-    setNotifications([
-      {
-        id: `ai-analysis-${now.getTime()}`,
-        title: "AI Analysis Ready",
-        message: "Your daily AI analysis is ready to view",
-        timestamp: now,
-        read: false,
-        type: 'ai',
-        link: "/ai-dashboard",
-        icon: <BrainCircuit className="h-4 w-4 text-indigo-400" />
-      }
-    ])
+    setNotifications([])
   }, [])
   
   const unreadCount = notifications.filter(n => !n.read).length

@@ -151,7 +151,7 @@ export function GreetingWidget({
   const [greeting, setGreeting] = useState("")
   const [synopsis, setSynopsis] = useState("")
   const [isLoading, setIsLoading] = useState(true)
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(true)
   const [periodData, setPeriodData] = useState<{
     today: PeriodMetrics,
     week: PeriodMetrics,
@@ -573,14 +573,18 @@ export function GreetingWidget({
 
   // Generate takeaways for the simulated data
   const generateTakeaways = (metrics: PeriodMetrics, comparison: any): string[] => {
-    // SIMULATION: Return a mix of realistic takeaways for demo purposes
+    // SIMULATION: Return a mix of realistic takeaways for demo purposes, including both positive and negative insights
     return [
       `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
       `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
-      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
-      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`,
-      `Weekend sales performance exceeds weekday sales by 35%`,
-      `'Summer Collection' campaign is your top performer with 3.2x ROAS`
+      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%) and needs optimization`,
+      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}, which is ${metrics.adSpend / metrics.newCustomers > 40 ? 'above target' : 'within target range'}`,
+      `Weekend sales performance exceeds weekday sales by 35%, suggesting potential for weekday-focused promotions`,
+      `'Summer Collection' campaign is your top performer with 3.2x ROAS`,
+      `Cart abandonment rate has increased to 68%, up 12% from previous period`,
+      `Email campaigns are generating 2.1x better conversion rates than social media ads`,
+      `Three products have inventory levels below 15% and require reordering`,
+      `Returning customer rate has decreased by 8% this period, retention strategy needs review`
     ];
   };
 
@@ -944,6 +948,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
               </div>
               
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {monthlyReport.aiAnalysis}
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -1026,6 +1040,82 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       
                       <div>
                         <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad Spend</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +12.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +13.6%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Average ROAS</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +11.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Orders</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
@@ -1064,7 +1154,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       
                       <div>
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Ad Spend</span>
+                          <span className="text-sm text-gray-400">Ad CTR</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1072,7 +1162,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {getThreeMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                              {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1080,10 +1170,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                              {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
                             </div>
-                            <div className="text-xs text-amber-500">
-                              +12.8%
+                            <div className="text-xs text-green-500">
+                              +8.2%
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1091,10 +1181,48 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                              {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
                             </div>
-                            <div className="text-xs text-amber-500">
-                              +13.6%
+                            <div className="text-xs text-green-500">
+                              +8.7%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Cost Per Acquisition</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -8.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -9.1%
                             </div>
                           </div>
                         </div>
@@ -1152,6 +1280,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
                     </p>
                   )}
+                </div>
+              </div>
+              
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {dailyReport.aiAnalysis}
                 </div>
               </div>
               
