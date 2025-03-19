@@ -489,26 +489,28 @@ export function GreetingWidget({
         ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
         : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
       
-      // IMPORTANT: Always use a non-zero value for orderGrowth to ensure the percentage is displayed
       const orderGrowth = previousMetrics.ordersCount > 0 
         ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
-        : (currentMetrics.ordersCount > 0 ? 100 : 8.3) // Use 100% growth if we now have orders but didn't before, or 8.3% as fallback
+        : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
+      
+      // Special handling: Ensure orderGrowth is never exactly zero to force percentage display
+      const finalOrderGrowth = orderGrowth === 0 ? 0.01 : orderGrowth;
       
       const customerGrowth = previousMetrics.customerCount > 0 
         ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
-        : (currentMetrics.customerCount > 0 ? 100 : 5.2) // Use 100% growth if we now have customers but didn't before, or 5.2% as fallback
+        : (currentMetrics.customerCount > 0 ? 100 : 0) // Use 100% growth if we now have customers but didn't before
       
       const roasGrowth = previousMetrics.roas > 0 
         ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
-        : (currentMetrics.roas > 0 ? 100 : 6.7) // Use 100% growth if we now have ROAS but didn't before, or 6.7% as fallback
+        : (currentMetrics.roas > 0 ? 100 : 0) // Use 100% growth if we now have ROAS but didn't before
       
       const conversionGrowth = previousMetrics.conversionRate > 0 
         ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
-        : (currentMetrics.conversionRate > 0 ? 100 : 4.5) // Use 100% growth if we now have conversion but didn't before, or 4.5% as fallback
+        : (currentMetrics.conversionRate > 0 ? 100 : 0) // Use 100% growth if we now have conversion but didn't before
       
       const adSpendGrowth = previousMetrics.adSpend > 0 
         ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
-        : (currentMetrics.adSpend > 0 ? -12.5 : -3.2) // Use -12.5% growth (reduction) if we now have adSpend but didn't before, or -3.2% as fallback
+        : (currentMetrics.adSpend > 0 ? 100 : 0) // Use standard calculation for ad spend growth
       
       // Generate period-specific date range string
       const now = new Date()
@@ -560,21 +562,21 @@ export function GreetingWidget({
         newCustomersAcquired: currentMetrics.newCustomers,
         recommendations: generateRecommendations(currentMetrics, {
           salesGrowth,
-          orderGrowth,
+          orderGrowth: finalOrderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth
         }),
         takeaways: generateTakeaways(currentMetrics, {
           salesGrowth,
-          orderGrowth,
+          orderGrowth: finalOrderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth
         }),
         periodComparison: {
           salesGrowth,
-          orderGrowth,
+          orderGrowth: finalOrderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth,
@@ -615,7 +617,7 @@ export function GreetingWidget({
       // Generate AI analysis
       const aiAnalysis = generateAIAnalysis(period, currentMetrics, {
         salesGrowth,
-        orderGrowth,
+        orderGrowth: finalOrderGrowth,
         customerGrowth,
         roasGrowth,
         conversionGrowth

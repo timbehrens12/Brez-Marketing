@@ -291,7 +291,8 @@ export function MetricCard({
   const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
     // If growth is exactly 100%, it means previous value was 0 (special case in the API)
     if (percentChange === 100) return 0;
-    if (percentChange === 0) return currentValue;
+    // If growth is exactly 0% or very close to 0 (like 0.01%), treat as no change
+    if (Math.abs(percentChange) < 0.02) return currentValue;
     return currentValue / (1 + percentChange / 100);
   }
   

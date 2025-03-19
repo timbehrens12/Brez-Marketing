@@ -216,7 +216,9 @@ export async function GET(request: Request) {
     // Calculate growth percentages
     const calculateGrowth = (current: number, previous: number): number => {
       if (previous === 0) return current > 0 ? 100 : 0;
-      return ((current - previous) / previous) * 100;
+      const growth = ((current - previous) / previous) * 100;
+      // Ensure we never return exactly zero to maintain consistency with UI display
+      return growth === 0 ? 0.01 : growth;
     };
 
     const salesGrowth = calculateGrowth(currentTotalSales, prevTotalSales);
