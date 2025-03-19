@@ -1426,59 +1426,26 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">Today's Best Campaigns</h5>
-                    <div className="flex flex-col items-end">
-                      <select 
-                        className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        defaultValue="roas"
-                        onChange={(e) => {
-                          const container = document.getElementById('campaign-metrics-container');
-                          if (container) {
-                            container.scrollTo({ left: 0, behavior: 'smooth' });
-                            Array.from(container.children).forEach(child => {
-                              if (child.id === `metric-${e.target.value}`) {
-                                child.classList.add('bg-blue-900/20', 'border-blue-800/50');
-                              } else {
-                                child.classList.remove('bg-blue-900/20', 'border-blue-800/50');
-                              }
-                            });
-                          }
-                        }}
-                      >
-                        <option value="roas">Sort by ROAS</option>
-                        <option value="ctr">Sort by CTR</option>
-                        <option value="revenue">Sort by Revenue</option>
-                        <option value="spend">Sort by Spend</option>
-                      </select>
-                      <p className="text-xs text-gray-400 mt-1">Swipe to see all metrics →</p>
-                    </div>
+                    <select 
+                      className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      defaultValue="roas"
+                      onChange={(e) => {
+                        // This would be where you'd implement the actual sorting logic
+                        // For now it's just for demonstration
+                        console.log(`Sorting by ${e.target.value}`);
+                      }}
+                    >
+                      <option value="roas">Sort by ROAS</option>
+                      <option value="ctr">Sort by CTR</option>
+                      <option value="revenue">Sort by Revenue</option>
+                      <option value="spend">Sort by Spend</option>
+                      <option value="cvr">Sort by Conversion Rate</option>
+                    </select>
                   </div>
                   
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    <div id="campaign-metrics-container" className="flex items-center gap-3 pb-3 mb-3 border-b border-gray-800 overflow-x-auto">
-                      <div id="metric-roas" className="flex-shrink-0 px-3 py-2 rounded-md bg-blue-900/20 border border-blue-800/50">
-                        <p className="text-xs text-gray-400">ROAS</p>
-                        <p className="text-sm font-medium text-white">Return/Spend</p>
-                      </div>
-                      <div id="metric-ctr" className="flex-shrink-0 px-3 py-2 rounded-md border border-transparent">
-                        <p className="text-xs text-gray-400">CTR</p>
-                        <p className="text-sm font-medium text-white">Click Rate</p>
-                      </div>
-                      <div id="metric-revenue" className="flex-shrink-0 px-3 py-2 rounded-md border border-transparent">
-                        <p className="text-xs text-gray-400">Revenue</p>
-                        <p className="text-sm font-medium text-white">Generated</p>
-                      </div>
-                      <div id="metric-spend" className="flex-shrink-0 px-3 py-2 rounded-md border border-transparent">
-                        <p className="text-xs text-gray-400">Spend</p>
-                        <p className="text-sm font-medium text-white">Budget Used</p>
-                      </div>
-                      <div id="metric-conversion" className="flex-shrink-0 px-3 py-2 rounded-md border border-transparent">
-                        <p className="text-xs text-gray-400">CVR</p>
-                        <p className="text-sm font-medium text-white">Conv. Rate</p>
-                      </div>
-                    </div>
-                    
                     {[
                       { name: "Summer Collection", roas: 3.8, spend: 220, revenue: 836, ctr: 2.7, clicks: 540, impressions: 20000, cvr: 4.6 },
                       { name: "Email Retargeting", roas: 3.2, spend: 180, revenue: 576, ctr: 5.1, clicks: 612, impressions: 12000, cvr: 3.8 },
@@ -1486,23 +1453,34 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       { name: "Customer Loyalty", roas: 2.5, spend: 120, revenue: 300, ctr: 4.8, clicks: 336, impressions: 7000, cvr: 2.9 },
                       { name: "New Arrivals", roas: 2.1, spend: 200, revenue: 420, ctr: 1.9, clicks: 285, impressions: 15000, cvr: 2.4 }
                     ].map((campaign, index) => (
-                      <div key={index} className="mb-4 last:mb-0">
-                        <div className="flex justify-between items-center mb-1">
+                      <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
+                        <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-medium">{campaign.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x ROAS</span>
-                            <span className="text-xs px-2 py-0.5 rounded bg-green-900/30 text-green-400">{campaign.ctr.toFixed(1)}% CTR</span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          <div className="text-xs text-gray-400">
-                            Revenue: <span className="text-white font-medium">${campaign.revenue}</span>
+                        
+                        <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Revenue</span>
+                            <span className="text-white font-medium">${campaign.revenue}</span>
                           </div>
-                          <div className="text-xs text-gray-400 text-right">
-                            Spend: <span className="text-white font-medium">${campaign.spend}</span>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Spend</span>
+                            <span className="text-white font-medium">${campaign.spend}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">CTR</span>
+                            <span className="text-white font-medium">{campaign.ctr}%</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">CVR</span>
+                            <span className="text-white font-medium">{campaign.cvr}%</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        
+                        <div className="flex items-center gap-2 mt-3">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-blue-500 rounded-full"
