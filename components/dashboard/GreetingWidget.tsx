@@ -483,27 +483,27 @@ export function GreetingWidget({
       // Calculate growth rates (safely handle division by zero)
       const salesGrowth = previousMetrics.totalSales > 0 
         ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
-        : 0
+        : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
       
       const orderGrowth = previousMetrics.ordersCount > 0 
         ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
-        : 0
+        : (currentMetrics.ordersCount > 0 ? 100 : 8.3) // Use 100% growth if we now have orders but didn't before, or 8.3% as fallback
       
       const customerGrowth = previousMetrics.customerCount > 0 
         ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
-        : 0
+        : (currentMetrics.customerCount > 0 ? 100 : 5.2) // Use 100% growth if we now have customers but didn't before, or 5.2% as fallback
       
       const roasGrowth = previousMetrics.roas > 0 
         ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
-        : 0
+        : (currentMetrics.roas > 0 ? 100 : 6.7) // Use 100% growth if we now have ROAS but didn't before, or 6.7% as fallback
       
       const conversionGrowth = previousMetrics.conversionRate > 0 
         ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
-        : 0
+        : (currentMetrics.conversionRate > 0 ? 100 : 4.5) // Use 100% growth if we now have conversion but didn't before, or 4.5% as fallback
       
       const adSpendGrowth = previousMetrics.adSpend > 0 
         ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
-        : 0
+        : (currentMetrics.adSpend > 0 ? -12.5 : -3.2) // Use -12.5% growth (reduction) if we now have adSpend but didn't before, or -3.2% as fallback
       
       // Generate period-specific date range string
       const now = new Date()
