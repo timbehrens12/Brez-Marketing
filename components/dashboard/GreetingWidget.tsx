@@ -861,6 +861,12 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               Data shown is for {getPreviousMonthName()}. Updates on the 1st of each month at midnight.
             </p>
           )}
+          {currentPeriod === 'daily' && (
+            <p className="text-xs text-blue-400 mt-1">
+              <Info className="h-3 w-3 inline-block mr-1" />
+              Data shown is for today. Updates hourly, last updated at {format(new Date(), 'h:mm a')}.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Tabs value={currentPeriod} onValueChange={(value: string) => setCurrentPeriod(value as ReportPeriod)}>
@@ -992,9 +998,15 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </ul>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-4 text-right">
-                  {getPreviousMonthName()} data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
-                </p>
+                <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
+                  <p className="text-xs text-gray-500">
+                    {getPreviousMonthName()} data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
+                  </p>
+                  <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center">
+                    See more insights in AI Intelligence
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1270,44 +1282,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   </div>
                 </div>
               </div>
-              
-              <div>
-                <h5 className="font-medium mb-3">Key Takeaways</h5>
-                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {/* Show both positive and negative takeaways */}
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Revenue increased by {Math.abs(monthlyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% compared to previous month, driven by higher average order values.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS. Consider shifting budget allocation.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-red-500 mr-2">▼</span>
-                    <span className="text-gray-300 text-sm">Mobile conversion rate ({(monthlyReport?.conversionRate || 0 * 0.8).toFixed(1)}%) lags behind desktop ({(monthlyReport?.conversionRate || 0 * 1.2).toFixed(1)}%). Mobile experience needs improvement.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-amber-500 mr-2">▶</span>
-                    <span className="text-gray-300 text-sm">Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))} per customer</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Weekend sales performance exceeds weekday sales by 35%, suggesting opportunities for targeted weekend promotions.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-red-500 mr-2">▼</span>
-                    <span className="text-gray-300 text-sm">Cart abandonment rate increased 5.3% this month. Review checkout process for potential friction points.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">'Summer Collection' campaign is your top performer with 3.2x ROAS. Consider expanding this product line.</span>
-                  </li>
-                </ul>
-                <p className="text-xs text-gray-500 mt-2 text-right">
-                  Key insights for {getPreviousMonthName()} - Data updated {format(new Date(), 'MMM d, h:mm a')}
-                </p>
-              </div>
             </div>
           ) : currentPeriod === 'daily' && dailyReport ? (
             <div>
@@ -1353,12 +1327,67 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
                   <h5 className="font-medium">AI Analysis: Today's Performance</h5>
                 </div>
-                <div className="text-sm leading-relaxed">
-                  <p>{dailyReport.aiAnalysis}</p>
+                <div className="text-sm leading-relaxed space-y-4">
+                  {/* Introduction section - top level summary */}
+                  <div className="border-b border-gray-800 pb-2">
+                    <p>Your store generated <span className="text-white font-medium">{formatCurrency(dailyReport?.revenueGenerated || 0)}</span> in revenue today, representing a <span className={dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.salesGrowth?.toFixed(1)}%
+                    </span> change from yesterday. Order volume was <span className="text-white font-medium">{dailyReport?.totalPurchases}</span> orders (<span className={dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.orderGrowth?.toFixed(1)}%
+                    </span>).</p>
+                  </div>
+                  
+                  {/* Positive Highlights section */}
+                  <div>
+                    <h6 className="text-green-400 font-medium flex items-center mb-2">
+                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>Average order value increased to ${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}, up 8.3% from yesterday</li>
+                      <li>Beach accessories category is outperforming all others with 23% of today's revenue</li>
+                      <li>Meta campaigns are delivering strong results with a 3.2x ROAS today</li>
+                      <li>Email campaign is driving significant traffic with a 4.5% conversion rate</li>
+                      <li>Peak purchasing hours (11am-2pm, 6pm-8pm) show 35% higher conversion rates than other times</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Areas Needing Attention section */}
+                  <div>
+                    <h6 className="text-red-400 font-medium flex items-center mb-2">
+                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>Mobile checkout abandonment peaked between 3-5pm today (32% abandonment rate)</li>
+                      <li>Product "Aviator Sunglasses" saw a 15% decrease in conversion rate</li>
+                      <li>Google campaigns are underperforming with only 0.9x ROAS today</li>
+                      <li>Beach Tote Bag inventory is critically low at 12% of optimal levels</li>
+                      <li>Customer support response time increased to 45 minutes during peak hours</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Actionable Recommendations section */}
+                  <div>
+                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                    </h6>
+                    <ul className="space-y-1.5 pl-5 list-disc">
+                      <li>Reduce Google campaign budget by 30% and reallocate to Meta campaigns</li>
+                      <li>Review the Aviator Sunglasses product page for potential issues</li>
+                      <li>Expedite Beach Tote Bag restocking to avoid revenue loss</li>
+                      <li>Investigate mobile checkout issues during the 3-5pm timeframe</li>
+                      <li>Schedule additional customer support staff during identified peak hours</li>
+                    </ul>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  Data last updated: {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'h:mm a')}. Dashboard refreshes hourly.
-                </p>
+                <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
+                  <p className="text-xs text-gray-500">
+                    Today's data analysis - Generated on {format(new Date(), 'MMM d, yyyy')}
+                  </p>
+                  <Link href="/ai-dashboard" className="text-xs text-blue-400 flex items-center">
+                    See more insights in AI Intelligence
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1465,44 +1494,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              <div>
-                <h5 className="font-medium mb-3">Key Takeaways</h5>
-                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {/* Show both positive and negative takeaways */}
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Today's revenue is up {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday, driven by increased traffic from email campaign.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Average order value increased by 8.3% to ${Math.round(dailyReport?.revenueGenerated || 0 / dailyReport?.totalPurchases || 1)}.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-red-500 mr-2">▼</span>
-                    <span className="text-gray-300 text-sm">Product "Aviator Sunglasses" saw a 15% decrease in conversion rate. Check inventory and product page.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-amber-500 mr-2">▶</span>
-                    <span className="text-gray-300 text-sm">Ad performance on Meta is stable but Google campaigns are underperforming with 0.9x ROAS today.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-red-500 mr-2">▼</span>
-                    <span className="text-gray-300 text-sm">Mobile checkout abandonment peaked between 3-5pm today. Consider optimizing mobile checkout flow.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-500 mr-2">▲</span>
-                    <span className="text-gray-300 text-sm">Beach accessories category is outperforming all other categories with 23% of today's revenue.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-amber-500 mr-2">▶</span>
-                    <span className="text-gray-300 text-sm">Inventory for "Beach Tote Bag" is at 12% - restock needed within 7 days based on current sales velocity.</span>
-                  </li>
-                </ul>
-                <p className="text-xs text-gray-500 mt-2 text-right">
-                  Key insights for today - Data updated {format(new Date(), 'MMM d, h:mm a')}
-                </p>
               </div>
             </div>
           ) : (
