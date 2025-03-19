@@ -145,6 +145,11 @@ interface PerformanceReport {
     roas: number
   }>
   aiAnalysis?: string
+  topProducts?: Array<{
+    name: string
+    revenue: number
+    orders: number
+  }>
 }
 
 export function GreetingWidget({ 
@@ -491,35 +496,35 @@ export function GreetingWidget({
         ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
         : 0
       
-      const customerGrowth = hasPreviousData && previousMetrics.customerCount > 0 
-        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
+      const customerGrowth = hasPreviousData && previousMetrics.customerCount > 0
+        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100
         : 0
-      
-      const roasGrowth = hasPreviousData && previousMetrics.roas > 0 
-        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
+        
+      const roasGrowth = hasPreviousData && previousMetrics.roas > 0
+        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100
         : 0
-      
-      const conversionGrowth = hasPreviousData && previousMetrics.conversionRate > 0 
-        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
+        
+      const conversionGrowth = hasPreviousData && previousMetrics.conversionRate > 0
+        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100
         : 0
+
+      // Generate sample ad performance data based on actual metrics
+      const adSpend = currentMetrics.adSpend || (currentMetrics.totalSales * 0.2) // 20% of revenue if not available
+      const roas = currentMetrics.roas || (currentMetrics.totalSales / adSpend)
       
-      // Generate period-specific date range string
-      const now = new Date()
-      let dateRangeStr = ""
-      if (period === 'daily') {
-        dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`
-      } else {
-        const monthStart = startOfMonth(subMonths(now, 1))
-        const monthEnd = endOfMonth(subMonths(now, 1))
-        dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`
-      }
+      // Format date range for display
+      const dateRangeStr = period === 'daily'
+        ? format(new Date(), 'MMMM d, yyyy')
+        : `${format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM d')} - ${format(new Date(new Date().getFullYear(), new Date().getMonth(), 0), 'MMMM d, yyyy')}`
       
-      // Get comparison period text
-      const comparisonText = period === 'daily' ? 'yesterday' : 'previous month'
-      
-      // Create sample campaign data based on real ROAS/spend if available
-      const roas = currentMetrics.roas || 2.5
-      const adSpend = currentMetrics.adSpend || (currentMetrics.totalSales * 0.25) // Fallback to 25% of sales
+      // Create sample top products based on current metrics
+      const topProducts = [
+        { name: "Summer T-Shirt Collection", revenue: currentMetrics.totalSales * 0.32, orders: Math.round(currentMetrics.ordersCount * 0.32) || 7 },
+        { name: "Beach Tote Bag", revenue: currentMetrics.totalSales * 0.2, orders: Math.round(currentMetrics.ordersCount * 0.2) || 4 },
+        { name: "Sunglasses - Aviator", revenue: currentMetrics.totalSales * 0.15, orders: Math.round(currentMetrics.ordersCount * 0.15) || 3 },
+        { name: "Linen Shorts", revenue: currentMetrics.totalSales * 0.12, orders: Math.round(currentMetrics.ordersCount * 0.12) || 2 },
+        { name: "Sandals - Unisex", revenue: currentMetrics.totalSales * 0.1, orders: Math.round(currentMetrics.ordersCount * 0.1) || 2 },
+      ]
       
       // Create base report with actual metrics
       const report: PerformanceReport = {
@@ -571,17 +576,9 @@ export function GreetingWidget({
           customerGrowth,
           roasGrowth,
           conversionGrowth
-        }
+        },
+        topProducts
       }
-      
-      // Add sample best-selling products
-      report.bestSellingProducts = [
-        { name: "Test product 4", revenue: currentMetrics.totalSales * 0.25, orders: Math.round(currentMetrics.ordersCount * 0.25) || 5 },
-        { name: "Beach Tote Bag", revenue: currentMetrics.totalSales * 0.2, orders: Math.round(currentMetrics.ordersCount * 0.2) || 4 },
-        { name: "Sunglasses - Aviator", revenue: currentMetrics.totalSales * 0.15, orders: Math.round(currentMetrics.ordersCount * 0.15) || 3 },
-        { name: "Linen Shorts", revenue: currentMetrics.totalSales * 0.12, orders: Math.round(currentMetrics.ordersCount * 0.12) || 2 },
-        { name: "Sandals - Unisex", revenue: currentMetrics.totalSales * 0.1, orders: Math.round(currentMetrics.ordersCount * 0.1) || 2 },
-      ]
       
       // Add historical data with realistic progression
       if (period === 'daily') {
@@ -634,7 +631,7 @@ export function GreetingWidget({
       report.aiAnalysis = aiAnalysis
       
       return report
-      } catch (error) {
+    } catch (error) {
       console.error(`Error generating ${period} report:`, error)
       return null
     }
@@ -1973,16 +1970,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       ) : (
-            <div className="flex flex-col items-center justify-center p-12">
-              <LoadingSkeleton />
+        <div className="flex flex-col items-center justify-center p-12">
+          <LoadingSkeleton />
         </div>
-          )}
-        </>
       )}
     </div>
-  )
+  );
 } 
