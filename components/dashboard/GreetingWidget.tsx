@@ -959,35 +959,121 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+                <div className="md:col-span-2 grid grid-cols-1 gap-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
+                      <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+                    </div>
+                    <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                      {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                        <div key={index} className="mb-4 last:mb-0">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm">{product.name}</span>
+                            <span className="text-sm font-medium">${product.revenue}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-yellow-500 rounded-full" 
+                                style={{ 
+                                  width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {monthlyReport?.bestSellingProducts?.map((product, index) => (
-                      <div key={index} className="mb-4 last:mb-0">
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <h5 className="font-medium">Top Performing Campaigns</h5>
+                      <p className="text-xs text-gray-400">by ROAS</p>
+                    </div>
+                    <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                      <div className="mb-4">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">{product.name}</span>
-                          <span className="text-sm font-medium">${product.revenue}</span>
+                          <span className="text-sm">Summer Collection</span>
+                          <span className="text-sm font-medium">3.8x</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-yellow-500 rounded-full" 
-                              style={{ 
-                                width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                              }}
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: "100%" }}
                             ></div>
                           </div>
-                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                          <span className="text-xs text-gray-400">$4,250 spent</span>
                         </div>
                       </div>
-                    ))}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">Beach Essentials</span>
+                          <span className="text-sm font-medium">3.2x</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: "84%" }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">$2,800 spent</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">Returning Customers</span>
+                          <span className="text-sm font-medium">2.9x</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: "76%" }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">$1,950 spent</span>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">Weekend Flash Sale</span>
+                          <span className="text-sm font-medium">2.6x</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: "68%" }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">$1,200 spent</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">New Arrivals</span>
+                          <span className="text-sm font-medium">2.3x</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: "60%" }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">$2,400 spent</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                <div>
+                <div className="md:col-span-1">
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">
                       Month-to-Month Comparison
@@ -1230,90 +1316,6 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     </div>
                   </div>
                 </div>
-                
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Top Performing Campaigns</h5>
-                    <p className="text-xs text-gray-400">by ROAS</p>
-                  </div>
-                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Summer Collection</span>
-                        <span className="text-sm font-medium">3.8x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: "100%" }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">$4,250 spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Beach Essentials</span>
-                        <span className="text-sm font-medium">3.2x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: "84%" }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">$2,800 spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Returning Customers</span>
-                        <span className="text-sm font-medium">2.9x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: "76%" }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">$1,950 spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Weekend Flash Sale</span>
-                        <span className="text-sm font-medium">2.6x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: "68%" }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">$1,200 spent</span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">New Arrivals</span>
-                        <span className="text-sm font-medium">2.3x</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full" 
-                            style={{ width: "60%" }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">$2,400 spent</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
               
               <div>
@@ -1332,36 +1334,36 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
-                  {dailyReport.periodComparison.salesGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.revenueGenerated || 0)}</p>
+                  {dailyReport?.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
-                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-                  <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
-                  {dailyReport.periodComparison.orderGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
+                  <h5 className="text-sm text-gray-400 mb-1">Orders</h5>
+                  <p className="text-2xl font-semibold">{dailyReport?.totalPurchases || 0}</p>
+                  {dailyReport?.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.orderGrowth || 0).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.totalAdSpend || 0)}</p>
                   <p className="text-sm text-gray-400">
-                    {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                    {(((dailyReport?.totalAdSpend || 0) / (dailyReport?.revenueGenerated || 1)) * 100).toFixed(1)}% of revenue
                   </p>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-                  <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
-                  {dailyReport.periodComparison.roasGrowth !== 0 && (
-                    <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                  <p className="text-2xl font-semibold">{dailyReport?.averageRoas.toFixed(1) || 'N/A'}x</p>
+                  {dailyReport?.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% from yesterday
                     </p>
                   )}
                 </div>
@@ -1373,7 +1375,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   <h5 className="font-medium">Performance Summary</h5>
                 </div>
                 <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {dailyReport.aiAnalysis}
+                  {dailyReport?.aiAnalysis || 'N/A'}
                 </div>
               </div>
               
@@ -1486,7 +1488,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               <div>
                 <h5 className="font-medium mb-3">Key Takeaways</h5>
                 <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {dailyReport.takeaways.map((takeaway, index) => (
+                  {dailyReport?.takeaways.map((takeaway, index) => (
                     <li key={index} className="flex items-start">
                       <span className="text-blue-400 mr-2">•</span>
                       <span className="text-gray-300 text-sm">{takeaway}</span>
