@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, ArrowUp, ArrowDown } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth, startOfDay } from "date-fns"
+import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -218,12 +218,20 @@ export function GreetingWidget({
   const [userName, setUserName] = useState<string>("")
   const supabase = createClientComponentClient()
 
-  // Get greeting based on time of day
-  const getGreeting = (): string => {
+  // Generate a greeting based on the time of day
+  const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 18) return "Good afternoon"
-    return "Good evening"
+    let greeting = "Good "
+    
+    if (hour < 12) {
+      greeting += "morning"
+    } else if (hour < 18) {
+      greeting += "afternoon"
+    } else {
+      greeting += "evening"
+    }
+    
+    return `${greeting}, ${user?.firstName || 'there'}`
   }
 
   // Get the current month name
@@ -233,17 +241,17 @@ export function GreetingWidget({
 
   // Get the previous month name
   const getPreviousMonthName = (): string => {
-    return format(subMonths(new Date(), 1), 'MMMM');
+    return format(subMonths(new Date(), 1), 'MMMM')
   }
 
   // Get month before previous month name
   const getTwoMonthsAgoName = (): string => {
-    return format(subMonths(new Date(), 2), 'MMMM');
+    return format(subMonths(new Date(), 2), 'MMMM')
   }
 
   // Get three months ago name
   const getThreeMonthsAgoName = (): string => {
-    return format(subMonths(new Date(), 3), 'MMMM');
+    return format(subMonths(new Date(), 3), 'MMMM')
   }
 
   // Calculate platform status
@@ -638,7 +646,7 @@ export function GreetingWidget({
     setSynopsis(synopsisText)
   }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, revenueGrowth])
 
-  // Helper function to format currency
+  // Format currency values (single definition)
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -648,988 +656,658 @@ export function GreetingWidget({
     }).format(value)
   }
   
-  // When component loads, trigger the data load
-  useEffect(() => {
-    if (user) {
-      setUserName(user.firstName || "")
-    }
-    
-    // Force loading of simulated data and ensure reports are created
-    const loadSimulatedData = async () => {
-      setIsLoading(true);
-      
-      try {
-        // Get dates for different periods
-        const dailyDates = getPeriodDates('daily')
-        const monthlyDates = getPeriodDates('monthly')
-        const previousMonthDates = getPreviousPeriodDates('monthly')
-        
-        // Generate simulated metrics for each period
-        const todayMetrics = await fetchPeriodMetrics('simulation-id', dailyDates.from, dailyDates.to)
-        const monthMetrics = await fetchPeriodMetrics('simulation-id', monthlyDates.from, monthlyDates.to)
-        const previousMonthMetrics = await fetchPeriodMetrics('simulation-id', previousMonthDates.from, previousMonthDates.to)
-        
-        // Update state with simulated metrics
-        setPeriodData({
-          today: todayMetrics,
-          week: {
-            totalSales: 0, 
-            ordersCount: 0, 
-            averageOrderValue: 0,
-            conversionRate: 0,
-            customerCount: 0,
-            newCustomers: 0,
-            returningCustomers: 0,
-            adSpend: 0,
-            roas: 0,
-            ctr: 0,
-            cpc: 0
-          },
-          month: monthMetrics,
-          previousMonth: previousMonthMetrics
-        })
-        
-        // Set reports based on the simulated data
-        const dailyReportData = await generateSimulatedReport('daily', todayMetrics, { 
-          salesGrowth: 15.7,
-          orderGrowth: 12.3,
-          customerGrowth: 8.5,
-          roasGrowth: 4.2,
-          conversionGrowth: 3.8
-        });
-        
-        const monthlyReportData = await generateSimulatedReport('monthly', monthMetrics, {
-          salesGrowth: 12.4,
-          orderGrowth: 10.8,
-          customerGrowth: 14.3,
-          roasGrowth: 7.9,
-          conversionGrowth: 6.2
-        });
-        
-        if (dailyReportData) setDailyReport(dailyReportData);
-        if (monthlyReportData) setMonthlyReport(monthlyReportData);
-        
-        // Ensure we mark data as available for the simulation
-        setHasEnoughData(true);
-      } catch (error) {
-        console.error('Error generating simulated data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    // Always run the simulation data for the demo
-    loadSimulatedData();
-  }, []);
-
-  // Function to generate simulated reports
-  const generateSimulatedReport = async (
-    period: ReportPeriod, 
-    metrics: PeriodMetrics, 
-    comparison: {
-      salesGrowth: number;
-      orderGrowth: number;
-      customerGrowth: number;
-      roasGrowth: number;
-      conversionGrowth: number;
-    }
-  ): Promise<PerformanceReport> => {
-    
-    // Generate period-specific date range string
-    let dateRangeStr = "";
-    const now = new Date();
-    
-    if (period === 'daily') {
-      dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
-    } else {
-      const monthStart = startOfMonth(now);
-      const monthEnd = endOfMonth(now);
-      dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`;
-    }
-    
-    // Generate recommendations and takeaways
-    const recommendations = generateRecommendations(metrics, comparison);
-    const takeaways = generateTakeaways(metrics, comparison);
-    
-    // Sample best-selling products
-    const bestSellingProducts = [
-      { name: "Test product 4", revenue: 1100, orders: 20 },
-      { name: "Beach Tote Bag", revenue: 870, orders: 18 },
-      { name: "Sunglasses - Aviator", revenue: 620, orders: 16 },
-      { name: "Linen Shorts", revenue: 520, orders: 12 },
-      { name: "Sandals - Unisex", revenue: 480, orders: 10 },
-    ];
-    
-    // Sample historical comparison data for daily view - now showing 7 days total (today plus 6 prior days)
-    const historicalData = period === 'daily' 
-      ? [
-          { name: format(subDays(new Date(), 6), 'EEE, MMM d'), revenue: metrics.totalSales * 0.78, orders: metrics.ordersCount * 0.75, adSpend: metrics.adSpend * 0.82, roas: metrics.roas * 0.88 },
-          { name: format(subDays(new Date(), 5), 'EEE, MMM d'), revenue: metrics.totalSales * 0.82, orders: metrics.ordersCount * 0.79, adSpend: metrics.adSpend * 0.85, roas: metrics.roas * 0.90 },
-          { name: format(subDays(new Date(), 4), 'EEE, MMM d'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
-          { name: format(subDays(new Date(), 3), 'EEE, MMM d'), revenue: metrics.totalSales * 0.88, orders: metrics.ordersCount * 0.85, adSpend: metrics.adSpend * 0.92, roas: metrics.roas * 0.97 },
-          { name: format(subDays(new Date(), 2), 'EEE, MMM d'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
-          { name: format(subDays(new Date(), 1), 'EEE, MMM d'), revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
-          { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
-        ]
-      : [
-          { name: getThreeMonthsAgoName(), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.78, roas: metrics.roas * 0.85 },
-          { name: getTwoMonthsAgoName(), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.88, roas: metrics.roas * 0.95 },
-          { name: getPreviousMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
-        ];
-    
-    // Generate AI analysis based on period
-    const aiAnalysis = period === 'daily'
-      ? `Your store is showing strong performance today with revenue of ${formatCurrency(metrics.totalSales)} from ${metrics.ordersCount} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from yesterday. 
-      
-The Summer T-Shirt Collection continues to be your best-selling product line, generating 32% of today's revenue. Beach accessories are also performing well with the Beach Tote Bag and Aviator Sunglasses in the top 3 products.
-
-Your advertising performance shows a ROAS of ${metrics.roas.toFixed(1)}x, which is ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from yesterday. Meta campaigns are outperforming Google campaigns with Meta showing a 3.2x ROAS compared to Google's 1.9x.
-
-Customer behavior analysis shows peak purchasing times between 11am-2pm and 6pm-8pm. Mobile conversion rates continue to lag behind desktop by approximately 25%.
-
-Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - consider restocking these high-performing items within the next 7 days to avoid stockouts during peak sales periods.`
-      : `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume increased by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
-
-Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
-
-Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
-
-Advertising efficiency improved with an overall ROAS of ${metrics.roas.toFixed(1)}x, up ${comparison.roasGrowth.toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
-
-Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`;
-
-    // Create the report with simulated data
-    const report: PerformanceReport = {
-      dateRange: dateRangeStr,
-      totalPurchases: metrics.ordersCount,
-      totalAdSpend: metrics.adSpend,
-      averageRoas: metrics.roas,
-      revenueGenerated: metrics.totalSales,
-      bestCampaign: {
-        name: "Summer Collection",
-        roas: 3.2,
-        cpa: 22.50,
-        ctr: 2.7,
-        conversions: Math.round(metrics.newCustomers * 0.35)
-      },
-      underperformingCampaign: {
-        name: "Google Search - Non-Brand",
-        roas: 0.9,
-        cpa: 48.75,
-        ctr: 1.2,
-        conversions: Math.round(metrics.newCustomers * 0.15)
-      },
-      bestAudience: {
-        name: "Previous Customers",
-        roas: 4.1,
-        cpa: 18.25
-      },
-      ctr: metrics.ctr,
-      cpc: metrics.cpc,
-      conversionRate: metrics.conversionRate,
-      newCustomersAcquired: metrics.newCustomers,
-      recommendations,
-      takeaways,
-      periodComparison: comparison,
-      bestSellingProducts: bestSellingProducts,
-      historicalData: historicalData,
-      aiAnalysis: aiAnalysis
-    };
-    
-    return report;
-  };
-
-  const togglePeriod = () => {
-    setCurrentPeriod(currentPeriod === 'daily' ? 'monthly' : 'daily')
+  const formatPercent = (value: number): string => {
+    return value.toFixed(1)
   }
-
-  const handleMinimize = () => {
-    setIsMinimized(!isMinimized)
-  }
-
-  const formatNumber = (value: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  };
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <LoadingSkeleton />
+      <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4">{getGreeting()}</h3>
+        <div className="animate-pulse space-y-4">
+          <div className="h-24 w-full bg-gray-800 rounded"></div>
+          <div className="h-12 w-2/3 bg-gray-800 rounded"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div>
-      <div className="mb-4 flex justify-between items-center">
+    <div className="bg-gradient-to-b from-[#161616] to-[#0A0A0A] rounded-lg p-6 mb-6 border border-[#333]">
+      <div className="mb-5 flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-semibold text-white">
-            {getGreeting()}, {brandName}
-          </h3>
-          <p className="text-sm text-gray-400 mt-1">
-            {currentPeriod === 'monthly' ? 
-              `Data from ${format(startOfMonth(subMonths(new Date(), 1)), 'MMMM d, yyyy')} to ${format(endOfMonth(subMonths(new Date(), 1)), 'MMMM d, yyyy')}` : 
-              `Data from ${format(startOfDay(new Date()), 'MMMM d, yyyy')} to ${format(new Date(), 'h:mm a')}`}
+          <h3 className="text-xl font-semibold">{getGreeting()}</h3>
+          <p className="text-gray-400 text-sm">
+            Here's an overview of your {brandName} store performance
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-400">
-            Last updated: {format(new Date(), 'h:mm a')}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={togglePeriod}
-            className="text-sm"
+        <div className="flex items-center gap-2">
+          <Tabs value={currentPeriod} onValueChange={(value: string) => setCurrentPeriod(value as ReportPeriod)}>
+            <TabsList className="bg-[#222]">
+              <TabsTrigger 
+                value="daily" 
+                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+              >
+                Today
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monthly" 
+                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+              >
+                Last Month
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-md"
+            onClick={() => setIsMinimized(!isMinimized)}
           >
-            View {currentPeriod === 'monthly' ? 'Today' : 'Last Month'}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="text-sm"
-            onClick={handleMinimize}
-          >
-            {isMinimized ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            {isMinimized ? <ChevronDown /> : <ChevronUp />}
           </Button>
         </div>
       </div>
-      
-      {!isLoading && isMinimized ? (
-        <div className="bg-[#1E1E1E] p-4 rounded-lg border border-[#333] mb-4">
-          <p className="text-sm text-gray-300">
-            {currentPeriod === 'monthly' ? 
-              `${monthlyReport?.totalPurchases || 0} orders for $${formatNumber(monthlyReport?.revenueGenerated || 0)} in ${getPreviousMonthName()} with a ${monthlyReport?.averageRoas?.toFixed(1) || 0}x ROAS` : 
-              `${dailyReport?.totalPurchases || 0} orders for $${formatNumber(dailyReport?.revenueGenerated || 0)} today with a ${dailyReport?.averageRoas?.toFixed(1) || 0}x ROAS`}
-          </p>
-        </div>
-      ) : null}
-      
-      {!isMinimized && currentPeriod === 'monthly' && monthlyReport ? (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
-              {monthlyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
-              {monthlyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-              <p className="text-sm text-gray-400">
-                {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-              </p>
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-              {monthlyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
-                </p>
-              )}
-            </div>
-          </div>
+
+      {!isMinimized && (
+        <>
+          <Separator className="my-4 bg-gray-800" />
           
-          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-            <div className="flex items-center mb-3">
-              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-              <h5 className="font-medium">Performance Summary</h5>
-            </div>
-            <div className="text-sm leading-relaxed whitespace-pre-line">
-              {monthlyReport.aiAnalysis}
-            </div>
-          </div>
+          <AlertBox 
+            title="Data Sources" 
+            type="info"
+            icon={<Info className="h-4 w-4 text-blue-400" />}
+            className="mb-4"
+          >
+            <p className="text-xs text-gray-400">
+              This dashboard updates with latest data from your connected platforms every hour. 
+              <span className="font-medium ml-1">
+                {connections.filter(c => c.status === 'active').length === 0 ? 
+                  'No platforms connected yet.' : 
+                  `Last updated: ${format(new Date(), 'h:mm a')}`
+                }
+              </span>
+            </p>
+          </AlertBox>
           
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-            <div className="md:col-span-7 grid grid-cols-1 gap-6">
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
-                  <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  {monthlyReport?.bestSellingProducts?.map((product, index) => (
-                    <div key={index} className="mb-4 last:mb-0">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">{product.name}</span>
-                        <span className="text-sm font-medium">${product.revenue}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-yellow-500 rounded-full" 
-                            style={{ 
-                              width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">Top Performing Campaigns</h5>
-                  <p className="text-xs text-gray-400">by ROAS</p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Summer Collection</span>
-                      <span className="text-sm font-medium">3.8x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "100%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$4,250 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Beach Essentials</span>
-                      <span className="text-sm font-medium">3.2x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "84%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$2,800 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Returning Customers</span>
-                      <span className="text-sm font-medium">2.9x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "76%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$1,950 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Weekend Flash Sale</span>
-                      <span className="text-sm font-medium">2.6x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "68%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$1,200 spent</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">New Arrivals</span>
-                      <span className="text-sm font-medium">2.3x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "60%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$2,400 spent</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="md:col-span-5">
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">
-                    Month-to-Month Comparison
-                  </h5>
-                  <p className="text-xs text-gray-400">
-                    {getPreviousMonthName()} vs. previous months
-                  </p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Revenue</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +13.3%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Ad Spend</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
-                          </div>
-                          <div className="text-xs text-amber-500">
-                            +12.8%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
-                          </div>
-                          <div className="text-xs text-amber-500">
-                            +13.6%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Average ROAS</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +11.8%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Orders</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +17.1%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Ad CTR</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +8.2%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
-                          </div>
-                          <div className="text-xs text-green-500">
-                            +8.7%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-400">Cost Per Acquisition</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getThreeMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getTwoMonthsAgoName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            -8.3%
-                          </div>
-                        </div>
-                        <div className="bg-[#1A1A1A] p-2 rounded-md">
-                          <div className="text-xs text-gray-400">
-                            {getPreviousMonthName()}
-                          </div>
-                          <div className="font-semibold">
-                            ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
-                          </div>
-                          <div className="text-xs text-green-500">
-                            -9.1%
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
+          {currentPeriod === 'monthly' && monthlyReport ? (
             <div>
-              <h5 className="font-medium mb-3">Key Takeaways</h5>
-              <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                {monthlyReport.takeaways.map((takeaway, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-400 mr-2">•</span>
-                    <span className="text-gray-300 text-sm">{takeaway}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'daily' && dailyReport ? (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.revenueGenerated || 0)}</p>
-              {dailyReport?.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders</h5>
-              <p className="text-2xl font-semibold">{dailyReport?.totalPurchases || 0}</p>
-              {dailyReport?.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport?.periodComparison.orderGrowth && dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.orderGrowth || 0).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport?.totalAdSpend || 0)}</p>
-              <p className="text-sm text-gray-400">
-                {(((dailyReport?.totalAdSpend || 0) / (dailyReport?.revenueGenerated || 1)) * 100).toFixed(1)}% of revenue
-              </p>
-            </div>
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{dailyReport?.averageRoas?.toFixed(1) || 'N/A'}x</p>
-              {dailyReport?.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport?.periodComparison.roasGrowth && dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport?.periodComparison.roasGrowth || 0).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-            <div className="flex items-center mb-3">
-              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-              <h5 className="font-medium">Performance Summary</h5>
-            </div>
-            <div className="text-sm leading-relaxed whitespace-pre-line">
-              {dailyReport?.aiAnalysis || 'N/A'}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-            <div className="md:col-span-7 grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
+                  {monthlyReport.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+                  <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
+                  {monthlyReport.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
+                  <p className="text-sm text-gray-400">
+                    {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                  </p>
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+                  <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+                  {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {monthlyReport.aiAnalysis}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">
+                      Month-to-Month Comparison
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      {getPreviousMonthName()} vs. previous months
+                    </p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Revenue</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +13.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad Spend</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +12.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +13.6%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Average ROAS</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +11.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Orders</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +17.1%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad CTR</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +8.2%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +8.7%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Cost Per Acquisition</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -8.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              -9.1%
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               <div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {monthlyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              
+              {/* New Ad Campaigns Performance Widget */}
+              <div className="mt-6">
                 <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">Today's Best Sellers</h5>
-                  <p className="text-xs text-gray-400">by today's revenue</p>
+                  <h5 className="font-medium">Top Ad Campaigns</h5>
+                  <p className="text-xs text-gray-400">by ROAS for {getPreviousMonthName()}</p>
                 </div>
                 <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  {dailyReport?.bestSellingProducts?.map((product, index) => (
-                    <div key={index} className="mb-4 last:mb-0">
+                  <div className="mb-2 text-xs text-gray-500">
+                    Data shown for period: {getPreviousMonthName()} 1 - {getPreviousMonthName()} {getDaysInMonth(subMonths(new Date(), 1))}
+                    <span className="ml-2 border-l border-gray-700 pl-2">Updated daily at 12:00 AM</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="mb-4">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">{product.name}</span>
-                        <span className="text-sm font-medium">${product.revenue}</span>
+                        <span className="text-sm">Summer Collection</span>
+                        <span className="text-sm font-medium text-green-500">3.8x ROAS</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-yellow-500 rounded-full" 
-                            style={{ 
-                              width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                            }}
-                          ></div>
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "95%" }}></div>
                         </div>
-                        <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.42 : 0)} spent</span>
                       </div>
                     </div>
-                  ))}
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Beach Accessories</span>
+                        <span className="text-sm font-medium text-green-500">2.9x ROAS</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "76%" }}></div>
+                        </div>
+                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.28 : 0)} spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Retargeting Campaign</span>
+                        <span className="text-sm font-medium text-green-500">2.5x ROAS</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "66%" }}></div>
+                        </div>
+                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.16 : 0)} spent</span>
+                      </div>
+                    </div>
+                    <div className="mb-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">New Customer Acquisition</span>
+                        <span className="text-sm font-medium text-red-500">0.7x ROAS</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-red-500 rounded-full" style={{ width: "18%" }}></div>
+                        </div>
+                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.14 : 0)} spent</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400">
+                    <div className="flex justify-between">
+                      <span>Total Ad Spend: ${formatCurrency(monthlyReport ? monthlyReport.totalAdSpend : 0)}</span>
+                      <span>Overall ROAS: {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : 0}x</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : currentPeriod === 'daily' && dailyReport ? (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
+                  {dailyReport.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+                  <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
+                  {dailyReport.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
+                  <p className="text-sm text-gray-400">
+                    {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                  </p>
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+                  <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
+                  {dailyReport.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">Performance Summary</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {dailyReport.aiAnalysis}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">Today's Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by today's revenue</p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    {dailyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">
+                      7-Day Performance
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      Today vs. previous 6 days
+                    </p>
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-gray-400 text-xs border-b border-gray-800">
+                            <th className="pb-2 text-left">Date</th>
+                            <th className="pb-2 text-right">Revenue</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">Orders</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">Ad Spend</th>
+                            <th className="pb-2 text-right">Change</th>
+                            <th className="pb-2 text-right">ROAS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
+                            // Calculate day-over-day changes
+                            const prevDay = index < array.length - 1 ? array[index + 1] : null;
+                            
+                            // Calculate percentage changes
+                            const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
+                            const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
+                            const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
+                            
+                            return (
+                              <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
+                                <td className="py-2">{day.name}</td>
+                                <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                                <td className="text-right py-2">
+                                  {revenueChange !== null ? (
+                                    <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(revenueChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">{Math.round(day.orders)}</td>
+                                <td className="text-right py-2">
+                                  {ordersChange !== null ? (
+                                    <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(ordersChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                                <td className="text-right py-2">
+                                  {adSpendChange !== null ? (
+                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                      {Math.abs(adSpendChange).toFixed(1)}%
+                                    </span>
+                                  ) : "-"}
+                                </td>
+                                <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
               
               <div>
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">Today's Top Campaigns</h5>
-                  <p className="text-xs text-gray-400">by ROAS</p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Summer Collection</span>
-                      <span className="text-sm font-medium">4.1x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "100%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$780 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Weekend Flash Sale</span>
-                      <span className="text-sm font-medium">3.5x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "85%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$420 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Beach Essentials</span>
-                      <span className="text-sm font-medium">3.2x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "78%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$550 spent</span>
-                    </div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">New Arrivals</span>
-                      <span className="text-sm font-medium">2.8x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "68%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$380 spent</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Returning Customers</span>
-                      <span className="text-sm font-medium">2.5x</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full" 
-                          style={{ width: "61%" }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">$320 spent</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="md:col-span-5">
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">
-                    7-Day Performance
-                  </h5>
-                  <p className="text-xs text-gray-400">
-                    Today vs. previous 6 days
-                  </p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-800">
-                          <th className="text-left pb-2 font-medium text-gray-400">Date</th>
-                          <th className="text-right pb-2 font-medium text-gray-400">Revenue</th>
-                          <th className="text-right pb-2 font-medium text-gray-400">Change</th>
-                          <th className="text-right pb-2 font-medium text-gray-400">Orders</th>
-                          <th className="text-right pb-2 font-medium text-gray-400">Change</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
-                          // Calculate day-over-day changes
-                          const prevDay = index < array.length - 1 ? array[index + 1] : null;
-                          
-                          // Calculate percentage changes
-                          const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
-                          const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
-                          
-                          return (
-                            <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
-                              <td className="py-2">{day.name}</td>
-                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
-                              <td className="text-right py-2">
-                                {revenueChange !== null ? (
-                                  <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                    {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                    {Math.abs(revenueChange).toFixed(1)}%
-                                  </span>
-                                ) : "-"}
-                              </td>
-                              <td className="text-right py-2">{Math.round(day.orders)}</td>
-                              <td className="text-right py-2">
-                                {ordersChange !== null ? (
-                                  <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                    {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                    {Math.abs(ordersChange).toFixed(1)}%
-                                  </span>
-                                ) : "-"}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {dailyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-            
-            <div className="md:col-span-5">
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="font-medium">
-                  7-Day Performance
-                </h5>
-                <p className="text-xs text-gray-400">
-                  Today vs. previous 6 days
-                </p>
-              </div>
-              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-800">
-                        <th className="text-left pb-2 font-medium text-gray-400">Date</th>
-                        <th className="text-right pb-2 font-medium text-gray-400">Revenue</th>
-                        <th className="text-right pb-2 font-medium text-gray-400">Change</th>
-                        <th className="text-right pb-2 font-medium text-gray-400">Orders</th>
-                        <th className="text-right pb-2 font-medium text-gray-400">Change</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
-                        // Calculate day-over-day changes
-                        const prevDay = index < array.length - 1 ? array[index + 1] : null;
-                        
-                        // Calculate percentage changes
-                        const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
-                        const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
-                        
-                        return (
-                          <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
-                            <td className="py-2">{day.name}</td>
-                            <td className="text-right py-2">${Math.round(day.revenue)}</td>
-                            <td className="text-right py-2">
-                              {revenueChange !== null ? (
-                                <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                  {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                  {Math.abs(revenueChange).toFixed(1)}%
-                                </span>
-                              ) : "-"}
-                            </td>
-                            <td className="text-right py-2">{Math.round(day.orders)}</td>
-                            <td className="text-right py-2">
-                              {ordersChange !== null ? (
-                                <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                  {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                  {Math.abs(ordersChange).toFixed(1)}%
-                                </span>
-                              ) : "-"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12">
+              <LoadingSkeleton />
             </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Key Takeaways</h5>
-            <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-              {dailyReport?.takeaways.map((takeaway, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300 text-sm">{takeaway}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center p-12">
-          <LoadingSkeleton />
-        </div>
+          )}
+        </>
       )}
     </div>
   )
