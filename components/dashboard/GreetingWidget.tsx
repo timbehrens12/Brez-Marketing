@@ -1424,80 +1424,109 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     ))}
                   </div>
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">
-                      7-Day Performance
-                    </h5>
-                    <p className="text-xs text-gray-400">
-                      Today vs. previous 6 days
-                    </p>
+                    <h5 className="font-medium">Today's Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by today's revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
-                    
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-gray-400 text-xs border-b border-gray-800">
-                            <th className="pb-2 text-left">Date</th>
-                            <th className="pb-2 text-right">Revenue</th>
-                            <th className="pb-2 text-right">Change</th>
-                            <th className="pb-2 text-right">Orders</th>
-                            <th className="pb-2 text-right">Change</th>
-                            <th className="pb-2 text-right">Ad Spend</th>
-                            <th className="pb-2 text-right">Change</th>
-                            <th className="pb-2 text-right">ROAS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
-                            // Calculate day-over-day changes
-                            const prevDay = index < array.length - 1 ? array[index + 1] : null;
-                            
-                            // Calculate percentage changes
-                            const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
-                            const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
-                            const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
-                            
-                            return (
-                              <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
-                                <td className="py-2">{day.name}</td>
-                                <td className="text-right py-2">${Math.round(day.revenue)}</td>
-                                <td className="text-right py-2">
-                                  {revenueChange !== null ? (
-                                    <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                      {Math.abs(revenueChange).toFixed(1)}%
-                                    </span>
-                                  ) : "-"}
-                                </td>
-                                <td className="text-right py-2">{Math.round(day.orders)}</td>
-                                <td className="text-right py-2">
-                                  {ordersChange !== null ? (
-                                    <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                      {Math.abs(ordersChange).toFixed(1)}%
-                                    </span>
-                                  ) : "-"}
-                                </td>
-                                <td className="text-right py-2">${Math.round(day.adSpend)}</td>
-                                <td className="text-right py-2">
-                                  {adSpendChange !== null ? (
-                                    <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                      {Math.abs(adSpendChange).toFixed(1)}%
-                                    </span>
-                                  ) : "-"}
-                                </td>
-                                <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    {dailyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h5 className="font-medium">
+                    7-Day Performance
+                  </h5>
+                  <p className="text-xs text-gray-400">
+                    Today vs. previous 6 days
+                  </p>
+                </div>
+                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-gray-400 text-xs border-b border-gray-800">
+                          <th className="pb-2 text-left">Date</th>
+                          <th className="pb-2 text-right">Revenue</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">Orders</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">Ad Spend</th>
+                          <th className="pb-2 text-right">Change</th>
+                          <th className="pb-2 text-right">ROAS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyReport.historicalData?.slice().reverse().map((day, index, array) => {
+
+                          // Calculate day-over-day changes
+                          const prevDay = index < array.length - 1 ? array[index + 1] : null;
+
+                          // Calculate percentage changes
+                          const revenueChange = prevDay ? ((day.revenue - prevDay.revenue) / prevDay.revenue) * 100 : null;
+                          const ordersChange = prevDay ? ((day.orders - prevDay.orders) / prevDay.orders) * 100 : null;
+                          const adSpendChange = prevDay ? ((day.adSpend - prevDay.adSpend) / prevDay.adSpend) * 100 : null;
+
+                          return (
+                            <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
+                              <td className="py-2">{day.name}</td>
+                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                              <td className="text-right py-2">
+                                {revenueChange !== null ? (
+                                  <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(revenueChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">{Math.round(day.orders)}</td>
+                              <td className="text-right py-2">
+                                {ordersChange !== null ? (
+                                  <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(ordersChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                              <td className="text-right py-2">
+                                {adSpendChange !== null ? (
+                                  <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                    {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                                    {Math.abs(adSpendChange).toFixed(1)}%
+                                  </span>
+                                ) : "-"}
+                              </td>
+                              <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
