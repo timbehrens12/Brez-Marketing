@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Metrics } from "@/types/metrics"
-import { PlatformConnection } from "@/types/platformConnection"
-import { supabase } from "@/lib/supabase"
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, getMonth, getYear, getDaysInMonth } from "date-fns"
+import { PlatformConnection } from "@/types/platform"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { Separator } from "@/components/ui/separator"
+import Link from "next/link"
+import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AlertBox } from "@/components/ui/alert-box"
+import { LoadingSkeleton } from "@/components/ui/loading-skeleton"
 
 interface GreetingWidgetProps {
   brandId: string
@@ -705,17 +707,20 @@ export function GreetingWidget({
       { name: "Sandals - Unisex", revenue: 480, orders: 10 },
     ];
     
-    // Sample historical comparison data
+    // Sample historical comparison data for daily view - now showing 7 days total (today plus 6 prior days)
     const historicalData = period === 'daily' 
       ? [
-          { name: format(subDays(new Date(), 3), 'MMM d'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
-          { name: format(subDays(new Date(), 2), 'MMM d'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
-          { name: format(subDays(new Date(), 1), 'MMM d'), revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
+          { name: format(subDays(new Date(), 6), 'EEE, MMM d'), revenue: metrics.totalSales * 0.78, orders: metrics.ordersCount * 0.75, adSpend: metrics.adSpend * 0.82, roas: metrics.roas * 0.88 },
+          { name: format(subDays(new Date(), 5), 'EEE, MMM d'), revenue: metrics.totalSales * 0.82, orders: metrics.ordersCount * 0.79, adSpend: metrics.adSpend * 0.85, roas: metrics.roas * 0.90 },
+          { name: format(subDays(new Date(), 4), 'EEE, MMM d'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: format(subDays(new Date(), 3), 'EEE, MMM d'), revenue: metrics.totalSales * 0.88, orders: metrics.ordersCount * 0.85, adSpend: metrics.adSpend * 0.92, roas: metrics.roas * 0.97 },
+          { name: format(subDays(new Date(), 2), 'EEE, MMM d'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: format(subDays(new Date(), 1), 'EEE, MMM d'), revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
           { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ]
       : [
-          { name: getThreeMonthsAgoName(), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.8, roas: metrics.roas * 0.85 },
-          { name: getTwoMonthsAgoName(), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: getThreeMonthsAgoName(), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.78, roas: metrics.roas * 0.85 },
+          { name: getTwoMonthsAgoName(), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.88, roas: metrics.roas * 0.95 },
           { name: getPreviousMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
         ];
     
@@ -794,583 +799,430 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
   }
 
   return (
-    <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
-      <div className="flex flex-col mb-6">
-        <h3 className="text-2xl font-bold mb-1">{getGreeting()}, {userName}</h3>
-        <p className="text-gray-400">Here's your {currentPeriod === 'daily' ? 'today' : 'monthly'} performance overview</p>
-      </div>
-      
-      <div className="flex justify-between items-center mb-6">
+    <div className="bg-gradient-to-b from-[#161616] to-[#0A0A0A] rounded-lg p-6 mb-6 border border-[#333]">
+      <div className="mb-5 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-semibold">
-            {currentPeriod === 'daily' ? 'Today\'s Performance' : 'Last Month\'s Performance'} 
-          </h2>
+          <h3 className="text-xl font-semibold">{greeting}, {userName || 'there'}</h3>
           <p className="text-gray-400 text-sm">
-            {currentPeriod === 'daily' 
-              ? `${format(new Date(), 'MMMM d, yyyy')}` 
-              : `${format(subMonths(new Date(), 1), 'MMMM 1')} - ${format(subMonths(endOfMonth(new Date()), 1), 'MMMM d, yyyy')}`}
+            Here's an overview of your {brandName} store performance
           </p>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'daily' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('daily')}
+        <div className="flex items-center gap-2">
+          <Tabs value={currentPeriod} onValueChange={(value: string) => setCurrentPeriod(value as ReportPeriod)}>
+            <TabsList className="bg-[#222]">
+              <TabsTrigger 
+                value="daily" 
+                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+              >
+                Today
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monthly" 
+                className="data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+              >
+                Last Month
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-md"
+            onClick={() => setIsMinimized(!isMinimized)}
           >
-            Today
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={currentPeriod === 'monthly' ? 'bg-gray-800' : ''}
-            onClick={() => setCurrentPeriod('monthly')}
-          >
-            Last Month
+            {isMinimized ? <ChevronDown /> : <ChevronUp />}
           </Button>
         </div>
-      </div>
-      
-      <div className="bg-[#222] rounded-lg p-3 mb-6 text-xs text-gray-400 flex items-center">
-        <div className="mr-2 text-yellow-400">
-          <AlertTriangle size={14} />
-        </div>
-        {currentPeriod === 'daily' 
-          ? "Today's data is refreshed every 30 minutes. Last update: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-          : "Monthly data is compiled on the 1st of each month at 12:00 AM. This ensures complete data for the previous month."}
       </div>
 
-      {!hasEnoughData ? (
-        <div className="text-center py-6">
-          <p className="text-gray-400 mb-4">Limited data available to generate a complete performance report.</p>
-          <div className="bg-[#222] p-4 rounded-lg mb-4">
-            <h4 className="font-medium mb-2">Available Information</h4>
-            <p className="text-sm text-gray-300 mb-3">
-              We're showing a limited report based on the data available. For a more comprehensive analysis:
+      {!isMinimized && (
+        <>
+          <Separator className="my-4 bg-gray-800" />
+          
+          <AlertBox 
+            title="Data Sources" 
+            type="info"
+            icon={<Info className="h-4 w-4 text-blue-400" />}
+            className="mb-4"
+          >
+            <p className="text-xs text-gray-400">
+              This dashboard updates with latest data from your connected platforms every hour. 
+              <span className="font-medium ml-1">
+                {connections.filter(c => c.status === 'active').length === 0 ? 
+                  'No platforms connected yet.' : 
+                  `Last updated: ${format(new Date(), 'h:mm a')}`
+                }
+              </span>
             </p>
-            <ul className="space-y-2">
-              {!connections.some(c => c.platform_type === 'shopify' && c.status === 'active') && (
-                <li className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">Connect your Shopify store to see sales performance metrics</span>
-                </li>
-              )}
-              {!connections.some(c => c.platform_type === 'meta' && c.status === 'active') && (
-                <li className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300">Connect Meta Ads to see advertising performance metrics</span>
-                </li>
-              )}
-              <li className="flex items-start">
-                <span className="text-blue-400 mr-2">•</span>
-                <span className="text-gray-300">Continue processing orders to build historical data for trend analysis</span>
-              </li>
-            </ul>
-          </div>
-          <p className="text-gray-500 text-sm">
-            We'll automatically update your report as more data becomes available.
-          </p>
-        </div>
-      ) : currentPeriod === 'monthly' && monthlyReport ? (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
-              {monthlyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
-              {monthlyReport.periodComparison.orderGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-              <p className="text-sm text-gray-400">
-                {Math.round(monthlyReport.totalAdSpend / monthlyReport.revenueGenerated * 100)}% of revenue
-              </p>
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-              {monthlyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from {getPreviousMonthName()}
-                </p>
-              )}
-            </div>
-          </div>
+          </AlertBox>
           
-          {/* AI Analysis Section */}
-          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-            <div className="flex items-center mb-3">
-              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-              <h5 className="font-medium">AI Analysis</h5>
-            </div>
-            <div className="text-sm leading-relaxed whitespace-pre-line">
-              {monthlyReport.aiAnalysis}
-            </div>
-            <div className="mt-4 text-right">
-              <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
-                Get detailed AI intelligence
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {currentPeriod === 'monthly' && monthlyReport ? (
             <div>
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "This Month's"} Best Sellers</h5>
-                <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
+                  {monthlyReport.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+                  <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
+                  {monthlyReport.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
+                  <p className="text-sm text-gray-400">
+                    {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                  </p>
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+                  <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+                  {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {monthlyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}% from previous month
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                {monthlyReport?.bestSellingProducts?.map((product, index) => (
-                  <div key={index} className="mb-4 last:mb-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">{product.name}</span>
-                      <span className="text-sm font-medium">${product.revenue}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-yellow-500 rounded-full" 
-                          style={{ 
-                            width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                    </div>
+              
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">AI Analysis</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {monthlyReport.aiAnalysis}
+                </div>
+                <div className="mt-4 text-right">
+                  <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
+                    Get detailed AI intelligence
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="font-medium">
-                  Month-to-Month Comparison
-                </h5>
-                <p className="text-xs text-gray-400">
-                  {getPreviousMonthName()} vs. previous months
-                </p>
-              </div>
-              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Revenue</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getThreeMonthsAgoName()}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getTwoMonthsAgoName()}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +13.3%
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getPreviousMonthName()}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
-                        </div>
-                      </div>
-                    </div>
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">
+                      Month-to-Month Comparison
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      {getPreviousMonthName()} vs. previous months
+                    </p>
                   </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Orders</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getThreeMonthsAgoName()}
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Revenue</span>
                         </div>
-                        <div className="font-semibold">
-                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getTwoMonthsAgoName()}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +17.1%
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getPreviousMonthName()}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Ad Spend</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getThreeMonthsAgoName()}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +13.3%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getTwoMonthsAgoName()}
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Orders</span>
                         </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
-                        </div>
-                        <div className="text-xs text-amber-500">
-                          +12.8%
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +17.1%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
+                            </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {getPreviousMonthName()}
+                      
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm text-gray-400">Ad Spend</span>
                         </div>
-                        <div className="font-semibold">
-                          ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
-                        </div>
-                        <div className="text-xs text-amber-500">
-                          +13.6%
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getThreeMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getTwoMonthsAgoName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +12.8%
+                            </div>
+                          </div>
+                          <div className="bg-[#1A1A1A] p-2 rounded-md">
+                            <div className="text-xs text-gray-400">
+                              {getPreviousMonthName()}
+                            </div>
+                            <div className="font-semibold">
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
+                            </div>
+                            <div className="text-xs text-amber-500">
+                              +13.6%
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+              
+              <div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {monthlyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Key Takeaways</h5>
-            <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-              {monthlyReport.takeaways.map((takeaway, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-blue-400 mr-2">•</span>
-                  <span className="text-gray-300 text-sm">{takeaway}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : currentPeriod === 'daily' && dailyReport ? (
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
-              {dailyReport.periodComparison.salesGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
-              <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
-              <div className="flex items-center mt-1">
-                <div className="h-2 w-full bg-gray-700 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-500 rounded-full" 
-                    style={{ width: `${Math.min(100, (dailyReport.totalPurchases / 20) * 100)}%` }}
-                  ></div>
+          ) : currentPeriod === 'daily' && dailyReport ? (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
+                  {dailyReport.periodComparison.salesGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
                 </div>
-                <span className="ml-2 text-xs text-gray-400">
-                  {Math.round((dailyReport.totalPurchases / 20) * 100)}% of daily goal
-                </span>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
+                  <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
+                  {dailyReport.periodComparison.orderGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.orderGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
+                  <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
+                  <p className="text-sm text-gray-400">
+                    {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                  </p>
+                </div>
+                <div className="bg-[#222] p-4 rounded-lg">
+                  <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
+                  <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
+                  {dailyReport.periodComparison.roasGrowth !== 0 && (
+                    <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
-              <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-              <p className="text-sm text-gray-400">
-                {Math.round(dailyReport.totalAdSpend / dailyReport.revenueGenerated * 100)}% of revenue
-              </p>
-            </div>
-            
-            <div className="bg-[#222] p-4 rounded-lg">
-              <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
-              {dailyReport.periodComparison.roasGrowth !== 0 && (
-                <p className={`text-sm ${dailyReport.periodComparison.roasGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                  {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}% from yesterday
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* AI Analysis Section */}
-          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-            <div className="flex items-center mb-3">
-              <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-              <h5 className="font-medium">AI Analysis</h5>
-            </div>
-            <div className="text-sm leading-relaxed whitespace-pre-line">
-              {dailyReport.aiAnalysis}
-            </div>
-            <div className="mt-4 text-right">
-              <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
-                Get detailed AI intelligence
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "This Month's"} Best Sellers</h5>
-                <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+              
+              <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
+                <div className="flex items-center mb-3">
+                  <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
+                  <h5 className="font-medium">AI Analysis</h5>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-line">
+                  {dailyReport.aiAnalysis}
+                </div>
+                <div className="mt-4 text-right">
+                  <Link href="/ai-dashboard" className="text-blue-400 text-sm hover:underline inline-flex items-center">
+                    Get detailed AI intelligence
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Link>
+                </div>
               </div>
-              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                {dailyReport?.bestSellingProducts?.map((product, index) => (
-                  <div key={index} className="mb-4 last:mb-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">{product.name}</span>
-                      <span className="text-sm font-medium">${product.revenue}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-yellow-500 rounded-full" 
-                          style={{ 
-                            width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                    </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">Today's Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by today's revenue</p>
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h5 className="font-medium">
-                  Day-to-Day Comparison
-                </h5>
-                <p className="text-xs text-gray-400">
-                  {format(new Date(), 'MMM d')} vs. previous days
-                </p>
-              </div>
-              <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    {dailyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Revenue</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.revenueGenerated * 0.92 : 0)}
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.revenueGenerated * 0.97 : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +5.4%
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          Today, {format(new Date(), 'MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.revenueGenerated : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +{dailyReport ? Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
-                        </div>
-                      </div>
-                    </div>
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium">
+                      7-Day Performance
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      Today vs. previous 6 days
+                    </p>
                   </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Orders</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(dailyReport ? dailyReport.totalPurchases * 0.90 : 0)}
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(dailyReport ? dailyReport.totalPurchases * 0.95 : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +5.6%
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          Today, {format(new Date(), 'MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          {Math.round(dailyReport ? dailyReport.totalPurchases : 0)}
-                        </div>
-                        <div className="text-xs text-green-500">
-                          +{dailyReport ? Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1) : 0}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-gray-400">Ad Spend</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 2), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.totalAdSpend * 0.95 : 0)}
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          {format(subDays(new Date(), 1), 'EEE, MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.totalAdSpend * 0.98 : 0)}
-                        </div>
-                        <div className="text-xs text-amber-500">
-                          +3.2%
-                        </div>
-                      </div>
-                      <div className="bg-[#1A1A1A] p-2 rounded-md">
-                        <div className="text-xs text-gray-400">
-                          Today, {format(new Date(), 'MMM d')}
-                        </div>
-                        <div className="font-semibold">
-                          ${Math.round(dailyReport ? dailyReport.totalAdSpend : 0)}
-                        </div>
-                        <div className="text-xs text-amber-500">
-                          +2.0%
-                        </div>
-                      </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                    <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
+                    
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr>
+                            <th className="text-left pb-2 text-gray-400 font-normal">Date</th>
+                            <th className="text-right pb-2 text-gray-400 font-normal">Revenue</th>
+                            <th className="text-right pb-2 text-gray-400 font-normal">Orders</th>
+                            <th className="text-right pb-2 text-gray-400 font-normal">Ad Spend</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dailyReport.historicalData?.slice().reverse().map((day, index) => (
+                            <tr key={index} className={index === 0 ? "bg-gray-900/30" : ""}>
+                              <td className="py-2">{day.name}</td>
+                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
+                              <td className="text-right py-2">{Math.round(day.orders)}</td>
+                              <td className="text-right py-2">${Math.round(day.adSpend)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
               </div>
+              
+              <div>
+                <h5 className="font-medium mb-3">Key Takeaways</h5>
+                <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
+                  {dailyReport.takeaways.map((takeaway, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-400 mr-2">•</span>
+                      <span className="text-gray-300 text-sm">{takeaway}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-          
-          <div>
-            <h5 className="font-medium mb-3">Extended Time Comparison</h5>
-            <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]" style={{ height: "350px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={(() => {
-                    if ((currentPeriod as string) === 'daily' && dailyReport) {
-                      return dailyReport.historicalData;
-                    } else if (monthlyReport) {
-                      return monthlyReport.historicalData;
-                    }
-                    return [];
-                  })()}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="name" tick={{ fill: '#aaa' }} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#aaa" tick={{ fill: '#aaa' }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#333', borderColor: '#444' }}
-                    labelStyle={{ color: 'white' }}
-                    itemStyle={{ color: 'white' }}
-                    formatter={(value: any) => typeof value === 'number' ? 
-                      value.toString().includes('.') ? value.toFixed(1) : value : value}
-                  />
-                  <Legend wrapperStyle={{ color: '#aaa' }} />
-                  <Bar yAxisId="left" dataKey="revenue" name="Revenue ($)" fill="#4ade80" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="left" dataKey="orders" name="Orders" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="left" dataKey="adSpend" name="Ad Spend ($)" fill="#f87171" radius={[4, 4, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="roas" name="ROAS (x)" fill="#fbbf24" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12">
+              <LoadingSkeleton />
             </div>
-          </div>
-        </div>
-      ) : (
-        // Fallback when no report is available for the selected period
-        <div className="text-center py-6">
-          <p className="text-gray-400 mb-4">No data available for the selected period.</p>
-          <p className="text-gray-500 text-sm">
-            Try selecting a different time period or check back later as more data becomes available.
-          </p>
-        </div>
+          )}
+        </>
       )}
     </div>
   )
