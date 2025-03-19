@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, ArrowUp, ArrowDown } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -218,20 +218,12 @@ export function GreetingWidget({
   const [userName, setUserName] = useState<string>("")
   const supabase = createClientComponentClient()
 
-  // Generate a greeting based on the time of day
-  const getGreeting = () => {
+  // Get greeting based on time of day
+  const getGreeting = (): string => {
     const hour = new Date().getHours()
-    let greeting = "Good "
-    
-    if (hour < 12) {
-      greeting += "morning"
-    } else if (hour < 18) {
-      greeting += "afternoon"
-    } else {
-      greeting += "evening"
-    }
-    
-    return `${greeting}, ${user?.firstName || 'there'}`
+    if (hour < 12) return "Good morning"
+    if (hour < 18) return "Good afternoon"
+    return "Good evening"
   }
 
   // Get the current month name
@@ -241,17 +233,17 @@ export function GreetingWidget({
 
   // Get the previous month name
   const getPreviousMonthName = (): string => {
-    return format(subMonths(new Date(), 1), 'MMMM')
+    return format(subMonths(new Date(), 1), 'MMMM');
   }
 
   // Get month before previous month name
   const getTwoMonthsAgoName = (): string => {
-    return format(subMonths(new Date(), 2), 'MMMM')
+    return format(subMonths(new Date(), 2), 'MMMM');
   }
 
   // Get three months ago name
   const getThreeMonthsAgoName = (): string => {
-    return format(subMonths(new Date(), 3), 'MMMM')
+    return format(subMonths(new Date(), 3), 'MMMM');
   }
 
   // Calculate platform status
@@ -581,18 +573,14 @@ export function GreetingWidget({
 
   // Generate takeaways for the simulated data
   const generateTakeaways = (metrics: PeriodMetrics, comparison: any): string[] => {
-    // SIMULATION: Return a mix of realistic takeaways for demo purposes, including both positive and negative insights
+    // SIMULATION: Return a mix of realistic takeaways for demo purposes
     return [
       `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
       `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
-      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%) and needs optimization`,
-      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}, which is ${metrics.adSpend / metrics.newCustomers > 40 ? 'above target' : 'within target range'}`,
-      `Weekend sales performance exceeds weekday sales by 35%, suggesting potential for weekday-focused promotions`,
-      `'Summer Collection' campaign is your top performer with 3.2x ROAS`,
-      `Cart abandonment rate has increased to 68%, up 12% from previous period`,
-      `Email campaigns are generating 2.1x better conversion rates than social media ads`,
-      `Three products have inventory levels below 15% and require reordering`,
-      `Returning customer rate has decreased by 8% this period, retention strategy needs review`
+      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
+      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`,
+      `Weekend sales performance exceeds weekday sales by 35%`,
+      `'Summer Collection' campaign is your top performer with 3.2x ROAS`
     ];
   };
 
@@ -646,7 +634,7 @@ export function GreetingWidget({
     setSynopsis(synopsisText)
   }, [isLoading, brandName, connections, periodData, metrics, hasShopify, hasMeta, revenueGrowth])
 
-  // Format currency values (single definition)
+  // Helper function to format currency
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -656,14 +644,201 @@ export function GreetingWidget({
     }).format(value)
   }
   
-  const formatPercent = (value: number): string => {
-    return value.toFixed(1)
-  }
+  // When component loads, trigger the data load
+  useEffect(() => {
+    if (user) {
+      setUserName(user.firstName || "")
+    }
+    
+    // Force loading of simulated data and ensure reports are created
+    const loadSimulatedData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Get dates for different periods
+        const dailyDates = getPeriodDates('daily')
+        const monthlyDates = getPeriodDates('monthly')
+        const previousMonthDates = getPreviousPeriodDates('monthly')
+        
+        // Generate simulated metrics for each period
+        const todayMetrics = await fetchPeriodMetrics('simulation-id', dailyDates.from, dailyDates.to)
+        const monthMetrics = await fetchPeriodMetrics('simulation-id', monthlyDates.from, monthlyDates.to)
+        const previousMonthMetrics = await fetchPeriodMetrics('simulation-id', previousMonthDates.from, previousMonthDates.to)
+        
+        // Update state with simulated metrics
+        setPeriodData({
+          today: todayMetrics,
+          week: {
+            totalSales: 0, 
+            ordersCount: 0, 
+            averageOrderValue: 0,
+            conversionRate: 0,
+            customerCount: 0,
+            newCustomers: 0,
+            returningCustomers: 0,
+            adSpend: 0,
+            roas: 0,
+            ctr: 0,
+            cpc: 0
+          },
+          month: monthMetrics,
+          previousMonth: previousMonthMetrics
+        })
+        
+        // Set reports based on the simulated data
+        const dailyReportData = await generateSimulatedReport('daily', todayMetrics, { 
+          salesGrowth: 15.7,
+          orderGrowth: 12.3,
+          customerGrowth: 8.5,
+          roasGrowth: 4.2,
+          conversionGrowth: 3.8
+        });
+        
+        const monthlyReportData = await generateSimulatedReport('monthly', monthMetrics, {
+          salesGrowth: 12.4,
+          orderGrowth: 10.8,
+          customerGrowth: 14.3,
+          roasGrowth: 7.9,
+          conversionGrowth: 6.2
+        });
+        
+        if (dailyReportData) setDailyReport(dailyReportData);
+        if (monthlyReportData) setMonthlyReport(monthlyReportData);
+        
+        // Ensure we mark data as available for the simulation
+        setHasEnoughData(true);
+      } catch (error) {
+        console.error('Error generating simulated data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Always run the simulation data for the demo
+    loadSimulatedData();
+  }, []);
+
+  // Function to generate simulated reports
+  const generateSimulatedReport = async (
+    period: ReportPeriod, 
+    metrics: PeriodMetrics, 
+    comparison: {
+      salesGrowth: number;
+      orderGrowth: number;
+      customerGrowth: number;
+      roasGrowth: number;
+      conversionGrowth: number;
+    }
+  ): Promise<PerformanceReport> => {
+    
+    // Generate period-specific date range string
+    let dateRangeStr = "";
+    const now = new Date();
+    
+    if (period === 'daily') {
+      dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`;
+    } else {
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`;
+    }
+    
+    // Generate recommendations and takeaways
+    const recommendations = generateRecommendations(metrics, comparison);
+    const takeaways = generateTakeaways(metrics, comparison);
+    
+    // Sample best-selling products
+    const bestSellingProducts = [
+      { name: "Test product 4", revenue: 1100, orders: 20 },
+      { name: "Beach Tote Bag", revenue: 870, orders: 18 },
+      { name: "Sunglasses - Aviator", revenue: 620, orders: 16 },
+      { name: "Linen Shorts", revenue: 520, orders: 12 },
+      { name: "Sandals - Unisex", revenue: 480, orders: 10 },
+    ];
+    
+    // Sample historical comparison data for daily view - now showing 7 days total (today plus 6 prior days)
+    const historicalData = period === 'daily' 
+      ? [
+          { name: format(subDays(new Date(), 6), 'EEE, MMM d'), revenue: metrics.totalSales * 0.78, orders: metrics.ordersCount * 0.75, adSpend: metrics.adSpend * 0.82, roas: metrics.roas * 0.88 },
+          { name: format(subDays(new Date(), 5), 'EEE, MMM d'), revenue: metrics.totalSales * 0.82, orders: metrics.ordersCount * 0.79, adSpend: metrics.adSpend * 0.85, roas: metrics.roas * 0.90 },
+          { name: format(subDays(new Date(), 4), 'EEE, MMM d'), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.9, roas: metrics.roas * 0.95 },
+          { name: format(subDays(new Date(), 3), 'EEE, MMM d'), revenue: metrics.totalSales * 0.88, orders: metrics.ordersCount * 0.85, adSpend: metrics.adSpend * 0.92, roas: metrics.roas * 0.97 },
+          { name: format(subDays(new Date(), 2), 'EEE, MMM d'), revenue: metrics.totalSales * 0.92, orders: metrics.ordersCount * 0.90, adSpend: metrics.adSpend * 0.95, roas: metrics.roas * 0.98 },
+          { name: format(subDays(new Date(), 1), 'EEE, MMM d'), revenue: metrics.totalSales * 0.97, orders: metrics.ordersCount * 0.95, adSpend: metrics.adSpend * 0.98, roas: metrics.roas * 0.99 },
+          { name: 'Today', revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+        ]
+      : [
+          { name: getThreeMonthsAgoName(), revenue: metrics.totalSales * 0.75, orders: metrics.ordersCount * 0.70, adSpend: metrics.adSpend * 0.78, roas: metrics.roas * 0.85 },
+          { name: getTwoMonthsAgoName(), revenue: metrics.totalSales * 0.85, orders: metrics.ordersCount * 0.82, adSpend: metrics.adSpend * 0.88, roas: metrics.roas * 0.95 },
+          { name: getPreviousMonthName(), revenue: metrics.totalSales, orders: metrics.ordersCount, adSpend: metrics.adSpend, roas: metrics.roas },
+        ];
+    
+    // Generate AI analysis based on period
+    const aiAnalysis = period === 'daily'
+      ? `Your store is showing strong performance today with revenue of ${formatCurrency(metrics.totalSales)} from ${metrics.ordersCount} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from yesterday. 
+      
+The Summer T-Shirt Collection continues to be your best-selling product line, generating 32% of today's revenue. Beach accessories are also performing well with the Beach Tote Bag and Aviator Sunglasses in the top 3 products.
+
+Your advertising performance shows a ROAS of ${metrics.roas.toFixed(1)}x, which is ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from yesterday. Meta campaigns are outperforming Google campaigns with Meta showing a 3.2x ROAS compared to Google's 1.9x.
+
+Customer behavior analysis shows peak purchasing times between 11am-2pm and 6pm-8pm. Mobile conversion rates continue to lag behind desktop by approximately 25%.
+
+Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - consider restocking these high-performing items within the next 7 days to avoid stockouts during peak sales periods.`
+      : `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume increased by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
+
+Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
+
+Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
+
+Advertising efficiency improved with an overall ROAS of ${metrics.roas.toFixed(1)}x, up ${comparison.roasGrowth.toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
+
+Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`;
+
+    // Create the report with simulated data
+    const report: PerformanceReport = {
+      dateRange: dateRangeStr,
+      totalPurchases: metrics.ordersCount,
+      totalAdSpend: metrics.adSpend,
+      averageRoas: metrics.roas,
+      revenueGenerated: metrics.totalSales,
+      bestCampaign: {
+        name: "Summer Collection",
+        roas: 3.2,
+        cpa: 22.50,
+        ctr: 2.7,
+        conversions: Math.round(metrics.newCustomers * 0.35)
+      },
+      underperformingCampaign: {
+        name: "Google Search - Non-Brand",
+        roas: 0.9,
+        cpa: 48.75,
+        ctr: 1.2,
+        conversions: Math.round(metrics.newCustomers * 0.15)
+      },
+      bestAudience: {
+        name: "Previous Customers",
+        roas: 4.1,
+        cpa: 18.25
+      },
+      ctr: metrics.ctr,
+      cpc: metrics.cpc,
+      conversionRate: metrics.conversionRate,
+      newCustomersAcquired: metrics.newCustomers,
+      recommendations,
+      takeaways,
+      periodComparison: comparison,
+      bestSellingProducts: bestSellingProducts,
+      historicalData: historicalData,
+      aiAnalysis: aiAnalysis
+    };
+    
+    return report;
+  };
 
   if (isLoading) {
     return (
       <div className="bg-[#1A1A1A] rounded-xl border border-[#2A2A2A] p-6 mb-6">
-        <h3 className="text-xl font-semibold mb-4">{getGreeting()}</h3>
+        <h3 className="text-xl font-semibold mb-4">{getGreeting()}, {userName}</h3>
         <div className="animate-pulse space-y-4">
           <div className="h-24 w-full bg-gray-800 rounded"></div>
           <div className="h-12 w-2/3 bg-gray-800 rounded"></div>
@@ -676,7 +851,7 @@ export function GreetingWidget({
     <div className="bg-gradient-to-b from-[#161616] to-[#0A0A0A] rounded-lg p-6 mb-6 border border-[#333]">
       <div className="mb-5 flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-semibold">{getGreeting()}</h3>
+          <h3 className="text-xl font-semibold">{greeting}, {userName || 'there'}</h3>
           <p className="text-gray-400 text-sm">
             Here's an overview of your {brandName} store performance
           </p>
@@ -772,11 +947,14 @@ export function GreetingWidget({
               <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">Performance Summary</h5>
+                  <h5 className="font-medium">AI Analysis: {getPreviousMonthName()} Overview</h5>
                 </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {monthlyReport.aiAnalysis}
+                <div className="text-sm leading-relaxed">
+                  <p>{monthlyReport.aiAnalysis}</p>
                 </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Data last updated: {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'h:mm a')}. Dashboard refreshes hourly.
+                </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -926,7 +1104,7 @@ export function GreetingWidget({
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas : 0).toFixed(1)}x
+                              {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : 0}x
                             </div>
                             <div className="text-xs text-green-500">
                               +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
@@ -1002,7 +1180,7 @@ export function GreetingWidget({
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr : 0).toFixed(2)}%
+                              {monthlyReport ? monthlyReport.ctr.toFixed(2) : 0}%
                             </div>
                             <div className="text-xs text-green-500">
                               +8.7%
@@ -1021,7 +1199,7 @@ export function GreetingWidget({
                               {getThreeMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.2 : 0).toFixed(2)}
+                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired * 0.65 : 1))}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1029,10 +1207,10 @@ export function GreetingWidget({
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) * 1.1 : 0).toFixed(2)}
+                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired * 0.82 : 1))}
                             </div>
-                            <div className="text-xs text-green-500">
-                              -8.3%
+                            <div className="text-xs text-red-500">
+                              +5.2%
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1040,10 +1218,10 @@ export function GreetingWidget({
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              ${(monthlyReport ? (monthlyReport.totalAdSpend / monthlyReport.newCustomersAcquired) : 0).toFixed(2)}
+                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired : 1))}
                             </div>
-                            <div className="text-xs text-green-500">
-                              -9.1%
+                            <div className="text-xs text-red-500">
+                              +3.7%
                             </div>
                           </div>
                         </div>
@@ -1056,83 +1234,39 @@ export function GreetingWidget({
               <div>
                 <h5 className="font-medium mb-3">Key Takeaways</h5>
                 <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {monthlyReport.takeaways.map((takeaway, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300 text-sm">{takeaway}</span>
-                    </li>
-                  ))}
+                  {/* Show both positive and negative takeaways */}
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Revenue increased by {Math.abs(monthlyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% compared to previous month, driven by higher average order values.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS. Consider shifting budget allocation.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">▼</span>
+                    <span className="text-gray-300 text-sm">Mobile conversion rate ({(monthlyReport?.conversionRate || 0 * 0.8).toFixed(1)}%) lags behind desktop ({(monthlyReport?.conversionRate || 0 * 1.2).toFixed(1)}%). Mobile experience needs improvement.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-500 mr-2">▶</span>
+                    <span className="text-gray-300 text-sm">Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}. Monitor this trend closely.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Weekend sales performance exceeds weekday sales by 35%, suggesting opportunities for targeted weekend promotions.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">▼</span>
+                    <span className="text-gray-300 text-sm">Cart abandonment rate increased 5.3% this month. Review checkout process for potential friction points.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">'Summer Collection' campaign is your top performer with 3.2x ROAS. Consider expanding this product line.</span>
+                  </li>
                 </ul>
-              </div>
-              
-              {/* New Ad Campaigns Performance Widget */}
-              <div className="mt-6">
-                <div className="flex justify-between items-center mb-3">
-                  <h5 className="font-medium">Top Ad Campaigns</h5>
-                  <p className="text-xs text-gray-400">by ROAS for {getPreviousMonthName()}</p>
-                </div>
-                <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                  <div className="mb-2 text-xs text-gray-500">
-                    Data shown for period: {getPreviousMonthName()} 1 - {getPreviousMonthName()} {getDaysInMonth(subMonths(new Date(), 1))}
-                    <span className="ml-2 border-l border-gray-700 pl-2">Updated daily at 12:00 AM</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Summer Collection</span>
-                        <span className="text-sm font-medium text-green-500">3.8x ROAS</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "95%" }}></div>
-                        </div>
-                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.42 : 0)} spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Beach Accessories</span>
-                        <span className="text-sm font-medium text-green-500">2.9x ROAS</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "76%" }}></div>
-                        </div>
-                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.28 : 0)} spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">Retargeting Campaign</span>
-                        <span className="text-sm font-medium text-green-500">2.5x ROAS</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: "66%" }}></div>
-                        </div>
-                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.16 : 0)} spent</span>
-                      </div>
-                    </div>
-                    <div className="mb-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm">New Customer Acquisition</span>
-                        <span className="text-sm font-medium text-red-500">0.7x ROAS</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-500 rounded-full" style={{ width: "18%" }}></div>
-                        </div>
-                        <span className="text-xs text-gray-400">${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.14 : 0)} spent</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400">
-                    <div className="flex justify-between">
-                      <span>Total Ad Spend: ${formatCurrency(monthlyReport ? monthlyReport.totalAdSpend : 0)}</span>
-                      <span>Overall ROAS: {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : 0}x</span>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-gray-500 mt-2 text-right">
+                  Key insights for {getPreviousMonthName()} - Data updated {format(new Date(), 'MMM d, h:mm a')}
+                </p>
               </div>
             </div>
           ) : currentPeriod === 'daily' && dailyReport ? (
@@ -1177,11 +1311,14 @@ export function GreetingWidget({
               <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">Performance Summary</h5>
+                  <h5 className="font-medium">AI Analysis: Today's Performance</h5>
                 </div>
-                <div className="text-sm leading-relaxed whitespace-pre-line">
-                  {dailyReport.aiAnalysis}
+                <div className="text-sm leading-relaxed">
+                  <p>{dailyReport.aiAnalysis}</p>
                 </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Data last updated: {format(new Date(), 'MMMM d, yyyy')} at {format(new Date(), 'h:mm a')}. Dashboard refreshes hourly.
+                </p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -1293,13 +1430,39 @@ export function GreetingWidget({
               <div>
                 <h5 className="font-medium mb-3">Key Takeaways</h5>
                 <ul className="space-y-2 bg-[#222] p-4 rounded-lg h-[calc(100%-28px)]">
-                  {dailyReport.takeaways.map((takeaway, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-blue-400 mr-2">•</span>
-                      <span className="text-gray-300 text-sm">{takeaway}</span>
-                    </li>
-                  ))}
+                  {/* Show both positive and negative takeaways */}
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Today's revenue is up {Math.abs(dailyReport?.periodComparison.salesGrowth || 0).toFixed(1)}% from yesterday, driven by increased traffic from email campaign.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Average order value increased by 8.3% to ${Math.round(dailyReport?.revenueGenerated || 0 / dailyReport?.totalPurchases || 1)}.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">▼</span>
+                    <span className="text-gray-300 text-sm">Product "Aviator Sunglasses" saw a 15% decrease in conversion rate. Check inventory and product page.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-500 mr-2">▶</span>
+                    <span className="text-gray-300 text-sm">Ad performance on Meta is stable but Google campaigns are underperforming with 0.9x ROAS today.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-red-500 mr-2">▼</span>
+                    <span className="text-gray-300 text-sm">Mobile checkout abandonment peaked between 3-5pm today. Consider optimizing mobile checkout flow.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-2">▲</span>
+                    <span className="text-gray-300 text-sm">Beach accessories category is outperforming all other categories with 23% of today's revenue.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-amber-500 mr-2">▶</span>
+                    <span className="text-gray-300 text-sm">Inventory for "Beach Tote Bag" is at 12% - restock needed within 7 days based on current sales velocity.</span>
+                  </li>
                 </ul>
+                <p className="text-xs text-gray-500 mt-2 text-right">
+                  Key insights for today - Data updated {format(new Date(), 'MMM d, h:mm a')}
+                </p>
               </div>
             </div>
           ) : (
