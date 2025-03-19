@@ -131,6 +131,7 @@ interface PerformanceReport {
     customerGrowth: number
     roasGrowth: number
     conversionGrowth: number
+    adSpendGrowth: number
   }
   bestSellingProducts?: Array<{
     name: string
@@ -145,11 +146,6 @@ interface PerformanceReport {
     roas: number
   }>
   aiAnalysis?: string
-  topProducts?: Array<{
-    name: string
-    revenue: number
-    orders: number
-  }>
 }
 
 export function GreetingWidget({ 
@@ -484,47 +480,48 @@ export function GreetingWidget({
         cpc: 0
       }
       
-      // Check if we have actual previous metrics or if they're just defaults
-      const hasPreviousData = previousMetrics.totalSales > 0 || previousMetrics.ordersCount > 0 || previousMetrics.adSpend > 0
-      
       // Calculate growth rates (safely handle division by zero)
-      const salesGrowth = hasPreviousData && previousMetrics.totalSales > 0 
+      const salesGrowth = previousMetrics.totalSales > 0 
         ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
         : 0
       
-      const orderGrowth = hasPreviousData && previousMetrics.ordersCount > 0 
+      const orderGrowth = previousMetrics.ordersCount > 0 
         ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
         : 0
       
-      const customerGrowth = hasPreviousData && previousMetrics.customerCount > 0
-        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100
+      const customerGrowth = previousMetrics.customerCount > 0 
+        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
         : 0
-        
-      const roasGrowth = hasPreviousData && previousMetrics.roas > 0
-        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100
-        : 0
-        
-      const conversionGrowth = hasPreviousData && previousMetrics.conversionRate > 0
-        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100
-        : 0
-
-      // Generate sample ad performance data based on actual metrics
-      const adSpend = currentMetrics.adSpend || (currentMetrics.totalSales * 0.2) // 20% of revenue if not available
-      const roas = currentMetrics.roas || (currentMetrics.totalSales / adSpend)
       
-      // Format date range for display
-      const dateRangeStr = period === 'daily'
-        ? format(new Date(), 'MMMM d, yyyy')
-        : `${format(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), 'MMMM d')} - ${format(new Date(new Date().getFullYear(), new Date().getMonth(), 0), 'MMMM d, yyyy')}`
+      const roasGrowth = previousMetrics.roas > 0 
+        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
+        : 0
       
-      // Create sample top products based on current metrics
-      const topProducts = [
-        { name: "Summer T-Shirt Collection", revenue: currentMetrics.totalSales * 0.32, orders: Math.round(currentMetrics.ordersCount * 0.32) || 7 },
-        { name: "Beach Tote Bag", revenue: currentMetrics.totalSales * 0.2, orders: Math.round(currentMetrics.ordersCount * 0.2) || 4 },
-        { name: "Sunglasses - Aviator", revenue: currentMetrics.totalSales * 0.15, orders: Math.round(currentMetrics.ordersCount * 0.15) || 3 },
-        { name: "Linen Shorts", revenue: currentMetrics.totalSales * 0.12, orders: Math.round(currentMetrics.ordersCount * 0.12) || 2 },
-        { name: "Sandals - Unisex", revenue: currentMetrics.totalSales * 0.1, orders: Math.round(currentMetrics.ordersCount * 0.1) || 2 },
-      ]
+      const conversionGrowth = previousMetrics.conversionRate > 0 
+        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
+        : 0
+      
+      const adSpendGrowth = previousMetrics.adSpend > 0 
+        ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
+        : 0
+      
+      // Generate period-specific date range string
+      const now = new Date()
+      let dateRangeStr = ""
+      if (period === 'daily') {
+        dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`
+      } else {
+        const monthStart = startOfMonth(subMonths(now, 1))
+        const monthEnd = endOfMonth(subMonths(now, 1))
+        dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`
+      }
+      
+      // Get comparison period text
+      const comparisonText = period === 'daily' ? 'yesterday' : 'previous month'
+      
+      // Create sample campaign data based on real ROAS/spend if available
+      const roas = currentMetrics.roas || 2.5
+      const adSpend = currentMetrics.adSpend || (currentMetrics.totalSales * 0.25) // Fallback to 25% of sales
       
       // Create base report with actual metrics
       const report: PerformanceReport = {
@@ -575,10 +572,19 @@ export function GreetingWidget({
           orderGrowth,
           customerGrowth,
           roasGrowth,
-          conversionGrowth
-        },
-        topProducts
+          conversionGrowth,
+          adSpendGrowth
+        }
       }
+      
+      // Add sample best-selling products
+      report.bestSellingProducts = [
+        { name: "Test product 4", revenue: currentMetrics.totalSales * 0.25, orders: Math.round(currentMetrics.ordersCount * 0.25) || 5 },
+        { name: "Beach Tote Bag", revenue: currentMetrics.totalSales * 0.2, orders: Math.round(currentMetrics.ordersCount * 0.2) || 4 },
+        { name: "Sunglasses - Aviator", revenue: currentMetrics.totalSales * 0.15, orders: Math.round(currentMetrics.ordersCount * 0.15) || 3 },
+        { name: "Linen Shorts", revenue: currentMetrics.totalSales * 0.12, orders: Math.round(currentMetrics.ordersCount * 0.12) || 2 },
+        { name: "Sandals - Unisex", revenue: currentMetrics.totalSales * 0.1, orders: Math.round(currentMetrics.ordersCount * 0.1) || 2 },
+      ]
       
       // Add historical data with realistic progression
       if (period === 'daily') {
@@ -595,27 +601,9 @@ export function GreetingWidget({
       } else {
         // For monthly report: last 3 months
         report.historicalData = [
-          { 
-            name: getThreeMonthsAgoName(), 
-            revenue: hasPreviousData ? currentMetrics.totalSales * 0.75 : 0, 
-            orders: hasPreviousData ? Math.round(currentMetrics.ordersCount * 0.7) : 0, 
-            adSpend: hasPreviousData ? currentMetrics.adSpend * 0.78 : 0, 
-            roas: hasPreviousData ? currentMetrics.roas * 0.85 : 0 
-          },
-          { 
-            name: getTwoMonthsAgoName(), 
-            revenue: hasPreviousData ? currentMetrics.totalSales * 0.85 : 0, 
-            orders: hasPreviousData ? Math.round(currentMetrics.ordersCount * 0.82) : 0, 
-            adSpend: hasPreviousData ? currentMetrics.adSpend * 0.88 : 0, 
-            roas: hasPreviousData ? currentMetrics.roas * 0.95 : 0 
-          },
-          { 
-            name: getPreviousMonthName(), 
-            revenue: currentMetrics.totalSales, 
-            orders: currentMetrics.ordersCount, 
-            adSpend: currentMetrics.adSpend, 
-            roas: currentMetrics.roas 
-          },
+          { name: getThreeMonthsAgoName(), revenue: currentMetrics.totalSales * 0.75, orders: Math.round(currentMetrics.ordersCount * 0.7), adSpend: currentMetrics.adSpend * 0.78, roas: currentMetrics.roas * 0.85 },
+          { name: getTwoMonthsAgoName(), revenue: currentMetrics.totalSales * 0.85, orders: Math.round(currentMetrics.ordersCount * 0.82), adSpend: currentMetrics.adSpend * 0.88, roas: currentMetrics.roas * 0.95 },
+          { name: getPreviousMonthName(), revenue: currentMetrics.totalSales, orders: currentMetrics.ordersCount, adSpend: currentMetrics.adSpend, roas: currentMetrics.roas },
         ]
       }
       
@@ -631,7 +619,7 @@ export function GreetingWidget({
       report.aiAnalysis = aiAnalysis
       
       return report
-    } catch (error) {
+      } catch (error) {
       console.error(`Error generating ${period} report:`, error)
       return null
     }
@@ -1268,24 +1256,15 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div className="text-sm leading-relaxed space-y-4">
                   {/* Introduction section - top level summary */}
                   <div className="border-b border-gray-800 pb-3">
-                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, 
-                    {monthlyReport?.periodComparison.salesGrowth !== 0 ? (
-                      <span> representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                        {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                      </span> change from {getTwoMonthsAgoName()}.</span>
-                    ) : (
-                      <span>. No comparison data available for {getTwoMonthsAgoName()}.</span>
-                    )} You processed <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders with an average order value of <span className="text-white font-medium">${Math.round((monthlyReport?.revenueGenerated || 0) / (monthlyReport?.totalPurchases || 1))}</span>.</p>
+                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
+                    </span> change from {getTwoMonthsAgoName()}. You processed <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders with an average order value of <span className="text-white font-medium">${Math.round((monthlyReport?.revenueGenerated || 0) / (monthlyReport?.totalPurchases || 1))}</span>.</p>
                     
                     <p>Ad performance resulted in <span className="text-white font-medium">${Math.round(monthlyReport?.totalAdSpend || 0)}</span> in ad spend with a ROAS of <span className={monthlyReport?.averageRoas && monthlyReport.averageRoas > 2 ? 'text-green-400 font-medium' : monthlyReport?.averageRoas && monthlyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
                       {monthlyReport?.averageRoas?.toFixed(1)}x
-                    </span>{monthlyReport?.periodComparison.roasGrowth !== 0 ? (
-                      <span>, which is <span className={monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                        {monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.roasGrowth?.toFixed(1)}%
-                      </span> compared to {getTwoMonthsAgoName()}.</span>
-                    ) : (
-                      <span>.</span>
-                    )} Customer acquisition cost is <span className="text-white font-medium">${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}</span> per new customer, with <span className="text-white font-medium">{monthlyReport?.newCustomersAcquired}</span> new customers acquired.</p>
+                    </span>, which is <span className={monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
+                      {monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.roasGrowth?.toFixed(1)}%
+                    </span> compared to {getTwoMonthsAgoName()}. Customer acquisition cost is <span className="text-white font-medium">${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}</span> per new customer, with <span className="text-white font-medium">{monthlyReport?.newCustomersAcquired}</span> new customers acquired.</p>
                   </div>
                   
                   {/* Positive Highlights section */}
@@ -1393,38 +1372,30 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {getThreeMonthsAgoName()}
                 </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[0].revenue > 0 ? 
-                                `$${Math.round(monthlyReport.historicalData[0].revenue)}` : 'No data'}
-                            </div>
-                          </div>
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.75 : 0)}
+            </div>
+          </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getTwoMonthsAgoName()}
-                            </div>
+        </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[1].revenue > 0 ? 
-                                `$${Math.round(monthlyReport.historicalData[1].revenue)}` : 'No data'}
-                            </div>
-                            {monthlyReport && monthlyReport.historicalData && 
-                             monthlyReport.historicalData[0].revenue > 0 && 
-                             monthlyReport.historicalData[1].revenue > 0 && (
-                              <div className="text-xs text-green-500">
-                                +13.3%
-                              </div>
-                            )}
-                          </div>
+                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated * 0.85 : 0)}
+            </div>
+                            <div className="text-xs text-green-500">
+                              +13.3%
+            </div>
+            </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getPreviousMonthName()}
-                            </div>
+          </div>
                             <div className="font-semibold">
                               ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
+                  </div>
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
                             </div>
-                            {monthlyReport && monthlyReport.periodComparison.salesGrowth !== 0 && (
-                              <div className="text-xs text-green-500">
-                                +{monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%
-                              </div>
-                            )}
                           </div>
                   </div>
                 </div>
@@ -1437,27 +1408,21 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getThreeMonthsAgoName()}
-                </div>
+                            </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[0].adSpend > 0 ? 
-                                `$${Math.round(monthlyReport.historicalData[0].adSpend)}` : 'No data'}
-                </div>
-              </div>
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                            </div>
+                          </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[1].adSpend > 0 ? 
-                                `$${Math.round(monthlyReport.historicalData[1].adSpend)}` : 'No data'}
+                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
                             </div>
-                            {monthlyReport && monthlyReport.historicalData && 
-                             monthlyReport.historicalData[0].adSpend > 0 && 
-                             monthlyReport.historicalData[1].adSpend > 0 && (
-                              <div className="text-xs text-green-500">
-                                +12.8%
-                              </div>
-                            )}
+                            <div className="text-xs text-amber-500">
+                              +12.8%
+                            </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
@@ -1466,29 +1431,24 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                             <div className="font-semibold">
                               ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
                             </div>
-                            {monthlyReport && monthlyReport.periodComparison && 
-                             monthlyReport.historicalData && 
-                             monthlyReport.historicalData[1].adSpend > 0 && (
-                              <div className="text-xs text-green-500">
-                                +13.6%
-                              </div>
-                            )}
+                            <div className="text-xs text-amber-500">
+                              +13.6%
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      
-                      <div>
+                  </div>
+                </div>
+                
+                <div>
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">ROAS</span>
-                        </div>
+                          <span className="text-sm text-gray-400">Average ROAS</span>
+                  </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getThreeMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[0].roas > 0 ? 
-                                `${monthlyReport.historicalData[0].roas.toFixed(1)}x` : 'No data'}
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -1496,32 +1456,24 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData[1].roas > 0 ? 
-                                `${monthlyReport.historicalData[1].roas.toFixed(1)}x` : 'No data'}
+                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
                             </div>
-                            {monthlyReport && monthlyReport.historicalData && 
-                             monthlyReport.historicalData[0].roas > 0 && 
-                             monthlyReport.historicalData[1].roas > 0 && (
-                              <div className="text-xs text-green-500">
-                                +11.8%
-                              </div>
-                            )}
+                            <div className="text-xs text-green-500">
+                              +11.8%
+                            </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              {monthlyReport.averageRoas.toFixed(1)}x
+                              {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : 0}x
                             </div>
-                            {monthlyReport && monthlyReport.periodComparison.roasGrowth !== 0 && (
-                              <div className="text-xs text-green-500">
-                                +{Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1)}%
-                              </div>
-                            )}
+                            <div className="text-xs text-green-500">
+                              +{monthlyReport ? Math.abs(monthlyReport.periodComparison.roasGrowth).toFixed(1) : 0}%
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                  </div>
                 </div>
                 
                 <div>
@@ -1688,20 +1640,22 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <p className="text-sm text-gray-400 cursor-help">
-                          {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                        </p>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#333] border-[#444]">
-                        <p className="text-xs">
-                          Total ad spend: ${Math.round(dailyReport.totalAdSpend)} of ${Math.round(dailyReport.revenueGenerated)} revenue
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {dailyReport.periodComparison.adSpendGrowth !== 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {dailyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            Today: ${Math.round(dailyReport.totalAdSpend)} vs Yesterday: ${Math.round(dailyReport.totalAdSpend / (1 + dailyReport.periodComparison.adSpendGrowth / 100))}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
@@ -1970,16 +1924,16 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                       </tbody>
                     </table>
                   </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12">
-          <LoadingSkeleton />
+            <div className="flex flex-col items-center justify-center p-12">
+              <LoadingSkeleton />
         </div>
+          )}
+        </>
       )}
     </div>
-  );
+  )
 } 
