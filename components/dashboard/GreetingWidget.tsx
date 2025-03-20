@@ -30,22 +30,12 @@ interface Metrics {
   totalSales: number
   conversionRate: number
   averagePurchaseValue: number
-  averageOrderValue?: number
   roas: number
   adSpend: number
   salesGrowth?: number
   aovGrowth?: number
   ordersPlaced?: number
-  orderGrowth?: number
-  previousOrdersPlaced?: number
-  ordersCount?: number
-  customerCount?: number
-  newCustomers?: number
-  returningCustomers?: number
-  ctr?: number
-  cpc?: number
-  unitsSold?: number
-  previousUnitsSold?: number
+  averageOrderValue?: number // Add this property
 }
 
 interface PlatformConnection {
@@ -1478,64 +1468,65 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
               <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
-                  <h5 className="font-medium">AI Analysis: {getPreviousMonthName()} Overview</h5>
+                  <h5 className="font-medium">AI Analysis: Monthly Performance</h5>
                   </div>
                 <div className="text-sm leading-relaxed space-y-4">
-                  {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-3">
-                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from {getTwoMonthsAgoName()}. You processed <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders with an average order value of <span className="text-white font-medium">${Math.round((monthlyReport?.revenueGenerated || 0) / (monthlyReport?.totalPurchases || 1))}</span>.</p>
-                    
-                    <p>Ad performance resulted in <span className="text-white font-medium">${Math.round(monthlyReport?.totalAdSpend || 0)}</span> in ad spend with a ROAS of <span className={monthlyReport?.averageRoas && monthlyReport.averageRoas > 2 ? 'text-green-400 font-medium' : monthlyReport?.averageRoas && monthlyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
-                      {monthlyReport?.averageRoas?.toFixed(1)}x
-                    </span>, which is <span className={monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.roasGrowth?.toFixed(1)}%
-                    </span> compared to {getTwoMonthsAgoName()}. Customer acquisition cost is <span className="text-white font-medium">${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}</span> per new customer, with <span className="text-white font-medium">{monthlyReport?.newCustomersAcquired}</span> new customers acquired.</p>
-                  </div>
-                  
-                  {/* Positive Highlights section */}
-                  <div>
-                    <h6 className="text-green-400 font-medium flex items-center mb-2">
-                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>The Summer T-Shirt Collection continues to be your top performer, generating 28% of monthly revenue with an exceptional conversion rate of 4.2%</li>
-                      <li>Meta campaigns significantly outperform other platforms with a ROAS of 3.2x versus Google's 1.9x</li>
-                      <li>The "Summer Collection" campaign was your highest performer with a 3.8x ROAS and 32% lower CPA than store average</li>
-                      <li>Customer retention rate increased to {monthlyReport?.conversionRate?.toFixed(1)}%, up {Math.abs(monthlyReport?.periodComparison.conversionGrowth || 0).toFixed(1)}% from last month</li>
-                      <li>Weekend sales performance exceeded weekday performance by 35% in revenue and 27% in conversion rate</li>
-                    </ul>
-                  </div>
-                  
-                  {/* Areas Needing Attention section */}
-                  <div>
-                    <h6 className="text-red-400 font-medium flex items-center mb-2">
-                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Mobile conversion rate ({(monthlyReport?.conversionRate || 0 * 0.8).toFixed(1)}%) lags behind desktop ({(monthlyReport?.conversionRate || 0 * 1.2).toFixed(1)}%) by 25%, suggesting issues with mobile UX</li>
-                      <li>Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))} per customer</li>
-                      <li>Google Search campaigns are significantly underperforming with a 0.9x ROAS for non-brand keywords</li>
-                      <li>Cart abandonment rate increased 5.3% this month, with the highest drop-off occurring at the shipping information step</li>
-                      <li>Inventory analysis indicates potential stockout risks for three top-selling items within 18-21 days; Beach Tote Bags are at critically low levels (12% of optimal stock)</li>
-                    </ul>
+                  {isLoadingMonthlyAnalysis ? (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+                      <p>Generating AI analysis...</p>
+                    </div>
+                  ) : monthlyAiAnalysis ? (
+                    <>
+                      {/* AI Generated Analysis - Main overview section */}
+                      <div className="mb-4">
+                        <div className="whitespace-pre-line">{monthlyAiAnalysis.split('\n\n')[0]}</div>
+                      </div>
+                      
+                      {/* Positive Highlights section */}
+                      <div>
+                        <h6 className="text-green-400 font-medium flex items-center mb-2">
+                          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {monthlyAiAnalysis.split('\n\n')[1]}
+                        </div>
+                      </div>
+                      
+                      {/* Areas Needing Attention section */}
+                      <div>
+                        <h6 className="text-amber-400 font-medium flex items-center mb-2">
+                          <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {monthlyAiAnalysis.split('\n\n')[2]}
+                        </div>
+                      </div>
+                      
+                      {/* Actionable Recommendations section */}
+                      <div>
+                        <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {monthlyAiAnalysis.split('\n\n')[3] || monthlyReport.recommendations.map((rec, i) => (
+                            <div key={i} className="mb-1">• {rec}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p>Unable to generate AI analysis at this time. Please try refreshing the page or check back later.</p>
+                      <button 
+                        onClick={() => fetchPeriodData()}
+                        className="mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
                 </div>
-                
-                  {/* Actionable Recommendations section - Monthly view */}
-                  <div>
-                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Shift 15-20% of Google ad budget to top-performing Meta campaigns to optimize ROAS</li>
-                      <li>Prioritize mobile checkout optimization to address the 25% gap in conversion rates</li>
-                      <li>Restock Beach Tote Bags within 7 days to prevent revenue loss (~$2,800 weekly potential)</li>
-                      <li>Implement exit-intent popup with 10% discount at shipping information step to reduce cart abandonment</li>
-                      <li>Expand the Summer Collection product line based on consistent performance metrics</li>
-                    </ul>
-                  </div>
-                  </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
                     {getPreviousMonthName()} data analysis
@@ -1978,58 +1969,61 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   <h5 className="font-medium">AI Analysis: Today's Performance</h5>
                 </div>
                 <div className="text-sm leading-relaxed space-y-4">
-                  {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-3">
-                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(dailyReport?.revenueGenerated || 0)}</span> in revenue today, representing a <span className={dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from yesterday. You received <span className="text-white font-medium">{dailyReport?.totalPurchases}</span> orders with an average value of <span className="text-white font-medium">${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}</span>, which is <span className="text-green-400 font-medium">8.3%</span> higher than yesterday.</p>
-                    
-                    <p>Today's ad performance shows <span className="text-white font-medium">${Math.round(dailyReport?.totalAdSpend || 0)}</span> spent across campaigns, achieving a ROAS of <span className={dailyReport?.averageRoas && dailyReport.averageRoas > 2 ? 'text-green-400 font-medium' : dailyReport?.averageRoas && dailyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
-                      {dailyReport?.averageRoas?.toFixed(1)}x
-                    </span>. Traffic patterns show peak activity during 11am-2pm and 6pm-8pm, with <span className="text-white font-medium">{Math.round(dailyReport?.conversionRate || 0)}%</span> overall site conversion rate. The Beach accessories category is your top performer today, with Beach Tote Bags showing inventory concerns.</p>
-                </div>
-                  
-                  {/* Positive Highlights section */}
-                  <div>
-                    <h6 className="text-green-400 font-medium flex items-center mb-2">
-                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Average order value increased to ${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}, up 8.3% from yesterday</li>
-                      <li>Beach accessories category is outperforming all others with 23% of today's revenue</li>
-                      <li>Meta campaigns are delivering strong results with a 3.2x ROAS today</li>
-                      <li>Email campaign is driving significant traffic with a 4.5% conversion rate</li>
-                      <li>Peak purchasing hours (11am-2pm, 6pm-8pm) show 35% higher conversion rates than other times</li>
-                    </ul>
-                </div>
-                  
-                  {/* Areas Needing Attention section */}
-                  <div>
-                    <h6 className="text-red-400 font-medium flex items-center mb-2">
-                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Mobile checkout abandonment peaked between 3-5pm today (32% abandonment rate)</li>
-                      <li>Product "Aviator Sunglasses" saw a 15% decrease in conversion rate</li>
-                      <li>Google campaigns are underperforming with only 0.9x ROAS today</li>
-                      <li>Beach Tote Bag inventory is critically low at 12% of optimal levels</li>
-                      <li>Customer support response time increased to 45 minutes during peak hours</li>
-                    </ul>
-              </div>
-                  
-                  {/* Actionable Recommendations section - Daily view */}
-                  <div>
-                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Reduce Google campaign budget by 30% and reallocate to Meta campaigns</li>
-                      <li>Review the Aviator Sunglasses product page for potential issues</li>
-                      <li>Expedite Beach Tote Bag restocking to avoid revenue loss</li>
-                      <li>Investigate mobile checkout issues during the 3-5pm timeframe</li>
-                      <li>Schedule additional customer support staff during identified peak hours</li>
-                    </ul>
-                  </div>
+                  {isLoadingDailyAnalysis ? (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-400 mb-2" />
+                      <p>Generating AI analysis...</p>
+                    </div>
+                  ) : dailyAiAnalysis ? (
+                    <>
+                      {/* AI Generated Analysis - Main overview section */}
+                      <div className="mb-4">
+                        <div className="whitespace-pre-line">{dailyAiAnalysis.split('\n\n')[0]}</div>
+                      </div>
+                      
+                      {/* Positive Highlights section */}
+                      <div>
+                        <h6 className="text-green-400 font-medium flex items-center mb-2">
+                          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {dailyAiAnalysis.split('\n\n')[1]}
+                        </div>
+                      </div>
+                      
+                      {/* Areas Needing Attention section */}
+                      <div>
+                        <h6 className="text-amber-400 font-medium flex items-center mb-2">
+                          <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {dailyAiAnalysis.split('\n\n')[2]}
+                        </div>
+                      </div>
+                      
+                      {/* Actionable Recommendations section */}
+                      <div>
+                        <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                        </h6>
+                        <div className="whitespace-pre-line ml-1">
+                          {dailyAiAnalysis.split('\n\n')[3] || dailyReport.recommendations.map((rec, i) => (
+                            <div key={i} className="mb-1">• {rec}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p>Unable to generate AI analysis at this time. Please try refreshing the page or check back later.</p>
+                      <button 
+                        onClick={() => fetchPeriodData()}
+                        className="mt-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
@@ -2256,7 +2250,7 @@ const generateRealAIAnalysis = async (
   try {
     // Check if we have enough data for analysis
     if (metrics.totalSales === 0 && metrics.ordersCount === 0) {
-      return '';
+      return 'Insufficient data available for AI analysis.';
     }
     
     // Instead of calling OpenAI directly, use our API endpoint
@@ -2303,43 +2297,4 @@ const generateRealAIAnalysis = async (
     console.error('Error generating AI analysis:', error);
     return `Unable to generate AI analysis at this time. Please try refreshing the page or check back later.`;
   }
-};
-
-// Function to parse the AI response into sections
-const parseAIResponse = (response: string) => {
-  if (!response) return { 
-    mainAnalysis: '', 
-    positiveHighlights: [], 
-    areasNeedingAttention: [], 
-    recommendedActions: [] 
-  };
-
-  // Split the response into sections
-  const mainAnalysisMatch = response.match(/^([\s\S]*?)(?=POSITIVE HIGHLIGHTS:|$)/);
-  const positiveHighlightsMatch = response.match(/POSITIVE HIGHLIGHTS:([\s\S]*?)(?=AREAS NEEDING ATTENTION:|$)/);
-  const areasNeedingAttentionMatch = response.match(/AREAS NEEDING ATTENTION:([\s\S]*?)(?=RECOMMENDED ACTIONS:|$)/);
-  const recommendedActionsMatch = response.match(/RECOMMENDED ACTIONS:([\s\S]*?)$/);
-
-  // Process main analysis
-  const mainAnalysis = mainAnalysisMatch ? mainAnalysisMatch[1].trim() : '';
-  
-  // Process bullet points sections
-  const processSection = (match: RegExpMatchArray | null): string[] => {
-    if (!match || !match[1]) return [];
-    return match[1]
-      .split('-')
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
-  };
-
-  const positiveHighlights = processSection(positiveHighlightsMatch);
-  const areasNeedingAttention = processSection(areasNeedingAttentionMatch);
-  const recommendedActions = processSection(recommendedActionsMatch);
-
-  return {
-    mainAnalysis,
-    positiveHighlights,
-    areasNeedingAttention,
-    recommendedActions
-  };
 };

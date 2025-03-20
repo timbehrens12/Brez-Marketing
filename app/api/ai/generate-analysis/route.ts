@@ -41,51 +41,45 @@ export async function POST(request: NextRequest) {
       connectedPlatforms: platformsConnected
     };
     
-    // Create system prompt for the AI with specific structure requirements
+    // Create system prompt for the AI with structured output requirements
     const systemPrompt = `You are an expert e-commerce analytics AI assistant providing analysis for a business dashboard.
     
-Your task is to analyze the provided data and generate a structured report with the following sections:
+Your task is to analyze the provided data and generate a structured report with insightful observations about business performance.
 
-1. MAIN ANALYSIS: 150-200 words of insightful observations about business performance.
-2. POSITIVE HIGHLIGHTS: 3 bullet points of positive aspects from the data.
-3. AREAS NEEDING ATTENTION: 2-3 bullet points of concerning metrics or areas for improvement.
-4. RECOMMENDED ACTIONS: 3-4 specific actionable steps the business should take.
+${period === 'daily' ? 'For today\'s data analysis:' : 'For this month\'s data analysis:'}
 
-For the main analysis:
-- Focus on key trends, comparing to ${comparisonText}
-- Highlight notable metrics (revenue, orders, ROAS, etc.)
-- Identify product performance patterns if data is available
-- Provide context for advertising metrics if available
-- Keep your response professional and data-driven
-- Indicate clearly if certain analysis isn't possible due to missing data
+Please structure your response in the following format with clear section breaks:
 
-Format your response exactly like this:
-\`\`\`
-[Your main analysis paragraphs here]
+PART 1: GENERAL OVERVIEW
+- Begin with a 2-3 sentence summary of the overall performance
+- Compare to ${comparisonText} using the growth percentages provided
+- Highlight the most significant metrics (revenue, orders, ROAS, etc.)
+- Keep this section to 150-200 words maximum
 
-POSITIVE HIGHLIGHTS:
-- [First positive highlight]
-- [Second positive highlight]
-- [Third positive highlight]
+PART 2: POSITIVE HIGHLIGHTS
+- Create 3-4 bullet points of positive performance areas
+- Each highlight should be specific and data-driven
+- Examples: "Strong performance in X product category with Y% growth" or "Advertising ROAS improved to X from Y"
 
-AREAS NEEDING ATTENTION:
-- [First area needing attention]
-- [Second area needing attention]
-- [Optional third area]
+PART 3: AREAS NEEDING ATTENTION
+- Create 2-3 bullet points of areas that need improvement
+- Be specific about the metrics showing concerns
+- Examples: "Mobile conversion rate lags behind desktop by X%" or "Ad spend increased by X% but resulted in only Y% revenue growth"
 
-RECOMMENDED ACTIONS:
-- [First recommended action]
-- [Second recommended action]
-- [Third recommended action]
-- [Optional fourth recommended action]
-\`\`\`
+PART 4: RECOMMENDED ACTIONS
+- Provide 3-4 specific, actionable recommendations based on the data
+- Each recommendation should be clear and directly tied to the analysis
+- Examples: "Consider restocking [product name] within 7 days based on current sales velocity" or "Optimize mobile checkout process to address the 25% lower conversion rate"
 
-Important notes:
-- Only analyze available data. If no ad platform data exists, focus on sales data.
-- If limited data is available, acknowledge the limitations.
-- Do NOT mention that you are an AI in your response.
-- Be specific with your recommendations, not generic.
-- For the ${period} analysis, tailor your response appropriately.`;
+Important formatting guidelines:
+1. Use professional, concise language throughout
+2. Do NOT include the section headers (PART 1, PART 2, etc.) in your response
+3. Use paragraph breaks between sections
+4. For highlights, attention areas, and recommendations, use bullet point format
+5. Do NOT mention that you are an AI in your response
+6. Only analyze available data - if certain metrics are missing, adapt your analysis accordingly
+
+The response should mirror the structure of the existing hard-coded analyses in the dashboard but with insights specific to the current data.`;
 
     // Get AI response
     const aiResponse = await getGPT4Response(systemPrompt, JSON.stringify(dataForAI), 0.7);
