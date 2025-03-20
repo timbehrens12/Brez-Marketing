@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, Loader2 } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, Loader2, ShoppingBag, BarChart3 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -2141,26 +2141,34 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">by today's revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {dailyReport?.bestSellingProducts?.map((product, index) => (
-                      <div key={index} className="mb-4 last:mb-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">{product.name}</span>
-                          <span className="text-sm font-medium">${product.revenue}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-yellow-500 rounded-full" 
-                        style={{
-                                width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                        }}
-                      ></div>
+                    {dailyReport?.bestSellingProducts && dailyReport.bestSellingProducts.length > 0 ? (
+                      dailyReport.bestSellingProducts.map((product, index) => (
+                        <div key={index} className="mb-4 last:mb-0">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm">{product.name}</span>
+                            <span className="text-sm font-medium">${product.revenue}</span>
                           </div>
-                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-yellow-500 rounded-full" 
+                          style={{
+                                  width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                          }}
+                        ></div>
+                            </div>
+                            <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
+                    ))
+                    ) : (
+                      <div className="py-8 text-center">
+                        <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                        <p className="text-gray-400">No products sold today</p>
+                        <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
+                      </div>
+                    )}
+                </div>
             </div>
             
             <div>
@@ -2184,56 +2192,63 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 </div>
                 
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {[
-                      { name: "Summer Collection", roas: 3.8, spend: 220, revenue: 836, ctr: 2.7, clicks: 540, impressions: 20000, cvr: 4.6 },
-                      { name: "Email Retargeting", roas: 3.2, spend: 180, revenue: 576, ctr: 5.1, clicks: 612, impressions: 12000, cvr: 3.8 },
-                      { name: "Beach Accessories", roas: 2.9, spend: 250, revenue: 725, ctr: 2.3, clicks: 437, impressions: 19000, cvr: 3.5 },
-                      { name: "Customer Loyalty", roas: 2.5, spend: 120, revenue: 300, ctr: 4.8, clicks: 336, impressions: 7000, cvr: 2.9 },
-                      { name: "New Arrivals", roas: 2.1, spend: 200, revenue: 420, ctr: 1.9, clicks: 285, impressions: 15000, cvr: 2.4 }
-                    ].map((campaign, index) => (
-                      <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium">{campaign.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
-                  </div>
-                </div>
-                
-                        <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">Revenue</span>
-                            <span className="text-white font-medium">${campaign.revenue}</span>
-                  </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">Spend</span>
-                            <span className="text-white font-medium">${campaign.spend}</span>
-                  </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">CTR</span>
-                            <span className="text-white font-medium">{campaign.ctr}%</span>
+                    {dailyReport?.bestCampaign && dailyReport.bestCampaign.name !== "No campaign data available" ? (
+                      // If we have real campaign data, show it
+                      [
+                        dailyReport.bestCampaign,
+                        ...(dailyReport.underperformingCampaign && dailyReport.underperformingCampaign.name !== "No campaign data available" ? [dailyReport.underperformingCampaign] : [])
+                      ].map((campaign, index) => (
+                        <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium">{campaign.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500">CVR</span>
-                            <span className="text-white font-medium">{campaign.cvr}%</span>
-                </div>
-              </div>
-              
-                        <div className="flex items-center gap-2 mt-3">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-blue-500 rounded-full"
-                              style={{
-                                width: `${(campaign.roas / 4) * 100}%`
-                              }}
-                            ></div>
+                          
+                          <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Revenue</span>
+                              <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Spend</span>
+                              <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">CTR</span>
+                              <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Conversions</span>
+                              <span className="text-white font-medium">{campaign.conversions || 0}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 mt-3">
+                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{
+                                  width: `${(campaign.roas / 4) * 100}%`
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-xs text-gray-400 whitespace-nowrap">{campaign.conversions || 0} conversions</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Otherwise show an empty state
+                      <div className="py-8 text-center">
+                        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                        <p className="text-gray-400">No ad campaign data available</p>
+                        <p className="text-xs text-gray-500 mt-1">Connect an ad platform to see campaign performance</p>
+                      </div>
+                    )}
                   </div>
-                          <span className="text-xs text-gray-400 whitespace-nowrap">{campaign.clicks} clicks</span>
-                  </div>
-                  </div>
-                    ))}
-                </div>
-              </div>
             </div>
+          </div>
 
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-3">
