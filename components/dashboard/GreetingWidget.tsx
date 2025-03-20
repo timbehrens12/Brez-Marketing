@@ -2362,7 +2362,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       <option value="spend">Sort by Spend</option>
                       <option value="cvr">Sort by Conversion Rate</option>
                     </select>
-                </div>
+                  </div>
                 
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
