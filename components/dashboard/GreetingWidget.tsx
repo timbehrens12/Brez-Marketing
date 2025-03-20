@@ -35,7 +35,34 @@ interface Metrics {
   salesGrowth?: number
   aovGrowth?: number
   ordersPlaced?: number
-  averageOrderValue?: number // Add this property
+  averageOrderValue?: number
+  previousOrdersPlaced?: number
+  unitsSold?: number
+  previousUnitsSold?: number
+  sessionCount?: number
+  sessionGrowth?: number
+  conversionRateGrowth?: number
+  customerRetentionRate?: number
+  retentionRateGrowth?: number
+  salesData?: any[]
+  sessionData?: any[]
+  conversionData?: any[]
+  retentionData?: any[]
+  topProducts?: any[]
+  currentWeekRevenue?: any[]
+  orderCount?: number
+  previousOrderCount?: number
+  revenueByDay?: any[]
+  inventoryLevels?: any[]
+  customerLifetimeValue?: number
+  productPerformance?: any[]
+  categoryPerformance?: any[]
+  customerSegments?: any[]
+  acquisitionChannels?: any[]
+  customerJourney?: any[]
+  marketingRoi?: any[]
+  inventoryTurnover?: number
+  inventoryTurnoverGrowth?: number
 }
 
 interface PlatformConnection {
@@ -163,6 +190,7 @@ export function GreetingWidget({
   connections 
 }: GreetingWidgetProps) {
   const { user } = useUser()
+  const { getToken } = useAuth() // Add auth hook
   const [greeting, setGreeting] = useState("")
   const [synopsis, setSynopsis] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -267,7 +295,11 @@ export function GreetingWidget({
     customerJourney: [],
     marketingRoi: [],
     inventoryTurnover: 0,
-    inventoryTurnoverGrowth: 0
+    inventoryTurnoverGrowth: 0,
+    // Required properties from interface
+    averagePurchaseValue: 0,
+    roas: 0,
+    adSpend: 0
   })
 
   // State hooks for component
@@ -516,12 +548,16 @@ export function GreetingWidget({
           dailyTo
         );
         
+        // Get auth token for API request
+        const token = await getToken();
+        
         const analysis = await generateRealAIAnalysis(
           'daily', 
           currentPeriodMetrics, 
           dailyReport.periodComparison,
           dailyReport.bestSellingProducts,
-          platformData
+          platformData,
+          token || undefined
         );
         
         setDailyAiAnalysis(analysis);
@@ -545,12 +581,16 @@ export function GreetingWidget({
           monthlyTo
         );
         
+        // Get auth token for API request
+        const token = await getToken();
+        
         const analysis = await generateRealAIAnalysis(
           'monthly', 
           monthlyPeriodMetrics, 
           monthlyReport.periodComparison,
           monthlyReport.bestSellingProducts,
-          platformData
+          platformData,
+          token || undefined
         );
         
         setMonthlyAiAnalysis(analysis);
@@ -2245,7 +2285,8 @@ const generateRealAIAnalysis = async (
   platformData?: {
     shopifyConnected: boolean;
     metaConnected: boolean;
-  }
+  },
+  authToken?: string // Add auth token as parameter
 ): Promise<string> => {
   try {
     // Check if we have enough data for analysis
@@ -2253,43 +2294,81 @@ const generateRealAIAnalysis = async (
       return 'Insufficient data available for AI analysis.';
     }
     
-    // Validate best selling products to ensure we only include real products
+    // Extremely strict validation for products
     const validProducts = Array.isArray(bestSellingProducts) 
       ? bestSellingProducts
-          .filter(p => p && typeof p.name === 'string' && p.name.trim() !== '' && 
-                   typeof p.revenue === 'number' && p.revenue > 0)
-          .filter(p => !p.name.toLowerCase().includes('test') && !p.name.toLowerCase().includes('demo'))
+          .filter(p => 
+            p && 
+            typeof p.name === 'string' && 
+            p.name.trim() !== '' && 
+            typeof p.revenue === 'number' && 
+            p.revenue > 0 &&
+            typeof p.orders === 'number' && 
+            p.orders > 0)
+          // Explicitly filter out any test, demo, or sample products
+          .filter(p => {
+            const nameLower = p.name.toLowerCase();
+            return !nameLower.includes('test') && 
+                   !nameLower.includes('demo') && 
+                   !nameLower.includes('sample') && 
+                   !nameLower.includes('unused') &&
+                   !nameLower.includes('placeholder');
+          })
       : [];
+    
+    console.log('Validated Products for AI Analysis:', validProducts);
+    
+    // Create clean metrics object - only include non-zero/valid metrics
+    const cleanMetrics = {
+      totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
+      ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
+      // Only include these if they actually exist with valid values
+      ...(typeof metrics.averageOrderValue === 'number' && metrics.averageOrderValue > 0 
+        ? { averageOrderValue: metrics.averageOrderValue } : {}),
+      ...(typeof metrics.customerCount === 'number' && metrics.customerCount > 0 
+        ? { customerCount: metrics.customerCount } : {}),
+      ...(typeof metrics.newCustomers === 'number'
+        ? { newCustomers: metrics.newCustomers } : {}),
+      ...(typeof metrics.returningCustomers === 'number' && metrics.returningCustomers > 0 
+        ? { returningCustomers: metrics.returningCustomers } : {}),
+      // Only include conversion rate if explicitly provided
+      ...(typeof metrics.conversionRate === 'number' && metrics.conversionRate > 0 
+        ? { conversionRate: metrics.conversionRate } : {}),
+      ...(typeof metrics.adSpend === 'number'
+        ? { adSpend: metrics.adSpend } : {}),
+      ...(typeof metrics.roas === 'number' && metrics.roas > 0
+        ? { roas: metrics.roas } : {}),
+      ...(typeof metrics.ctr === 'number' && metrics.ctr > 0
+        ? { ctr: metrics.ctr } : {}),
+      ...(typeof metrics.cpc === 'number' && metrics.cpc > 0
+        ? { cpc: metrics.cpc } : {})
+    };
+    
+    // Clean comparison data - only include what's relevant
+    const cleanComparison = {
+      salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
+      orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
+      ...(typeof comparison.customerGrowth === 'number' && cleanMetrics.customerCount
+        ? { customerGrowth: comparison.customerGrowth } : {}),
+      ...(typeof comparison.roasGrowth === 'number' && cleanMetrics.roas
+        ? { roasGrowth: comparison.roasGrowth } : {}),
+      ...(typeof comparison.conversionGrowth === 'number' && cleanMetrics.conversionRate
+        ? { conversionGrowth: comparison.conversionGrowth } : {}),
+      ...(typeof comparison.adSpendGrowth === 'number' && typeof cleanMetrics.adSpend === 'number'
+        ? { adSpendGrowth: comparison.adSpendGrowth } : {})
+    };
     
     // Instead of calling OpenAI directly, use our API endpoint
     const response = await fetch('/api/ai/generate-analysis', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       },
       body: JSON.stringify({
         period,
-        metrics: {
-          totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
-          ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
-          averageOrderValue: typeof metrics.averageOrderValue === 'number' ? metrics.averageOrderValue : 0,
-          customerCount: typeof metrics.customerCount === 'number' ? metrics.customerCount : 0,
-          newCustomers: typeof metrics.newCustomers === 'number' ? metrics.newCustomers : 0,
-          returningCustomers: typeof metrics.returningCustomers === 'number' ? metrics.returningCustomers : 0,
-          conversionRate: typeof metrics.conversionRate === 'number' ? metrics.conversionRate : 0,
-          adSpend: typeof metrics.adSpend === 'number' ? metrics.adSpend : 0,
-          roas: typeof metrics.roas === 'number' ? metrics.roas : 0,
-          ctr: typeof metrics.ctr === 'number' ? metrics.ctr : 0,
-          cpc: typeof metrics.cpc === 'number' ? metrics.cpc : 0
-        },
-        comparison: {
-          salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
-          orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
-          customerGrowth: typeof comparison.customerGrowth === 'number' ? comparison.customerGrowth : 0,
-          roasGrowth: typeof comparison.roasGrowth === 'number' ? comparison.roasGrowth : 0,
-          conversionGrowth: typeof comparison.conversionGrowth === 'number' ? comparison.conversionGrowth : 0,
-          adSpendGrowth: typeof comparison.adSpendGrowth === 'number' ? comparison.adSpendGrowth : 0
-        },
+        metrics: cleanMetrics,
+        comparison: cleanComparison,
         bestSellingProducts: validProducts,
         platformData: {
           shopifyConnected: !!platformData?.shopifyConnected,

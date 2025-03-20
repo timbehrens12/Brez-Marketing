@@ -51,12 +51,68 @@ export function AIDashboardAnalysis({
         return
       }
       
-      // Validate best selling products
+      // Extremely strict validation for products - filter out any test/demo products
       const validProducts = Array.isArray(bestSellingProducts) 
-        ? bestSellingProducts.filter(p => 
-            p && typeof p.name === 'string' && p.name.trim() !== '' && 
-            typeof p.revenue === 'number' && p.revenue > 0)
-        : []
+        ? bestSellingProducts
+            .filter(p => 
+              p && 
+              typeof p.name === 'string' && 
+              p.name.trim() !== '' && 
+              typeof p.revenue === 'number' && 
+              p.revenue > 0 &&
+              typeof p.orders === 'number' && 
+              p.orders > 0)
+            .filter(p => {
+              const nameLower = p.name.toLowerCase();
+              return !nameLower.includes('test') && 
+                     !nameLower.includes('demo') && 
+                     !nameLower.includes('sample') && 
+                     !nameLower.includes('unused') &&
+                     !nameLower.includes('placeholder');
+            })
+        : [];
+      
+      console.log('AI Dashboard Analysis - Validated Products:', validProducts);
+      
+      // Create clean metrics object - only include non-zero/valid metrics
+      const cleanMetrics = {
+        totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
+        ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
+        // Only include these if they actually exist with valid values
+        ...(typeof metrics.averageOrderValue === 'number' && metrics.averageOrderValue > 0 
+          ? { averageOrderValue: metrics.averageOrderValue } : {}),
+        ...(typeof metrics.customerCount === 'number' && metrics.customerCount > 0 
+          ? { customerCount: metrics.customerCount } : {}),
+        ...(typeof metrics.newCustomers === 'number'
+          ? { newCustomers: metrics.newCustomers } : {}),
+        ...(typeof metrics.returningCustomers === 'number' && metrics.returningCustomers > 0 
+          ? { returningCustomers: metrics.returningCustomers } : {}),
+        // Only include conversion rate if explicitly provided
+        ...(typeof metrics.conversionRate === 'number' && metrics.conversionRate > 0 
+          ? { conversionRate: metrics.conversionRate } : {}),
+        ...(typeof metrics.adSpend === 'number'
+          ? { adSpend: metrics.adSpend } : {}),
+        ...(typeof metrics.roas === 'number' && metrics.roas > 0
+          ? { roas: metrics.roas } : {}),
+        ...(typeof metrics.ctr === 'number' && metrics.ctr > 0
+          ? { ctr: metrics.ctr } : {}),
+        ...(typeof metrics.cpc === 'number' && metrics.cpc > 0
+          ? { cpc: metrics.cpc } : {})
+      };
+      
+      // Clean comparison data - only include what's relevant
+      const cleanComparison = {
+        salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
+        orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
+        ...(typeof comparison.customerGrowth === 'number' && cleanMetrics.customerCount
+          ? { customerGrowth: comparison.customerGrowth } : {}),
+        ...(typeof comparison.roasGrowth === 'number' && cleanMetrics.roas
+          ? { roasGrowth: comparison.roasGrowth } : {}),
+        ...(typeof comparison.conversionGrowth === 'number' && cleanMetrics.conversionRate
+          ? { conversionGrowth: comparison.conversionGrowth } : {}),
+        ...(typeof comparison.adSpendGrowth === 'number' && typeof cleanMetrics.adSpend === 'number'
+          ? { adSpendGrowth: comparison.adSpendGrowth } : {})
+      };
       
       // Prepare the data for the API with validation
       const platformData = {
@@ -73,27 +129,8 @@ export function AIDashboardAnalysis({
         },
         body: JSON.stringify({
           period,
-          metrics: {
-            totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
-            ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
-            averageOrderValue: typeof metrics.averageOrderValue === 'number' ? metrics.averageOrderValue : 0,
-            customerCount: typeof metrics.customerCount === 'number' ? metrics.customerCount : 0,
-            newCustomers: typeof metrics.newCustomers === 'number' ? metrics.newCustomers : 0,
-            returningCustomers: typeof metrics.returningCustomers === 'number' ? metrics.returningCustomers : 0,
-            conversionRate: typeof metrics.conversionRate === 'number' ? metrics.conversionRate : 0,
-            adSpend: typeof metrics.adSpend === 'number' ? metrics.adSpend : 0,
-            roas: typeof metrics.roas === 'number' ? metrics.roas : 0,
-            ctr: typeof metrics.ctr === 'number' ? metrics.ctr : 0,
-            cpc: typeof metrics.cpc === 'number' ? metrics.cpc : 0
-          },
-          comparison: {
-            salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
-            orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
-            customerGrowth: typeof comparison.customerGrowth === 'number' ? comparison.customerGrowth : 0,
-            roasGrowth: typeof comparison.roasGrowth === 'number' ? comparison.roasGrowth : 0,
-            conversionGrowth: typeof comparison.conversionGrowth === 'number' ? comparison.conversionGrowth : 0,
-            adSpendGrowth: typeof comparison.adSpendGrowth === 'number' ? comparison.adSpendGrowth : 0,
-          },
+          metrics: cleanMetrics,
+          comparison: cleanComparison,
           bestSellingProducts: validProducts,
           platformData
         })
