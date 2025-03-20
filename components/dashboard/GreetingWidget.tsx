@@ -756,12 +756,24 @@ export function GreetingWidget({
       // Add sample best-selling products
       // Only use real products from the metrics, don't generate fake ones
       if (metrics.topProducts && Array.isArray(metrics.topProducts) && metrics.topProducts.length > 0) {
-        // Use actual products from metrics
-        report.bestSellingProducts = metrics.topProducts.map(product => ({
-          name: product.title || product.name || 'Unknown Product', 
-          revenue: product.revenue || 0, 
-          orders: product.quantity || product.orders || 0
-        })).slice(0, 5); // Limit to top 5
+        // Use actual products from metrics - include test products (since we're testing with them)
+        // but still filter out other placeholder types
+        report.bestSellingProducts = metrics.topProducts
+          .filter(product => {
+            if (!product.title && !product.name) return false;
+            const name = (product.title || product.name || '').toLowerCase();
+            // Allow test products but still filter out other demo/sample products
+            return !name.includes("demo") && 
+                  !name.includes("sample") && 
+                  !name.includes("unused") &&
+                  !name.includes("placeholder");
+          })
+          .map(product => ({
+            name: product.title || product.name || 'Unknown Product', 
+            revenue: product.revenue || 0, 
+            orders: product.quantity || product.orders || 0
+          }))
+          .slice(0, 5); // Limit to top 5
         
         console.log('Using real products for best-selling products:', report.bestSellingProducts);
       } else {
