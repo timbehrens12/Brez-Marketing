@@ -607,11 +607,27 @@ export function GreetingWidget({
         ]
       } else {
         // For monthly report: last 3 months
+        // Only show data that actually has real values and don't generate fake history
         report.historicalData = [
-          { name: getThreeMonthsAgoName(), revenue: currentMetrics.totalSales * 0.75, orders: Math.round(currentMetrics.ordersCount * 0.7), adSpend: currentMetrics.adSpend * 0.78, roas: currentMetrics.roas * 0.85 },
-          { name: getTwoMonthsAgoName(), revenue: currentMetrics.totalSales * 0.85, orders: Math.round(currentMetrics.ordersCount * 0.82), adSpend: currentMetrics.adSpend * 0.88, roas: currentMetrics.roas * 0.95 },
-          { name: getPreviousMonthName(), revenue: currentMetrics.totalSales, orders: currentMetrics.ordersCount, adSpend: currentMetrics.adSpend, roas: currentMetrics.roas },
+          { 
+            name: getPreviousMonthName(), 
+            revenue: currentMetrics.totalSales, 
+            orders: currentMetrics.ordersCount, 
+            adSpend: currentMetrics.adSpend, 
+            roas: currentMetrics.roas 
+          }
         ]
+        
+        // Only add previous months if they had real data
+        if (previousMetrics && previousMetrics.totalSales > 0) {
+          report.historicalData.unshift({ 
+            name: getTwoMonthsAgoName(), 
+            revenue: previousMetrics.totalSales, 
+            orders: previousMetrics.ordersCount, 
+            adSpend: previousMetrics.adSpend, 
+            roas: previousMetrics.roas 
+          })
+        }
       }
       
       // Generate AI analysis
@@ -657,7 +673,11 @@ Customer behavior analysis shows peak purchasing times between 11am-2pm and 6pm-
 
 Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - consider restocking these high-performing items within the next 7 days to avoid stockouts during peak sales periods.`
     } else {
-      return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume ${comparison.orderGrowth > 0 ? 'increased' : 'decreased'} by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
+      // Check if there's any data in the previous month to compare with
+      const hasPreviousData = comparison.salesGrowth !== 100 && comparison.orderGrowth !== 100;
+      
+      if (hasPreviousData) {
+        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume ${comparison.orderGrowth > 0 ? 'increased' : 'decreased'} by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
 
 Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
 
@@ -666,6 +686,18 @@ Customer acquisition metrics show ${metrics.newCustomers} new customers last mon
 Advertising efficiency ${comparison.roasGrowth > 0 ? 'improved' : 'declined'} with an overall ROAS of ${metrics.roas.toFixed(1)}x, ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
 
 Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`
+      } else {
+        // No previous month data available
+        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month. There is no data from previous months to compare with, so this will serve as your baseline for future comparisons.
+
+Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
+
+Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%.
+
+Your overall ROAS is ${metrics.roas.toFixed(1)}x. Meta campaigns outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
+
+Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`
+      }
     }
   }
 
@@ -744,49 +776,21 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       const hasRealData = totalSales > 0 || ordersCount > 0 || adSpend > 0;
       
       if (!hasRealData) {
-        console.log('Using simulated data due to insufficient real data');
-        // Simulate data similar to the original function
-    const daysDifference = Math.max(1, Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
-    const isPreviousMonth = from.getMonth() !== new Date().getMonth();
-    
-    // Base values that will be adjusted based on the period
-    const baseOrdersPerDay = 12;
-    const baseAvgOrderValue = 68;
-    
-    // Adjust for previous periods (slightly lower numbers to show growth)
-    const adjustmentFactor = isPreviousMonth ? 0.85 : 1;
-    
-    // Generate realistic looking metrics
-        ordersCount = Math.floor(baseOrdersPerDay * daysDifference * adjustmentFactor * (0.9 + Math.random() * 0.2));
-    const averageOrderValue = baseAvgOrderValue * adjustmentFactor * (0.95 + Math.random() * 0.1);
-        totalSales = ordersCount * averageOrderValue;
-    
-    const customerCount = ordersCount;
-    const newCustomers = Math.floor(customerCount * 0.65); // 65% are new customers
-    const returningCustomers = customerCount - newCustomers;
-    
-    const conversionRate = 2.7 * adjustmentFactor * (0.9 + Math.random() * 0.2); // Average 2.7%
-        adSpend = totalSales * 0.28; // 28% of revenue goes to ad spend
-    const impressions = Math.floor(ordersCount * 100); // 100 impressions per order
-    const clicks = Math.floor(impressions * 0.03); // 3% CTR
-    
-    const ctr = (clicks / impressions) * 100;
-    const cpc = adSpend / clicks;
-    const roas = totalSales / adSpend;
-    
-    return {
-      totalSales,
-      ordersCount,
-      averageOrderValue,
-      conversionRate,
-      customerCount,
-      newCustomers,
-      returningCustomers,
-      adSpend,
-      roas,
-      ctr,
-      cpc
-    };
+        console.log('No real data available, returning zeros for accurate reporting');
+        // Return zeros instead of simulated data to ensure accurate reporting
+        return {
+          totalSales: 0,
+          ordersCount: 0,
+          averageOrderValue: 0,
+          conversionRate: 0,
+          customerCount: 0,
+          newCustomers: 0,
+          returningCustomers: 0,
+          adSpend: 0,
+          roas: 0,
+          ctr: 0,
+          cpc: 0
+        };
       }
       
       // Calculate derived metrics from real data
@@ -823,54 +827,77 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
     } catch (error) {
       console.error('Error in fetchPeriodMetrics:', error);
       
-      // Return fallback data in case of error
-      const daysDifference = Math.max(1, Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)));
-      const totalSales = 500 * daysDifference;
-      const ordersCount = 8 * daysDifference;
-      const adSpend = totalSales * 0.25;
-      
+      // Return zeros in case of error rather than simulated data
       return {
-        totalSales,
-        ordersCount,
-        averageOrderValue: totalSales / ordersCount,
-        conversionRate: 2.5,
-        customerCount: ordersCount,
-        newCustomers: Math.floor(ordersCount * 0.65),
-        returningCustomers: Math.floor(ordersCount * 0.35),
-        adSpend,
-        roas: totalSales / adSpend,
-        ctr: 2.7,
-        cpc: adSpend / (ordersCount * 5)
+        totalSales: 0,
+        ordersCount: 0,
+        averageOrderValue: 0,
+        conversionRate: 0,
+        customerCount: 0,
+        newCustomers: 0,
+        returningCustomers: 0,
+        adSpend: 0,
+        roas: 0,
+        ctr: 0,
+        cpc: 0
       };
     }
   };
 
   // Generate recommendations for the simulated data
   const generateRecommendations = (metrics: PeriodMetrics, comparison: any): string[] => {
-    // SIMULATION: Return a mix of realistic recommendations for demo purposes
-    return [
-      "Increase budget allocation for your 'Summer Collection' campaign which has a ROAS of 3.2",
-      "Pause underperforming Google Search ads with CPC above $4.50",
-      "Optimize Meta ad creatives to improve current CTR (2.3%)",
-      "Target lookalike audiences based on your high-value customer segment",
-      "Implement cross-selling strategies on product pages to increase AOV",
-      "Schedule email campaigns to target customers who haven't purchased in 30+ days",
-      "Create dedicated landing pages for Google Ad campaigns to improve quality score",
-      "Re-engage shopping cart abandoners with Meta retargeting ads"
-    ];
+    // Check if we have previous period data to compare against
+    const hasPreviousData = metrics.totalSales > 0 && 
+      !(comparison.salesGrowth === 100 && comparison.orderGrowth === 100);
+    
+    if (hasPreviousData) {
+      // SIMULATION: Return a mix of realistic recommendations for demo purposes
+      return [
+        "Increase budget allocation for your 'Summer Collection' campaign which has a ROAS of 3.2",
+        "Pause underperforming Google Search ads with CPC above $4.50",
+        "Optimize Meta ad creatives to improve current CTR (2.3%)",
+        "Target lookalike audiences based on your high-value customer segment",
+        "Implement cross-selling strategies on product pages to increase AOV",
+        "Schedule email campaigns to target customers who haven't purchased in 30+ days",
+        "Create dedicated landing pages for Google Ad campaigns to improve quality score",
+        "Re-engage shopping cart abandoners with Meta retargeting ads"
+      ];
+    } else {
+      // No previous data - focus on initial strategy recommendations
+      return [
+        "Continue collecting data to establish performance baselines",
+        "Set up conversion tracking for all marketing campaigns",
+        "Implement A/B testing for ad creatives to determine best performers",
+        "Monitor customer acquisition costs closely in these early stages",
+        "Focus on building your customer email list for future remarketing",
+        "Consider small budget tests across different ad platforms to compare performance"
+      ];
+    }
   };
 
   // Generate takeaways for the simulated data
   const generateTakeaways = (metrics: PeriodMetrics, comparison: any): string[] => {
-    // SIMULATION: Return a mix of realistic takeaways for demo purposes
-    return [
-      `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
-      `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
-      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
-      `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`,
-      `Weekend sales performance exceeds weekday sales by 35%`,
-      `'Summer Collection' campaign is your top performer with 3.2x ROAS`
-    ];
+    // Check if we have previous period data to compare against
+    const hasPreviousData = metrics.totalSales > 0 && 
+      !(comparison.salesGrowth === 100 && comparison.orderGrowth === 100);
+    
+    if (hasPreviousData) {
+      // SIMULATION: Return a mix of realistic takeaways for demo purposes
+      return [
+        `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
+        `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
+        `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
+        `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`
+      ];
+    } else {
+      // No previous data - focus on initial metrics
+      return [
+        `Your store generated ${formatCurrency(metrics.totalSales)} in revenue`,
+        `You received ${metrics.ordersCount} orders with an average value of ${formatCurrency(metrics.averageOrderValue)}`,
+        `Your current ROAS is ${metrics.roas.toFixed(1)}x`,
+        `You acquired ${metrics.newCustomers} new customers this period`
+      ];
+    }
   };
 
   // Generate synopsis based on metrics
