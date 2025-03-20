@@ -851,17 +851,17 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       !(comparison.salesGrowth === 100 && comparison.orderGrowth === 100);
     
     if (hasPreviousData) {
-      // SIMULATION: Return a mix of realistic recommendations for demo purposes
-      return [
-        "Increase budget allocation for your 'Summer Collection' campaign which has a ROAS of 3.2",
-        "Pause underperforming Google Search ads with CPC above $4.50",
-        "Optimize Meta ad creatives to improve current CTR (2.3%)",
-        "Target lookalike audiences based on your high-value customer segment",
-        "Implement cross-selling strategies on product pages to increase AOV",
-        "Schedule email campaigns to target customers who haven't purchased in 30+ days",
-        "Create dedicated landing pages for Google Ad campaigns to improve quality score",
-        "Re-engage shopping cart abandoners with Meta retargeting ads"
-      ];
+    // SIMULATION: Return a mix of realistic recommendations for demo purposes
+    return [
+      "Increase budget allocation for your 'Summer Collection' campaign which has a ROAS of 3.2",
+      "Pause underperforming Google Search ads with CPC above $4.50",
+      "Optimize Meta ad creatives to improve current CTR (2.3%)",
+      "Target lookalike audiences based on your high-value customer segment",
+      "Implement cross-selling strategies on product pages to increase AOV",
+      "Schedule email campaigns to target customers who haven't purchased in 30+ days",
+      "Create dedicated landing pages for Google Ad campaigns to improve quality score",
+      "Re-engage shopping cart abandoners with Meta retargeting ads"
+    ];
     } else {
       // No previous data - focus on initial strategy recommendations
       return [
@@ -882,11 +882,11 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
       !(comparison.salesGrowth === 100 && comparison.orderGrowth === 100);
     
     if (hasPreviousData) {
-      // SIMULATION: Return a mix of realistic takeaways for demo purposes
-      return [
-        `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
-        `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
-        `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
+    // SIMULATION: Return a mix of realistic takeaways for demo purposes
+    return [
+      `Revenue ${comparison.salesGrowth > 0 ? 'increased' : 'decreased'} by ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to the previous period`,
+      `Meta ads are outperforming Google ads with a 2.8x vs 1.9x ROAS`,
+      `Mobile conversion rate (${(metrics.conversionRate * 0.8).toFixed(1)}%) lags behind desktop (${(metrics.conversionRate * 1.2).toFixed(1)}%)`,
         `New customer acquisition cost is $${(metrics.adSpend / metrics.newCustomers).toFixed(2)}`
       ];
     } else {
@@ -1251,25 +1251,41 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-                  {monthlyReport.periodComparison.adSpendGrowth !== 0 && (
+                  <div className="flex items-center gap-2">
+                    {monthlyReport.periodComparison.adSpendGrowth !== 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {monthlyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-[#333] border-[#444]">
+                            <p className="text-xs">
+                              {monthlyReport.periodComparison.adSpendGrowth === 100 
+                                ? `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $0` 
+                                : `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $${Math.round(monthlyReport.totalAdSpend / (1 + monthlyReport.periodComparison.adSpendGrowth / 100))}`
+                              }
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {monthlyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
+                          <p className="text-sm text-gray-400 cursor-help">
+                            {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
                           </p>
                         </TooltipTrigger>
                         <TooltipContent className="bg-[#333] border-[#444]">
                           <p className="text-xs">
-                            {monthlyReport.periodComparison.adSpendGrowth === 100 
-                              ? `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $0` 
-                              : `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $${Math.round(monthlyReport.totalAdSpend / (1 + monthlyReport.periodComparison.adSpendGrowth / 100))}`
-                            }
+                            Total ad spend: ${Math.round(monthlyReport.totalAdSpend)} of ${Math.round(monthlyReport.revenueGenerated)} revenue
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  )}
+                  </div>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
@@ -1421,26 +1437,26 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 </div>
                             <div className="font-semibold">
                               ${monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.75)}
-                            </div>
-                          </div>
+            </div>
+          </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getTwoMonthsAgoName()}
-                            </div>
+        </div>
                             <div className="font-semibold">
                               ${monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.85)}
-                            </div>
+            </div>
                             <div className="text-xs text-green-500">
                               {monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
-                            </div>
-                          </div>
+            </div>
+            </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getPreviousMonthName()}
-                            </div>
+          </div>
                             <div className="font-semibold">
                               ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
-                            </div>
+                  </div>
                             <div className="text-xs text-green-500">
                               {monthlyReport.periodComparison.salesGrowth === 100 ? "First month" : `+${monthlyReport ? Math.abs(monthlyReport.periodComparison.salesGrowth).toFixed(1) : 0}%`}
                             </div>
@@ -1451,7 +1467,7 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Ad Spend</span>
-                        </div>
+                  </div>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
@@ -1483,8 +1499,8 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                               {monthlyReport.periodComparison.adSpendGrowth === 100 ? "First month" : `+${monthlyReport ? Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1) : 0}%`}
                             </div>
                           </div>
-                        </div>
                   </div>
+                </div>
                 
                 <div>
                         <div className="flex justify-between items-center mb-1">
@@ -1688,22 +1704,38 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-                  {dailyReport.periodComparison.adSpendGrowth !== 0 && (
+                  <div className="flex items-center gap-2">
+                    {dailyReport.periodComparison.adSpendGrowth !== 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {dailyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-[#333] border-[#444]">
+                            <p className="text-xs">
+                              Today: ${Math.round(dailyReport.totalAdSpend)} vs Yesterday: ${Math.round(dailyReport.totalAdSpend / (1 + dailyReport.periodComparison.adSpendGrowth / 100))}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                            {dailyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
+                          <p className="text-sm text-gray-400 cursor-help">
+                            {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
                           </p>
                         </TooltipTrigger>
                         <TooltipContent className="bg-[#333] border-[#444]">
                           <p className="text-xs">
-                            Today: ${Math.round(dailyReport.totalAdSpend)} vs Yesterday: ${Math.round(dailyReport.totalAdSpend / (1 + dailyReport.periodComparison.adSpendGrowth / 100))}
+                            Total ad spend: ${Math.round(dailyReport.totalAdSpend)} of ${Math.round(dailyReport.revenueGenerated)} revenue
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  )}
+                  </div>
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
