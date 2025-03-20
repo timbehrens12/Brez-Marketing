@@ -605,6 +605,14 @@ export function GreetingWidget({
     }
   }
 
+  // Helper function to calculate growth percentage safely
+  const calculateGrowthPercentage = (current: number, previous: number): number => {
+    if (previous <= 0) {
+      return current > 0 ? 100 : 0; // 100% growth if we now have value but didn't before
+    }
+    return ((current - previous) / previous) * 100;
+  };
+
   // Generate enhanced reports with real or simulated data as needed
   const generateEnhancedReport = async (
     period: ReportPeriod,
@@ -618,68 +626,58 @@ export function GreetingWidget({
         return null
       }
       
-      // Use previous metrics if available, or create zeros
-      previousMetrics = previousMetrics || {
-        totalSales: 0, 
-        ordersCount: 0, 
-        averageOrderValue: 0,
-        conversionRate: 0,
-        customerCount: 0,
-        newCustomers: 0,
-        returningCustomers: 0,
-        adSpend: 0,
-        roas: 0,
-        ctr: 0,
-        cpc: 0
+      // Calculate period-over-period changes
+      const salesGrowth = calculateGrowthPercentage(
+        currentMetrics.totalSales, 
+        previousMetrics?.totalSales || 0
+      )
+      
+      let finalOrderGrowth = calculateGrowthPercentage(
+        currentMetrics.ordersCount, 
+        previousMetrics?.ordersCount || 0
+      )
+      
+      // Handle edge case for new accounts with no previous data
+      if (previousMetrics?.ordersCount === 0) {
+        finalOrderGrowth = Math.min(finalOrderGrowth, 100) // Cap at 100% for new accounts
       }
       
-      // Calculate growth rates (safely handle division by zero)
-      const salesGrowth = previousMetrics.totalSales > 0 
-        ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
-        : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
+      const customerGrowth = calculateGrowthPercentage(
+        currentMetrics.customerCount, 
+        previousMetrics?.customerCount || 0
+      )
       
-      const orderGrowth = previousMetrics.ordersCount > 0 
-        ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
-        : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
+      const roasGrowth = calculateGrowthPercentage(
+        currentMetrics.roas, 
+        previousMetrics?.roas || 0
+      )
       
-      // Special handling: Ensure orderGrowth is never exactly zero to force percentage display
-      const finalOrderGrowth = orderGrowth === 0 ? 0.01 : orderGrowth;
+      const conversionGrowth = calculateGrowthPercentage(
+        currentMetrics.conversionRate, 
+        previousMetrics?.conversionRate || 0
+      )
       
-      const customerGrowth = previousMetrics.customerCount > 0 
-        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
-        : (currentMetrics.customerCount > 0 ? 100 : 0) // Use 100% growth if we now have customers but didn't before
+      const adSpendGrowth = calculateGrowthPercentage(
+        currentMetrics.adSpend, 
+        previousMetrics?.adSpend || 0
+      )
       
-      const roasGrowth = previousMetrics.roas > 0 
-        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
-        : (currentMetrics.roas > 0 ? 100 : 0) // Use 100% growth if we now have ROAS but didn't before
-      
-      const conversionGrowth = previousMetrics.conversionRate > 0 
-        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
-        : (currentMetrics.conversionRate > 0 ? 100 : 0) // Use 100% growth if we now have conversion but didn't before
-      
-      const adSpendGrowth = previousMetrics.adSpend > 0 
-        ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
-        : (currentMetrics.adSpend > 0 ? 100 : 0) // Use standard calculation for ad spend growth
-      
-      // Generate period-specific date range string
-      const now = new Date()
+      // Format date range string
       let dateRangeStr = ""
       if (period === 'daily') {
-        dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`
+        dateRangeStr = format(new Date(), 'MMMM d, yyyy')
       } else {
-        const monthStart = startOfMonth(subMonths(now, 1))
-        const monthEnd = endOfMonth(subMonths(now, 1))
-        dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`
+        // For monthly, use previous month's date range
+        const today = new Date()
+        const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+        dateRangeStr = `${format(prevMonth, 'MMMM d')} - ${format(new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0), 'MMMM d, yyyy')}`
       }
       
-      // Get comparison period text
-      const comparisonText = period === 'daily' ? 'yesterday' : 'previous month'
+      // ROAS or fallback to 0 if not provided
+      const roas = currentMetrics.roas || 0
+      const adSpend = currentMetrics.adSpend || 0
       
-      // Create sample campaign data based on real ROAS/spend if available
-      const roas = currentMetrics.roas || 2.5
-      const adSpend = currentMetrics.adSpend || (currentMetrics.totalSales * 0.25) // Fallback to 25% of sales
-      
-      // Create base report with actual metrics
+      // Create base report with actual metrics - no fake data
       const report: PerformanceReport = {
         dateRange: dateRangeStr,
         totalPurchases: currentMetrics.ordersCount,
@@ -687,23 +685,21 @@ export function GreetingWidget({
         averageRoas: currentMetrics.roas,
         revenueGenerated: currentMetrics.totalSales,
         bestCampaign: {
-          name: "Summer Collection",
-          roas: roas * 1.2, // 20% better than average
-          cpa: adSpend / (currentMetrics.newCustomers || 10),
-          ctr: currentMetrics.ctr * 1.15, // 15% better than average
-          conversions: Math.round(currentMetrics.newCustomers * 0.7) || 5 // 70% of new customers
+          name: "", // Will be populated with real data if available
+          roas: 0,
+          cpa: 0,
+          conversions: 0
         },
         underperformingCampaign: {
-          name: "Google Search - Non-Brand", 
-          roas: roas * 0.7, // 30% worse than average
-          cpa: adSpend / (currentMetrics.newCustomers || 10) * 1.4, // 40% higher CPA
-          ctr: currentMetrics.ctr * 0.8, // 20% worse than average
-          conversions: Math.round(currentMetrics.newCustomers * 0.2) || 2 // 20% of new customers
+          name: "", 
+          roas: 0,
+          cpa: 0,
+          conversions: 0
         },
         bestAudience: {
-          name: "Previous Customers",
-          roas: roas * 1.3, // 30% better than average
-          cpa: adSpend / (currentMetrics.newCustomers || 10) * 0.7 // 30% lower CPA
+          name: "",
+          roas: 0,
+          cpa: 0
         },
         ctr: currentMetrics.ctr,
         cpc: currentMetrics.cpc,
@@ -730,69 +726,126 @@ export function GreetingWidget({
           roasGrowth,
           conversionGrowth,
           adSpendGrowth
+        },
+        // Initialize with empty arrays - no fake data
+        bestSellingProducts: [],
+        historicalData: []
+      }
+      
+      // Only add historical data if there is some actual data
+      if (currentMetrics.totalSales > 0) {
+        if (period === 'daily') {
+          // For daily report: just add today with actual data
+          report.historicalData = [
+            { 
+              name: 'Today', 
+              revenue: currentMetrics.totalSales, 
+              orders: currentMetrics.ordersCount, 
+              adSpend: currentMetrics.adSpend, 
+              roas: currentMetrics.roas 
+            }
+          ]
+        } else {
+          // For monthly report: just the current month with actual data
+          report.historicalData = [
+            { 
+              name: getPreviousMonthName(), 
+              revenue: currentMetrics.totalSales, 
+              orders: currentMetrics.ordersCount, 
+              adSpend: currentMetrics.adSpend, 
+              roas: currentMetrics.roas 
+            }
+          ]
         }
       }
       
-      // Add sample best-selling products
-      report.bestSellingProducts = [
-        { name: "Test product 4", revenue: currentMetrics.totalSales * 0.25, orders: Math.round(currentMetrics.ordersCount * 0.25) || 5 },
-        { name: "Beach Tote Bag", revenue: currentMetrics.totalSales * 0.2, orders: Math.round(currentMetrics.ordersCount * 0.2) || 4 },
-        { name: "Sunglasses - Aviator", revenue: currentMetrics.totalSales * 0.15, orders: Math.round(currentMetrics.ordersCount * 0.15) || 3 },
-        { name: "Linen Shorts", revenue: currentMetrics.totalSales * 0.12, orders: Math.round(currentMetrics.ordersCount * 0.12) || 2 },
-        { name: "Sandals - Unisex", revenue: currentMetrics.totalSales * 0.1, orders: Math.round(currentMetrics.ordersCount * 0.1) || 2 },
-      ]
-      
-      // Add historical data with realistic progression
-      if (period === 'daily') {
-        // For daily report: 7 days (today plus 6 prior days)
-        report.historicalData = [
-          { name: format(subDays(new Date(), 6), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.78, orders: Math.round(currentMetrics.ordersCount * 0.75), adSpend: currentMetrics.adSpend * 0.82, roas: currentMetrics.roas * 0.88 },
-          { name: format(subDays(new Date(), 5), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.82, orders: Math.round(currentMetrics.ordersCount * 0.79), adSpend: currentMetrics.adSpend * 0.85, roas: currentMetrics.roas * 0.9 },
-          { name: format(subDays(new Date(), 4), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.85, orders: Math.round(currentMetrics.ordersCount * 0.82), adSpend: currentMetrics.adSpend * 0.9, roas: currentMetrics.roas * 0.95 },
-          { name: format(subDays(new Date(), 3), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.88, orders: Math.round(currentMetrics.ordersCount * 0.85), adSpend: currentMetrics.adSpend * 0.92, roas: currentMetrics.roas * 0.97 },
-          { name: format(subDays(new Date(), 2), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.92, orders: Math.round(currentMetrics.ordersCount * 0.9), adSpend: currentMetrics.adSpend * 0.95, roas: currentMetrics.roas * 0.98 },
-          { name: format(subDays(new Date(), 1), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.97, orders: Math.round(currentMetrics.ordersCount * 0.95), adSpend: currentMetrics.adSpend * 0.98, roas: currentMetrics.roas * 0.99 },
-          { name: 'Today', revenue: currentMetrics.totalSales, orders: currentMetrics.ordersCount, adSpend: currentMetrics.adSpend, roas: currentMetrics.roas },
-        ]
-      } else {
-        // For monthly report: last 3 months
-        // Only show data that actually has real values and don't generate fake history
-        report.historicalData = [
-          { 
-            name: getPreviousMonthName(), 
-            revenue: currentMetrics.totalSales, 
-            orders: currentMetrics.ordersCount, 
-            adSpend: currentMetrics.adSpend, 
-            roas: currentMetrics.roas 
+      // Query real best-selling products data from API if available
+      try {
+        const response = await fetch(`/api/shopify/best-products?brandId=${brandId}&period=${period}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
           }
-        ]
+        });
         
-        // Only add previous months if they had real data
-        if (previousMetrics && previousMetrics.totalSales > 0) {
-          report.historicalData.unshift({ 
-            name: getTwoMonthsAgoName(), 
-            revenue: previousMetrics.totalSales, 
-            orders: previousMetrics.ordersCount, 
-            adSpend: previousMetrics.adSpend, 
-            roas: previousMetrics.roas 
-          })
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.products && Array.isArray(data.products) && data.products.length > 0) {
+            // Filter out any products with test/demo in the name
+            const realProducts = data.products.filter((product: any) => {
+              if (!product || !product.name || typeof product.name !== 'string') return false;
+              const name = product.name.toLowerCase();
+              return !name.includes('test') && 
+                    !name.includes('demo') && 
+                    !name.includes('sample') && 
+                    !name.includes('unused') &&
+                    !name.includes('placeholder');
+            });
+            
+            if (realProducts.length > 0) {
+              report.bestSellingProducts = realProducts.map((product: any) => ({
+                name: product.name,
+                revenue: product.revenue || 0,
+                orders: product.orders || 0
+              })).slice(0, 5); // Limit to top 5
+            }
+          }
         }
+      } catch (error) {
+        console.error('Error fetching best-selling products:', error);
       }
       
-      // Generate AI analysis
-      const aiAnalysis = generateAIAnalysis(period, currentMetrics, {
-        salesGrowth,
-        orderGrowth: finalOrderGrowth,
-        customerGrowth,
-        roasGrowth,
-        conversionGrowth
-      })
-      
-      report.aiAnalysis = aiAnalysis
+      // Try to get real campaign data from Meta API if connected and data is available
+      try {
+        const response = await fetch(`/api/meta/campaigns?brandId=${brandId}&period=${period}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+            // Sort campaigns by ROAS to find best and worst performers
+            const sortedCampaigns = [...data.campaigns].sort((a, b) => (b.roas || 0) - (a.roas || 0));
+            
+            if (sortedCampaigns.length > 0) {
+              // Best campaign
+              const bestCampaign = sortedCampaigns[0];
+              if (bestCampaign && bestCampaign.name && bestCampaign.roas > 0) {
+                report.bestCampaign = {
+                  name: bestCampaign.name,
+                  roas: bestCampaign.roas || 0,
+                  cpa: bestCampaign.cpa || 0,
+                  ctr: bestCampaign.ctr || 0,
+                  conversions: bestCampaign.conversions || 0
+                };
+              }
+              
+              // Worst campaign (if there are at least 2 campaigns)
+              if (sortedCampaigns.length > 1) {
+                const worstCampaign = sortedCampaigns[sortedCampaigns.length - 1];
+                if (worstCampaign && worstCampaign.name) {
+                  report.underperformingCampaign = {
+                    name: worstCampaign.name,
+                    roas: worstCampaign.roas || 0,
+                    cpa: worstCampaign.cpa || 0,
+                    ctr: worstCampaign.ctr || 0,
+                    conversions: worstCampaign.conversions || 0
+                  };
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching campaign data:', error);
+      }
       
       return report
-      } catch (error) {
-      console.error(`Error generating ${period} report:`, error)
+    } catch (error) {
+      console.error('Error generating enhanced report:', error)
       return null
     }
   }
@@ -806,7 +859,8 @@ export function GreetingWidget({
       orderGrowth: number,
       customerGrowth: number,
       roasGrowth: number,
-      conversionGrowth: number
+      conversionGrowth: number,
+      adSpendGrowth: number
     }
   ): string => {
     const comparisonText = period === 'daily' ? 'yesterday' : 'last month'

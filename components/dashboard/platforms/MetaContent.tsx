@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { MetaConnectButton } from "./MetaConnectButton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, ArrowRight, Loader2, TrendingUp, Users, Target, DollarSign, BarChart2, LineChart, Megaphone, ArrowUp, ArrowDown, MousePointer } from "lucide-react"
+import { AlertCircle, ArrowRight, Loader2, TrendingUp, Users, Target, DollarSign, BarChart2, LineChart, Megaphone, ArrowUp, ArrowDown, MousePointer, LayoutGrid } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { TabsContent } from "@/components/ui/tabs"
 import Link from "next/link"
@@ -320,57 +320,70 @@ export function MetaContent({ metrics, dateRange, brandId }: MetaContentProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {metaData.campaigns?.map((campaign, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{campaign.name}</div>
-                        <div className="text-sm text-white/60">
-                          Objective: {campaign.objective}
-                        </div>
-                      </div>
-                      <div className={`px-2 py-1 rounded text-sm ${
-                        campaign.status === 'ACTIVE' ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
-                      }`}>
-                        {campaign.status}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <div className="text-white/60">Spend</div>
-                        <div className="font-medium">
-                          ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-white/60">Impressions</div>
-                        <div className="font-medium">
-                          {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-white/60">Clicks</div>
-                        <div className="font-medium">
-                          {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-white/60">CTR</div>
-                        <div className="font-medium">
-                          {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Progress 
-                      value={parseFloat(campaign.performance?.ctr || "0")} 
-                      className="h-2"
-                    />
+              {!metaData.campaigns || metaData.campaigns.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="bg-gray-800/50 p-3 rounded-full mb-3">
+                    <Megaphone className="h-5 w-5 text-gray-400" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-gray-400 font-medium mb-1">No campaigns data available</h3>
+                  <p className="text-gray-500 text-sm max-w-md">
+                    There are no active campaigns or data for the selected period. 
+                    New campaign data will appear here once available.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {metaData.campaigns.map((campaign, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{campaign.name}</div>
+                          <div className="text-sm text-white/60">
+                            Objective: {campaign.objective}
+                          </div>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-sm ${
+                          campaign.status === 'ACTIVE' ? 'bg-green-900 text-green-300' : 'bg-gray-800 text-gray-300'
+                        }`}>
+                          {campaign.status}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <div className="text-white/60">Spend</div>
+                          <div className="font-medium">
+                            ${parseFloat(campaign.performance?.spend || "0").toFixed(2)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/60">Impressions</div>
+                          <div className="font-medium">
+                            {parseInt(campaign.performance?.impressions || "0").toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/60">Clicks</div>
+                          <div className="font-medium">
+                            {parseInt(campaign.performance?.clicks || "0").toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/60">CTR</div>
+                          <div className="font-medium">
+                            {parseFloat(campaign.performance?.ctr || "0").toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Progress 
+                        value={parseFloat(campaign.performance?.ctr || "0")} 
+                        className="h-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -381,38 +394,51 @@ export function MetaContent({ metrics, dateRange, brandId }: MetaContentProps) {
               <CardDescription className="text-white/60">Performance metrics by ad set</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {metaData.adsets?.map((adset, index) => (
-                  <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
-                    <div className="space-y-1">
-                      <div className="font-medium text-white">{adset.name}</div>
-                      <div className="text-sm text-white/60">
-                        Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div className="text-right">
-                        <div className="text-white/60">Impressions</div>
-                        <div className="font-medium">
-                          {parseInt(adset.impressions || "0").toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white/60">Clicks</div>
-                        <div className="font-medium">
-                          {parseInt(adset.clicks || "0").toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white/60">CTR</div>
-                        <div className="font-medium">
-                          {parseFloat(adset.ctr || "0").toFixed(2)}%
-                        </div>
-                      </div>
-                    </div>
+              {!metaData.adsets || metaData.adsets.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <div className="bg-gray-800/50 p-3 rounded-full mb-3">
+                    <LayoutGrid className="h-5 w-5 text-gray-400" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-gray-400 font-medium mb-1">No ad sets data available</h3>
+                  <p className="text-gray-500 text-sm max-w-md">
+                    There are no active ad sets or data for the selected period. 
+                    New ad set data will appear here once available.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {metaData.adsets.map((adset, index) => (
+                    <div key={index} className="flex items-center justify-between border-b border-gray-800 pb-4">
+                      <div className="space-y-1">
+                        <div className="font-medium text-white">{adset.name}</div>
+                        <div className="text-sm text-white/60">
+                          Daily Budget: ${parseFloat(adset.daily_budget || "0").toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="text-right">
+                          <div className="text-white/60">Impressions</div>
+                          <div className="font-medium">
+                            {parseInt(adset.impressions || "0").toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white/60">Clicks</div>
+                          <div className="font-medium">
+                            {parseInt(adset.clicks || "0").toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white/60">CTR</div>
+                          <div className="font-medium">
+                            {parseFloat(adset.ctr || "0").toFixed(2)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
