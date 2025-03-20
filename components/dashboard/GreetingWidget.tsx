@@ -1251,46 +1251,75 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-                  <div className="flex items-center gap-2">
-                    {monthlyReport.periodComparison.adSpendGrowth !== 0 && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              {monthlyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-[#333] border-[#444]">
-                            <p className="text-xs">
-                              {monthlyReport.periodComparison.adSpendGrowth === 100 
-                                ? `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $0` 
-                                : `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $${Math.round(monthlyReport.totalAdSpend / (1 + monthlyReport.periodComparison.adSpendGrowth / 100))}`
-                              }
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+                  {monthlyReport.totalAdSpend === 0 ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className="text-sm text-gray-400 cursor-help">
-                            {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No data available
                           </p>
                         </TooltipTrigger>
                         <TooltipContent className="bg-[#333] border-[#444]">
                           <p className="text-xs">
-                            Total ad spend: ${Math.round(monthlyReport.totalAdSpend)} of ${Math.round(monthlyReport.revenueGenerated)} revenue
+                            No ad spend data is available for {getPreviousMonthName()}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </div>
+                  ) : monthlyReport.periodComparison.adSpendGrowth !== 0 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {monthlyReport.periodComparison.adSpendGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {monthlyReport.periodComparison.adSpendGrowth === 100 
+                              ? `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $0` 
+                              : `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $${Math.round(monthlyReport.totalAdSpend / (1 + monthlyReport.periodComparison.adSpendGrowth / 100))}`
+                            }
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No change from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {getPreviousMonthName()}: ${Math.round(monthlyReport.totalAdSpend)} vs {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.totalAdSpend)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
-              <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
-              {monthlyReport.periodComparison.roasGrowth !== 0 && (
+                  <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
+                  {monthlyReport.averageRoas === 0 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No data available
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            No ROAS data is available for {getPreviousMonthName()}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : monthlyReport.periodComparison.roasGrowth !== 0 ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1308,8 +1337,23 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-              )}
-            </div>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No change from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport.averageRoas.toFixed(1)}x
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
           </div>
           
               <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
@@ -1704,43 +1748,75 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-                  <div className="flex items-center gap-2">
-                    {dailyReport.periodComparison.adSpendGrowth !== 0 && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
-                              {dailyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-[#333] border-[#444]">
-                            <p className="text-xs">
-                              Today: ${Math.round(dailyReport.totalAdSpend)} vs Yesterday: ${Math.round(dailyReport.totalAdSpend / (1 + dailyReport.periodComparison.adSpendGrowth / 100))}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
+                  {dailyReport.totalAdSpend === 0 ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className="text-sm text-gray-400 cursor-help">
-                            {((dailyReport.totalAdSpend / dailyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No data available
                           </p>
                         </TooltipTrigger>
                         <TooltipContent className="bg-[#333] border-[#444]">
                           <p className="text-xs">
-                            Total ad spend: ${Math.round(dailyReport.totalAdSpend)} of ${Math.round(dailyReport.revenueGenerated)} revenue
+                            No ad spend data is available for today
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  </div>
+                  ) : dailyReport.periodComparison.adSpendGrowth !== 0 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {dailyReport.periodComparison.adSpendGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {dailyReport.periodComparison.adSpendGrowth === 100 
+                              ? `Today: $${Math.round(dailyReport.totalAdSpend)} vs Yesterday: $0` 
+                              : `Today: $${Math.round(dailyReport.totalAdSpend)} vs Yesterday: $${Math.round(dailyReport.totalAdSpend / (1 + dailyReport.periodComparison.adSpendGrowth / 100))}`
+                            }
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No change from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            Today: ${Math.round(dailyReport.totalAdSpend)} vs Yesterday: ${Math.round(dailyReport.totalAdSpend)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
                   <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
-                  {dailyReport.periodComparison.roasGrowth !== 0 && (
+                  {dailyReport.averageRoas === 0 ? (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No data available
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            No ROAS data is available for today
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : dailyReport.periodComparison.roasGrowth !== 0 ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1750,7 +1826,25 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                         </TooltipTrigger>
                         <TooltipContent className="bg-[#333] border-[#444]">
                           <p className="text-xs">
-                            Today: {dailyReport.averageRoas.toFixed(1)}x vs Yesterday: {(dailyReport.averageRoas / (1 + dailyReport.periodComparison.roasGrowth / 100)).toFixed(1)}x
+                            {dailyReport.periodComparison.roasGrowth === 100 
+                              ? `Today: ${dailyReport.averageRoas.toFixed(1)}x vs Yesterday: 0.0x` 
+                              : `Today: ${dailyReport.averageRoas.toFixed(1)}x vs Yesterday: ${(dailyReport.averageRoas / (1 + dailyReport.periodComparison.roasGrowth / 100)).toFixed(1)}x`
+                            }
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm cursor-help text-gray-400">
+                            - No change from yesterday
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            Today: ${dailyReport.averageRoas.toFixed(1)}x vs Yesterday: ${dailyReport.averageRoas.toFixed(1)}x
                           </p>
                         </TooltipContent>
                       </Tooltip>
