@@ -2346,7 +2346,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Today's Best Campaigns</h5>
+                    <h5 className="font-medium">{currentPeriod === 'daily' ? 'Today\'s' : 'Monthly'} Best Campaigns</h5>
                     <select 
                       className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       defaultValue="roas"
@@ -2365,60 +2365,78 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 </div>
                 
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {dailyReport?.bestCampaign && dailyReport.bestCampaign.name !== "No campaign data available" ? (
-                      // If we have real campaign data, show it
-                      [
-                        dailyReport.bestCampaign,
-                        ...(dailyReport.underperformingCampaign && dailyReport.underperformingCampaign.name !== "No campaign data available" ? [dailyReport.underperformingCampaign] : [])
-                      ].map((campaign, index) => (
-                        <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium">{campaign.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                    {(() => {
+                      console.log(`[Debug] Rendering campaigns for ${currentPeriod} period`);
+                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      
+                      if (report?.bestCampaign && report.bestCampaign.name !== "No campaign data available") {
+                        // If we have real campaign data, show it
+                        const campaignsToShow = [
+                          report.bestCampaign,
+                          ...(report.underperformingCampaign && report.underperformingCampaign.name !== "No campaign data available" ? [report.underperformingCampaign] : [])
+                        ];
+                        
+                        console.log(`[Debug] Found ${campaignsToShow.length} campaigns to show in ${currentPeriod} report`);
+                        
+                        return campaignsToShow.map((campaign, index) => (
+                          <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium">{campaign.name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Revenue</span>
+                                <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Spend</span>
+                                <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">CTR</span>
+                                <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Conversions</span>
+                                <span className="text-white font-medium">{campaign.conversions || 0}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mt-3">
+                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-500 rounded-full"
+                                  style={{
+                                    width: `${(campaign.roas / 4) * 100}%`
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-gray-400 whitespace-nowrap">{campaign.conversions || 0} conversions</span>
                             </div>
                           </div>
-                          
-                          <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Revenue</span>
-                              <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Spend</span>
-                              <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">CTR</span>
-                              <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Conversions</span>
-                              <span className="text-white font-medium">{campaign.conversions || 0}</span>
-                            </div>
+                        ));
+                      } else {
+                        // Otherwise show an empty state
+                        return (
+                          <div className="py-8 text-center">
+                            <BarChart3 className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                            <p className="text-gray-400">No ad campaign data available</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {
+                                // Check if we have any connected ad platforms
+                                connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google')
+                                  ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
+                                  : 'Connect an ad platform to see campaign performance'
+                              }
+                            </p>
                           </div>
-                          
-                          <div className="flex items-center gap-2 mt-3">
-                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-500 rounded-full"
-                                style={{
-                                  width: `${(campaign.roas / 4) * 100}%`
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-gray-400 whitespace-nowrap">{campaign.conversions || 0} conversions</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      // Otherwise show an empty state
-                      <div className="py-8 text-center">
-                        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-400">No ad campaign data available</p>
-                        <p className="text-xs text-gray-500 mt-1">Connect an ad platform to see campaign performance</p>
-                      </div>
-                    )}
+                        );
+                      }
+                    })()}
                   </div>
             </div>
           </div>
