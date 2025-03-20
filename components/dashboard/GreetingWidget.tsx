@@ -859,7 +859,8 @@ export function GreetingWidget({
       orderGrowth: number,
       customerGrowth: number,
       roasGrowth: number,
-      conversionGrowth: number
+      conversionGrowth: number,
+      adSpendGrowth: number
     }
   ): string => {
     const comparisonText = period === 'daily' ? 'yesterday' : 'last month'
@@ -1896,7 +1897,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">
                       {getPreviousMonthName()} vs. previous months
                     </p>
-            </div>
+                  </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
           
@@ -2523,7 +2524,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <p className="text-xs text-gray-500 mt-1">
                               {
                                 // Check if we have any connected ad platforms
-                                connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google')
+                                connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google' || c.platform_type === 'meta')
                                   ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
                                   : 'Connect an ad platform to see campaign performance'
                               }
