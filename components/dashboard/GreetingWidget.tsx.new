@@ -781,7 +781,6 @@ export function GreetingWidget({
   // Function to fetch period data with real data instead of simulated data
   const fetchPeriodData = async () => {
     setIsLoading(true)
-    setIsAiLoading(true)
     
     try {
       // Find active connections
@@ -1154,7 +1153,6 @@ export function GreetingWidget({
     } catch (error) {
       console.error('Error in fetchPeriodData:', error)
       setSynopsis("Error loading your brand snapshot.")
-      setIsAiLoading(false)
     } finally {
       setIsLoading(false)
     }
@@ -1622,14 +1620,7 @@ export function GreetingWidget({
             </div>
             
                         {/* Show different content based on whether there is data */}
-                        {isAiLoading ? (
-                          <div className="py-6">
-                            <div className="flex justify-center">
-                              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            </div>
-                            <p className="text-center text-gray-300 mt-2">Analyzing your performance data...</p>
-                          </div>
-                        ) : (!dailyReport || dailyReport.revenueGenerated === 0) ? (
+                        {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
                           <div className="text-sm text-gray-300 leading-relaxed">
                             <p className="mb-4">There isn't enough data available for today to generate a complete analysis.</p>
                             
@@ -1905,14 +1896,7 @@ export function GreetingWidget({
                         </div>
                         
                         {/* Show different content based on whether there is data */}
-                        {isAiLoading ? (
-                          <div className="py-6">
-                            <div className="flex justify-center">
-                              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            </div>
-                            <p className="text-center text-gray-300 mt-2">Analyzing your performance data...</p>
-                          </div>
-                        ) : (!monthlyReport || monthlyReport.revenueGenerated === 0) ? (
+                        {(!monthlyReport || monthlyReport.revenueGenerated === 0) ? (
                           <div className="text-sm text-gray-300 leading-relaxed">
                             <p className="mb-4">There isn't enough data available for this month to generate a complete analysis.</p>
                             

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, Fragment } from "react"
 import { useUser } from "@clerk/nextjs"
@@ -126,6 +126,7 @@ export function GreetingWidget({
   const [greeting, setGreeting] = useState("")
   const [synopsis, setSynopsis] = useState("Loading your brand snapshot...")
   const [isLoading, setIsLoading] = useState(true)
+
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [periodData, setPeriodData] = useState<{
@@ -781,7 +782,6 @@ export function GreetingWidget({
   // Function to fetch period data with real data instead of simulated data
   const fetchPeriodData = async () => {
     setIsLoading(true)
-    setIsAiLoading(true)
     
     try {
       // Find active connections
@@ -1154,7 +1154,6 @@ export function GreetingWidget({
     } catch (error) {
       console.error('Error in fetchPeriodData:', error)
       setSynopsis("Error loading your brand snapshot.")
-      setIsAiLoading(false)
     } finally {
       setIsLoading(false)
     }
@@ -1622,14 +1621,7 @@ export function GreetingWidget({
             </div>
             
                         {/* Show different content based on whether there is data */}
-                        {isAiLoading ? (
-                          <div className="py-6">
-                            <div className="flex justify-center">
-                              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            </div>
-                            <p className="text-center text-gray-300 mt-2">Analyzing your performance data...</p>
-                          </div>
-                        ) : (!dailyReport || dailyReport.revenueGenerated === 0) ? (
+                        {(!dailyReport || dailyReport.revenueGenerated === 0) ? (
                           <div className="text-sm text-gray-300 leading-relaxed">
                             <p className="mb-4">There isn't enough data available for today to generate a complete analysis.</p>
                             
@@ -1647,29 +1639,29 @@ export function GreetingWidget({
                           </div>
                         ) : hasMeta ? (
                           <p className="text-sm text-gray-300 leading-relaxed">
-                            <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "New Strat - ABO" campaign has recorded only a 0.62x ROAS today, significantly below breakeven. Consider pausing this campaign immediately or adjusting targeting.
+                            <span className="text-amber-400 font-medium">âš ï¸ ATTENTION NEEDED:</span> The "New Strat - ABO" campaign has recorded only a 0.62x ROAS today, significantly below breakeven. Consider pausing this campaign immediately or adjusting targeting.
                             <br/><br/>
-                            <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
+                            <span className="text-red-400 font-medium">ðŸš¨ INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
                             <br/><br/>
 
                             Today's performance shows ${dailyReport.revenueGenerated?.toFixed(0)} in revenue, a {Math.abs(dailyReport.periodComparison.salesGrowth * 100).toFixed(1)}% {dailyReport.periodComparison.salesGrowth > 0 ? 'increase' : 'decrease'} compared to yesterday. You've processed {dailyReport.totalPurchases} orders today, with Meta ads generating approximately {dailyReport.platformRevenue?.meta ? ((dailyReport.platformRevenue.meta / dailyReport.revenueGenerated) * 100).toFixed(0) : '68'}% of today's revenue. Your best-performing campaign {dailyReport.bestCampaign?.name || '"Brez/Yordy - Adv+ Catalog"'} achieved an {dailyReport.bestCampaign?.roas?.toFixed(2) || '7.8'}x ROAS today, significantly outperforming your overall daily ROAS of {dailyReport.averageRoas?.toFixed(2) || '0.00'}x.
                             
                             Today's ad spend of ${dailyReport.totalAdSpend?.toFixed(0)} is {Math.abs(dailyReport.periodComparison.roasGrowth * 100).toFixed(1)}% {dailyReport.periodComparison.roasGrowth > 0 ? 'higher' : 'lower'} than yesterday but has delivered {Math.abs(dailyReport.periodComparison.customerGrowth * 100).toFixed(1)}% {dailyReport.periodComparison.customerGrowth > 0 ? 'more' : 'fewer'} conversions, indicating {dailyReport.periodComparison.customerGrowth > 0 ? 'improved' : 'reduced'} efficiency. Mobile conversion rates have improved by 18.4% today compared to your 7-day average.
                             
-                            <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
+                            <span className="text-blue-400 font-medium">ðŸ’¡ OPPORTUNITY:</span> Your "Skincare Bundle" promotion is converting exceptionally well today (9.2% conversion rate vs 4.1% average). Consider increasing visibility for this offer on your homepage.
                             
                             <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
                           </p>
                         ) : (
                           <p className="text-sm text-gray-300 leading-relaxed">
-                            <span className="text-amber-400 font-medium">📊 SHOPIFY DATA ONLY:</span> We're showing Shopify data, but no Meta ad data is available yet. Connect your Meta account to see full performance metrics and ad campaign analysis.
+                            <span className="text-amber-400 font-medium">ðŸ“Š SHOPIFY DATA ONLY:</span> We're showing Shopify data, but no Meta ad data is available yet. Connect your Meta account to see full performance metrics and ad campaign analysis.
                             <br/><br/>
-                            <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
+                            <span className="text-red-400 font-medium">ðŸš¨ INVENTORY ALERT:</span> "Premium Skincare Set" inventory is critically low with 4 units remaining. This is your best-selling product today with high purchase velocity. Restock immediately.
                             <br/><br/>
 
                             Today's performance shows ${dailyReport.revenueGenerated?.toFixed(0)} in revenue, a {Math.abs(dailyReport.periodComparison.salesGrowth * 100).toFixed(1)}% {dailyReport.periodComparison.salesGrowth > 0 ? 'increase' : 'decrease'} compared to yesterday. You've processed {dailyReport.totalPurchases} orders today coming directly from your Shopify store.
                             
-                            <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Connect your Meta Ads account to see which campaigns are driving sales and get optimization recommendations.
+                            <span className="text-blue-400 font-medium">ðŸ’¡ OPPORTUNITY:</span> Connect your Meta Ads account to see which campaigns are driving sales and get optimization recommendations.
                             
                             <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis of your store performance and personalized recommendations.</span>
                 </p>
@@ -1905,14 +1897,7 @@ export function GreetingWidget({
                         </div>
                         
                         {/* Show different content based on whether there is data */}
-                        {isAiLoading ? (
-                          <div className="py-6">
-                            <div className="flex justify-center">
-                              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                            </div>
-                            <p className="text-center text-gray-300 mt-2">Analyzing your performance data...</p>
-                          </div>
-                        ) : (!monthlyReport || monthlyReport.revenueGenerated === 0) ? (
+                        {(!monthlyReport || monthlyReport.revenueGenerated === 0) ? (
                           <div className="text-sm text-gray-300 leading-relaxed">
                             <p className="mb-4">There isn't enough data available for this month to generate a complete analysis.</p>
                             
@@ -1930,29 +1915,29 @@ export function GreetingWidget({
                   </div>
                         ) : hasMeta ? (
                           <p className="text-sm text-gray-300 leading-relaxed">
-                            <span className="text-amber-400 font-medium">⚠️ ATTENTION NEEDED:</span> The "Cold Traffic - Interest Targeting" campaign is underperforming with only a 0.88x ROAS this month, significantly below breakeven. Consider pausing this campaign or reallocating budget.
+                            <span className="text-amber-400 font-medium">âš ï¸ ATTENTION NEEDED:</span> The "Cold Traffic - Interest Targeting" campaign is underperforming with only a 0.88x ROAS this month, significantly below breakeven. Consider pausing this campaign or reallocating budget.
                             <br/><br/>
-                            <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Facial Cleansing Brush" inventory is critically low with only 8 units remaining. This is consistently selling well with high margins. Reorder immediately.
+                            <span className="text-red-400 font-medium">ðŸš¨ INVENTORY ALERT:</span> "Facial Cleansing Brush" inventory is critically low with only 8 units remaining. This is consistently selling well with high margins. Reorder immediately.
                             <br/><br/>
 
                             {getCurrentMonthName()}'s total revenue is ${monthlyReport.revenueGenerated?.toFixed(0)}, a {Math.abs(monthlyReport.periodComparison.salesGrowth * 100).toFixed(1)}% {monthlyReport.periodComparison.salesGrowth > 0 ? 'increase' : 'decrease'} from {getPreviousMonthName()}. Meta ads continue to be your primary revenue driver at 65% of total revenue. Your customer acquisition cost is ${(monthlyReport.totalAdSpend / (monthlyReport.newCustomersAcquired || 1)).toFixed(2)} per new customer, which remains competitive for your industry.
                             
                             Organic traffic is contributing a healthy 20% of total revenue this month, showing improved SEO performance. Weekend performance has been particularly strong, with 30% higher conversion rates compared to weekdays.
                             
-                            <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Google search campaigns are showing improving ROAS (now at 2.8x) and could be scaled with additional investment.
+                            <span className="text-blue-400 font-medium">ðŸ’¡ OPPORTUNITY:</span> Google search campaigns are showing improving ROAS (now at 2.8x) and could be scaled with additional investment.
                             
                             <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis and personalized recommendations to optimize your marketing strategy.</span>
                           </p>
                         ) : (
                           <p className="text-sm text-gray-300 leading-relaxed">
-                            <span className="text-amber-400 font-medium">📊 SHOPIFY DATA ONLY:</span> We're showing Shopify data, but no Meta ad data is available yet. Connect your Meta account to see full performance metrics and ad campaign analysis.
+                            <span className="text-amber-400 font-medium">ðŸ“Š SHOPIFY DATA ONLY:</span> We're showing Shopify data, but no Meta ad data is available yet. Connect your Meta account to see full performance metrics and ad campaign analysis.
                             <br/><br/>
-                            <span className="text-red-400 font-medium">🚨 INVENTORY ALERT:</span> "Facial Cleansing Brush" inventory is critically low with only 8 units remaining. This is consistently selling well with high margins. Reorder immediately.
+                            <span className="text-red-400 font-medium">ðŸš¨ INVENTORY ALERT:</span> "Facial Cleansing Brush" inventory is critically low with only 8 units remaining. This is consistently selling well with high margins. Reorder immediately.
                             <br/><br/>
 
                             {getCurrentMonthName()}'s total revenue is ${monthlyReport.revenueGenerated?.toFixed(0)}, a {Math.abs(monthlyReport.periodComparison.salesGrowth * 100).toFixed(1)}% {monthlyReport.periodComparison.salesGrowth > 0 ? 'increase' : 'decrease'} from {getPreviousMonthName()}. All revenue is currently attributed to direct shop visits since Meta ad data is not connected.
                             
-                            <span className="text-blue-400 font-medium">💡 OPPORTUNITY:</span> Connect your Meta Ads account to see which campaigns are driving sales and get optimization recommendations.
+                            <span className="text-blue-400 font-medium">ðŸ’¡ OPPORTUNITY:</span> Connect your Meta Ads account to see which campaigns are driving sales and get optimization recommendations.
                             
                             <span className="mt-3 block text-blue-400 font-medium">Visit the AI Intelligence page for detailed analysis of your store performance and personalized recommendations.</span>
                           </p>
