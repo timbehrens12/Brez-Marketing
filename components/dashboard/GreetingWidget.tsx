@@ -757,42 +757,28 @@ export function GreetingWidget({
       // Add sample best-selling products
       // Only use real products from the metrics, don't generate fake ones
       if (metrics.topProducts && Array.isArray(metrics.topProducts) && metrics.topProducts.length > 0) {
-        console.log(`DEBUG BEST SELLERS: generateEnhancedReport has ${metrics.topProducts.length} products from metrics:`, metrics.topProducts);
-        
         // Use actual products from metrics - include test products (since we're testing with them)
         // but still filter out other placeholder types
         report.bestSellingProducts = metrics.topProducts
           .filter(product => {
-            if (!product.title && !product.name) {
-              console.log(`DEBUG BEST SELLERS: Filtering out product with no title/name:`, product);
-              return false;
-            }
+            if (!product.title && !product.name) return false;
             const name = (product.title || product.name || '').toLowerCase();
             // Allow test products but still filter out other demo/sample products
-            const isValid = !name.includes("demo") && 
-                    !name.includes("sample") && 
-                    !name.includes("unused") &&
-                    !name.includes("placeholder");
-            
-            if (!isValid) {
-              console.log(`DEBUG BEST SELLERS: Filtering out product with placeholder name:`, product);
-            }
-            return isValid;
+            return !name.includes("demo") && 
+                  !name.includes("sample") && 
+                  !name.includes("unused") &&
+                  !name.includes("placeholder");
           })
-          .map(product => {
-            console.log(`DEBUG BEST SELLERS: Processing product for display:`, product);
-            return {
-              name: product.title || product.name || 'Unknown Product', 
-              revenue: product.revenue || 0, 
-              orders: product.quantity || product.orders || 0
-            };
-          })
+          .map(product => ({
+            name: product.title || product.name || 'Unknown Product', 
+            revenue: product.revenue || 0, 
+            orders: product.quantity || product.orders || 0
+          }))
           .slice(0, 5); // Limit to top 5
         
-        console.log('DEBUG BEST SELLERS: Final bestSellingProducts:', report.bestSellingProducts);
+        console.log('Using real products for best-selling products:', report.bestSellingProducts);
       } else {
         // If no real product data, use empty array - don't make up fake products
-        console.log('DEBUG BEST SELLERS: No topProducts available in metrics:', metrics.topProducts);
         report.bestSellingProducts = [];
         console.log('No real product data available for best-selling products');
       }
@@ -901,7 +887,6 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       let topProducts: Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }> = [];
       
       // Step 1: Get Shopify sales data
-      console.log(`DEBUG BEST SELLERS: Fetching Shopify orders with line_items for ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}`);
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
         .select('id, total_price, created_at, line_items')
@@ -913,7 +898,6 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         console.error('Error fetching Shopify orders:', salesError);
       } else if (salesData && salesData.length > 0) {
         console.log(`Found ${salesData.length} Shopify orders for the period`);
-        console.log(`DEBUG BEST SELLERS: First few orders:`, salesData.slice(0, 2));
         
         // Log the date range of orders found
         if (salesData.length > 0) {
@@ -934,22 +918,11 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         // Process line_items to get top products
         const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
         
-        // Count orders with line items
-        const ordersWithLineItems = salesData.filter(order => order.line_items && Array.isArray(order.line_items) && order.line_items.length > 0);
-        console.log(`DEBUG BEST SELLERS: ${ordersWithLineItems.length} of ${salesData.length} orders have line items`);
-        
         salesData.forEach(order => {
-          if (!order.line_items || !Array.isArray(order.line_items)) {
-            console.log(`DEBUG BEST SELLERS: Order ${order.id} has no line_items or line_items is not an array`);
-            return;
-          }
-          
-          order.line_items.forEach((item: any) => {
+          const lineItems = order.line_items || [];
+          lineItems.forEach((item: any) => {
             const productId = item.product_id?.toString() || item.id?.toString();
-            if (!productId) {
-              console.log(`DEBUG BEST SELLERS: Item without productId:`, item);
-              return;
-            }
+            if (!productId) return;
             
             const title = item.title || 'Unknown Product';
             const quantity = parseInt(item.quantity) || 0;
@@ -970,12 +943,6 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           });
         });
         
-        // Log all products found
-        console.log(`DEBUG BEST SELLERS: Product map has ${productMap.size} products`);
-        if (productMap.size > 0) {
-          console.log(`DEBUG BEST SELLERS: Sample of products found:`, Array.from(productMap.entries()).slice(0, 3));
-        }
-        
         // Convert to array and sort by revenue
         topProducts = Array.from(productMap.values())
           .map(product => ({
@@ -988,7 +955,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 10);  // Get top 10
           
-        console.log(`DEBUG BEST SELLERS: Found ${topProducts.length} top products:`, topProducts);
+        console.log('Found top products:', topProducts);
       } else {
         console.log('No Shopify orders found for the period, falling back to simulation');
       }
@@ -1735,41 +1702,25 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {console.log('DEBUG BEST SELLERS RENDER:', {
-                      hasDailyReport: !!dailyReport, 
-                      hasProducts: !!dailyReport?.bestSellingProducts, 
-                      productCount: dailyReport?.bestSellingProducts?.length,
-                      products: dailyReport?.bestSellingProducts
-                    })}
-                    {dailyReport?.bestSellingProducts && dailyReport.bestSellingProducts.length > 0 ? (
-                      dailyReport.bestSellingProducts.map((product, index) => (
-                        <div key={index} className="mb-4 last:mb-0">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm">{product.name}</span>
-                            <span className="text-sm font-medium">${product.revenue}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-yellow-500 rounded-full" 
-                                style={{
-                                  width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-8 text-center">
-                        <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-400">No products sold today</p>
-                        <p className="text-xs text-gray-500 mt-1">Debug: Check console for more info</p>
-                      </div>
-                    )}
+                    {monthlyReport?.bestSellingProducts?.map((product, index) => (
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
                   </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
+                                width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                              }}
+                            ></div>
+                  </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
                 </div>
+                      </div>
+                    ))}
               </div>
             </div>
             
@@ -2249,33 +2200,42 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">by today's revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {dailyReport?.bestSellingProducts && dailyReport.bestSellingProducts.length > 0 ? (
-                      dailyReport.bestSellingProducts.map((product, index) => (
-                        <div key={index} className="mb-4 last:mb-0">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm">{product.name}</span>
-                            <span className="text-sm font-medium">${product.revenue}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-yellow-500 rounded-full" 
-                          style={{
-                                  width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                          }}
-                        ></div>
+                    {(() => {
+                      console.log("Best Sellers Debug:", {
+                        hasDailyReport: !!dailyReport,
+                        hasProducts: !!dailyReport?.bestSellingProducts,
+                        productCount: dailyReport?.bestSellingProducts?.length || 0,
+                        productDetails: dailyReport?.bestSellingProducts
+                      });
+                      
+                      return dailyReport?.bestSellingProducts?.length > 0 ? (
+                        dailyReport.bestSellingProducts.map((product, index) => (
+                          <div key={index} className="mb-4 last:mb-0">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm">{product.name}</span>
+                              <span className="text-sm font-medium">${product.revenue}</span>
                             </div>
-                            <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-yellow-500 rounded-full" 
+                                  style={{
+                                    width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-8 text-center">
+                          <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                          <p className="text-gray-400">No products sold today</p>
+                          <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                         </div>
-                      </div>
-                    ))
-                    ) : (
-                      <div className="py-8 text-center">
-                        <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-400">No products sold today</p>
-                        <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
-                      </div>
-                    )}
+                      );
+                    })()}
                 </div>
             </div>
             
