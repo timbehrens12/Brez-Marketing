@@ -1251,20 +1251,25 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
             <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <p className="text-sm text-gray-400 cursor-help">
-                          {((monthlyReport.totalAdSpend / monthlyReport.revenueGenerated) * 100).toFixed(1)}% of revenue
-                        </p>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-[#333] border-[#444]">
-                        <p className="text-xs">
-                          Total ad spend: ${Math.round(monthlyReport.totalAdSpend)} of ${Math.round(monthlyReport.revenueGenerated)} revenue
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {monthlyReport.periodComparison.adSpendGrowth !== 0 && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth < 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {monthlyReport.periodComparison.adSpendGrowth < 0 ? '↓' : '↑'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-[#333] border-[#444]">
+                          <p className="text-xs">
+                            {monthlyReport.periodComparison.adSpendGrowth === 100 
+                              ? `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $0` 
+                              : `${getPreviousMonthName()}: $${Math.round(monthlyReport.totalAdSpend)} vs ${getTwoMonthsAgoName()}: $${Math.round(monthlyReport.totalAdSpend / (1 + monthlyReport.periodComparison.adSpendGrowth / 100))}`
+                            }
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
                 <div className="bg-[#222] p-4 rounded-lg">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
