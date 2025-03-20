@@ -24,7 +24,8 @@ export default authMiddleware({
     "/api/analytics/meta/campaigns",
     "/api/ai/insights",
     "/api/ai/recommendations",
-    "/api/ai/explain"
+    "/api/ai/explain",
+    "/api/ai/generate-analysis"
   ],
   ignoredRoutes: [
     "/api/webhooks(.*)",

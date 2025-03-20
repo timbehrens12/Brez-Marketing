@@ -46,6 +46,7 @@
     "@shopify/shopify-app-session-storage": "^3.0.13",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.49.1",
+    "@tanstack/react-query": "^5.69.0",
     "@turf/turf": "^7.2.0",
     "@types/react-grid-layout": "^1.3.5",
     "autoprefixer": "^10.4.20",

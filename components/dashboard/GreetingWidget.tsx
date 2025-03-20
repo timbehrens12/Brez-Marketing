@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns"
+import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth, parseISO, isSameDay, isAfter, isBefore, differenceInDays } from "date-fns"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,7 +18,9 @@ import {
   TooltipTrigger 
 } from "@/components/ui/tooltip"
 import { supabase } from '@/lib/supabase'
-import { getGPT4Response } from '@/lib/openai' // Import the OpenAI function
+import { formatCurrencyCompact, formatNumberCompact } from '@/lib/formatters'
+import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@clerk/nextjs'
 
 // Define types locally
 type ReportPeriod = 'daily' | 'monthly'
@@ -766,7 +768,7 @@ export function GreetingWidget({
     const comparisonText = period === 'daily' ? 'yesterday' : 'last month'
     
     if (period === 'daily') {
-      return `Your store is showing ${comparison.salesGrowth > 5 ? 'strong' : comparison.salesGrowth > 0 ? 'positive' : 'challenged'} performance today with revenue of ${formatCurrency(metrics.totalSales)} from ${metrics.ordersCount} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from ${comparisonText}. 
+      return `Your store is showing ${comparison.salesGrowth > 5 ? 'strong' : comparison.salesGrowth > 0 ? 'positive' : 'challenged'} performance today with revenue of ${formatCurrencyCompact(metrics.totalSales)} from ${formatNumberCompact(metrics.ordersCount)} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from ${comparisonText}. 
       
 The Summer T-Shirt Collection continues to be your best-selling product line, generating 32% of today's revenue. Beach accessories are also performing well with the Beach Tote Bag and Aviator Sunglasses in the top 3 products.
 
@@ -780,22 +782,22 @@ Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - conside
       const hasPreviousData = comparison.salesGrowth !== 100 && comparison.orderGrowth !== 100;
       
       if (hasPreviousData) {
-        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume ${comparison.orderGrowth > 0 ? 'increased' : 'decreased'} by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
+        return `Your store generated ${formatCurrencyCompact(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume ${comparison.orderGrowth > 0 ? 'increased' : 'decreased'} by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${formatNumberCompact(metrics.ordersCount)} orders.
 
 Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
 
-Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
+Customer acquisition metrics show ${formatNumberCompact(metrics.newCustomers)} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
 
 Advertising efficiency ${comparison.roasGrowth > 0 ? 'improved' : 'declined'} with an overall ROAS of ${metrics.roas.toFixed(1)}x, ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
 
 Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`
       } else {
         // No previous month data available
-        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month. There is no data from previous months to compare with, so this will serve as your baseline for future comparisons.
+        return `Your store generated ${formatCurrencyCompact(metrics.totalSales)} in revenue last month. There is no data from previous months to compare with, so this will serve as your baseline for future comparisons.
 
 Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
 
-Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%.
+Customer acquisition metrics show ${formatNumberCompact(metrics.newCustomers)} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%.
 
 Your overall ROAS is ${metrics.roas.toFixed(1)}x. Meta campaigns outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
 
@@ -995,10 +997,10 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
     } else {
       // No previous data - focus on initial metrics
       return [
-        `Your store generated ${formatCurrency(metrics.totalSales)} in revenue`,
-        `You received ${metrics.ordersCount} orders with an average value of ${formatCurrency(metrics.averageOrderValue)}`,
+        `Your store generated ${formatCurrencyCompact(metrics.totalSales)} in revenue`,
+        `You received ${formatNumberCompact(metrics.ordersCount)} orders with an average value of ${formatCurrencyCompact(metrics.averageOrderValue)}`,
         `Your current ROAS is ${metrics.roas.toFixed(1)}x`,
-        `You acquired ${metrics.newCustomers} new customers this period`
+        `You acquired ${formatNumberCompact(metrics.newCustomers)} new customers this period`
       ];
     }
   };
@@ -2238,65 +2240,51 @@ const generateRealAIAnalysis = async (
   }
 ): Promise<string> => {
   try {
-    const comparisonText = period === 'daily' ? 'yesterday' : 'last month';
-    
     // Check if we have enough data for analysis
     if (metrics.totalSales === 0 && metrics.ordersCount === 0) {
       return '';
     }
     
-    const platformsConnected = [];
-    if (platformData?.shopifyConnected) platformsConnected.push('Shopify');
-    if (platformData?.metaConnected) platformsConnected.push('Meta Ads');
-    
-    // Format the data for the AI
-    const dataForAI = {
-      period,
-      metrics: {
-        totalSales: metrics.totalSales,
-        ordersCount: metrics.ordersCount,
-        averageOrderValue: metrics.averageOrderValue,
-        customerCount: metrics.customerCount,
-        newCustomers: metrics.newCustomers,
-        returningCustomers: metrics.returningCustomers,
-        conversionRate: metrics.conversionRate,
-        adSpend: metrics.adSpend,
-        roas: metrics.roas,
-        ctr: metrics.ctr,
-        cpc: metrics.cpc
+    // Instead of calling OpenAI directly, use our API endpoint
+    const response = await fetch('/api/ai/generate-analysis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      comparison: {
-        salesGrowth: comparison.salesGrowth,
-        orderGrowth: comparison.orderGrowth,
-        customerGrowth: comparison.customerGrowth,
-        roasGrowth: comparison.roasGrowth,
-        conversionGrowth: comparison.conversionGrowth,
-        adSpendGrowth: comparison.adSpendGrowth
-      },
-      bestSellingProducts: bestSellingProducts || [],
-      connectedPlatforms: platformsConnected
-    };
+      body: JSON.stringify({
+        period,
+        metrics: {
+          totalSales: metrics.totalSales,
+          ordersCount: metrics.ordersCount,
+          averageOrderValue: metrics.averageOrderValue,
+          customerCount: metrics.customerCount,
+          newCustomers: metrics.newCustomers,
+          returningCustomers: metrics.returningCustomers,
+          conversionRate: metrics.conversionRate,
+          adSpend: metrics.adSpend,
+          roas: metrics.roas,
+          ctr: metrics.ctr,
+          cpc: metrics.cpc
+        },
+        comparison: {
+          salesGrowth: comparison.salesGrowth,
+          orderGrowth: comparison.orderGrowth,
+          customerGrowth: comparison.customerGrowth,
+          roasGrowth: comparison.roasGrowth,
+          conversionGrowth: comparison.conversionGrowth,
+          adSpendGrowth: comparison.adSpendGrowth
+        },
+        bestSellingProducts: bestSellingProducts || [],
+        platformData
+      }),
+    });
     
-    // Create system prompt for the AI
-    const systemPrompt = `You are an expert e-commerce analytics AI assistant providing analysis for a business dashboard.
+    if (!response.ok) {
+      throw new Error(`API responded with status: ${response.status}`);
+    }
     
-Your task is to analyze the provided data and generate insightful, concise observations about business performance.
-
-${period === 'daily' ? 'For today\'s data analysis:' : 'For this month\'s data analysis:'}
-1. Focus on key trends, comparing to ${comparisonText}.
-2. Highlight notable metrics (revenue, orders, ROAS, etc.).
-3. Identify product performance patterns if data is available.
-4. Provide context for advertising metrics if available.
-5. Keep your response between 150-300 words, using a professional tone.
-6. Use paragraphs to organize information.
-7. Indicate clearly if certain analysis isn't possible due to missing data.
-8. Do NOT mention that you are an AI in your response.
-
-Important: Only analyze available data. If no ad platform data exists, focus on sales data. If limited data is available, acknowledge the limitations.`;
-
-    // Get AI response
-    const aiResponse = await getGPT4Response(systemPrompt, JSON.stringify(dataForAI), 0.7);
-    return aiResponse;
+    const data = await response.json();
+    return data.analysis;
   } catch (error) {
     console.error('Error generating AI analysis:', error);
     return `Unable to generate AI analysis at this time. Please try refreshing the page or check back later.`;
