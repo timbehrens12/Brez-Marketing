@@ -1719,45 +1719,72 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
-                      // Get the appropriate report based on the current period
-                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      // Get products directly from periodData instead of reports
+                      const products = currentPeriod === 'daily' 
+                        ? periodData.today.topProducts || []
+                        : periodData.month.topProducts || [];
                       
-                      console.log(`DEBUG - ${currentPeriod} Best Sellers render:`, {
-                        hasReport: !!report,
-                        hasProducts: !!report?.bestSellingProducts,
-                        productCount: report?.bestSellingProducts?.length || 0,
-                        productDetails: report?.bestSellingProducts
+                      console.log(`DEBUG - ${currentPeriod} Best Sellers:`, {
+                        hasProducts: products && products.length > 0,
+                        productCount: products?.length || 0,
+                        productDetails: products
                       });
                       
-                      if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
-                        return report.bestSellingProducts.map((product, index) => (
+                      if (products && products.length > 0) {
+                        // Sort by revenue (highest first) just to be sure
+                        const sortedProducts = [...products]
+                          .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+                          .slice(0, 5); // Show top 5
+                        
+                        return sortedProducts.map((product, index) => (
                           <div key={index} className="mb-4 last:mb-0">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm">{product.name}</span>
-                              <span className="text-sm font-medium">${product.revenue}</span>
+                              <span className="text-sm">{product.title || product.name}</span>
+                              <span className="text-sm font-medium">${(product.revenue || 0).toFixed(0)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-yellow-500 rounded-full" 
                                   style={{
-                                    width: `${(product.revenue / (report?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                    width: `${((product.revenue || 0) / (sortedProducts[0]?.revenue || 1)) * 100}%` 
                                   }}
                                 ></div>
                               </div>
-                              <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                              <span className="text-xs text-gray-400">{product.quantity || product.orders || 0} units sold</span>
                             </div>
                           </div>
                         ));
                       } else {
+                        // Check if we have a hard-coded product for the current report
+                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                        
+                        if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
+                          return report.bestSellingProducts.map((product, index) => (
+                            <div key={index} className="mb-4 last:mb-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm">{product.name}</span>
+                                <span className="text-sm font-medium">${product.revenue}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-yellow-500 rounded-full" 
+                                    style={{
+                                      width: `100%` 
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                              </div>
+                            </div>
+                          ));
+                        }
+                        
                         return (
                           <div className="py-8 text-center">
                             <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">
-                              {currentPeriod === 'daily' 
-                                ? "No products sold today" 
-                                : "No products sold this month"}
-                            </p>
+                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
                             <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                           </div>
                         );
@@ -2243,38 +2270,68 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
-                      // Select the appropriate report based on the current period
-                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      // Get products directly from periodData instead of reports
+                      const products = currentPeriod === 'daily' 
+                        ? periodData.today.topProducts || []
+                        : periodData.month.topProducts || [];
                       
-                      console.log("DEBUG - Best Sellers render:", {
-                        currentPeriod,
-                        hasReport: !!report,
-                        hasProducts: !!report?.bestSellingProducts,
-                        productCount: report?.bestSellingProducts?.length || 0,
-                        productDetails: report?.bestSellingProducts
+                      console.log(`DEBUG - ${currentPeriod} Best Sellers:`, {
+                        hasProducts: products && products.length > 0,
+                        productCount: products?.length || 0,
+                        productDetails: products
                       });
                       
-                      if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
-                        return report.bestSellingProducts.map((product, index) => (
+                      if (products && products.length > 0) {
+                        // Sort by revenue (highest first) just to be sure
+                        const sortedProducts = [...products]
+                          .sort((a, b) => (b.revenue || 0) - (a.revenue || 0))
+                          .slice(0, 5); // Show top 5
+                        
+                        return sortedProducts.map((product, index) => (
                           <div key={index} className="mb-4 last:mb-0">
                             <div className="flex justify-between items-center mb-1">
-                              <span className="text-sm">{product.name}</span>
-                              <span className="text-sm font-medium">${product.revenue}</span>
+                              <span className="text-sm">{product.title || product.name}</span>
+                              <span className="text-sm font-medium">${(product.revenue || 0).toFixed(0)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-yellow-500 rounded-full" 
                                   style={{
-                                    width: `${(product.revenue / (report?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                    width: `${((product.revenue || 0) / (sortedProducts[0]?.revenue || 1)) * 100}%` 
                                   }}
                                 ></div>
                               </div>
-                              <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                              <span className="text-xs text-gray-400">{product.quantity || product.orders || 0} units sold</span>
                             </div>
                           </div>
                         ));
                       } else {
+                        // Check if we have a hard-coded product for the current report
+                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                        
+                        if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
+                          return report.bestSellingProducts.map((product, index) => (
+                            <div key={index} className="mb-4 last:mb-0">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm">{product.name}</span>
+                                <span className="text-sm font-medium">${product.revenue}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-yellow-500 rounded-full" 
+                                    style={{
+                                      width: `100%` 
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                              </div>
+                            </div>
+                          ));
+                        }
+                        
                         return (
                           <div className="py-8 text-center">
                             <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
