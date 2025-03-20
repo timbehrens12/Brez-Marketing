@@ -1356,7 +1356,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </>
+            
           ) : hasShopify && !hasMeta ? (
             <>
               <p className="text-gray-400 mt-2 mb-6 max-w-md">
@@ -1373,7 +1373,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   </Button>
                 </Link>
               </div>
-            </>
+            
           ) : !hasShopify && hasMeta ? (
             <>
               <p className="text-gray-400 mt-2 mb-6 max-w-md">
@@ -1385,7 +1385,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </>
+            
           ) : (
             <>
               <p className="text-gray-400 mt-2 mb-6 max-w-md">
@@ -1399,7 +1399,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   Check Connection Status
                 </Button>
               </div>
-            </>
+            
           )}
         </div>
       </div>
@@ -1684,7 +1684,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           ))}
                         </div>
                       </div>
-                    </>
+                    
                   ) : (
                     <div className="text-center py-4">
                       <p>Unable to generate AI analysis at this time. Please try refreshing the page or check back later.</p>
@@ -2090,7 +2090,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           ))}
                         </div>
                       </div>
-                    </>
+                    
                   ) : (
                     <div className="text-center py-4">
                       <p>Unable to generate AI analysis at this time. Please try refreshing the page or check back later.</p>
