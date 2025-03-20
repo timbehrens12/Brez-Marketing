@@ -2253,6 +2253,14 @@ const generateRealAIAnalysis = async (
       return 'Insufficient data available for AI analysis.';
     }
     
+    // Validate best selling products to ensure we only include real products
+    const validProducts = Array.isArray(bestSellingProducts) 
+      ? bestSellingProducts
+          .filter(p => p && typeof p.name === 'string' && p.name.trim() !== '' && 
+                   typeof p.revenue === 'number' && p.revenue > 0)
+          .filter(p => !p.name.toLowerCase().includes('test') && !p.name.toLowerCase().includes('demo'))
+      : [];
+    
     // Instead of calling OpenAI directly, use our API endpoint
     const response = await fetch('/api/ai/generate-analysis', {
       method: 'POST',
@@ -2262,28 +2270,31 @@ const generateRealAIAnalysis = async (
       body: JSON.stringify({
         period,
         metrics: {
-          totalSales: metrics.totalSales,
-          ordersCount: metrics.ordersCount,
-          averageOrderValue: metrics.averageOrderValue,
-          customerCount: metrics.customerCount,
-          newCustomers: metrics.newCustomers,
-          returningCustomers: metrics.returningCustomers,
-          conversionRate: metrics.conversionRate,
-          adSpend: metrics.adSpend,
-          roas: metrics.roas,
-          ctr: metrics.ctr,
-          cpc: metrics.cpc
+          totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
+          ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
+          averageOrderValue: typeof metrics.averageOrderValue === 'number' ? metrics.averageOrderValue : 0,
+          customerCount: typeof metrics.customerCount === 'number' ? metrics.customerCount : 0,
+          newCustomers: typeof metrics.newCustomers === 'number' ? metrics.newCustomers : 0,
+          returningCustomers: typeof metrics.returningCustomers === 'number' ? metrics.returningCustomers : 0,
+          conversionRate: typeof metrics.conversionRate === 'number' ? metrics.conversionRate : 0,
+          adSpend: typeof metrics.adSpend === 'number' ? metrics.adSpend : 0,
+          roas: typeof metrics.roas === 'number' ? metrics.roas : 0,
+          ctr: typeof metrics.ctr === 'number' ? metrics.ctr : 0,
+          cpc: typeof metrics.cpc === 'number' ? metrics.cpc : 0
         },
         comparison: {
-          salesGrowth: comparison.salesGrowth,
-          orderGrowth: comparison.orderGrowth,
-          customerGrowth: comparison.customerGrowth,
-          roasGrowth: comparison.roasGrowth,
-          conversionGrowth: comparison.conversionGrowth,
-          adSpendGrowth: comparison.adSpendGrowth
+          salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
+          orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
+          customerGrowth: typeof comparison.customerGrowth === 'number' ? comparison.customerGrowth : 0,
+          roasGrowth: typeof comparison.roasGrowth === 'number' ? comparison.roasGrowth : 0,
+          conversionGrowth: typeof comparison.conversionGrowth === 'number' ? comparison.conversionGrowth : 0,
+          adSpendGrowth: typeof comparison.adSpendGrowth === 'number' ? comparison.adSpendGrowth : 0
         },
-        bestSellingProducts: bestSellingProducts || [],
-        platformData
+        bestSellingProducts: validProducts,
+        platformData: {
+          shopifyConnected: !!platformData?.shopifyConnected,
+          metaConnected: !!platformData?.metaConnected && typeof metrics.adSpend === 'number' && metrics.adSpend > 0
+        }
       }),
     });
     

@@ -32,12 +32,47 @@ export async function POST(request: NextRequest) {
     
     const comparisonText = period === 'daily' ? 'yesterday' : 'last month';
     
+    // Clean and validate the data to ensure we only use real data
+    const validatedMetrics = {
+      totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
+      ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
+      averageOrderValue: typeof metrics.averageOrderValue === 'number' ? metrics.averageOrderValue : 0,
+      customerCount: typeof metrics.customerCount === 'number' ? metrics.customerCount : 0,
+      newCustomers: typeof metrics.newCustomers === 'number' ? metrics.newCustomers : 0,
+      returningCustomers: typeof metrics.returningCustomers === 'number' ? metrics.returningCustomers : 0,
+      conversionRate: typeof metrics.conversionRate === 'number' ? metrics.conversionRate : 0,
+      adSpend: typeof metrics.adSpend === 'number' ? metrics.adSpend : 0,
+      roas: typeof metrics.roas === 'number' ? metrics.roas : 0,
+      ctr: typeof metrics.ctr === 'number' ? metrics.ctr : 0,
+      cpc: typeof metrics.cpc === 'number' ? metrics.cpc : 0
+    };
+    
+    const validatedComparison = {
+      salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
+      orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
+      customerGrowth: typeof comparison.customerGrowth === 'number' ? comparison.customerGrowth : 0,
+      roasGrowth: typeof comparison.roasGrowth === 'number' ? comparison.roasGrowth : 0,
+      conversionGrowth: typeof comparison.conversionGrowth === 'number' ? comparison.conversionGrowth : 0,
+      adSpendGrowth: typeof comparison.adSpendGrowth === 'number' ? comparison.adSpendGrowth : 0
+    };
+    
+    // Validate bestselling products to ensure they have name and revenue
+    const validatedProducts = Array.isArray(bestSellingProducts) 
+      ? bestSellingProducts
+          .filter(product => product && typeof product.name === 'string' && product.name.trim() !== '' && typeof product.revenue === 'number')
+          .map(product => ({
+            name: product.name,
+            revenue: product.revenue,
+            orders: typeof product.orders === 'number' ? product.orders : 0
+          }))
+      : [];
+    
     // Format the data for the AI
     const dataForAI = {
       period,
-      metrics,
-      comparison,
-      bestSellingProducts,
+      metrics: validatedMetrics,
+      comparison: validatedComparison,
+      bestSellingProducts: validatedProducts,
       connectedPlatforms: platformsConnected
     };
     
@@ -57,29 +92,36 @@ PART 1: GENERAL OVERVIEW
 - Keep this section to 150-200 words maximum
 
 PART 2: POSITIVE HIGHLIGHTS
-- Create 3-4 bullet points of positive performance areas
+- Create 2-3 bullet points of positive performance areas
 - Each highlight should be specific and data-driven
-- Examples: "Strong performance in X product category with Y% growth" or "Advertising ROAS improved to X from Y"
+- Only mention actual products that appear in the bestSellingProducts array
+- If there are no clear positives, focus on the most stable metrics
 
 PART 3: AREAS NEEDING ATTENTION
 - Create 2-3 bullet points of areas that need improvement
 - Be specific about the metrics showing concerns
-- Examples: "Mobile conversion rate lags behind desktop by X%" or "Ad spend increased by X% but resulted in only Y% revenue growth"
+- Only reference actual data points, never assume or invent values
+- If metrics are zero or missing, note this as an area for data collection improvement
 
 PART 4: RECOMMENDED ACTIONS
-- Provide 3-4 specific, actionable recommendations based on the data
+- Provide 2-3 specific, actionable recommendations based on the data
 - Each recommendation should be clear and directly tied to the analysis
-- Examples: "Consider restocking [product name] within 7 days based on current sales velocity" or "Optimize mobile checkout process to address the 25% lower conversion rate"
+- Only reference actual products in the bestSellingProducts array
+- For metrics with zero values, recommend appropriate tracking measures
 
-Important formatting guidelines:
-1. Use professional, concise language throughout
-2. Do NOT include the section headers (PART 1, PART 2, etc.) in your response
-3. Use paragraph breaks between sections
-4. For highlights, attention areas, and recommendations, use bullet point format
-5. Do NOT mention that you are an AI in your response
-6. Only analyze available data - if certain metrics are missing, adapt your analysis accordingly
+CRITICAL INSTRUCTIONS:
+1. ONLY analyze the data provided - do not introduce fictional products, metrics, or scenarios
+2. NEVER mention products unless they appear in bestSellingProducts with their exact names
+3. ONLY reference actual numeric values that appear in the metrics or comparison objects
+4. Be honest about data limitations - if certain metrics are zero or missing, acknowledge this
+5. Adapt your analysis to be simpler when data is limited rather than inventing insights
+6. Use professional, concise language throughout
+7. Do NOT include the section headers (PART 1, PART 2, etc.) in your response
+8. Use paragraph breaks between sections
+9. For highlights, attention areas, and recommendations, use bullet point format
+10. Do NOT mention that you are an AI in your response
 
-The response should mirror the structure of the existing hard-coded analyses in the dashboard but with insights specific to the current data.`;
+Remember: It's better to have a shorter, accurate analysis than one based on assumptions.`;
 
     // Get AI response
     const aiResponse = await getGPT4Response(systemPrompt, JSON.stringify(dataForAI), 0.7);

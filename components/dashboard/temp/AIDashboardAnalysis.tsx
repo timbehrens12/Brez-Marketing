@@ -39,10 +39,11 @@ export function AIDashboardAnalysis({
     setError(null)
     
     try {
-      // Check if we have enough data to generate an analysis
+      // Strict validation to ensure we only have real data
       const hasSalesData = 
-        metrics.totalSales > 0 && 
-        (metrics.ordersCount > 0 || metrics.ordersPlaced > 0)
+        typeof metrics.totalSales === 'number' && metrics.totalSales > 0 && 
+        (typeof metrics.ordersCount === 'number' && metrics.ordersCount > 0 || 
+         typeof metrics.ordersPlaced === 'number' && metrics.ordersPlaced > 0)
       
       if (!hasSalesData) {
         setError(`Insufficient sales data available for ${period === 'daily' ? 'today' : period === 'weekly' ? 'this week' : 'this month'}. Please check back when more data is available.`)
@@ -50,10 +51,17 @@ export function AIDashboardAnalysis({
         return
       }
       
-      // Prepare the data for the API
+      // Validate best selling products
+      const validProducts = Array.isArray(bestSellingProducts) 
+        ? bestSellingProducts.filter(p => 
+            p && typeof p.name === 'string' && p.name.trim() !== '' && 
+            typeof p.revenue === 'number' && p.revenue > 0)
+        : []
+      
+      // Prepare the data for the API with validation
       const platformData = {
         shopifyConnected: true, // Determine this based on your actual connections
-        metaConnected: metrics.adSpend !== undefined && metrics.adSpend > 0
+        metaConnected: typeof metrics.adSpend === 'number' && metrics.adSpend > 0
       }
       
       // Call the API to generate the analysis
@@ -65,9 +73,28 @@ export function AIDashboardAnalysis({
         },
         body: JSON.stringify({
           period,
-          metrics,
-          comparison,
-          bestSellingProducts,
+          metrics: {
+            totalSales: typeof metrics.totalSales === 'number' ? metrics.totalSales : 0,
+            ordersCount: typeof metrics.ordersCount === 'number' ? metrics.ordersCount : 0,
+            averageOrderValue: typeof metrics.averageOrderValue === 'number' ? metrics.averageOrderValue : 0,
+            customerCount: typeof metrics.customerCount === 'number' ? metrics.customerCount : 0,
+            newCustomers: typeof metrics.newCustomers === 'number' ? metrics.newCustomers : 0,
+            returningCustomers: typeof metrics.returningCustomers === 'number' ? metrics.returningCustomers : 0,
+            conversionRate: typeof metrics.conversionRate === 'number' ? metrics.conversionRate : 0,
+            adSpend: typeof metrics.adSpend === 'number' ? metrics.adSpend : 0,
+            roas: typeof metrics.roas === 'number' ? metrics.roas : 0,
+            ctr: typeof metrics.ctr === 'number' ? metrics.ctr : 0,
+            cpc: typeof metrics.cpc === 'number' ? metrics.cpc : 0
+          },
+          comparison: {
+            salesGrowth: typeof comparison.salesGrowth === 'number' ? comparison.salesGrowth : 0,
+            orderGrowth: typeof comparison.orderGrowth === 'number' ? comparison.orderGrowth : 0,
+            customerGrowth: typeof comparison.customerGrowth === 'number' ? comparison.customerGrowth : 0,
+            roasGrowth: typeof comparison.roasGrowth === 'number' ? comparison.roasGrowth : 0,
+            conversionGrowth: typeof comparison.conversionGrowth === 'number' ? comparison.conversionGrowth : 0,
+            adSpendGrowth: typeof comparison.adSpendGrowth === 'number' ? comparison.adSpendGrowth : 0,
+          },
+          bestSellingProducts: validProducts,
           platformData
         })
       })
