@@ -128,6 +128,7 @@ interface PeriodMetrics {
   roas: number
   ctr: number
   cpc: number
+  topProducts?: Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }>
 }
 
 interface PerformanceReport {
@@ -883,11 +884,12 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       let totalSales: number = 0;
       let ordersCount: number = 0;
       let adSpend: number = 0;
+      let topProducts: Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }> = [];
       
       // Step 1: Get Shopify sales data
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
-        .select('id, total_price, created_at')
+        .select('id, total_price, created_at, line_items')
         .eq('connection_id', connectionId)
         .gte('created_at', from.toISOString())
         .lte('created_at', to.toISOString());
@@ -912,6 +914,48 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         }, 0);
         
         ordersCount = salesData.length;
+        
+        // Process line_items to get top products
+        const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
+        
+        salesData.forEach(order => {
+          const lineItems = order.line_items || [];
+          lineItems.forEach((item: any) => {
+            const productId = item.product_id?.toString() || item.id?.toString();
+            if (!productId) return;
+            
+            const title = item.title || 'Unknown Product';
+            const quantity = parseInt(item.quantity) || 0;
+            const price = parseFloat(item.price) || 0;
+            const revenue = quantity * price;
+            
+            if (productMap.has(productId)) {
+              const product = productMap.get(productId)!;
+              product.quantity += quantity;
+              product.revenue += revenue;
+            } else {
+              productMap.set(productId, {
+                title,
+                quantity,
+                revenue
+              });
+            }
+          });
+        });
+        
+        // Convert to array and sort by revenue
+        topProducts = Array.from(productMap.values())
+          .map(product => ({
+            title: product.title,
+            name: product.title,
+            quantity: product.quantity,
+            orders: product.quantity,
+            revenue: product.revenue
+          }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 10);  // Get top 10
+          
+        console.log('Found top products:', topProducts);
       } else {
         console.log('No Shopify orders found for the period, falling back to simulation');
       }
@@ -962,7 +1006,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           adSpend: 0,
           roas: 0,
           ctr: 0,
-          cpc: 0
+          cpc: 0,
+          topProducts: []
         };
       }
       
@@ -995,7 +1040,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         adSpend,
         roas,
         ctr,
-        cpc
+        cpc,
+        topProducts
       };
     } catch (error) {
       console.error('Error in fetchPeriodMetrics:', error);
@@ -1012,7 +1058,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         adSpend: 0,
         roas: 0,
         ctr: 0,
-        cpc: 0
+        cpc: 0,
+        topProducts: []
       };
     }
   };
