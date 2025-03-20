@@ -238,6 +238,15 @@ export function MetricCard({
       return "Compared to previous equivalent period"
     }
 
+    // Special handling for 100% growth (previous value was zero)
+    if (safeChange === 100) {
+      if (valueFormat === "currency") {
+        return `Previous period: $0.00`;
+      } else {
+        return `Previous period: 0${suffix ? suffix : ''}`;
+      }
+    }
+
     // Special case for March 9th, 2025
     const isMarch9th2025 = dateRange?.from?.getFullYear() === 2025 && 
                           dateRange.from.getMonth() === 2 && // 0-indexed, so 2 = March
@@ -316,6 +325,15 @@ export function MetricCard({
 
   // Add a function to directly display the actual comparison
   const renderActualComparison = () => {
+    // Handle special case for 100% growth (previous value was zero)
+    if (safeChange === 100) {
+      return (
+        <p className="mt-1">
+          Previous: {valueFormat === "currency" ? "$0.00" : `0${suffix ? suffix : ''}`}
+        </p>
+      );
+    }
+    
     // Calculate the previous value based on the current value and percentage change
     const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
     const previousValue = calculatePreviousValue(numericValue, change);
