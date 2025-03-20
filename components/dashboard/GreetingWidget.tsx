@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useUser } from "@clerk/nextjs"
-import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from "lucide-react"
+import { Sparkles, ChevronUp, ChevronDown, ArrowRight, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info, CalendarIcon, RefreshCw, ArrowDown, ArrowUp, CalendarCheck, Calendar, InfoIcon, ClockIcon } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -17,6 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger 
 } from "@/components/ui/tooltip"
+import { generatePerformanceAnalysis } from '@/lib/openai'
+import { supabase } from '@/lib/supabase'
 
 // Define types locally
 type ReportPeriod = 'daily' | 'monthly'
@@ -630,8 +632,8 @@ export function GreetingWidget({
         }
       }
       
-      // Generate AI analysis
-      const aiAnalysis = generateAIAnalysis(period, currentMetrics, {
+      // Generate AI analysis (await the result)
+      const aiAnalysis = await generateAIAnalysis(period, currentMetrics, {
         salesGrowth,
         orderGrowth: finalOrderGrowth,
         customerGrowth,
@@ -642,14 +644,14 @@ export function GreetingWidget({
       report.aiAnalysis = aiAnalysis
       
       return report
-      } catch (error) {
+    } catch (error) {
       console.error(`Error generating ${period} report:`, error)
       return null
     }
   }
 
   // Generate AI analysis based on real metrics
-  const generateAIAnalysis = (
+  const generateAIAnalysis = async (
     period: ReportPeriod,
     metrics: PeriodMetrics,
     comparison: {
@@ -659,45 +661,46 @@ export function GreetingWidget({
       roasGrowth: number,
       conversionGrowth: number
     }
-  ): string => {
-    const comparisonText = period === 'daily' ? 'yesterday' : 'last month'
+  ): Promise<string> => {
+    console.log(`Generating AI analysis for ${period} report`)
     
-    if (period === 'daily') {
-      return `Your store is showing ${comparison.salesGrowth > 5 ? 'strong' : comparison.salesGrowth > 0 ? 'positive' : 'challenged'} performance today with revenue of ${formatCurrency(metrics.totalSales)} from ${metrics.ordersCount} orders, which is a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from ${comparisonText}. 
+    try {
+      // Determine which platforms are connected based on metrics
+      const hasShopifyData = metrics.totalSales > 0 || metrics.ordersCount > 0
+      const hasMetaData = metrics.adSpend > 0 || metrics.roas > 0
       
-The Summer T-Shirt Collection continues to be your best-selling product line, generating 32% of today's revenue. Beach accessories are also performing well with the Beach Tote Bag and Aviator Sunglasses in the top 3 products.
-
-Your advertising performance shows a ROAS of ${metrics.roas.toFixed(1)}x, which is ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from ${comparisonText}. Meta campaigns are outperforming Google campaigns with Meta showing a 3.2x ROAS compared to Google's 1.9x.
-
-Customer behavior analysis shows peak purchasing times between 11am-2pm and 6pm-8pm. Mobile conversion rates continue to lag behind desktop by approximately 25%.
-
-Inventory levels for Summer T-Shirts and Beach Tote Bags are below 30% - consider restocking these high-performing items within the next 7 days to avoid stockouts during peak sales periods.`
-    } else {
-      // Check if there's any data in the previous month to compare with
-      const hasPreviousData = comparison.salesGrowth !== 100 && comparison.orderGrowth !== 100;
-      
-      if (hasPreviousData) {
-        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month, representing a ${comparison.salesGrowth > 0 ? 'positive' : 'negative'} ${Math.abs(comparison.salesGrowth).toFixed(1)}% change from the previous month. Overall order volume ${comparison.orderGrowth > 0 ? 'increased' : 'decreased'} by ${comparison.orderGrowth > 0 ? '+' : ''}${comparison.orderGrowth.toFixed(1)}% to ${metrics.ordersCount} orders.
-
-Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
-
-Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%, which is ${comparison.conversionGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.conversionGrowth).toFixed(1)}% from last month.
-
-Advertising efficiency ${comparison.roasGrowth > 0 ? 'improved' : 'declined'} with an overall ROAS of ${metrics.roas.toFixed(1)}x, ${comparison.roasGrowth > 0 ? 'up' : 'down'} ${Math.abs(comparison.roasGrowth).toFixed(1)}% from previous month. Meta campaigns continue to outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
-
-Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`
-      } else {
-        // No previous month data available
-        return `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month. There is no data from previous months to compare with, so this will serve as your baseline for future comparisons.
-
-Product performance analysis shows summer apparel and accessories dominating your sales, with the Summer T-Shirt Collection being the clear leader generating 28% of monthly revenue. The top 5 products account for 52% of your total sales, suggesting strong category focus.
-
-Customer acquisition metrics show ${metrics.newCustomers} new customers last month, with a cost per acquisition of $${(metrics.adSpend / (metrics.newCustomers || 1)).toFixed(2)}. Your customer retention rate is ${metrics.conversionRate.toFixed(1)}%.
-
-Your overall ROAS is ${metrics.roas.toFixed(1)}x. Meta campaigns outperform other platforms with a ROAS of 3.2x versus Google's 1.9x. The "Summer Collection" campaign was your best performer with a 3.8x ROAS.
-
-Inventory analysis indicates potential stockout risks for three of your top-selling items within the next 18-21 days based on current sales velocity. Beach Tote Bags are at critically low levels (12% of optimal stock).`
+      const connectedPlatforms = {
+        shopify: hasShopifyData,
+        meta: hasMetaData
       }
+      
+      // In case there's no data at all, return a default message
+      if (!hasShopifyData && !hasMetaData) {
+        return period === 'daily'
+          ? `No sales or marketing data is available for today. Please connect your store and marketing platforms to see AI-generated analysis of your performance.`
+          : `No sales or marketing data is available for ${getPreviousMonthName()}. Please connect your store and marketing platforms to see AI-generated analysis of your monthly performance.`
+      }
+      
+      // Prepare historical data for the API call
+      const historicalData = dailyReport?.historicalData || monthlyReport?.historicalData || []
+      
+      // Call the OpenAI function to generate the analysis
+      const analysis = await generatePerformanceAnalysis(
+        period,
+        metrics,
+        comparison,
+        historicalData,
+        connectedPlatforms
+      )
+      
+      return analysis
+    } catch (error) {
+      console.error(`Error in generateAIAnalysis:`, error)
+      
+      // Return a fallback message if there's an error
+      return period === 'daily'
+        ? `Your store has generated ${formatCurrency(metrics.totalSales)} in revenue today from ${metrics.ordersCount} orders. We're unable to provide a detailed analysis at this time due to high demand. Please try refreshing in a few minutes.`
+        : `Your store generated ${formatCurrency(metrics.totalSales)} in revenue last month from ${metrics.ordersCount} orders. We're unable to provide a detailed analysis at this time due to high demand. Please try refreshing in a few minutes.`
     }
   }
 
@@ -1360,63 +1363,22 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
                   <h5 className="font-medium">AI Analysis: {getPreviousMonthName()} Overview</h5>
-                  </div>
-                <div className="text-sm leading-relaxed space-y-4">
-                  {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-3">
-                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(monthlyReport?.revenueGenerated || 0)}</span> in revenue for {getPreviousMonthName()}, representing a <span className={monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {monthlyReport?.periodComparison.salesGrowth && monthlyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from {getTwoMonthsAgoName()}. You processed <span className="text-white font-medium">{monthlyReport?.totalPurchases}</span> orders with an average order value of <span className="text-white font-medium">${Math.round((monthlyReport?.revenueGenerated || 0) / (monthlyReport?.totalPurchases || 1))}</span>.</p>
-                    
-                    <p>Ad performance resulted in <span className="text-white font-medium">${Math.round(monthlyReport?.totalAdSpend || 0)}</span> in ad spend with a ROAS of <span className={monthlyReport?.averageRoas && monthlyReport.averageRoas > 2 ? 'text-green-400 font-medium' : monthlyReport?.averageRoas && monthlyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
-                      {monthlyReport?.averageRoas?.toFixed(1)}x
-                    </span>, which is <span className={monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {monthlyReport?.periodComparison.roasGrowth && monthlyReport.periodComparison.roasGrowth > 0 ? '+' : ''}{monthlyReport?.periodComparison.roasGrowth?.toFixed(1)}%
-                    </span> compared to {getTwoMonthsAgoName()}. Customer acquisition cost is <span className="text-white font-medium">${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))}</span> per new customer, with <span className="text-white font-medium">{monthlyReport?.newCustomersAcquired}</span> new customers acquired.</p>
-                  </div>
-                  
-                  {/* Positive Highlights section */}
-                  <div>
-                    <h6 className="text-green-400 font-medium flex items-center mb-2">
-                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>The Summer T-Shirt Collection continues to be your top performer, generating 28% of monthly revenue with an exceptional conversion rate of 4.2%</li>
-                      <li>Meta campaigns significantly outperform other platforms with a ROAS of 3.2x versus Google's 1.9x</li>
-                      <li>The "Summer Collection" campaign was your highest performer with a 3.8x ROAS and 32% lower CPA than store average</li>
-                      <li>Customer retention rate increased to {monthlyReport?.conversionRate?.toFixed(1)}%, up {Math.abs(monthlyReport?.periodComparison.conversionGrowth || 0).toFixed(1)}% from last month</li>
-                      <li>Weekend sales performance exceeded weekday performance by 35% in revenue and 27% in conversion rate</li>
-                    </ul>
-                  </div>
-                  
-                  {/* Areas Needing Attention section */}
-                  <div>
-                    <h6 className="text-red-400 font-medium flex items-center mb-2">
-                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Mobile conversion rate ({(monthlyReport?.conversionRate || 0 * 0.8).toFixed(1)}%) lags behind desktop ({(monthlyReport?.conversionRate || 0 * 1.2).toFixed(1)}%) by 25%, suggesting issues with mobile UX</li>
-                      <li>Customer acquisition cost increased by 3.7% to ${Math.round((monthlyReport?.totalAdSpend || 0) / (monthlyReport?.newCustomersAcquired || 1))} per customer</li>
-                      <li>Google Search campaigns are significantly underperforming with a 0.9x ROAS for non-brand keywords</li>
-                      <li>Cart abandonment rate increased 5.3% this month, with the highest drop-off occurring at the shipping information step</li>
-                      <li>Inventory analysis indicates potential stockout risks for three top-selling items within 18-21 days; Beach Tote Bags are at critically low levels (12% of optimal stock)</li>
-                    </ul>
                 </div>
-                
-                  {/* Actionable Recommendations section - Monthly view */}
-                  <div>
-                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Shift 15-20% of Google ad budget to top-performing Meta campaigns to optimize ROAS</li>
-                      <li>Prioritize mobile checkout optimization to address the 25% gap in conversion rates</li>
-                      <li>Restock Beach Tote Bags within 7 days to prevent revenue loss (~$2,800 weekly potential)</li>
-                      <li>Implement exit-intent popup with 10% discount at shipping information step to reduce cart abandonment</li>
-                      <li>Expand the Summer Collection product line based on consistent performance metrics</li>
-                    </ul>
-                  </div>
-                  </div>
+                <div className="text-sm leading-relaxed">
+                  {!monthlyReport ? (
+                    <div className="py-6 flex justify-center">
+                      <RefreshCw className="animate-spin h-6 w-6 text-gray-500" />
+                    </div>
+                  ) : monthlyReport.aiAnalysis ? (
+                    <div className="whitespace-pre-line">{monthlyReport.aiAnalysis}</div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500">
+                      <AlertTriangle className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                      <p>Unable to generate AI analysis for {getPreviousMonthName()}.</p>
+                      <p className="text-xs mt-2">Try refreshing the data or connect additional data sources.</p>
+                    </div>
+                  )}
+                </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
                     {getPreviousMonthName()} data analysis
@@ -1425,8 +1387,8 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                     See more recommendations on the AI Intelligence page
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Link>
-                  </div>
                 </div>
+              </div>
                 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
@@ -1858,59 +1820,20 @@ Inventory analysis indicates potential stockout risks for three of your top-sell
                   <Sparkles className="text-blue-400 mr-2 h-5 w-5" />
                   <h5 className="font-medium">AI Analysis: Today's Performance</h5>
                 </div>
-                <div className="text-sm leading-relaxed space-y-4">
-                  {/* Introduction section - top level summary */}
-                  <div className="border-b border-gray-800 pb-3">
-                    <p className="mb-2">Your store generated <span className="text-white font-medium">{formatCurrency(dailyReport?.revenueGenerated || 0)}</span> in revenue today, representing a <span className={dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
-                      {dailyReport?.periodComparison.salesGrowth && dailyReport.periodComparison.salesGrowth > 0 ? '+' : ''}{dailyReport?.periodComparison.salesGrowth?.toFixed(1)}%
-                    </span> change from yesterday. You received <span className="text-white font-medium">{dailyReport?.totalPurchases}</span> orders with an average value of <span className="text-white font-medium">${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}</span>, which is <span className="text-green-400 font-medium">8.3%</span> higher than yesterday.</p>
-                    
-                    <p>Today's ad performance shows <span className="text-white font-medium">${Math.round(dailyReport?.totalAdSpend || 0)}</span> spent across campaigns, achieving a ROAS of <span className={dailyReport?.averageRoas && dailyReport.averageRoas > 2 ? 'text-green-400 font-medium' : dailyReport?.averageRoas && dailyReport.averageRoas < 1 ? 'text-red-400 font-medium' : 'text-white font-medium'}>
-                      {dailyReport?.averageRoas?.toFixed(1)}x
-                    </span>. Traffic patterns show peak activity during 11am-2pm and 6pm-8pm, with <span className="text-white font-medium">{Math.round(dailyReport?.conversionRate || 0)}%</span> overall site conversion rate. The Beach accessories category is your top performer today, with Beach Tote Bags showing inventory concerns.</p>
-                </div>
-                  
-                  {/* Positive Highlights section */}
-                  <div>
-                    <h6 className="text-green-400 font-medium flex items-center mb-2">
-                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Average order value increased to ${Math.round((dailyReport?.revenueGenerated || 0) / (dailyReport?.totalPurchases || 1))}, up 8.3% from yesterday</li>
-                      <li>Beach accessories category is outperforming all others with 23% of today's revenue</li>
-                      <li>Meta campaigns are delivering strong results with a 3.2x ROAS today</li>
-                      <li>Email campaign is driving significant traffic with a 4.5% conversion rate</li>
-                      <li>Peak purchasing hours (11am-2pm, 6pm-8pm) show 35% higher conversion rates than other times</li>
-                    </ul>
-                </div>
-                  
-                  {/* Areas Needing Attention section */}
-                  <div>
-                    <h6 className="text-red-400 font-medium flex items-center mb-2">
-                      <TrendingDown className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Mobile checkout abandonment peaked between 3-5pm today (32% abandonment rate)</li>
-                      <li>Product "Aviator Sunglasses" saw a 15% decrease in conversion rate</li>
-                      <li>Google campaigns are underperforming with only 0.9x ROAS today</li>
-                      <li>Beach Tote Bag inventory is critically low at 12% of optimal levels</li>
-                      <li>Customer support response time increased to 45 minutes during peak hours</li>
-                    </ul>
-              </div>
-                  
-                  {/* Actionable Recommendations section - Daily view */}
-                  <div>
-                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                    </h6>
-                    <ul className="space-y-1.5 pl-5 list-disc">
-                      <li>Reduce Google campaign budget by 30% and reallocate to Meta campaigns</li>
-                      <li>Review the Aviator Sunglasses product page for potential issues</li>
-                      <li>Expedite Beach Tote Bag restocking to avoid revenue loss</li>
-                      <li>Investigate mobile checkout issues during the 3-5pm timeframe</li>
-                      <li>Schedule additional customer support staff during identified peak hours</li>
-                    </ul>
-                  </div>
+                <div className="text-sm leading-relaxed">
+                  {!dailyReport ? (
+                    <div className="py-6 flex justify-center">
+                      <RefreshCw className="animate-spin h-6 w-6 text-gray-500" />
+                    </div>
+                  ) : dailyReport.aiAnalysis ? (
+                    <div className="whitespace-pre-line">{dailyReport.aiAnalysis}</div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500">
+                      <AlertTriangle className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                      <p>Unable to generate AI analysis for today.</p>
+                      <p className="text-xs mt-2">Try refreshing the data or connect additional data sources.</p>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">

@@ -274,4 +274,94 @@ export async function explainMetric(
   }
 }
 
+/**
+ * Generate a comprehensive performance analysis for daily or monthly reports
+ * @param period - Whether this is a daily or monthly report
+ * @param metrics - Current period metrics
+ * @param comparison - Growth percentages compared to previous period
+ * @param historicalData - Optional historical data for context
+ * @param connectedPlatforms - Which platforms (shopify, meta, etc.) have data
+ * @returns Detailed performance analysis as text
+ */
+export async function generatePerformanceAnalysis(
+  period: 'daily' | 'monthly',
+  metrics: {
+    totalSales: number;
+    ordersCount: number;
+    averageOrderValue: number;
+    conversionRate: number;
+    customerCount?: number;
+    newCustomers?: number;
+    returningCustomers?: number;
+    adSpend: number;
+    roas: number;
+    ctr?: number;
+    cpc?: number;
+  },
+  comparison: {
+    salesGrowth: number;
+    orderGrowth: number;
+    customerGrowth?: number;
+    roasGrowth?: number;
+    conversionGrowth?: number;
+  },
+  historicalData?: Array<{
+    name: string;
+    revenue: number;
+    orders: number;
+    adSpend?: number;
+    roas?: number;
+  }>,
+  connectedPlatforms?: {
+    shopify: boolean;
+    meta: boolean;
+    google?: boolean;
+    tiktok?: boolean;
+  }
+): Promise<string> {
+  const systemPrompt = `You are an expert e-commerce and marketing analyst providing insights to a business owner.
+  Create a comprehensive analysis of their ${period === 'daily' ? 'daily' : 'monthly'} performance data.
+  
+  Guidelines:
+  - Focus on actionable insights that help make business decisions
+  - Be specific and data-driven but use a conversational tone
+  - Highlight both strengths and areas for improvement
+  - Analyze trends and patterns if historical data is available
+  - Include product performance, customer behavior, and marketing metrics where available
+  - Provide 2-3 specific, actionable recommendations at the end
+  - Format in clear paragraphs with natural breaks between topics
+  - Keep the entire analysis to 4-5 paragraphs maximum
+  - Focus analysis only on the platforms that are connected (included in connectedPlatforms)
+  - If ad platforms like Meta aren't connected, don't analyze ad performance or mention missing data
+  - If there's very limited data, acknowledge this and keep analysis appropriate to available data
+  
+  IMPORTANT: This analysis will be shown directly to the business owner, so make it professional and valuable.`;
+
+  // Prepare the data for GPT
+  const userData = {
+    period,
+    metrics,
+    comparison,
+    historicalData: historicalData || [],
+    connectedPlatforms: connectedPlatforms || { shopify: true, meta: false },
+    comparisonText: period === 'daily' ? 'yesterday' : 'last month'
+  };
+
+  try {
+    return await getGPT4Response(systemPrompt, JSON.stringify(userData), 0.4);
+  } catch (error) {
+    console.error('Error generating performance analysis:', error);
+    
+    // Create a basic fallback response
+    const timeframe = period === 'daily' ? 'today' : 'this month';
+    const prevTimeframe = period === 'daily' ? 'yesterday' : 'last month';
+    
+    if (metrics.totalSales <= 0) {
+      return `No sales data is available for ${timeframe}. Please connect your store or ensure your data is properly synced to see a detailed performance analysis.`;
+    }
+    
+    return `Your store generated $${metrics.totalSales.toFixed(2)} in revenue ${timeframe} from ${metrics.ordersCount} orders. This represents a ${comparison.salesGrowth >= 0 ? 'positive' : 'negative'} change of ${Math.abs(comparison.salesGrowth).toFixed(1)}% compared to ${prevTimeframe}. Unable to provide a more detailed analysis at this time.`;
+  }
+}
+
 export default openai; 
