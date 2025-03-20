@@ -30,8 +30,22 @@ interface Metrics {
   totalSales: number
   conversionRate: number
   averagePurchaseValue: number
+  averageOrderValue?: number
   roas: number
   adSpend: number
+  salesGrowth?: number
+  aovGrowth?: number
+  ordersPlaced?: number
+  orderGrowth?: number
+  previousOrdersPlaced?: number
+  ordersCount?: number
+  customerCount?: number
+  newCustomers?: number
+  returningCustomers?: number
+  ctr?: number
+  cpc?: number
+  unitsSold?: number
+  previousUnitsSold?: number
 }
 
 interface PlatformConnection {
@@ -2289,4 +2303,43 @@ const generateRealAIAnalysis = async (
     console.error('Error generating AI analysis:', error);
     return `Unable to generate AI analysis at this time. Please try refreshing the page or check back later.`;
   }
+};
+
+// Function to parse the AI response into sections
+const parseAIResponse = (response: string) => {
+  if (!response) return { 
+    mainAnalysis: '', 
+    positiveHighlights: [], 
+    areasNeedingAttention: [], 
+    recommendedActions: [] 
+  };
+
+  // Split the response into sections
+  const mainAnalysisMatch = response.match(/^([\s\S]*?)(?=POSITIVE HIGHLIGHTS:|$)/);
+  const positiveHighlightsMatch = response.match(/POSITIVE HIGHLIGHTS:([\s\S]*?)(?=AREAS NEEDING ATTENTION:|$)/);
+  const areasNeedingAttentionMatch = response.match(/AREAS NEEDING ATTENTION:([\s\S]*?)(?=RECOMMENDED ACTIONS:|$)/);
+  const recommendedActionsMatch = response.match(/RECOMMENDED ACTIONS:([\s\S]*?)$/);
+
+  // Process main analysis
+  const mainAnalysis = mainAnalysisMatch ? mainAnalysisMatch[1].trim() : '';
+  
+  // Process bullet points sections
+  const processSection = (match: RegExpMatchArray | null): string[] => {
+    if (!match || !match[1]) return [];
+    return match[1]
+      .split('-')
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  };
+
+  const positiveHighlights = processSection(positiveHighlightsMatch);
+  const areasNeedingAttention = processSection(areasNeedingAttentionMatch);
+  const recommendedActions = processSection(recommendedActionsMatch);
+
+  return {
+    mainAnalysis,
+    positiveHighlights,
+    areasNeedingAttention,
+    recommendedActions
+  };
 };

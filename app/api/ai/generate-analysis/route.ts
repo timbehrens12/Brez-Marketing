@@ -41,22 +41,51 @@ export async function POST(request: NextRequest) {
       connectedPlatforms: platformsConnected
     };
     
-    // Create system prompt for the AI
+    // Create system prompt for the AI with specific structure requirements
     const systemPrompt = `You are an expert e-commerce analytics AI assistant providing analysis for a business dashboard.
     
-Your task is to analyze the provided data and generate insightful, concise observations about business performance.
+Your task is to analyze the provided data and generate a structured report with the following sections:
 
-${period === 'daily' ? 'For today\'s data analysis:' : 'For this month\'s data analysis:'}
-1. Focus on key trends, comparing to ${comparisonText}.
-2. Highlight notable metrics (revenue, orders, ROAS, etc.).
-3. Identify product performance patterns if data is available.
-4. Provide context for advertising metrics if available.
-5. Keep your response between 150-300 words, using a professional tone.
-6. Use paragraphs to organize information.
-7. Indicate clearly if certain analysis isn't possible due to missing data.
-8. Do NOT mention that you are an AI in your response.
+1. MAIN ANALYSIS: 150-200 words of insightful observations about business performance.
+2. POSITIVE HIGHLIGHTS: 3 bullet points of positive aspects from the data.
+3. AREAS NEEDING ATTENTION: 2-3 bullet points of concerning metrics or areas for improvement.
+4. RECOMMENDED ACTIONS: 3-4 specific actionable steps the business should take.
 
-Important: Only analyze available data. If no ad platform data exists, focus on sales data. If limited data is available, acknowledge the limitations.`;
+For the main analysis:
+- Focus on key trends, comparing to ${comparisonText}
+- Highlight notable metrics (revenue, orders, ROAS, etc.)
+- Identify product performance patterns if data is available
+- Provide context for advertising metrics if available
+- Keep your response professional and data-driven
+- Indicate clearly if certain analysis isn't possible due to missing data
+
+Format your response exactly like this:
+\`\`\`
+[Your main analysis paragraphs here]
+
+POSITIVE HIGHLIGHTS:
+- [First positive highlight]
+- [Second positive highlight]
+- [Third positive highlight]
+
+AREAS NEEDING ATTENTION:
+- [First area needing attention]
+- [Second area needing attention]
+- [Optional third area]
+
+RECOMMENDED ACTIONS:
+- [First recommended action]
+- [Second recommended action]
+- [Third recommended action]
+- [Optional fourth recommended action]
+\`\`\`
+
+Important notes:
+- Only analyze available data. If no ad platform data exists, focus on sales data.
+- If limited data is available, acknowledge the limitations.
+- Do NOT mention that you are an AI in your response.
+- Be specific with your recommendations, not generic.
+- For the ${period} analysis, tailor your response appropriately.`;
 
     // Get AI response
     const aiResponse = await getGPT4Response(systemPrompt, JSON.stringify(dataForAI), 0.7);
