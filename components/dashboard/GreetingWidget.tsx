@@ -2238,20 +2238,24 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">Today's Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by today's revenue</p>
+                    <h5 className="font-medium">{currentPeriod === 'daily' ? "Today's" : "Monthly"} Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by {currentPeriod === 'daily' ? "today's" : "monthly"} revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
+                      // Select the appropriate report based on the current period
+                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      
                       console.log("DEBUG - Best Sellers render:", {
-                        hasDailyReport: !!dailyReport,
-                        hasProducts: !!dailyReport?.bestSellingProducts,
-                        productCount: dailyReport?.bestSellingProducts?.length || 0,
-                        productDetails: dailyReport?.bestSellingProducts
+                        currentPeriod,
+                        hasReport: !!report,
+                        hasProducts: !!report?.bestSellingProducts,
+                        productCount: report?.bestSellingProducts?.length || 0,
+                        productDetails: report?.bestSellingProducts
                       });
                       
-                      if (dailyReport?.bestSellingProducts && dailyReport.bestSellingProducts.length > 0) {
-                        return dailyReport.bestSellingProducts.map((product, index) => (
+                      if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
+                        return report.bestSellingProducts.map((product, index) => (
                           <div key={index} className="mb-4 last:mb-0">
                             <div className="flex justify-between items-center mb-1">
                               <span className="text-sm">{product.name}</span>
@@ -2262,7 +2266,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 <div 
                                   className="h-full bg-yellow-500 rounded-full" 
                                   style={{
-                                    width: `${(product.revenue / (dailyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                    width: `${(product.revenue / (report?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
                                   }}
                                 ></div>
                               </div>
@@ -2274,7 +2278,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         return (
                           <div className="py-8 text-center">
                             <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">No products sold today</p>
+                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
                             <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                           </div>
                         );
