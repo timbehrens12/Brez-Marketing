@@ -757,10 +757,10 @@ export function GreetingWidget({
       // Debug logging to see what's being received in metrics.topProducts
       console.log('DEBUG - topProducts from metrics:', metrics.topProducts);
       
-      // First, gather any real products from the metrics if available
-      let realProducts = [];
+      // Use actual products from metrics - include all valid products
+      // Filter out only obvious placeholder products
       if (metrics.topProducts && Array.isArray(metrics.topProducts) && metrics.topProducts.length > 0) {
-        realProducts = metrics.topProducts
+        report.bestSellingProducts = metrics.topProducts
           .filter(product => {
             if (!product.title && !product.name) return false;
             const name = (product.title || product.name || '').toLowerCase();
@@ -772,48 +772,16 @@ export function GreetingWidget({
             name: product.title || product.name || 'Unknown Product', 
             revenue: product.revenue || 0, 
             orders: product.quantity || product.orders || 0
-          }));
+          }))
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5); // Limit to top 5
         
-        console.log('Filtered real products from metrics:', realProducts);
+        console.log(`Using real products for ${period} best-selling products:`, report.bestSellingProducts);
+      } else {
+        // If no product data found
+        report.bestSellingProducts = [];
+        console.log(`No product data available for ${period} best-selling products`);
       }
-      
-      // Create an array of known products that should be included
-      const knownProducts = [
-        {
-          name: 'Test Product 4',
-          revenue: 825,
-          orders: 1
-        },
-        {
-          name: 'Sofa Covers',
-          revenue: 640,
-          orders: 16
-        }
-      ];
-      
-      // Combine real products with known products
-      // Use Set to eliminate duplicates based on name
-      const productMap = new Map();
-      
-      // Add real products to map
-      realProducts.forEach(product => {
-        productMap.set(product.name.toLowerCase(), product);
-      });
-      
-      // Add known products to map (will overwrite real products with same name)
-      knownProducts.forEach(product => {
-        // Only add known product if we don't already have a real product with the same name
-        if (!productMap.has(product.name.toLowerCase())) {
-          productMap.set(product.name.toLowerCase(), product);
-        }
-      });
-      
-      // Convert map back to array and sort by revenue
-      report.bestSellingProducts = Array.from(productMap.values())
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 5); // Limit to top 5
-      
-      console.log('Final best-selling products:', report.bestSellingProducts);
       
       // Add historical data with realistic progression
       if (period === 'daily') {
@@ -1742,33 +1710,63 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{(currentPeriod as string) === 'daily' ? "Today's" : "Last Month's"} Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by {(currentPeriod as string) === 'daily' ? "today's" : "month's"} revenue</p>
+                    <h5 className="font-medium">
+                      {currentPeriod === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
+                    </h5>
+                    <p className="text-xs text-gray-400">
+                      {currentPeriod === 'daily' ? "by today's revenue" : "by monthly revenue"}
+                    </p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
-                    {monthlyReport?.bestSellingProducts?.map((product, index) => (
-                      <div key={index} className="mb-4 last:mb-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm">{product.name}</span>
-                          <span className="text-sm font-medium">${product.revenue}</span>
+                    {(() => {
+                      // Get the appropriate report based on the current period
+                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      
+                      console.log(`DEBUG - ${currentPeriod} Best Sellers render:`, {
+                        hasReport: !!report,
+                        hasProducts: !!report?.bestSellingProducts,
+                        productCount: report?.bestSellingProducts?.length || 0,
+                        productDetails: report?.bestSellingProducts
+                      });
+                      
+                      if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
+                        return report.bestSellingProducts.map((product, index) => (
+                          <div key={index} className="mb-4 last:mb-0">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm">{product.name}</span>
+                              <span className="text-sm font-medium">${product.revenue}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-yellow-500 rounded-full" 
+                                  style={{
+                                    width: `${(product.revenue / (report?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                            </div>
+                          </div>
+                        ));
+                      } else {
+                        return (
+                          <div className="py-8 text-center">
+                            <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                            <p className="text-gray-400">
+                              {currentPeriod === 'daily' 
+                                ? "No products sold today" 
+                                : "No products sold this month"}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-yellow-500 rounded-full" 
-                              style={{ 
-                                width: `${(product.revenue / (monthlyReport?.bestSellingProducts?.[0]?.revenue || 1)) * 100}%` 
-                              }}
-                            ></div>
-                  </div>
-                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
                 </div>
-                      </div>
-                    ))}
-              </div>
-            </div>
-            
-            <div>
+                
+                <div>
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">
                       Month-to-Month Comparison
