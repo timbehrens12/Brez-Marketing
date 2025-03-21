@@ -76,86 +76,20 @@ export function MetaTab({
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>("7d")
   const [topCampaigns, setTopCampaigns] = useState<any[]>([])
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
-  const [useTestData, setUseTestData] = useState<boolean>(true)
 
   useEffect(() => {
     async function fetchMetaData() {
       if (!brandId) return
       
       setLoading(true)
-      setError(null)
-      
       try {
-        // Format date parameters if available
-        let dateParams = ''
-        if (dateRange?.from && dateRange?.to) {
-          const startDate = dateRange.from.toISOString().split('T')[0]
-          const endDate = dateRange.to.toISOString().split('T')[0]
-          dateParams = `&startDate=${startDate}&endDate=${endDate}`
-        }
-        
-        console.log(`Fetching Meta ${useTestData ? 'test' : ''} data for brand: ${brandId}`)
-        const endpoint = useTestData 
-          ? `/api/metrics/meta-test?brandId=${brandId}${dateParams}` 
-          : `/api/metrics/meta?brandId=${brandId}${dateParams}`
-        
-        const response = await fetch(endpoint)
-        
+        const response = await fetch(`/api/metrics/meta?brandId=${brandId}`)
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`Failed to fetch Meta data: Status ${response.status}, Response: ${errorText}`)
-          
-          // If real data fetch fails, switch to test data automatically
-          if (!useTestData) {
-            console.log("Falling back to test data due to real data fetch error")
-            setUseTestData(true)
-            // Return early to avoid throwing, we'll retry with test data in the next effect cycle
-            return
-          }
-          
-          throw new Error(`Failed to fetch Meta data: ${response.status} ${errorText}`)
+          throw new Error(`Failed to fetch Meta data: ${response.status}`)
         }
         
         const data = await response.json()
-        console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} data:`, data)
-        
-        if (!data || Object.keys(data).length === 0) {
-          console.warn('Empty data response from API')
-          setMetaData(null)
-        } else {
-          // Make sure dailyData is always an array
-          if (!data.dailyData || !Array.isArray(data.dailyData)) {
-            console.warn('dailyData is missing or not an array, setting default empty array')
-            data.dailyData = []
-          }
-          
-          // Ensure all metrics have at least default values
-          const processedData = {
-            adSpend: data.adSpend ?? 0,
-            adSpendGrowth: data.adSpendGrowth ?? 0,
-            impressions: data.impressions ?? 0,
-            impressionGrowth: data.impressionGrowth ?? 0,
-            clicks: data.clicks ?? 0,
-            clickGrowth: data.clickGrowth ?? 0,
-            conversions: data.conversions ?? 0,
-            conversionGrowth: data.conversionGrowth ?? 0,
-            ctr: data.ctr ?? 0,
-            ctrGrowth: data.ctrGrowth ?? 0,
-            cpc: data.cpc ?? 0,
-            cpcLink: data.cpcLink ?? 0,
-            costPerResult: data.costPerResult ?? 0,
-            cprGrowth: data.cprGrowth ?? 0,
-            roas: data.roas ?? 2.5,
-            roasGrowth: data.roasGrowth ?? 0,
-            frequency: data.frequency ?? 0,
-            budget: data.budget ?? 0,
-            reach: data.reach ?? 0,
-            dailyData: data.dailyData
-          }
-          
-          console.log('Processed Meta data:', processedData)
-          setMetaData(processedData)
-        }
+        setMetaData(data)
       } catch (err) {
         console.error("Error fetching Meta data:", err)
         setError(err instanceof Error ? err.message : "Failed to load Meta data")
@@ -169,38 +103,13 @@ export function MetaTab({
       
       setIsLoadingCampaigns(true)
       try {
-        // Format date parameters if available
-        let dateParams = ''
-        if (dateRange?.from && dateRange?.to) {
-          const startDate = dateRange.from.toISOString().split('T')[0]
-          const endDate = dateRange.to.toISOString().split('T')[0]
-          dateParams = `&startDate=${startDate}&endDate=${endDate}`
-        }
-        
-        console.log(`Fetching Meta ${useTestData ? 'test' : ''} campaigns for brand: ${brandId}`)
-        const endpoint = useTestData 
-          ? `/api/analytics/meta-test/campaigns?brandId=${brandId}${dateParams}` 
-          : `/api/analytics/meta/campaigns?brandId=${brandId}${dateParams}`
-          
-        const response = await fetch(endpoint)
+        const response = await fetch(`/api/analytics/meta/campaigns?brandId=${brandId}`)
         
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`Failed to fetch campaigns: Status ${response.status}, Response: ${errorText}`)
-          
-          // If real data fetch fails, switch to test data automatically
-          if (!useTestData) {
-            console.log("Falling back to test data for campaigns due to real data fetch error")
-            setUseTestData(true)
-            // Return early to avoid throwing, we'll retry with test data in the next effect cycle
-            return
-          }
-          
-          throw new Error(`Failed to fetch campaigns: ${response.status} ${errorText}`)
+          throw new Error(`Failed to fetch campaigns: ${response.status}`)
         }
         
         const data = await response.json()
-        console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} campaigns:`, data)
         
         if (data.error) {
           throw new Error(data.error)
@@ -211,7 +120,6 @@ export function MetaTab({
           const sortedCampaigns = [...data.campaigns].sort((a, b) => b.roas - a.roas).slice(0, 5)
           setTopCampaigns(sortedCampaigns)
         } else {
-          console.warn('No campaigns found in API response')
           setTopCampaigns([])
         }
       } catch (err) {
@@ -223,7 +131,7 @@ export function MetaTab({
     
     fetchMetaData()
     fetchCampaigns()
-  }, [brandId, dateRange, useTestData])
+  }, [brandId, dateRange])
 
   const generateAiInsights = async () => {
     setIsLoadingInsights(true)
@@ -262,75 +170,28 @@ export function MetaTab({
 
   // Transform daily data for the line chart
   const getDailyTrendData = () => {
-    const dailyData = data?.dailyData || [];
-    
-    if (!dailyData || dailyData.length === 0) {
-      console.warn('No daily data available for trend chart')
-      return []
-    }
-    
-    console.log(`Processing ${dailyData.length} daily data items for trend chart`)
+    if (!data.dailyData || data.dailyData.length === 0) return []
     
     // Filter based on selected time frame
-    let filteredData = [...dailyData]
+    let filteredData = [...data.dailyData]
     
     if (selectedTimeFrame === "7d") {
-      filteredData = filteredData.slice(0, 7)
+      filteredData = filteredData.slice(-7)
     } else if (selectedTimeFrame === "30d") {
-      filteredData = filteredData.slice(0, 30)
+      filteredData = filteredData.slice(-30)
     } else if (selectedTimeFrame === "90d") {
-      filteredData = filteredData.slice(0, 90)
+      filteredData = filteredData.slice(-90)
     }
     
-    const result = filteredData.map((item: DailyDataItem) => {
-      // Make sure date is a string
-      let dateStr = 'Unknown';
-      try {
-        if (item && item.date) {
-          const dateObj = new Date(item.date);
-          if (!isNaN(dateObj.getTime())) {
-            dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing date', e);
-      }
-      
-      // Convert spend and roas to numbers, with fallbacks for null/undefined
-      const spend = item && item.spend !== undefined && item.spend !== null ? Number(item.spend) : 0;
-      const roas = item && item.roas !== undefined && item.roas !== null ? Number(item.roas) : 0;
-      
-      // Ensure we only return finite numbers
-      return {
-        date: dateStr,
-        spend: isNaN(spend) || !isFinite(spend) ? 0 : spend,
-        roas: isNaN(roas) || !isFinite(roas) ? 0 : roas
-      }
-    }).reverse(); // Reverse to show oldest to newest
-    
-    console.log('Processed trend data:', result)
-    return result
+    return filteredData.map((item: DailyDataItem) => ({
+      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      spend: item.spend || 0,
+      roas: item.roas || 0
+    }))
   }
 
   return (
     <div className="space-y-6">
-      {/* Test Mode Switch */}
-      <div className="flex items-center justify-end mb-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-400">Real Data</span>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={useTestData}
-              onChange={() => setUseTestData(!useTestData)}
-            />
-            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-          </label>
-          <span className="text-sm text-gray-400">Test Data</span>
-        </div>
-      </div>
-
       {/* Meta Connection Status Banner */}
       {hasData ? (
         <AlertBox
@@ -346,9 +207,7 @@ export function MetaTab({
           className="bg-blue-950/20 border-blue-800/30"
         >
           <p className="text-sm">
-            {useTestData 
-              ? "Using test data for Meta Ads. This data is simulated for demonstration purposes."
-              : "Your Meta advertising account is connected and data is being synchronized daily."}
+            Your Meta advertising account is connected and data is being synchronized daily.
           </p>
         </AlertBox>
       ) : (
@@ -359,22 +218,8 @@ export function MetaTab({
           className="bg-amber-950/20 border-amber-800/30"
         >
           <p className="text-sm">
-            {useTestData 
-              ? "No test data available. Please make sure you've set up the test tables in Supabase." 
-              : "We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns."}
+            We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns.
           </p>
-          {!useTestData && (
-            <div className="mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs bg-amber-900/30 border-amber-700/30 hover:bg-amber-800/30"
-                onClick={() => setUseTestData(true)}
-              >
-                Switch to Test Data
-              </Button>
-              </div>
-          )}
         </AlertBox>
       )}
 
@@ -520,7 +365,7 @@ export function MetaTab({
                       formatter={(value: any, name: string) => {
                         if (name === 'spend') return [`$${(value || 0).toFixed(2)}`, 'Spend'];
                         if (name === 'roas') return [`${(value || 0).toFixed(2)}x`, 'ROAS'];
-                        return [value || 0, name];
+                        return [value, name];
                       }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '10px' }} />
@@ -584,7 +429,7 @@ export function MetaTab({
                     </span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{((data.ctr || 0)).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">{(data.ctr || 0).toFixed(2)}</span>
                     <span className="text-gray-400 ml-1">%</span>
                   </div>
                 </div>
@@ -606,7 +451,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${((data.cpc || 0)).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${(data.cpc || 0).toFixed(2)}</span>
                   </div>
                 </div>
                 
@@ -638,7 +483,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{((data.frequency || 0)).toFixed(1)}</span>
+                    <span className="text-xl font-semibold">{(data.frequency || 0).toFixed(1)}</span>
                     <span className="text-gray-400 ml-1">times</span>
                   </div>
                 </div>
@@ -658,7 +503,7 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Cost Per Result</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${((data.costPerResult || 0)).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${(data.costPerResult || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

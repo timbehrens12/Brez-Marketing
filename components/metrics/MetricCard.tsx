@@ -57,9 +57,9 @@ export function MetricCard({
   hidePercentageChange = false,
   brandId,
 }: MetricCardProps & { brandId?: string }) {
-  // Force everything to be numbers
-  const safeValue = typeof value === 'number' ? value : Number(value) || 0
-  const safeChange = typeof change === 'number' ? change : Number(change) || 0
+  // Use a default value of 0 for undefined/null values
+  const safeValue = value === undefined || value === null || isNaN(Number(value)) ? 0 : Number(value)
+  const safeChange = change === undefined || change === null || isNaN(Number(change)) ? 0 : Number(change)
   const safeData = Array.isArray(data) ? data : []
   
   const isPositive = safeChange > 0
@@ -154,10 +154,16 @@ export function MetricCard({
 
   const formatValue = (val: number) => {
     try {
-      // Handle null, undefined, NaN
-      if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
-        if (valueFormat === "currency") return "0.00";
-        return "0";
+      // Handle invalid input
+      if (val === undefined || val === null || !isFinite(val) || isNaN(val)) {
+        switch(valueFormat) {
+          case "currency":
+            return prefix === "$" ? "0.00" : "$0.00"
+          case "percentage":
+            return "0.0%"
+          default:
+            return "0"
+        }
       }
       
       switch(valueFormat) {
@@ -170,29 +176,26 @@ export function MetricCard({
           return val.toLocaleString('en-US', { maximumFractionDigits: 0 })
       }
     } catch (error) {
-      console.error('Error formatting value:', error, 'Value was:', val);
-      return valueFormat === "currency" ? "0.00" : "0";
+      console.error("Error formatting value:", error);
+      switch(valueFormat) {
+        case "currency":
+          return prefix === "$" ? "0.00" : "$0.00"
+        case "percentage":
+          return "0.0%"
+        default:
+          return "0"
+      }
     }
   }
 
   // Format the change value as a percentage
   const formatChange = (change: number) => {
+    if (change === undefined || change === null || !isFinite(change) || isNaN(change)) return '+0.0%'
     try {
-      // Handle null, undefined, NaN, and non-finite values
-      if (change === null || change === undefined || isNaN(change) || !isFinite(change)) {
-        return '+0.0%';
-      }
-      
-      // Ensure change is a number and has toFixed method
-      const numericChange = Number(change);
-      if (isNaN(numericChange) || typeof numericChange.toFixed !== 'function') {
-        return '+0.0%';
-      }
-      
-      return `${numericChange > 0 ? '+' : ''}${numericChange.toFixed(1)}%`;
+      return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
     } catch (error) {
-      console.error('Error formatting change:', error, 'Change was:', change);
-      return '+0.0%';
+      console.error("Error formatting change:", error);
+      return '+0.0%'
     }
   }
   
@@ -320,67 +323,73 @@ export function MetricCard({
   
   // Helper function to calculate the previous period value based on current value and percentage change
   const calculatePreviousValue = (currentValue: number, percentChange: number): number => {
-    // If growth is exactly 100%, it means previous value was 0 (special case in the API)
-    if (percentChange === 100) return 0;
-    // If growth is exactly 0% or very close to 0 (like 0.01%), treat as no change
-    if (Math.abs(percentChange) < 0.02) return currentValue;
-    return currentValue / (1 + percentChange / 100);
+    if (percentChange === 0 || !isFinite(percentChange) || isNaN(percentChange)) return currentValue;
+    try {
+      return currentValue / (1 + percentChange / 100);
+    } catch (error) {
+      console.error("Error calculating previous value:", error);
+      return currentValue;
+    }
   }
   
   // Format the previous value consistently with the current value display
   const formatPreviousValue = (value: number): string => {
     try {
-      // Handle null, undefined, NaN
-      if (value === null || value === undefined || isNaN(value)) {
-        return valueFormat === "currency" ? "$0.00" : "0";
+      if (value === undefined || value === null || !isFinite(value) || isNaN(value)) {
+        switch(valueFormat) {
+          case "currency":
+            return prefix + "0.00"
+          case "percentage":
+            return "0.0%"
+          default:
+            return "0"
+        }
       }
-      
+
       switch(valueFormat) {
         case "currency":
-          return prefix === "$" 
-            ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-            : `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${suffix}`;
+          return `${prefix}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         case "percentage":
-          return `${value.toFixed(1)}%${suffix}`;
+          return `${value.toFixed(1)}%`
         default:
-          return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}${suffix ? suffix : ''}`;
+          return value.toLocaleString('en-US', { maximumFractionDigits: 0 })
       }
     } catch (error) {
-      console.error('Error formatting previous value:', error, 'Value was:', value);
-      return valueFormat === "currency" ? "$0.00" : "0";
+      console.error("Error formatting previous value:", error);
+      return `${prefix}0`
     }
   }
 
   // Add a function to directly display the actual comparison
   const renderActualComparison = () => {
-    // Handle special case for 100% growth (previous value was zero)
-    if (safeChange === 100) {
+    try {
+      const prevValue = calculatePreviousValue(safeValue, safeChange)
+      const prevFormatted = formatPreviousValue(prevValue)
+      
+      // If there's no significant change or an invalid change, just show the previous period
+      if (Math.abs(safeChange) < 0.1 || !isFinite(safeChange) || isNaN(safeChange)) {
+        return (
+          <p className="mt-1">
+            Previous: {prevFormatted}
+          </p>
+        );
+      }
+      
+      // Show previous period value with increase/decrease text
       return (
         <p className="mt-1">
-          Previous: {valueFormat === "currency" ? "$0.00" : "0"}
+          {safeChange > 0 ? 'Up from' : 'Down from'}: {prevFormatted}
+        </p>
+      );
+    } catch (error) {
+      console.error("Error rendering comparison:", error);
+      return (
+        <p className="mt-1">
+          Previous period comparison not available
         </p>
       );
     }
-    
-    // Calculate the previous value based on the current value and percentage change
-    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
-    const previousValue = calculatePreviousValue(numericValue, change);
-    
-    // If the previous value is 0 or very close to 0, show a special message
-    if (previousValue === 0 || (previousValue < 0.01 && previousValue > -0.01)) {
-      return (
-        <p className="mt-1">
-          Previous: {valueFormat === "currency" ? "$0.00" : "0"}
-        </p>
-      );
-    }
-    
-    return (
-      <p className="mt-1">
-        Previous: {formatPreviousValue(previousValue)}
-      </p>
-    );
-  };
+  }
 
   return (
     <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]", className)}>
