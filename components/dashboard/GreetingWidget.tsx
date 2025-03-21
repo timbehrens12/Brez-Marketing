@@ -409,7 +409,7 @@ export function GreetingWidget({
         from.setHours(0, 0, 0, 0)
         
         to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
+      to.setHours(23, 59, 59, 999)
     } else {
       // Previous complete month (not current month)
       const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -1679,7 +1679,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           {currentPeriod === 'monthly' && monthlyReport ? (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
+            <div className="bg-[#222] p-4 rounded-lg border-b-2 border-blue-500/20">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.revenueGenerated)}</p>
               {monthlyReport.periodComparison.salesGrowth !== 0 && (
@@ -1702,7 +1702,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     </TooltipProvider>
               )}
             </div>
-            <div className="bg-[#222] p-4 rounded-lg">
+            <div className="bg-[#222] p-4 rounded-lg border-b-2 border-green-500/20">
               <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
               <p className="text-2xl font-semibold">{monthlyReport.totalPurchases}</p>
               {monthlyReport.periodComparison.orderGrowth !== 0 && (
@@ -1725,7 +1725,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     </TooltipProvider>
               )}
             </div>
-            <div className="bg-[#222] p-4 rounded-lg">
+            <div className="bg-[#222] p-4 rounded-lg border-b-2 border-yellow-500/20">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(monthlyReport.totalAdSpend)}</p>
                   {monthlyReport.totalAdSpend === 0 ? (
@@ -1747,7 +1747,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <p className={`text-sm cursor-help ${monthlyReport.periodComparison.adSpendGrowth > 0 ? 'text-red-500' : 'text-green-500'}`}>
                             {monthlyReport.periodComparison.adSpendGrowth > 0 ? '↑' : '↓'} {Math.abs(monthlyReport.periodComparison.adSpendGrowth).toFixed(1)}% from previous month
                           </p>
                         </TooltipTrigger>
@@ -1778,7 +1778,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     </TooltipProvider>
                   )}
                 </div>
-                <div className="bg-[#222] p-4 rounded-lg">
+                <div className="bg-[#222] p-4 rounded-lg border-b-2 border-purple-500/20">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
                   <p className="text-2xl font-semibold">{monthlyReport.averageRoas.toFixed(1)}x</p>
                   {monthlyReport.averageRoas === 0 ? (
@@ -2341,7 +2341,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#222] p-4 rounded-lg">
+            <div className="bg-[#222] p-4 rounded-lg border-b-2 border-blue-500/20">
               <h5 className="text-sm text-gray-400 mb-1">Revenue Generated</h5>
               <p className="text-2xl font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
               {dailyReport.periodComparison.salesGrowth !== 0 && (
@@ -2361,7 +2361,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 </TooltipProvider>
               )}
             </div>
-            <div className="bg-[#222] p-4 rounded-lg">
+            <div className="bg-[#222] p-4 rounded-lg border-b-2 border-green-500/20">
               <h5 className="text-sm text-gray-400 mb-1">Orders Placed</h5>
               <p className="text-2xl font-semibold">{dailyReport.totalPurchases}</p>
                   {dailyReport.periodComparison.orderGrowth !== 0 && (
@@ -2381,7 +2381,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     </TooltipProvider>
                   )}
                 </div>
-                <div className="bg-[#222] p-4 rounded-lg">
+                <div className="bg-[#222] p-4 rounded-lg border-b-2 border-yellow-500/20">
                   <h5 className="text-sm text-gray-400 mb-1">Ad Spend</h5>
                   <p className="text-2xl font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
                   {dailyReport.totalAdSpend === 0 ? (
@@ -2403,7 +2403,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                          <p className={`text-sm cursor-help ${dailyReport.periodComparison.adSpendGrowth > 0 ? 'text-red-500' : 'text-green-500'}`}>
                             {dailyReport.periodComparison.adSpendGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}% from yesterday
                           </p>
                         </TooltipTrigger>
@@ -2434,7 +2434,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     </TooltipProvider>
                   )}
                 </div>
-                <div className="bg-[#222] p-4 rounded-lg">
+                <div className="bg-[#222] p-4 rounded-lg border-b-2 border-purple-500/20">
                   <h5 className="text-sm text-gray-400 mb-1">Average ROAS</h5>
                   <p className="text-2xl font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
                   {dailyReport.averageRoas === 0 ? (
@@ -2616,7 +2616,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm">{product.name}</span>
                           <span className="text-sm font-medium">${product.revenue}</span>
-                        </div>
+                  </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div 
@@ -2627,20 +2627,20 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       ></div>
                           </div>
                           <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                </div>
                       </div>
-                    </div>
-                          ));
+                            ));
+                          }
+                          
+                          return (
+                            <div className="py-8 text-center">
+                              <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                              <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
+                              <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
+                            </div>
+                          );
                         }
-                        
-                        return (
-                          <div className="py-8 text-center">
-                            <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
-                            <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
-                          </div>
-                        );
-                      }
-                    })()}
+                      })()}
               </div>
             </div>
             
@@ -2789,8 +2789,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                         <TooltipTrigger asChild>
                                           <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${revenueChange > 0 ? 'bg-green-900/30 text-green-400' : revenueChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
                                             {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                            {Math.abs(revenueChange).toFixed(1)}%
-                                          </span>
+                                    {Math.abs(revenueChange).toFixed(1)}%
+                    </span>
                                         </TooltipTrigger>
                                         <TooltipContent className="bg-[#333] border-[#444]">
                                           <p className="text-xs">
@@ -2814,8 +2814,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                         <TooltipTrigger asChild>
                                           <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${ordersChange > 0 ? 'bg-green-900/30 text-green-400' : ordersChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
                                             {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                            {Math.abs(ordersChange).toFixed(1)}%
-                                          </span>
+                                    {Math.abs(ordersChange).toFixed(1)}%
+                                  </span>
                                         </TooltipTrigger>
                                         <TooltipContent className="bg-[#333] border-[#444]">
                                           <p className="text-xs">
@@ -2839,8 +2839,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                         <TooltipTrigger asChild>
                                           <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${adSpendChange > 0 ? 'bg-red-900/30 text-red-400' : adSpendChange < 0 ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-400'}`}>
                                             {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                            {Math.abs(adSpendChange).toFixed(1)}%
-                                          </span>
+                                    {Math.abs(adSpendChange).toFixed(1)}%
+                                  </span>
                                         </TooltipTrigger>
                                         <TooltipContent className="bg-[#333] border-[#444]">
                                           <p className="text-xs">
