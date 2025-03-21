@@ -83,16 +83,29 @@ export function MetaTab({
       if (!brandId) return
       
       setLoading(true)
+      setError(null)
+      
       try {
+        console.log(`Fetching Meta ${useTestData ? 'test' : ''} data for brand: ${brandId}`)
         const endpoint = useTestData ? `/api/metrics/meta-test?brandId=${brandId}` : `/api/metrics/meta?brandId=${brandId}`
+        
         const response = await fetch(endpoint)
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch Meta data: ${response.status}`)
+          const errorText = await response.text()
+          console.error(`Failed to fetch Meta data: Status ${response.status}, Response: ${errorText}`)
+          throw new Error(`Failed to fetch Meta data: ${response.status} ${errorText}`)
         }
         
         const data = await response.json()
-        setMetaData(data)
+        console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} data:`, data)
+        
+        if (!data || Object.keys(data).length === 0) {
+          console.warn('Empty data response from API')
+          setMetaData(null)
+        } else {
+          setMetaData(data)
+        }
       } catch (err) {
         console.error("Error fetching Meta data:", err)
         setError(err instanceof Error ? err.message : "Failed to load Meta data")
@@ -106,6 +119,7 @@ export function MetaTab({
       
       setIsLoadingCampaigns(true)
       try {
+        console.log(`Fetching Meta ${useTestData ? 'test' : ''} campaigns for brand: ${brandId}`)
         const endpoint = useTestData 
           ? `/api/analytics/meta-test/campaigns?brandId=${brandId}` 
           : `/api/analytics/meta/campaigns?brandId=${brandId}`
@@ -113,10 +127,13 @@ export function MetaTab({
         const response = await fetch(endpoint)
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch campaigns: ${response.status}`)
+          const errorText = await response.text()
+          console.error(`Failed to fetch campaigns: Status ${response.status}, Response: ${errorText}`)
+          throw new Error(`Failed to fetch campaigns: ${response.status} ${errorText}`)
         }
         
         const data = await response.json()
+        console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} campaigns:`, data)
         
         if (data.error) {
           throw new Error(data.error)
@@ -127,6 +144,7 @@ export function MetaTab({
           const sortedCampaigns = [...data.campaigns].sort((a, b) => b.roas - a.roas).slice(0, 5)
           setTopCampaigns(sortedCampaigns)
         } else {
+          console.warn('No campaigns found in API response')
           setTopCampaigns([])
         }
       } catch (err) {

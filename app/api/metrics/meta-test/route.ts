@@ -55,21 +55,94 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'brandId is required' }, { status: 400 })
     }
 
-    // Get test data from our test tables
-    const { data: metaTestData, error: metaError } = await supabase
+    // Get test insights record
+    const { data: metaTestInsights, error: insightsError } = await supabase
       .from('meta_test_insights')
       .select('*')
       .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    
+    if (insightsError) {
+      console.error('Error fetching Meta test insights:', insightsError)
+      return NextResponse.json({ error: 'Failed to fetch Meta test insights' }, { status: 500 })
+    }
+
+    if (!metaTestInsights || metaTestInsights.length === 0) {
+      console.warn(`No Meta test insights found for brand ${brandId}. Returning empty data.`)
+      return NextResponse.json(createEmptyDataStructure())
+    }
+
+    // Get the insight_id from the first record
+    const insightId = metaTestInsights[0].id
+
+    // Get daily data for this insight
+    const { data: dailyData, error: dailyError } = await supabase
+      .from('meta_test_daily_data')
+      .select('*')
+      .eq('insight_id', insightId)
       .order('date', { ascending: false })
       .limit(90)
     
-    if (metaError) {
-      console.error('Error fetching Meta test data:', metaError)
-      return NextResponse.json({ error: 'Failed to fetch Meta test data' }, { status: 500 })
+    if (dailyError) {
+      console.error('Error fetching Meta test daily data:', dailyError)
+      return NextResponse.json({ error: 'Failed to fetch Meta test daily data' }, { status: 500 })
+    }
+
+    // If we have daily data, use that, otherwise create synthetic data
+    let dataToProcess: MetaDataItem[] = []
+    
+    if (dailyData && dailyData.length > 0) {
+      // Convert daily data to MetaDataItem format
+      dataToProcess = dailyData.map(item => ({
+        date: item.date,
+        spend: item.spend,
+        impressions: item.impressions,
+        clicks: item.clicks,
+        conversions: item.conversions,
+        reach: 0, // These fields might not be in daily data
+        ctr: item.ctr,
+        cpc: item.spend / item.clicks,
+        frequency: 0
+      }))
+    } else {
+      // Create synthetic data based on the insights
+      const insight = metaTestInsights[0]
+      
+      // Create 60 days of synthetic data
+      for (let i = 0; i < 60; i++) {
+        const date = new Date()
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0]
+        
+        // Base values from insight with some randomization
+        const dayFactor = 1 - (i / 120) // Gradually reduce values further in the past
+        const randomFactor = 0.5 + Math.random()
+        
+        dataToProcess.push({
+          date: dateStr,
+          spend: (insight.spend / 30) * dayFactor * randomFactor,
+          impressions: Math.round((insight.impressions / 30) * dayFactor * randomFactor),
+          clicks: Math.round((insight.clicks / 30) * dayFactor * randomFactor),
+          conversions: Math.round((insight.conversions / 30) * dayFactor * randomFactor),
+          reach: Math.round((insight.reach / 30) * dayFactor * randomFactor),
+          ctr: insight.ctr * randomFactor,
+          cpc: insight.cpc * randomFactor,
+          frequency: insight.frequency * randomFactor
+        })
+      }
     }
     
-    // Process the test data
-    const processedData = processMetaData(metaTestData || [])
+    // Process the data
+    const processedData = processMetaData(dataToProcess)
+    
+    // Add additional data from the insight for completeness
+    if (metaTestInsights.length > 0) {
+      const insight = metaTestInsights[0]
+      processedData.budget = insight.budget || 0
+      processedData.reach = insight.reach || 0
+      processedData.frequency = insight.frequency || 0
+    }
     
     return NextResponse.json(processedData)
     
