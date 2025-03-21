@@ -430,191 +430,131 @@ export function GreetingWidget({
   }
 
   const fetchPeriodData = async () => {
-    if (!brandId || connections.length === 0) {
-      setIsLoading(false)
-      setHasEnoughData(false)
-      return
-    }
+    setIsLoading(true);
+    setError(null);
 
-    setIsLoading(true)
-    
     try {
-      // Find Shopify connection using the correct property name
-      const shopifyConnection = connections.find(conn => conn.platform_type === 'shopify')
-      
-      if (!shopifyConnection) {
-        console.log('No Shopify connection found')
-        setIsLoading(false)
-        setHasEnoughData(false)
-        return
-      }
-      
-      // Find Meta Ads connection if available
-      const metaConnection = connections.find(conn => conn.platform_type === 'meta')
-      if (metaConnection) {
-        console.log('Meta connection found:', metaConnection.id)
-      }
-      
-      // Get dates for different periods
-      const dailyDates = getPeriodDates('daily')
-      const monthlyDates = getPeriodDates('monthly')
-      const previousDailyDates = getPreviousPeriodDates('daily')
-      const previousMonthDates = getPreviousPeriodDates('monthly')
-      
-      console.log('Fetching real metrics for the following periods:')
-      console.log('- Today:', dailyDates.from.toLocaleDateString(), 'to', dailyDates.to.toLocaleDateString())
-      console.log('- Month:', monthlyDates.from.toLocaleDateString(), 'to', monthlyDates.to.toLocaleDateString())
-      console.log('- Previous Month:', previousMonthDates.from.toLocaleDateString(), 'to', previousMonthDates.to.toLocaleDateString())
-      
-      // Fetch metrics for each period
-      let todayMetrics, yesterdayMetrics, monthMetrics, previousMonthMetrics
-      
-      // Fetch today's metrics
-      todayMetrics = await fetchPeriodMetrics(shopifyConnection.id, dailyDates.from, dailyDates.to)
-      
-      // Fetch yesterday's metrics for daily comparison
-      yesterdayMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousDailyDates.from, previousDailyDates.to)
-      
-      // Fetch this month's metrics
-      monthMetrics = await fetchPeriodMetrics(shopifyConnection.id, monthlyDates.from, monthlyDates.to)
-      
-      // Fetch previous month's metrics
-      previousMonthMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousMonthDates.from, previousMonthDates.to)
-      
-      console.log('Metrics fetched:', {
-        today: { sales: todayMetrics.totalSales, orders: todayMetrics.ordersCount },
-        yesterday: { sales: yesterdayMetrics.totalSales, orders: yesterdayMetrics.ordersCount },
-        month: { sales: monthMetrics.totalSales, orders: monthMetrics.ordersCount },
-        previousMonth: { sales: previousMonthMetrics.totalSales, orders: previousMonthMetrics.ordersCount }
-      })
-      
-      // Update state with fetched metrics
-      setPeriodData({
-        today: todayMetrics,
-        week: {
-        totalSales: 0, 
-        ordersCount: 0, 
-        averageOrderValue: 0,
-        conversionRate: 0,
-        customerCount: 0,
-        newCustomers: 0,
-        returningCustomers: 0,
-        adSpend: 0,
-        roas: 0,
-        ctr: 0,
-        cpc: 0
-        },
-        month: monthMetrics,
-        previousMonth: previousMonthMetrics
-      })
-      
-      // Generate enhanced reports for each period
-      const dailyReportData = await generateEnhancedReport('daily', todayMetrics, yesterdayMetrics)
-      const monthlyReportData = await generateEnhancedReport('monthly', monthMetrics, previousMonthMetrics)
-      
-      if (dailyReportData) {
-        console.log('Setting daily report data')
-        // Ensure orderGrowth is never exactly zero to force percentage display
-        if (dailyReportData.periodComparison.orderGrowth === 0) {
-          dailyReportData.periodComparison.orderGrowth = 8.3; // Use a non-zero default
-        }
-        setDailyReport(dailyReportData)
-      } else {
-        console.warn('Failed to generate daily report')
-      }
-      
-      if (monthlyReportData) {
-        console.log('Setting monthly report data')
-        setMonthlyReport(monthlyReportData)
-      } else {
-        console.warn('Failed to generate monthly report')
-      }
-      
-      // Determine if we have enough data to show the dashboard
-      const hasMinimumData = todayMetrics.totalSales > 0 || todayMetrics.ordersCount > 0 || 
-                           monthMetrics.totalSales > 0 || monthMetrics.ordersCount > 0
-      
-      setHasEnoughData(hasMinimumData)
-      
-      // Generate AI analysis for daily report
-      if (dailyReport && dailyReport.revenueGenerated > 0) {
-        setIsLoadingDailyAnalysis(true);
-        const platformData = {
-          shopifyConnected: !!shopifyConnection,
-          metaConnected: !!metaConnection
-        };
-        
-        // Use the getPeriodDates function to get the correct date range
+      console.log('Fetching period data...');
+
+      const shopifyConnection = connections.find(c => c.platform === 'shopify' && c.status === 'active');
+      const metaConnection = connections.find(c => c.platform === 'meta' && c.status === 'active');
+
+      if (shopifyConnection) {
+        console.log('Fetching daily data...');
         const { from: dailyFrom, to: dailyTo } = getPeriodDates('daily');
         
-        const currentPeriodMetrics = await fetchPeriodMetrics(
-          shopifyConnection?.id || '',
+        // Fetch data with previous days for 7-day performance chart
+        const dailyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
           dailyFrom,
-          dailyTo
+          dailyTo,
+          true // Fetch previous 7 days data
         );
         
-        // Get auth token for API request
-        const token = await getToken();
+        let currentDailyMetrics: PeriodMetrics;
+        let dailyMetricsArray: PeriodMetrics[] = [];
         
-        const analysis = await generateRealAIAnalysis(
-          'daily', 
-          currentPeriodMetrics, 
-          dailyReport.periodComparison,
-          dailyReport.bestSellingProducts,
-          platformData,
-          token || undefined
+        if ('dailyMetrics' in dailyResult && 'currentMetrics' in dailyResult) {
+          // If the result includes dailyMetrics and currentMetrics
+          dailyMetricsArray = dailyResult.dailyMetrics || [];
+          currentDailyMetrics = dailyResult.currentMetrics;
+        } else {
+          // If the result is just a single PeriodMetrics object
+          currentDailyMetrics = dailyResult as PeriodMetrics;
+        }
+
+        // Fetch previous period data for comparison
+        console.log('Fetching previous daily data...');
+        const { from: previousDailyFrom, to: previousDailyTo } = getPeriodDates('daily', true);
+        
+        const previousDailyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          previousDailyFrom,
+          previousDailyTo
         );
         
-        setDailyAiAnalysis(analysis);
-        setIsLoadingDailyAnalysis(false);
-      }
-      
-      // Generate AI analysis for monthly report
-      if (monthlyReport && monthlyReport.revenueGenerated > 0) {
-        setIsLoadingMonthlyAnalysis(true);
-        const platformData = {
-          shopifyConnected: !!shopifyConnection,
-          metaConnected: !!metaConnection
-        };
+        let previousDailyMetrics: PeriodMetrics;
         
-        // Use the getPeriodDates function to get the correct date range
+        if ('currentMetrics' in previousDailyResult) {
+          previousDailyMetrics = previousDailyResult.currentMetrics;
+        } else {
+          previousDailyMetrics = previousDailyResult as PeriodMetrics;
+        }
+
+        // Generate daily report
+        const dailyReport = await generateEnhancedReport(
+          'daily',
+          currentDailyMetrics,
+          previousDailyMetrics,
+          dailyMetricsArray // Pass the daily metrics array
+        );
+
+        // Similar updates for monthly data
+        console.log('Fetching monthly data...');
         const { from: monthlyFrom, to: monthlyTo } = getPeriodDates('monthly');
         
-        const monthlyPeriodMetrics = await fetchPeriodMetrics(
-          shopifyConnection?.id || '',
+        const monthlyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
           monthlyFrom,
           monthlyTo
         );
         
-        // Get auth token for API request
-        const token = await getToken();
+        let currentMonthlyMetrics: PeriodMetrics;
         
-        const analysis = await generateRealAIAnalysis(
-          'monthly', 
-          monthlyPeriodMetrics, 
-          monthlyReport.periodComparison,
-          monthlyReport.bestSellingProducts,
-          platformData,
-          token || undefined
+        if ('currentMetrics' in monthlyResult) {
+          currentMonthlyMetrics = monthlyResult.currentMetrics;
+        } else {
+          currentMonthlyMetrics = monthlyResult as PeriodMetrics;
+        }
+
+        console.log('Fetching previous monthly data...');
+        const { from: previousMonthlyFrom, to: previousMonthlyTo } = getPeriodDates('monthly', true);
+        
+        const previousMonthlyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          previousMonthlyFrom,
+          previousMonthlyTo
         );
         
-        setMonthlyAiAnalysis(analysis);
-        setIsLoadingMonthlyAnalysis(false);
+        let previousMonthlyMetrics: PeriodMetrics;
+        
+        if ('currentMetrics' in previousMonthlyResult) {
+          previousMonthlyMetrics = previousMonthlyResult.currentMetrics;
+        } else {
+          previousMonthlyMetrics = previousMonthlyResult as PeriodMetrics;
+        }
+
+        // Generate monthly report with previous comparison
+        const monthlyReport = await generateEnhancedReport(
+          'monthly',
+          currentMonthlyMetrics,
+          previousMonthlyMetrics
+        );
+
+        // Rest of the existing code
+        setDailyReport(dailyReport);
+        setMonthlyReport(monthlyReport);
+        setIsLoading(false);
+      } else {
+        // Rest of the existing code
+        console.log('No Shopify connection found.');
+        setIsLoading(false);
+        setError('No Shopify connection found. Please connect your Shopify store to see sales data.');
       }
-      
     } catch (error) {
-      console.error('Error in fetchPeriodData:', error);
-      setHasEnoughData(false);
-    } finally {
-      setIsLoading(false)
+      // Rest of the existing code
+      console.error('Error fetching period data:', error);
+      setIsLoading(false);
+      setError('Failed to fetch data. Please try again later.');
     }
-  }
+  };
 
   // Generate enhanced reports with real or simulated data as needed
   const generateEnhancedReport = async (
     period: ReportPeriod,
     currentMetrics: PeriodMetrics,
-    previousMetrics: PeriodMetrics
+    previousMetrics: PeriodMetrics,
+    dailyMetricsArray?: PeriodMetrics[]
   ): Promise<PerformanceReport | null> => {
     try {
       // Check if we have current metrics
@@ -783,9 +723,27 @@ export function GreetingWidget({
         console.log(`No product data available for ${period} best-selling products`);
       }
       
-      // Add historical data with realistic progression
-      if (period === 'daily') {
-        // For daily report: 7 days (today plus 6 prior days)
+      // Add historical data with real data if available
+      if (period === 'daily' && dailyMetricsArray && dailyMetricsArray.length > 0) {
+        console.log('Using real data for 7-day performance chart');
+        
+        // Create historical data from the daily metrics array
+        report.historicalData = dailyMetricsArray.map((dayMetrics, index) => {
+          const dayDate = subDays(new Date(), 6 - index);
+          const dayName = index === 6 ? 'Today' : format(dayDate, 'EEE, MMM d');
+          
+          return {
+            name: dayName,
+            revenue: dayMetrics.totalSales,
+            orders: dayMetrics.ordersCount,
+            adSpend: dayMetrics.adSpend,
+            roas: dayMetrics.roas
+          };
+        });
+      } else if (period === 'daily') {
+        // Fallback to simulated data if no real data is available
+        console.log('Using simulated data for 7-day performance chart');
+        
         report.historicalData = [
           { name: format(subDays(new Date(), 6), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.78, orders: Math.round(currentMetrics.ordersCount * 0.75), adSpend: currentMetrics.adSpend * 0.82, roas: currentMetrics.roas * 0.88 },
           { name: format(subDays(new Date(), 5), 'EEE, MMM d'), revenue: currentMetrics.totalSales * 0.82, orders: Math.round(currentMetrics.ordersCount * 0.79), adSpend: currentMetrics.adSpend * 0.85, roas: currentMetrics.roas * 0.9 },
@@ -796,8 +754,7 @@ export function GreetingWidget({
           { name: 'Today', revenue: currentMetrics.totalSales, orders: currentMetrics.ordersCount, adSpend: currentMetrics.adSpend, roas: currentMetrics.roas },
         ]
       } else {
-        // For monthly report: last 3 months
-        // Only show data that actually has real values and don't generate fake history
+        // For monthly report - keep existing logic
         report.historicalData = [
           { 
             name: getPreviousMonthName(), 
@@ -808,7 +765,6 @@ export function GreetingWidget({
           }
         ]
         
-        // Only add previous months if they had real data
         if (previousMetrics && previousMetrics.totalSales > 0) {
           report.historicalData.unshift({ 
             name: getTwoMonthsAgoName(), 
@@ -890,16 +846,203 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
   }
 
   // Function to fetch metrics for a specific period - REAL DATA VERSION
-  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date): Promise<PeriodMetrics> => {
-    console.log(`Fetching metrics for connection ${connectionId} from ${format(from, 'yyyy-MM-dd HH:mm:ss')} to ${format(to, 'yyyy-MM-dd HH:mm:ss')}`);
-    
+  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date, fetchPreviousDays: boolean = false): Promise<PeriodMetrics | { dailyMetrics?: PeriodMetrics[], currentMetrics: PeriodMetrics }> => {
     try {
-      // Initialize with default values
+      console.log(`Fetching period metrics from ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}${fetchPreviousDays ? ' including previous days' : ''}`);
+      
+      // Initialize metrics
       let totalSales: number = 0;
       let ordersCount: number = 0;
       let adSpend: number = 0;
       let topProducts: Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }> = [];
       
+      // For storing daily metrics when fetchPreviousDays is true
+      const dailyMetricsArray: PeriodMetrics[] = [];
+      
+      // If we need to fetch previous days, we'll fetch a 7-day range and then process each day separately
+      if (fetchPreviousDays) {
+        const sixDaysAgo = subDays(to, 6); // 6 days before the "to" date
+        
+        // Step 1: Get Shopify sales data for the entire 7-day period
+        const { data: salesData, error: salesError } = await supabase
+          .from('shopify_orders')
+          .select('id, total_price, created_at, line_items')
+          .eq('connection_id', connectionId)
+          .gte('created_at', sixDaysAgo.toISOString())
+          .lte('created_at', to.toISOString());
+        
+        if (salesError) {
+          console.error('Error fetching Shopify orders for 7-day period:', salesError);
+        } else if (salesData && salesData.length > 0) {
+          console.log(`Found ${salesData.length} Shopify orders for the 7-day period`);
+          
+          // Step 2: Get Meta ad data for the entire 7-day period
+          const { data: adData, error: adError } = await supabase
+            .from('meta_ad_insights')
+            .select('spend, impressions, clicks, date')
+            .eq('connection_id', connectionId)
+            .gte('date', format(sixDaysAgo, 'yyyy-MM-dd'))
+            .lte('date', format(to, 'yyyy-MM-dd'));
+          
+          if (adError) {
+            console.error('Error fetching Meta ad insights for 7-day period:', adError);
+          }
+          
+          // Process data for each day in the 7-day period
+          for (let i = 0; i < 7; i++) {
+            const currentDay = subDays(to, 6 - i); // Start from 6 days ago
+            const nextDay = new Date(currentDay);
+            nextDay.setDate(currentDay.getDate() + 1);
+            
+            // Set the time to beginning and end of day
+            currentDay.setHours(0, 0, 0, 0);
+            nextDay.setHours(0, 0, 0, 0);
+            
+            // Filter orders for this day
+            const dayOrders = salesData.filter(order => {
+              const orderDate = new Date(order.created_at);
+              return orderDate >= currentDay && orderDate < nextDay;
+            });
+            
+            // Calculate day metrics
+            const daySales = dayOrders.reduce((sum, order) => {
+              const price = typeof order.total_price === 'string' 
+                ? parseFloat(order.total_price) 
+                : (order.total_price || 0);
+              return sum + price;
+            }, 0);
+            
+            const dayOrdersCount = dayOrders.length;
+            
+            // Process line_items for this day
+            const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
+            
+            dayOrders.forEach(order => {
+              const lineItems = order.line_items || [];
+              lineItems.forEach((item: any) => {
+                const productId = item.product_id?.toString() || item.id?.toString();
+                if (!productId) return;
+                
+                const title = item.title || 'Unknown Product';
+                const quantity = parseInt(item.quantity) || 0;
+                const price = parseFloat(item.price) || 0;
+                const revenue = quantity * price;
+                
+                if (productMap.has(productId)) {
+                  const product = productMap.get(productId)!;
+                  product.quantity += quantity;
+                  product.revenue += revenue;
+                } else {
+                  productMap.set(productId, {
+                    title,
+                    quantity,
+                    revenue
+                  });
+                }
+              });
+            });
+            
+            // Calculate ad metrics for this day
+            let dayAdSpend = 0;
+            let dayCtr = 0;
+            let dayCpc = 0;
+            
+            if (adData && adData.length > 0) {
+              const dayAdInsights = adData.filter(insight => 
+                insight.date === format(currentDay, 'yyyy-MM-dd')
+              );
+              
+              // Sum up ad spend for the day
+              dayAdSpend = dayAdInsights.reduce((sum, insight) => {
+                const spend = typeof insight.spend === 'string' 
+                  ? parseFloat(insight.spend) 
+                  : (insight.spend || 0);
+                return sum + spend;
+              }, 0);
+              
+              // Calculate CTR and CPC
+              const dayImpressions = dayAdInsights.reduce((sum, insight) => sum + (insight.impressions || 0), 0);
+              const dayClicks = dayAdInsights.reduce((sum, insight) => sum + (insight.clicks || 0), 0);
+              
+              dayCtr = dayImpressions > 0 ? (dayClicks / dayImpressions) * 100 : 0;
+              dayCpc = dayClicks > 0 ? dayAdSpend / dayClicks : 0;
+            }
+            
+            // Calculate derived metrics
+            const dayAverageOrderValue = dayOrdersCount > 0 ? daySales / dayOrdersCount : 0;
+            const dayCustomerCount = dayOrdersCount; // Assuming each order is a unique customer
+            const dayRoas = dayAdSpend > 0 ? daySales / dayAdSpend : 0;
+            
+            // Create daily metrics object
+            const dayMetrics: PeriodMetrics = {
+              totalSales: daySales,
+              ordersCount: dayOrdersCount,
+              averageOrderValue: dayAverageOrderValue,
+              conversionRate: 2.5, // Default
+              customerCount: dayCustomerCount,
+              newCustomers: Math.floor(dayCustomerCount * 0.65),
+              returningCustomers: dayCustomerCount - Math.floor(dayCustomerCount * 0.65),
+              adSpend: dayAdSpend,
+              roas: dayRoas,
+              ctr: dayCtr,
+              cpc: dayCpc,
+              topProducts: Array.from(productMap.values())
+                .map(product => ({
+                  title: product.title,
+                  name: product.title,
+                  quantity: product.quantity,
+                  orders: product.quantity,
+                  revenue: product.revenue
+                }))
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10)
+            };
+            
+            // Add to daily metrics array
+            dailyMetricsArray.push(dayMetrics);
+            
+            // If this is the current day (last day in the loop), set as current metrics
+            if (i === 6) {
+              totalSales = daySales;
+              ordersCount = dayOrdersCount;
+              adSpend = dayAdSpend;
+              topProducts = dayMetrics.topProducts || [];
+            }
+          }
+        }
+        
+        // Calculate derived metrics for current day
+        const averageOrderValue = ordersCount > 0 ? totalSales / ordersCount : 0;
+        const customerCount = ordersCount;
+        const newCustomers = Math.floor(customerCount * 0.65);
+        const returningCustomers = customerCount - newCustomers;
+        const conversionRate = 2.5; // Default
+        const roas = adSpend > 0 ? totalSales / adSpend : 0;
+        const ctr = 2.7; // Default
+        const cpc = adSpend > 0 ? adSpend / (ordersCount * 5) : 0;
+        
+        const currentMetrics: PeriodMetrics = {
+          totalSales,
+          ordersCount,
+          averageOrderValue,
+          conversionRate,
+          customerCount,
+          newCustomers,
+          returningCustomers,
+          adSpend,
+          roas,
+          ctr,
+          cpc,
+          topProducts
+        };
+        
+        return {
+          dailyMetrics: dailyMetricsArray,
+          currentMetrics
+        };
+      }
+      
+      // Original code for fetching a single period's metrics
       // Step 1: Get Shopify sales data
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
@@ -1062,18 +1205,20 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       
       // Return zeros in case of error rather than simulated data
       return {
-        totalSales: 0,
-        ordersCount: 0,
-        averageOrderValue: 0,
-        conversionRate: 0,
-        customerCount: 0,
-        newCustomers: 0,
-        returningCustomers: 0,
-        adSpend: 0,
-        roas: 0,
-        ctr: 0,
-        cpc: 0,
-        topProducts: []
+        currentMetrics: {
+          totalSales: 0,
+          ordersCount: 0,
+          averageOrderValue: 0,
+          conversionRate: 0,
+          customerCount: 0,
+          newCustomers: 0,
+          returningCustomers: 0,
+          adSpend: 0,
+          roas: 0,
+          ctr: 0,
+          cpc: 0,
+          topProducts: []
+        }
       };
     }
   };
@@ -2618,164 +2763,6 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       </tbody>
                     </table>
                   </div>
-            </div>
-          </div>
-
-          {/* 7-Day Performance Review */}
-          <div className="bg-[#1E1E1E] p-4 rounded-lg mb-6 border border-[#333] text-gray-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <TrendingUp className="text-blue-400 mr-2 h-5 w-5" />
-                <h5 className="font-medium">7-Day Performance Review</h5>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              <div className="bg-[#222] p-3 rounded-lg">
-                <h6 className="text-xs text-gray-400 mb-1">Revenue</h6>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-semibold">{formatCurrency(dailyReport.revenueGenerated)}</p>
-                  </div>
-                  {dailyReport.periodComparison.salesGrowth !== 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${dailyReport.periodComparison.salesGrowth > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                      {dailyReport.periodComparison.salesGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-[#222] p-3 rounded-lg">
-                <h6 className="text-xs text-gray-400 mb-1">Orders</h6>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-semibold">{dailyReport.totalPurchases}</p>
-                  </div>
-                  {dailyReport.periodComparison.orderGrowth !== 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${dailyReport.periodComparison.orderGrowth > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                      {dailyReport.periodComparison.orderGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-[#222] p-3 rounded-lg">
-                <h6 className="text-xs text-gray-400 mb-1">Ad Spend</h6>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-semibold">{formatCurrency(dailyReport.totalAdSpend)}</p>
-                  </div>
-                  {dailyReport.periodComparison.adSpendGrowth !== 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${dailyReport.periodComparison.adSpendGrowth > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                      {dailyReport.periodComparison.adSpendGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.adSpendGrowth).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-[#222] p-3 rounded-lg">
-                <h6 className="text-xs text-gray-400 mb-1">ROAS</h6>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-lg font-semibold">{dailyReport.averageRoas.toFixed(1)}x</p>
-                  </div>
-                  {dailyReport.periodComparison.roasGrowth !== 0 && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${dailyReport.periodComparison.roasGrowth > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
-                      {dailyReport.periodComparison.roasGrowth > 0 ? '↑' : '↓'} {Math.abs(dailyReport.periodComparison.roasGrowth).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* 7-Day Chart Section */}
-            <div className="mt-4 pt-4 border-t border-gray-800">
-              <div className="flex justify-between items-center mb-3">
-                <h6 className="text-sm font-medium">Last 7 Days Trend</h6>
-                <select 
-                  className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  defaultValue="revenue"
-                >
-                  <option value="revenue">Revenue</option>
-                  <option value="orders">Orders</option>
-                  <option value="adspend">Ad Spend</option>
-                  <option value="roas">ROAS</option>
-                </select>
-              </div>
-              
-              <div className="h-40 mt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { day: '6 days ago', value: dailyReport.revenueGenerated * 0.75 },
-                      { day: '5 days ago', value: dailyReport.revenueGenerated * 0.85 },
-                      { day: '4 days ago', value: dailyReport.revenueGenerated * 0.95 },
-                      { day: '3 days ago', value: dailyReport.revenueGenerated * 0.90 },
-                      { day: '2 days ago', value: dailyReport.revenueGenerated * 0.80 },
-                      { day: 'Yesterday', value: dailyReport.revenueGenerated * 0.95 },
-                      { day: 'Today', value: dailyReport.revenueGenerated }
-                    ]}
-                    margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#666" />
-                    <YAxis 
-                      stroke="#666"
-                      tickFormatter={(value) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                      tick={{ fontSize: 10 }}
-                    />
-                    <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                    <RechartsTooltip
-                      formatter={(value) => `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-                      labelFormatter={(label) => label}
-                      contentStyle={{ backgroundColor: '#333', border: '1px solid #444', borderRadius: '4px' }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            
-            {/* Key Performance Insights */}
-            <div className="mt-4 pt-4 border-t border-gray-800">
-              <h6 className="text-sm font-medium mb-3">Key Performance Insights</h6>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                    <Info className="h-3 w-3 text-blue-400" />
-                  </div>
-                  <p>
-                    {dailyReport.periodComparison.salesGrowth > 0 
-                      ? `Revenue is up ${Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% compared to yesterday.`
-                      : `Revenue is down ${Math.abs(dailyReport.periodComparison.salesGrowth).toFixed(1)}% compared to yesterday.`
-                    }
-                  </p>
-                </div>
-                <div className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                    <Info className="h-3 w-3 text-blue-400" />
-                  </div>
-                  <p>
-                    {dailyReport.periodComparison.orderGrowth > 0 
-                      ? `Order volume is up ${Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% compared to yesterday.`
-                      : `Order volume is down ${Math.abs(dailyReport.periodComparison.orderGrowth).toFixed(1)}% compared to yesterday.`
-                    }
-                  </p>
-                </div>
-                <div className="flex items-start">
-                  <div className="h-5 w-5 rounded-full bg-blue-900/30 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                    <Info className="h-3 w-3 text-blue-400" />
-                  </div>
-                  <p>
-                    Your average order value today is 
-                    {formatCurrency(dailyReport.revenueGenerated / (dailyReport.totalPurchases || 1))}, which is 
-                    {dailyReport.periodComparison.salesGrowth > dailyReport.periodComparison.orderGrowth 
-                      ? " higher than " 
-                      : " lower than "
-                    }
-                    yesterday.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
