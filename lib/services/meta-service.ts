@@ -1,17 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 
-export async function fetchMetaAdInsights(brandId: string, startDate: string, endDate: string) {
-  try {
-    console.log(`Starting Meta sync for brand ${brandId} from ${startDate} to ${endDate}`)
-    
-    // Get the access token from the database
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } }
-    )
+/**
+ * Fetches Meta ad insights for a specific brand within a date range
+ */
+export async function fetchMetaAdInsights(
+  brandId: string, 
+  startDate: Date, 
+  endDate: Date,
+  dryRun: boolean = false
+) {
+  console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}`)
+  
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-    // Get the Meta connection
+  try {
+    // Find the Meta connection for this brand
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
       .select('*')
@@ -21,116 +27,141 @@ export async function fetchMetaAdInsights(brandId: string, startDate: string, en
       .single()
 
     if (connectionError || !connection) {
-      console.error('No Meta connection found:', connectionError)
-      return { error: 'No active Meta connection found' }
+      console.error(`[Meta] Error finding Meta connection for brand ${brandId}:`, connectionError)
+      return { 
+        success: false, 
+        error: 'No active Meta connection found' 
+      }
     }
 
-    console.log(`Found Meta connection for brand ${brandId}`)
-
-    // First, get the ad accounts
-    console.log('Fetching ad accounts...')
+    // Fetch ad accounts
     const accountsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,account_id&access_token=${connection.access_token}`
+      `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
     )
     
     const accountsData = await accountsResponse.json()
-    console.log('Ad accounts response:', JSON.stringify(accountsData))
     
     if (accountsData.error) {
-      console.error('Error fetching ad accounts:', accountsData.error)
-      return { error: 'Failed to fetch ad accounts', details: accountsData.error }
+      console.error(`[Meta] Error fetching ad accounts:`, accountsData.error)
+      return { 
+        success: false, 
+        error: 'Failed to fetch Meta ad accounts',
+        details: accountsData.error
+      }
     }
 
     if (!accountsData.data || accountsData.data.length === 0) {
-      console.log('No ad accounts found for this user')
+      console.log(`[Meta] No ad accounts found for brand ${brandId}`)
+      return { 
+        success: false, 
+        error: 'No Meta ad accounts found for this connection' 
+      }
+    }
+
+    console.log(`[Meta] Found ${accountsData.data.length} ad accounts`)
+    
+    // Format dates for the API
+    const startDateStr = startDate.toISOString().split('T')[0]
+    const endDateStr = endDate.toISOString().split('T')[0]
+
+    let allInsights = []
+    
+    // For each ad account, fetch insights
+    for (const account of accountsData.data) {
+      console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
+      
+      try {
+        const insightsResponse = await fetch(
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&access_token=${connection.access_token}`
+        )
+        
+        const insightsData = await insightsResponse.json()
+        
+        if (insightsData.error) {
+          console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
+          continue
+        }
+        
+        if (insightsData.data && insightsData.data.length > 0) {
+          allInsights.push(...insightsData.data)
+        }
+      } catch (error) {
+        console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)
+      }
+    }
+
+    console.log(`[Meta] Fetched a total of ${allInsights.length} insights across all accounts`)
+    
+    if (allInsights.length === 0) {
       return { 
         success: true, 
-        message: 'Connection is working, but no ad accounts found',
-        accounts: []
+        message: 'No insights data available for the specified period',
+        insights: []
       }
     }
 
-    console.log(`Found ${accountsData.data.length} ad accounts`)
-
-    // For each ad account, get the insights
-    const allInsights = []
-    
-    for (const account of accountsData.data || []) {
-      // Fetch campaign insights
-      const insightsResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${account.id}/insights?` +
-        `fields=campaign_id,campaign_name,spend,impressions,clicks,reach,cpc,cpm,ctr` +
-        `&time_range={"since":"${startDate}","until":"${endDate}"}` +
-        `&level=campaign` +
-        `&access_token=${connection.access_token}`
-      )
-      
-      const insightsData = await insightsResponse.json()
-      
-      if (insightsData.error) {
-        console.error(`Error fetching insights for account ${account.id}:`, insightsData.error)
-        continue
-      }
-      
-      // Add account info to each insight
-      const enrichedInsights = (insightsData.data || []).map((insight: any) => ({
-        ...insight,
-        account_id: account.id,
-        account_name: account.name
-      }))
-      
-      allInsights.push(...enrichedInsights)
-    }
-
-    // Store the insights in the database - NOW USING meta_ad_insights INSTEAD OF meta_data_tracking
-    if (allInsights.length > 0) {
+    // Only store data if not in dry run mode
+    if (!dryRun) {
+      // Process and store insights data in meta_ad_insights
       // First clear existing data for this date range to avoid duplicates
-      await supabase
+      const { error: deleteError } = await supabase
         .from('meta_ad_insights')
         .delete()
         .eq('brand_id', brandId)
-        .gte('date_start', startDate)
-        .lte('date_end', endDate)
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
       
-      // Insert new data
+      if (deleteError) {
+        console.error(`[Meta] Error clearing existing insights:`, deleteError)
+      }
+  
+      // Prepare and store the enriched insights
+      const enrichedInsights = allInsights.map((insight: any) => ({
+        brand_id: brandId,
+        connection_id: connection.id,
+        account_id: insight.account_id,
+        account_name: insight.account_name,
+        campaign_id: insight.campaign_id,
+        campaign_name: insight.campaign_name,
+        adset_id: insight.adset_id,
+        adset_name: insight.adset_name,
+        ad_id: insight.ad_id,
+        ad_name: insight.ad_name,
+        impressions: parseInt(insight.impressions || '0'),
+        clicks: parseInt(insight.clicks || '0'),
+        spend: parseFloat(insight.spend || '0'),
+        date: startDateStr, // Using the start date for simplicity
+        actions: insight.actions || [],
+        action_values: insight.action_values || []
+      }))
+      
       const { error: insertError } = await supabase
         .from('meta_ad_insights')
-        .upsert(
-          allInsights.map(insight => ({
-            brand_id: brandId,
-            connection_id: connection.id, // Add connection ID for proper linking
-            account_id: insight.account_id,
-            account_name: insight.account_name,
-            campaign_id: insight.campaign_id,
-            campaign_name: insight.campaign_name,
-            spend: parseFloat(insight.spend || 0),
-            impressions: parseInt(insight.impressions || 0, 10),
-            clicks: parseInt(insight.clicks || 0, 10),
-            reach: parseInt(insight.reach || 0, 10),
-            cpc: parseFloat(insight.cpc || 0),
-            cpm: parseFloat(insight.cpm || 0),
-            ctr: parseFloat(insight.ctr || 0),
-            date_start: startDate,
-            date_end: endDate,
-            date: startDate, // Add a date field for easier querying
-            created_at: new Date().toISOString()
-          }))
-        )
-
+        .upsert(enrichedInsights)
+      
       if (insertError) {
-        console.error('Error storing insights:', insertError)
-        return { error: 'Failed to store insights', details: insertError }
+        console.error(`[Meta] Error storing insights:`, insertError)
+        return { 
+          success: false, 
+          error: 'Failed to store Meta insights',
+          details: insertError
+        }
       }
     }
-
-    return { success: true, insights: allInsights }
-  } catch (error) {
-    console.error('Error in fetchMetaAdInsights:', error)
+    
     return { 
-      error: 'Server error', 
-      details: typeof error === 'object' && error !== null && 'message' in error 
-        ? (error.message as string) 
-        : 'Unknown error'
+      success: true, 
+      message: dryRun ? 'Meta insights fetched successfully (dry run)' : 'Meta insights synced successfully',
+      count: allInsights.length,
+      insights: dryRun ? allInsights : undefined
+    }
+    
+  } catch (error) {
+    console.error(`[Meta] Error in fetchMetaAdInsights:`, error)
+    return { 
+      success: false, 
+      error: 'Failed to fetch Meta ad insights',
+      details: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }

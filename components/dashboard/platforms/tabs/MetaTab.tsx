@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
+import Link from "next/link"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -200,6 +201,244 @@ export function MetaTab({
     }
   }
 
+  // Function to run diagnostics on the Meta connection
+  const runDiagnostics = async () => {
+    if (!brandId) return
+    
+    try {
+      const response = await fetch(`/api/meta/diagnose?brandId=${brandId}`)
+      if (!response.ok) {
+        throw new Error(`Failed to run diagnostics: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log('Meta connection diagnostics:', data)
+      
+      // Format the diagnostic data as a readable string
+      let diagnosticInfo = `
+============ META CONNECTION DIAGNOSTICS ============\n
+Connection Status: ${data.connection?.status || 'Unknown'}\n
+Connection ID: ${data.connection?.id || 'Unknown'}\n
+Created: ${data.connection?.created_at ? new Date(data.connection.created_at).toLocaleString() : 'Unknown'}\n
+\n---- AD ACCOUNTS ----\n`
+
+      if (data.accounts?.data?.length > 0) {
+        data.accounts.data.forEach((account: any, index: number) => {
+          diagnosticInfo += `\nAccount ${index + 1}:\n`
+          diagnosticInfo += `Name: ${account.name}\n`
+          diagnosticInfo += `ID: ${account.id}\n`
+          diagnosticInfo += `Status: ${account.account_status === 1 ? 'Active' : 'Inactive'}\n`
+        })
+      } else {
+        diagnosticInfo += 'No ad accounts found.\n'
+      }
+      
+      diagnosticInfo += '\n---- CAMPAIGNS ----\n'
+      
+      if (data.campaigns?.data?.length > 0) {
+        data.campaigns.data.forEach((campaign: any, index: number) => {
+          diagnosticInfo += `\nCampaign ${index + 1}:\n`
+          diagnosticInfo += `Name: ${campaign.name}\n`
+          diagnosticInfo += `Status: ${campaign.status}\n`
+          diagnosticInfo += `Objective: ${campaign.objective}\n`
+          diagnosticInfo += `Created: ${campaign.created_time ? new Date(campaign.created_time).toLocaleString() : 'Unknown'}\n`
+        })
+      } else {
+        diagnosticInfo += 'No campaigns found. You need to create at least one campaign in Meta Ads Manager.\n'
+      }
+      
+      diagnosticInfo += '\n---- DATABASE DATA ----\n'
+      diagnosticInfo += `Data in meta_ad_insights: ${data.existing_data?.has_data ? 'Yes' : 'No'}\n`
+      
+      diagnosticInfo += '\n---- RECOMMENDATION ----\n'
+      if (!data.campaigns?.data?.length) {
+        diagnosticInfo += 'Create an active campaign in Meta Ads Manager to generate data.\n'
+        diagnosticInfo += 'Even with a very small budget ($1/day) or a paused campaign that ran briefly, you should see data.\n'
+      } else if (data.campaigns?.data?.length > 0 && data.campaigns.data.every((c: any) => c.status !== 'ACTIVE')) {
+        diagnosticInfo += 'You have campaigns, but none are active. Activate a campaign to generate data.\n'
+      }
+      
+      showDiagnosticDialog(diagnosticInfo, data)
+      
+      toast.success("Diagnostics completed successfully")
+    } catch (err) {
+      console.error("Error running Meta diagnostics:", err)
+      toast.error("Failed to run diagnostics. Please try again.")
+    }
+  }
+
+  // Function to test fetch Meta data (dry run)
+  const testFetchMetaData = async () => {
+    if (!brandId) return
+    
+    try {
+      toast.info("Fetching Meta data in test mode...")
+      
+      const response = await fetch(`/api/meta/sync?brandId=${brandId}&dryRun=true`, {
+        method: 'POST'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Meta data: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      console.log('Meta data test fetch result:', data)
+      
+      if (data.success && data.insights && data.insights.length > 0) {
+        let insightsInfo = `
+============ META TEST FETCH RESULTS ============\n
+Successfully fetched ${data.count} ads/insights.
+\n
+This data would be synced to your dashboard in a real sync operation.
+\n`
+
+        // Show a sample of the insights (first 5)
+        insightsInfo += '\n---- SAMPLE INSIGHTS DATA ----\n'
+        
+        const sampleInsights = data.insights.slice(0, 5)
+        sampleInsights.forEach((insight: any, index: number) => {
+          insightsInfo += `\nInsight ${index + 1}:\n`
+          insightsInfo += `Campaign: ${insight.campaign_name}\n`
+          insightsInfo += `Ad: ${insight.ad_name}\n`
+          insightsInfo += `Spend: $${parseFloat(insight.spend || 0).toFixed(2)}\n`
+          insightsInfo += `Impressions: ${insight.impressions}\n`
+          insightsInfo += `Clicks: ${insight.clicks}\n`
+          
+          // Show conversions if available
+          const conversions = insight.actions?.find((a: any) => a.action_type === 'purchase' || a.action_type === 'offsite_conversion.fb_pixel_purchase')
+          if (conversions) {
+            insightsInfo += `Conversions: ${conversions.value}\n`
+          }
+        })
+        
+        insightsInfo += '\n---- CONCLUSION ----\n'
+        insightsInfo += 'Your Meta account is working correctly and returning data.\n'
+        insightsInfo += 'Use the "Sync Now" button to populate this data into your dashboard.\n'
+        
+        showDiagnosticDialog(insightsInfo)
+        toast.success("Test fetch completed successfully")
+      } else {
+        let message = `
+============ META TEST FETCH RESULTS ============\n
+No insights data was returned from Meta.
+\n
+This could be because:
+- You don't have any active campaigns
+- You haven't spent any money on ads recently
+- Your campaigns are in draft mode
+\n
+Try creating at least one active campaign in Meta Ads Manager.
+`
+        showDiagnosticDialog(message)
+        toast.info("No data found in Meta account")
+      }
+    } catch (err) {
+      console.error("Error testing Meta data fetch:", err)
+      toast.error("Failed to test fetch Meta data. Please try again.")
+    }
+  }
+
+  // Helper function to show diagnostic dialog
+  const showDiagnosticDialog = (content: string, data?: any) => {
+    const dialogElement = document.createElement('div')
+    dialogElement.style.position = 'fixed'
+    dialogElement.style.zIndex = '1000'
+    dialogElement.style.top = '0'
+    dialogElement.style.left = '0'
+    dialogElement.style.width = '100%'
+    dialogElement.style.height = '100%'
+    dialogElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)'
+    dialogElement.style.display = 'flex'
+    dialogElement.style.justifyContent = 'center'
+    dialogElement.style.alignItems = 'center'
+    
+    const dialogContent = document.createElement('div')
+    dialogContent.style.backgroundColor = '#222'
+    dialogContent.style.border = '1px solid #444'
+    dialogContent.style.borderRadius = '8px'
+    dialogContent.style.padding = '20px'
+    dialogContent.style.maxWidth = '800px'
+    dialogContent.style.maxHeight = '80vh'
+    dialogContent.style.overflow = 'auto'
+    dialogContent.style.position = 'relative'
+    
+    const closeButton = document.createElement('button')
+    closeButton.innerHTML = '✕'
+    closeButton.style.position = 'absolute'
+    closeButton.style.top = '10px'
+    closeButton.style.right = '10px'
+    closeButton.style.background = 'none'
+    closeButton.style.border = 'none'
+    closeButton.style.color = '#999'
+    closeButton.style.fontSize = '20px'
+    closeButton.style.cursor = 'pointer'
+    closeButton.onclick = () => {
+      document.body.removeChild(dialogElement)
+    }
+    
+    const title = document.createElement('h3')
+    title.textContent = 'Meta Connection Diagnostics'
+    title.style.marginTop = '0'
+    title.style.marginBottom = '15px'
+    title.style.color = '#fff'
+    
+    const pre = document.createElement('pre')
+    pre.textContent = content
+    pre.style.whiteSpace = 'pre-wrap'
+    pre.style.fontSize = '14px'
+    pre.style.color = '#ddd'
+    pre.style.backgroundColor = '#1a1a1a'
+    pre.style.padding = '10px'
+    pre.style.borderRadius = '4px'
+    pre.style.maxHeight = '500px'
+    pre.style.overflow = 'auto'
+    
+    // Add buttons if we have data
+    if (data && data.accounts?.data?.length > 0) {
+      const buttonContainer = document.createElement('div')
+      buttonContainer.style.display = 'flex'
+      buttonContainer.style.gap = '10px'
+      buttonContainer.style.marginTop = '15px'
+      
+      const testFetchButton = document.createElement('button')
+      testFetchButton.textContent = 'Test Fetch Data'
+      testFetchButton.style.backgroundColor = '#4a7edd'
+      testFetchButton.style.color = 'white'
+      testFetchButton.style.border = 'none'
+      testFetchButton.style.padding = '8px 12px'
+      testFetchButton.style.borderRadius = '4px'
+      testFetchButton.style.cursor = 'pointer'
+      testFetchButton.onclick = () => {
+        document.body.removeChild(dialogElement)
+        testFetchMetaData()
+      }
+      
+      const helpButton = document.createElement('button')
+      helpButton.textContent = 'Setup Help'
+      helpButton.style.backgroundColor = '#555'
+      helpButton.style.color = 'white'
+      helpButton.style.border = 'none'
+      helpButton.style.padding = '8px 12px'
+      helpButton.style.borderRadius = '4px'
+      helpButton.style.cursor = 'pointer'
+      helpButton.onclick = () => {
+        window.open('/help/meta-setup', '_blank')
+      }
+      
+      buttonContainer.appendChild(testFetchButton)
+      buttonContainer.appendChild(helpButton)
+      dialogContent.appendChild(buttonContainer)
+    }
+    
+    dialogContent.appendChild(closeButton)
+    dialogContent.appendChild(title)
+    dialogContent.appendChild(pre)
+    dialogElement.appendChild(dialogContent)
+    
+    document.body.appendChild(dialogElement)
+  }
+
   // Show a loading spinner when initialDataLoad is true
   if (initialDataLoad) {
     return (
@@ -278,20 +517,34 @@ export function MetaTab({
           />}
           className="bg-amber-950/20 border-amber-800/30"
         >
-          <div className="flex justify-between items-center w-full">
-            <p className="text-sm">
+          <div className="flex flex-col md:flex-row md:items-center w-full gap-3">
+            <p className="text-sm flex-1">
               We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns.
+              <Link href="/help/meta-setup" className="inline-flex items-center ml-1 text-blue-400 hover:text-blue-300">
+                <Info className="h-3.5 w-3.5 mr-1" />
+                <span>Learn more</span>
+              </Link>
             </p>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={refreshMetaData}
-              disabled={isSyncing}
-              className="whitespace-nowrap ml-4"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
-            </Button>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="secondary"
+                size="sm"
+                onClick={runDiagnostics}
+                className="whitespace-nowrap"
+              >
+                Run Diagnostics
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={refreshMetaData}
+                disabled={isSyncing}
+                className="whitespace-nowrap"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
+              </Button>
+            </div>
           </div>
         </AlertBox>
       )}
