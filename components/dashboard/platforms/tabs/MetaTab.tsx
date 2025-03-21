@@ -334,21 +334,25 @@ export function MetaTab({
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">CTR</span>
                     <span className="text-xs flex items-center">
-                      {data.ctrGrowth > 0 ? (
-                        <span className="text-green-400 flex items-center">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          +{data.ctrGrowth.toFixed(1)}%
-                        </span>
+                      {data && typeof data.ctrGrowth === 'number' ? (
+                        data.ctrGrowth > 0 ? (
+                          <span className="text-green-400 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                            +{data.ctrGrowth.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-red-400 flex items-center">
+                            <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                            {data.ctrGrowth.toFixed(1)}%
+                          </span>
+                        )
                       ) : (
-                        <span className="text-red-400 flex items-center">
-                          <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                          {data.ctrGrowth.toFixed(1)}%
-                        </span>
+                        <span className="text-gray-400">--</span>
                       )}
                     </span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{(data.ctr || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">{data && typeof data.ctr === 'number' ? data.ctr.toFixed(2) : '0.00'}</span>
                     <span className="text-gray-400 ml-1">%</span>
                   </div>
                 </div>
@@ -370,7 +374,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${(data.cpc || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${data && typeof data.cpc === 'number' ? data.cpc.toFixed(2) : '0.00'}</span>
                   </div>
                 </div>
                 
@@ -379,7 +383,7 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Conversions</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{data.conversions || 0}</span>
+                    <span className="text-xl font-semibold">{data && typeof data.conversions === 'number' ? data.conversions : 0}</span>
                   </div>
                 </div>
               </div>
@@ -402,7 +406,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{(data.frequency || 0).toFixed(1)}</span>
+                    <span className="text-xl font-semibold">{data && typeof data.frequency === 'number' ? data.frequency.toFixed(1) : '0.0'}</span>
                     <span className="text-gray-400 ml-1">times</span>
                   </div>
                 </div>
@@ -412,7 +416,7 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Reach</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{formatNumberCompact(data.reach || 0)}</span>
+                    <span className="text-xl font-semibold">{formatNumberCompact(data && typeof data.reach === 'number' ? data.reach : 0)}</span>
                     <span className="text-gray-400 ml-1">people</span>
                   </div>
                 </div>
@@ -422,7 +426,7 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Cost Per Result</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${(data.costPerResult || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${data && typeof data.costPerResult === 'number' ? data.costPerResult.toFixed(2) : '0.00'}</span>
                   </div>
                 </div>
               </div>
