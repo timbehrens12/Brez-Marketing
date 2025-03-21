@@ -376,51 +376,51 @@ export function GreetingWidget({
     }
   }, [])
 
+  // Fix the getPeriodDates function to include the last day of the month
   const getPeriodDates = (period: ReportPeriod, isPrevious: boolean = false) => {
     const now = new Date()
     let from: Date
     let to: Date
 
     if (period === 'daily') {
+      // For daily period
       if (isPrevious) {
         // Yesterday
-        const yesterday = new Date(now)
-        yesterday.setDate(yesterday.getDate() - 1)
-        yesterday.setHours(0, 0, 0, 0)
+        from = new Date()
+        from.setDate(from.getDate() - 1)
+        from.setHours(0, 0, 0, 0)
         
-        const yesterdayEnd = new Date(yesterday)
-        yesterdayEnd.setHours(23, 59, 59, 999)
-        
-        from = yesterday
-        to = yesterdayEnd
+        to = new Date(from)
+        to.setHours(23, 59, 59, 999)
       } else {
-      // Today
-      from = new Date(now)
-      from.setHours(0, 0, 0, 0)
-      to = new Date(now)
-      to.setHours(23, 59, 59, 999)
+        // Today
+        from = new Date()
+        from.setHours(0, 0, 0, 0)
+        
+        to = new Date()
+        to.setHours(23, 59, 59, 999)
       }
     } else {
+      // For monthly period
       if (isPrevious) {
-        // Two months ago (month before the previous month)
+        // Previous month (two months ago)
         const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-        
         from = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
         from.setHours(0, 0, 0, 0)
         
         to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
-      to.setHours(23, 59, 59, 999)
-    } else {
-      // Previous complete month (not current month)
-      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
-      from.setHours(0, 0, 0, 0)
-      
-      to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
-      to.setHours(23, 59, 59, 999)
+        to.setHours(23, 59, 59, 999)
+      } else {
+        // Last month (previous month)
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1)
+        from.setHours(0, 0, 0, 0)
+        
+        to = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0)
+        to.setHours(23, 59, 59, 999)
       }
     }
-
+    
     return { from, to }
   }
 
@@ -544,7 +544,7 @@ export function GreetingWidget({
     }
   };
 
-  // Generate enhanced reports with real or simulated data as needed
+  // Update the generateEnhancedReport function to properly handle zero values in percentage calculations
   const generateEnhancedReport = async (
     period: ReportPeriod,
     currentMetrics: PeriodMetrics,
@@ -573,45 +573,32 @@ export function GreetingWidget({
         cpc: 0
       }
       
-      // Calculate growth rates (safely handle division by zero)
-      const salesGrowth = previousMetrics.totalSales === 0 && currentMetrics.totalSales === 0
-        ? 0
-        : previousMetrics.totalSales > 0 
-          ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
-          : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
+      // Utility function to safely calculate percentage change
+      const calculatePercentageChange = (current: number, previous: number): number => {
+        // If both values are zero, there's no change (0%)
+        if (current === 0 && previous === 0) return 0;
+        
+        // If previous is zero and current is not, this is technically infinite growth
+        // but we'll cap it at 100% to avoid extreme values
+        if (previous === 0 && current > 0) return 100;
+        
+        // Normal percentage calculation
+        if (previous > 0) {
+          return ((current - previous) / previous) * 100;
+        }
+        
+        // If previous is negative and current is not, or vice versa, special handling might be needed
+        // For now, we'll use the simple calculation
+        return ((current - previous) / Math.abs(previous)) * 100;
+      }
       
-      const orderGrowth = previousMetrics.ordersCount === 0 && currentMetrics.ordersCount === 0
-        ? 0
-        : previousMetrics.ordersCount > 0 
-          ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
-          : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
-      
-      // Special handling: Ensure orderGrowth is never exactly zero to force percentage display
-      const finalOrderGrowth = orderGrowth;
-      
-      const customerGrowth = previousMetrics.customerCount === 0 && currentMetrics.customerCount === 0
-        ? 0
-        : previousMetrics.customerCount > 0 
-          ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
-          : (currentMetrics.customerCount > 0 ? 100 : 0) // Use 100% growth if we now have customers but didn't before
-      
-      const roasGrowth = previousMetrics.roas === 0 && currentMetrics.roas === 0
-        ? 0
-        : previousMetrics.roas > 0 
-          ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
-          : (currentMetrics.roas > 0 ? 100 : 0) // Use 100% growth if we now have ROAS but didn't before
-      
-      const conversionGrowth = previousMetrics.conversionRate === 0 && currentMetrics.conversionRate === 0
-        ? 0
-        : previousMetrics.conversionRate > 0 
-          ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
-          : (currentMetrics.conversionRate > 0 ? 100 : 0) // Use 100% growth if we now have conversion but didn't before
-      
-      const adSpendGrowth = previousMetrics.adSpend === 0 && currentMetrics.adSpend === 0
-        ? 0
-        : previousMetrics.adSpend > 0 
-          ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
-          : (currentMetrics.adSpend > 0 ? 100 : 0) // Use standard calculation for ad spend growth
+      // Calculate growth rates using the utility function
+      const salesGrowth = calculatePercentageChange(currentMetrics.totalSales, previousMetrics.totalSales);
+      const orderGrowth = calculatePercentageChange(currentMetrics.ordersCount, previousMetrics.ordersCount);
+      const customerGrowth = calculatePercentageChange(currentMetrics.customerCount, previousMetrics.customerCount);
+      const roasGrowth = calculatePercentageChange(currentMetrics.roas, previousMetrics.roas);
+      const conversionGrowth = calculatePercentageChange(currentMetrics.conversionRate, previousMetrics.conversionRate);
+      const adSpendGrowth = calculatePercentageChange(currentMetrics.adSpend, previousMetrics.adSpend);
       
       // Generate period-specific date range string
       const now = new Date()
@@ -619,9 +606,10 @@ export function GreetingWidget({
       if (period === 'daily') {
         dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`
       } else {
-        const monthStart = startOfMonth(subMonths(now, 1))
-        const monthEnd = endOfMonth(subMonths(now, 1))
-        dateRangeStr = `${format(monthStart, 'MMMM yyyy')}`
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const monthStart = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1)
+        const monthEnd = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0)
+        dateRangeStr = `${format(monthStart, 'MMMM d')} - ${format(monthEnd, 'MMMM d, yyyy')}`
       }
       
       // Get comparison period text
@@ -679,21 +667,21 @@ export function GreetingWidget({
         newCustomersAcquired: currentMetrics.newCustomers,
         recommendations: generateRecommendations(currentMetrics, {
           salesGrowth,
-          orderGrowth: finalOrderGrowth,
+          orderGrowth: orderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth
         }),
         takeaways: generateTakeaways(currentMetrics, {
           salesGrowth,
-          orderGrowth: finalOrderGrowth,
+          orderGrowth: orderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth
         }),
         periodComparison: {
           salesGrowth,
-          orderGrowth: finalOrderGrowth,
+          orderGrowth: orderGrowth,
           customerGrowth,
           roasGrowth,
           conversionGrowth,
@@ -814,7 +802,7 @@ export function GreetingWidget({
       // Generate AI analysis
       const aiAnalysis = generateAIAnalysis(period, currentMetrics, {
         salesGrowth,
-        orderGrowth: finalOrderGrowth,
+        orderGrowth: orderGrowth,
         customerGrowth,
         roasGrowth,
         conversionGrowth,
@@ -910,9 +898,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       
       try {
         shopifyOrdersResult = await supabase
-          .from('shopify_orders')
+        .from('shopify_orders')
           .select('*')
-          .eq('connection_id', connectionId)
+        .eq('connection_id', connectionId)
           .gte('created_at', format(from, 'yyyy-MM-dd'))
           .lte('created_at', format(to, 'yyyy-MM-dd'))
         
@@ -959,9 +947,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       let metaDataResult
       try {
         metaDataResult = await supabase
-          .from('meta_ad_insights')
+        .from('meta_ad_insights')
           .select('*')
-          .gte('date', format(from, 'yyyy-MM-dd'))
+        .gte('date', format(from, 'yyyy-MM-dd'))
           .lte('date', format(to, 'yyyy-MM-dd'))
         
         if (metaDataResult.error) {
@@ -973,8 +961,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       }
       
       const metaInsights = metaDataResult?.data || []
-      
-      // Calculate ad metrics
+        
+        // Calculate ad metrics
       const adSpend = metaInsights.reduce((sum: number, insight: any) => {
         return sum + (parseFloat(insight.spend) || 0)
       }, 0)
@@ -1041,18 +1029,18 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       console.error('Error fetching period metrics:', error)
       return {
         currentMetrics: {
-          totalSales: 0,
-          ordersCount: 0,
-          averageOrderValue: 0,
-          conversionRate: 0,
-          customerCount: 0,
-          newCustomers: 0,
-          returningCustomers: 0,
-          adSpend: 0,
-          roas: 0,
-          ctr: 0,
-          cpc: 0
-        }
+        totalSales: 0,
+        ordersCount: 0,
+        averageOrderValue: 0,
+        conversionRate: 0,
+        customerCount: 0,
+        newCustomers: 0,
+        returningCustomers: 0,
+        adSpend: 0,
+        roas: 0,
+        ctr: 0,
+        cpc: 0
+    }
       }
     }
   }
@@ -1954,13 +1942,13 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getThreeMonthsAgoName()}
-                            </div>
+                </div>
                             <div className="font-semibold">
                               ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
                                 ? Math.round(monthlyReport.historicalData[0].revenue)
                                 : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.75))}
-                            </div>
-                          </div>
+            </div>
+          </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getTwoMonthsAgoName()}
@@ -1976,7 +1964,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                   ? ((monthlyReport.historicalData[1].revenue - monthlyReport.historicalData[0].revenue) / monthlyReport.historicalData[0].revenue * 100).toFixed(1)
                                   : monthlyReport.historicalData[1].revenue > 0 ? "+100" : "0"}%`
                                 : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
-                            </div>
+            </div>
             </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
@@ -1994,7 +1982,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                           ? ((monthlyReport.revenueGenerated - monthlyReport.historicalData[1].revenue) / monthlyReport.historicalData[1].revenue * 100).toFixed(1)
                                           : monthlyReport.revenueGenerated > 0 ? "+100" : "0"}%`
                                       : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
-                                  </div>
+                            </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
@@ -2060,7 +2048,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                           ? ((monthlyReport.totalAdSpend - monthlyReport.historicalData[1].adSpend) / monthlyReport.historicalData[1].adSpend * 100).toFixed(1)
                                           : monthlyReport.totalAdSpend > 0 ? "+100" : "0"}%`
                                       : monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
-                                  </div>
+                            </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
@@ -2126,7 +2114,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                           ? ((monthlyReport.averageRoas - monthlyReport.historicalData[1].roas) / monthlyReport.historicalData[1].roas * 100).toFixed(1)
                                           : monthlyReport.averageRoas > 0 ? "+100" : "0"}%`
                                       : "+11.8%"}
-                                  </div>
+                            </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
@@ -2168,16 +2156,41 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 ? Math.round(monthlyReport.historicalData[0].orders)
                                 : 0}
                             </div>
-                            <div className="text-xs text-green-500">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? (monthlyReport.historicalData[0].orders === 0 && monthlyReport.historicalData[1].orders === 0)
-                                  ? "0%" 
-                                  : monthlyReport.historicalData[0].orders === 0 && monthlyReport.historicalData[1].orders > 0
-                                    ? "N/A"
-                                    : `${((monthlyReport.historicalData[1].orders - monthlyReport.historicalData[0].orders) / 
-                                        Math.max(0.01, monthlyReport.historicalData[0].orders) * 100).toFixed(1)}%`
-                                : "0%"}
-                            </div>
+                            {(() => {
+                              // Calculate percentage change between three months ago and two months ago
+                              if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2) {
+                                const prevValue = monthlyReport.historicalData[0].orders;
+                                const currValue = monthlyReport.historicalData[1].orders;
+                                
+                                // If both zero, show 0%
+                                if (prevValue === 0 && currValue === 0) {
+                                  return <div className="text-xs text-gray-400">0%</div>;
+                                }
+                                
+                                // If previous was zero but current has value, show N/A
+                                if (prevValue === 0 && currValue > 0) {
+                                  return <div className="text-xs text-gray-400">N/A</div>;
+                                }
+                                
+                                // Calculate percentage change
+                                const percentChange = prevValue > 0 
+                                  ? ((currValue - prevValue) / prevValue) * 100 
+                                  : 0;
+                                
+                                // Display with appropriate color
+                                const textColor = percentChange >= 0 ? "text-green-500" : "text-red-500";
+                                const prefix = percentChange >= 0 ? "+" : "";
+                                
+                                return (
+                                  <div className={`text-xs ${textColor}`}>
+                                    {`${prefix}${percentChange.toFixed(1)}%`}
+                                  </div>
+                                );
+                              }
+                              
+                              // Default when no real data
+                              return <div className="text-xs text-gray-400">0%</div>;
+                            })()}
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
@@ -2189,20 +2202,53 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <div className="text-xs text-green-500 cursor-help">
-                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? (monthlyReport.historicalData[1].orders === 0 && monthlyReport.totalPurchases === 0)
-                                        ? "0%" 
-                                        : monthlyReport.historicalData[1].orders === 0 && monthlyReport.totalPurchases > 0
-                                          ? "N/A"
-                                          : `${((monthlyReport.totalPurchases - monthlyReport.historicalData[1].orders) / 
-                                              Math.max(0.01, monthlyReport.historicalData[1].orders) * 100).toFixed(1)}%`
-                                      : "0%"}
+                                  <div className={`text-xs cursor-help ${(() => {
+                                    // Calculate percentage change
+                                    if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1) {
+                                      const prevValue = monthlyReport.historicalData[1].orders;
+                                      const currValue = monthlyReport.totalPurchases;
+                                      
+                                      // Return appropriate color based on the change
+                                      if (prevValue === 0 && currValue === 0) return "text-gray-400";
+                                      if (prevValue === 0) return "text-gray-400";
+                                      return ((currValue - prevValue) / prevValue) >= 0 ? "text-green-500" : "text-red-500";
+                                    }
+                                    return "text-gray-400";
+                                  })()}`}>
+                                    {(() => {
+                                      // Calculate percentage text
+                                      if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1) {
+                                        const prevValue = monthlyReport.historicalData[1].orders;
+                                        const currValue = monthlyReport.totalPurchases;
+                                        
+                                        // If both zero, show 0%
+                                        if (prevValue === 0 && currValue === 0) {
+                                          return "0%";
+                                        }
+                                        
+                                        // If previous was zero but current has value, show N/A
+                                        if (prevValue === 0 && currValue > 0) {
+                                          return "N/A";
+                                        }
+                                        
+                                        // Calculate percentage change
+                                        const percentChange = prevValue > 0 
+                                          ? ((currValue - prevValue) / prevValue) * 100 
+                                          : 0;
+                                        
+                                        // Display with appropriate prefix
+                                        const prefix = percentChange >= 0 ? "+" : "";
+                                        return `${prefix}${percentChange.toFixed(1)}%`;
+                                      }
+                                      
+                                      // Default when no real data
+                                      return "0%";
+                                    })()}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getPreviousMonthName()}: {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                    {getPreviousMonthName()}: {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
                                       ? Math.round(monthlyReport.historicalData[1].orders)
                                       : 0} orders
                                   </p>
