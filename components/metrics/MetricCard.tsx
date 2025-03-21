@@ -156,7 +156,7 @@ export function MetricCard({
     try {
       // Handle null, undefined, NaN
       if (val === null || val === undefined || isNaN(val)) {
-        return "0";
+        return valueFormat === "currency" ? "$0.00" : "0";
       }
       
       switch(valueFormat) {
@@ -170,7 +170,7 @@ export function MetricCard({
       }
     } catch (error) {
       console.error('Error formatting value:', error, 'Value was:', val);
-      return "0"
+      return valueFormat === "currency" ? "$0.00" : "0"
     }
   }
 
@@ -355,8 +355,8 @@ export function MetricCard({
     }
     
     // Calculate the previous value based on the current value and percentage change
-    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
-    const previousValue = calculatePreviousValue(numericValue, change);
+    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : safeValue;
+    const previousValue = calculatePreviousValue(numericValue, safeChange);
     
     // If the previous value is 0 or very close to 0, show a special message
     if (previousValue === 0 || (previousValue < 0.01 && previousValue > -0.01)) {

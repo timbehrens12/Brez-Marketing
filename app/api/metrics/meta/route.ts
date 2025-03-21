@@ -61,6 +61,10 @@ export async function GET(request: NextRequest) {
   // Get brandId from query parameters
   const url = new URL(request.url)
   const brandId = url.searchParams.get('brandId')
+  const startDate = url.searchParams.get('startDate')
+  const endDate = url.searchParams.get('endDate')
+  
+  console.log(`Meta API request for brand: ${brandId}, startDate: ${startDate}, endDate: ${endDate}`)
   
   if (!brandId) {
     return new Response(JSON.stringify({ error: 'Brand ID is required' }), {
@@ -76,13 +80,25 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Check if we have real Meta data for this brand
-    const { data: metaData, error: metaError } = await supabase
+    // Build the query
+    let query = supabase
       .from('meta_ad_insights')
       .select('*')
       .eq('brand_id', brandId)
       .order('date_start', { ascending: false })
-      .limit(90) // Get last 90 days of data
+    
+    // Add date filtering if provided
+    if (startDate && endDate) {
+      query = query
+        .gte('date_start', startDate)
+        .lte('date_start', endDate)
+    } else {
+      // Default: last 90 days
+      query = query.limit(90)
+    }
+    
+    // Execute the query
+    const { data: metaData, error: metaError } = await query
     
     if (metaError) {
       console.error('Error fetching Meta data:', metaError)

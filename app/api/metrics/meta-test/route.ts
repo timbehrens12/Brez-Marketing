@@ -50,8 +50,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     
-    console.log(`Meta test API called with brandId: ${brandId}`)
+    console.log(`Meta test API called with brandId: ${brandId}, startDate: ${startDate}, endDate: ${endDate}`)
     
     if (!brandId) {
       return NextResponse.json({ error: 'brandId is required' }, { status: 400 })
@@ -102,7 +104,20 @@ export async function GET(request: NextRequest) {
       const today = new Date();
       const dailyData: DailyDataItem[] = [];
       
-      for (let i = 0; i < 30; i++) {
+      // Determine the number of days to generate based on startDate/endDate
+      let daysToGenerate = 30;
+      
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (start instanceof Date && !isNaN(start.getTime()) && 
+            end instanceof Date && !isNaN(end.getTime())) {
+          daysToGenerate = Math.min(90, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+          console.log(`Generating ${daysToGenerate} days of data based on date range`);
+        }
+      }
+      
+      for (let i = 0; i < daysToGenerate; i++) {
         const date = new Date();
         date.setDate(today.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
@@ -112,10 +127,10 @@ export async function GET(request: NextRequest) {
         
         dailyData.push({
           date: dateStr,
-          spend: (result.adSpend / 30) * randomFactor,
-          impressions: Math.round((result.impressions / 30) * randomFactor),
-          clicks: Math.round((result.clicks / 30) * randomFactor),
-          conversions: Math.round((result.conversions / 30) * randomFactor),
+          spend: (result.adSpend / daysToGenerate) * randomFactor,
+          impressions: Math.round((result.impressions / daysToGenerate) * randomFactor),
+          clicks: Math.round((result.clicks / daysToGenerate) * randomFactor),
+          conversions: Math.round((result.conversions / daysToGenerate) * randomFactor),
           ctr: result.ctr * randomFactor,
           roas: result.roas * randomFactor
         });
