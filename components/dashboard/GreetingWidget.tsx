@@ -394,11 +394,11 @@ export function GreetingWidget({
         from = yesterday
         to = yesterdayEnd
       } else {
-        // Today
-        from = new Date(now)
-        from.setHours(0, 0, 0, 0)
-        to = new Date(now)
-        to.setHours(23, 59, 59, 999)
+      // Today
+      from = new Date(now)
+      from.setHours(0, 0, 0, 0)
+      to = new Date(now)
+      to.setHours(23, 59, 59, 999)
       }
     } else {
       if (isPrevious) {
@@ -410,14 +410,14 @@ export function GreetingWidget({
         
         to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
         to.setHours(23, 59, 59, 999)
-      } else {
-        // Previous complete month (not current month)
-        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
-        from.setHours(0, 0, 0, 0)
-        
-        to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
+    } else {
+      // Previous complete month (not current month)
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
+      from.setHours(0, 0, 0, 0)
+      
+      to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
+      to.setHours(23, 59, 59, 999)
       }
     }
 
@@ -515,7 +515,7 @@ export function GreetingWidget({
         
         if ('currentMetrics' in previousMonthlyResult) {
           previousMonthlyMetrics = previousMonthlyResult.currentMetrics;
-        } else {
+      } else {
           previousMonthlyMetrics = previousMonthlyResult as PeriodMetrics;
         }
 
@@ -1201,16 +1201,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       // Return zeros in case of error rather than simulated data
       return {
         currentMetrics: {
-          totalSales: 0,
-          ordersCount: 0,
-          averageOrderValue: 0,
-          conversionRate: 0,
-          customerCount: 0,
-          newCustomers: 0,
-          returningCustomers: 0,
-          adSpend: 0,
-          roas: 0,
-          ctr: 0,
+        totalSales: 0,
+        ordersCount: 0,
+        averageOrderValue: 0,
+        conversionRate: 0,
+        customerCount: 0,
+        newCustomers: 0,
+        returningCustomers: 0,
+        adSpend: 0,
+        roas: 0,
+        ctr: 0,
           cpc: 0,
           topProducts: []
         }
@@ -1411,7 +1411,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       // Only fetch daily data since that's all that changes hourly
       const refreshDailyOnly = async () => {
         setIsRefreshing(true);
-        
+          
         try {
           // Get dates for daily period
           const dailyDates = getPeriodDates('daily');
@@ -1452,19 +1452,19 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             } else {
               yesterdayMetrics = yesterdayResult as PeriodMetrics;
             }
-            
-            // Update just the daily metrics in state
-            setPeriodData(prev => ({
-              ...prev,
-              today: todayMetrics,
-            }));
-            
-            // Update the daily report
+          
+          // Update just the daily metrics in state
+          setPeriodData(prev => ({
+            ...prev,
+            today: todayMetrics,
+          }));
+          
+          // Update the daily report
             const updatedDailyReport = await generateEnhancedReport('daily', todayMetrics, yesterdayMetrics, dailyMetricsArray);
-            if (updatedDailyReport) {
-              setDailyReport(updatedDailyReport);
-            }
-            
+          if (updatedDailyReport) {
+            setDailyReport(updatedDailyReport);
+          }
+          
             // Update state and show toast
             setLastRefreshed(new Date());
           }
@@ -1849,38 +1849,38 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       {/* AI Generated Analysis - Main overview section */}
                       <div className="mb-4">
                         <div className="whitespace-pre-line">{monthlyAiAnalysis.split('\n\n')[0]}</div>
-                      </div>
-                      
-                      {/* Positive Highlights section */}
-                      <div>
-                        <h6 className="text-green-400 font-medium flex items-center mb-2">
-                          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                        </h6>
+                  </div>
+                  
+                  {/* Positive Highlights section */}
+                  <div>
+                    <h6 className="text-green-400 font-medium flex items-center mb-2">
+                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {monthlyAiAnalysis.split('\n\n')[1]}
                         </div>
-                      </div>
-                      
-                      {/* Areas Needing Attention section */}
-                      <div>
+                  </div>
+                  
+                  {/* Areas Needing Attention section */}
+                  <div>
                         <h6 className="text-amber-400 font-medium flex items-center mb-2">
                           <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                        </h6>
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {monthlyAiAnalysis.split('\n\n')[2]}
                         </div>
-                      </div>
-                      
+                </div>
+                
                       {/* Actionable Recommendations section */}
-                      <div>
-                        <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                        </h6>
+                  <div>
+                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {monthlyAiAnalysis.split('\n\n')[3] || monthlyReport.recommendations.map((rec, i) => (
                             <div key={i} className="mb-1">• {rec}</div>
                           ))}
-                        </div>
+                  </div>
                       </div>
                     </>
                   ) : (
@@ -1894,7 +1894,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       </button>
                     </div>
                   )}
-                </div>
+                  </div>
                 <div className="mt-4 flex justify-between items-center border-t border-gray-800 pt-4">
                   <p className="text-xs text-gray-500">
                     {getPreviousMonthName()} data analysis
@@ -1910,16 +1910,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 {/* Left column with stacked Best Sellers and Best Campaigns */}
                 <div className="space-y-6">
                   {/* Best Sellers Section */}
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium">
                         {currentPeriod === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
                       </h5>
                       <p className="text-xs text-gray-400">
                         {currentPeriod === 'daily' ? "by today's revenue" : "by monthly revenue"}
                       </p>
-                    </div>
-                    <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
+                  </div>
+                  <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                       {(() => {
                         // Get products directly from periodData instead of reports
                         const products = currentPeriod === 'daily' 
@@ -1963,23 +1963,23 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           
                           if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                             return report.bestSellingProducts.map((product, index) => (
-                              <div key={index} className="mb-4 last:mb-0">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-sm">{product.name}</span>
-                                  <span className="text-sm font-medium">${product.revenue}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-yellow-500 rounded-full" 
-                                      style={{
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                  </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                              style={{ 
                                         width: `100%` 
-                                      }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                                </div>
-                              </div>
+                              }}
+                            ></div>
+                  </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                </div>
+                      </div>
                             ));
                           }
                           
@@ -1992,9 +1992,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           );
                         }
                       })()}
-                    </div>
-                  </div>
-                  
+              </div>
+            </div>
+            
                   {/* Best Campaigns Section */}
                   <div>
                     <div className="flex justify-between items-center mb-3">
@@ -2093,7 +2093,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 </div>
                 
                 {/* Right column with Month-to-Month Comparison */}
-                <div>
+            <div>
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">
                       Month-to-Month Comparison
@@ -2101,7 +2101,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">
                       {getPreviousMonthName()} vs. previous months
                     </p>
-                  </div>
+            </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A] h-full">
                     <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
           
@@ -2505,38 +2505,38 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       {/* AI Generated Analysis - Main overview section */}
                       <div className="mb-4">
                         <div className="whitespace-pre-line">{dailyAiAnalysis.split('\n\n')[0]}</div>
-                      </div>
-                      
-                      {/* Positive Highlights section */}
-                      <div>
-                        <h6 className="text-green-400 font-medium flex items-center mb-2">
-                          <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
-                        </h6>
+                </div>
+                  
+                  {/* Positive Highlights section */}
+                  <div>
+                    <h6 className="text-green-400 font-medium flex items-center mb-2">
+                      <TrendingUp className="h-3.5 w-3.5 mr-1" /> Positive Highlights
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {dailyAiAnalysis.split('\n\n')[1]}
                         </div>
-                      </div>
-                      
-                      {/* Areas Needing Attention section */}
-                      <div>
+                </div>
+                  
+                  {/* Areas Needing Attention section */}
+                  <div>
                         <h6 className="text-amber-400 font-medium flex items-center mb-2">
                           <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Areas Needing Attention
-                        </h6>
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {dailyAiAnalysis.split('\n\n')[2]}
                         </div>
-                      </div>
-                      
+              </div>
+                  
                       {/* Actionable Recommendations section */}
-                      <div>
-                        <h6 className="text-blue-400 font-medium flex items-center mb-2">
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
-                        </h6>
+                  <div>
+                    <h6 className="text-blue-400 font-medium flex items-center mb-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Recommended Actions
+                    </h6>
                         <div className="whitespace-pre-line ml-1">
                           {dailyAiAnalysis.split('\n\n')[3] || dailyReport.recommendations.map((rec, i) => (
                             <div key={i} className="mb-1">• {rec}</div>
                           ))}
-                        </div>
+                  </div>
                       </div>
                     </>
                   ) : (
@@ -2612,23 +2612,23 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         
                         if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                           return report.bestSellingProducts.map((product, index) => (
-                            <div key={index} className="mb-4 last:mb-0">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-sm">{product.name}</span>
-                                <span className="text-sm font-medium">${product.revenue}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-yellow-500 rounded-full" 
-                                    style={{
+                      <div key={index} className="mb-4 last:mb-0">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm">{product.name}</span>
+                          <span className="text-sm font-medium">${product.revenue}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-yellow-500 rounded-full" 
+                        style={{
                                       width: `100%` 
-                                    }}
-                                  ></div>
-                                </div>
-                                <span className="text-xs text-gray-400">{product.orders} units sold</span>
-                              </div>
-                            </div>
+                        }}
+                      ></div>
+                          </div>
+                          <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                      </div>
+                    </div>
                           ));
                         }
                         
@@ -2641,7 +2641,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         );
                       }
                     })()}
-                </div>
+              </div>
             </div>
             
             <div>
@@ -2662,7 +2662,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       <option value="spend">Sort by Spend</option>
                       <option value="cvr">Sort by Conversion Rate</option>
                     </select>
-                  </div>
+                </div>
                 
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
@@ -2679,45 +2679,45 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         console.log(`[Debug] Found ${campaignsToShow.length} campaigns to show in ${currentPeriod} report`);
                         
                         return campaignsToShow.map((campaign, index) => (
-                          <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-sm font-medium">{campaign.name}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
-                              <div className="flex flex-col">
-                                <span className="text-gray-500">Revenue</span>
+                      <div key={index} className="mb-5 last:mb-0 pb-4 last:pb-0 border-b last:border-b-0 border-gray-800">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">{campaign.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-400">{campaign.roas.toFixed(1)}x</span>
+                  </div>
+                </div>
+                
+                        <div className="grid grid-cols-4 gap-2 mb-2 text-xs">
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Revenue</span>
                                 <span className="text-white font-medium">${campaign.roas * campaign.cpa * (campaign.conversions || 0)}</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-gray-500">Spend</span>
+                  </div>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">Spend</span>
                                 <span className="text-white font-medium">${campaign.cpa * (campaign.conversions || 0)}</span>
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="text-gray-500">CTR</span>
+                  </div>
+                          <div className="flex flex-col">
+                            <span className="text-gray-500">CTR</span>
                                 <span className="text-white font-medium">{campaign.ctr ? campaign.ctr.toFixed(1) : 0}%</span>
-                              </div>
-                              <div className="flex flex-col">
+                          </div>
+                          <div className="flex flex-col">
                                 <span className="text-gray-500">Conversions</span>
                                 <span className="text-white font-medium">{campaign.conversions || 0}</span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mt-3">
-                              <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-blue-500 rounded-full"
-                                  style={{
-                                    width: `${(campaign.roas / 4) * 100}%`
-                                  }}
-                                ></div>
-                              </div>
+                </div>
+              </div>
+              
+                        <div className="flex items-center gap-2 mt-3">
+                          <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{
+                                width: `${(campaign.roas / 4) * 100}%`
+                              }}
+                            ></div>
+                  </div>
                               <span className="text-xs text-gray-400 whitespace-nowrap">{campaign.conversions || 0} conversions</span>
-                            </div>
-                          </div>
+                  </div>
+                  </div>
                         ));
                       } else {
                         // Otherwise show an empty state
@@ -2737,9 +2737,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         );
                       }
                     })()}
-                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-3">
@@ -2758,13 +2758,10 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       <thead>
                         <tr className="text-gray-400 text-xs border-b border-gray-800">
                           <th className="pb-2 text-left">Date</th>
-                          <th className="pb-2 text-right pr-1">Revenue</th>
-                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
-                          <th className="pb-2 text-right pr-1 border-l border-gray-800">Orders</th>
-                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
-                          <th className="pb-2 text-right pr-1 border-l border-gray-800">Ad Spend</th>
-                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
-                          <th className="pb-2 text-right border-l border-gray-800">ROAS</th>
+                          <th className="pb-2 text-left" colSpan={2}>Revenue</th>
+                          <th className="pb-2 text-left" colSpan={2}>Orders</th>
+                          <th className="pb-2 text-left" colSpan={2}>Ad Spend</th>
+                          <th className="pb-2 text-right">ROAS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2781,34 +2778,50 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           return (
                             <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
                               <td className="py-2">{day.name}</td>
-                              <td className="text-right py-2 pr-1">${Math.round(day.revenue)}</td>
-                              <td className="text-right py-2 pl-1 border-l border-gray-800">
-                                {revenueChange !== null ? (
-                                  <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                    {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                    {Math.abs(revenueChange).toFixed(1)}%
-                                  </span>
-                                ) : "-"}
+                              
+                              {/* Revenue column with integrated change */}
+                              <td className="py-2">
+                                <div className="flex items-center">
+                                  <span className="font-medium">${Math.round(day.revenue)}</span>
+                                  {revenueChange !== null && (
+                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${revenueChange > 0 ? 'bg-green-900/30 text-green-400' : revenueChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
+                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                      {Math.abs(revenueChange).toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
                               </td>
-                              <td className="text-right py-2 pr-1 border-l border-gray-800">{Math.round(day.orders)}</td>
-                              <td className="text-right py-2 pl-1 border-l border-gray-800">
-                                {ordersChange !== null ? (
-                                  <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                    {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                    {Math.abs(ordersChange).toFixed(1)}%
-                                  </span>
-                                ) : "-"}
+                              <td></td> {/* Empty cell to maintain colspan structure */}
+                              
+                              {/* Orders column with integrated change */}
+                              <td className="py-2">
+                                <div className="flex items-center">
+                                  <span className="font-medium">{Math.round(day.orders)}</span>
+                                  {ordersChange !== null && (
+                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${ordersChange > 0 ? 'bg-green-900/30 text-green-400' : ordersChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
+                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                      {Math.abs(ordersChange).toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
                               </td>
-                              <td className="text-right py-2 pr-1 border-l border-gray-800">${Math.round(day.adSpend)}</td>
-                              <td className="text-right py-2 pl-1 border-l border-gray-800">
-                                {adSpendChange !== null ? (
-                                  <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                    {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                                    {Math.abs(adSpendChange).toFixed(1)}%
-                                  </span>
-                                ) : "-"}
+                              <td></td> {/* Empty cell to maintain colspan structure */}
+                              
+                              {/* Ad Spend column with integrated change */}
+                              <td className="py-2">
+                                <div className="flex items-center">
+                                  <span className="font-medium">${Math.round(day.adSpend)}</span>
+                                  {adSpendChange !== null && (
+                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${adSpendChange > 0 ? 'bg-red-900/30 text-red-400' : adSpendChange < 0 ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-400'}`}>
+                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                      {Math.abs(adSpendChange).toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
                               </td>
-                              <td className="text-right py-2 border-l border-gray-800">{day.roas.toFixed(1)}x</td>
+                              <td></td> {/* Empty cell to maintain colspan structure */}
+                              
+                              <td className="text-right py-2 font-medium">{day.roas.toFixed(1)}x</td>
                             </tr>
                           );
                         })}
