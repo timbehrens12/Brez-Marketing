@@ -395,7 +395,7 @@ export function GreetingWidget({
         to = new Date(from);
         to.setHours(23, 59, 59, 999);
       } else {
-        // Today
+      // Today
         from = new Date(now);
         from.setHours(0, 0, 0, 0);
         to = new Date(now);
@@ -410,7 +410,7 @@ export function GreetingWidget({
         from = new Date(year, month, 1);
         to = new Date(year, month + 1, 0); // Last day of the month
         to.setHours(23, 59, 59, 999);
-      } else {
+    } else {
         // Current month
         from = new Date(now.getFullYear(), now.getMonth(), 1);
         to = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of the month
@@ -1916,7 +1916,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 </div>
                 
                 {/* Right column with Month-to-Month Comparison */}
-            <div>
+                <div>
                   <div className="flex justify-between items-center mb-3">
                     <h5 className="font-medium">
                       Month-to-Month Comparison
@@ -1924,443 +1924,413 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <p className="text-xs text-gray-400">
                       {getPreviousMonthName()} vs. previous months
                     </p>
-            </div>
+                  </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A] h-full">
                     <h6 className="text-sm font-medium mb-4">Performance Trends</h6>
-          
-                    <div className="space-y-6">
-          <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Revenue</span>
-                  </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {/* Using real historical data if available */}
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                </div>
-                            <div className="font-semibold">
-                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                ? Math.round(monthlyReport.historicalData[0].revenue)
-                                : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.75))}
-            </div>
-          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-        </div>
-                            <div className="font-semibold">
-                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                ? Math.round(monthlyReport.historicalData[0].revenue)
-                                : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.85))}
-            </div>
-                            <div className="text-xs">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? (() => {
-                                    const prevValue = monthlyReport.historicalData[0].revenue;
-                                    const currValue = monthlyReport.historicalData[1].revenue;
-                                    const { text, className } = formatPercentageChange(currValue, prevValue);
-                                    return <span className={className}>{text}</span>;
-                                  })()
-                                : <span className="text-gray-400">N/A</span>}
-            </div>
-            </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-          </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.revenueGenerated : 0)}
-                  </div>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="text-xs text-green-500 cursor-help">
-                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? `${monthlyReport.historicalData[1].revenue > 0 
-                                          ? ((monthlyReport.revenueGenerated - monthlyReport.historicalData[1].revenue) / monthlyReport.historicalData[1].revenue * 100).toFixed(1)
-                                          : monthlyReport.revenueGenerated > 0 ? "+100" : "0"}%`
-                                      : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
-                            </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#333] border-[#444]">
-                                  <p className="text-xs">
-                                    {getPreviousMonthName()}: ${Math.round(monthlyReport.revenueGenerated)} vs {getTwoMonthsAgoName()}: ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                      ? Math.round(monthlyReport.historicalData[1].revenue)
-                                      : Math.round(monthlyReport.revenueGenerated * 0.85)}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                    
+                    {!monthlyReport ? (
+                      <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+                        <BarChart3 className="h-8 w-8 mb-2" />
+                        <p>No monthly data available</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Connect a sales platform to see month-to-month trends
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {/* Revenue Section */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-300 font-medium">Revenue</span>
                           </div>
-                  </div>
-                </div>
-                
-                {/* Divider */}
-                <div className="h-px bg-gray-800 my-4"></div>
-                
-                <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Ad Spend</span>
-                  </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
+                          <div className="grid grid-cols-3 gap-3">
+                            {/* Revenue Three Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                  ? Math.round(monthlyReport.historicalData[0].revenue)
+                                  : 0}
+                              </div>
                             </div>
-                            <div className="font-semibold">
-                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                ? Math.round(monthlyReport.historicalData[0].adSpend)
-                                : (monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport.totalAdSpend * 0.78))}
+                            
+                            {/* Revenue Two Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                  ? Math.round(monthlyReport.historicalData[1].revenue)
+                                  : 0}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevRevenue = monthlyReport.historicalData[0].revenue;
+                                          const currRevenue = monthlyReport.historicalData[1].revenue;
+                                          if (prevRevenue === 0 && currRevenue === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevRevenue === 0 && currRevenue > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currRevenue - prevRevenue) / prevRevenue) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1].revenue)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0].revenue)}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                ? Math.round(monthlyReport.historicalData[0].adSpend)
-                                : (monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport.totalAdSpend * 0.88))}
-                            </div>
-                            <div className="text-xs text-red-500">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? `${monthlyReport.historicalData[0].adSpend > 0 && monthlyReport.historicalData[0].adSpend !== monthlyReport.historicalData[1].adSpend
-                                  ? ((monthlyReport.historicalData[1].adSpend - monthlyReport.historicalData[0].adSpend) / monthlyReport.historicalData[0].adSpend * 100).toFixed(1)
-                                  : monthlyReport.historicalData[1].adSpend > 0 ? "+100" : "0"}%`
-                                : monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round(monthlyReport ? monthlyReport.totalAdSpend : 0)}
-                            </div>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="text-xs text-red-500 cursor-help">
-                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? `${monthlyReport.historicalData[1].adSpend > 0 
-                                          ? ((monthlyReport.totalAdSpend - monthlyReport.historicalData[1].adSpend) / monthlyReport.historicalData[1].adSpend * 100).toFixed(1)
-                                          : monthlyReport.totalAdSpend > 0 ? "+100" : "0"}%`
-                                      : monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
-                            </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#333] border-[#444]">
-                                  <p className="text-xs">
-                                    {getPreviousMonthName()}: ${Math.round(monthlyReport.totalAdSpend)} vs {getTwoMonthsAgoName()}: ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                      ? Math.round(monthlyReport.historicalData[1].adSpend)
-                                      : Math.round(monthlyReport.totalAdSpend * 0.88)}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                  </div>
-                </div>
-                
-                {/* Divider */}
-                <div className="h-px bg-gray-800 my-4"></div>
-                
-                <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Average ROAS</span>
-                  </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                ? monthlyReport.historicalData[0].roas.toFixed(1)
-                                : (monthlyReport ? (monthlyReport.averageRoas * 0.85).toFixed(1) : "0.0")}x
+                            
+                            {/* Revenue Previous Month */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
+                              <div className="font-semibold">
+                                ${Math.round(monthlyReport.revenueGenerated)}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevRevenue = monthlyReport.historicalData[1].revenue;
+                                          const currRevenue = monthlyReport.revenueGenerated;
+                                          if (prevRevenue === 0 && currRevenue === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevRevenue === 0 && currRevenue > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currRevenue - prevRevenue) / prevRevenue) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getPreviousMonthName()}: ${Math.round(monthlyReport.revenueGenerated)} vs {getTwoMonthsAgoName()}: ${monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].revenue) : 0}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                ? monthlyReport.historicalData[0].roas.toFixed(1)
-                                : (monthlyReport ? (monthlyReport.averageRoas * 0.95).toFixed(1) : "0.0")}x
-                            </div>
-                            <div className="text-xs text-green-500">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? `${monthlyReport.historicalData[0].roas > 0 && monthlyReport.historicalData[0].roas !== monthlyReport.historicalData[1].roas
-                                  ? ((monthlyReport.historicalData[1].roas - monthlyReport.historicalData[0].roas) / monthlyReport.historicalData[0].roas * 100).toFixed(1)
-                                  : monthlyReport.historicalData[1].roas > 0 ? "+100" : "0"}%`
-                                : "+11.8%"}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : "0.0"}x
-                            </div>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="text-xs text-green-500 cursor-help">
-                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? `${monthlyReport.historicalData[1].roas > 0 
-                                          ? ((monthlyReport.averageRoas - monthlyReport.historicalData[1].roas) / monthlyReport.historicalData[1].roas * 100).toFixed(1)
-                                          : monthlyReport.averageRoas > 0 ? "+100" : "0"}%`
-                                      : "+11.8%"}
-                            </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#333] border-[#444]">
-                                  <p className="text-xs">
-                                    {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                      ? monthlyReport.historicalData[1].roas.toFixed(1)
-                                      : (monthlyReport.averageRoas * 0.95).toFixed(1)}x
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                  </div>
-                </div>
-                
-                {/* Divider */}
-                <div className="h-px bg-gray-800 my-4"></div>
-                
-                <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Orders</span>
-                  </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                  </div>
-                            <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                ? Math.round(monthlyReport.historicalData[0].orders)
-                                : 0}
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
-                            </div>
-                            <div className="font-semibold">
-                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                ? Math.round(monthlyReport.historicalData[0].orders)
-                                : 0}
-                            </div>
-                            {(() => {
-                              // Calculate percentage change between three months ago and two months ago
-                              if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2) {
-                                const prevValue = monthlyReport.historicalData[0].orders;
-                                const currValue = monthlyReport.historicalData[1].orders;
-                                
-                                // If both zero, show 0%
-                                if (prevValue === 0 && currValue === 0) {
-                                  return <div className="text-xs text-gray-400">0%</div>;
-                                }
-                                
-                                // If previous was zero but current has value, show N/A
-                                if (prevValue === 0 && currValue > 0) {
-                                  return <div className="text-xs text-gray-400">N/A</div>;
-                                }
-                                
-                                // Calculate percentage change
-                                const percentChange = prevValue > 0 
-                                  ? ((currValue - prevValue) / prevValue) * 100 
-                                  : 0;
-                                
-                                // Display with appropriate color
-                                const textColor = percentChange >= 0 ? "text-green-500" : "text-red-500";
-                                const prefix = percentChange >= 0 ? "+" : "";
-                                
-                                return (
-                                  <div className={`text-xs ${textColor}`}>
-                                    {`${prefix}${percentChange.toFixed(1)}%`}
-                            </div>
-                                );
-                              }
-                              
-                              // Default when no real data
-                              return <div className="text-xs text-gray-400">0%</div>;
-                            })()}
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)}
-                            </div>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className={`text-xs cursor-help ${(() => {
-                                    // Calculate percentage change
-                                    if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1) {
-                                      const prevValue = monthlyReport.historicalData[1].orders;
-                                      const currValue = monthlyReport.totalPurchases;
-                                      
-                                      // Return appropriate color based on the change
-                                      if (prevValue === 0 && currValue === 0) return "text-gray-400";
-                                      if (prevValue === 0) return "text-gray-400";
-                                      return ((currValue - prevValue) / prevValue) >= 0 ? "text-green-500" : "text-red-500";
-                                    }
-                                    return "text-gray-400";
-                                  })()}`}>
-                                    {(() => {
-                                      // Calculate percentage text
-                                      if (monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1) {
-                                        const prevValue = monthlyReport.historicalData[1].orders;
-                                        const currValue = monthlyReport.totalPurchases;
-                                        
-                                        // If both zero, show 0%
-                                        if (prevValue === 0 && currValue === 0) {
-                                          return "0%";
-                                        }
-                                        
-                                        // If previous was zero but current has value, show N/A
-                                        if (prevValue === 0 && currValue > 0) {
-                                          return "N/A";
-                                        }
-                                        
-                                        // Calculate percentage change
-                                        const percentChange = prevValue > 0 
-                                          ? ((currValue - prevValue) / prevValue) * 100 
-                                          : 0;
-                                        
-                                        // Display with appropriate prefix
-                                        const prefix = percentChange >= 0 ? "+" : "";
-                                        return `${prefix}${percentChange.toFixed(1)}%`;
-                                      }
-                                      
-                                      // Default when no real data
-                                      return "0%";
-                                    })()}
-                            </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-[#333] border-[#444]">
-                                  <p className="text-xs">
-                                    {getPreviousMonthName()}: {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? Math.round(monthlyReport.historicalData[1].orders)
-                                      : 0} orders
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                </div>
-              </div>
-            </div>
-            
-                {/* Divider */}
-                <div className="h-px bg-gray-800 my-4"></div>
-            
-            <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Ad CTR</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
+                        
+                        {/* Divider */}
+                        <div className="h-px bg-gray-800"></div>
+                        
+                        {/* Orders Section */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-300 font-medium">Orders</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {/* Orders Three Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                  ? Math.round(monthlyReport.historicalData[0].orders)
+                                  : 0}
+                              </div>
                             </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr * 0.85 : 0).toFixed(2)}%
+                            
+                            {/* Orders Two Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                  ? Math.round(monthlyReport.historicalData[1].orders)
+                                  : 0}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevOrders = monthlyReport.historicalData[0].orders;
+                                          const currOrders = monthlyReport.historicalData[1].orders;
+                                          if (prevOrders === 0 && currOrders === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevOrders === 0 && currOrders > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currOrders - prevOrders) / prevOrders) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getTwoMonthsAgoName()}: {Math.round(monthlyReport.historicalData[1].orders)} orders vs {getThreeMonthsAgoName()}: {Math.round(monthlyReport.historicalData[0].orders)} orders
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                            
+                            {/* Orders Previous Month */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
+                              <div className="font-semibold">
+                                {Math.round(monthlyReport.totalPurchases)}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevOrders = monthlyReport.historicalData[1].orders;
+                                          const currOrders = monthlyReport.totalPurchases;
+                                          if (prevOrders === 0 && currOrders === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevOrders === 0 && currOrders > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currOrders - prevOrders) / prevOrders) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getPreviousMonthName()}: {Math.round(monthlyReport.totalPurchases)} orders vs {getTwoMonthsAgoName()}: {monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].orders) : 0} orders
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
+                        </div>
+                        
+                        {/* Divider */}
+                        <div className="h-px bg-gray-800"></div>
+                        
+                        {/* Ad Spend Section */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-300 font-medium">Ad Spend</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {/* Ad Spend Three Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                  ? Math.round(monthlyReport.historicalData[0].adSpend)
+                                  : 0}
+                              </div>
                             </div>
-                            <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
+                            
+                            {/* Ad Spend Two Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                  ? Math.round(monthlyReport.historicalData[1].adSpend)
+                                  : 0}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevAdSpend = monthlyReport.historicalData[0].adSpend;
+                                          const currAdSpend = monthlyReport.historicalData[1].adSpend;
+                                          if (prevAdSpend === 0 && currAdSpend === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevAdSpend === 0 && currAdSpend > 0) {
+                                            return <span className="text-red-500">+100%</span>;
+                                          } else {
+                                            const change = ((currAdSpend - prevAdSpend) / prevAdSpend) * 100;
+                                            // For ad spend, increase is typically red (more spend) and decrease is green (less spend)
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-red-500" : change < 0 ? "text-green-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1].adSpend)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0].adSpend)}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
-                            <div className="text-xs text-green-500">
-                              {(() => {
-                                // If we have real data, calculate properly
-                                if (monthlyReport && monthlyReport.ctr > 0) {
-                                  const prevValue = monthlyReport.ctr * 0.92; // Two months ago CTR
-                                  const currValue = monthlyReport.ctr;
-                                  const percentChange = calculatePercentageChange(currValue, prevValue);
-                                  
-                                  // Use appropriate color based on change direction
-                                  const textColor = percentChange > 0 ? "text-green-500" : percentChange < 0 ? "text-red-500" : "text-gray-400";
-                                  const prefix = percentChange > 0 ? "+" : "";
-                                  
-                                  return <span className={textColor}>{`${prefix}${Math.abs(percentChange).toFixed(1)}%`}</span>;
-                                }
-                                
-                                // Handle no data case
-                                return <span className="text-gray-400">N/A</span>;
-                              })()}
+                            
+                            {/* Ad Spend Previous Month */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
+                              <div className="font-semibold">
+                                ${Math.round(monthlyReport.totalAdSpend)}
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevAdSpend = monthlyReport.historicalData[1].adSpend;
+                                          const currAdSpend = monthlyReport.totalAdSpend;
+                                          if (prevAdSpend === 0 && currAdSpend === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevAdSpend === 0 && currAdSpend > 0) {
+                                            return <span className="text-red-500">+100%</span>;
+                                          } else {
+                                            const change = ((currAdSpend - prevAdSpend) / prevAdSpend) * 100;
+                                            // For ad spend, increase is typically red (more spend) and decrease is green (less spend)
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-red-500" : change < 0 ? "text-green-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getPreviousMonthName()}: ${Math.round(monthlyReport.totalAdSpend)} vs {getTwoMonthsAgoName()}: ${monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].adSpend) : 0}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              {monthlyReport ? monthlyReport.ctr.toFixed(2) : 0}%
-                            </div>
-                            <div className="text-xs text-green-500">
-                              +8.7%
-                            </div>
+                        </div>
+                        
+                        {/* Divider */}
+                        <div className="h-px bg-gray-800"></div>
+                        
+                        {/* ROAS Section */}
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-gray-300 font-medium">Average ROAS</span>
                           </div>
-            </div>
-          </div>
-          
-                {/* Divider */}
-                <div className="h-px bg-gray-800 my-4"></div>
-          
-          <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-gray-400">Cost Per Acquisition</span>
-                  </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getThreeMonthsAgoName()}
-                </div>
-                            <div className="font-semibold">
-                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired * 0.65 : 1))}
+                          <div className="grid grid-cols-3 gap-3">
+                            {/* ROAS Three Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                  ? monthlyReport.historicalData[0].roas.toFixed(1)
+                                  : "0.0"}x
+                              </div>
                             </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getTwoMonthsAgoName()}
+                            
+                            {/* ROAS Two Months Ago */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
+                              <div className="font-semibold">
+                                {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                  ? monthlyReport.historicalData[1].roas.toFixed(1)
+                                  : "0.0"}x
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevRoas = monthlyReport.historicalData[0].roas;
+                                          const currRoas = monthlyReport.historicalData[1].roas;
+                                          if (prevRoas === 0 && currRoas === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevRoas === 0 && currRoas > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currRoas - prevRoas) / prevRoas) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getTwoMonthsAgoName()}: {monthlyReport.historicalData[1].roas.toFixed(1)}x vs {getThreeMonthsAgoName()}: {monthlyReport.historicalData[0].roas.toFixed(1)}x
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
-                            <div className="font-semibold">
-                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired * 0.82 : 1))}
-                            </div>
-                            <div className="text-xs text-red-500">
-                              +5.2%
-                            </div>
-                          </div>
-                          <div className="bg-[#1A1A1A] p-2 rounded-md">
-                            <div className="text-xs text-gray-400">
-                              {getPreviousMonthName()}
-                            </div>
-                            <div className="font-semibold">
-                              ${Math.round((monthlyReport ? monthlyReport.totalAdSpend : 0) / (monthlyReport ? monthlyReport.newCustomersAcquired : 1))}
-                            </div>
-                            <div className="text-xs text-red-500">
-                              +3.7%
+                            
+                            {/* ROAS Previous Month */}
+                            <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
+                              <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
+                              <div className="font-semibold">
+                                {monthlyReport.averageRoas.toFixed(1)}x
+                              </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="text-xs mt-1 cursor-help">
+                                        {(() => {
+                                          const prevRoas = monthlyReport.historicalData[1].roas;
+                                          const currRoas = monthlyReport.averageRoas;
+                                          if (prevRoas === 0 && currRoas === 0) {
+                                            return <span className="text-gray-400">0%</span>;
+                                          } else if (prevRoas === 0 && currRoas > 0) {
+                                            return <span className="text-green-500">+100%</span>;
+                                          } else {
+                                            const change = ((currRoas - prevRoas) / prevRoas) * 100;
+                                            const prefix = change > 0 ? "+" : "";
+                                            const className = change > 0 ? "text-green-500" : change < 0 ? "text-red-500" : "text-gray-400";
+                                            return <span className={className}>{prefix}{change.toFixed(1)}%</span>;
+                                          }
+                                        })()}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-[#333] border-[#444]">
+                                      <p className="text-xs">
+                                        {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? monthlyReport.historicalData[1].roas.toFixed(1) : "0.0"}x
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ) : currentPeriod === 'daily' && dailyReport ? (
+          ) : currentPeriod === 'daily' && dailyReport ? (
         <div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-[#222] p-4 rounded-lg">
@@ -2638,7 +2608,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm">{product.name}</span>
                           <span className="text-sm font-medium">${product.revenue}</span>
-                  </div>
+                        </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div 
@@ -3144,4 +3114,4 @@ function formatPercentageChange(currentValue: number, previousValue: number): {t
   }
   
   return { text: formattedText, className };
-}
+} 
