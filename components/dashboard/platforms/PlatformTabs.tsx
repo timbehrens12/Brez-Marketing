@@ -16,8 +16,24 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { RevenueByDay } from "@/components/dashboard/RevenueByDay"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
-import { AINotification } from "@/components/dashboard/AINotification"
 import { CustomerGeographicMap } from "@/components/dashboard/CustomerGeographicMap"
+
+// Define local interfaces to match GreetingWidget's expectations
+interface GreetingWidgetMetrics {
+  totalSales: number
+  conversionRate: number
+  averagePurchaseValue: number
+  roas: number
+  adSpend: number
+  salesGrowth?: number
+  aovGrowth?: number
+  ordersPlaced?: number
+  averageOrderValue?: number
+  unitsSold?: number
+  topProducts?: any[]
+  customerSegments?: any[]
+  [key: string]: any // Allow other properties
+}
 
 interface PlatformTabsProps {
   platforms: {
@@ -87,8 +103,27 @@ export function PlatformTabs({
     })
   }, [connections])
 
-  // Ensure metrics is never undefined
-  const safeMetrics = metrics || defaultMetrics
+  // Ensure metrics is never undefined for general use
+  const safeMetrics = metrics || defaultMetrics;
+  
+  // Create an adapter specifically for the GreetingWidget component
+  const greetingWidgetMetrics: GreetingWidgetMetrics = {
+    totalSales: safeMetrics.totalSales || 0,
+    conversionRate: safeMetrics.conversionRate || 0,
+    averagePurchaseValue: safeMetrics.averageOrderValue || 0,
+    roas: safeMetrics.roas || 0,
+    adSpend: safeMetrics.adSpend || 0,
+    salesGrowth: safeMetrics.salesGrowth || 0,
+    aovGrowth: safeMetrics.aovGrowth || 0,
+    ordersPlaced: safeMetrics.ordersPlaced || 0,
+    averageOrderValue: safeMetrics.averageOrderValue || 0,
+    unitsSold: safeMetrics.unitsSold || 0,
+    topProducts: safeMetrics.topProducts || [],
+    revenueByDay: safeMetrics.revenueByDay || [],
+    customerSegments: [], // An empty array as expected by GreetingWidget
+    conversionRateGrowth: safeMetrics.conversionRateGrowth || 0,
+    customerRetentionRate: safeMetrics.customerRetentionRate || 0
+  };
 
   // Handle tab change
   const handleValueChange = (value: string) => {
@@ -297,12 +332,9 @@ export function PlatformTabs({
           <GreetingWidget 
             brandId={brandId}
             brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
-            metrics={safeMetrics}
+            metrics={greetingWidgetMetrics} 
             connections={connections}
           />
-          
-          {/* AI Notification */}
-          <AINotification lastAnalyzedDate={new Date()} />
           
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium text-white">Site Overview</h3>
@@ -383,7 +415,7 @@ export function PlatformTabs({
         </div>
         <MetaTab 
           dateRange={dateRange}
-          metrics={metrics}
+          metrics={safeMetrics}
           isLoading={isLoading}
           isRefreshingData={isRefreshingData}
           initialDataLoad={initialDataLoad}
