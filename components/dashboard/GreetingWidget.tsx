@@ -1941,16 +1941,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 <div>
                   <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium">
-                        {currentPeriod === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
+                        {(currentPeriod as ReportPeriod) === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
                       </h5>
                       <p className="text-xs text-gray-400">
-                        {currentPeriod === 'daily' ? "by today's revenue" : "by monthly revenue"}
+                        {(currentPeriod as ReportPeriod) === 'daily' ? "by today's revenue" : "by monthly revenue"}
                       </p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                       {(() => {
                         // Get products directly from periodData instead of reports
-                        const products = currentPeriod === 'daily' 
+                        const products = (currentPeriod as ReportPeriod) === 'daily' 
                           ? periodData.today.topProducts || []
                           : periodData.month.topProducts || [];
                         
@@ -1987,7 +1987,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           ));
                         } else {
                           // Check if we have a hard-coded product for the current report
-                          const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                          const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
                           
                           if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                             return report.bestSellingProducts.map((product, index) => (
@@ -2014,7 +2014,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           return (
                             <div className="py-8 text-center">
                               <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                              <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
+                              <p className="text-gray-400">No products sold {(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}</p>
                               <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                             </div>
                           );
@@ -2027,7 +2027,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium">
-                        {currentPeriod === 'daily' ? "Today's" : "Monthly"} Best Campaigns
+                        {(currentPeriod as ReportPeriod) === 'daily' ? "Today's" : "Monthly"} Best Campaigns
                       </h5>
                       <select 
                         className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -2046,7 +2046,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                       {(() => {
                         console.log(`[Debug] Rendering campaigns for ${currentPeriod} view`);
-                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                        const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
                         
                         if (report?.bestCampaign && report.bestCampaign.name !== "No campaign data available") {
                           // If we have real campaign data, show it
@@ -2108,7 +2108,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 {
                                   // Check if we have any connected ad platforms
                                   connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google' || c.platform_type === 'meta')
-                                    ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
+                                    ? `No campaigns found for ${(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}`
                                     : 'Connect an ad platform to see campaign performance'
                                 }
                               </p>
@@ -2652,13 +2652,13 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{currentPeriod === 'daily' ? "Today's" : "Monthly"} Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by {currentPeriod === 'daily' ? "today's" : "monthly"} revenue</p>
+                    <h5 className="font-medium">{(currentPeriod as ReportPeriod) === 'daily' ? "Today's" : "Monthly"} Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by {(currentPeriod as ReportPeriod) === 'daily' ? "today's" : "monthly"} revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
                       // Get products directly from periodData instead of reports
-                      const products = currentPeriod === 'daily' 
+                      const products = (currentPeriod as ReportPeriod) === 'daily' 
                         ? periodData.today.topProducts || []
                         : periodData.month.topProducts || [];
                       
@@ -2695,7 +2695,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         ));
                       } else {
                         // Check if we have a hard-coded product for the current report
-                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                        const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
                         
                         if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                           return report.bestSellingProducts.map((product, index) => (
@@ -2722,7 +2722,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         return (
                           <div className="py-8 text-center">
                             <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
+                            <p className="text-gray-400">No products sold {(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}</p>
                             <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                           </div>
                         );
@@ -2733,7 +2733,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{currentPeriod === 'daily' ? 'Today\'s' : 'Monthly'} Best Campaigns</h5>
+                    <h5 className="font-medium">{(currentPeriod as ReportPeriod) === 'daily' ? 'Today\'s' : 'Monthly'} Best Campaigns</h5>
                     <select 
                       className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       defaultValue="roas"
@@ -2754,7 +2754,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
                       console.log(`[Debug] Rendering campaigns for ${currentPeriod} period`);
-                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
+                      const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
                       
                       if (report?.bestCampaign && report.bestCampaign.name !== "No campaign data available") {
                         // If we have real campaign data, show it
@@ -2816,7 +2816,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {
                                 // Check if we have any connected ad platforms
                                 connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google' || c.platform_type === 'meta')
-                                  ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
+                                  ? `No campaigns found for ${(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}`
                                   : 'Connect an ad platform to see campaign performance'
                               }
                             </p>
