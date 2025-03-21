@@ -1592,13 +1592,37 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
     )
   }
 
-  // If we don't have enough data, show a message
-  if (!hasEnoughData) {
-    return renderNoDataMessage()
-  }
+  // Remove the check for hasEnoughData to always show the UI for development purposes
+  // if (!hasEnoughData) {
+  //   return renderNoDataMessage()
+  // }
+
+  // For dev purposes, always render the UI, but show an alert if no data
+  const showNoDataAlert = !hasEnoughData;
 
   return (
     <div className="bg-gradient-to-b from-[#161616] to-[#0A0A0A] rounded-lg p-6 mb-6 border border-[#333]">
+      {showNoDataAlert && (
+        <div className="mb-4 bg-yellow-900/20 border border-yellow-800/30 p-3 rounded">
+          <div className="flex items-start">
+            <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-yellow-200">
+                Your platforms are connected, but we don't have enough data yet to generate meaningful insights.
+              </p>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" className="border-yellow-800/50 bg-yellow-900/20 text-xs h-7 px-2" onClick={() => null}>
+                  Sync Data Now
+                </Button>
+                <Button variant="outline" className="border-yellow-800/50 bg-yellow-900/20 text-xs h-7 px-2" onClick={() => null}>
+                  Check Connection Status
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="mb-5 flex justify-between items-center">
         <div>
           <h3 className="text-xl font-semibold">{greeting}, {userName || 'there'}</h3>
