@@ -410,9 +410,6 @@ export function PlatformTabs({
       </TabsContent>
       
       <TabsContent value="meta" className="mt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {children}
-        </div>
         <MetaTab 
           dateRange={dateRange}
           metrics={safeMetrics}

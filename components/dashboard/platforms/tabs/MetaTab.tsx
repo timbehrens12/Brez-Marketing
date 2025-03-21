@@ -223,6 +223,87 @@ export function MetaTab({
         </AlertBox>
       )}
 
+      {/* Key Performance Metrics */}
+      <div>
+        <h2 className="text-lg font-medium mb-3 flex items-center">
+          <Activity className="mr-2 h-5 w-5 text-blue-400" />
+          Key Performance Metrics
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-blue-400" />
+              <span className="ml-0.5">Ad Spend</span>
+            </div>
+          }
+          value={data.adSpend || 0}
+          change={data.adSpendGrowth || 0}
+          prefix="$"
+          valueFormat="currency"
+            data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.spend })) || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Total amount spent on Meta ads in the selected period"
+          brandId={brandId}
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-blue-400" />
+                <span className="ml-0.5">ROAS</span>
+              </div>
+            }
+            value={data.roas || 0}
+            change={data.roasGrowth || 0}
+            suffix="x"
+            data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.roas })) || []}
+            loading={loading}
+            refreshing={isRefreshingData}
+            platform="meta"
+            dateRange={dateRange}
+            infoTooltip="Return on Ad Spend - revenue generated per dollar spent on ads"
+            brandId={brandId}
+          />
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-blue-400" />
+              <span className="ml-0.5">Impressions</span>
+            </div>
+          }
+          value={data.impressions || 0}
+          change={data.impressionGrowth || 0}
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.impressions })) || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Number of times your ads were displayed to users"
+          brandId={brandId}
+        />
+        <MetricCard
+          title={
+            <div className="flex items-center gap-1.5">
+                <MousePointer className="h-4 w-4 text-blue-400" />
+              <span className="ml-0.5">Clicks</span>
+            </div>
+          }
+          value={data.clicks || 0}
+          change={data.clickGrowth || 0}
+          data={data.dailyData?.map((d: DailyDataItem) => ({ ...d, value: d.clicks })) || []}
+          loading={loading}
+          refreshing={isRefreshingData}
+          platform="meta"
+          dateRange={dateRange}
+          infoTooltip="Number of clicks on your ads"
+          brandId={brandId}
+        />
+        </div>
+      </div>
+      
       {/* Detailed Performance Metrics */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Spend & ROAS Trends */}
@@ -334,57 +415,23 @@ export function MetaTab({
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">CTR</span>
                     <span className="text-xs flex items-center">
-                      {data && typeof data.ctrGrowth === 'number' ? (
-                        data.ctrGrowth > 0 ? (
-                          <span className="text-green-400 flex items-center">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            +{data.ctrGrowth.toFixed(1)}%
-                          </span>
-                        ) : (
-                          <span className="text-red-400 flex items-center">
-                            <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                            {data.ctrGrowth.toFixed(1)}%
-                          </span>
-                        )
+                      {data.ctrGrowth > 0 ? (
+                        <span className="text-green-400 flex items-center">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          +{data.ctrGrowth.toFixed(1)}%
+                        </span>
                       ) : (
-                        <span className="text-gray-400">--</span>
+                        <span className="text-red-400 flex items-center">
+                          <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                          {data.ctrGrowth.toFixed(1)}%
+                        </span>
                       )}
                     </span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{data && typeof data.ctr === 'number' ? data.ctr.toFixed(2) : '0.00'}</span>
+                    <span className="text-xl font-semibold">{(data.ctr || 0).toFixed(2)}</span>
                     <span className="text-gray-400 ml-1">%</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          value: d.ctr
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#8884d8" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [`${value.toFixed(2)}%`, 'CTR']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
                 
                 <div>
@@ -404,38 +451,8 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${data && typeof data.cpc === 'number' ? data.cpc.toFixed(2) : '0.00'}</span>
+                    <span className="text-xl font-semibold">${(data.cpc || 0).toFixed(2)}</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          value: d.clicks > 0 ? d.spend / d.clicks : 0
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#82ca9d" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [`$${value.toFixed(2)}`, 'CPC']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
                 
                 <div>
@@ -443,38 +460,8 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Conversions</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{data && typeof data.conversions === 'number' ? data.conversions : 0}</span>
+                    <span className="text-xl font-semibold">{data.conversions || 0}</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          value: d.conversions || 0
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#f59e0b" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [value, 'Conversions']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
               </div>
               
@@ -496,42 +483,9 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{data && typeof data.frequency === 'number' ? data.frequency.toFixed(1) : '0.0'}</span>
+                    <span className="text-xl font-semibold">{(data.frequency || 0).toFixed(1)}</span>
                     <span className="text-gray-400 ml-1">times</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          // Using a placeholder value since frequency may not be in daily data
-                          value: typeof d.impressions === 'number' && typeof d.reach === 'number' && d.reach > 0 
-                            ? d.impressions / d.reach 
-                            : 1
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#3b82f6" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [`${value.toFixed(1)} times`, 'Frequency']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
                 
                 <div>
@@ -539,39 +493,9 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Reach</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{formatNumberCompact(data && typeof data.reach === 'number' ? data.reach : 0)}</span>
+                    <span className="text-xl font-semibold">{formatNumberCompact(data.reach || 0)}</span>
                     <span className="text-gray-400 ml-1">people</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          value: d.reach || 0
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#ec4899" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [formatNumberCompact(value), 'Reach']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
                 
                 <div>
@@ -579,38 +503,8 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Cost Per Result</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${data && typeof data.costPerResult === 'number' ? data.costPerResult.toFixed(2) : '0.00'}</span>
+                    <span className="text-xl font-semibold">${(data.costPerResult || 0).toFixed(2)}</span>
                   </div>
-                  {hasData && data.dailyData && data.dailyData.length > 0 && (
-                    <div className="h-16 mt-1">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={data.dailyData.slice(-7).map((d: DailyDataItem) => ({
-                          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                          value: d.conversions > 0 ? d.spend / d.conversions : 0
-                        }))}>
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#10b981" 
-                            strokeWidth={1.5} 
-                            dot={false}
-                            isAnimationActive={false}
-                          />
-                          <XAxis dataKey="date" hide={true} />
-                          <YAxis hide={true} />
-                          <RechartsTooltip 
-                            contentStyle={{ 
-                              backgroundColor: '#222', 
-                              border: '1px solid #444',
-                              borderRadius: '4px',
-                              color: '#fff'
-                            }}
-                            formatter={(value: any) => [`$${value.toFixed(2)}`, 'Cost Per Result']}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -756,7 +650,7 @@ export function MetaTab({
               </div>
               <p className="text-xs text-gray-400">Test different ad formats, including video content which typically outperforms static images.</p>
             </div>
-          </div>
+      </div>
         </CardContent>
       </Card>
     </div>
