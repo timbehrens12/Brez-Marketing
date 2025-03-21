@@ -198,11 +198,11 @@ export function MetaTab({
           type="info"
           title="Meta Ads Connected"
           icon={<Image 
-            src="https://i.imgur.com/6hyyRrs.png" 
-            alt="Meta logo" 
-            width={18} 
-            height={18} 
-            className="object-contain"
+                  src="https://i.imgur.com/6hyyRrs.png" 
+                  alt="Meta logo" 
+                  width={18} 
+                  height={18} 
+                  className="object-contain"
           />}
           className="bg-blue-950/20 border-blue-800/30"
         >
