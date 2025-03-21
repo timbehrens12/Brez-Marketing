@@ -73,7 +73,7 @@ export async function fetchMetaAdInsights(brandId: string, startDate: string, en
       }
       
       // Add account info to each insight
-      const enrichedInsights = (insightsData.data || []).map(insight => ({
+      const enrichedInsights = (insightsData.data || []).map((insight: any) => ({
         ...insight,
         account_id: account.id,
         account_name: account.name
@@ -82,13 +82,23 @@ export async function fetchMetaAdInsights(brandId: string, startDate: string, en
       allInsights.push(...enrichedInsights)
     }
 
-    // Store the insights in the database
+    // Store the insights in the database - NOW USING meta_ad_insights INSTEAD OF meta_data_tracking
     if (allInsights.length > 0) {
+      // First clear existing data for this date range to avoid duplicates
+      await supabase
+        .from('meta_ad_insights')
+        .delete()
+        .eq('brand_id', brandId)
+        .gte('date_start', startDate)
+        .lte('date_end', endDate)
+      
+      // Insert new data
       const { error: insertError } = await supabase
-        .from('meta_data_tracking')
+        .from('meta_ad_insights')
         .upsert(
           allInsights.map(insight => ({
             brand_id: brandId,
+            connection_id: connection.id, // Add connection ID for proper linking
             account_id: insight.account_id,
             account_name: insight.account_name,
             campaign_id: insight.campaign_id,
@@ -102,7 +112,7 @@ export async function fetchMetaAdInsights(brandId: string, startDate: string, en
             ctr: parseFloat(insight.ctr || 0),
             date_start: startDate,
             date_end: endDate,
-            data_type: 'campaign',
+            date: startDate, // Add a date field for easier querying
             created_at: new Date().toISOString()
           }))
         )

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { 
@@ -28,7 +28,8 @@ import {
   Percent, 
   BrainCircuit, 
   Info, 
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -38,6 +39,7 @@ import { AlertBox } from "@/components/ui/alert-box"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "sonner"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -76,6 +78,7 @@ export function MetaTab({
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>("7d")
   const [topCampaigns, setTopCampaigns] = useState<any[]>([])
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     async function fetchMetaData() {
@@ -158,6 +161,45 @@ export function MetaTab({
   const data = metrics || metaData || {}
   const hasData = data && Object.keys(data).length > 0 && data.adSpend > 0
 
+  // Function to force clear and re-sync Meta data
+  const refreshMetaData = async () => {
+    if (!brandId) return
+    
+    setIsSyncing(true)
+    try {
+      // First, clear existing data
+      const clearResponse = await fetch(`/api/meta/clear-data?brandId=${brandId}`, {
+        method: 'POST'
+      })
+      
+      if (!clearResponse.ok) {
+        throw new Error(`Failed to clear Meta data: ${clearResponse.status}`)
+      }
+      
+      // Now trigger a new sync
+      const syncResponse = await fetch(`/api/meta/sync?brandId=${brandId}`, {
+        method: 'POST'
+      })
+      
+      if (!syncResponse.ok) {
+        throw new Error(`Failed to sync Meta data: ${syncResponse.status}`)
+      }
+      
+      toast.success("Meta data refreshed successfully. Reloading page...")
+      
+      // Reload the page to show new data
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+      
+    } catch (err) {
+      console.error("Error refreshing Meta data:", err)
+      toast.error("Failed to refresh Meta data. Please try again.")
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   // Show a loading spinner when initialDataLoad is true
   if (initialDataLoad) {
     return (
@@ -194,32 +236,63 @@ export function MetaTab({
     <div className="space-y-6">
       {/* Meta Connection Status Banner */}
       {hasData ? (
-        <AlertBox
-          type="info"
-          title="Meta Ads Connected"
-          icon={<Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
-                  alt="Meta logo" 
-                  width={18} 
-                  height={18} 
-                  className="object-contain"
-          />}
-          className="bg-blue-950/20 border-blue-800/30"
-        >
-          <p className="text-sm">
-            Your Meta advertising account is connected and data is being synchronized daily.
-          </p>
-        </AlertBox>
+        <div className="flex justify-between items-center">
+          <AlertBox
+            type="info"
+            title="Meta Ads Connected"
+            icon={<Image 
+                    src="https://i.imgur.com/6hyyRrs.png" 
+                    alt="Meta logo" 
+                    width={18} 
+                    height={18} 
+                    className="object-contain"
+            />}
+            className="bg-blue-950/20 border-blue-800/30 flex-1 mr-2"
+          >
+            <p className="text-sm">
+              Your Meta advertising account is connected and data is being synchronized daily.
+            </p>
+          </AlertBox>
+          
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={refreshMetaData}
+            disabled={isSyncing}
+            className="whitespace-nowrap"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Refresh Meta Data'}
+          </Button>
+        </div>
       ) : (
         <AlertBox
           type="warning"
           title="Limited Meta Ads Data"
-          icon={<Info className="h-4 w-4 text-amber-400" />}
+          icon={<Image 
+                 src="https://i.imgur.com/6hyyRrs.png" 
+                 alt="Meta logo" 
+                 width={18} 
+                 height={18} 
+                 className="object-contain"
+          />}
           className="bg-amber-950/20 border-amber-800/30"
         >
-          <p className="text-sm">
-            We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns.
-          </p>
+          <div className="flex justify-between items-center w-full">
+            <p className="text-sm">
+              We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns.
+            </p>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={refreshMetaData}
+              disabled={isSyncing}
+              className="whitespace-nowrap ml-4"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync Now'}
+            </Button>
+          </div>
         </AlertBox>
       )}
 
