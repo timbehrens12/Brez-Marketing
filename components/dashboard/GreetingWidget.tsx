@@ -376,53 +376,61 @@ export function GreetingWidget({
     }
   }, [])
 
-  // Fix the getPeriodDates function to include the last day of the month
-  const getPeriodDates = (period: ReportPeriod, isPrevious: boolean = false) => {
-    const now = new Date()
-    let from: Date
-    let to: Date
+  // Update the getPeriodDates function to use strict typings
+  const getPeriodDates = (
+    period: ReportPeriod,
+    isPrevious: boolean = false
+  ): { from: string; to: string } => {
+    const now = new Date();
+    let from: Date;
+    let to: Date;
 
     if (period === 'daily') {
-      // For daily period
+      // Daily period logic (today or yesterday)
       if (isPrevious) {
         // Yesterday
-        from = new Date()
-        from.setDate(from.getDate() - 1)
-        from.setHours(0, 0, 0, 0)
-        
-        to = new Date(from)
-        to.setHours(23, 59, 59, 999)
+        from = new Date(now);
+        from.setDate(now.getDate() - 1);
+        from.setHours(0, 0, 0, 0);
+        to = new Date(from);
+        to.setHours(23, 59, 59, 999);
       } else {
-      // Today
-        from = new Date()
-      from.setHours(0, 0, 0, 0)
-        
-        to = new Date()
-      to.setHours(23, 59, 59, 999)
+        // Today
+        from = new Date(now);
+        from.setHours(0, 0, 0, 0);
+        to = new Date(now);
+        to.setHours(23, 59, 59, 999);
+      }
+    } else if (period === 'monthly') {
+      // Monthly period logic (current month or previous month)
+      if (isPrevious) {
+        // Previous month
+        const year = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        const month = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+        from = new Date(year, month, 1);
+        to = new Date(year, month + 1, 0); // Last day of the month
+        to.setHours(23, 59, 59, 999);
+      } else {
+        // Current month
+        from = new Date(now.getFullYear(), now.getMonth(), 1);
+        to = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of the month
+        to.setHours(23, 59, 59, 999);
       }
     } else {
-      // For monthly period
-      if (isPrevious) {
-        // Previous month (two months ago)
-        const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-        from = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
-      from.setHours(0, 0, 0, 0)
-      
-        to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
-      to.setHours(23, 59, 59, 999)
-      } else {
-        // Last month (previous month)
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1)
-        from.setHours(0, 0, 0, 0)
-      
-        to = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
-      }
+      // Default case (should not reach here if ReportPeriod is properly typed)
+      console.error('Invalid period type:', period);
+      from = new Date(now);
+      to = new Date(now);
     }
-
-    return { from, to }
-  }
+    
+    console.log(`Period dates for ${period} (${isPrevious ? 'previous' : 'current'}):`, 
+      { from: from.toISOString(), to: to.toISOString() });
+      
+    return {
+      from: from.toISOString(),
+      to: to.toISOString()
+    };
+  };
 
   const fetchPeriodData = async () => {
     setIsLoading(true);
@@ -586,9 +594,11 @@ export function GreetingWidget({
       let dateRangeStr = ""
       if (period === 'daily') {
         dateRangeStr = `Today, ${format(now, 'MMMM d, yyyy')}`
-      } else {
+      } else if (period === 'monthly') {
+        // For monthly report, use the actual date range from last month
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
         const monthStart = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1)
+        // Get the last day of the month by creating a date for the first day of next month and subtracting 1 day
         const monthEnd = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0)
         dateRangeStr = `${format(monthStart, 'MMMM d')} - ${format(monthEnd, 'MMMM d, yyyy')}`
       }
@@ -850,14 +860,19 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
   }
 
   // Function to fetch metrics for a specific period - REAL DATA VERSION
-  const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date, fetchPreviousDays: boolean = false): Promise<PeriodMetrics | { dailyMetrics?: PeriodMetrics[], currentMetrics: PeriodMetrics }> => {
+  const fetchPeriodMetrics = async (
+    connectionId: string,
+    from: string,
+    to: string,
+    includeDailyBreakdown: boolean = false
+  ): Promise<PeriodMetrics | { currentMetrics: PeriodMetrics, dailyMetrics?: PeriodMetrics[] }> => {
     try {
-      // Debug log for monitoring function calls
-      console.log(`Fetching period metrics for connection ${connectionId}`, {
-        from: format(from, 'yyyy-MM-dd'),
-        to: format(to, 'yyyy-MM-dd'),
-        fetchPreviousDays
-      })
+      // Fetch the data from the API with the date range
+      console.log(`Fetching metrics for ${connectionId} from ${from} to ${to}`);
+      
+      // Convert string dates to Date objects for API compatibility
+      const fromDate = new Date(from);
+      const toDate = new Date(to);
       
       // Initialize with empty metrics
       const emptyMetrics: PeriodMetrics = {
@@ -1939,12 +1954,15 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 ? Math.round(monthlyReport.historicalData[0].revenue)
                                 : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.85))}
             </div>
-                            <div className="text-xs text-green-500">
+                            <div className="text-xs">
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? `${monthlyReport.historicalData[0].revenue > 0 && monthlyReport.historicalData[0].revenue !== monthlyReport.historicalData[1].revenue
-                                  ? ((monthlyReport.historicalData[1].revenue - monthlyReport.historicalData[0].revenue) / monthlyReport.historicalData[0].revenue * 100).toFixed(1)
-                                  : monthlyReport.historicalData[1].revenue > 0 ? "+100" : "0"}%`
-                                : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
+                                ? (() => {
+                                    const prevValue = monthlyReport.historicalData[0].revenue;
+                                    const currValue = monthlyReport.historicalData[1].revenue;
+                                    const { text, className } = formatPercentageChange(currValue, prevValue);
+                                    return <span className={className}>{text}</span>;
+                                  })()
+                                : <span className="text-gray-400">N/A</span>}
             </div>
             </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -3097,4 +3115,33 @@ export const calculatePercentageChange = (current: number, previous: number): nu
   // If previous is negative and current is not, or vice versa, special handling might be needed
   // For now, we'll use the simple calculation
   return ((current - previous) / Math.abs(previous)) * 100;
+}
+
+// Add a utility function for formatting percentage changes with appropriate styling
+function formatPercentageChange(currentValue: number, previousValue: number): {text: string, className: string} {
+  // Calculate the percentage change
+  const percentChange = calculatePercentageChange(currentValue, previousValue);
+  
+  // Handle special cases
+  if (currentValue === 0 && previousValue === 0) {
+    return { text: "0%", className: "text-gray-400" };
+  }
+  
+  if (previousValue === 0 && currentValue > 0) {
+    return { text: "N/A", className: "text-gray-400" };
+  }
+  
+  // Format with + or - sign
+  const prefix = percentChange > 0 ? "+" : "";
+  const formattedText = `${prefix}${percentChange.toFixed(1)}%`;
+  
+  // Choose appropriate color
+  let className = "text-gray-400";
+  if (percentChange > 0) {
+    className = "text-green-500"; // Positive change
+  } else if (percentChange < 0) {
+    className = "text-red-500"; // Negative change
+  }
+  
+  return { text: formattedText, className };
 }
