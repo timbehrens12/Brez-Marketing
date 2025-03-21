@@ -154,6 +154,11 @@ export function MetricCard({
 
   const formatValue = (val: number) => {
     try {
+      // Handle null, undefined, NaN
+      if (val === null || val === undefined || isNaN(val)) {
+        return "0";
+      }
+      
       switch(valueFormat) {
         case "currency":
           return prefix === "$" ? val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
@@ -163,15 +168,24 @@ export function MetricCard({
         default:
           return val.toLocaleString('en-US', { maximumFractionDigits: 0 })
       }
-    } catch {
+    } catch (error) {
+      console.error('Error formatting value:', error, 'Value was:', val);
       return "0"
     }
   }
 
   // Format the change value as a percentage
   const formatChange = (change: number) => {
-    if (!isFinite(change) || isNaN(change)) return '+0.0%'
-    return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`
+    try {
+      // Handle null, undefined, NaN, and non-finite values
+      if (change === null || change === undefined || !isFinite(change) || isNaN(change)) {
+        return '+0.0%';
+      }
+      return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+    } catch (error) {
+      console.error('Error formatting change:', error, 'Change was:', change);
+      return '+0.0%';
+    }
   }
   
   // Get the appropriate color class based on the change value
@@ -308,6 +322,11 @@ export function MetricCard({
   // Format the previous value consistently with the current value display
   const formatPreviousValue = (value: number): string => {
     try {
+      // Handle null, undefined, NaN
+      if (value === null || value === undefined || isNaN(value)) {
+        return valueFormat === "currency" ? "$0.00" : "0";
+      }
+      
       switch(valueFormat) {
         case "currency":
           return prefix === "$" 
@@ -318,8 +337,9 @@ export function MetricCard({
         default:
           return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}${suffix ? suffix : ''}`;
       }
-    } catch {
-      return "0";
+    } catch (error) {
+      console.error('Error formatting previous value:', error, 'Value was:', value);
+      return valueFormat === "currency" ? "$0.00" : "0";
     }
   }
 
@@ -329,7 +349,7 @@ export function MetricCard({
     if (safeChange === 100) {
       return (
         <p className="mt-1">
-          Previous: {valueFormat === "currency" ? "$0.00" : `0${suffix ? suffix : ''}`}
+          Previous: {valueFormat === "currency" ? "$0.00" : "0"}
         </p>
       );
     }

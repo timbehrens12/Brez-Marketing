@@ -104,7 +104,38 @@ export function MetaTab({
           console.warn('Empty data response from API')
           setMetaData(null)
         } else {
-          setMetaData(data)
+          // Make sure dailyData is always an array
+          if (!data.dailyData || !Array.isArray(data.dailyData)) {
+            console.warn('dailyData is missing or not an array, setting default empty array')
+            data.dailyData = []
+          }
+          
+          // Ensure all metrics have at least default values
+          const processedData = {
+            adSpend: data.adSpend ?? 0,
+            adSpendGrowth: data.adSpendGrowth ?? 0,
+            impressions: data.impressions ?? 0,
+            impressionGrowth: data.impressionGrowth ?? 0,
+            clicks: data.clicks ?? 0,
+            clickGrowth: data.clickGrowth ?? 0,
+            conversions: data.conversions ?? 0,
+            conversionGrowth: data.conversionGrowth ?? 0,
+            ctr: data.ctr ?? 0,
+            ctrGrowth: data.ctrGrowth ?? 0,
+            cpc: data.cpc ?? 0,
+            cpcLink: data.cpcLink ?? 0,
+            costPerResult: data.costPerResult ?? 0,
+            cprGrowth: data.cprGrowth ?? 0,
+            roas: data.roas ?? 2.5,
+            roasGrowth: data.roasGrowth ?? 0,
+            frequency: data.frequency ?? 0,
+            budget: data.budget ?? 0,
+            reach: data.reach ?? 0,
+            dailyData: data.dailyData
+          }
+          
+          console.log('Processed Meta data:', processedData)
+          setMetaData(processedData)
         }
       } catch (err) {
         console.error("Error fetching Meta data:", err)
@@ -195,24 +226,39 @@ export function MetaTab({
 
   // Transform daily data for the line chart
   const getDailyTrendData = () => {
-    if (!data.dailyData || data.dailyData.length === 0) return []
+    const dailyData = data?.dailyData || [];
     
-    // Filter based on selected time frame
-    let filteredData = [...data.dailyData]
-    
-    if (selectedTimeFrame === "7d") {
-      filteredData = filteredData.slice(-7)
-    } else if (selectedTimeFrame === "30d") {
-      filteredData = filteredData.slice(-30)
-    } else if (selectedTimeFrame === "90d") {
-      filteredData = filteredData.slice(-90)
+    if (!dailyData || dailyData.length === 0) {
+      console.warn('No daily data available for trend chart')
+      return []
     }
     
-    return filteredData.map((item: DailyDataItem) => ({
-      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      spend: item.spend,
-      roas: item.roas
-    }))
+    console.log(`Processing ${dailyData.length} daily data items for trend chart`)
+    
+    // Filter based on selected time frame
+    let filteredData = [...dailyData]
+    
+    if (selectedTimeFrame === "7d") {
+      filteredData = filteredData.slice(0, 7)
+    } else if (selectedTimeFrame === "30d") {
+      filteredData = filteredData.slice(0, 30)
+    } else if (selectedTimeFrame === "90d") {
+      filteredData = filteredData.slice(0, 90)
+    }
+    
+    const result = filteredData.map((item: DailyDataItem) => {
+      // Make sure date is a string
+      const dateStr = item.date ? new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown';
+      
+      return {
+        date: dateStr,
+        spend: Number(item.spend || 0),
+        roas: Number(item.roas || 0)
+      }
+    }).reverse(); // Reverse to show oldest to newest
+    
+    console.log('Processed trend data:', result)
+    return result
   }
 
   return (
