@@ -76,6 +76,7 @@ export function MetaTab({
   const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>("7d")
   const [topCampaigns, setTopCampaigns] = useState<any[]>([])
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
+  const [useTestData, setUseTestData] = useState<boolean>(true)
 
   useEffect(() => {
     async function fetchMetaData() {
@@ -83,7 +84,9 @@ export function MetaTab({
       
       setLoading(true)
       try {
-        const response = await fetch(`/api/metrics/meta?brandId=${brandId}`)
+        const endpoint = useTestData ? `/api/metrics/meta-test?brandId=${brandId}` : `/api/metrics/meta?brandId=${brandId}`
+        const response = await fetch(endpoint)
+        
         if (!response.ok) {
           throw new Error(`Failed to fetch Meta data: ${response.status}`)
         }
@@ -103,7 +106,11 @@ export function MetaTab({
       
       setIsLoadingCampaigns(true)
       try {
-        const response = await fetch(`/api/analytics/meta/campaigns?brandId=${brandId}`)
+        const endpoint = useTestData 
+          ? `/api/analytics/meta-test/campaigns?brandId=${brandId}` 
+          : `/api/analytics/meta/campaigns?brandId=${brandId}`
+          
+        const response = await fetch(endpoint)
         
         if (!response.ok) {
           throw new Error(`Failed to fetch campaigns: ${response.status}`)
@@ -131,7 +138,7 @@ export function MetaTab({
     
     fetchMetaData()
     fetchCampaigns()
-  }, [brandId, dateRange])
+  }, [brandId, dateRange, useTestData])
 
   const generateAiInsights = async () => {
     setIsLoadingInsights(true)
@@ -192,6 +199,23 @@ export function MetaTab({
 
   return (
     <div className="space-y-6">
+      {/* Test Mode Switch */}
+      <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-400">Real Data</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              className="sr-only peer" 
+              checked={useTestData}
+              onChange={() => setUseTestData(!useTestData)}
+            />
+            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+          <span className="text-sm text-gray-400">Test Data</span>
+        </div>
+      </div>
+
       {/* Meta Connection Status Banner */}
       {hasData ? (
         <AlertBox
@@ -207,7 +231,9 @@ export function MetaTab({
           className="bg-blue-950/20 border-blue-800/30"
         >
           <p className="text-sm">
-            Your Meta advertising account is connected and data is being synchronized daily.
+            {useTestData 
+              ? "Using test data for Meta Ads. This data is simulated for demonstration purposes."
+              : "Your Meta advertising account is connected and data is being synchronized daily."}
           </p>
         </AlertBox>
       ) : (
@@ -218,8 +244,22 @@ export function MetaTab({
           className="bg-amber-950/20 border-amber-800/30"
         >
           <p className="text-sm">
-            We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns.
+            {useTestData 
+              ? "No test data available. Please make sure you've set up the test tables in Supabase." 
+              : "We're not seeing much Meta Ads data for your account. Make sure your account is correctly connected and that you have active ad campaigns."}
           </p>
+          {!useTestData && (
+            <div className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs bg-amber-900/30 border-amber-700/30 hover:bg-amber-800/30"
+                onClick={() => setUseTestData(true)}
+              >
+                Switch to Test Data
+              </Button>
+            </div>
+          )}
         </AlertBox>
       )}
 
@@ -363,9 +403,9 @@ export function MetaTab({
                         color: '#fff'
                       }} 
                       formatter={(value: any, name: string) => {
-                        if (name === 'spend') return [`$${value.toFixed(2)}`, 'Spend'];
-                        if (name === 'roas') return [`${value.toFixed(2)}x`, 'ROAS'];
-                        return [value, name];
+                        if (name === 'spend') return [`$${(value || 0).toFixed(2)}`, 'Spend'];
+                        if (name === 'roas') return [`${(value || 0).toFixed(2)}x`, 'ROAS'];
+                        return [value || 0, name];
                       }}
                     />
                     <Legend wrapperStyle={{ paddingTop: '10px' }} />
@@ -483,7 +523,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{(data.frequency || 0).toFixed(1)}</span>
+                    <span className="text-xl font-semibold">{((data.frequency || 0)).toFixed(1)}</span>
                     <span className="text-gray-400 ml-1">times</span>
                   </div>
                 </div>
