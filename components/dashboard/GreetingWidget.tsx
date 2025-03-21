@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
-import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth, parseISO, isSameDay, isAfter, isBefore, differenceInDays } from "date-fns"
+import { format, subDays, subMonths, startOfMonth, endOfMonth, getDaysInMonth, parseISO, isSameDay, isAfter, isBefore, differenceInDays, startOfDay, endOfDay } from "date-fns"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -587,7 +587,7 @@ export function GreetingWidget({
           : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
       
       // Special handling: Ensure orderGrowth is never exactly zero to force percentage display
-      const finalOrderGrowth = orderGrowth === 0 ? 0 : orderGrowth;
+      const finalOrderGrowth = orderGrowth;
       
       const customerGrowth = previousMetrics.customerCount === 0 && currentMetrics.customerCount === 0
         ? 0
@@ -883,315 +883,15 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
   // Function to fetch metrics for a specific period - REAL DATA VERSION
   const fetchPeriodMetrics = async (connectionId: string, from: Date, to: Date, fetchPreviousDays: boolean = false): Promise<PeriodMetrics | { dailyMetrics?: PeriodMetrics[], currentMetrics: PeriodMetrics }> => {
     try {
-      console.log(`Fetching period metrics from ${format(from, 'yyyy-MM-dd')} to ${format(to, 'yyyy-MM-dd')}${fetchPreviousDays ? ' including previous days' : ''}`);
+      // Debug log for monitoring function calls
+      console.log(`Fetching period metrics for connection ${connectionId}`, {
+        from: format(from, 'yyyy-MM-dd'),
+        to: format(to, 'yyyy-MM-dd'),
+        fetchPreviousDays
+      })
       
-      // Initialize metrics
-      let totalSales: number = 0;
-      let ordersCount: number = 0;
-      let adSpend: number = 0;
-      let topProducts: Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }> = [];
-      
-      // For storing daily metrics when fetchPreviousDays is true
-      const dailyMetricsArray: PeriodMetrics[] = [];
-      
-      // If we need to fetch previous days, we'll fetch a 7-day range and then process each day separately
-      if (fetchPreviousDays) {
-        const sixDaysAgo = subDays(to, 6); // 6 days before the "to" date
-        
-        // Step 1: Get Shopify sales data for the entire 7-day period
-        const { data: salesData, error: salesError } = await supabase
-          .from('shopify_orders')
-          .select('id, total_price, created_at, line_items')
-          .eq('connection_id', connectionId)
-          .gte('created_at', sixDaysAgo.toISOString())
-          .lte('created_at', to.toISOString());
-        
-        if (salesError) {
-          console.error('Error fetching Shopify orders for 7-day period:', salesError);
-        } else if (salesData && salesData.length > 0) {
-          console.log(`Found ${salesData.length} Shopify orders for the 7-day period`);
-          
-          // Step 2: Get Meta ad data for the entire 7-day period
-          const { data: adData, error: adError } = await supabase
-            .from('meta_ad_insights')
-            .select('spend, impressions, clicks, date')
-            .eq('connection_id', connectionId)
-            .gte('date', format(sixDaysAgo, 'yyyy-MM-dd'))
-            .lte('date', format(to, 'yyyy-MM-dd'));
-          
-          if (adError) {
-            console.error('Error fetching Meta ad insights for 7-day period:', adError);
-          }
-          
-          // Process data for each day in the 7-day period
-          for (let i = 0; i < 7; i++) {
-            const currentDay = subDays(to, 6 - i); // Start from 6 days ago
-            const nextDay = new Date(currentDay);
-            nextDay.setDate(currentDay.getDate() + 1);
-            
-            // Set the time to beginning and end of day
-            currentDay.setHours(0, 0, 0, 0);
-            nextDay.setHours(0, 0, 0, 0);
-            
-            // Filter orders for this day
-            const dayOrders = salesData.filter(order => {
-              const orderDate = new Date(order.created_at);
-              return orderDate >= currentDay && orderDate < nextDay;
-            });
-            
-            // Calculate day metrics
-            const daySales = dayOrders.reduce((sum, order) => {
-              const price = typeof order.total_price === 'string' 
-                ? parseFloat(order.total_price) 
-                : (order.total_price || 0);
-              return sum + price;
-            }, 0);
-            
-            const dayOrdersCount = dayOrders.length;
-            
-            // Process line_items for this day
-            const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
-            
-            dayOrders.forEach(order => {
-              const lineItems = order.line_items || [];
-              lineItems.forEach((item: any) => {
-                const productId = item.product_id?.toString() || item.id?.toString();
-                if (!productId) return;
-                
-                const title = item.title || 'Unknown Product';
-                const quantity = parseInt(item.quantity) || 0;
-                const price = parseFloat(item.price) || 0;
-                const revenue = quantity * price;
-                
-                if (productMap.has(productId)) {
-                  const product = productMap.get(productId)!;
-                  product.quantity += quantity;
-                  product.revenue += revenue;
-                } else {
-                  productMap.set(productId, {
-                    title,
-                    quantity,
-                    revenue
-                  });
-                }
-              });
-            });
-            
-            // Calculate ad metrics for this day
-            let dayAdSpend = 0;
-            let dayCtr = 0;
-            let dayCpc = 0;
-            
-            if (adData && adData.length > 0) {
-              const dayAdInsights = adData.filter(insight => 
-                insight.date === format(currentDay, 'yyyy-MM-dd')
-              );
-              
-              // Sum up ad spend for the day
-              dayAdSpend = dayAdInsights.reduce((sum, insight) => {
-                const spend = typeof insight.spend === 'string' 
-                  ? parseFloat(insight.spend) 
-                  : (insight.spend || 0);
-                return sum + spend;
-              }, 0);
-              
-              // Calculate CTR and CPC
-              const dayImpressions = dayAdInsights.reduce((sum, insight) => sum + (insight.impressions || 0), 0);
-              const dayClicks = dayAdInsights.reduce((sum, insight) => sum + (insight.clicks || 0), 0);
-              
-              dayCtr = dayImpressions > 0 ? (dayClicks / dayImpressions) * 100 : 0;
-              dayCpc = dayClicks > 0 ? dayAdSpend / dayClicks : 0;
-            }
-            
-            // Calculate derived metrics
-            const dayAverageOrderValue = dayOrdersCount > 0 ? daySales / dayOrdersCount : 0;
-            const dayCustomerCount = dayOrdersCount; // Assuming each order is a unique customer
-            const dayRoas = dayAdSpend > 0 ? daySales / dayAdSpend : 0;
-            
-            // Convert the product map to an array
-            const dayTopProducts = Array.from(productMap.values())
-              .map(product => ({
-                title: product.title,
-                quantity: product.quantity,
-                revenue: product.revenue
-              }))
-              .sort((a, b) => b.revenue - a.revenue);
-            
-            // Create daily metrics object
-            const dayMetrics: PeriodMetrics = {
-              totalSales: daySales,
-              ordersCount: dayOrdersCount,
-              averageOrderValue: dayAverageOrderValue,
-              conversionRate: 0, // We don't have this data
-              customerCount: dayCustomerCount,
-              newCustomers: 0, // We don't have this data
-              returningCustomers: 0, // We don't have this data
-              adSpend: dayAdSpend,
-              roas: dayRoas,
-              ctr: dayCtr,
-              cpc: dayCpc,
-              topProducts: dayTopProducts
-            };
-            
-            // Add to the metrics array
-            dailyMetricsArray.push(dayMetrics);
-            
-            // If this is the last day (today), update the current metrics
-            if (i === 6) {
-              totalSales = daySales;
-              ordersCount = dayOrdersCount;
-              adSpend = dayAdSpend;
-              topProducts = dayTopProducts;
-            }
-          }
-        }
-        
-        // Return both the daily metrics array and current metrics
-        return {
-          dailyMetrics: dailyMetricsArray,
-          currentMetrics: {
-            totalSales,
-            ordersCount,
-            averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
-            conversionRate: 0, // We don't have this data
-            customerCount: ordersCount, // Assuming each order is a unique customer
-            newCustomers: 0, // We don't have this data
-            returningCustomers: 0, // We don't have this data
-            adSpend,
-            roas: adSpend > 0 ? totalSales / adSpend : 0,
-            ctr: 0, // We calculate this only for daily metrics
-            cpc: 0, // We calculate this only for daily metrics
-            topProducts
-          }
-        };
-      }
-      
-      // For non-previous days request, just fetch data for the specified period
-      // Step 1: Get Shopify sales data
-      const { data: salesData, error: salesError } = await supabase
-        .from('shopify_orders')
-        .select('id, total_price, created_at, line_items')
-        .eq('connection_id', connectionId)
-        .gte('created_at', from.toISOString())
-        .lte('created_at', to.toISOString());
-      
-      if (salesError) {
-        console.error('Error fetching Shopify orders:', salesError);
-      } else if (salesData && salesData.length > 0) {
-        console.log(`Found ${salesData.length} Shopify orders for the period`);
-        
-        // Calculate sales metrics
-        totalSales = salesData.reduce((sum, order) => {
-          const price = typeof order.total_price === 'string' 
-            ? parseFloat(order.total_price) 
-            : (order.total_price || 0);
-          return sum + price;
-        }, 0);
-        
-        ordersCount = salesData.length;
-        
-        // Process line_items
-        const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
-        
-        salesData.forEach(order => {
-          const lineItems = order.line_items || [];
-          lineItems.forEach((item: any) => {
-            const productId = item.product_id?.toString() || item.id?.toString();
-            if (!productId) return;
-            
-            const title = item.title || 'Unknown Product';
-            const quantity = parseInt(item.quantity) || 0;
-            const price = parseFloat(item.price) || 0;
-            const revenue = quantity * price;
-            
-            if (productMap.has(productId)) {
-              const product = productMap.get(productId)!;
-              product.quantity += quantity;
-              product.revenue += revenue;
-            } else {
-              productMap.set(productId, {
-                title,
-                quantity,
-                revenue
-              });
-            }
-          });
-        });
-        
-        // Convert the product map to an array
-        topProducts = Array.from(productMap.values())
-          .map(product => ({
-            title: product.title,
-            quantity: product.quantity,
-            revenue: product.revenue
-          }))
-          .sort((a, b) => b.revenue - a.revenue);
-      }
-      
-      // Step 2: Get Meta ad data
-      const { data: adData, error: adError } = await supabase
-        .from('meta_ad_insights')
-        .select('spend, impressions, clicks, date')
-        .eq('connection_id', connectionId)
-        .gte('date', format(from, 'yyyy-MM-dd'))
-        .lte('date', format(to, 'yyyy-MM-dd'));
-      
-      if (adError) {
-        console.error('Error fetching Meta ad insights:', adError);
-      } else if (adData && adData.length > 0) {
-        console.log(`Found ${adData.length} Meta ad insights for the period`);
-        
-        // Calculate ad metrics
-        adSpend = adData.reduce((sum, insight) => {
-          const spend = typeof insight.spend === 'string' 
-            ? parseFloat(insight.spend) 
-            : (insight.spend || 0);
-          return sum + spend;
-        }, 0);
-        
-        const totalImpressions = adData.reduce((sum, insight) => sum + (insight.impressions || 0), 0);
-        const totalClicks = adData.reduce((sum, insight) => sum + (insight.clicks || 0), 0);
-        
-        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-        const cpc = totalClicks > 0 ? adSpend / totalClicks : 0;
-        
-        // Return with ad metrics
-        return {
-          totalSales,
-          ordersCount,
-          averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
-          conversionRate: 0, // We don't have this data
-          customerCount: ordersCount, // Assuming each order is a unique customer
-          newCustomers: 0, // We don't have this data
-          returningCustomers: 0, // We don't have this data
-          adSpend,
-          roas: adSpend > 0 ? totalSales / adSpend : 0,
-          ctr,
-          cpc,
-          topProducts
-        };
-      }
-      
-      // Return even if we only have Shopify data
-      return {
-        totalSales,
-        ordersCount,
-        averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
-        conversionRate: 0, // We don't have this data
-        customerCount: ordersCount, // Assuming each order is a unique customer
-        newCustomers: 0, // We don't have this data
-        returningCustomers: 0, // We don't have this data
-        adSpend,
-        roas: adSpend > 0 ? totalSales / adSpend : 0,
-        ctr: 0,
-        cpc: 0,
-        topProducts
-      };
-    } catch (error) {
-      console.error('Error in fetchPeriodMetrics:', error);
-      
-      // Return empty metrics in case of error
-      return {
+      // Initialize with empty metrics
+      const emptyMetrics: PeriodMetrics = {
         totalSales: 0,
         ordersCount: 0,
         averageOrderValue: 0,
@@ -1202,11 +902,160 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         adSpend: 0,
         roas: 0,
         ctr: 0,
-        cpc: 0,
-        topProducts: []
-      };
+        cpc: 0
+      }
+      
+      // Fetch Shopify order data
+      let shopifyOrdersResult
+      
+      try {
+        shopifyOrdersResult = await supabase
+          .from('shopify_orders')
+          .select('*')
+          .eq('connection_id', connectionId)
+          .gte('created_at', format(from, 'yyyy-MM-dd'))
+          .lte('created_at', format(to, 'yyyy-MM-dd'))
+        
+        if (shopifyOrdersResult.error) {
+          throw shopifyOrdersResult.error
+        }
+      } catch (error) {
+        console.error('Error fetching Shopify orders:', error)
+        shopifyOrdersResult = { data: [] }
+      }
+      
+      const orders = shopifyOrdersResult?.data || []
+      
+      // Calculate metrics from orders
+      const totalSales = orders.reduce((sum: number, order: any) => {
+        const orderTotal = parseFloat(order.total_price || '0')
+        return sum + (isNaN(orderTotal) ? 0 : orderTotal)
+      }, 0)
+      
+      const ordersCount = orders.length
+      
+      const averageOrderValue = ordersCount > 0 
+        ? totalSales / ordersCount 
+        : 0
+      
+      // Process customer data
+      const customerIds = orders.map((order: any) => order.customer_id).filter(Boolean)
+      const uniqueCustomerIds = [...new Set(customerIds)]
+      const customerCount = uniqueCustomerIds.length
+      
+      // Determine returning customers (rough estimation as we don't have full order history)
+      // For a real app, you'd need to fetch previous orders to accurately determine this
+      const customerOrderCounts: Record<string, number> = {}
+      orders.forEach((order: any) => {
+        if (order.customer_id) {
+          customerOrderCounts[order.customer_id] = (customerOrderCounts[order.customer_id] || 0) + 1
+        }
+      })
+      
+      const returningCustomers = Object.values(customerOrderCounts).filter(count => count > 1).length
+      const newCustomers = customerCount - returningCustomers
+      
+      // Get Ad spend data from Meta
+      let metaDataResult
+      try {
+        metaDataResult = await supabase
+          .from('meta_ad_insights')
+          .select('*')
+          .gte('date', format(from, 'yyyy-MM-dd'))
+          .lte('date', format(to, 'yyyy-MM-dd'))
+        
+        if (metaDataResult.error) {
+          throw metaDataResult.error
+        }
+      } catch (error) {
+        console.error('Error fetching Meta ad insights:', error)
+        metaDataResult = { data: [] }
+      }
+      
+      const metaInsights = metaDataResult?.data || []
+      
+      // Calculate ad metrics
+      const adSpend = metaInsights.reduce((sum: number, insight: any) => {
+        return sum + (parseFloat(insight.spend) || 0)
+      }, 0)
+      
+      const impressions = metaInsights.reduce((sum: number, insight: any) => {
+        return sum + (parseInt(insight.impressions, 10) || 0)
+      }, 0)
+      
+      const clicks = metaInsights.reduce((sum: number, insight: any) => {
+        return sum + (parseInt(insight.clicks, 10) || 0)
+      }, 0)
+      
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0
+      const cpc = clicks > 0 ? adSpend / clicks : 0
+      
+      // Calculate ROAS
+      const roas = adSpend > 0 ? totalSales / adSpend : 0
+      
+      // Calculate conversion rate
+      const conversionRate = clicks > 0 ? (ordersCount / clicks) * 100 : 0
+      
+      // Create metrics object
+      const currentMetrics: PeriodMetrics = {
+        totalSales,
+        ordersCount,
+        averageOrderValue,
+        conversionRate,
+        customerCount,
+        newCustomers,
+        returningCustomers,
+        adSpend,
+        roas,
+        ctr,
+        cpc,
+        // Include top products if we have order data
+        topProducts: orders.length > 0 ? processTopProducts(orders) : []
+      }
+      
+      // If we don't need to fetch daily metrics, just return the current metrics
+      if (!fetchPreviousDays) {
+        return currentMetrics
+      }
+      
+      // Otherwise, get daily metrics for the last 7 days
+      const dailyMetrics: PeriodMetrics[] = []
+      const days = 7
+      
+      for (let i = 0; i < days; i++) {
+        const dayDate = subDays(to, 6 - i)
+        const dayStart = startOfDay(dayDate)
+        const dayEnd = endOfDay(dayDate)
+        
+        const dayMetrics = await fetchPeriodMetrics(connectionId, dayStart, dayEnd)
+        
+        // Add to array
+        dailyMetrics.push(dayMetrics as PeriodMetrics)
+      }
+      
+      return {
+        dailyMetrics,
+        currentMetrics
+      }
+    } catch (error) {
+      console.error('Error fetching period metrics:', error)
+      return {
+        currentMetrics: {
+          totalSales: 0,
+          ordersCount: 0,
+          averageOrderValue: 0,
+          conversionRate: 0,
+          customerCount: 0,
+          newCustomers: 0,
+          returningCustomers: 0,
+          adSpend: 0,
+          roas: 0,
+          ctr: 0,
+          cpc: 0
+        }
+      }
     }
-  };
+  }
 
   // Generate recommendations
   const generateRecommendations = (metrics: PeriodMetrics, comparison: any): string[] => {
@@ -2307,7 +2156,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="font-semibold">
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
                                 ? Math.round(monthlyReport.historicalData[0].orders)
-                                : Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                                : 0}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2317,14 +2166,17 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="font-semibold">
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
                                 ? Math.round(monthlyReport.historicalData[0].orders)
-                                : Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                                : 0}
                             </div>
                             <div className="text-xs text-green-500">
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
-                                ? `${monthlyReport.historicalData[0].orders > 0 && monthlyReport.historicalData[0].orders !== monthlyReport.historicalData[1].orders
-                                  ? ((monthlyReport.historicalData[1].orders - monthlyReport.historicalData[0].orders) / monthlyReport.historicalData[0].orders * 100).toFixed(1)
-                                  : monthlyReport.historicalData[1].orders > 0 ? "+100" : "0"}%`
-                                : "+17.1%"}
+                                ? (monthlyReport.historicalData[0].orders === 0 && monthlyReport.historicalData[1].orders === 0)
+                                  ? "0%" 
+                                  : monthlyReport.historicalData[0].orders === 0 && monthlyReport.historicalData[1].orders > 0
+                                    ? "N/A"
+                                    : `${((monthlyReport.historicalData[1].orders - monthlyReport.historicalData[0].orders) / 
+                                        Math.max(0.01, monthlyReport.historicalData[0].orders) * 100).toFixed(1)}%`
+                                : "0%"}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2339,17 +2191,20 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 <TooltipTrigger asChild>
                                   <div className="text-xs text-green-500 cursor-help">
                                     {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
-                                      ? `${monthlyReport.historicalData[1].orders > 0 
-                                          ? ((monthlyReport.totalPurchases - monthlyReport.historicalData[1].orders) / monthlyReport.historicalData[1].orders * 100).toFixed(1)
-                                          : monthlyReport.totalPurchases > 0 ? "+100" : "0"}%`
-                                      : "+17.1%"}
+                                      ? (monthlyReport.historicalData[1].orders === 0 && monthlyReport.totalPurchases === 0)
+                                        ? "0%" 
+                                        : monthlyReport.historicalData[1].orders === 0 && monthlyReport.totalPurchases > 0
+                                          ? "N/A"
+                                          : `${((monthlyReport.totalPurchases - monthlyReport.historicalData[1].orders) / 
+                                              Math.max(0.01, monthlyReport.historicalData[1].orders) * 100).toFixed(1)}%`
+                                      : "0%"}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getPreviousMonthName()}: {Math.round(monthlyReport.totalPurchases)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                    {getPreviousMonthName()}: {Math.round(monthlyReport ? monthlyReport.totalPurchases : 0)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
                                       ? Math.round(monthlyReport.historicalData[1].orders)
-                                      : Math.round(monthlyReport.totalPurchases * 0.82)} orders
+                                      : 0} orders
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -3134,4 +2989,50 @@ const generateRealAIAnalysis = async (
     console.error('Error generating AI analysis:', error);
     return `Unable to generate AI analysis at this time. Please try refreshing the page or check back later.`;
   }
+};
+
+// Add the processTopProducts function before fetchPeriodMetrics
+const processTopProducts = (orders: any[]): Array<{ title?: string; name?: string; quantity?: number; orders?: number; revenue?: number }> => {
+  // Process line_items from orders
+  const productMap = new Map<string, { title: string; quantity: number; orders: number; revenue: number }>();
+  
+  orders.forEach(order => {
+    const lineItems = order.line_items || [];
+    if (!Array.isArray(lineItems)) return;
+    
+    lineItems.forEach((item: any) => {
+      const productId = item.product_id?.toString() || item.id?.toString();
+      if (!productId) return;
+      
+      const title = item.title || 'Unknown Product';
+      const quantity = parseInt(item.quantity) || 0;
+      const price = parseFloat(item.price) || 0;
+      const revenue = quantity * price;
+      
+      if (productMap.has(productId)) {
+        const product = productMap.get(productId)!;
+        product.quantity += quantity;
+        product.orders += 1;
+        product.revenue += revenue;
+      } else {
+        productMap.set(productId, {
+          title,
+          quantity,
+          orders: 1,
+          revenue
+        });
+      }
+    });
+  });
+  
+  // Convert the product map to an array and sort by revenue
+  return Array.from(productMap.values())
+    .map(product => ({
+      title: product.title,
+      name: product.title,
+      quantity: product.quantity,
+      orders: product.orders,
+      revenue: product.revenue
+    }))
+    .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
 };
