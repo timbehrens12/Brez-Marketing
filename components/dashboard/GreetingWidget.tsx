@@ -574,32 +574,44 @@ export function GreetingWidget({
       }
       
       // Calculate growth rates (safely handle division by zero)
-      const salesGrowth = previousMetrics.totalSales > 0 
-        ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
-        : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
+      const salesGrowth = previousMetrics.totalSales === 0 && currentMetrics.totalSales === 0
+        ? 0
+        : previousMetrics.totalSales > 0 
+          ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
+          : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before
       
-      const orderGrowth = previousMetrics.ordersCount > 0 
-        ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
-        : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
+      const orderGrowth = previousMetrics.ordersCount === 0 && currentMetrics.ordersCount === 0
+        ? 0
+        : previousMetrics.ordersCount > 0 
+          ? ((currentMetrics.ordersCount - previousMetrics.ordersCount) / previousMetrics.ordersCount) * 100 
+          : (currentMetrics.ordersCount > 0 ? 100 : 0) // Use 100% growth if we now have orders but didn't before
       
       // Special handling: Ensure orderGrowth is never exactly zero to force percentage display
-      const finalOrderGrowth = orderGrowth === 0 ? 0.01 : orderGrowth;
+      const finalOrderGrowth = orderGrowth === 0 ? 0 : orderGrowth;
       
-      const customerGrowth = previousMetrics.customerCount > 0 
-        ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
-        : (currentMetrics.customerCount > 0 ? 100 : 0) // Use 100% growth if we now have customers but didn't before
+      const customerGrowth = previousMetrics.customerCount === 0 && currentMetrics.customerCount === 0
+        ? 0
+        : previousMetrics.customerCount > 0 
+          ? ((currentMetrics.customerCount - previousMetrics.customerCount) / previousMetrics.customerCount) * 100 
+          : (currentMetrics.customerCount > 0 ? 100 : 0) // Use 100% growth if we now have customers but didn't before
       
-      const roasGrowth = previousMetrics.roas > 0 
-        ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
-        : (currentMetrics.roas > 0 ? 100 : 0) // Use 100% growth if we now have ROAS but didn't before
+      const roasGrowth = previousMetrics.roas === 0 && currentMetrics.roas === 0
+        ? 0
+        : previousMetrics.roas > 0 
+          ? ((currentMetrics.roas - previousMetrics.roas) / previousMetrics.roas) * 100 
+          : (currentMetrics.roas > 0 ? 100 : 0) // Use 100% growth if we now have ROAS but didn't before
       
-      const conversionGrowth = previousMetrics.conversionRate > 0 
-        ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
-        : (currentMetrics.conversionRate > 0 ? 100 : 0) // Use 100% growth if we now have conversion but didn't before
+      const conversionGrowth = previousMetrics.conversionRate === 0 && currentMetrics.conversionRate === 0
+        ? 0
+        : previousMetrics.conversionRate > 0 
+          ? ((currentMetrics.conversionRate - previousMetrics.conversionRate) / previousMetrics.conversionRate) * 100 
+          : (currentMetrics.conversionRate > 0 ? 100 : 0) // Use 100% growth if we now have conversion but didn't before
       
-      const adSpendGrowth = previousMetrics.adSpend > 0 
-        ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
-        : (currentMetrics.adSpend > 0 ? 100 : 0) // Use standard calculation for ad spend growth
+      const adSpendGrowth = previousMetrics.adSpend === 0 && currentMetrics.adSpend === 0
+        ? 0
+        : previousMetrics.adSpend > 0 
+          ? ((currentMetrics.adSpend - previousMetrics.adSpend) / previousMetrics.adSpend) * 100 
+          : (currentMetrics.adSpend > 0 ? 100 : 0) // Use standard calculation for ad spend growth
       
       // Generate period-specific date range string
       const now = new Date()
@@ -996,76 +1008,65 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             const dayCustomerCount = dayOrdersCount; // Assuming each order is a unique customer
             const dayRoas = dayAdSpend > 0 ? daySales / dayAdSpend : 0;
             
+            // Convert the product map to an array
+            const dayTopProducts = Array.from(productMap.values())
+              .map(product => ({
+                title: product.title,
+                quantity: product.quantity,
+                revenue: product.revenue
+              }))
+              .sort((a, b) => b.revenue - a.revenue);
+            
             // Create daily metrics object
             const dayMetrics: PeriodMetrics = {
               totalSales: daySales,
               ordersCount: dayOrdersCount,
               averageOrderValue: dayAverageOrderValue,
-              conversionRate: 2.5, // Default
+              conversionRate: 0, // We don't have this data
               customerCount: dayCustomerCount,
-              newCustomers: Math.floor(dayCustomerCount * 0.65),
-              returningCustomers: dayCustomerCount - Math.floor(dayCustomerCount * 0.65),
+              newCustomers: 0, // We don't have this data
+              returningCustomers: 0, // We don't have this data
               adSpend: dayAdSpend,
               roas: dayRoas,
               ctr: dayCtr,
               cpc: dayCpc,
-              topProducts: Array.from(productMap.values())
-                .map(product => ({
-                  title: product.title,
-                  name: product.title,
-                  quantity: product.quantity,
-                  orders: product.quantity,
-                  revenue: product.revenue
-                }))
-                .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 10)
+              topProducts: dayTopProducts
             };
             
-            // Add to daily metrics array
+            // Add to the metrics array
             dailyMetricsArray.push(dayMetrics);
             
-            // If this is the current day (last day in the loop), set as current metrics
+            // If this is the last day (today), update the current metrics
             if (i === 6) {
               totalSales = daySales;
               ordersCount = dayOrdersCount;
               adSpend = dayAdSpend;
-              topProducts = dayMetrics.topProducts || [];
+              topProducts = dayTopProducts;
             }
           }
         }
         
-        // Calculate derived metrics for current day
-        const averageOrderValue = ordersCount > 0 ? totalSales / ordersCount : 0;
-        const customerCount = ordersCount;
-        const newCustomers = Math.floor(customerCount * 0.65);
-        const returningCustomers = customerCount - newCustomers;
-        const conversionRate = 2.5; // Default
-        const roas = adSpend > 0 ? totalSales / adSpend : 0;
-        const ctr = 2.7; // Default
-        const cpc = adSpend > 0 ? adSpend / (ordersCount * 5) : 0;
-        
-        const currentMetrics: PeriodMetrics = {
-          totalSales,
-          ordersCount,
-          averageOrderValue,
-          conversionRate,
-          customerCount,
-          newCustomers,
-          returningCustomers,
-          adSpend,
-          roas,
-          ctr,
-          cpc,
-          topProducts
-        };
-        
+        // Return both the daily metrics array and current metrics
         return {
           dailyMetrics: dailyMetricsArray,
-          currentMetrics
+          currentMetrics: {
+            totalSales,
+            ordersCount,
+            averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
+            conversionRate: 0, // We don't have this data
+            customerCount: ordersCount, // Assuming each order is a unique customer
+            newCustomers: 0, // We don't have this data
+            returningCustomers: 0, // We don't have this data
+            adSpend,
+            roas: adSpend > 0 ? totalSales / adSpend : 0,
+            ctr: 0, // We calculate this only for daily metrics
+            cpc: 0, // We calculate this only for daily metrics
+            topProducts
+          }
         };
       }
       
-      // Original code for fetching a single period's metrics
+      // For non-previous days request, just fetch data for the specified period
       // Step 1: Get Shopify sales data
       const { data: salesData, error: salesError } = await supabase
         .from('shopify_orders')
@@ -1079,12 +1080,6 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       } else if (salesData && salesData.length > 0) {
         console.log(`Found ${salesData.length} Shopify orders for the period`);
         
-        // Log the date range of orders found
-        if (salesData.length > 0) {
-          const orderDates = salesData.map(order => new Date(order.created_at)).sort((a, b) => a.getTime() - b.getTime());
-          console.log(`Order date range: ${format(orderDates[0], 'yyyy-MM-dd HH:mm:ss')} to ${format(orderDates[orderDates.length - 1], 'yyyy-MM-dd HH:mm:ss')}`);
-        }
-        
         // Calculate sales metrics
         totalSales = salesData.reduce((sum, order) => {
           const price = typeof order.total_price === 'string' 
@@ -1095,7 +1090,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         
         ordersCount = salesData.length;
         
-        // Process line_items to get top products
+        // Process line_items
         const productMap = new Map<string, { title: string; quantity: number; revenue: number }>();
         
         salesData.forEach(order => {
@@ -1123,27 +1118,20 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           });
         });
         
-        // Convert to array and sort by revenue
+        // Convert the product map to an array
         topProducts = Array.from(productMap.values())
           .map(product => ({
             title: product.title,
-            name: product.title,
             quantity: product.quantity,
-            orders: product.quantity,
             revenue: product.revenue
           }))
-          .sort((a, b) => b.revenue - a.revenue)
-          .slice(0, 10);  // Get top 10
-          
-        console.log('Found top products:', topProducts);
-      } else {
-        console.log('No Shopify orders found for the period, falling back to simulation');
+          .sort((a, b) => b.revenue - a.revenue);
       }
       
-      // Step 2: Get Meta ad spend data if available
+      // Step 2: Get Meta ad data
       const { data: adData, error: adError } = await supabase
         .from('meta_ad_insights')
-        .select('spend, impressions, clicks')
+        .select('spend, impressions, clicks, date')
         .eq('connection_id', connectionId)
         .gte('date', format(from, 'yyyy-MM-dd'))
         .lte('date', format(to, 'yyyy-MM-dd'));
@@ -1161,74 +1149,49 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           return sum + spend;
         }, 0);
         
-        const impressions = adData.reduce((sum, insight) => sum + (insight.impressions || 0), 0);
-        const clicks = adData.reduce((sum, insight) => sum + (insight.clicks || 0), 0);
+        const totalImpressions = adData.reduce((sum, insight) => sum + (insight.impressions || 0), 0);
+        const totalClicks = adData.reduce((sum, insight) => sum + (insight.clicks || 0), 0);
         
-        // Calculate CTR and CPC
-        const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-        const cpc = clicks > 0 ? adSpend / clicks : 0;
-      }
-      
-      // Use simulated data as fallback if real data is insufficient
-      const hasRealData = totalSales > 0 || ordersCount > 0 || adSpend > 0;
-      
-      if (!hasRealData) {
-        console.log('No real data available, returning zeros for accurate reporting');
-        // Return zeros instead of simulated data to ensure accurate reporting
+        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+        const cpc = totalClicks > 0 ? adSpend / totalClicks : 0;
+        
+        // Return with ad metrics
         return {
-          totalSales: 0,
-          ordersCount: 0,
-          averageOrderValue: 0,
-          conversionRate: 0,
-          customerCount: 0,
-          newCustomers: 0,
-          returningCustomers: 0,
-          adSpend: 0,
-          roas: 0,
-          ctr: 0,
-          cpc: 0,
-          topProducts: []
+          totalSales,
+          ordersCount,
+          averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
+          conversionRate: 0, // We don't have this data
+          customerCount: ordersCount, // Assuming each order is a unique customer
+          newCustomers: 0, // We don't have this data
+          returningCustomers: 0, // We don't have this data
+          adSpend,
+          roas: adSpend > 0 ? totalSales / adSpend : 0,
+          ctr,
+          cpc,
+          topProducts
         };
       }
       
-      // Calculate derived metrics from real data
-      const averageOrderValue = ordersCount > 0 ? totalSales / ordersCount : 0;
-      const customerCount = ordersCount; // Assuming each order is a unique customer for simplicity
-      const newCustomers = Math.floor(customerCount * 0.65); // Estimate 65% new customers
-      const returningCustomers = customerCount - newCustomers;
-      const conversionRate = 2.5; // Default conversion rate if we don't have actual data
-      const roas = adSpend > 0 ? totalSales / adSpend : 0;
-      const ctr = 2.7; // Default CTR if we don't have actual data
-      const cpc = adSpend > 0 ? adSpend / (ordersCount * 5) : 0; // Rough estimate of clicks
-      
-      console.log('Calculated metrics:', {
-        totalSales,
-        ordersCount,
-        averageOrderValue,
-        roas,
-        adSpend
-      });
-      
+      // Return even if we only have Shopify data
       return {
         totalSales,
         ordersCount,
-        averageOrderValue,
-        conversionRate,
-        customerCount,
-        newCustomers,
-        returningCustomers,
+        averageOrderValue: ordersCount > 0 ? totalSales / ordersCount : 0,
+        conversionRate: 0, // We don't have this data
+        customerCount: ordersCount, // Assuming each order is a unique customer
+        newCustomers: 0, // We don't have this data
+        returningCustomers: 0, // We don't have this data
         adSpend,
-        roas,
-        ctr,
-        cpc,
+        roas: adSpend > 0 ? totalSales / adSpend : 0,
+        ctr: 0,
+        cpc: 0,
         topProducts
       };
     } catch (error) {
       console.error('Error in fetchPeriodMetrics:', error);
       
-      // Return zeros in case of error rather than simulated data
+      // Return empty metrics in case of error
       return {
-        currentMetrics: {
         totalSales: 0,
         ordersCount: 0,
         averageOrderValue: 0,
@@ -1239,9 +1202,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
         adSpend: 0,
         roas: 0,
         ctr: 0,
-          cpc: 0,
-          topProducts: []
-        }
+        cpc: 0,
+        topProducts: []
       };
     }
   };
@@ -1941,16 +1903,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 <div>
                   <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium">
-                        {(currentPeriod as ReportPeriod) === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
+                        {currentPeriod === 'daily' ? "Today's Best Sellers" : "Monthly Best Sellers"}
                       </h5>
                       <p className="text-xs text-gray-400">
-                        {(currentPeriod as ReportPeriod) === 'daily' ? "by today's revenue" : "by monthly revenue"}
+                        {currentPeriod === 'daily' ? "by today's revenue" : "by monthly revenue"}
                       </p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                       {(() => {
                         // Get products directly from periodData instead of reports
-                        const products = (currentPeriod as ReportPeriod) === 'daily' 
+                        const products = currentPeriod === 'daily' 
                           ? periodData.today.topProducts || []
                           : periodData.month.topProducts || [];
                         
@@ -1987,7 +1949,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           ));
                         } else {
                           // Check if we have a hard-coded product for the current report
-                          const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
+                          const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
                           
                           if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                             return report.bestSellingProducts.map((product, index) => (
@@ -2014,7 +1976,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           return (
                             <div className="py-8 text-center">
                               <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                              <p className="text-gray-400">No products sold {(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}</p>
+                              <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
                               <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                             </div>
                           );
@@ -2027,7 +1989,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <h5 className="font-medium">
-                        {(currentPeriod as ReportPeriod) === 'daily' ? "Today's" : "Monthly"} Best Campaigns
+                        {currentPeriod === 'daily' ? "Today's" : "Monthly"} Best Campaigns
                       </h5>
                       <select 
                         className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -2046,7 +2008,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                     <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                       {(() => {
                         console.log(`[Debug] Rendering campaigns for ${currentPeriod} view`);
-                        const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
+                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
                         
                         if (report?.bestCampaign && report.bestCampaign.name !== "No campaign data available") {
                           // If we have real campaign data, show it
@@ -2108,7 +2070,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 {
                                   // Check if we have any connected ad platforms
                                   connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google' || c.platform_type === 'meta')
-                                    ? `No campaigns found for ${(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}`
+                                    ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
                                     : 'Connect an ad platform to see campaign performance'
                                 }
                               </p>
@@ -2139,24 +2101,33 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           <span className="text-sm text-gray-400">Revenue</span>
                   </div>
                         <div className="grid grid-cols-3 gap-2">
+                          {/* Using real historical data if available */}
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getThreeMonthsAgoName()}
-                </div>
-                            <div className="font-semibold">
-                              ${monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.75)}
                             </div>
-          </div>
+                            <div className="font-semibold">
+                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                ? Math.round(monthlyReport.historicalData[0].revenue)
+                                : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.75))}
+                            </div>
+                          </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
                               {getTwoMonthsAgoName()}
         </div>
                             <div className="font-semibold">
-                              ${monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.85)}
+                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                ? Math.round(monthlyReport.historicalData[0].revenue)
+                                : (monthlyReport.periodComparison.salesGrowth === 100 ? 0 : Math.round(monthlyReport.revenueGenerated * 0.85))}
             </div>
                             <div className="text-xs text-green-500">
-                              {monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
-            </div>
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
+                                ? `${monthlyReport.historicalData[0].revenue > 0 && monthlyReport.historicalData[0].revenue !== monthlyReport.historicalData[1].revenue
+                                  ? ((monthlyReport.historicalData[1].revenue - monthlyReport.historicalData[0].revenue) / monthlyReport.historicalData[0].revenue * 100).toFixed(1)
+                                  : monthlyReport.historicalData[1].revenue > 0 ? "+100" : "0"}%`
+                                : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
+                            </div>
             </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
                             <div className="text-xs text-gray-400">
@@ -2169,12 +2140,18 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-xs text-green-500 cursor-help">
-                                    {monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
+                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
+                                      ? `${monthlyReport.historicalData[1].revenue > 0 
+                                          ? ((monthlyReport.revenueGenerated - monthlyReport.historicalData[1].revenue) / monthlyReport.historicalData[1].revenue * 100).toFixed(1)
+                                          : monthlyReport.revenueGenerated > 0 ? "+100" : "0"}%`
+                                      : monthlyReport.periodComparison.salesGrowth === 100 ? "N/A" : "+13.3%"}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.revenueGenerated * 0.85)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.revenueGenerated * 0.75)}
+                                    {getPreviousMonthName()}: ${Math.round(monthlyReport.revenueGenerated)} vs {getTwoMonthsAgoName()}: ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                      ? Math.round(monthlyReport.historicalData[1].revenue)
+                                      : Math.round(monthlyReport.revenueGenerated * 0.85)}
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -2185,7 +2162,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 
                 {/* Divider */}
                 <div className="h-px bg-gray-800 my-4"></div>
-
+                
                 <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Ad Spend</span>
@@ -2196,7 +2173,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getThreeMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.78 : 0)}
+                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                ? Math.round(monthlyReport.historicalData[0].adSpend)
+                                : (monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport.totalAdSpend * 0.78))}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2204,10 +2183,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              ${monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport ? monthlyReport.totalAdSpend * 0.88 : 0)}
+                              ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                ? Math.round(monthlyReport.historicalData[0].adSpend)
+                                : (monthlyReport.periodComparison.adSpendGrowth === 100 ? 0 : Math.round(monthlyReport.totalAdSpend * 0.88))}
                             </div>
                             <div className="text-xs text-red-500">
-                              {monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
+                                ? `${monthlyReport.historicalData[0].adSpend > 0 && monthlyReport.historicalData[0].adSpend !== monthlyReport.historicalData[1].adSpend
+                                  ? ((monthlyReport.historicalData[1].adSpend - monthlyReport.historicalData[0].adSpend) / monthlyReport.historicalData[0].adSpend * 100).toFixed(1)
+                                  : monthlyReport.historicalData[1].adSpend > 0 ? "+100" : "0"}%`
+                                : monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2221,12 +2206,18 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-xs text-red-500 cursor-help">
-                                    {monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
+                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
+                                      ? `${monthlyReport.historicalData[1].adSpend > 0 
+                                          ? ((monthlyReport.totalAdSpend - monthlyReport.historicalData[1].adSpend) / monthlyReport.historicalData[1].adSpend * 100).toFixed(1)
+                                          : monthlyReport.totalAdSpend > 0 ? "+100" : "0"}%`
+                                      : monthlyReport.periodComparison.adSpendGrowth === 100 ? "N/A" : "+12.8%"}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.totalAdSpend * 0.88)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.totalAdSpend * 0.78)}
+                                    {getPreviousMonthName()}: ${Math.round(monthlyReport.totalAdSpend)} vs {getTwoMonthsAgoName()}: ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                      ? Math.round(monthlyReport.historicalData[1].adSpend)
+                                      : Math.round(monthlyReport.totalAdSpend * 0.88)}
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -2237,7 +2228,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 
                 {/* Divider */}
                 <div className="h-px bg-gray-800 my-4"></div>
-
+                
                 <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Average ROAS</span>
@@ -2248,7 +2239,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getThreeMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas * 0.85 : 0).toFixed(1)}x
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                ? monthlyReport.historicalData[0].roas.toFixed(1)
+                                : (monthlyReport ? (monthlyReport.averageRoas * 0.85).toFixed(1) : "0.0")}x
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2256,10 +2249,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {(monthlyReport ? monthlyReport.averageRoas * 0.95 : 0).toFixed(1)}x
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                ? monthlyReport.historicalData[0].roas.toFixed(1)
+                                : (monthlyReport ? (monthlyReport.averageRoas * 0.95).toFixed(1) : "0.0")}x
                             </div>
                             <div className="text-xs text-green-500">
-                              +11.8%
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
+                                ? `${monthlyReport.historicalData[0].roas > 0 && monthlyReport.historicalData[0].roas !== monthlyReport.historicalData[1].roas
+                                  ? ((monthlyReport.historicalData[1].roas - monthlyReport.historicalData[0].roas) / monthlyReport.historicalData[0].roas * 100).toFixed(1)
+                                  : monthlyReport.historicalData[1].roas > 0 ? "+100" : "0"}%`
+                                : "+11.8%"}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2267,18 +2266,24 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getPreviousMonthName()}
                             </div>
                             <div className="font-semibold">
-                              {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : 0}x
+                              {monthlyReport ? monthlyReport.averageRoas.toFixed(1) : "0.0"}x
                             </div>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-xs text-green-500 cursor-help">
-                                    +11.8%
+                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
+                                      ? `${monthlyReport.historicalData[1].roas > 0 
+                                          ? ((monthlyReport.averageRoas - monthlyReport.historicalData[1].roas) / monthlyReport.historicalData[1].roas * 100).toFixed(1)
+                                          : monthlyReport.averageRoas > 0 ? "+100" : "0"}%`
+                                      : "+11.8%"}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getTwoMonthsAgoName()}: {(monthlyReport.averageRoas * 0.95).toFixed(1)}x vs {getThreeMonthsAgoName()}: {(monthlyReport.averageRoas * 0.85).toFixed(1)}x
+                                    {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                      ? monthlyReport.historicalData[1].roas.toFixed(1)
+                                      : (monthlyReport.averageRoas * 0.95).toFixed(1)}x
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
@@ -2289,7 +2294,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                 
                 {/* Divider */}
                 <div className="h-px bg-gray-800 my-4"></div>
-
+                
                 <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Orders</span>
@@ -2300,7 +2305,9 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getThreeMonthsAgoName()}
                   </div>
                             <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
+                                ? Math.round(monthlyReport.historicalData[0].orders)
+                                : Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.70 : 0)}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2308,10 +2315,16 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {getTwoMonthsAgoName()}
                             </div>
                             <div className="font-semibold">
-                              {Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                ? Math.round(monthlyReport.historicalData[0].orders)
+                                : Math.round(monthlyReport ? monthlyReport.totalPurchases * 0.82 : 0)}
                             </div>
                             <div className="text-xs text-green-500">
-                              +17.1%
+                              {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2
+                                ? `${monthlyReport.historicalData[0].orders > 0 && monthlyReport.historicalData[0].orders !== monthlyReport.historicalData[1].orders
+                                  ? ((monthlyReport.historicalData[1].orders - monthlyReport.historicalData[0].orders) / monthlyReport.historicalData[0].orders * 100).toFixed(1)
+                                  : monthlyReport.historicalData[1].orders > 0 ? "+100" : "0"}%`
+                                : "+17.1%"}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2325,24 +2338,30 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-xs text-green-500 cursor-help">
-                                    +17.1%
+                                    {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1
+                                      ? `${monthlyReport.historicalData[1].orders > 0 
+                                          ? ((monthlyReport.totalPurchases - monthlyReport.historicalData[1].orders) / monthlyReport.historicalData[1].orders * 100).toFixed(1)
+                                          : monthlyReport.totalPurchases > 0 ? "+100" : "0"}%`
+                                      : "+17.1%"}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
-                                    {getTwoMonthsAgoName()}: {Math.round(monthlyReport.totalPurchases * 0.82)} orders vs {getThreeMonthsAgoName()}: {Math.round(monthlyReport.totalPurchases * 0.70)} orders
+                                    {getPreviousMonthName()}: {Math.round(monthlyReport.totalPurchases)} orders vs {getTwoMonthsAgoName()}: {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
+                                      ? Math.round(monthlyReport.historicalData[1].orders)
+                                      : Math.round(monthlyReport.totalPurchases * 0.82)} orders
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          </div>
                 </div>
               </div>
+            </div>
             
                 {/* Divider */}
                 <div className="h-px bg-gray-800 my-4"></div>
-
-                <div>
+            
+            <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Ad CTR</span>
                         </div>
@@ -2382,8 +2401,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           
                 {/* Divider */}
                 <div className="h-px bg-gray-800 my-4"></div>
-
-                <div>
+          
+          <div>
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm text-gray-400">Cost Per Acquisition</span>
                   </div>
@@ -2652,13 +2671,13 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{(currentPeriod as ReportPeriod) === 'daily' ? "Today's" : "Monthly"} Best Sellers</h5>
-                    <p className="text-xs text-gray-400">by {(currentPeriod as ReportPeriod) === 'daily' ? "today's" : "monthly"} revenue</p>
+                    <h5 className="font-medium">{currentPeriod === 'daily' ? "Today's" : "Monthly"} Best Sellers</h5>
+                    <p className="text-xs text-gray-400">by {currentPeriod === 'daily' ? "today's" : "monthly"} revenue</p>
                   </div>
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
                       // Get products directly from periodData instead of reports
-                      const products = (currentPeriod as ReportPeriod) === 'daily' 
+                      const products = currentPeriod === 'daily' 
                         ? periodData.today.topProducts || []
                         : periodData.month.topProducts || [];
                       
@@ -2695,7 +2714,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         ));
                       } else {
                         // Check if we have a hard-coded product for the current report
-                        const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
+                        const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
                         
                         if (report?.bestSellingProducts && report.bestSellingProducts.length > 0) {
                           return report.bestSellingProducts.map((product, index) => (
@@ -2722,7 +2741,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         return (
                           <div className="py-8 text-center">
                             <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">No products sold {(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}</p>
+                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
                             <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
                           </div>
                         );
@@ -2733,7 +2752,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
             
             <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-medium">{(currentPeriod as ReportPeriod) === 'daily' ? 'Today\'s' : 'Monthly'} Best Campaigns</h5>
+                    <h5 className="font-medium">{currentPeriod === 'daily' ? 'Today\'s' : 'Monthly'} Best Campaigns</h5>
                     <select 
                       className="text-xs bg-[#222] border border-[#333] rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       defaultValue="roas"
@@ -2754,7 +2773,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                   <div className="bg-[#121212] p-4 rounded-lg border border-[#2A2A2A]">
                     {(() => {
                       console.log(`[Debug] Rendering campaigns for ${currentPeriod} period`);
-                      const report = (currentPeriod as ReportPeriod) === 'daily' ? dailyReport : monthlyReport;
+                      const report = currentPeriod === 'daily' ? dailyReport : monthlyReport;
                       
                       if (report?.bestCampaign && report.bestCampaign.name !== "No campaign data available") {
                         // If we have real campaign data, show it
@@ -2816,7 +2835,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {
                                 // Check if we have any connected ad platforms
                                 connections && connections.some(c => c.platform_type === 'facebook' || c.platform_type === 'google' || c.platform_type === 'meta')
-                                  ? `No campaigns found for ${(currentPeriod as ReportPeriod) === 'daily' ? 'today' : 'this month'}`
+                                  ? `No campaigns found for ${currentPeriod === 'daily' ? 'today' : 'this month'}`
                                   : 'Connect an ad platform to see campaign performance'
                               }
                             </p>
