@@ -2784,10 +2784,21 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 <div className="flex items-center">
                                   <span className="font-medium">${Math.round(day.revenue)}</span>
                                   {revenueChange !== null && (
-                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${revenueChange > 0 ? 'bg-green-900/30 text-green-400' : revenueChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
-                                      {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                      {Math.abs(revenueChange).toFixed(1)}%
-                                    </span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${revenueChange > 0 ? 'bg-green-900/30 text-green-400' : revenueChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
+                                            {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                            {Math.abs(revenueChange).toFixed(1)}%
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-[#333] border-[#444]">
+                                          <p className="text-xs">
+                                            {day.name}: ${Math.round(day.revenue)} vs {prevDay?.name}: ${Math.round(prevDay?.revenue || 0)}
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   )}
                                 </div>
                               </td>
@@ -2798,10 +2809,21 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 <div className="flex items-center">
                                   <span className="font-medium">{Math.round(day.orders)}</span>
                                   {ordersChange !== null && (
-                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${ordersChange > 0 ? 'bg-green-900/30 text-green-400' : ordersChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
-                                      {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                      {Math.abs(ordersChange).toFixed(1)}%
-                                    </span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${ordersChange > 0 ? 'bg-green-900/30 text-green-400' : ordersChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'}`}>
+                                            {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                            {Math.abs(ordersChange).toFixed(1)}%
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-[#333] border-[#444]">
+                                          <p className="text-xs">
+                                            {day.name}: {Math.round(day.orders)} orders vs {prevDay?.name}: {Math.round(prevDay?.orders || 0)} orders
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   )}
                                 </div>
                               </td>
@@ -2812,10 +2834,21 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 <div className="flex items-center">
                                   <span className="font-medium">${Math.round(day.adSpend)}</span>
                                   {adSpendChange !== null && (
-                                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center ${adSpendChange > 0 ? 'bg-red-900/30 text-red-400' : adSpendChange < 0 ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-400'}`}>
-                                      {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
-                                      {Math.abs(adSpendChange).toFixed(1)}%
-                                    </span>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${adSpendChange > 0 ? 'bg-red-900/30 text-red-400' : adSpendChange < 0 ? 'bg-green-900/30 text-green-400' : 'bg-gray-800 text-gray-400'}`}>
+                                            {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                            {Math.abs(adSpendChange).toFixed(1)}%
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-[#333] border-[#444]">
+                                          <p className="text-xs">
+                                            {day.name}: ${Math.round(day.adSpend)} vs {prevDay?.name}: ${Math.round(prevDay?.adSpend || 0)}
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   )}
                                 </div>
                               </td>
