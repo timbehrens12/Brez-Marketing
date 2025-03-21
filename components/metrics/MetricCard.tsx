@@ -155,8 +155,9 @@ export function MetricCard({
   const formatValue = (val: number) => {
     try {
       // Handle null, undefined, NaN
-      if (val === null || val === undefined || isNaN(val)) {
-        return valueFormat === "currency" ? "$0.00" : "0";
+      if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
+        if (valueFormat === "currency") return "0.00";
+        return "0";
       }
       
       switch(valueFormat) {
@@ -170,7 +171,7 @@ export function MetricCard({
       }
     } catch (error) {
       console.error('Error formatting value:', error, 'Value was:', val);
-      return valueFormat === "currency" ? "$0.00" : "0"
+      return valueFormat === "currency" ? "0.00" : "0";
     }
   }
 
@@ -178,10 +179,17 @@ export function MetricCard({
   const formatChange = (change: number) => {
     try {
       // Handle null, undefined, NaN, and non-finite values
-      if (change === null || change === undefined || !isFinite(change) || isNaN(change)) {
+      if (change === null || change === undefined || isNaN(change) || !isFinite(change)) {
         return '+0.0%';
       }
-      return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+      
+      // Ensure change is a number and has toFixed method
+      const numericChange = Number(change);
+      if (isNaN(numericChange) || typeof numericChange.toFixed !== 'function') {
+        return '+0.0%';
+      }
+      
+      return `${numericChange > 0 ? '+' : ''}${numericChange.toFixed(1)}%`;
     } catch (error) {
       console.error('Error formatting change:', error, 'Change was:', change);
       return '+0.0%';
@@ -355,8 +363,8 @@ export function MetricCard({
     }
     
     // Calculate the previous value based on the current value and percentage change
-    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : safeValue;
-    const previousValue = calculatePreviousValue(numericValue, safeChange);
+    const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]+/g, '')) : value;
+    const previousValue = calculatePreviousValue(numericValue, change);
     
     // If the previous value is 0 or very close to 0, show a special message
     if (previousValue === 0 || (previousValue < 0.01 && previousValue > -0.01)) {

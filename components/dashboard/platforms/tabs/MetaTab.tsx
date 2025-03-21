@@ -86,15 +86,15 @@ export function MetaTab({
       setError(null)
       
       try {
-        // Format date range if available
-        let dateParams = '';
-        if (dateRange && dateRange.from && dateRange.to) {
-          const startDate = dateRange.from.toISOString().split('T')[0];
-          const endDate = dateRange.to.toISOString().split('T')[0];
-          dateParams = `&startDate=${startDate}&endDate=${endDate}`;
+        // Format date parameters if available
+        let dateParams = ''
+        if (dateRange?.from && dateRange?.to) {
+          const startDate = dateRange.from.toISOString().split('T')[0]
+          const endDate = dateRange.to.toISOString().split('T')[0]
+          dateParams = `&startDate=${startDate}&endDate=${endDate}`
         }
         
-        console.log(`Fetching Meta ${useTestData ? 'test' : ''} data for brand: ${brandId}${dateParams ? ' with date range' : ''}`)
+        console.log(`Fetching Meta ${useTestData ? 'test' : ''} data for brand: ${brandId}`)
         const endpoint = useTestData 
           ? `/api/metrics/meta-test?brandId=${brandId}${dateParams}` 
           : `/api/metrics/meta?brandId=${brandId}${dateParams}`
@@ -102,34 +102,22 @@ export function MetaTab({
         const response = await fetch(endpoint)
         
         if (!response.ok) {
-          let errorText = '';
-          try {
-            const errorData = await response.json();
-            errorText = errorData.error || `Status ${response.status}`;
-          } catch (e) {
-            errorText = await response.text() || `Status ${response.status}`;
+          const errorText = await response.text()
+          console.error(`Failed to fetch Meta data: Status ${response.status}, Response: ${errorText}`)
+          
+          // If real data fetch fails, switch to test data automatically
+          if (!useTestData) {
+            console.log("Falling back to test data due to real data fetch error")
+            setUseTestData(true)
+            // Return early to avoid throwing, we'll retry with test data in the next effect cycle
+            return
           }
           
-          console.error(`Failed to fetch Meta data: Status ${response.status}, Response: ${errorText}`);
-          
-          if (response.status === 500 && !useTestData) {
-            console.log('Retrying with test data after real data 500 error');
-            // If we get a 500 error with real data, try test data
-            setUseTestData(true);
-            return; // This will trigger useEffect again with useTestData=true
-          }
-          
-          throw new Error(`Failed to fetch Meta data: ${errorText}`);
+          throw new Error(`Failed to fetch Meta data: ${response.status} ${errorText}`)
         }
         
-        let data;
-        try {
-          data = await response.json();
-          console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} data:`, data);
-        } catch (parseError) {
-          console.error('Error parsing API response:', parseError);
-          throw new Error('Invalid response format from Meta API');
-        }
+        const data = await response.json()
+        console.log(`Successfully fetched Meta ${useTestData ? 'test' : ''} data:`, data)
         
         if (!data || Object.keys(data).length === 0) {
           console.warn('Empty data response from API')
@@ -181,24 +169,34 @@ export function MetaTab({
       
       setIsLoadingCampaigns(true)
       try {
+        // Format date parameters if available
+        let dateParams = ''
+        if (dateRange?.from && dateRange?.to) {
+          const startDate = dateRange.from.toISOString().split('T')[0]
+          const endDate = dateRange.to.toISOString().split('T')[0]
+          dateParams = `&startDate=${startDate}&endDate=${endDate}`
+        }
+        
         console.log(`Fetching Meta ${useTestData ? 'test' : ''} campaigns for brand: ${brandId}`)
         const endpoint = useTestData 
-          ? `/api/analytics/meta-test/campaigns?brandId=${brandId}` 
-          : `/api/analytics/meta/campaigns?brandId=${brandId}`
+          ? `/api/analytics/meta-test/campaigns?brandId=${brandId}${dateParams}` 
+          : `/api/analytics/meta/campaigns?brandId=${brandId}${dateParams}`
           
         const response = await fetch(endpoint)
         
         if (!response.ok) {
-          let errorText = '';
-          try {
-            const errorData = await response.json();
-            errorText = errorData.error || `Status ${response.status}`;
-          } catch (e) {
-            errorText = await response.text() || `Status ${response.status}`;
+          const errorText = await response.text()
+          console.error(`Failed to fetch campaigns: Status ${response.status}, Response: ${errorText}`)
+          
+          // If real data fetch fails, switch to test data automatically
+          if (!useTestData) {
+            console.log("Falling back to test data for campaigns due to real data fetch error")
+            setUseTestData(true)
+            // Return early to avoid throwing, we'll retry with test data in the next effect cycle
+            return
           }
           
-          console.error(`Failed to fetch campaigns: Status ${response.status}, Response: ${errorText}`);
-          throw new Error(`Failed to fetch campaigns: ${errorText}`);
+          throw new Error(`Failed to fetch campaigns: ${response.status} ${errorText}`)
         }
         
         const data = await response.json()
@@ -285,87 +283,34 @@ export function MetaTab({
     }
     
     const result = filteredData.map((item: DailyDataItem) => {
-      // Make sure date is a string and a valid date
+      // Make sure date is a string
       let dateStr = 'Unknown';
       try {
-        if (item.date) {
+        if (item && item.date) {
           const dateObj = new Date(item.date);
           if (!isNaN(dateObj.getTime())) {
             dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           }
         }
-      } catch (error) {
-        console.warn(`Invalid date format: ${item.date}`);
+      } catch (e) {
+        console.error('Error parsing date', e);
       }
       
-      // Ensure all numeric values are numbers, not strings, and handle null/undefined
-      const spend = typeof item.spend === 'string' ? parseFloat(item.spend) || 0 : Number(item.spend || 0);
-      const roas = typeof item.roas === 'string' ? parseFloat(item.roas) || 0 : Number(item.roas || 0);
+      // Convert spend and roas to numbers, with fallbacks for null/undefined
+      const spend = item && item.spend !== undefined && item.spend !== null ? Number(item.spend) : 0;
+      const roas = item && item.roas !== undefined && item.roas !== null ? Number(item.roas) : 0;
       
+      // Ensure we only return finite numbers
       return {
         date: dateStr,
-        spend: spend,
-        roas: roas
+        spend: isNaN(spend) || !isFinite(spend) ? 0 : spend,
+        roas: isNaN(roas) || !isFinite(roas) ? 0 : roas
       }
     }).reverse(); // Reverse to show oldest to newest
     
     console.log('Processed trend data:', result)
     return result
   }
-
-  // Safe Recharts LineChart component with error handling
-  const SafeRechartsLineChart = ({ 
-    data, 
-    ...props 
-  }: { 
-    data: any[], 
-    [key: string]: any 
-  }) => {
-    // Validate data before rendering chart
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return (
-        <div className="h-full w-full flex items-center justify-center">
-          <p className="text-gray-500 text-sm">No data available for chart</p>
-        </div>
-      );
-    }
-
-    // Check if data has valid properties
-    const hasValidDataPoints = data.some(item => 
-      item && 
-      typeof item === 'object' && 
-      'date' in item && 
-      (('spend' in item && typeof item.spend === 'number') || 
-       ('roas' in item && typeof item.roas === 'number'))
-    );
-
-    if (!hasValidDataPoints) {
-      console.warn('Chart data is missing required properties', data);
-      return (
-        <div className="h-full w-full flex items-center justify-center">
-          <p className="text-gray-500 text-sm">Invalid data format for chart</p>
-        </div>
-      );
-    }
-
-    // Render the chart with valid data
-    try {
-      return (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} {...props}>
-            {props.children}
-          </LineChart>
-        </ResponsiveContainer>
-      );
-    } catch (error) {
-      console.error('Error rendering chart:', error);
-      return (
-        <div className="h-full w-full flex items-center justify-center">
-          <p className="text-gray-500 text-sm">Error rendering chart</p>
-        </div>
-      );
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -428,7 +373,7 @@ export function MetaTab({
               >
                 Switch to Test Data
               </Button>
-            </div>
+              </div>
           )}
         </AlertBox>
       )}
@@ -559,49 +504,48 @@ export function MetaTab({
                   <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
                 </div>
               ) : hasData ? (
-                <SafeRechartsLineChart 
-                  data={getDailyTrendData()} 
-                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="date" stroke="#666" />
-                  <YAxis yAxisId="left" stroke="#8884d8" tickFormatter={(value) => `$${value}`} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                  <RechartsTooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#222', 
-                      border: '1px solid #444',
-                      borderRadius: '4px',
-                      color: '#fff'
-                    }} 
-                    formatter={(value: any, name: string) => {
-                      if (name === 'spend') return [`$${(value || 0).toFixed(2)}`, 'Spend'];
-                      if (name === 'roas') return [`${(value || 0).toFixed(2)}x`, 'ROAS'];
-                      return [value || 0, name];
-                    }}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                  <Line 
-                    yAxisId="left" 
-                    type="monotone" 
-                    dataKey="spend" 
-                    stroke="#8884d8" 
-                    name="Spend" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5, stroke: '#8884d8', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    yAxisId="right" 
-                    type="monotone" 
-                    dataKey="roas" 
-                    stroke="#82ca9d" 
-                    name="ROAS" 
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5, stroke: '#82ca9d', strokeWidth: 2 }}
-                  />
-                </SafeRechartsLineChart>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={getDailyTrendData()} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="date" stroke="#666" />
+                    <YAxis yAxisId="left" stroke="#8884d8" tickFormatter={(value) => `$${value}`} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                    <RechartsTooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#222', 
+                        border: '1px solid #444',
+                        borderRadius: '4px',
+                        color: '#fff'
+                      }} 
+                      formatter={(value: any, name: string) => {
+                        if (name === 'spend') return [`$${(value || 0).toFixed(2)}`, 'Spend'];
+                        if (name === 'roas') return [`${(value || 0).toFixed(2)}x`, 'ROAS'];
+                        return [value || 0, name];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                    <Line 
+                      yAxisId="left" 
+                      type="monotone" 
+                      dataKey="spend" 
+                      stroke="#8884d8" 
+                      name="Spend" 
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5, stroke: '#8884d8', strokeWidth: 2 }}
+                    />
+                    <Line 
+                      yAxisId="right" 
+                      type="monotone" 
+                      dataKey="roas" 
+                      stroke="#82ca9d" 
+                      name="ROAS" 
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5, stroke: '#82ca9d', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="h-full w-full flex items-center justify-center">
                   <p className="text-gray-500 text-sm">No trend data available</p>

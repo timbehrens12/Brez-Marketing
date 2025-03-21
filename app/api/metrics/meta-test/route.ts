@@ -104,22 +104,23 @@ export async function GET(request: NextRequest) {
       const today = new Date();
       const dailyData: DailyDataItem[] = [];
       
-      // Determine the number of days to generate based on startDate/endDate
-      let daysToGenerate = 30;
+      // Determine date range for data generation
+      let startDateObj = startDate ? new Date(startDate) : new Date(today);
+      startDateObj.setDate(startDateObj.getDate() - 30); // Default to 30 days if no startDate
       
-      if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        if (start instanceof Date && !isNaN(start.getTime()) && 
-            end instanceof Date && !isNaN(end.getTime())) {
-          daysToGenerate = Math.min(90, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-          console.log(`Generating ${daysToGenerate} days of data based on date range`);
-        }
-      }
+      let endDateObj = endDate ? new Date(endDate) : new Date(today);
+      
+      // Make sure we have valid dates
+      if (isNaN(startDateObj.getTime())) startDateObj = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      if (isNaN(endDateObj.getTime())) endDateObj = new Date(today);
+      
+      // Calculate days between dates
+      const dayDiff = Math.max(1, Math.floor((endDateObj.getTime() - startDateObj.getTime()) / (24 * 60 * 60 * 1000))) + 1;
+      const daysToGenerate = Math.min(90, dayDiff); // Cap at 90 days
       
       for (let i = 0; i < daysToGenerate; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() - i);
+        const date = new Date(endDateObj);
+        date.setDate(endDateObj.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
         
         // Random factor to make the data look realistic

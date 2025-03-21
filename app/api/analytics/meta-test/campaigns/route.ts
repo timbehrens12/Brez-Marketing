@@ -5,12 +5,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
     
     if (!brandId) {
       return NextResponse.json({ error: 'brandId is required' }, { status: 400 })
     }
 
-    console.log(`Fetching meta test campaigns for brand ID: ${brandId}`)
+    console.log(`Fetching meta test campaigns for brand ID: ${brandId}, startDate: ${startDate}, endDate: ${endDate}`)
 
     // Special case for the specific brand ID
     if (brandId === '1a30f34b-b048-4f80-b880-6c61bd12c720') {
@@ -105,16 +107,39 @@ export async function GET(request: NextRequest) {
         }
       ];
       
-      console.log(`Returning ${campaigns.length} predefined campaigns for brand ${brandId}`);
+      // Filter campaigns by date if date parameters are provided
+      let filteredCampaigns = [...campaigns];
+      if (startDate || endDate) {
+        // For demo purposes, we'll just apply a slight variation to the campaign metrics based on date
+        // In a real implementation, you would filter the campaigns by date or adjust the metrics more accurately
+        
+        const randomFactor = startDate && endDate 
+          ? (new Date(endDate).getTime() - new Date(startDate).getTime()) / (30 * 24 * 60 * 60 * 1000) // Scale based on date range length
+          : 1.0;
+        
+        // Apply a transformation factor between 0.8 and 1.2
+        const scaleFactor = 0.8 + (randomFactor * 0.4);
+        
+        filteredCampaigns = campaigns.map(campaign => ({
+          ...campaign,
+          spend: campaign.spend * scaleFactor,
+          impressions: Math.round(campaign.impressions * scaleFactor),
+          clicks: Math.round(campaign.clicks * scaleFactor),
+          conversions: Math.round(campaign.conversions * scaleFactor),
+          roas: campaign.roas * (scaleFactor > 1 ? 1.1 : 0.9) // Inverse relationship for ROAS
+        }));
+      }
+      
+      console.log(`Returning ${filteredCampaigns.length} predefined campaigns for brand ${brandId}`);
       
       // Calculate totals
-      const totalSpend = campaigns.reduce((sum, campaign) => sum + campaign.spend, 0);
-      const totalImpressions = campaigns.reduce((sum, campaign) => sum + campaign.impressions, 0);
-      const totalClicks = campaigns.reduce((sum, campaign) => sum + campaign.clicks, 0);
-      const totalConversions = campaigns.reduce((sum, campaign) => sum + campaign.conversions, 0);
+      const totalSpend = filteredCampaigns.reduce((sum, campaign) => sum + campaign.spend, 0);
+      const totalImpressions = filteredCampaigns.reduce((sum, campaign) => sum + campaign.impressions, 0);
+      const totalClicks = filteredCampaigns.reduce((sum, campaign) => sum + campaign.clicks, 0);
+      const totalConversions = filteredCampaigns.reduce((sum, campaign) => sum + campaign.conversions, 0);
       
       return NextResponse.json({ 
-        campaigns,
+        campaigns: filteredCampaigns,
         totalSpend,
         totalImpressions,
         totalClicks,
