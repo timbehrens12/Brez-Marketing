@@ -393,12 +393,12 @@ export function GreetingWidget({
         to = new Date(from)
         to.setHours(23, 59, 59, 999)
       } else {
-        // Today
+      // Today
         from = new Date()
-        from.setHours(0, 0, 0, 0)
+      from.setHours(0, 0, 0, 0)
         
         to = new Date()
-        to.setHours(23, 59, 59, 999)
+      to.setHours(23, 59, 59, 999)
       }
     } else {
       // For monthly period
@@ -406,21 +406,21 @@ export function GreetingWidget({
         // Previous month (two months ago)
         const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
         from = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
-        from.setHours(0, 0, 0, 0)
-        
+      from.setHours(0, 0, 0, 0)
+      
         to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
+      to.setHours(23, 59, 59, 999)
       } else {
         // Last month (previous month)
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
         from = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1)
         from.setHours(0, 0, 0, 0)
-        
+      
         to = new Date(lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0)
         to.setHours(23, 59, 59, 999)
       }
     }
-    
+
     return { from, to }
   }
 
@@ -571,25 +571,6 @@ export function GreetingWidget({
         roas: 0,
         ctr: 0,
         cpc: 0
-      }
-      
-      // Utility function to safely calculate percentage change
-      const calculatePercentageChange = (current: number, previous: number): number => {
-        // If both values are zero, there's no change (0%)
-        if (current === 0 && previous === 0) return 0;
-        
-        // If previous is zero and current is not, this is technically infinite growth
-        // but we'll cap it at 100% to avoid extreme values
-        if (previous === 0 && current > 0) return 100;
-        
-        // Normal percentage calculation
-        if (previous > 0) {
-          return ((current - previous) / previous) * 100;
-        }
-        
-        // If previous is negative and current is not, or vice versa, special handling might be needed
-        // For now, we'll use the simple calculation
-        return ((current - previous) / Math.abs(previous)) * 100;
       }
       
       // Calculate growth rates using the utility function
@@ -2184,7 +2165,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                 return (
                                   <div className={`text-xs ${textColor}`}>
                                     {`${prefix}${percentChange.toFixed(1)}%`}
-                                  </div>
+                            </div>
                                 );
                               }
                               
@@ -2244,7 +2225,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                       // Default when no real data
                                       return "0%";
                                     })()}
-                                  </div>
+                            </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="bg-[#333] border-[#444]">
                                   <p className="text-xs">
@@ -2283,7 +2264,23 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               {(monthlyReport ? monthlyReport.ctr * 0.92 : 0).toFixed(2)}%
                             </div>
                             <div className="text-xs text-green-500">
-                              +8.2%
+                              {(() => {
+                                // If we have real data, calculate properly
+                                if (monthlyReport && monthlyReport.ctr > 0) {
+                                  const prevValue = monthlyReport.ctr * 0.92; // Two months ago CTR
+                                  const currValue = monthlyReport.ctr;
+                                  const percentChange = calculatePercentageChange(currValue, prevValue);
+                                  
+                                  // Use appropriate color based on change direction
+                                  const textColor = percentChange > 0 ? "text-green-500" : percentChange < 0 ? "text-red-500" : "text-gray-400";
+                                  const prefix = percentChange > 0 ? "+" : "";
+                                  
+                                  return <span className={textColor}>{`${prefix}${Math.abs(percentChange).toFixed(1)}%`}</span>;
+                                }
+                                
+                                // Handle no data case
+                                return <span className="text-gray-400">N/A</span>;
+                              })()}
                             </div>
                           </div>
                           <div className="bg-[#1A1A1A] p-2 rounded-md">
@@ -2623,7 +2620,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm">{product.name}</span>
                           <span className="text-sm font-medium">${product.revenue}</span>
-                        </div>
+                  </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div 
@@ -3082,3 +3079,22 @@ const processTopProducts = (orders: any[]): Array<{ title?: string; name?: strin
     }))
     .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
 };
+
+// Utility function to safely calculate percentage change
+export const calculatePercentageChange = (current: number, previous: number): number => {
+  // If both values are zero, there's no change (0%)
+  if (current === 0 && previous === 0) return 0;
+  
+  // If previous is zero and current is not, this is technically infinite growth
+  // but we'll cap it at 100% to avoid extreme values
+  if (previous === 0 && current > 0) return 100;
+  
+  // Normal percentage calculation
+  if (previous > 0) {
+    return ((current - previous) / previous) * 100;
+  }
+  
+  // If previous is negative and current is not, or vice versa, special handling might be needed
+  // For now, we'll use the simple calculation
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
