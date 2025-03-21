@@ -2758,13 +2758,13 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       <thead>
                         <tr className="text-gray-400 text-xs border-b border-gray-800">
                           <th className="pb-2 text-left">Date</th>
-                          <th className="pb-2 text-right">Revenue</th>
-                          <th className="pb-2 text-right">Change</th>
-                          <th className="pb-2 text-right">Orders</th>
-                          <th className="pb-2 text-right">Change</th>
-                          <th className="pb-2 text-right">Ad Spend</th>
-                          <th className="pb-2 text-right">Change</th>
-                          <th className="pb-2 text-right">ROAS</th>
+                          <th className="pb-2 text-right pr-1">Revenue</th>
+                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
+                          <th className="pb-2 text-right pr-1 border-l border-gray-800">Orders</th>
+                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
+                          <th className="pb-2 text-right pr-1 border-l border-gray-800">Ad Spend</th>
+                          <th className="pb-2 text-right pl-1 border-l border-gray-800">Change</th>
+                          <th className="pb-2 text-right border-l border-gray-800">ROAS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2781,17 +2781,17 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                           return (
                             <tr key={day.name} className={index === 0 ? "bg-gray-900/30" : ""}>
                               <td className="py-2">{day.name}</td>
-                              <td className="text-right py-2">${Math.round(day.revenue)}</td>
-                              <td className="text-right py-2">
+                              <td className="text-right py-2 pr-1">${Math.round(day.revenue)}</td>
+                              <td className="text-right py-2 pl-1 border-l border-gray-800">
                                 {revenueChange !== null ? (
                                   <span className={`flex items-center justify-end ${revenueChange > 0 ? 'text-green-500' : revenueChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                                     {revenueChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : revenueChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
                                     {Math.abs(revenueChange).toFixed(1)}%
-                    </span>
+                                  </span>
                                 ) : "-"}
                               </td>
-                              <td className="text-right py-2">{Math.round(day.orders)}</td>
-                              <td className="text-right py-2">
+                              <td className="text-right py-2 pr-1 border-l border-gray-800">{Math.round(day.orders)}</td>
+                              <td className="text-right py-2 pl-1 border-l border-gray-800">
                                 {ordersChange !== null ? (
                                   <span className={`flex items-center justify-end ${ordersChange > 0 ? 'text-green-500' : ordersChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                                     {ordersChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : ordersChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
@@ -2799,8 +2799,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                   </span>
                                 ) : "-"}
                               </td>
-                              <td className="text-right py-2">${Math.round(day.adSpend)}</td>
-                              <td className="text-right py-2">
+                              <td className="text-right py-2 pr-1 border-l border-gray-800">${Math.round(day.adSpend)}</td>
+                              <td className="text-right py-2 pl-1 border-l border-gray-800">
                                 {adSpendChange !== null ? (
                                   <span className={`flex items-center justify-end ${adSpendChange > 0 ? 'text-green-500' : adSpendChange < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                                     {adSpendChange > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : adSpendChange < 0 ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
@@ -2808,7 +2808,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                   </span>
                                 ) : "-"}
                               </td>
-                              <td className="text-right py-2">{day.roas.toFixed(1)}x</td>
+                              <td className="text-right py-2 border-l border-gray-800">{day.roas.toFixed(1)}x</td>
                             </tr>
                           );
                         })}
