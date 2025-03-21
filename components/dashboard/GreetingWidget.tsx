@@ -2854,7 +2854,38 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               </td>
                               <td></td> {/* Empty cell to maintain colspan structure */}
                               
-                              <td className="text-right py-2 font-medium">{day.roas.toFixed(1)}x</td>
+                              <td className="text-right py-2">
+                                <div className="flex items-center justify-end">
+                                  <span className="font-medium">{day.roas.toFixed(1)}x</span>
+                                  {prevDay && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          {(() => {
+                                            const roasChange = ((day.roas - prevDay.roas) / prevDay.roas) * 100;
+                                            return (
+                                              <span className={`ml-2 px-1.5 py-0.5 text-xs rounded flex items-center cursor-help ${
+                                                roasChange > 0 ? 'bg-green-900/30 text-green-400' : 
+                                                roasChange < 0 ? 'bg-red-900/30 text-red-400' : 
+                                                'bg-gray-800 text-gray-400'
+                                              }`}>
+                                                {roasChange > 0 ? <TrendingUp className="h-3 w-3 mr-0.5" /> : 
+                                                roasChange < 0 ? <TrendingDown className="h-3 w-3 mr-0.5" /> : null}
+                                                {Math.abs(roasChange).toFixed(1)}%
+                                              </span>
+                                            );
+                                          })()}
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-[#333] border-[#444]">
+                                          <p className="text-xs">
+                                            {day.name}: {day.roas.toFixed(1)}x vs {prevDay.name}: {prevDay.roas.toFixed(1)}x
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
