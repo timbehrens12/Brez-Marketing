@@ -142,10 +142,10 @@ export function MetaTab({
       // This is a simulated response for now
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      const spendTrend = data.adSpendGrowth > 0 ? "increased" : "decreased"
-      const roasTrend = data.roasGrowth > 0 ? "improved" : "declined"
+      const spendTrend = (data.adSpendGrowth || 0) > 0 ? "increased" : "decreased"
+      const roasTrend = (data.roasGrowth || 0) > 0 ? "improved" : "declined"
       
-      setAiInsights(`Your Meta ad spend has ${spendTrend} by ${Math.abs(data.adSpendGrowth).toFixed(1)}% while your ROAS has ${roasTrend} by ${Math.abs(data.roasGrowth).toFixed(1)}%. Based on your campaign performance, you could improve results by optimizing your targeting for the audiences that generate the highest conversion rates. Consider testing different creative formats, especially video content which is currently performing well on the platform.`)
+      setAiInsights(`Your Meta ad spend has ${spendTrend} by ${Math.abs(data.adSpendGrowth || 0).toFixed(1)}% while your ROAS has ${roasTrend} by ${Math.abs(data.roasGrowth || 0).toFixed(1)}%. Based on your campaign performance, you could improve results by optimizing your targeting for the audiences that generate the highest conversion rates. Consider testing different creative formats, especially video content which is currently performing well on the platform.`)
     } catch (error) {
       console.error("Error generating AI insights:", error)
       setAiInsights("Unable to generate insights at this time. Please try again later.")
@@ -415,21 +415,21 @@ export function MetaTab({
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">CTR</span>
                     <span className="text-xs flex items-center">
-                      {data.ctrGrowth > 0 ? (
+                      {(data.ctrGrowth || 0) > 0 ? (
                         <span className="text-green-400 flex items-center">
                           <TrendingUp className="h-3 w-3 mr-1" />
-                          +{data.ctrGrowth.toFixed(1)}%
+                          +{(data.ctrGrowth || 0).toFixed(1)}%
                         </span>
                       ) : (
                         <span className="text-red-400 flex items-center">
                           <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                          {data.ctrGrowth.toFixed(1)}%
+                          {(data.ctrGrowth || 0).toFixed(1)}%
                         </span>
                       )}
                     </span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">{(data.ctr || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">{((data.ctr || 0)).toFixed(2)}</span>
                     <span className="text-gray-400 ml-1">%</span>
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export function MetaTab({
                     </TooltipProvider>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${(data.cpc || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${((data.cpc || 0)).toFixed(2)}</span>
                   </div>
                 </div>
                 
@@ -503,7 +503,7 @@ export function MetaTab({
                     <span className="text-xs text-gray-400">Cost Per Result</span>
                   </div>
                   <div className="flex items-baseline mt-1">
-                    <span className="text-xl font-semibold">${(data.costPerResult || 0).toFixed(2)}</span>
+                    <span className="text-xl font-semibold">${((data.costPerResult || 0)).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -537,11 +537,11 @@ export function MetaTab({
                       </div>
                       <div>
                         <p className="text-sm font-medium truncate max-w-[180px]">{campaign.campaign_name}</p>
-                        <p className="text-xs text-gray-400">${campaign.spend.toFixed(2)} spent</p>
+                        <p className="text-xs text-gray-400">${(campaign.spend || 0).toFixed(2)} spent</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium">{campaign.roas.toFixed(1)}x</p>
+                      <p className="text-sm font-medium">{(campaign.roas || 0).toFixed(1)}x</p>
                       <p className="text-xs text-gray-400">ROAS</p>
                     </div>
                   </div>
