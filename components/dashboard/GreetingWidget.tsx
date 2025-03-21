@@ -198,7 +198,10 @@ export function GreetingWidget({
   const [greeting, setGreeting] = useState("")
   const [synopsis, setSynopsis] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [isMinimized, setIsMinimized] = useState(true)
+  const [error, setError] = useState<string | null>(null) // Add missing error state
   const [periodData, setPeriodData] = useState<{
     today: PeriodMetrics,
     week: PeriodMetrics,
@@ -261,7 +264,7 @@ export function GreetingWidget({
   const [monthlyReport, setMonthlyReport] = useState<PerformanceReport | null>(null)
   const [dailyReport, setDailyReport] = useState<PerformanceReport | null>(null)
   const [hasEnoughData, setHasEnoughData] = useState(false)
-  const [currentPeriod, setCurrentPeriod] = useState<ReportPeriod>('daily')
+  const [currentPeriod, setCurrentPeriod] = useState<'daily' | 'monthly'>('daily')
   const [userName, setUserName] = useState<string>("")
   const supabase = createClientComponentClient()
 
@@ -373,60 +376,52 @@ export function GreetingWidget({
     }
   }, [])
 
-  const getPeriodDates = (period: ReportPeriod) => {
+  const getPeriodDates = (period: ReportPeriod, isPrevious: boolean = false) => {
     const now = new Date()
     let from: Date
     let to: Date
 
     if (period === 'daily') {
-      // Today
-      from = new Date(now)
-      from.setHours(0, 0, 0, 0)
-      to = new Date(now)
-      to.setHours(23, 59, 59, 999)
+      if (isPrevious) {
+        // Yesterday
+        const yesterday = new Date(now)
+        yesterday.setDate(yesterday.getDate() - 1)
+        yesterday.setHours(0, 0, 0, 0)
+        
+        const yesterdayEnd = new Date(yesterday)
+        yesterdayEnd.setHours(23, 59, 59, 999)
+        
+        from = yesterday
+        to = yesterdayEnd
+      } else {
+        // Today
+        from = new Date(now)
+        from.setHours(0, 0, 0, 0)
+        to = new Date(now)
+        to.setHours(23, 59, 59, 999)
+      }
     } else {
-      // Previous complete month (not current month)
-      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
-      from.setHours(0, 0, 0, 0)
-      
-      // Last day of previous month with time set to end of day
-      to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
-      to.setHours(23, 59, 59, 999)
-      
-      console.log(`Monthly date range: ${format(from, 'yyyy-MM-dd HH:mm:ss')} to ${format(to, 'yyyy-MM-dd HH:mm:ss')}`)
+      if (isPrevious) {
+        // Two months ago (month before the previous month)
+        const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+        
+        from = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
+        from.setHours(0, 0, 0, 0)
+        
+        to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
+        to.setHours(23, 59, 59, 999)
+      } else {
+        // Previous complete month (not current month)
+        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
+        from.setHours(0, 0, 0, 0)
+        
+        to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
+        to.setHours(23, 59, 59, 999)
+      }
     }
 
     return { from, to }
-  }
-
-  const getPreviousPeriodDates = (period: ReportPeriod) => {
-    if (period === 'daily') {
-      // For daily, we want yesterday
-      const now = new Date()
-      const yesterday = new Date(now)
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(0, 0, 0, 0)
-      
-      const yesterdayEnd = new Date(yesterday)
-      yesterdayEnd.setHours(23, 59, 59, 999)
-      
-      return { from: yesterday, to: yesterdayEnd }
-    } else {
-      // For monthly, we want the month before last month
-      const now = new Date()
-      const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-      
-      const prevFrom = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
-      prevFrom.setHours(0, 0, 0, 0)
-      
-      const prevTo = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
-      prevTo.setHours(23, 59, 59, 999)
-      
-      console.log(`Previous monthly date range: ${format(prevFrom, 'yyyy-MM-dd HH:mm:ss')} to ${format(prevTo, 'yyyy-MM-dd HH:mm:ss')}`)
-      
-      return { from: prevFrom, to: prevTo }
-    }
   }
 
   const fetchPeriodData = async () => {
@@ -436,8 +431,8 @@ export function GreetingWidget({
     try {
       console.log('Fetching period data...');
 
-      const shopifyConnection = connections.find(c => c.platform === 'shopify' && c.status === 'active');
-      const metaConnection = connections.find(c => c.platform === 'meta' && c.status === 'active');
+      const shopifyConnection = connections.find(c => c.platform_type === 'shopify' && c.status === 'active');
+      const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
 
       if (shopifyConnection) {
         console.log('Fetching daily data...');
@@ -1415,35 +1410,68 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
       
       // Only fetch daily data since that's all that changes hourly
       const refreshDailyOnly = async () => {
+        setIsRefreshing(true);
+        
         try {
-          if (connections.length === 0) return;
-          
-          const shopifyConnection = connections.find(conn => conn.platform_type === 'shopify');
-          if (!shopifyConnection) return;
-          
           // Get dates for daily period
           const dailyDates = getPeriodDates('daily');
-          const previousDailyDates = getPreviousPeriodDates('daily');
+          const previousDailyDates = getPeriodDates('daily', true);
           
           // Fetch only today's and yesterday's metrics
-          const todayMetrics = await fetchPeriodMetrics(shopifyConnection.id, dailyDates.from, dailyDates.to);
-          const yesterdayMetrics = await fetchPeriodMetrics(shopifyConnection.id, previousDailyDates.from, previousDailyDates.to);
+          const shopifyConnection = connections.find(conn => conn.platform_type === 'shopify');
           
-          // Update just the daily metrics in state
-          setPeriodData(prev => ({
-            ...prev,
-            today: todayMetrics,
-          }));
-          
-          // Update the daily report
-          const updatedDailyReport = await generateEnhancedReport('daily', todayMetrics, yesterdayMetrics);
-          if (updatedDailyReport) {
-            setDailyReport(updatedDailyReport);
+          if (shopifyConnection) {
+            const todayResult = await fetchPeriodMetrics(
+              shopifyConnection.id,
+              dailyDates.from,
+              dailyDates.to,
+              true // Fetch previous 7 days
+            );
+            
+            // Safely handle the complex return type
+            let todayMetrics: PeriodMetrics;
+            let dailyMetricsArray: PeriodMetrics[] = [];
+            
+            if ('currentMetrics' in todayResult && 'dailyMetrics' in todayResult) {
+              todayMetrics = todayResult.currentMetrics;
+              dailyMetricsArray = todayResult.dailyMetrics || [];
+            } else {
+              todayMetrics = todayResult as PeriodMetrics;
+            }
+            
+            const yesterdayResult = await fetchPeriodMetrics(
+              shopifyConnection.id,
+              previousDailyDates.from,
+              previousDailyDates.to
+            );
+            
+            let yesterdayMetrics: PeriodMetrics;
+            
+            if ('currentMetrics' in yesterdayResult) {
+              yesterdayMetrics = yesterdayResult.currentMetrics;
+            } else {
+              yesterdayMetrics = yesterdayResult as PeriodMetrics;
+            }
+            
+            // Update just the daily metrics in state
+            setPeriodData(prev => ({
+              ...prev,
+              today: todayMetrics,
+            }));
+            
+            // Update the daily report
+            const updatedDailyReport = await generateEnhancedReport('daily', todayMetrics, yesterdayMetrics, dailyMetricsArray);
+            if (updatedDailyReport) {
+              setDailyReport(updatedDailyReport);
+            }
+            
+            // Update state and show toast
+            setLastRefreshed(new Date());
           }
-          
-          console.log('Daily data refreshed at:', new Date().toLocaleTimeString());
-      } catch (error) {
-          console.error('Error refreshing daily data:', error);
+        } catch (err) {
+          console.error('Error refreshing data:', err);
+        } finally {
+          setIsRefreshing(false);
         }
       };
       
