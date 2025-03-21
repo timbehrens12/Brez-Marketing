@@ -1949,7 +1949,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                  ? Math.round(monthlyReport.historicalData[0].revenue)
+                                  ? Math.round(monthlyReport.historicalData[0]?.revenue || 0)
                                   : 0}
                               </div>
                             </div>
@@ -1959,7 +1959,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                  ? Math.round(monthlyReport.historicalData[1].revenue)
+                                  ? Math.round(monthlyReport.historicalData[1]?.revenue || 0)
                                   : 0}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
@@ -1968,8 +1968,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevRevenue = monthlyReport.historicalData[0].revenue;
-                                          const currRevenue = monthlyReport.historicalData[1].revenue;
+                                          const prevRevenue = monthlyReport.historicalData[0]?.revenue || 0;
+                                          const currRevenue = monthlyReport.historicalData[1]?.revenue || 0;
                                           if (prevRevenue === 0 && currRevenue === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevRevenue === 0 && currRevenue > 0) {
@@ -1985,7 +1985,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1].revenue)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0].revenue)}
+                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1]?.revenue || 0)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0]?.revenue || 0)}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -1997,7 +1997,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
                               <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
                               <div className="font-semibold">
-                                ${Math.round(monthlyReport.revenueGenerated)}
+                                ${Math.round(monthlyReport?.revenueGenerated || 0)}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
                                 <TooltipProvider>
@@ -2005,8 +2005,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevRevenue = monthlyReport.historicalData[1].revenue;
-                                          const currRevenue = monthlyReport.revenueGenerated;
+                                          const prevRevenue = monthlyReport.historicalData[1]?.revenue || 0;
+                                          const currRevenue = monthlyReport?.revenueGenerated || 0;
                                           if (prevRevenue === 0 && currRevenue === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevRevenue === 0 && currRevenue > 0) {
@@ -2022,7 +2022,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getPreviousMonthName()}: ${Math.round(monthlyReport.revenueGenerated)} vs {getTwoMonthsAgoName()}: ${monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].revenue) : 0}
+                                        {getPreviousMonthName()}: ${Math.round(monthlyReport?.revenueGenerated || 0)} vs {getTwoMonthsAgoName()}: ${monthlyReport?.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1]?.revenue || 0) : 0}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2046,7 +2046,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                  ? Math.round(monthlyReport.historicalData[0].orders)
+                                  ? Math.round(monthlyReport.historicalData[0]?.orders || 0)
                                   : 0}
                               </div>
                             </div>
@@ -2056,7 +2056,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                  ? Math.round(monthlyReport.historicalData[1].orders)
+                                  ? Math.round(monthlyReport.historicalData[1]?.orders || 0)
                                   : 0}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
@@ -2065,8 +2065,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevOrders = monthlyReport.historicalData[0].orders;
-                                          const currOrders = monthlyReport.historicalData[1].orders;
+                                          const prevOrders = monthlyReport.historicalData[0]?.orders || 0;
+                                          const currOrders = monthlyReport.historicalData[1]?.orders || 0;
                                           if (prevOrders === 0 && currOrders === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevOrders === 0 && currOrders > 0) {
@@ -2082,7 +2082,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getTwoMonthsAgoName()}: {Math.round(monthlyReport.historicalData[1].orders)} orders vs {getThreeMonthsAgoName()}: {Math.round(monthlyReport.historicalData[0].orders)} orders
+                                        {getTwoMonthsAgoName()}: {Math.round(monthlyReport.historicalData[1]?.orders || 0)} orders vs {getThreeMonthsAgoName()}: {Math.round(monthlyReport.historicalData[0]?.orders || 0)} orders
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2094,7 +2094,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
                               <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
                               <div className="font-semibold">
-                                {Math.round(monthlyReport.totalPurchases)}
+                                {Math.round(monthlyReport?.totalPurchases || 0)}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
                                 <TooltipProvider>
@@ -2102,8 +2102,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevOrders = monthlyReport.historicalData[1].orders;
-                                          const currOrders = monthlyReport.totalPurchases;
+                                          const prevOrders = monthlyReport.historicalData[1]?.orders || 0;
+                                          const currOrders = monthlyReport?.totalPurchases || 0;
                                           if (prevOrders === 0 && currOrders === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevOrders === 0 && currOrders > 0) {
@@ -2119,7 +2119,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getPreviousMonthName()}: {Math.round(monthlyReport.totalPurchases)} orders vs {getTwoMonthsAgoName()}: {monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].orders) : 0} orders
+                                        {getPreviousMonthName()}: {Math.round(monthlyReport?.totalPurchases || 0)} orders vs {getTwoMonthsAgoName()}: {monthlyReport?.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1]?.orders || 0) : 0} orders
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2143,7 +2143,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                  ? Math.round(monthlyReport.historicalData[0].adSpend)
+                                  ? Math.round(monthlyReport.historicalData[0]?.adSpend || 0)
                                   : 0}
                               </div>
                             </div>
@@ -2153,7 +2153,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 ${monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                  ? Math.round(monthlyReport.historicalData[1].adSpend)
+                                  ? Math.round(monthlyReport.historicalData[1]?.adSpend || 0)
                                   : 0}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
@@ -2162,8 +2162,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevAdSpend = monthlyReport.historicalData[0].adSpend;
-                                          const currAdSpend = monthlyReport.historicalData[1].adSpend;
+                                          const prevAdSpend = monthlyReport.historicalData[0]?.adSpend || 0;
+                                          const currAdSpend = monthlyReport.historicalData[1]?.adSpend || 0;
                                           if (prevAdSpend === 0 && currAdSpend === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevAdSpend === 0 && currAdSpend > 0) {
@@ -2180,7 +2180,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1].adSpend)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0].adSpend)}
+                                        {getTwoMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[1]?.adSpend || 0)} vs {getThreeMonthsAgoName()}: ${Math.round(monthlyReport.historicalData[0]?.adSpend || 0)}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2192,7 +2192,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
                               <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
                               <div className="font-semibold">
-                                ${Math.round(monthlyReport.totalAdSpend)}
+                                ${Math.round(monthlyReport?.totalAdSpend || 0)}
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
                                 <TooltipProvider>
@@ -2200,8 +2200,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevAdSpend = monthlyReport.historicalData[1].adSpend;
-                                          const currAdSpend = monthlyReport.totalAdSpend;
+                                          const prevAdSpend = monthlyReport.historicalData[1]?.adSpend || 0;
+                                          const currAdSpend = monthlyReport?.totalAdSpend || 0;
                                           if (prevAdSpend === 0 && currAdSpend === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevAdSpend === 0 && currAdSpend > 0) {
@@ -2218,7 +2218,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getPreviousMonthName()}: ${Math.round(monthlyReport.totalAdSpend)} vs {getTwoMonthsAgoName()}: ${monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1].adSpend) : 0}
+                                        {getPreviousMonthName()}: ${Math.round(monthlyReport?.totalAdSpend || 0)} vs {getTwoMonthsAgoName()}: ${monthlyReport?.historicalData && monthlyReport.historicalData.length > 1 ? Math.round(monthlyReport.historicalData[1]?.adSpend || 0) : 0}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2242,7 +2242,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getThreeMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 
-                                  ? monthlyReport.historicalData[0].roas.toFixed(1)
+                                  ? (monthlyReport.historicalData[0].roas || 0).toFixed(1)
                                   : "0.0"}x
                               </div>
                             </div>
@@ -2252,7 +2252,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                               <div className="text-xs text-gray-400 mb-1">{getTwoMonthsAgoName()}</div>
                               <div className="font-semibold">
                                 {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 
-                                  ? monthlyReport.historicalData[1].roas.toFixed(1)
+                                  ? (monthlyReport.historicalData[1].roas || 0).toFixed(1)
                                   : "0.0"}x
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 2 && (
@@ -2261,8 +2261,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevRoas = monthlyReport.historicalData[0].roas;
-                                          const currRoas = monthlyReport.historicalData[1].roas;
+                                          const prevRoas = monthlyReport.historicalData[0].roas || 0;
+                                          const currRoas = monthlyReport.historicalData[1].roas || 0;
                                           if (prevRoas === 0 && currRoas === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevRoas === 0 && currRoas > 0) {
@@ -2278,7 +2278,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getTwoMonthsAgoName()}: {monthlyReport.historicalData[1].roas.toFixed(1)}x vs {getThreeMonthsAgoName()}: {monthlyReport.historicalData[0].roas.toFixed(1)}x
+                                        {getTwoMonthsAgoName()}: {(monthlyReport.historicalData[1].roas || 0).toFixed(1)}x vs {getThreeMonthsAgoName()}: {(monthlyReport.historicalData[0].roas || 0).toFixed(1)}x
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2290,7 +2290,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                             <div className="bg-[#1A1A1A] p-3 rounded-md flex flex-col">
                               <div className="text-xs text-gray-400 mb-1">{getPreviousMonthName()}</div>
                               <div className="font-semibold">
-                                {monthlyReport.averageRoas.toFixed(1)}x
+                                {(monthlyReport.averageRoas || 0).toFixed(1)}x
                               </div>
                               {monthlyReport && monthlyReport.historicalData && monthlyReport.historicalData.length > 1 && (
                                 <TooltipProvider>
@@ -2298,8 +2298,8 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     <TooltipTrigger asChild>
                                       <div className="text-xs mt-1 cursor-help">
                                         {(() => {
-                                          const prevRoas = monthlyReport.historicalData[1].roas;
-                                          const currRoas = monthlyReport.averageRoas;
+                                          const prevRoas = monthlyReport.historicalData[1].roas || 0;
+                                          const currRoas = monthlyReport.averageRoas || 0;
                                           if (prevRoas === 0 && currRoas === 0) {
                                             return <span className="text-gray-400">0%</span>;
                                           } else if (prevRoas === 0 && currRoas > 0) {
@@ -2315,7 +2315,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-[#333] border-[#444]">
                                       <p className="text-xs">
-                                        {getPreviousMonthName()}: {monthlyReport.averageRoas.toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? monthlyReport.historicalData[1].roas.toFixed(1) : "0.0"}x
+                                        {getPreviousMonthName()}: {(monthlyReport.averageRoas || 0).toFixed(1)}x vs {getTwoMonthsAgoName()}: {monthlyReport.historicalData && monthlyReport.historicalData.length > 1 ? (monthlyReport.historicalData[1].roas || 0).toFixed(1) : "0.0"}x
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2608,7 +2608,7 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-sm">{product.name}</span>
                           <span className="text-sm font-medium">${product.revenue}</span>
-                        </div>
+                  </div>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
                             <div 
@@ -2619,20 +2619,20 @@ ${metrics.roas > 0 ? `Your advertising performed with an overall ROAS of ${metri
                       ></div>
                           </div>
                           <span className="text-xs text-gray-400">{product.orders} units sold</span>
+                </div>
                       </div>
-                    </div>
-                          ));
+                            ));
+                          }
+                          
+                          return (
+                            <div className="py-8 text-center">
+                              <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                              <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
+                              <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
+                            </div>
+                          );
                         }
-                        
-                        return (
-                          <div className="py-8 text-center">
-                            <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                            <p className="text-gray-400">No products sold {currentPeriod === 'daily' ? 'today' : 'this month'}</p>
-                            <p className="text-xs text-gray-500 mt-1">Products will appear here once sales are recorded</p>
-                          </div>
-                        );
-                      }
-                    })()}
+                      })()}
               </div>
             </div>
             
