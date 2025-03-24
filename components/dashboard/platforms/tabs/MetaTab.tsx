@@ -1,26 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { useToast } from '@/components/ui/use-toast'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
-import { DateRange } from 'react-day-picker'
-import { AlertCircle, ExternalLink, HelpCircle, RefreshCw } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { formatCurrency, formatNumberCompact, formatPercentage } from '@/lib/formatters'
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import type { Metrics } from "@/types/metrics"
+import type { DateRange } from "react-day-picker"
 import { 
   LineChart, 
   Line, 
@@ -33,13 +16,6 @@ import {
   ResponsiveContainer, 
   Legend 
 } from 'recharts'
-import { MetricCard } from "@/components/metrics/MetricCard"
-import { AlertBox } from "@/components/ui/alert-box"
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { toast } from "sonner"
-import Link from "next/link"
-import type { Metrics } from "@/types/metrics"
 import { 
   DollarSign, 
   TrendingUp, 
@@ -52,9 +28,19 @@ import {
   Percent, 
   BrainCircuit, 
   Info, 
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react"
+import { MetricCard } from "@/components/metrics/MetricCard"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatCurrencyCompact, formatNumberCompact, formatPercentage } from "@/lib/formatters"
 import Image from "next/image"
+import { AlertBox } from "@/components/ui/alert-box"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "sonner"
+import Link from "next/link"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -167,9 +153,6 @@ export function MetaTab({
     dailyData: []
   })
 
-  // Add state for last updated time
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
   // Check if we have data to display - with improved type safety
   const hasData = () => {
     // More robust check that ensures metrics is an object
@@ -271,38 +254,57 @@ export function MetaTab({
       const data = await response.json()
       console.log('Meta metrics data:', data)
       
-      // Update state with the fetched data
-      setMetricsData({
-        adSpend: data.adSpend || 0,
-        adSpendGrowth: data.adSpendGrowth || 0,
-        impressions: data.impressions || 0,
-        impressionGrowth: data.impressionGrowth || 0,
-        clicks: data.clicks || 0,
-        clickGrowth: data.clickGrowth || 0,
-        conversions: data.conversions || 0,
-        conversionGrowth: data.conversionGrowth || 0,
-        ctr: data.ctr || 0,
-        ctrGrowth: data.ctrGrowth || 0,
-        cpc: data.cpc || 0,
-        cpcLink: data.cpcLink || 0,
-        costPerResult: data.costPerResult || 0,
-        cprGrowth: data.cprGrowth || 0,
-        roas: data.roas || 0,
-        roasGrowth: data.roasGrowth || 0,
-        frequency: data.frequency || 0,
-        reach: data.reach || 0,
-        dailyData: Array.isArray(data.dailyData) ? data.dailyData.map((item: any) => ({
-          ...item,
-          date: item.date || ''
-        })) : []
-      })
+      // Create a fully initialized metrics object with defaults
+      const safeMetrics = {
+        adSpend: typeof data.adSpend === 'number' && !isNaN(data.adSpend) ? data.adSpend : 0,
+        adSpendGrowth: typeof data.adSpendGrowth === 'number' && !isNaN(data.adSpendGrowth) ? data.adSpendGrowth : 0,
+        impressions: typeof data.impressions === 'number' && !isNaN(data.impressions) ? data.impressions : 0,
+        impressionGrowth: typeof data.impressionGrowth === 'number' && !isNaN(data.impressionGrowth) ? data.impressionGrowth : 0,
+        clicks: typeof data.clicks === 'number' && !isNaN(data.clicks) ? data.clicks : 0,
+        clickGrowth: typeof data.clickGrowth === 'number' && !isNaN(data.clickGrowth) ? data.clickGrowth : 0,
+        conversions: typeof data.conversions === 'number' && !isNaN(data.conversions) ? data.conversions : 0,
+        conversionGrowth: typeof data.conversionGrowth === 'number' && !isNaN(data.conversionGrowth) ? data.conversionGrowth : 0,
+        ctr: typeof data.ctr === 'number' && !isNaN(data.ctr) ? data.ctr : 0,
+        ctrGrowth: typeof data.ctrGrowth === 'number' && !isNaN(data.ctrGrowth) ? data.ctrGrowth : 0,
+        cpc: typeof data.cpc === 'number' && !isNaN(data.cpc) ? data.cpc : 0,
+        cpcLink: typeof data.cpcLink === 'number' && !isNaN(data.cpcLink) ? data.cpcLink : 0,
+        costPerResult: typeof data.costPerResult === 'number' && !isNaN(data.costPerResult) ? data.costPerResult : 0,
+        cprGrowth: typeof data.cprGrowth === 'number' && !isNaN(data.cprGrowth) ? data.cprGrowth : 0,
+        roas: typeof data.roas === 'number' && !isNaN(data.roas) ? data.roas : 0,
+        roasGrowth: typeof data.roasGrowth === 'number' && !isNaN(data.roasGrowth) ? data.roasGrowth : 0,
+        frequency: typeof data.frequency === 'number' && !isNaN(data.frequency) ? data.frequency : 0,
+        reach: typeof data.reach === 'number' && !isNaN(data.reach) ? data.reach : 0,
+        dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
+      };
       
-      // Set the last updated time
-      setLastUpdated(new Date());
-      
+      setMetricsData(safeMetrics);
+      setMetaData(data);
     } catch (error) {
-      console.error("Error fetching Meta data:", error)
-      setError("Failed to fetch Meta data. Please try again.")
+      console.error('Error fetching Meta data:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch Meta data')
+      
+      // Set default values on error to prevent rendering issues
+      setMetricsData({
+        adSpend: 0,
+        adSpendGrowth: 0,
+        impressions: 0,
+        impressionGrowth: 0,
+        clicks: 0,
+        clickGrowth: 0,
+        conversions: 0,
+        conversionGrowth: 0,
+        ctr: 0,
+        ctrGrowth: 0,
+        cpc: 0,
+        cpcLink: 0,
+        costPerResult: 0,
+        cprGrowth: 0,
+        roas: 0,
+        roasGrowth: 0,
+        frequency: 0,
+        reach: 0,
+        dailyData: []
+      });
     } finally {
       setLoading(false)
     }
@@ -355,35 +357,29 @@ export function MetaTab({
 
   // Function to force clear and re-sync Meta data
   const refreshMetaData = async () => {
-    if (!brandId) return
-    
-    setIsSyncing(true)
+    setLoading(true);
     try {
-      // Use the new dedicated refresh endpoint that supports daily data
-      const refreshResponse = await fetch(`/api/meta/refresh?brandId=${brandId}`, {
-        method: 'POST'
-      })
+      // Call the Meta sync endpoint to fetch fresh data
+      const response = await fetch(`/api/meta/sync?brandId=${brandId}`, {
+        method: 'POST',
+      });
       
-      if (!refreshResponse.ok) {
-        throw new Error(`Failed to refresh Meta data: ${refreshResponse.status}`)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to refresh Meta data');
       }
       
-      const result = await refreshResponse.json()
+      // After syncing, fetch the latest metrics
+      fetchMetaData();
       
-      toast.success(`Meta data refreshed successfully (${result.count || 0} records). Reloading page...`)
-      
-      // Reload the page to show new data
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-      
-    } catch (err) {
-      console.error("Error refreshing Meta data:", err)
-      toast.error("Failed to refresh Meta data. Please try again.")
+      toast.success("Meta Ads data has been updated with the latest information.");
+    } catch (error) {
+      console.error('Error refreshing Meta data:', error);
+      toast.error("Failed to refresh your Meta Ads data. Please try again later.");
     } finally {
-      setIsSyncing(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Function to run diagnostics on the Meta connection
   const runDiagnostics = async () => {
@@ -671,35 +667,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     }).filter(item => item.date !== '') // Remove items with invalid dates
   }
 
-  // Add auto-refresh functionality
-  useEffect(() => {
-    if (!brandId) return;
-    
-    // Fetch data initially
-    fetchMetaData();
-    
-    // Set up periodic refresh every 15 minutes
-    const refreshInterval = setInterval(() => {
-      console.log('Auto-refreshing Meta tab data');
-      fetchMetaData();
-    }, 15 * 60 * 1000);
-    
-    // Clean up on unmount
-    return () => clearInterval(refreshInterval);
-  }, [brandId, dateRange]);
-
   return (
     <div className="space-y-6">
-      {/* Add a last updated indicator */}
-      {lastUpdated && (
-        <div className="flex justify-end items-center space-x-2 text-xs text-gray-400">
-          <RefreshCw className="h-3 w-3" />
-          <span>
-            Last updated {lastUpdated.toLocaleTimeString()} {lastUpdated.toLocaleDateString()}
-          </span>
-        </div>
-      )}
-      
       {/* Meta Connection Status Banner */}
       {hasData() ? (
         <div className="flex justify-between items-center">
@@ -724,11 +693,20 @@ Try creating at least one active campaign in Meta Ads Manager.
             variant="outline"
             size="sm"
             onClick={refreshMetaData}
-            disabled={isSyncing}
+            disabled={loading}
             className="whitespace-nowrap"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : 'Refresh Meta Data'}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Data
+              </>
+            )}
           </Button>
         </div>
       ) : (
@@ -765,11 +743,20 @@ Try creating at least one active campaign in Meta Ads Manager.
                 variant="outline"
                 size="sm"
                 onClick={refreshMetaData}
-                disabled={isSyncing}
+                disabled={loading}
                 className="whitespace-nowrap"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Syncing...' : 'Sync Now'}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh Data
+                  </>
+                )}
               </Button>
             </div>
               </div>
@@ -799,7 +786,7 @@ Try creating at least one active campaign in Meta Ads Manager.
               return { ...d, value: typeof d.spend === 'number' && !isNaN(d.spend) ? d.spend : 0 }
             }) : []}
           loading={loading}
-          refreshing={isRefreshingData}
+          refreshing={loading}
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Total amount spent on Meta ads in the selected period"
@@ -820,7 +807,7 @@ Try creating at least one active campaign in Meta Ads Manager.
               return { ...d, value: typeof d.roas === 'number' && !isNaN(d.roas) ? d.roas : 0 }
             }) : []}
             loading={loading}
-            refreshing={isRefreshingData}
+            refreshing={loading}
             platform="meta"
             dateRange={dateRange}
             infoTooltip="Return on Ad Spend - revenue generated per dollar spent on ads"
@@ -840,7 +827,7 @@ Try creating at least one active campaign in Meta Ads Manager.
               return { ...d, value: typeof d.impressions === 'number' && !isNaN(d.impressions) ? d.impressions : 0 }
             }) : []}
           loading={loading}
-          refreshing={isRefreshingData}
+          refreshing={loading}
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Number of times your ads were displayed to users"
@@ -860,7 +847,7 @@ Try creating at least one active campaign in Meta Ads Manager.
               return { ...d, value: typeof d.clicks === 'number' && !isNaN(d.clicks) ? d.clicks : 0 }
             }) : []}
           loading={loading}
-          refreshing={isRefreshingData}
+          refreshing={loading}
           platform="meta"
           dateRange={dateRange}
           infoTooltip="Number of clicks on your ads"

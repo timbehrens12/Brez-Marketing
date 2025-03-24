@@ -41,27 +41,32 @@ export async function POST(request: NextRequest) {
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - 30)
 
-    console.log(`Running Meta sync cron job for ${brandIds.length} brands from ${startDate.toISOString()} to ${endDate.toISOString()}`)
-
     // Fetch insights for each brand
     const results = []
     
     for (const brandId of brandIds) {
-      const result = await fetchMetaAdInsights(brandId, startDate, endDate)
-      results.push({ brandId, ...result })
+      try {
+        console.log(`Running Meta sync for brand ${brandId}`)
+        const result = await fetchMetaAdInsights(brandId, startDate, endDate)
+        results.push({ brandId, ...result })
+      } catch (error) {
+        console.error(`Error syncing Meta data for brand ${brandId}:`, error)
+        results.push({ 
+          brandId, 
+          success: false, 
+          error: 'Error syncing Meta data',
+          details: error 
+        })
+      }
     }
 
     return NextResponse.json({ 
       success: true, 
-      syncedBrands: brandIds.length,
-      dateRange: {
-        from: startDate.toISOString(),
-        to: endDate.toISOString()
-      },
+      message: `Meta data sync completed for ${results.length} brands`,
       results 
     })
   } catch (error) {
-    console.error('Error in cron job:', error)
+    console.error('Error in Meta cron job:', error)
     return NextResponse.json({ 
       error: 'Server error', 
       details: typeof error === 'object' && error !== null && 'message' in error 

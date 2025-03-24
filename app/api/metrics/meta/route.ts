@@ -158,147 +158,118 @@ function processMetaData(data: any[]): ProcessedMetaData {
     return result
   }
   
-  // Sort data by date, with newest dates first
+  // Sort data by date
   const sortedData = [...data].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime()
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
   })
   
-  // Get today's date for filtering
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayStr = today.toISOString().split('T')[0]
-  
-  // Filter for today's data to use in metric cards
-  const todayData = sortedData.filter(item => item.date === todayStr)
-  
-  // Calculate total metrics for all dates
+  // Calculate total metrics
   let totalSpend = 0
   let totalImpressions = 0
   let totalClicks = 0
   let totalConversions = 0
   let totalReach = 0
   
-  // Calculate today's metrics separately
-  let todaySpend = 0
-  let todayImpressions = 0
-  let todayClicks = 0
-  let todayConversions = 0
-  
-  // Process daily data (organizing by date)
+  // Process daily data
   const dailyData: DailyDataItem[] = []
-  const seenDates = new Set<string>()
+  const dateMap = new Map<string, DailyDataItem>()
   
-  // First process all dates to build daily data
+  // First aggregate metrics by date
   sortedData.forEach(item => {
     const dateStr = item.date
+    if (!dateStr) return
     
-    // Skip if we've already processed this date (aggregate by date)
-    if (seenDates.has(dateStr)) return
-    seenDates.add(dateStr)
+    // Convert string values to numbers for calculations
+    const itemSpend = parseFloat(item.spend) || 0
+    const itemImpressions = parseInt(item.impressions) || 0
+    const itemClicks = parseInt(item.clicks) || 0
     
-    // Aggregate metrics for this date
-    const dayItems = sortedData.filter(d => d.date === dateStr)
+    // Add to total metrics
+    totalSpend += itemSpend
+    totalImpressions += itemImpressions
+    totalClicks += itemClicks
     
-    const daySpend = dayItems.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
-    const dayImpressions = dayItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
-    const dayClicks = dayItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
-    
-    // Calculate conversions from actions array (purchase or conversion actions)
-    let dayConversions = 0
-    dayItems.forEach(d => {
-      if (d.actions && Array.isArray(d.actions)) {
-        d.actions.forEach((action: any) => {
-          if (
-            action.action_type === 'purchase' || 
-            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            action.action_type === 'omni_purchase'
-          ) {
-            dayConversions += parseFloat(action.value) || 0
-          }
-        })
-      }
-    })
-    
-    // Calculate day CTR and ROAS
-    const dayCtr = dayImpressions > 0 ? (dayClicks / dayImpressions) * 100 : 0
-    
-    // Calculate ROAS (if we have conversion value data)
-    let dayRoas = 0
-    dayItems.forEach(d => {
-      if (d.action_values && Array.isArray(d.action_values)) {
-        d.action_values.forEach((actionValue: any) => {
-          if (
-            actionValue.action_type === 'purchase' || 
-            actionValue.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            actionValue.action_type === 'omni_purchase'
-          ) {
-            dayRoas += parseFloat(actionValue.value) || 0
-          }
-        })
-      }
-    })
-    dayRoas = daySpend > 0 ? dayRoas / daySpend : 0
-    
-    // Add to daily data array
-    dailyData.push({
-      date: dateStr,
-      spend: daySpend,
-      impressions: dayImpressions,
-      clicks: dayClicks,
-      conversions: dayConversions,
-      ctr: dayCtr,
-      roas: dayRoas
-    })
-    
-    // If this is today, update today's metrics
-    if (dateStr === todayStr) {
-      todaySpend = daySpend
-      todayImpressions = dayImpressions
-      todayClicks = dayClicks
-      todayConversions = dayConversions
+    // Calculate conversions from actions array if present
+    let itemConversions = 0
+    if (item.actions && Array.isArray(item.actions)) {
+      item.actions.forEach((action: any) => {
+        if (
+          action.action_type === 'purchase' || 
+          action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+          action.action_type === 'omni_purchase'
+        ) {
+          itemConversions += parseInt(action.value) || 0
+        }
+      })
     }
+    totalConversions += itemConversions
     
-    // Add to totals for all time
-    totalSpend += daySpend
-    totalImpressions += dayImpressions
-    totalClicks += dayClicks
-    totalConversions += dayConversions
+    // If we already have this date, add to its metrics
+    if (dateMap.has(dateStr)) {
+      const existing = dateMap.get(dateStr)!
+      existing.spend += itemSpend
+      existing.impressions += itemImpressions
+      existing.clicks += itemClicks
+      existing.conversions += itemConversions
+    } else {
+      // Otherwise create a new entry for this date
+      dateMap.set(dateStr, {
+        date: dateStr,
+        spend: itemSpend,
+        impressions: itemImpressions,
+        clicks: itemClicks,
+        conversions: itemConversions,
+        ctr: 0, // Will calculate after all data is aggregated
+        roas: 0  // Will calculate after all data is aggregated
+      })
+    }
   })
   
-  // Sort daily data by date, newest first
-  dailyData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  // Now calculate derived metrics for each date and convert to array
+  dateMap.forEach((item) => {
+    // Calculate CTR
+    item.ctr = item.impressions > 0 ? (item.clicks / item.impressions) * 100 : 0
+    
+    // Calculate ROAS (if we have conversion data)
+    // For now, using a placeholder calculation - in a real system we'd get actual revenue data
+    // This is just for demonstration
+    item.roas = item.spend > 0 ? (item.conversions * 50) / item.spend : 0
+    
+    dailyData.push(item)
+  })
   
-  // Calculate growth metrics
-  const impressionGrowth = calculateGrowth(dailyData, 'impressions')
-  const clickGrowth = calculateGrowth(dailyData, 'clicks')
-  const adSpendGrowth = calculateGrowth(dailyData, 'spend')
-  const conversionGrowth = calculateGrowth(dailyData, 'conversions')
-  const ctrGrowth = calculateGrowth(dailyData, 'ctr')
-  const roasGrowth = calculateGrowth(dailyData, 'roas')
+  // Make sure daily data is sorted by date
+  dailyData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   
   // Calculate overall metrics
-  // Use today's metrics for display if available, otherwise use all-time
-  const displaySpend = todayData.length > 0 ? todaySpend : totalSpend
-  const displayImpressions = todayData.length > 0 ? todayImpressions : totalImpressions
-  const displayClicks = todayData.length > 0 ? todayClicks : totalClicks
-  const displayConversions = todayData.length > 0 ? todayConversions : totalConversions
+  const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
+  const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0
+  const cpcLink = totalClicks > 0 ? totalSpend / totalClicks : 0 // Usually these would be different
+  const roas = totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0 // Placeholder calculation
+  const costPerResult = totalConversions > 0 ? totalSpend / totalConversions : 0
+  const frequency = totalReach > 0 ? totalImpressions / totalReach : 0
   
-  const ctr = displayImpressions > 0 ? (displayClicks / displayImpressions) * 100 : 0
-  const cpc = displayClicks > 0 ? displaySpend / displayClicks : 0
-  const cpcLink = displayClicks > 0 ? displaySpend / displayClicks : 0
-  const costPerResult = displayConversions > 0 ? displaySpend / displayConversions : 0
-  const roas = displaySpend > 0 ? (displayConversions * 50) / displaySpend : 0 // Assuming $50 per conversion if not available
-  const cprGrowth = calculateGrowth(dailyData, 'cpr')
-  const frequency = totalReach > 0 ? totalImpressions / totalReach : 1
+  // Calculate growth metrics (comparing latest data with previous period)
+  const halfLength = Math.floor(dailyData.length / 2)
+  const recentData = dailyData.slice(halfLength)
+  const previousData = dailyData.slice(0, halfLength)
+  
+  const adSpendGrowth = calculateGrowth(dailyData, 'spend')
+  const impressionGrowth = calculateGrowth(dailyData, 'impressions')
+  const clickGrowth = calculateGrowth(dailyData, 'clicks')
+  const conversionGrowth = calculateGrowth(dailyData, 'conversions')
+  const ctrGrowth = calculateGrowth(dailyData, 'ctr')
+  const cprGrowth = 0 // Placeholder
+  const roasGrowth = calculateGrowth(dailyData, 'roas')
   
   return {
-    adSpend: displaySpend,
+    adSpend: totalSpend,
     adSpendGrowth,
-    impressions: displayImpressions,
+    impressions: totalImpressions,
     impressionGrowth,
-    clicks: displayClicks,
+    clicks: totalClicks,
     clickGrowth,
-    conversions: displayConversions,
+    conversions: totalConversions,
     conversionGrowth,
     ctr,
     ctrGrowth,
@@ -309,7 +280,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     roas,
     roasGrowth,
     frequency,
-    budget: displaySpend > 0 ? displaySpend : 0, // Daily budget
+    budget: totalSpend > 0 ? totalSpend / dailyData.length : 0, // Average daily budget
     reach: totalReach,
     dailyData
   }

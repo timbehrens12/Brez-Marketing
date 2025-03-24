@@ -698,65 +698,14 @@ export default function DashboardPage() {
     }, COOLDOWN_SECONDS * 1000)
   }
 
-  // Add a function to refresh only Meta data
-  const refreshMetaDataOnly = async () => {
-    if (!selectedBrandId || !activePlatforms.meta) return;
-    
-    try {
-      console.log('Refreshing Meta data only...');
-      
-      // Fetch from the Meta metrics endpoint
-      const startDate = formatDate(dateRange.from);
-      const endDate = formatDate(dateRange.to);
-      
-      const metaResponse = await fetch(
-        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}`
-      );
-      
-      if (!metaResponse.ok) {
-        throw new Error(`Failed to fetch Meta metrics: ${metaResponse.status}`);
-      }
-      
-      const metaData = await metaResponse.json();
-      
-      // Update only the Meta-specific metrics
-      setMetrics(prev => ({
-        ...prev,
-        adSpend: metaData.adSpend || 0,
-        adSpendGrowth: metaData.adSpendGrowth || 0,
-        impressions: metaData.impressions || 0,
-        impressionGrowth: metaData.impressionGrowth || 0,
-        clicks: metaData.clicks || 0,
-        clickGrowth: metaData.clickGrowth || 0,
-        conversions: metaData.conversions || 0,
-        conversionGrowth: metaData.conversionGrowth || 0,
-        ctr: metaData.ctr || 0,
-        ctrGrowth: metaData.ctrGrowth || 0,
-        cpc: metaData.cpc || 0,
-        cpcLink: metaData.cpcLink || 0,
-        costPerResult: metaData.costPerResult || 0,
-        cprGrowth: metaData.cprGrowth || 0,
-        roas: metaData.roas || 0,
-        roasGrowth: metaData.roasGrowth || 0,
-        frequency: metaData.frequency || 0,
-        reach: metaData.reach || 0,
-        dailyData: metaData.dailyData || []
-      }));
-      
-      console.log('Meta data refreshed successfully at:', new Date().toLocaleTimeString());
-    } catch (error) {
-      console.error('Error refreshing Meta data:', error);
-    }
-  };
-
   // Set up periodic data refresh
   useEffect(() => {
     // Don't do initial fetch here - we'll do it in the selectedBrandId effect
     
-    // Set up interval for full dashboard refresh
-    const fullRefreshInterval = setInterval(() => {
+    // Set up interval for periodic refresh
+    const interval = setInterval(() => {
       if (selectedBrandId) {
-        console.log('Periodic full dashboard data refresh triggered');
+        console.log('Periodic dashboard data refresh triggered')
         // For periodic refreshes, we don't want to show the full-screen loader
         setInitialDataLoad(false);
         fetchAllData();
@@ -764,20 +713,9 @@ export default function DashboardPage() {
       }
     }, 300000); // Refresh every 5 minutes
     
-    // Set up a more frequent refresh just for Meta data
-    const metaRefreshInterval = setInterval(() => {
-      if (selectedBrandId && activePlatforms.meta) {
-        console.log('Periodic Meta data refresh triggered');
-        refreshMetaDataOnly();
-      }
-    }, 900000); // Refresh Meta data every 15 minutes
-    
-    // Clean up intervals on unmount
-    return () => {
-      clearInterval(fullRefreshInterval);
-      clearInterval(metaRefreshInterval);
-    };
-  }, [selectedBrandId, dateRange, activePlatforms.meta]);
+    // Clean up interval on unmount
+    return () => clearInterval(interval);
+  }, [selectedBrandId, dateRange, activePlatforms]);
 
   // Add a new effect to trigger data load when brand is selected
   useEffect(() => {

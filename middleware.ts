@@ -20,7 +20,6 @@ export default authMiddleware({
     "/api/meta/sync",
     "/api/meta/diagnose",
     "/api/meta/clear-data",
-    "/api/meta/refresh",
     "/api/metrics/meta",
     "/api/cron/meta-sync",
     "/api/debug/meta-metrics",

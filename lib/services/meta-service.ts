@@ -36,7 +36,7 @@ export async function fetchMetaAdInsights(
 
     // Fetch ad accounts
     const accountsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
+      `https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,account_id&access_token=${connection.access_token}`
     )
     
     const accountsData = await accountsResponse.json()
@@ -50,11 +50,12 @@ export async function fetchMetaAdInsights(
       }
     }
 
-    if (!accountsData.data || accountsData.data.length === 0) {
+    if (!accountsData.data || !Array.isArray(accountsData.data) || accountsData.data.length === 0) {
       console.log(`[Meta] No ad accounts found for brand ${brandId}`)
       return { 
-        success: false, 
-        error: 'No Meta ad accounts found for this connection' 
+        success: true, 
+        message: 'No ad accounts found',
+        insights: []
       }
     }
 
@@ -72,7 +73,7 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,date_start&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&time_increment=1&level=ad&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,date_start&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
         const insightsData = await insightsResponse.json()
@@ -130,7 +131,7 @@ export async function fetchMetaAdInsights(
         impressions: parseInt(insight.impressions || '0'),
         clicks: parseInt(insight.clicks || '0'),
         spend: parseFloat(insight.spend || '0'),
-        date: insight.date_start || startDateStr, // Use actual date from the API instead of startDate
+        date: insight.date_start,
         actions: insight.actions || [],
         action_values: insight.action_values || []
       }))
@@ -237,45 +238,5 @@ export async function fetchMetaMetrics(brandId: string) {
     console.error('Error fetching Meta metrics:', error);
     // Return default object instead of throwing to prevent component errors
     return defaultMetrics;
-  }
-}
-
-/**
- * Manually triggers a refresh of Meta ad insights data for a specific brand and date range
- */
-export async function refreshMetaData(
-  brandId: string,
-  fromDate?: Date,
-  toDate?: Date
-): Promise<{ success: boolean; message: string; count?: number }> {
-  try {
-    // Default to last 30 days if dates not provided
-    const endDate = toDate || new Date()
-    const startDate = fromDate || new Date(endDate)
-    
-    // Use 30 days if fromDate not provided
-    if (!fromDate) {
-      startDate.setDate(startDate.getDate() - 30)
-    }
-    
-    console.log(`[Meta] Manually refreshing data for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}`)
-    
-    // Use the existing fetchMetaAdInsights function to do the work
-    const result = await fetchMetaAdInsights(brandId, startDate, endDate)
-    
-    return {
-      success: result.success || false,
-      message: result.message || 'Failed to refresh Meta data',
-      count: result.count
-    }
-  } catch (error) {
-    console.error('[Meta] Error refreshing data:', error)
-    return {
-      success: false,
-      message: 'Error refreshing Meta data: ' + 
-        (typeof error === 'object' && error !== null && 'message' in error 
-          ? (error.message as string) 
-          : 'Unknown error')
-    }
   }
 } 
