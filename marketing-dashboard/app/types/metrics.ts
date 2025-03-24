@@ -1,0 +1,35 @@
+export interface Metrics {
+  totalSales: number
+  salesGrowth: number
+  averageOrderValue: number
+  aovGrowth: number
+  ordersPlaced: number
+  previousOrdersPlaced: number
+  unitsSold: number
+  previousUnitsSold: number
+  sessionCount: number
+  sessionGrowth: number
+  conversionRate: number
+  conversionRateGrowth: number
+  customerRetentionRate: number
+  retentionRateGrowth: number
+  salesData: any[]
+  sessionData: any[]
+  conversionData: any[]
+  retentionData: any[]
+  topProducts: any[]
+  currentWeekRevenue: number[]
+  orderCount: number
+  previousOrderCount: number
+  revenueByDay: any[]
+  inventoryLevels: any[]
+  customerLifetimeValue: number
+  productPerformance: any[]
+  categoryPerformance: any[]
+  customerSegments: any[]
+  acquisitionChannels: any[]
+  customerJourney: any[]
+  marketingRoi: any[]
+  inventoryTurnover: number
+  inventoryTurnoverGrowth: number
+} 

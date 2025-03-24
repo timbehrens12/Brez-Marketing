@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/ai/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/meta-sync",
+      "schedule": "0 */3 * * *"
+    }
+  ]
+} 
