@@ -33,10 +33,31 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
     previousClicks: 0
   })
 
+  // Get the date range from the parent context
+  const searchParams = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams('');
+    
+  const fromDate = searchParams.get('from')
+  const toDate = searchParams.get('to')
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch(`/api/analytics/meta?brandId=${brandId}`)
+        // Build the API URL with date range parameters
+        let apiUrl = `/api/analytics/meta?brandId=${brandId}`
+        
+        // Add date filtering parameters if available
+        if (fromDate) {
+          apiUrl += `&from=${fromDate}`
+        }
+        if (toDate) {
+          apiUrl += `&to=${toDate}`
+        }
+        
+        console.log(`Fetching Meta ad performance data with: ${apiUrl}`)
+        
+        const response = await fetch(apiUrl)
         const result = await response.json()
         
         if (result.error) {
@@ -86,7 +107,7 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchData()
     }
-  }, [brandId])
+  }, [brandId, fromDate, toDate])
 
   if (loading) {
     return (

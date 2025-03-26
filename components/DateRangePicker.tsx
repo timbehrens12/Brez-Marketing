@@ -169,7 +169,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       adjustedRange.to = now
     }
     
-    // When the first date is clicked, set both from and to to the same date
+    // First click always sets a single date
     if (selectionStep === 'start' && adjustedRange.from) {
       adjustedRange.to = adjustedRange.from
       setSelectionStep('complete')
@@ -374,12 +374,25 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   fromMonth={undefined}
                   toMonth={today}
                   className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
+                  // Hide today style by using a custom day styling
+                  modifiersClassNames={{
+                    today: 'bg-transparent'
+                  }}
+                  modifiersStyles={{
+                    // Make selected days more prominent
+                    selected: {
+                      backgroundColor: '#374151',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }}
                   components={{
                     IconLeft: () => null,
                     IconRight: () => null,
                     Caption: CustomCaption
                   }}
                 />
+                
                 <div className="text-xs text-gray-400 mt-2 italic">
                   Future dates are disabled. You can only select dates up to today.
                 </div>

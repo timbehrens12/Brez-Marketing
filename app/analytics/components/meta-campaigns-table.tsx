@@ -52,11 +52,33 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     totalClicks: 0
   })
 
+  // Get the date range from the parent context
+  const searchParams = typeof window !== 'undefined' 
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams('');
+    
+  const fromDate = searchParams.get('from')
+  const toDate = searchParams.get('to')
+
   useEffect(() => {
     async function fetchCampaigns() {
       try {
         setLoading(true)
-        const response = await fetch(`/api/analytics/meta/campaigns?brandId=${brandId}`)
+        
+        // Build the API URL with date range parameters
+        let apiUrl = `/api/analytics/meta/campaigns?brandId=${brandId}`
+        
+        // Add date filtering parameters if available
+        if (fromDate) {
+          apiUrl += `&from=${fromDate}`
+        }
+        if (toDate) {
+          apiUrl += `&to=${toDate}`
+        }
+        
+        console.log(`Fetching Meta campaigns data with: ${apiUrl}`)
+        
+        const response = await fetch(apiUrl)
         
         if (!response.ok) {
           throw new Error(`Failed to fetch campaigns: ${response.status}`)
@@ -202,7 +224,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchCampaigns()
     }
-  }, [brandId])
+  }, [brandId, fromDate, toDate])
 
   // Sort function
   const sortedCampaigns = useMemo(() => {
