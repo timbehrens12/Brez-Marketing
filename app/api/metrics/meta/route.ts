@@ -153,7 +153,22 @@ export async function GET(request: NextRequest) {
       requestedToDate = toDate;
       
       console.log(`Using strict yesterday-only query: from=${fromDate}, to=${toDate}`);
-    } else if (from && to) {
+    }
+    // Special handling for today preset
+    else if (preset === 'today') {
+      console.log('TODAY PRESET DETECTED - ENFORCING STRICT SINGLE DAY QUERY');
+      
+      // Use exactly today's date for both from and to
+      const today = new Date();
+      fromDate = today.toISOString().split('T')[0];
+      toDate = fromDate; // Same day - this is critical for single day accuracy
+      
+      requestedFromDate = fromDate;
+      requestedToDate = toDate;
+      
+      console.log(`Using strict today-only query: from=${fromDate}, to=${toDate}`);
+    } 
+    else if (from && to) {
       // Save the original requested dates for verification
       requestedFromDate = from
       requestedToDate = to
@@ -168,7 +183,11 @@ export async function GET(request: NextRequest) {
         
         // Special case - if from and to are the same date, this is a single day query
         if (fromDate === toDate) {
-          console.log(`Single day query detected: ${fromDate}`);
+          console.log(`IDENTICAL DATE RANGE DETECTED - Single day query: ${fromDate}`);
+          
+          // Ensure we use the exact same date for both from and to
+          // This is critical for single day accuracy in the database query
+          fromDate = toDate = fromDate;
           
           // Check if this is "yesterday" query
           const yesterday = new Date();
@@ -177,9 +196,6 @@ export async function GET(request: NextRequest) {
           
           if (fromDate === yesterdayStr) {
             console.log(`YESTERDAY SPECIAL CASE DETECTED: ${yesterdayStr}`);
-            // Ensure we only get yesterday's data exactly (not including today)
-            fromDate = yesterdayStr;
-            toDate = yesterdayStr;
             
             console.log(`STRICT YESTERDAY QUERY: Setting exact date query for yesterday only: from=${fromDate}, to=${toDate}`);
           }

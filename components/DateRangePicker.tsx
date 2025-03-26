@@ -192,11 +192,28 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.to = now
     }
     
+    // Special handling for single-day presets (Today, Yesterday)
+    const isSingleDayPreset = preset.value === 'today' || preset.value === 'yesterday'
+    
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
       from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0]
+      to: newRange.to.toISOString().split('T')[0],
+      isSingleDayPreset
     });
+    
+    // When selecting a single day preset, ensure the dates are strictly equal
+    if (isSingleDayPreset) {
+      // For single-day presets, ensure the to date is exactly the same as the from date
+      // This guarantees backend will treat it as a single-day query
+      const exactDay = newRange.from.toISOString().split('T')[0];
+      
+      console.log(`Setting STRICT single day for ${preset.value}: ${exactDay}`);
+      
+      // Create a new date object with the exact same date for both from and to
+      newRange.from = new Date(exactDay + 'T00:00:00');
+      newRange.to = new Date(exactDay + 'T23:59:59');
+    }
     
     setTempDateRange(newRange)
     setSelectionStep('complete')
@@ -212,9 +229,15 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       const url = new URL(window.location.href);
       const params = new URLSearchParams(url.search);
       
+      // Extract just the date portion (YYYY-MM-DD) for the URL parameters
+      const fromDate = newRange.from.toISOString().split('T')[0];
+      const toDate = isSingleDayPreset 
+        ? fromDate // For single-day presets, use exactly the same date string for both
+        : newRange.to.toISOString().split('T')[0];
+      
       // Add from and to date parameters
-      params.set('from', newRange.from.toISOString().split('T')[0]);
-      params.set('to', newRange.to.toISOString().split('T')[0]);
+      params.set('from', fromDate);
+      params.set('to', toDate);
       
       // Add the preset parameter - this is critical for proper backend handling
       params.set('preset', preset.value);
@@ -237,10 +260,16 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         to: tempDateRange.to || tempDateRange.from
       };
       
+      // Check if this is a single day selection (same date for both from and to)
+      const isSingleDaySelection = finalRange.from && finalRange.to && 
+        new Date(finalRange.from).toISOString().split('T')[0] === 
+        new Date(finalRange.to).toISOString().split('T')[0];
+      
       // Log what we're applying
       console.log('Applying date range:', {
         from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0]
+        to: finalRange.to.toISOString().split('T')[0],
+        isSingleDaySelection
       });
       
       setDateRange(finalRange);
@@ -251,9 +280,18 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         const url = new URL(window.location.href);
         const params = new URLSearchParams(url.search);
         
+        // Get the date strings for URL parameters
+        const fromDateStr = finalRange.from.toISOString().split('T')[0];
+        
+        // For single day selections, ensure both dates are exactly the same string
+        // This is critical for proper backend handling
+        const toDateStr = isSingleDaySelection 
+          ? fromDateStr // Use exactly the same string for both parameters
+          : finalRange.to.toISOString().split('T')[0];
+        
         // Add from and to date parameters
-        params.set('from', finalRange.from.toISOString().split('T')[0]);
-        params.set('to', finalRange.to.toISOString().split('T')[0]);
+        params.set('from', fromDateStr);
+        params.set('to', toDateStr);
         
         // Remove preset parameter if it exists (critical for backend handling)
         if (params.has('preset')) {

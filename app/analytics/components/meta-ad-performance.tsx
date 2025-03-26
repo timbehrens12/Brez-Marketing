@@ -45,6 +45,8 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
   useEffect(() => {
     async function fetchData() {
       try {
+        setLoading(true);
+        
         // Build the API URL with date range parameters
         let apiUrl = `/api/analytics/meta?brandId=${brandId}`
         
@@ -62,6 +64,14 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
         console.log(`Fetching Meta ad performance data with: ${apiUrl}`)
         
         const response = await fetch(apiUrl)
+        
+        // Log detailed status information for debugging
+        console.log(`Meta ad performance response status: ${response.status} ${response.statusText}`);
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status} ${response.statusText}`);
+        }
+        
         const result = await response.json()
         
         if (result.error) {

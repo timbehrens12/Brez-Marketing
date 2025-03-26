@@ -84,8 +84,18 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         const response = await fetch(apiUrl)
         
+        console.log(`Meta campaigns response status: ${response.status} ${response.statusText}`);
+        
         if (!response.ok) {
-          throw new Error(`Failed to fetch campaigns: ${response.status}`)
+          console.error(`Campaign fetch failed with status: ${response.status}`);
+          try {
+            // Try to extract error details from the response
+            const errorData = await response.json();
+            console.error('Error details:', errorData);
+            throw new Error(`Failed to fetch campaigns: ${response.status}${errorData.error ? ` - ${errorData.error}` : ''}`);
+          } catch (parseError) {
+            throw new Error(`Failed to fetch campaigns: ${response.status}`);
+          }
         }
         
         const data = await response.json()

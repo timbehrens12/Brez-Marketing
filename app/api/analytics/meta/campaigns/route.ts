@@ -35,7 +35,7 @@ interface CampaignResponse {
   conversions: number;
   cpa: number;
   roas: number;
-  start_date?: string;
+  start_date?: string | null;
   end_date?: string | null;
 }
 
@@ -187,56 +187,113 @@ export async function GET(request: NextRequest) {
       
       // Process each campaign with its insights
       campaigns = (campaignData as MetaCampaign[]).map(campaign => {
-        const campaignInsights = insightsByCampaign[campaign.campaign_id] || [];
-        
-        // Sum up metrics from all insights for this campaign
-        const totalSpend = campaignInsights.reduce(
-          (sum: number, insight: MetaInsight) => sum + parseFloat(insight.spend || '0'), 
-          0
-        );
-        
-        const totalImpressions = campaignInsights.reduce(
-          (sum: number, insight: MetaInsight) => sum + parseInt(insight.impressions || '0'), 
-          0
-        );
-        
-        const totalClicks = campaignInsights.reduce(
-          (sum: number, insight: MetaInsight) => sum + parseInt(insight.clicks || '0'), 
-          0
-        );
-        
-        const totalConversions = campaignInsights.reduce(
-          (sum: number, insight: MetaInsight) => sum + parseInt(insight.conversions || '0'), 
-          0
-        );
-        
-        // Calculate derived metrics
-        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-        const cpa = totalConversions > 0 ? totalSpend / totalConversions : 0;
-        const roas = totalSpend > 0 ? (campaign.estimated_revenue || 0) / totalSpend : 0;
-        
-        return {
-          id: campaign.campaign_id,
-          campaign_name: campaign.campaign_name,
-          status: campaign.status,
-          spend: totalSpend,
-          impressions: totalImpressions,
-          clicks: totalClicks,
-          ctr: ctr,
-          conversions: totalConversions,
-          cpa: cpa,
-          roas: roas,
-          start_date: campaign.start_time,
-          end_date: campaign.stop_time
-        };
+        try {
+          const campaignInsights = insightsByCampaign[campaign.campaign_id] || [];
+          
+          // Sum up metrics from all insights for this campaign
+          const totalSpend = campaignInsights.reduce(
+            (sum: number, insight: MetaInsight) => {
+              try {
+                return sum + parseFloat(insight.spend || '0');
+              } catch (e) {
+                console.error(`Error parsing spend: ${insight.spend}`, e);
+                return sum;
+              }
+            }, 
+            0
+          );
+          
+          const totalImpressions = campaignInsights.reduce(
+            (sum: number, insight: MetaInsight) => {
+              try {
+                return sum + parseInt(insight.impressions || '0');
+              } catch (e) {
+                console.error(`Error parsing impressions: ${insight.impressions}`, e);
+                return sum;
+              }
+            }, 
+            0
+          );
+          
+          const totalClicks = campaignInsights.reduce(
+            (sum: number, insight: MetaInsight) => {
+              try {
+                return sum + parseInt(insight.clicks || '0');
+              } catch (e) {
+                console.error(`Error parsing clicks: ${insight.clicks}`, e);
+                return sum;
+              }
+            }, 
+            0
+          );
+          
+          const totalConversions = campaignInsights.reduce(
+            (sum: number, insight: MetaInsight) => {
+              try {
+                return sum + parseInt(insight.conversions || '0');
+              } catch (e) {
+                console.error(`Error parsing conversions: ${insight.conversions}`, e);
+                return sum;
+              }
+            }, 
+            0
+          );
+          
+          // Calculate derived metrics
+          const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+          const cpa = totalConversions > 0 ? totalSpend / totalConversions : 0;
+          const roas = totalSpend > 0 ? (campaign.estimated_revenue || 0) / totalSpend : 0;
+          
+          return {
+            id: campaign.campaign_id,
+            campaign_name: campaign.campaign_name || 'Unnamed Campaign',
+            status: campaign.status || 'UNKNOWN',
+            spend: totalSpend || 0,
+            impressions: totalImpressions || 0,
+            clicks: totalClicks || 0,
+            ctr: ctr || 0,
+            conversions: totalConversions || 0,
+            cpa: cpa || 0,
+            roas: roas || 0,
+            start_date: campaign.start_time || null,
+            end_date: campaign.stop_time || null
+          };
+        } catch (err) {
+          console.error(`Error processing campaign ${campaign.campaign_id}:`, err);
+          // Return a default campaign object with zeros to prevent the entire response from failing
+          return {
+            id: campaign.campaign_id || 'unknown',
+            campaign_name: campaign.campaign_name || 'Error Processing Campaign',
+            status: 'ERROR',
+            spend: 0,
+            impressions: 0,
+            clicks: 0,
+            ctr: 0,
+            conversions: 0,
+            cpa: 0,
+            roas: 0,
+            start_date: null,
+            end_date: null
+          };
+        }
       });
     }
     
     // Sort by spend (descending)
-    campaigns.sort((a, b) => b.spend - a.spend);
+    try {
+      campaigns.sort((a, b) => b.spend - a.spend);
+    } catch (sortErr) {
+      console.error('Error sorting campaigns:', sortErr);
+    }
 
     // Return only campaigns with spend > 0 during the selected period
-    const activeCampaigns = campaigns.filter(campaign => campaign.spend > 0);
+    let activeCampaigns: CampaignResponse[] = [];
+    try {
+      activeCampaigns = campaigns.filter(campaign => campaign.spend > 0);
+    } catch (filterErr) {
+      console.error('Error filtering active campaigns:', filterErr);
+      activeCampaigns = campaigns; // Fallback to all campaigns
+    }
 
     return NextResponse.json({ 
       campaigns: activeCampaigns.length > 0 ? activeCampaigns : campaigns,
@@ -244,7 +301,9 @@ export async function GET(request: NextRequest) {
         requestedDateRange: { 
           fromDate: formattedFromDate || fromDate, 
           toDate: formattedToDate || toDate,
-          preset: preset
+          preset: preset,
+          originalFromDate: fromDate,
+          originalToDate: toDate
         },
         campaignsCount: campaignData?.length || 0,
         insightsCount: insightsData?.length || 0,
@@ -253,12 +312,19 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in Meta campaigns endpoint:', error)
+    // Include more detailed error information for debugging
+    const errorDetails = typeof error === 'object' && error !== null 
+      ? {
+          message: 'message' in error ? (error.message as string) : 'Unknown error',
+          stack: 'stack' in error ? (error.stack as string) : undefined,
+          name: 'name' in error ? (error.name as string) : undefined
+        }
+      : { message: 'Unknown error' };
+      
     return NextResponse.json({ 
       error: 'Failed to fetch campaigns', 
-      details: typeof error === 'object' && error !== null && 'message' in error 
-        ? (error.message as string) 
-        : 'Unknown error',
-      status: 500
+      details: errorDetails,
+      errorType: error instanceof Error ? error.constructor.name : typeof error
     }, { status: 500 })
   }
 } 
