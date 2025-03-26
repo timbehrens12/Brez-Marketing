@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
+import { normalizeDateForApi, normalizeDateRangeForApi, buildDateRangeQueryString } from '@/lib/date-utils'
 
 interface Campaign {
   id: string;
@@ -52,33 +53,29 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     totalClicks: 0
   })
 
-  // Get the date range from the parent context
+  // Get the date parameters from URL
   const searchParams = typeof window !== 'undefined' 
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams('');
     
-  const fromDate = searchParams.get('from')
-  const toDate = searchParams.get('to')
-  const preset = searchParams.get('preset')
+  const rawFromDate = searchParams.get('from') || undefined
+  const rawToDate = searchParams.get('to') || undefined
+  const presetValue = searchParams.get('preset') || undefined
 
   useEffect(() => {
     async function fetchCampaigns() {
       try {
         setLoading(true)
         
-        // Build the API URL with date range parameters
-        let apiUrl = `/api/analytics/meta/campaigns?brandId=${brandId}`
+        // Build the API URL with normalized date range parameters
+        const queryString = buildDateRangeQueryString({
+          brandId,
+          from: rawFromDate,
+          to: rawToDate,
+          preset: presetValue,
+        });
         
-        // Add date filtering parameters if available
-        if (fromDate) {
-          apiUrl += `&from=${fromDate}`
-        }
-        if (toDate) {
-          apiUrl += `&to=${toDate}`
-        }
-        if (preset) {
-          apiUrl += `&preset=${preset}`
-        }
+        const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
         
         console.log(`Fetching Meta campaigns data with: ${apiUrl}`)
         
@@ -294,7 +291,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchCampaigns()
     }
-  }, [brandId, fromDate, toDate, preset])
+  }, [brandId, rawFromDate, rawToDate, presetValue])
 
   // Sort function
   const sortedCampaigns = useMemo(() => {

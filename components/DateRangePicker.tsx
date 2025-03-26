@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { normalizeDateForApi, normalizeDateRangeForApi, isSingleDayRange } from "@/lib/date-utils"
 
 // Add custom styles to hide the default navigation buttons
 const calendarStyles = `
@@ -186,19 +187,25 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     // Get the date range from the preset
     const newRange = preset.getDate()
     
-    // Ensure no future dates are selected
-    const now = new Date()
-    if (newRange.to > now) {
-      newRange.to = now
-    }
+    // Ensure no future dates are selected by normalizing
+    const normalizedDates = normalizeDateRangeForApi(
+      newRange.from,
+      newRange.to
+    );
+    
+    // Convert back to Date objects for state
+    const normalizedRange = {
+      from: new Date(normalizedDates.from),
+      to: new Date(normalizedDates.to)
+    };
     
     // Special handling for single-day presets (Today, Yesterday)
     const isSingleDayPreset = preset.value === 'today' || preset.value === 'yesterday'
     
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
-      from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0],
+      from: normalizedDates.from,
+      to: normalizedDates.to,
       isSingleDayPreset
     });
     
@@ -206,22 +213,22 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     if (isSingleDayPreset) {
       // For single-day presets, ensure the to date is exactly the same as the from date
       // This guarantees backend will treat it as a single-day query
-      const exactDay = newRange.from.toISOString().split('T')[0];
+      const exactDay = normalizedDates.from;
       
       console.log(`Setting STRICT single day for ${preset.value}: ${exactDay}`);
       
-      // Create a new date object with the exact same date for both from and to
-      newRange.from = new Date(exactDay + 'T00:00:00');
-      newRange.to = new Date(exactDay + 'T23:59:59');
+      // Create with the exact same date for both from and to
+      normalizedRange.from = new Date(exactDay + 'T00:00:00');
+      normalizedRange.to = new Date(exactDay + 'T23:59:59');
     }
     
-    setTempDateRange(newRange)
+    setTempDateRange(normalizedRange)
     setSelectionStep('complete')
     
     // Apply immediately when a preset is selected
     setDateRange({
-      from: newRange.from,
-      to: newRange.to
+      from: normalizedRange.from,
+      to: normalizedRange.to
     })
     
     // Update URL to include the preset parameter
@@ -229,11 +236,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       const url = new URL(window.location.href);
       const params = new URLSearchParams(url.search);
       
-      // Extract just the date portion (YYYY-MM-DD) for the URL parameters
-      const fromDate = newRange.from.toISOString().split('T')[0];
+      // For the URL parameters, use the normalized date strings
+      const fromDate = normalizedDates.from;
       const toDate = isSingleDayPreset 
         ? fromDate // For single-day presets, use exactly the same date string for both
-        : newRange.to.toISOString().split('T')[0];
+        : normalizedDates.to;
       
       // Add from and to date parameters
       params.set('from', fromDate);
@@ -260,19 +267,32 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         to: tempDateRange.to || tempDateRange.from
       };
       
+      // Normalize dates to ensure they're valid (not in future, etc.)
+      const normalizedDates = normalizeDateRangeForApi(
+        finalRange.from,
+        finalRange.to
+      );
+      
+      // Convert back to Date objects for the state
+      const normalizedDateRange = {
+        from: new Date(normalizedDates.from),
+        to: new Date(normalizedDates.to)
+      };
+      
       // Check if this is a single day selection (same date for both from and to)
-      const fromDateStr = finalRange.from.toISOString().split('T')[0];
-      const toDateStr = finalRange.to.toISOString().split('T')[0];
-      const isSingleDaySelection = fromDateStr === toDateStr;
+      const isSingleDaySelection = isSingleDayRange(
+        normalizedDateRange.from,
+        normalizedDateRange.to
+      );
       
       // Log what we're applying
       console.log('Applying date range:', {
-        from: fromDateStr,
-        to: toDateStr,
+        from: normalizedDates.from,
+        to: normalizedDates.to,
         isSingleDaySelection
       });
       
-      setDateRange(finalRange);
+      setDateRange(normalizedDateRange);
       
       // Update URL with the selected date range, but REMOVE preset parameter
       // since this is a manual date selection, not a preset
@@ -282,8 +302,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         
         // For single day selections, ensure both dates are exactly the same string
         // This is critical for proper backend handling
-        params.set('from', fromDateStr);
-        params.set('to', isSingleDaySelection ? fromDateStr : toDateStr);
+        params.set('from', normalizedDates.from);
+        params.set('to', isSingleDaySelection ? normalizedDates.from : normalizedDates.to);
         
         // Remove preset parameter if it exists (critical for backend handling)
         if (params.has('preset')) {

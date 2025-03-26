@@ -47,6 +47,51 @@ export async function GET(request: NextRequest) {
     const toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
     
+    // Immediately log the raw request parameters
+    console.log(`Meta Campaigns API - Raw parameters received:`, {
+      brandId,
+      fromDate,
+      toDate,
+      preset,
+      fullUrl: request.url
+    })
+    
+    // Check for potential date format issues upfront
+    if (fromDate && !isValid(new Date(fromDate))) {
+      console.error(`Invalid from date format received: ${fromDate}`)
+    }
+    
+    if (toDate && !isValid(new Date(toDate))) {
+      console.error(`Invalid to date format received: ${toDate}`)
+    }
+    
+    // Log year values for potentially problematic dates in future
+    try {
+      if (fromDate) {
+        const parsedFromDate = new Date(fromDate)
+        if (isValid(parsedFromDate)) {
+          const fromYear = parsedFromDate.getFullYear()
+          const currentYear = new Date().getFullYear()
+          if (fromYear > currentYear) {
+            console.warn(`Future year detected in fromDate: ${fromYear} > ${currentYear}`)
+          }
+        }
+      }
+      
+      if (toDate) {
+        const parsedToDate = new Date(toDate)
+        if (isValid(parsedToDate)) {
+          const toYear = parsedToDate.getFullYear()
+          const currentYear = new Date().getFullYear()
+          if (toYear > currentYear) {
+            console.warn(`Future year detected in toDate: ${toYear} > ${currentYear}`)
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error validating date years:', e)
+    }
+    
     // Check for yesterday preset explicitly
     const isYesterdayPreset = preset === 'yesterday'
     const isTodayPreset = preset === 'today'
@@ -131,19 +176,43 @@ export async function GET(request: NextRequest) {
     else if (fromDate && toDate) {
       try {
         // Validate both dates - this is critical for preventing 500 errors
-        const parsedFromDate = new Date(fromDate)
-        const parsedToDate = new Date(toDate)
+        let parsedFromDate = new Date(fromDate)
+        let parsedToDate = new Date(toDate)
         
+        // Handle potentially invalid dates (including future dates)
         if (!isValid(parsedFromDate) || !isValid(parsedToDate)) {
           console.error(`Invalid date format detected. from=${fromDate}, to=${toDate}`)
           
-          // Use fallback dates - default to current date for invalid dates
+          // Use fallback dates - default to current date on error
           formattedFromDate = currentDateStr
           formattedToDate = currentDateStr
         } else {
-          // Dates are valid, format them
+          // Check for future dates - replace with today
+          const now = new Date()
+          
+          // If future dates are provided, log and adjust them
+          if (parsedFromDate > now) {
+            console.warn(`Future from date detected: ${fromDate}. Adjusting to today.`)
+            parsedFromDate = now
+          }
+          
+          if (parsedToDate > now) {
+            console.warn(`Future to date detected: ${toDate}. Adjusting to today.`)
+            parsedToDate = now
+          }
+          
+          // Format the dates (which are now valid and not in the future)
           formattedFromDate = format(parsedFromDate, 'yyyy-MM-dd')
           formattedToDate = format(parsedToDate, 'yyyy-MM-dd')
+          
+          // Check for dates that are way in the future (different year)
+          const currentYear = now.getFullYear()
+          const fromYear = parsedFromDate.getFullYear()
+          const toYear = parsedToDate.getFullYear()
+          
+          if (fromYear > currentYear || toYear > currentYear) {
+            console.warn(`Dates in future year detected (${fromYear}, ${toYear}). This may indicate a date selection error.`)
+          }
           
           // Check if this is a single-day query (from and to are the same)
           if (formattedFromDate === formattedToDate) {
