@@ -218,8 +218,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       console.log(`Setting STRICT single day for ${preset.value}: ${exactDay}`);
       
       // Create with the exact same date for both from and to
-      normalizedRange.from = new Date(exactDay + 'T00:00:00');
-      normalizedRange.to = new Date(exactDay + 'T23:59:59');
+      normalizedRange.from = new Date(exactDay);
+      normalizedRange.to = new Date(exactDay);
     }
     
     setTempDateRange(normalizedRange)
@@ -237,10 +237,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       const params = new URLSearchParams(url.search);
       
       // For the URL parameters, use the normalized date strings
+      // For single-day presets, use exactly the same date string for both
       const fromDate = normalizedDates.from;
-      const toDate = isSingleDayPreset 
-        ? fromDate // For single-day presets, use exactly the same date string for both
-        : normalizedDates.to;
+      const toDate = isSingleDayPreset ? fromDate : normalizedDates.to;
       
       // Add from and to date parameters
       params.set('from', fromDate);

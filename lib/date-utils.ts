@@ -96,6 +96,25 @@ export function buildDateRangeQueryString(
     queryParams.set('brandId', params.brandId);
   }
   
+  // Special handling for today preset to ensure backend consistency
+  if (params.preset === 'today') {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    queryParams.set('from', today);
+    queryParams.set('to', today);
+    queryParams.set('preset', 'today');
+    
+    console.log(`Setting today preset date parameters: from=${today}, to=${today}`);
+    
+    // Add any additional parameters
+    Object.entries(params).forEach(([key, value]) => {
+      if (key !== 'brandId' && key !== 'from' && key !== 'to' && key !== 'preset' && value !== undefined) {
+        queryParams.set(key, String(value));
+      }
+    });
+    
+    return queryParams.toString();
+  }
+  
   // Normalize and add date range parameters
   if (params.from || params.to) {
     const { from, to } = normalizeDateRangeForApi(params.from, params.to);

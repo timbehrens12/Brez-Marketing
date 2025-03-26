@@ -43,9 +43,13 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const fromDate = url.searchParams.get('from')
-    const toDate = url.searchParams.get('to')
+    const rawFromDate = url.searchParams.get('from')
+    const rawToDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
+    
+    // Create mutable copies of the date parameters
+    let fromDate = rawFromDate;
+    let toDate = rawToDate;
     
     // Immediately log the raw request parameters
     console.log(`Meta Campaigns API - Raw parameters received:`, {
@@ -55,6 +59,21 @@ export async function GET(request: NextRequest) {
       preset,
       fullUrl: request.url
     })
+    
+    // Override date parameters if 'today' preset is detected but dates don't match
+    if (preset === 'today') {
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // Check if the from and to dates match today's date
+      if (fromDate !== today || toDate !== today) {
+        console.warn(`'today' preset detected but dates don't match current date. Overriding both to use today's date.`);
+        console.warn(`Original dates: from=${fromDate}, to=${toDate}. Overriding to: ${today}`);
+        
+        // Force both dates to be today
+        fromDate = today;
+        toDate = today;
+      }
+    }
     
     // Check for potential date format issues upfront
     if (fromDate && !isValid(new Date(fromDate))) {
@@ -163,13 +182,32 @@ export async function GET(request: NextRequest) {
       
       try {
         // Use exactly today's date for both from and to
-        formattedFromDate = currentDateStr
-        formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
-        
-        console.log(`Using strict today-only query: from=${formattedFromDate}, to=${formattedToDate}`)
+        // We may have already normalized this above, so check
+        if (fromDate && toDate && fromDate === toDate && isValid(new Date(fromDate))) {
+          console.log(`Using preset-provided today date: ${fromDate}`);
+          formattedFromDate = fromDate;
+          formattedToDate = formattedFromDate;
+        } else {
+          const today = new Date();
+          
+          // Ensure the date is valid
+          if (isValid(today)) {
+            formattedFromDate = format(today, 'yyyy-MM-dd')
+            formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
+            
+            console.log(`Using strict today-only query: from=${formattedFromDate}, to=${formattedToDate}`)
+          } else {
+            console.error('Invalid date generated for today preset')
+            // Fallback to current date string
+            formattedFromDate = currentDateStr
+            formattedToDate = formattedFromDate
+          }
+        }
       } catch (e) {
         console.error('Error handling today preset:', e)
         // Already using the current date, so no fallback needed
+        formattedFromDate = currentDateStr
+        formattedToDate = currentDateStr
       }
     }
     // Normal handling for explicit date parameters
