@@ -131,6 +131,11 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
     if (!currentDate?.from || !currentDate?.to) return "Pick a date range"
 
+    // If from and to are the same date, just show that date
+    if (isSameDay(currentDate.from, currentDate.to)) {
+      return format(currentDate.from, "LLL dd, y")
+    }
+
     // Check for preset matches
     if (isToday(currentDate.from) && isToday(currentDate.to)) return "Today"
     if (isYesterday(currentDate.from) && isYesterday(currentDate.to)) return "Yesterday"
@@ -164,16 +169,17 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       adjustedRange.to = now
     }
     
-    setTempDateRange(adjustedRange)
-    
-    // If both from and to are selected, mark as complete
-    if (adjustedRange.from && adjustedRange.to) {
+    // When the first date is clicked, set both from and to to the same date
+    if (selectionStep === 'start' && adjustedRange.from) {
+      adjustedRange.to = adjustedRange.from
       setSelectionStep('complete')
     } 
-    // If only from is selected, prompt for end date
-    else if (adjustedRange.from) {
-      setSelectionStep('end')
+    // When second click happens
+    else if (selectionStep === 'end' && adjustedRange.from && adjustedRange.to) {
+      setSelectionStep('complete')
     }
+    
+    setTempDateRange(adjustedRange)
   }
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
@@ -204,17 +210,20 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleApply = () => {
-    if (tempDateRange?.from && tempDateRange?.to) {
+    if (tempDateRange?.from) {
+      // If only from date is selected, use same date for both
+      const finalRange = {
+        from: tempDateRange.from,
+        to: tempDateRange.to || tempDateRange.from
+      };
+      
       // Log what we're applying
       console.log('Applying date range:', {
-        from: tempDateRange.from.toISOString().split('T')[0],
-        to: tempDateRange.to.toISOString().split('T')[0]
+        from: finalRange.from.toISOString().split('T')[0],
+        to: finalRange.to.toISOString().split('T')[0]
       });
       
-      setDateRange({
-        from: tempDateRange.from,
-        to: tempDateRange.to
-      })
+      setDateRange(finalRange);
     }
     setIsOpen(false)
   }
@@ -258,15 +267,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
           >
             <CalendarIcon className="mr-2 h-4 w-4 text-white" />
             {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(dateRange.from, "LLL dd, y")
-              )
+              getSelectedPresetLabel(dateRange)
             ) : (
-              <span>Pick a date range</span>
+              <span>Pick a date</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -338,13 +341,33 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   </div>
                 </div>
                 
+                {selectionStep === 'end' && (
+                  <div className="text-sm text-blue-400 mb-2">
+                    {/* Clicking again will select a range */}
+                    Select end date or click the same date for single-day selection
+                  </div>
+                )}
+                
                 <Calendar
                   initialFocus
                   mode="range"
                   month={currentMonth}
                   defaultMonth={currentMonth}
                   selected={tempDateRange}
-                  onSelect={handleCalendarSelect}
+                  onSelect={(range) => {
+                    if (!range) return;
+                    
+                    // When first clicking a date
+                    if (!range.to && range.from) {
+                      // Auto-select same date for both from and to on first click
+                      const singleDateRange = { from: range.from, to: range.from };
+                      handleCalendarSelect(singleDateRange);
+                      return;
+                    }
+                    
+                    // When clicking a second time
+                    handleCalendarSelect(range);
+                  }}
                   numberOfMonths={2}
                   showOutsideDays={false}
                   disabled={{ after: new Date() }}
@@ -374,7 +397,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
               <Button 
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!dateRange?.from || !dateRange?.to}
+                disabled={!tempDateRange?.from}
                 onClick={handleApply}
               >
                 Apply
