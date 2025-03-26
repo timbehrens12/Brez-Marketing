@@ -59,6 +59,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     
   const fromDate = searchParams.get('from')
   const toDate = searchParams.get('to')
+  const preset = searchParams.get('preset')
 
   useEffect(() => {
     async function fetchCampaigns() {
@@ -74,6 +75,9 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         }
         if (toDate) {
           apiUrl += `&to=${toDate}`
+        }
+        if (preset) {
+          apiUrl += `&preset=${preset}`
         }
         
         console.log(`Fetching Meta campaigns data with: ${apiUrl}`)
@@ -224,7 +228,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchCampaigns()
     }
-  }, [brandId, fromDate, toDate])
+  }, [brandId, fromDate, toDate, preset])
 
   // Sort function
   const sortedCampaigns = useMemo(() => {

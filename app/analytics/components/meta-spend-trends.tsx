@@ -31,6 +31,7 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
     
   const fromDate = searchParams.get('from')
   const toDate = searchParams.get('to')
+  const preset = searchParams.get('preset')
 
   useEffect(() => {
     async function fetchData() {
@@ -44,6 +45,9 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
         }
         if (toDate) {
           apiUrl += `&to=${toDate}`
+        }
+        if (preset) {
+          apiUrl += `&preset=${preset}`
         }
         
         console.log(`Fetching Meta spend trends data with: ${apiUrl}`)
@@ -92,7 +96,7 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchData()
     }
-  }, [brandId, fromDate, toDate])
+  }, [brandId, fromDate, toDate, preset])
 
   if (loading) {
     return (

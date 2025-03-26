@@ -206,6 +206,26 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       from: newRange.from,
       to: newRange.to
     })
+    
+    // Update URL to include the preset parameter
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      const params = new URLSearchParams(url.search);
+      
+      // Add from and to date parameters
+      params.set('from', newRange.from.toISOString().split('T')[0]);
+      params.set('to', newRange.to.toISOString().split('T')[0]);
+      
+      // Add the preset parameter - this is critical for proper backend handling
+      params.set('preset', preset.value);
+      
+      // Update the URL without refreshing the page
+      url.search = params.toString();
+      window.history.pushState({}, '', url.toString());
+      
+      console.log(`Updated URL with preset ${preset.value}: ${url.toString()}`);
+    }
+    
     setIsOpen(false)
   }
 
@@ -224,6 +244,28 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       });
       
       setDateRange(finalRange);
+      
+      // Update URL with the selected date range, but REMOVE preset parameter
+      // since this is a manual date selection, not a preset
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        
+        // Add from and to date parameters
+        params.set('from', finalRange.from.toISOString().split('T')[0]);
+        params.set('to', finalRange.to.toISOString().split('T')[0]);
+        
+        // Remove preset parameter if it exists (critical for backend handling)
+        if (params.has('preset')) {
+          params.delete('preset');
+        }
+        
+        // Update the URL without refreshing the page
+        url.search = params.toString();
+        window.history.pushState({}, '', url.toString());
+        
+        console.log(`Updated URL with custom date range: ${url.toString()}`);
+      }
     }
     setIsOpen(false)
   }
