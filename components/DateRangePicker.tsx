@@ -155,6 +155,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const handleCalendarSelect = (newDateRange: DateRange | undefined) => {
     if (!newDateRange) return
     
+    // Log the raw selection
+    console.log('Calendar selection:', {
+      from: newDateRange.from?.toISOString(),
+      to: newDateRange.to?.toISOString()
+    });
+    
     // Ensure no future dates are selected
     const now = new Date()
     let adjustedRange = { ...newDateRange }
@@ -171,11 +177,52 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     
     // First click always sets a single date
     if (selectionStep === 'start' && adjustedRange.from) {
-      adjustedRange.to = adjustedRange.from
-      setSelectionStep('complete')
+      // Auto-select same date for both from and to on first click
+      const exactDay = adjustedRange.from.toISOString().split('T')[0];
+      
+      // Create proper time boundaries for the single day
+      adjustedRange.from = new Date(exactDay + 'T00:00:00.000Z');
+      adjustedRange.to = new Date(exactDay + 'T23:59:59.999Z');
+      
+      console.log('Single date selected (first click):', {
+        date: exactDay,
+        from: adjustedRange.from.toISOString(),
+        to: adjustedRange.to.toISOString()
+      });
+      
+      setSelectionStep('complete');
     } 
     // When second click happens
     else if (selectionStep === 'end' && adjustedRange.from && adjustedRange.to) {
+      // Check if this is a single-day selection (both dates on same day)
+      const fromDateStr = adjustedRange.from.toISOString().split('T')[0];
+      const toDateStr = adjustedRange.to.toISOString().split('T')[0];
+      const isSingleDaySelection = fromDateStr === toDateStr;
+      
+      if (isSingleDaySelection) {
+        // Create proper time boundaries for the single day
+        adjustedRange.from = new Date(fromDateStr + 'T00:00:00.000Z');
+        adjustedRange.to = new Date(fromDateStr + 'T23:59:59.999Z');
+        
+        console.log('Single day range selected:', {
+          date: fromDateStr,
+          from: adjustedRange.from.toISOString(),
+          to: adjustedRange.to.toISOString()
+        });
+      } else {
+        // For a date range, ensure from date starts at beginning of day
+        // and to date ends at end of day
+        adjustedRange.from = startOfDay(adjustedRange.from);
+        adjustedRange.to = endOfDay(adjustedRange.to);
+        
+        console.log('Date range selected:', {
+          fromDate: fromDateStr,
+          toDate: toDateStr,
+          from: adjustedRange.from.toISOString(),
+          to: adjustedRange.to.toISOString()
+        });
+      }
+      
       setSelectionStep('complete')
     }
     
@@ -197,8 +244,10 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
-      from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0],
+      from: newRange.from.toISOString(),
+      to: newRange.to.toISOString(),
+      fromDate: newRange.from.toISOString().split('T')[0],
+      toDate: newRange.to.toISOString().split('T')[0],
       isSingleDayPreset
     });
     
@@ -211,8 +260,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       console.log(`Setting STRICT single day for ${preset.value}: ${exactDay}`);
       
       // Create a new date object with the exact same date for both from and to
-      newRange.from = new Date(exactDay + 'T00:00:00');
-      newRange.to = new Date(exactDay + 'T23:59:59');
+      newRange.from = new Date(exactDay + 'T00:00:00.000Z');
+      newRange.to = new Date(exactDay + 'T23:59:59.999Z');
     }
     
     setTempDateRange(newRange)
@@ -246,7 +295,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       url.search = params.toString();
       window.history.pushState({}, '', url.toString());
       
-      console.log(`Updated URL with preset ${preset.value}: ${url.toString()}`);
+      console.log(`Updated URL for preset ${preset.value}: ${url.toString()}`);
+      console.log(`URL params: from=${fromDate}, to=${toDate}, preset=${preset.value}`);
     }
     
     setIsOpen(false)
@@ -261,16 +311,33 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       };
       
       // Check if this is a single day selection (same date for both from and to)
-      const isSingleDaySelection = finalRange.from && finalRange.to && 
-        new Date(finalRange.from).toISOString().split('T')[0] === 
-        new Date(finalRange.to).toISOString().split('T')[0];
+      const fromDateStr = finalRange.from.toISOString().split('T')[0];
+      const toDateStr = finalRange.to.toISOString().split('T')[0];
+      const isSingleDaySelection = fromDateStr === toDateStr;
       
-      // Log what we're applying
-      console.log('Applying date range:', {
-        from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0],
+      // Log what we're applying with detail
+      console.log('Applying manual date range selection:', {
+        from: finalRange.from.toISOString(),
+        to: finalRange.to.toISOString(), 
+        fromDate: fromDateStr,
+        toDate: toDateStr,
         isSingleDaySelection
       });
+      
+      // For single day selections, ensure the time components are correct
+      if (isSingleDaySelection) {
+        console.log(`Single day selection detected: ${fromDateStr}`);
+        
+        // Create new date objects for precise time control
+        finalRange.from = new Date(fromDateStr + 'T00:00:00.000Z');
+        finalRange.to = new Date(fromDateStr + 'T23:59:59.999Z');
+        
+        // Verify we did it correctly
+        console.log('Adjusted single day time range:', {
+          from: finalRange.from.toISOString(),
+          to: finalRange.to.toISOString()
+        });
+      }
       
       setDateRange(finalRange);
       
@@ -280,18 +347,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         const url = new URL(window.location.href);
         const params = new URLSearchParams(url.search);
         
-        // Get the date strings for URL parameters
-        const fromDateStr = finalRange.from.toISOString().split('T')[0];
-        
         // For single day selections, ensure both dates are exactly the same string
         // This is critical for proper backend handling
-        const toDateStr = isSingleDaySelection 
-          ? fromDateStr // Use exactly the same string for both parameters
-          : finalRange.to.toISOString().split('T')[0];
         
         // Add from and to date parameters
         params.set('from', fromDateStr);
-        params.set('to', toDateStr);
+        params.set('to', isSingleDaySelection ? fromDateStr : toDateStr);
         
         // Remove preset parameter if it exists (critical for backend handling)
         if (params.has('preset')) {
@@ -303,6 +364,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         window.history.pushState({}, '', url.toString());
         
         console.log(`Updated URL with custom date range: ${url.toString()}`);
+        console.log(`URL params: from=${fromDateStr}, to=${isSingleDaySelection ? fromDateStr : toDateStr}`);
       }
     }
     setIsOpen(false)
@@ -437,15 +499,53 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   onSelect={(range) => {
                     if (!range) return;
                     
-                    // When first clicking a date
-                    if (!range.to && range.from) {
-                      // Auto-select same date for both from and to on first click
-                      const singleDateRange = { from: range.from, to: range.from };
+                    console.log('Raw calendar selection:', range);
+                    
+                    // When first clicking a date (only the 'from' date is set)
+                    if (range.from && !range.to) {
+                      console.log('First click detected - auto selecting as single day');
+                      
+                      // Get the ISO date string (YYYY-MM-DD)
+                      const exactDay = range.from.toISOString().split('T')[0];
+                      
+                      // Create a proper single day range (start of day to end of day)
+                      const singleDateRange = { 
+                        from: new Date(exactDay + 'T00:00:00.000Z'), 
+                        to: new Date(exactDay + 'T23:59:59.999Z') 
+                      };
+                      
+                      console.log('Created single day selection:', {
+                        date: exactDay,
+                        from: singleDateRange.from.toISOString(),
+                        to: singleDateRange.to.toISOString()
+                      });
+                      
                       handleCalendarSelect(singleDateRange);
                       return;
                     }
                     
-                    // When clicking a second time
+                    // When clicking a second time - check if it's the same day
+                    if (range.from && range.to) {
+                      const fromDay = range.from.toISOString().split('T')[0];
+                      const toDay = range.to.toISOString().split('T')[0];
+                      
+                      console.log('Two dates selected:', { fromDay, toDay });
+                      
+                      // If the same day is selected twice, treat as a single day selection
+                      if (fromDay === toDay) {
+                        console.log('Same day selected twice - handling as single day');
+                        
+                        const singleDateRange = {
+                          from: new Date(fromDay + 'T00:00:00.000Z'),
+                          to: new Date(fromDay + 'T23:59:59.999Z')
+                        };
+                        
+                        handleCalendarSelect(singleDateRange);
+                        return;
+                      }
+                    }
+                    
+                    // Otherwise handle as a normal range
                     handleCalendarSelect(range);
                   }}
                   numberOfMonths={2}

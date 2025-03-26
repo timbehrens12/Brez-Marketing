@@ -65,6 +65,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     async function fetchCampaigns() {
       try {
         setLoading(true)
+        setError(null) // Reset any previous errors
         
         // Build the API URL with date range parameters
         let apiUrl = `/api/analytics/meta/campaigns?brandId=${brandId}`
@@ -82,7 +83,21 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         console.log(`Fetching Meta campaigns data with: ${apiUrl}`)
         
-        const response = await fetch(apiUrl)
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+        
+        const response = await fetch(apiUrl, {
+          signal: controller.signal
+        }).catch(error => {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timeout - the server took too long to respond');
+          }
+          throw error;
+        });
+        
+        // Clear timeout after response received
+        clearTimeout(timeoutId);
         
         console.log(`Meta campaigns response status: ${response.status} ${response.statusText}`);
         
@@ -92,8 +107,19 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
             // Try to extract error details from the response
             const errorData = await response.json();
             console.error('Error details:', errorData);
-            throw new Error(`Failed to fetch campaigns: ${response.status}${errorData.error ? ` - ${errorData.error}` : ''}`);
+            
+            // Create a helpful error message
+            let errorMessage = `Failed to fetch campaigns: ${response.status}`;
+            if (errorData.error) {
+              errorMessage += ` - ${errorData.error}`;
+            }
+            if (errorData.details?.message) {
+              errorMessage += ` (${errorData.details.message})`;
+            }
+            
+            throw new Error(errorMessage);
           } catch (parseError) {
+            // If we can't parse the JSON, just use the status
             throw new Error(`Failed to fetch campaigns: ${response.status}`);
           }
         }
@@ -104,132 +130,56 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
           throw new Error(data.error)
         }
         
+        // If we have debug info, log it
+        if (data._debug) {
+          console.log('API debug info:', data._debug);
+        }
+        
+        // Log actual campaigns data structure for debugging
+        if (data.campaigns) {
+          console.log(`Received ${data.campaigns.length} campaigns from API`);
+          if (data.campaigns.length > 0) {
+            console.log('Sample campaign data structure:', data.campaigns[0]);
+          }
+        }
+        
         // If we have real data, use it
         if (data.campaigns && data.campaigns.length > 0) {
           setCampaigns(data.campaigns)
           
           // Calculate aggregated metrics
-          if (data.campaigns.length > 0) {
-            const totalClicks = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.clicks, 0);
-            const totalImpressions = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.impressions, 0);
-            const totalSpend = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.spend, 0);
-            const totalRevenue = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.roas * campaign.spend), 0);
-            
-            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-            const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
-            
-            // Check if we have comparison data
-            if (data.periodComparison && data.periodComparison.current && data.periodComparison.previous) {
-              const { current, previous } = data.periodComparison;
-              
-              const ctrChange = previous.ctr > 0 
-                ? ((avgCTR - previous.ctr) / previous.ctr) * 100 
-                : 0;
-                
-              const roasChange = previous.roas > 0 
-                ? ((avgRoas - previous.roas) / previous.roas) * 100 
-                : 0;
-                
-              setMetrics({
-                ctrChange,
-                roasChange,
-                currentCTR: avgCTR,
-                previousCTR: previous.ctr,
-                currentRoas: avgRoas,
-                previousRoas: previous.roas,
-                totalSpend,
-                totalClicks
-              });
-            } else {
-              // If no comparison data, at least set the current metrics
-              setMetrics(prev => ({
-                ...prev,
-                currentCTR: avgCTR,
-                currentRoas: avgRoas,
-                totalSpend,
-                totalClicks
-              }));
-            }
-          }
+          const totalClicks = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.clicks || 0), 0);
+          const totalImpressions = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.impressions || 0), 0);
+          const totalSpend = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.spend || 0), 0);
+          const totalRevenue = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
           
+          const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+          const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+          
+          // For now, just set the current metrics without worrying about comparison data
+          setMetrics({
+            ctrChange: 0,
+            roasChange: 0,
+            currentCTR: avgCTR,
+            previousCTR: 0,
+            currentRoas: avgRoas,
+            previousRoas: 0,
+            totalSpend,
+            totalClicks
+          });
         } else {
-          // Otherwise use mock data
-          setCampaigns([
-            {
-              id: '1',
-              campaign_name: 'Summer Sale 2023',
-              status: 'ACTIVE',
-              spend: 1250.75,
-              impressions: 85000,
-              clicks: 3200,
-              ctr: 3.76,
-              conversions: 128,
-              cpa: 9.77,
-              roas: 4.2,
-              start_date: '2023-06-01',
-              end_date: '2023-08-31'
-            },
-            {
-              id: '2',
-              campaign_name: 'New Product Launch',
-              status: 'ACTIVE',
-              spend: 2450.50,
-              impressions: 120000,
-              clicks: 5800,
-              ctr: 4.83,
-              conversions: 210,
-              cpa: 11.67,
-              roas: 3.8,
-              start_date: '2023-09-15',
-              end_date: null
-            },
-            {
-              id: '3',
-              campaign_name: 'Holiday Special',
-              status: 'PAUSED',
-              spend: 850.25,
-              impressions: 45000,
-              clicks: 1800,
-              ctr: 4.00,
-              conversions: 72,
-              cpa: 11.81,
-              roas: 3.5,
-              start_date: '2023-11-01',
-              end_date: '2023-12-31'
-            },
-            {
-              id: '4',
-              campaign_name: 'Retargeting Campaign',
-              status: 'ACTIVE',
-              spend: 750.00,
-              impressions: 32000,
-              clicks: 1600,
-              ctr: 5.00,
-              conversions: 96,
-              cpa: 7.81,
-              roas: 5.2,
-              start_date: '2023-10-01',
-              end_date: null
-            },
-            {
-              id: '5',
-              campaign_name: 'Brand Awareness',
-              status: 'COMPLETED',
-              spend: 1800.00,
-              impressions: 150000,
-              clicks: 4500,
-              ctr: 3.00,
-              conversions: 90,
-              cpa: 20.00,
-              roas: 2.1,
-              start_date: '2023-05-01',
-              end_date: '2023-07-31'
-            }
-          ])
+          // If we have no data, show a message but don't use mock data
+          console.log('No campaigns data returned from API');
+          setCampaigns([]);
+          setError('No campaigns data available for the selected date range');
         }
       } catch (err) {
         console.error('Error fetching Meta campaigns:', err)
-        setError('Failed to load Meta campaigns data')
+        // Set a user-friendly error message
+        setError(err instanceof Error ? err.message : 'Failed to load Meta campaigns data')
+        
+        // On error, make sure to clear any previous data to avoid confusion
+        setCampaigns([])
       } finally {
         setLoading(false)
       }
@@ -237,6 +187,11 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
 
     if (brandId) {
       fetchCampaigns()
+    } else {
+      // If no brandId provided, set empty data and not loading
+      setCampaigns([])
+      setLoading(false)
+      setError('No brand selected')
     }
   }, [brandId, fromDate, toDate, preset])
 
