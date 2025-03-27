@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     
     // Check for yesterday preset explicitly
-    const isYesterdayPreset = preset === 'yesterday';
+    let isYesterdayPreset = preset === 'yesterday';
     
     // Create a cache key from the request parameters
     const cacheKey = `meta-metrics-${brandId}-${from}-${to}${isYesterdayPreset ? '-yesterday' : ''}`;
@@ -147,12 +147,12 @@ export async function GET(request: NextRequest) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       fromDate = yesterday.toISOString().split('T')[0];
-      toDate = fromDate; // Same day
+      toDate = fromDate; // Same day - critical for yesterday only
       
       requestedFromDate = fromDate;
       requestedToDate = toDate;
       
-      console.log(`Forcing yesterday-only query: from=${fromDate}, to=${toDate}`);
+      console.log(`STRICT YESTERDAY HANDLING: Forcing yesterday-only query: from=${fromDate}, to=${toDate}`);
     } else if (from && to) {
       // Save the original requested dates for verification
       requestedFromDate = from
@@ -191,11 +191,17 @@ export async function GET(request: NextRequest) {
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
         
+        // More aggressive check for yesterday data
         if (requestedFromDate?.includes('yesterday') || requestedToDate?.includes('yesterday') ||
+            from === 'yesterday' || to === 'yesterday' ||
+            preset === 'yesterday' ||
             (fromDate && fromDate.includes(yesterdayStr) && toDate && toDate.includes(yesterdayStr))) {
           console.log(`YESTERDAY PRESET DETECTED: Forcing single day query for yesterday only`);
           fromDate = yesterdayStr;
           toDate = yesterdayStr;
+          
+          // Mark this as a yesterday preset for special handling
+          isYesterdayPreset = true;
         }
       } catch (e) {
         console.log(`Error parsing dates: ${e}`);
@@ -256,73 +262,65 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Fetch Meta data from meta_ad_insights table
-    let query = supabase
+    // Query meta_ad_insights for this time period
+    const { data: insights, error } = await supabase
       .from('meta_ad_insights')
       .select('*')
-      .eq('connection_id', connection.id);
-
-    // For yesterday preset, we need to be extremely strict about the date
+      .eq('connection_id', connection.id)
+      .gte('date_start', fromDate)
+      .lte('date_start', toDate)
+      .order('date_start', { ascending: true })
+    
+    if (error) {
+      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
+      return NextResponse.json({ error: 'Error retrieving Meta insights', details: error }, { status: 500 })
+    }
+    
+    // Additional validation for yesterday preset to ensure we only have yesterday's data
+    let filteredInsights = insights || [];
+    
     if (isYesterdayPreset) {
-      console.log(`EXACT YESTERDAY QUERY: Using exact date match for yesterday: date = '${fromDate}'`);
+      console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       
-      // Use equals instead of between for yesterday - we want exactly this day only
-      query = query.eq('date', fromDate);
-    } else {
-      // Normal date range query with greater/less than
-      query = query
-        .gte('date', fromDate)
-        .lte('date', toDate);
-    }
-      
-    // Execute the query
-    const { data: metaData, error: metaError } = await query;
-    
-    if (metaError) {
-      console.log(`Error fetching Meta data: ${JSON.stringify(metaError)}`)
-      return NextResponse.json({ 
-        error: 'Error fetching Meta data', 
-        details: metaError,
-        _dateRange: { error: 'db_error', from: fromDate, to: toDate } 
-      }, { status: 500 })
-    }
-    
-    // If dateDebug is true, log more details about the returned data
-    if (dateDebug || debug) {
-      const dateCounts: Record<string, number> = {};
-      if (metaData) {
-        metaData.forEach(record => {
-          const date = record.date;
-          dateCounts[date] = (dateCounts[date] || 0) + 1;
-        });
+      // For yesterday preset, strictly filter to only include data from yesterday
+      filteredInsights = filteredInsights.filter(item => {
+        // Normalize the date format for comparison
+        const dateStart = new Date(item.date_start).toISOString().split('T')[0];
+        const exactMatch = dateStart === fromDate;
         
-        console.log(`Date distribution in returned data:`, dateCounts);
-      }
+        if (!exactMatch) {
+          console.log(`Filtering out non-yesterday data point: ${dateStart} (expected ${fromDate})`);
+        }
+        
+        return exactMatch;
+      });
+      
+      console.log(`YESTERDAY VALIDATION: After filtering, kept ${filteredInsights.length} records out of ${insights?.length || 0}`);
     }
     
-    // If no data found, return empty structure with the exact date range
-    if (!metaData || metaData.length === 0) {
-      console.log(`No Meta data found for period ${fromDate} to ${toDate} and connection ${connection.id}`)
-      
-      // Return empty data with date range info
+    // If no insights found, return empty data
+    if (!filteredInsights || filteredInsights.length === 0) {
+      console.log(`No Meta insights found for the date range ${fromDate} to ${toDate}`)
       return NextResponse.json({
-        ...createEmptyDataStructure(),
+        adSpend: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        ctr: 0,
+        cpc: 0,
+        costPerResult: 0,
+        dailyData: [],
         _dateRange: {
           from: fromDate,
-          to: toDate,
-          requested: { 
-            from: requestedFromDate || fromDate, 
-            to: requestedToDate || toDate 
-          },
-          noData: true
+          to: toDate
         }
       })
     }
     
-    console.log(`Found ${metaData.length} Meta data records for period ${fromDate} to ${toDate}`)
+    console.log(`Found ${filteredInsights.length} Meta data records for period ${fromDate} to ${toDate}`)
     
     // Process the Meta data
-    const processedData = processMetaData(metaData)
+    const processedData = processMetaData(filteredInsights)
     
     // Log a sample of what we're actually returning
     console.log(`Meta metrics response data for ${cacheKey}:`, {

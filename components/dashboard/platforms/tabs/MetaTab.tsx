@@ -52,6 +52,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
+import { isSameDay, isYesterday } from "date-fns"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -454,8 +455,12 @@ export function MetaTab({
         return;
       }
       
-      // Detect special presets
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday';
+      // Detect special presets - improve detection mechanism
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+                              (fromDate && toDate && 
+                               isSameDay(fromDate, toDate) && 
+                               isYesterday(fromDate));
+      
       const isToday = (dateRange as any)?._preset === 'today';
       const isCustomRange = !isYesterdayPreset && !isToday;
 
@@ -474,10 +479,16 @@ export function MetaTab({
         yesterday.setDate(yesterday.getDate() - 1);
         yesterday.setHours(0, 0, 0, 0);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        // CRITICAL: Set exactly the same date for both from and to
         params.append('from', yesterdayStr);
         params.append('to', yesterdayStr); // Same date for both
-        params.append('preset', 'yesterday');
+        params.append('preset', 'yesterday'); // Add explicit preset marker
+        
         console.log(`Using yesterday preset with exact date: ${yesterdayStr}`);
+        
+        // Force log to troubleshoot
+        console.warn(`YESTERDAY ONLY: Fetching data only for ${yesterdayStr}`);
       } 
       else if (isToday) {
         // For today preset, use today's date only
@@ -578,6 +589,29 @@ export function MetaTab({
           }
           
           responseData = await response.json();
+          
+          // Additional validation for yesterday preset to ensure we only have yesterday's data
+          if (isYesterdayPreset && responseData && responseData.dailyData) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            // Validate that all daily data points are from yesterday only
+            const hasNonYesterdayData = responseData.dailyData.some((dataPoint: any) => 
+              dataPoint.date !== yesterdayStr
+            );
+            
+            if (hasNonYesterdayData) {
+              console.warn("Received data contains non-yesterday dates for yesterday preset");
+              
+              // Filter to only include yesterday data
+              responseData.dailyData = responseData.dailyData.filter((dataPoint: any) => 
+                dataPoint.date === yesterdayStr
+              );
+              
+              console.log(`Filtered daily data to only include ${yesterdayStr}`);
+            }
+          }
           
           // Check if we have valid data or if we should retry
           const hasAnyData = responseData && (
