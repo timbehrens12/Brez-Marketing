@@ -2255,7 +2255,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       async function fetchPreviousPeriodData() {
         if (!dateRange?.from || !dateRange?.to || !brandId) return;
         
-        console.log("REAL COMPARISON: Fetching previous period data for accurate growth calculation");
+        console.log("REAL COMPARISON: Fetching previous period data for accurate Ad Spend growth calculation");
         
         try {
           // Calculate previous period date range
@@ -2289,75 +2289,33 @@ Try creating at least one active campaign in Meta Ads Manager.
           
           console.log("Previous period data:", previousData);
           
-          // Calculate real growth percentages
+          // Calculate ad spend growth percentage only
           if (previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0) {
-            // Current data
+            // Current and previous ad spend values
             const currentAdSpend = metricsData.adSpend;
-            const currentImpressions = metricsData.impressions;
-            const currentClicks = metricsData.clicks;
-            const currentConversions = metricsData.conversions;
-            const currentCtr = metricsData.ctr;
-            const currentRoas = metricsData.roas;
-            
-            // Previous data
             const previousAdSpend = previousData.adSpend;
-            const previousImpressions = previousData.impressions;
-            const previousClicks = previousData.clicks;
-            const previousConversions = previousData.conversions;
-            const previousCtr = previousData.ctr;
-            const previousRoas = previousData.roas;
             
-            // Calculate real growth percentages
-            const calculateGrowth = (current: number, previous: number): number => {
-              if (previous <= 0) return 0;
-              return ((current - previous) / previous) * 100;
-            };
+            // Calculate ad spend growth percentage
+            const realAdSpendGrowth = previousAdSpend > 0 
+              ? ((currentAdSpend - previousAdSpend) / previousAdSpend) * 100
+              : 0;
             
-            const realAdSpendGrowth = calculateGrowth(currentAdSpend, previousAdSpend);
-            const realImpressionGrowth = calculateGrowth(currentImpressions, previousImpressions);
-            const realClickGrowth = calculateGrowth(currentClicks, previousClicks);
-            const realConversionGrowth = calculateGrowth(currentConversions, previousConversions);
-            const realCtrGrowth = calculateGrowth(currentCtr, previousCtr);
-            const realRoasGrowth = calculateGrowth(currentRoas, previousRoas);
-            
-            console.log("REAL GROWTH CALCULATED:", {
-              adSpendGrowth: realAdSpendGrowth.toFixed(1) + '%',
-              impressionGrowth: realImpressionGrowth.toFixed(1) + '%',
-              clickGrowth: realClickGrowth.toFixed(1) + '%'
+            console.log("REAL AD SPEND GROWTH CALCULATED:", {
+              currentAdSpend: currentAdSpend.toFixed(2),
+              previousAdSpend: previousAdSpend.toFixed(2),
+              growthPercentage: realAdSpendGrowth.toFixed(1) + '%'
             });
             
-            // Update metrics with real growth values
+            // Update metrics with real ad spend growth value only
             setMetricsData(current => ({
               ...current,
-              adSpendGrowth: Math.round(realAdSpendGrowth * 10) / 10,        // Round to 1 decimal place
-              impressionGrowth: Math.round(realImpressionGrowth * 10) / 10,
-              clickGrowth: Math.round(realClickGrowth * 10) / 10,
-              conversionGrowth: Math.round(realConversionGrowth * 10) / 10,
-              ctrGrowth: Math.round(realCtrGrowth * 10) / 10,
-              roasGrowth: Math.round(realRoasGrowth * 10) / 10
+              adSpendGrowth: Math.round(realAdSpendGrowth * 10) / 10  // Round to 1 decimal place
             }));
             
-            // Store previous period data for reference
+            // Store previous ad spend for reference
             setPreviousData({
-              adSpend: previousAdSpend,
-              adSpendGrowth: 0,
-              impressions: previousImpressions,
-              impressionGrowth: 0,
-              clicks: previousClicks,
-              clickGrowth: 0,
-              conversions: previousConversions,
-              conversionGrowth: 0,
-              ctr: previousCtr,
-              ctrGrowth: 0,
-              cpc: 0,
-              costPerResult: 0,
-              cprGrowth: 0,
-              roas: previousRoas,
-              roasGrowth: 0,
-              frequency: 0,
-              budget: 0,
-              reach: 0,
-              dailyData: []
+              ...previousData,
+              adSpend: previousAdSpend
             });
           }
         } catch (error) {
@@ -2384,6 +2342,24 @@ Try creating at least one active campaign in Meta Ads Manager.
       });
     }
   }, [metricsData.adSpend, metricsData.adSpendGrowth]);
+
+  // Add debug logging whenever ad spend or growth changes
+  useEffect(() => {
+    if (metricsData.adSpend > 0) {
+      console.log("AD SPEND DATA UPDATE:", {
+        current: formatCurrencyCompact(metricsData.adSpend),
+        previous: previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0 
+          ? formatCurrencyCompact(previousData.adSpend) 
+          : 'Not available',
+        growthPercent: metricsData.adSpendGrowth.toFixed(1) + '%',
+        formattedGrowth: new Intl.NumberFormat('en-US', {
+          style: 'percent',
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(Math.abs(metricsData.adSpendGrowth) / 100)
+      });
+    }
+  }, [metricsData.adSpend, metricsData.adSpendGrowth, previousData]);
 
   return (
     <TooltipProvider>
@@ -2541,7 +2517,6 @@ Try creating at least one active campaign in Meta Ads Manager.
                             )}
                             {/* Display actual calculated percentage */}
                             {typeof metricsData.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? (
-                              // Format as percentage with 1 decimal place
                               new Intl.NumberFormat('en-US', {
                                 style: 'percent',
                                 minimumFractionDigits: 1,
@@ -2556,24 +2531,25 @@ Try creating at least one active campaign in Meta Ads Manager.
                           <p>
                             {metricsData.adSpend > 0 ? (
                               metricsData.adSpendGrowth > 0 ? 
-                                `Increase of ${new Intl.NumberFormat('en-US', {
+                                `Ad Spend increased by ${new Intl.NumberFormat('en-US', {
                                   style: 'percent',
                                   minimumFractionDigits: 1,
                                   maximumFractionDigits: 1
                                 }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` : 
                                 metricsData.adSpendGrowth < 0 ?
-                                  `Decrease of ${new Intl.NumberFormat('en-US', {
+                                  `Ad Spend decreased by ${new Intl.NumberFormat('en-US', {
                                     style: 'percent',
                                     minimumFractionDigits: 1,
                                     maximumFractionDigits: 1
                                   }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` :
-                                  `No change compared to previous period`
+                                  `No change in Ad Spend compared to previous period`
                             ) : (
-                              `No historical data available for comparison`
+                              `No historical Ad Spend data available for comparison`
                             )}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Previous period amount: {previousData && previousData.adSpend > 0 ? (
+                          <div className="text-xs text-gray-500 mt-1">
+                            <p>Current period: {formatCurrencyCompact(metricsData.adSpend)}</p>
+                            <p>Previous period: {previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0 ? (
                               // Use actual previous period data that we fetched
                               formatCurrencyCompact(previousData.adSpend)
                             ) : metricsData.adSpend > 0 && metricsData.adSpendGrowth !== 0 ? (
@@ -2581,8 +2557,8 @@ Try creating at least one active campaign in Meta Ads Manager.
                               formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth / 100))
                             ) : (
                               'Not available'
-                            )}
-                          </p>
+                            )}</p>
+                          </div>
                           <p className="text-xs text-gray-400 mt-1">
                             {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
                               ? 'Compared to previous day'
