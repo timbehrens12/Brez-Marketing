@@ -2004,6 +2004,113 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, []);
 
+  // Add new state just for Ad Spend to keep it separate from other metrics
+  const [adSpendData, setAdSpendData] = useState<{
+    value: number;
+    growth: number;
+    isLoading: boolean;
+    lastUpdated: Date | null;
+  }>({
+    value: 0,
+    growth: 0,
+    isLoading: true,
+    lastUpdated: null
+  });
+
+  // Dedicated function to fetch just the Ad Spend data directly
+  const fetchAdSpendDirectly = useCallback(async () => {
+    if (!brandId || !dateRange?.from) return;
+    
+    console.log("AD SPEND WIDGET: Fetching ad spend data directly");
+    setAdSpendData(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      // Detect if this is yesterday preset
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+                              (dateRange?.from && dateRange?.to && 
+                               isSameDay(dateRange.from, dateRange.to) && 
+                               isYesterday(dateRange.from));
+      
+      // Create params based on date range
+      const params = new URLSearchParams({
+        brandId: brandId,
+        metric: 'adSpend',
+        direct_db: 'true' // Signal the API to fetch directly from database
+      });
+      
+      // Handle date parameters
+      if (isYesterdayPreset) {
+        // For yesterday preset, use a fixed date
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        params.append('from', yesterdayStr);
+        params.append('to', yesterdayStr);
+        params.append('preset', 'yesterday');
+        
+        console.log(`AD SPEND WIDGET: Using yesterday preset ${yesterdayStr}`);
+      } else if (dateRange.from) {
+        // For regular date range
+        const fromDate = new Date(dateRange.from);
+        fromDate.setHours(0, 0, 0, 0);
+        params.append('from', fromDate.toISOString().split('T')[0]);
+        
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to);
+          toDate.setHours(23, 59, 59, 999);
+          params.append('to', toDate.toISOString().split('T')[0]);
+        }
+      }
+      
+      // Use a dedicated endpoint that just returns the ad spend data
+      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ad spend data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log("AD SPEND WIDGET: Received data:", data);
+      
+      // Update the ad spend state
+      setAdSpendData({
+        value: data.value || 0,
+        growth: data.growth || 0,
+        isLoading: false,
+        lastUpdated: new Date()
+      });
+    } catch (error) {
+      console.error("AD SPEND WIDGET: Error fetching ad spend data:", error);
+      setAdSpendData(prev => ({ 
+        ...prev,
+        isLoading: false
+      }));
+    }
+  }, [brandId, dateRange]);
+
+  // Fetch ad spend data on component mount and date range changes
+  useEffect(() => {
+    if (brandId && dateRange?.from) {
+      fetchAdSpendDirectly();
+    }
+  }, [brandId, dateRange, fetchAdSpendDirectly]);
+
+  // Also refetch on manual refresh
+  useEffect(() => {
+    if (isRefreshingData && brandId) {
+      console.log("AD SPEND WIDGET: Refreshing data");
+      fetchAdSpendDirectly();
+    }
+  }, [isRefreshingData, brandId, fetchAdSpendDirectly]);
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -2116,7 +2223,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
-        {/* Just the Ad Spend MetricCard */}
+        {/* Ad Spend Widget - With direct DB connection */}
         <div className="grid grid-cols-1 gap-4">
           <MetricCard
             title={
@@ -2125,10 +2232,10 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Ad Spend</span>
               </div>
             }
-            value={typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) ? metricsData.adSpend : 0}
-            change={typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? metricsData.adSpendGrowth : 0}
+            value={adSpendData.value}
+            change={adSpendData.growth}
             data={[]}
-            loading={showLoadingPlaceholder}
+            loading={adSpendData.isLoading}
             refreshing={isRefreshingData}
             platform="meta"
             prefix="$"
