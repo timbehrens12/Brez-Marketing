@@ -36,6 +36,12 @@ interface MetricCardProps {
   brandId?: string
   showChart?: boolean
   hideChange?: boolean
+  previousValue?: number
+  previousValuePrefix?: string
+  previousValueSuffix?: string
+  previousValueFormat?: "number" | "percentage" | "currency"
+  showPreviousPeriod?: boolean
+  previousPeriodLabel?: string
 }
 
 // Define a proper type guard for DateRange
@@ -74,6 +80,12 @@ export function MetricCard({
   brandId,
   showChart = true,
   hideChange = false,
+  previousValue = 0,
+  previousValuePrefix = "",
+  previousValueSuffix = "",
+  previousValueFormat = "number",
+  showPreviousPeriod = false,
+  previousPeriodLabel = "Previous period",
 }: MetricCardProps & { brandId?: string }) {
   // Use a more robust conversion with error catching
   const safeValue = useMemo(() => {
@@ -182,6 +194,30 @@ export function MetricCard({
     }
   };
   
+  // Add formatter for previous value
+  const formatPreviousValue = () => {
+    try {
+      if (previousValue === undefined || previousValue === null) {
+        return `${previousValuePrefix}0${previousValueSuffix}`;
+      }
+      
+      // Handle numeric values
+      const num = Number(previousValue);
+      if (isNaN(num)) return `${previousValuePrefix}0${previousValueSuffix}`;
+      
+      if (previousValueFormat === 'currency') {
+        return `${previousValuePrefix}${num.toFixed(2)}${previousValueSuffix}`;
+      } else if (previousValueFormat === 'percentage') {
+        return `${previousValuePrefix}${num.toFixed(1)}%${previousValueSuffix}`;
+      } else {
+        return `${previousValuePrefix}${Math.round(num).toLocaleString()}${previousValueSuffix}`;
+      }
+    } catch (error) {
+      console.error("Error formatting previous value:", error);
+      return `${previousValuePrefix}0${previousValueSuffix}`;
+    }
+  };
+  
   // If in initial loading state, show loading card
   if (initialLoading) {
     return (
@@ -243,6 +279,29 @@ export function MetricCard({
                   <>{formatSafeValue()}</>
                 )}
               </div>
+              
+              {showPreviousPeriod && !loading && !refreshing && (
+                <div className="mt-1 text-sm text-gray-400">
+                  <span className="flex items-center">
+                    <span className="text-gray-500 mr-1">vs</span>
+                    {formatPreviousValue()}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="cursor-help ml-1">
+                          <Info className="h-3 w-3 text-gray-600" />
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="center"
+                          className="z-50 bg-black border border-gray-800 text-xs p-2"
+                        >
+                          <p>{previousPeriodLabel || "Value from the previous comparable time period"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </span>
+                </div>
+              )}
               
               {!loading && !refreshing && !hidePercentageChange && !hideChange && typeof change === 'number' && !isNaN(change) && (
                 <div className="flex items-center mt-2">

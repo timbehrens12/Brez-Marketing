@@ -2002,109 +2002,162 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, []);
 
-  // Add new state just for Ad Spend to keep it separate from other metrics
+  // Update the state types to include previous period data
   const [adSpendData, setAdSpendData] = useState({
     value: 0,
-    growth: 0,
+    previousValue: 0,
     isLoading: true,
     lastUpdated: null as Date | null
   })
   
-  // Add states for ROAS, Impressions, and Clicks
   const [roasData, setRoasData] = useState({
     value: 0,
+    previousValue: 0,
     isLoading: true,
     lastUpdated: null as Date | null
   })
   
   const [impressionsData, setImpressionsData] = useState({
     value: 0,
+    previousValue: 0,
     isLoading: true,
     lastUpdated: null as Date | null
   })
   
   const [clicksData, setClicksData] = useState({
     value: 0,
+    previousValue: 0,
     isLoading: true,
     lastUpdated: null as Date | null
   })
+  
+  // Helper function to calculate the previous period date range
+  const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
+    const currentRange = to.getTime() - from.getTime()
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24))
+    
+    const prevFrom = new Date(from)
+    prevFrom.setDate(prevFrom.getDate() - daysInRange)
+    
+    const prevTo = new Date(to)
+    prevTo.setDate(prevTo.getDate() - daysInRange)
+    
+    return {
+      prevFrom: prevFrom.toISOString().split('T')[0],
+      prevTo: prevTo.toISOString().split('T')[0]
+    }
+  }
+  
+  // Helper function to get a descriptive label for the previous period
+  const getPreviousPeriodLabel = (): string => {
+    if (!dateRange || !dateRange.from || !dateRange.to) {
+      return "Previous period"
+    }
+    
+    const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+    if (isYesterdayPreset) {
+      return "Day before yesterday"
+    }
+    
+    const isSingleDay = dateRange.from.toDateString() === dateRange.to.toDateString()
+    if (isSingleDay) {
+      return "Previous day"
+    }
+    
+    // Calculate days between
+    const currentRange = dateRange.to.getTime() - dateRange.from.getTime()
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24))
+    
+    if (daysInRange <= 1) {
+      return "Previous day"
+    } else if (daysInRange <= 7) {
+      return "Previous week"
+    } else if (daysInRange <= 31) {
+      return "Previous month"
+    } else if (daysInRange <= 92) {
+      return "Previous quarter"
+    } else if (daysInRange <= 366) {
+      return "Previous year"
+    } else {
+      return "Previous period"
+    }
+  }
 
   // Fetch Ad Spend data directly from the database
   const fetchAdSpendDirectly = async () => {
-    if (!brandId || !dateRange?.from) return;
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Ad Spend: Missing date range or brand ID")
+      return
+    }
     
-    console.log("AD SPEND WIDGET: Fetching ad spend data directly");
-    setAdSpendData(prev => ({ ...prev, isLoading: true }));
+    setAdSpendData(prev => ({ ...prev, isLoading: true }))
     
     try {
-      // Detect if this is yesterday preset
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-                              (dateRange?.from && dateRange?.to && 
-                               isSameDay(dateRange.from, dateRange.to) && 
-                               isYesterday(dateRange.from));
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'adSpend')
       
-      // Create params based on date range
-      const params = new URLSearchParams({
-        brandId: brandId,
-        metric: 'adSpend',
-        direct_db: 'true' // Signal the API to fetch directly from database
-      });
+      // Handle presets - check if the preset property exists on dateRange
+      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
       
-      // Handle date parameters
+      let fromDate: Date
+      let toDate: Date
+      
       if (isYesterdayPreset) {
-        // For yesterday preset, use a fixed date
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        params.append('preset', 'yesterday')
         
-        params.append('from', yesterdayStr);
-        params.append('to', yesterdayStr);
-        params.append('preset', 'yesterday');
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        fromDate = yesterday
+        toDate = yesterday
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
         
-        console.log(`AD SPEND WIDGET: Using yesterday preset ${yesterdayStr}`);
-      } else if (dateRange.from) {
-        // For regular date range
-        const fromDate = new Date(dateRange.from);
-        fromDate.setHours(0, 0, 0, 0);
-        params.append('from', fromDate.toISOString().split('T')[0]);
+        params.append('from', yesterdayStr)
+        params.append('to', yesterdayStr)
         
-        if (dateRange.to) {
-          const toDate = new Date(dateRange.to);
-          toDate.setHours(23, 59, 59, 999);
-          params.append('to', toDate.toISOString().split('T')[0]);
-        }
+        console.log(`Setting yesterday preset for Ad Spend: ${yesterdayStr}`)
+      } else {
+        // Use the selected date range
+        fromDate = dateRange.from
+        toDate = dateRange.to
+        params.append('from', fromDate.toISOString().split('T')[0])
+        params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Use a dedicated endpoint that just returns the ad spend data
-      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch ad spend data: ${response.status}`);
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'adSpend')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (response.ok && prevResponse.ok) {
+        setAdSpendData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Ad Spend data:", data.error || prevData.error)
+        setAdSpendData(prev => ({ ...prev, isLoading: false }))
       }
-      
-      const data = await response.json();
-      
-      console.log("AD SPEND WIDGET: Received data:", data);
-      
-      // Update the ad spend state
-      setAdSpendData({
-        value: data.value || 0,
-        growth: data.growth || 0,
-        isLoading: false,
-        lastUpdated: new Date()
-      });
     } catch (error) {
-      console.error("AD SPEND WIDGET: Error fetching ad spend data:", error);
-      setAdSpendData(prev => ({ 
-        ...prev,
-        isLoading: false
-      }));
+      console.error("Error in Ad Spend fetch:", error)
+      setAdSpendData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -2118,7 +2171,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setRoasData(prev => ({ ...prev, isLoading: true }))
     
     try {
-      // Construct URL params
+      // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'roas')
@@ -2126,11 +2179,16 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Handle presets - check if the preset property exists on dateRange
       const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
       
+      let fromDate: Date
+      let toDate: Date
+      
       if (isYesterdayPreset) {
         params.append('preset', 'yesterday')
         
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
+        fromDate = yesterday
+        toDate = yesterday
         const yesterdayStr = yesterday.toISOString().split('T')[0]
         
         params.append('from', yesterdayStr)
@@ -2139,23 +2197,40 @@ Try creating at least one active campaign in Meta Ads Manager.
         console.log(`Setting yesterday preset for ROAS: ${yesterdayStr}`)
       } else {
         // Use the selected date range
-        params.append('from', dateRange.from.toISOString().split('T')[0])
-        params.append('to', dateRange.to.toISOString().split('T')[0])
+        fromDate = dateRange.from
+        toDate = dateRange.to
+        params.append('from', fromDate.toISOString().split('T')[0])
+        params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Fetch data from the API
-      const response = await fetch(`/api/metrics/meta/single/roas?${params.toString()}`)
-      const data = await response.json()
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      if (response.ok) {
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/roas?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'roas')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/roas?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (response.ok && prevResponse.ok) {
         setRoasData({
           value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`ROAS data fetched directly: ${data.value}`)
+        console.log(`ROAS data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching ROAS data:", data.error)
+        console.error("Error fetching ROAS data:", data.error || prevData.error)
         setRoasData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
@@ -2174,7 +2249,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setImpressionsData(prev => ({ ...prev, isLoading: true }))
     
     try {
-      // Construct URL params
+      // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'impressions')
@@ -2182,11 +2257,16 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Handle presets - check if the preset property exists on dateRange
       const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
       
+      let fromDate: Date
+      let toDate: Date
+      
       if (isYesterdayPreset) {
         params.append('preset', 'yesterday')
         
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
+        fromDate = yesterday
+        toDate = yesterday
         const yesterdayStr = yesterday.toISOString().split('T')[0]
         
         params.append('from', yesterdayStr)
@@ -2195,23 +2275,40 @@ Try creating at least one active campaign in Meta Ads Manager.
         console.log(`Setting yesterday preset for Impressions: ${yesterdayStr}`)
       } else {
         // Use the selected date range
-        params.append('from', dateRange.from.toISOString().split('T')[0])
-        params.append('to', dateRange.to.toISOString().split('T')[0])
+        fromDate = dateRange.from
+        toDate = dateRange.to
+        params.append('from', fromDate.toISOString().split('T')[0])
+        params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Fetch data from the API
-      const response = await fetch(`/api/metrics/meta/single/impressions?${params.toString()}`)
-      const data = await response.json()
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      if (response.ok) {
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/impressions?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'impressions')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/impressions?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (response.ok && prevResponse.ok) {
         setImpressionsData({
           value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Impressions data fetched directly: ${data.value}`)
+        console.log(`Impressions data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Impressions data:", data.error)
+        console.error("Error fetching Impressions data:", data.error || prevData.error)
         setImpressionsData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
@@ -2230,7 +2327,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setClicksData(prev => ({ ...prev, isLoading: true }))
     
     try {
-      // Construct URL params
+      // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'clicks')
@@ -2238,11 +2335,16 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Handle presets - check if the preset property exists on dateRange
       const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
       
+      let fromDate: Date
+      let toDate: Date
+      
       if (isYesterdayPreset) {
         params.append('preset', 'yesterday')
         
         const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
+        fromDate = yesterday
+        toDate = yesterday
         const yesterdayStr = yesterday.toISOString().split('T')[0]
         
         params.append('from', yesterdayStr)
@@ -2251,23 +2353,40 @@ Try creating at least one active campaign in Meta Ads Manager.
         console.log(`Setting yesterday preset for Clicks: ${yesterdayStr}`)
       } else {
         // Use the selected date range
-        params.append('from', dateRange.from.toISOString().split('T')[0])
-        params.append('to', dateRange.to.toISOString().split('T')[0])
+        fromDate = dateRange.from
+        toDate = dateRange.to
+        params.append('from', fromDate.toISOString().split('T')[0])
+        params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Fetch data from the API
-      const response = await fetch(`/api/metrics/meta/single/clicks?${params.toString()}`)
-      const data = await response.json()
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      if (response.ok) {
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/clicks?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'clicks')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/clicks?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (response.ok && prevResponse.ok) {
         setClicksData({
           value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Clicks data fetched directly: ${data.value}`)
+        console.log(`Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Clicks data:", data.error)
+        console.error("Error fetching Clicks data:", data.error || prevData.error)
         setClicksData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
@@ -2530,6 +2649,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             prefix="$"
             valueFormat="currency"
             hideGraph={true}
+            previousValue={adSpendData.previousValue}
+            previousValuePrefix="$"
+            previousValueFormat="currency"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
           <MetricCard
@@ -2546,6 +2670,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             suffix="x"
             valueFormat="number"
             hideGraph={true}
+            previousValue={roasData.previousValue}
+            previousValueSuffix="x"
+            previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
           <MetricCard
@@ -2561,6 +2690,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={impressionsData.previousValue}
+            previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
           <MetricCard
@@ -2576,6 +2709,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={clicksData.previousValue}
+            previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
           />
         </div>
       </div>
