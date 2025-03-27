@@ -98,12 +98,16 @@ export function buildDateRangeQueryString(
   
   // Special handling for today preset to ensure backend consistency
   if (params.preset === 'today') {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    queryParams.set('from', today);
-    queryParams.set('to', today);
-    queryParams.set('preset', 'today');
+    // Get the current date to ensure "Today" is accurate
+    const exactToday = new Date();
+    const todayStr = format(exactToday, 'yyyy-MM-dd');
     
-    console.log(`Setting today preset date parameters: from=${today}, to=${today}`);
+    console.log(`TODAY PRESET: Using current date ${todayStr} for both from and to`);
+    
+    // Set both from and to to exactly today
+    queryParams.set('from', todayStr);
+    queryParams.set('to', todayStr);
+    queryParams.set('preset', 'today');
     
     // Add any additional parameters
     Object.entries(params).forEach(([key, value]) => {
@@ -117,25 +121,27 @@ export function buildDateRangeQueryString(
   
   // Special handling for yesterday preset to ensure backend consistency
   if (params.preset === 'yesterday') {
-    // Use the exact date from params since this should be the normalized date 
-    // that was already calculated in the DateRangePicker
-    if (params.from && typeof params.from === 'string') {
-      const yesterdayDate = params.from;
-      queryParams.set('from', yesterdayDate);
-      queryParams.set('to', yesterdayDate); // Use exact same string for to
-      queryParams.set('preset', 'yesterday');
-      
-      console.log(`Setting yesterday preset with exact date parameters: from=${yesterdayDate}, to=${yesterdayDate}`);
-      
-      // Add any additional parameters
-      Object.entries(params).forEach(([key, value]) => {
-        if (key !== 'brandId' && key !== 'from' && key !== 'to' && key !== 'preset' && value !== undefined) {
-          queryParams.set(key, String(value));
-        }
-      });
-      
-      return queryParams.toString();
-    }
+    // Calculate yesterday's date accurately
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+    
+    console.log(`YESTERDAY PRESET: Using exact yesterday date ${yesterdayStr} for both from and to`);
+    
+    // Set both from and to to exactly yesterday
+    queryParams.set('from', yesterdayStr);
+    queryParams.set('to', yesterdayStr);
+    queryParams.set('preset', 'yesterday');
+    
+    // Add any additional parameters
+    Object.entries(params).forEach(([key, value]) => {
+      if (key !== 'brandId' && key !== 'from' && key !== 'to' && key !== 'preset' && value !== undefined) {
+        queryParams.set(key, String(value));
+      }
+    });
+    
+    return queryParams.toString();
   }
   
   // Normalize and add date range parameters

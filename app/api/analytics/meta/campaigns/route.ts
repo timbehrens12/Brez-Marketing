@@ -53,43 +53,30 @@ export async function GET(request: NextRequest) {
       fullUrl: request.url
     })
     
-    // Override date parameters if 'today' preset is detected but dates don't match
+    // Override date parameters if 'today' preset is detected
     if (preset === 'today') {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = new Date();
+      const todayStr = format(today, 'yyyy-MM-dd');
       
-      // Check if the from and to dates match today's date
-      if (fromDate !== today || toDate !== today) {
-        console.warn(`'today' preset detected but dates don't match current date. Overriding both to use today's date.`);
-        console.warn(`Original dates: from=${fromDate}, to=${toDate}. Overriding to: ${today}`);
-        
-        // Force both dates to be today
-        fromDate = today;
-        toDate = today;
-      }
+      console.log(`'today' preset detected - ENFORCING EXACT CURRENT DATE: ${todayStr}`);
+      
+      // Force both dates to be today's exact date
+      fromDate = todayStr;
+      toDate = todayStr;
     }
     
-    // Similarly handle yesterday preset to ensure consistency
+    // Similarly handle yesterday preset 
     if (preset === 'yesterday') {
-      // First check if both dates are identical (as they should be)
-      if (fromDate && toDate && fromDate === toDate) {
-        console.log(`'yesterday' preset with matching dates detected. Using provided date: ${fromDate}`);
-        // Dates are consistent, no changes needed
-      } else if (fromDate && toDate) {
-        console.warn(`'yesterday' preset detected with mismatched dates. Ensuring both dates match.`);
-        console.warn(`Original dates: from=${fromDate}, to=${toDate}. Setting both to: ${fromDate}`);
-        
-        // Force both dates to be the same (using from date)
-        toDate = fromDate;
-      } else {
-        // If dates are missing, calculate yesterday
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-        
-        console.warn(`'yesterday' preset missing dates. Setting both to calculated yesterday: ${yesterdayStr}`);
-        fromDate = yesterdayStr;
-        toDate = yesterdayStr;
-      }
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+      
+      console.log(`'yesterday' preset detected - ENFORCING EXACT YESTERDAY DATE: ${yesterdayStr}`);
+      
+      // Force both dates to be yesterday's exact date
+      fromDate = yesterdayStr;
+      toDate = yesterdayStr;
     }
     
     // Check for potential date format issues upfront
