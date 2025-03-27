@@ -15,7 +15,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
-import { DateRange } from "react-day-picker"
 
 interface Campaign {
   id: string;
@@ -32,13 +31,7 @@ interface Campaign {
   end_date: string | null;
 }
 
-export default function MetaCampaignsTable({ 
-  brandId, 
-  dateRange 
-}: { 
-  brandId: string,
-  dateRange?: DateRange
-}) {
+export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,33 +56,7 @@ export default function MetaCampaignsTable({
     async function fetchCampaigns() {
       try {
         setLoading(true)
-        
-        // Build the URL with date range parameters
-        const params = new URLSearchParams({
-          brandId: brandId
-        })
-        
-        // Add the date range if available
-        if (dateRange?.from) {
-          const formattedFromDate = new Date(dateRange.from)
-          formattedFromDate.setHours(0, 0, 0, 0)
-          params.append('from', formattedFromDate.toISOString().split('T')[0])
-        }
-        
-        if (dateRange?.to) {
-          const formattedToDate = new Date(dateRange.to)
-          formattedToDate.setHours(23, 59, 59, 999)
-          params.append('to', formattedToDate.toISOString().split('T')[0])
-        }
-        
-        // Special handling for yesterday preset
-        if (dateRange && 'from' in dateRange && 'to' in dateRange && 
-            dateRange.from && dateRange.to && 
-            (dateRange as any)._preset === 'yesterday') {
-          params.append('yesterday', 'true')
-        }
-        
-        const response = await fetch(`/api/analytics/meta/campaigns?${params.toString()}`)
+        const response = await fetch(`/api/analytics/meta/campaigns?brandId=${brandId}`)
         
         if (!response.ok) {
           throw new Error(`Failed to fetch campaigns: ${response.status}`)
@@ -148,6 +115,7 @@ export default function MetaCampaignsTable({
               }));
             }
           }
+          
         } else {
           // Otherwise use mock data
           setCampaigns([
@@ -234,7 +202,7 @@ export default function MetaCampaignsTable({
     if (brandId) {
       fetchCampaigns()
     }
-  }, [brandId, dateRange])
+  }, [brandId])
 
   // Sort function
   const sortedCampaigns = useMemo(() => {

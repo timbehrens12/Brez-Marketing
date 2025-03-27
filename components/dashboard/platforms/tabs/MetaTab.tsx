@@ -421,93 +421,78 @@ export function MetaTab({
       
       // Detect the special yesterday preset
       const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday';
+      const isToday = (dateRange as any)?._preset === 'today';
 
-      // Important: Do not modify the dates for yesterday when handling specific presets
-      // This is ensuring only yesterday's data shows without combining today's data
-      
       const params = new URLSearchParams({
-        brandId: brandId as string
+        brandId: brandId as string,
+        strict_date_range: 'true', // Always enforce strict date handling
+        bypass_cache: 'true',      // Always bypass cache for fresh data
+        date_debug: 'true'         // Enable date debugging
       });
       
       if (fromDate) {
-        // Ensure from date is set to the beginning of the day
-        const formattedFromDate = new Date(fromDate);
-        formattedFromDate.setHours(0, 0, 0, 0);
-        params.append('from', formattedFromDate.toISOString().split('T')[0]);
-      }
-      
-      if (toDate) {
-        // Ensure to date is set to the end of the day
-        const formattedToDate = new Date(toDate);
-        formattedToDate.setHours(23, 59, 59, 999);
-        
-        // CRITICAL: If this is yesterday preset, use the same date for both from and to
-        // This ensures we get ONLY yesterday's data
+        // For yesterday preset, use exact date match
         if (isYesterdayPreset) {
-          params.append('to', params.get('from') || '');
-          console.log("YESTERDAY PRESET: Setting exact from/to match to ensure ONLY yesterday data");
-        } else {
-          params.append('to', formattedToDate.toISOString().split('T')[0]);
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          yesterday.setHours(0, 0, 0, 0);
+          params.append('from', yesterday.toISOString().split('T')[0]);
+          params.append('to', yesterday.toISOString().split('T')[0]); // Same date for both
+          params.append('preset', 'yesterday');
+        } 
+        // For today preset, use today's date only
+        else if (isToday) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          params.append('from', today.toISOString().split('T')[0]);
+          params.append('to', today.toISOString().split('T')[0]); // Same date for both
+          params.append('preset', 'today');
+        }
+        // For normal date ranges
+        else {
+          const formattedFromDate = new Date(fromDate);
+          formattedFromDate.setHours(0, 0, 0, 0);
+          params.append('from', formattedFromDate.toISOString().split('T')[0]);
+          
+          if (toDate) {
+            const formattedToDate = new Date(toDate);
+            formattedToDate.setHours(23, 59, 59, 999);
+            params.append('to', formattedToDate.toISOString().split('T')[0]);
+          }
         }
       }
       
-      // Add the preset identifier if it exists
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday');
-        console.log("Adding yesterday preset identifier to API call");
-      }
-      
-      // Add parameters to help debugging
-      params.append('date_debug', 'true'); 
-      params.append('bypass_cache', 'true');
-      params.append('force_load', 'true');
-      params.append('strict_date_range', 'true'); // Add this to force strict date handling
-      
-      console.log(`Fetching Meta data with date range: ${params.get('from')} to ${params.get('to')} ${isYesterdayPreset ? '(yesterday preset)' : ''}`);
+      console.log(`Fetching Meta data with params:`, Object.fromEntries(params.entries()));
       
       const controller = new AbortController();
       const signal = controller.signal;
       
-      // Create cleanup handler that will be returned by the useEffect
+      // Create cleanup handler
       const cleanup = () => {
         isMounted = false;
         controller.abort();
       };
       
-      // Set timeout to prevent request hanging indefinitely
+      // Set timeout to prevent request hanging
       const timeoutId = setTimeout(() => {
         if (isMounted) {
           controller.abort();
-          if (isMounted) {
-            setError("Request timed out. Please try again.");
-            setLoading(false);
-            setIsDateChangeLoading(false);
-          }
-        }
-      }, 30000); // 30 second timeout
-      
-      // Add a maximum wait time for the loading state, even if API never responds
-      const maxLoadingTimeout = setTimeout(() => {
-        if (isMounted) {
+          setError("Request timed out. Please try again.");
           setLoading(false);
           setIsDateChangeLoading(false);
         }
-      }, 20000); // Force loading to end after 20 seconds maximum
+      }, 30000);
       
       const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
         signal,
-        // Force refresh from network, not cache
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache'
         }
       });
       
-      // Clear the timeout since we got a response
       clearTimeout(timeoutId);
-      clearTimeout(maxLoadingTimeout);
       
-      // Check if component is still mounted before proceeding
       if (!isMounted) {
         return cleanup;
       }
@@ -519,37 +504,44 @@ export function MetaTab({
       
       const data = await response.json();
       
-      console.log("Fetched Meta data:", JSON.stringify({
-        adSpend: data.adSpend,
-        impressions: data.impressions,
-        clicks: data.clicks,
-        roas: data.roas,
-        dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
-      }));
-      
-      // Check if component is still mounted before updating state
-      if (!isMounted) {
-        return cleanup;
+      // Validate date range in response
+      if (data._dateRange) {
+        const responseFrom = new Date(data._dateRange.from);
+        const responseTo = new Date(data._dateRange.to);
+        const requestedFrom = new Date(params.get('from') || '');
+        const requestedTo = new Date(params.get('to') || '');
+        
+        if (responseFrom.getTime() !== requestedFrom.getTime() || 
+            responseTo.getTime() !== requestedTo.getTime()) {
+          console.warn("Date range mismatch:", {
+            requested: { from: requestedFrom, to: requestedTo },
+            received: { from: responseFrom, to: responseTo }
+          });
+          toast.warning("Data range mismatch", {
+            description: "The data received doesn't match the requested date range.",
+            duration: 4000
+          });
+          setLoading(false);
+          setIsDateChangeLoading(false);
+          return cleanup;
+        }
       }
       
-      // Skip update if we got all zeros and no daily data, unless it's the first load
+      // Skip update if we got all zeros and no daily data (unless first load)
       const hasRealData = data.adSpend > 0 || data.impressions > 0 || data.clicks > 0 || 
                          (Array.isArray(data.dailyData) && data.dailyData.length > 0);
                            
-      // If we have a valid response but no actual meta data for the period, 
-      // show a toast warning the user instead of resetting metrics to 0
       if (!hasRealData && metricsData.adSpend > 0) {
-        toast.warning("No Meta data for period", {
-          description: "No Meta ad data found for the selected date range. Showing previous data.",
+        toast.warning("No Meta data available", {
+          description: "No data found for the selected date range.",
           duration: 4000
         });
-        // Keep the previous metrics but end loading state
         setLoading(false);
         setIsDateChangeLoading(false);
         return cleanup;
       }
 
-      // Update metrics state with the data we received
+      // Update metrics with validated data
       setMetricsData({
         adSpend: data.adSpend ?? 0,
         adSpendGrowth: data.adSpendGrowth ?? 0,
@@ -572,34 +564,15 @@ export function MetaTab({
         dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
       });
       
-      // Log the values we just set to help with debugging
-      console.log("Updated metrics data:", JSON.stringify({
-        adSpend: data.adSpend,
-        impressions: data.impressions,
-        clicks: data.clicks,
-        roas: data.roas
-      }));
-
       setLoading(false);
       setIsDateChangeLoading(false);
-      isFetching.current = false;
       
       return cleanup;
     } catch (error) {
-      console.error('Error fetching Meta data:', error);
-      
-      if (isMounted) {
-        setError(error instanceof Error ? error.message : 'An error occurred');
-        
-        // Don't reset metrics data on error - keep displaying what we had
-        setLoading(false);
-        setIsDateChangeLoading(false);
-        isFetching.current = false;
-      }
-      
-      return () => {
-        isMounted = false;
-      };
+      console.error("Error fetching Meta data:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch Meta data");
+      setLoading(false);
+      setIsDateChangeLoading(false);
     }
   }
 

@@ -10,7 +10,6 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
-import { DateRange } from "react-day-picker"
 
 // Define interface for meta analytics data
 interface MetaAnalyticItem {
@@ -21,10 +20,7 @@ interface MetaAnalyticItem {
   ctr?: number | string;
 }
 
-export default function MetaAdPerformance({ brandId, dateRange }: { 
-  brandId: string,
-  dateRange?: DateRange
-}) {
+export default function MetaAdPerformance({ brandId }: { brandId: string }) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,34 +36,7 @@ export default function MetaAdPerformance({ brandId, dateRange }: {
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true)
-        
-        // Build the URL with date range parameters
-        const params = new URLSearchParams({
-          brandId: brandId
-        })
-        
-        // Add the date range if available
-        if (dateRange?.from) {
-          const formattedFromDate = new Date(dateRange.from)
-          formattedFromDate.setHours(0, 0, 0, 0)
-          params.append('from', formattedFromDate.toISOString().split('T')[0])
-        }
-        
-        if (dateRange?.to) {
-          const formattedToDate = new Date(dateRange.to)
-          formattedToDate.setHours(23, 59, 59, 999)
-          params.append('to', formattedToDate.toISOString().split('T')[0])
-        }
-        
-        // Special handling for yesterday preset
-        if (dateRange && 'from' in dateRange && 'to' in dateRange && 
-            dateRange.from && dateRange.to && 
-            (dateRange as any)._preset === 'yesterday') {
-          params.append('yesterday', 'true')
-        }
-        
-        const response = await fetch(`/api/analytics/meta?${params.toString()}`)
+        const response = await fetch(`/api/analytics/meta?brandId=${brandId}`)
         const result = await response.json()
         
         if (result.error) {
@@ -117,7 +86,7 @@ export default function MetaAdPerformance({ brandId, dateRange }: {
     if (brandId) {
       fetchData()
     }
-  }, [brandId, dateRange])
+  }, [brandId])
 
   if (loading) {
     return (
