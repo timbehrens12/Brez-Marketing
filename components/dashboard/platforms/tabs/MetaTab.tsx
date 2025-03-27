@@ -357,10 +357,65 @@ export function MetaTab({
     let tempCampaigns = [] as any[];
     
     try {
-      const response = await fetch(`/api/analytics/meta/campaigns?brandId=${brandId}`, {
+      // Get URL parameters to check for date range
+      const urlParams = new URL(window.location.href).searchParams;
+      const fromDate = urlParams.get('from');
+      const toDate = urlParams.get('to');
+      const preset = urlParams.get('preset');
+      const isYesterdayPreset = preset === 'yesterday';
+      
+      // Build the API URL with proper date parameters
+      let apiUrl;
+      
+      // Special handling for yesterday preset
+      if (isYesterdayPreset) {
+        // Calculate yesterday's date exactly
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        
+        console.log(`CAMPAIGNS: Strict yesterday enforcement - using ${yesterdayStr}`);
+        
+        // Create params with consistent yesterday date
+        const params = new URLSearchParams();
+        params.set('brandId', brandId);
+        params.set('from', yesterdayStr);
+        params.set('to', yesterdayStr);
+        params.set('preset', 'yesterday');
+        params.set('enforce_single_day', 'true');
+        
+        apiUrl = `/api/analytics/meta/campaigns?${params.toString()}`;
+        
+        console.log(`YESTERDAY: Fetching campaigns for yesterday only: ${yesterdayStr}`);
+      } 
+      // Normal date handling for other cases
+      else {
+        // Create base URL with brandId
+        const params = new URLSearchParams();
+        params.set('brandId', brandId);
+        
+        // Add date parameters if available
+        if (fromDate) params.set('from', fromDate);
+        if (toDate) params.set('to', toDate);
+        if (preset) params.set('preset', preset);
+        
+        apiUrl = `/api/analytics/meta/campaigns?${params.toString()}`;
+        
+        // Log appropriate message based on date type
+        if (fromDate && toDate && fromDate === toDate) {
+          console.log(`SINGLE DAY: Fetching campaigns for specific date: ${fromDate}`);
+        } else if (fromDate && toDate) {
+          console.log(`DATE RANGE: Fetching campaigns from ${fromDate} to ${toDate}`);
+        } else {
+          console.log(`Fetching campaigns with default date range`);
+        }
+      }
+      
+      const response = await fetch(apiUrl, {
         // Add a signal to abort the request after 10 seconds
         signal: AbortSignal.timeout(10000) // 10 second timeout
-      })
+      });
       
       if (!response.ok) {
         console.error('Campaign fetch failed with status:', response.status);
