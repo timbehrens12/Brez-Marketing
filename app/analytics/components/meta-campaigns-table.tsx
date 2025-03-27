@@ -89,7 +89,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
           if (response.status === 500) {
             console.error('Server error fetching campaigns - using mock data');
             // If server error, use mock data instead of failing completely
-            setCampaigns([
+            const mockCampaigns: Campaign[] = [
               {
                 id: '1',
                 campaign_name: 'Summer Sale 2023',
@@ -160,7 +160,26 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
                 start_date: '2023-05-01',
                 end_date: '2023-07-31'
               }
-            ]);
+            ];
+            
+            // Also calculate metrics for mock data
+            setCampaigns(mockCampaigns);
+            
+            const totalClicks = mockCampaigns.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
+            const totalImpressions = mockCampaigns.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
+            const totalSpend = mockCampaigns.reduce((sum, campaign) => sum + (campaign.spend || 0), 0);
+            const totalRevenue = mockCampaigns.reduce((sum, campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
+            
+            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+            const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+            
+            setMetrics(prev => ({
+              ...prev,
+              currentCTR: avgCTR,
+              currentRoas: avgRoas,
+              totalSpend,
+              totalClicks
+            }));
             setLoading(false);
             return;
           }
@@ -183,14 +202,27 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         // If we have real data, use it
         if (data.campaigns && data.campaigns.length > 0) {
-          setCampaigns(data.campaigns)
+          // Ensure all numeric fields are properly converted to numbers
+          const processedCampaigns = data.campaigns.map((campaign: any) => ({
+            ...campaign,
+            // Ensure all numeric values are properly converted from strings/nulls
+            spend: parseFloat(campaign.spend) || 0,
+            impressions: parseInt(campaign.impressions, 10) || 0, 
+            clicks: parseInt(campaign.clicks, 10) || 0,
+            ctr: parseFloat(campaign.ctr) || 0,
+            conversions: parseInt(campaign.conversions, 10) || 0,
+            cpa: parseFloat(campaign.cpa) || 0,
+            roas: parseFloat(campaign.roas) || 0
+          })) as Campaign[];
+          
+          setCampaigns(processedCampaigns);
           
           // Calculate aggregated metrics
-          if (data.campaigns.length > 0) {
-            const totalClicks = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.clicks || 0), 0);
-            const totalImpressions = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.impressions || 0), 0);
-            const totalSpend = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.spend || 0), 0);
-            const totalRevenue = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
+          if (processedCampaigns.length > 0) {
+            const totalClicks = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.clicks || 0), 0);
+            const totalImpressions = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.impressions || 0), 0);
+            const totalSpend = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.spend || 0), 0);
+            const totalRevenue = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
             
             const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
             const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
@@ -207,7 +239,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         } else {
           // Otherwise use mock data
           console.log('No campaigns data found, using mock data');
-          setCampaigns([
+          const mockCampaigns: Campaign[] = [
             {
               id: '1',
               campaign_name: 'Summer Sale 2023',
@@ -278,7 +310,26 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
               start_date: '2023-05-01',
               end_date: '2023-07-31'
             }
-          ])
+          ];
+          
+          // Also calculate metrics for mock data
+          setCampaigns(mockCampaigns);
+          
+          const totalClicks = mockCampaigns.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
+          const totalImpressions = mockCampaigns.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
+          const totalSpend = mockCampaigns.reduce((sum, campaign) => sum + (campaign.spend || 0), 0);
+          const totalRevenue = mockCampaigns.reduce((sum, campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
+          
+          const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+          const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+          
+          setMetrics(prev => ({
+            ...prev,
+            currentCTR: avgCTR,
+            currentRoas: avgRoas,
+            totalSpend,
+            totalClicks
+          }));
         }
       } catch (err) {
         console.error('Error fetching Meta campaigns:', err)
