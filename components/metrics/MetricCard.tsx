@@ -194,7 +194,29 @@ export function MetricCard({
     }
   };
   
-  // Add formatter for previous value
+  // Calculate percentage change from previous period
+  const calculatePercentChange = (): { value: number; isPositive: boolean; isZero: boolean } => {
+    try {
+      // Prevent division by zero
+      if (previousValue === 0) {
+        return { value: 0, isPositive: false, isZero: true };
+      }
+      
+      const currentValue = Number(value);
+      const change = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
+      
+      return { 
+        value: Math.abs(change), // Absolute value for display 
+        isPositive: change > 0,
+        isZero: change === 0
+      };
+    } catch (error) {
+      console.error("Error calculating percentage change:", error);
+      return { value: 0, isPositive: false, isZero: true };
+    }
+  };
+
+  // Format previous value for tooltip
   const formatPreviousValue = () => {
     try {
       if (previousValue === undefined || previousValue === null) {
@@ -280,26 +302,50 @@ export function MetricCard({
                 )}
               </div>
               
-              {showPreviousPeriod && !loading && !refreshing && (
-                <div className="mt-1 text-sm text-gray-400">
-                  <span className="flex items-center">
-                    <span className="text-gray-500 mr-1">vs</span>
-                    {formatPreviousValue()}
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-help ml-1">
-                          <Info className="h-3 w-3 text-gray-600" />
-                        </TooltipTrigger>
-                        <TooltipContent 
-                          side="top" 
-                          align="center"
-                          className="z-50 bg-black border border-gray-800 text-xs p-2"
-                        >
-                          <p>{previousPeriodLabel || "Value from the previous comparable time period"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </span>
+              {/* Show percentage change from previous period */}
+              {showPreviousPeriod && !loading && !refreshing && previousValue !== undefined && (
+                <div className="mt-1">
+                  {(() => {
+                    const percentChange = calculatePercentChange();
+                    const formattedPrevValue = formatPreviousValue();
+                    
+                    return (
+                      <div className="flex items-center">
+                        <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                          percentChange.isZero 
+                            ? "text-gray-500 bg-gray-500/10" 
+                            : percentChange.isPositive 
+                              ? "text-green-500 bg-green-500/10" 
+                              : "text-red-500 bg-red-500/10"
+                        }`}>
+                          <div className="flex items-center">
+                            {percentChange.isZero ? (
+                              <Minus className="w-3 h-3 mr-1" />
+                            ) : percentChange.isPositive ? (
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                            ) : (
+                              <TrendingDown className="w-3 h-3 mr-1" />
+                            )}
+                            <span>{percentChange.isZero ? '0%' : `${percentChange.value.toFixed(1)}%`}</span>
+                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help ml-1">
+                                <Info className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                align="center"
+                                className="z-50 bg-black border border-gray-800 text-xs p-2"
+                              >
+                                <p>{previousPeriodLabel}: {formattedPrevValue}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
               
