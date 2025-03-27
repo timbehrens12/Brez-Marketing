@@ -127,12 +127,31 @@ export function buildDateRangeQueryString(
     yesterday.setDate(today.getDate() - 1);
     const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
     
-    console.log(`YESTERDAY PRESET: Using exact yesterday date ${yesterdayStr} for both from and to`);
-    
-    // Set both from and to to exactly yesterday
-    queryParams.set('from', yesterdayStr);
-    queryParams.set('to', yesterdayStr);
-    queryParams.set('preset', 'yesterday');
+    // If explicit dates are provided (from URL params), verify they match the expected pattern
+    if (params.from && params.to) {
+      const normalizedFrom = normalizeDateForApi(params.from);
+      const normalizedTo = normalizeDateForApi(params.to);
+      
+      // If from and to are the same and appear to be yesterday, use them
+      if (normalizedFrom === normalizedTo) {
+        console.log(`YESTERDAY PRESET: Using provided date ${normalizedFrom} for both from and to`);
+        queryParams.set('from', normalizedFrom);
+        queryParams.set('to', normalizedFrom); // Deliberately use the same value
+        queryParams.set('preset', 'yesterday');
+      } else {
+        // Otherwise, force use of calculated yesterday
+        console.log(`YESTERDAY PRESET: Provided dates don't match (${normalizedFrom} != ${normalizedTo}). Using exact yesterday ${yesterdayStr}`);
+        queryParams.set('from', yesterdayStr);
+        queryParams.set('to', yesterdayStr);
+        queryParams.set('preset', 'yesterday');
+      }
+    } else {
+      // No explicit dates provided, use calculated yesterday
+      console.log(`YESTERDAY PRESET: Using exact yesterday date ${yesterdayStr} for both from and to`);
+      queryParams.set('from', yesterdayStr);
+      queryParams.set('to', yesterdayStr);
+      queryParams.set('preset', 'yesterday');
+    }
     
     // Add any additional parameters
     Object.entries(params).forEach(([key, value]) => {
