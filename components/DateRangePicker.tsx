@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { normalizeDateForApi, normalizeDateRangeForApi, isSingleDayRange } from "@/lib/date-utils"
 
 // Add custom styles to hide the default navigation buttons
 const calendarStyles = `
@@ -40,35 +39,33 @@ const presets = [
   {
     name: 'Today',
     value: 'today',
-    getDate: () => {
-      // Always use the current date, not a stored one
-      const exactToday = new Date();
-      
-      // Set hours to ensure we get today's exact date
-      exactToday.setHours(0, 0, 0, 0);
-      
-      return {
-        from: exactToday,
-        to: exactToday
-      };
-    }
+    getDate: () => ({
+      from: startOfDay(new Date()),
+      to: endOfDay(new Date())
+    })
   },
   {
     name: 'Yesterday',
     value: 'yesterday',
     getDate: () => {
-      // Calculate yesterday's date based on today
-      const exactToday = new Date();
-      const exactYesterday = new Date(exactToday);
-      exactYesterday.setDate(exactToday.getDate() - 1);
+      // Create yesterday's date
+      const yesterday = subDays(new Date(), 1);
       
-      // Set hours to ensure we get yesterday's exact date
-      exactYesterday.setHours(0, 0, 0, 0);
+      // Format dates as ISO strings with 'yesterday' marker
+      const yesterdayStart = startOfDay(yesterday);
+      const yesterdayEnd = endOfDay(yesterday);
       
-      return {
-        from: exactYesterday,
-        to: exactYesterday
+      // Add a special parameter to the date object
+      const date = {
+        from: yesterdayStart,
+        to: yesterdayEnd,
+        // Add a property to identify this as the yesterday preset
+        _preset: 'yesterday'
       };
+      
+      console.log('Setting yesterday preset with special marker');
+      
+      return date;
     }
   },
   {
@@ -134,30 +131,14 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
     if (!currentDate?.from || !currentDate?.to) return "Pick a date range"
 
-    // For today preset, always use the actual current date
-    if (currentDate.from && currentDate.to && 
-        isSameDay(currentDate.from, currentDate.to) && 
-        (isYesterday(currentDate.from) || isToday(currentDate.from))) {
-      // Check in URL for the preset value
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        const preset = url.searchParams.get('preset');
-        
-        if (preset === 'today') {
-          return "Today";
-        }
-        if (preset === 'yesterday') {
-          return "Yesterday";
-        }
-      }
-      
-      // Default display for single-day selection
-      if (isToday(currentDate.from)) return "Today";
-      if (isYesterday(currentDate.from)) return "Yesterday";
-      
-      // For any other single day
+    // If from and to are the same date, just show that date
+    if (isSameDay(currentDate.from, currentDate.to)) {
       return format(currentDate.from, "LLL dd, y")
     }
+
+    // Check for preset matches
+    if (isToday(currentDate.from) && isToday(currentDate.to)) return "Today"
+    if (isYesterday(currentDate.from) && isYesterday(currentDate.to)) return "Yesterday"
 
     // Check for other presets
     for (const preset of presets) {
@@ -188,7 +169,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       adjustedRange.to = now
     }
     
-    // First click always sets a single date
+    // When the first date is clicked, set both from and to to the same date
     if (selectionStep === 'start' && adjustedRange.from) {
       adjustedRange.to = adjustedRange.from
       setSelectionStep('complete')
@@ -205,138 +186,26 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     // Get the date range from the preset
     const newRange = preset.getDate()
     
-    // Special handling for single-day presets (Today, Yesterday)
-    const isSingleDayPreset = preset.value === 'today' || preset.value === 'yesterday'
-    
-    // For today or yesterday presets, get exact current dates
-    if (preset.value === 'today') {
-      const today = new Date();
-      const todayStr = format(today, 'yyyy-MM-dd');
-      
-      console.log(`Setting EXACT today date: ${todayStr}`);
-      
-      // Set state with today's date
-      setTempDateRange({
-        from: today,
-        to: today
-      })
-      
-      setSelectionStep('complete')
-      
-      // Apply immediately
-      setDateRange({
-        from: today,
-        to: today
-      })
-      
-      // Update URL
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
-        
-        params.set('from', todayStr);
-        params.set('to', todayStr);
-        params.set('preset', 'today');
-        
-        url.search = params.toString();
-        window.history.pushState({}, '', url.toString());
-        
-        console.log(`Updated URL with exact today preset: ${url.toString()}`);
-      }
-      
-      setIsOpen(false)
-      return;
+    // Ensure no future dates are selected
+    const now = new Date()
+    if (newRange.to > now) {
+      newRange.to = now
     }
-    
-    if (preset.value === 'yesterday') {
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
-      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-      
-      console.log(`Setting EXACT yesterday date: ${yesterdayStr}`);
-      
-      // Set state with yesterday's date
-      setTempDateRange({
-        from: yesterday,
-        to: yesterday
-      })
-      
-      setSelectionStep('complete')
-      
-      // Apply immediately
-      setDateRange({
-        from: yesterday,
-        to: yesterday
-      })
-      
-      // Update URL
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
-        
-        params.set('from', yesterdayStr);
-        params.set('to', yesterdayStr);
-        params.set('preset', 'yesterday');
-        
-        url.search = params.toString();
-        window.history.pushState({}, '', url.toString());
-        
-        console.log(`Updated URL with exact yesterday preset: ${url.toString()}`);
-      }
-      
-      setIsOpen(false)
-      return;
-    }
-    
-    // For other presets, continue with normal processing
-    // Ensure no future dates are selected by normalizing
-    const normalizedDates = normalizeDateRangeForApi(
-      newRange.from,
-      newRange.to
-    );
-    
-    // Convert back to Date objects for state
-    const normalizedRange = {
-      from: new Date(normalizedDates.from),
-      to: new Date(normalizedDates.to)
-    };
     
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
-      from: normalizedDates.from,
-      to: normalizedDates.to,
-      isSingleDayPreset
+      from: newRange.from.toISOString().split('T')[0],
+      to: newRange.to.toISOString().split('T')[0]
     });
     
-    setTempDateRange(normalizedRange)
+    setTempDateRange(newRange)
     setSelectionStep('complete')
     
     // Apply immediately when a preset is selected
     setDateRange({
-      from: normalizedRange.from,
-      to: normalizedRange.to
+      from: newRange.from,
+      to: newRange.to
     })
-    
-    // Update URL to include the preset parameter
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      const params = new URLSearchParams(url.search);
-      
-      // Add from and to date parameters
-      params.set('from', normalizedDates.from);
-      params.set('to', normalizedDates.to);
-      
-      // Add the preset parameter - this is critical for proper backend handling
-      params.set('preset', preset.value);
-      
-      // Update the URL without refreshing the page
-      url.search = params.toString();
-      window.history.pushState({}, '', url.toString());
-      
-      console.log(`Updated URL with preset ${preset.value}: ${url.toString()}`);
-    }
-    
     setIsOpen(false)
   }
 
@@ -348,55 +217,13 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         to: tempDateRange.to || tempDateRange.from
       };
       
-      // Normalize dates to ensure they're valid (not in future, etc.)
-      const normalizedDates = normalizeDateRangeForApi(
-        finalRange.from,
-        finalRange.to
-      );
-      
-      // Convert back to Date objects for the state
-      const normalizedDateRange = {
-        from: new Date(normalizedDates.from),
-        to: new Date(normalizedDates.to)
-      };
-      
-      // Check if this is a single day selection (same date for both from and to)
-      const isSingleDaySelection = isSingleDayRange(
-        normalizedDateRange.from,
-        normalizedDateRange.to
-      );
-      
       // Log what we're applying
       console.log('Applying date range:', {
-        from: normalizedDates.from,
-        to: normalizedDates.to,
-        isSingleDaySelection
+        from: finalRange.from.toISOString().split('T')[0],
+        to: finalRange.to.toISOString().split('T')[0]
       });
       
-      setDateRange(normalizedDateRange);
-      
-      // Update URL with the selected date range, but REMOVE preset parameter
-      // since this is a manual date selection, not a preset
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        const params = new URLSearchParams(url.search);
-        
-        // For single day selections, ensure both dates are exactly the same string
-        // This is critical for proper backend handling
-        params.set('from', normalizedDates.from);
-        params.set('to', isSingleDaySelection ? normalizedDates.from : normalizedDates.to);
-        
-        // Remove preset parameter if it exists (critical for backend handling)
-        if (params.has('preset')) {
-          params.delete('preset');
-        }
-        
-        // Update the URL without refreshing the page
-        url.search = params.toString();
-        window.history.pushState({}, '', url.toString());
-        
-        console.log(`Updated URL with custom date range: ${url.toString()}`);
-      }
+      setDateRange(finalRange);
     }
     setIsOpen(false)
   }
@@ -547,25 +374,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   fromMonth={undefined}
                   toMonth={today}
                   className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
-                  // Hide today style by using a custom day styling
-                  modifiersClassNames={{
-                    today: 'bg-transparent'
-                  }}
-                  modifiersStyles={{
-                    // Make selected days more prominent
-                    selected: {
-                      backgroundColor: '#374151',
-                      color: 'white',
-                      fontWeight: 'bold'
-                    }
-                  }}
                   components={{
                     IconLeft: () => null,
                     IconRight: () => null,
                     Caption: CustomCaption
                   }}
                 />
-                
                 <div className="text-xs text-gray-400 mt-2 italic">
                   Future dates are disabled. You can only select dates up to today.
                 </div>

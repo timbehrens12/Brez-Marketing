@@ -141,34 +141,19 @@ export async function GET(request: NextRequest) {
     
     // Special handling for yesterday preset
     if (isYesterdayPreset) {
-      console.log('YESTERDAY PRESET DETECTED - ENFORCING STRICT SINGLE DAY QUERY');
+      console.log('YESTERDAY PRESET DETECTED FROM PARAMETER');
       
       // Use exactly yesterday's date for both from and to
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       fromDate = yesterday.toISOString().split('T')[0];
-      toDate = fromDate; // Same day - this is critical for single day accuracy
+      toDate = fromDate; // Same day
       
       requestedFromDate = fromDate;
       requestedToDate = toDate;
       
-      console.log(`Using strict yesterday-only query: from=${fromDate}, to=${toDate}`);
-    }
-    // Special handling for today preset
-    else if (preset === 'today') {
-      console.log('TODAY PRESET DETECTED - ENFORCING STRICT SINGLE DAY QUERY');
-      
-      // Use exactly today's date for both from and to
-      const today = new Date();
-      fromDate = today.toISOString().split('T')[0];
-      toDate = fromDate; // Same day - this is critical for single day accuracy
-      
-      requestedFromDate = fromDate;
-      requestedToDate = toDate;
-      
-      console.log(`Using strict today-only query: from=${fromDate}, to=${toDate}`);
-    } 
-    else if (from && to) {
+      console.log(`Forcing yesterday-only query: from=${fromDate}, to=${toDate}`);
+    } else if (from && to) {
       // Save the original requested dates for verification
       requestedFromDate = from
       requestedToDate = to
@@ -183,11 +168,7 @@ export async function GET(request: NextRequest) {
         
         // Special case - if from and to are the same date, this is a single day query
         if (fromDate === toDate) {
-          console.log(`IDENTICAL DATE RANGE DETECTED - Single day query: ${fromDate}`);
-          
-          // Ensure we use the exact same date for both from and to
-          // This is critical for single day accuracy in the database query
-          fromDate = toDate = fromDate;
+          console.log(`Single day query detected: ${fromDate}`);
           
           // Check if this is "yesterday" query
           const yesterday = new Date();
@@ -196,6 +177,9 @@ export async function GET(request: NextRequest) {
           
           if (fromDate === yesterdayStr) {
             console.log(`YESTERDAY SPECIAL CASE DETECTED: ${yesterdayStr}`);
+            // Ensure we only get yesterday's data exactly (not including today)
+            fromDate = yesterdayStr;
+            toDate = yesterdayStr;
             
             console.log(`STRICT YESTERDAY QUERY: Setting exact date query for yesterday only: from=${fromDate}, to=${toDate}`);
           }
@@ -272,34 +256,33 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Fetch meta insights for this date range
-    console.log(`FETCHING META INSIGHTS: from [${fromDate}] to [${toDate}] for connection ${connection.id}`)
-
-    // For yesterday preset, be extra strict about date filtering
-    const insightsQuery = supabase
+    // Fetch Meta data from meta_ad_insights table
+    let query = supabase
       .from('meta_ad_insights')
       .select('*')
-      .eq('connection_id', connection.id)
-      
-    // Add specific date filtering based on the date range
-    if (isYesterdayPreset) {
-      // For yesterday preset, use exact equality instead of range
-      insightsQuery.eq('date', fromDate)
-      console.log(`Using EXACT date match for yesterday: ${fromDate}`)
-    } else {
-      // For normal date ranges, use the range operators
-      insightsQuery.gte('date', fromDate)
-      insightsQuery.lte('date', toDate)
-      console.log(`Using date range: from=${fromDate}, to=${toDate}`)
-    }
+      .eq('connection_id', connection.id);
 
-    const { data: insightsData, error: insightsError } = await insightsQuery
+    // For yesterday preset, we need to be extremely strict about the date
+    if (isYesterdayPreset) {
+      console.log(`EXACT YESTERDAY QUERY: Using exact date match for yesterday: date = '${fromDate}'`);
+      
+      // Use equals instead of between for yesterday - we want exactly this day only
+      query = query.eq('date', fromDate);
+    } else {
+      // Normal date range query with greater/less than
+      query = query
+        .gte('date', fromDate)
+        .lte('date', toDate);
+    }
+      
+    // Execute the query
+    const { data: metaData, error: metaError } = await query;
     
-    if (insightsError) {
-      console.log(`Error fetching Meta data: ${JSON.stringify(insightsError)}`)
+    if (metaError) {
+      console.log(`Error fetching Meta data: ${JSON.stringify(metaError)}`)
       return NextResponse.json({ 
         error: 'Error fetching Meta data', 
-        details: insightsError,
+        details: metaError,
         _dateRange: { error: 'db_error', from: fromDate, to: toDate } 
       }, { status: 500 })
     }
@@ -307,8 +290,8 @@ export async function GET(request: NextRequest) {
     // If dateDebug is true, log more details about the returned data
     if (dateDebug || debug) {
       const dateCounts: Record<string, number> = {};
-      if (insightsData) {
-        insightsData.forEach(record => {
+      if (metaData) {
+        metaData.forEach(record => {
           const date = record.date;
           dateCounts[date] = (dateCounts[date] || 0) + 1;
         });
@@ -318,7 +301,7 @@ export async function GET(request: NextRequest) {
     }
     
     // If no data found, return empty structure with the exact date range
-    if (!insightsData || insightsData.length === 0) {
+    if (!metaData || metaData.length === 0) {
       console.log(`No Meta data found for period ${fromDate} to ${toDate} and connection ${connection.id}`)
       
       // Return empty data with date range info
@@ -336,10 +319,10 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    console.log(`Found ${insightsData.length} Meta data records for period ${fromDate} to ${toDate}`)
+    console.log(`Found ${metaData.length} Meta data records for period ${fromDate} to ${toDate}`)
     
     // Process the Meta data
-    const processedData = processMetaData(insightsData)
+    const processedData = processMetaData(metaData)
     
     // Log a sample of what we're actually returning
     console.log(`Meta metrics response data for ${cacheKey}:`, {

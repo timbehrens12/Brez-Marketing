@@ -893,11 +893,11 @@ export default function DashboardPage() {
           >
             <div className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MetaSpendTrends brandId={selectedBrandId} />
-                <MetaAdPerformance brandId={selectedBrandId} />
+                <MetaSpendTrends brandId={selectedBrandId} dateRange={dateRange} />
+                <MetaAdPerformance brandId={selectedBrandId} dateRange={dateRange} />
               </div>
               
-              <MetaCampaignsTable brandId={selectedBrandId} />
+              <MetaCampaignsTable brandId={selectedBrandId} dateRange={dateRange} />
             </div>
           </WidgetManager>
         </>

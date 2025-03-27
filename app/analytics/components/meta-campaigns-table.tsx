@@ -15,8 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
-import { normalizeDateForApi, normalizeDateRangeForApi, buildDateRangeQueryString } from '@/lib/date-utils'
-import { format } from 'date-fns'
+import { DateRange } from "react-day-picker"
 
 interface Campaign {
   id: string;
@@ -33,7 +32,13 @@ interface Campaign {
   end_date: string | null;
 }
 
-export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
+export default function MetaCampaignsTable({ 
+  brandId, 
+  dateRange 
+}: { 
+  brandId: string,
+  dateRange?: DateRange
+}) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -54,181 +59,40 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     totalClicks: 0
   })
 
-  // Get the date parameters from URL
-  const searchParams = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams('');
-    
-  const rawFromDate = searchParams.get('from') || undefined
-  const rawToDate = searchParams.get('to') || undefined
-  const presetValue = searchParams.get('preset') || undefined
-
   useEffect(() => {
     async function fetchCampaigns() {
-      // Guard against null brand ID
-      if (!brandId) {
-        console.error('No brand ID provided, cannot fetch campaigns');
-        setError('Missing brand ID');
-        setLoading(false);
-        return;
-      }
-      
       try {
         setLoading(true)
         
-        // Special handling for yesterday preset
-        let modifiedFromDate = rawFromDate;
-        let modifiedToDate = rawToDate;
+        // Build the URL with date range parameters
+        const params = new URLSearchParams({
+          brandId: brandId
+        })
         
-        if (presetValue === 'yesterday') {
-          // Force yesterday to be a single day
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-          
-          console.log(`CAMPAIGNS TABLE: Strict yesterday enforcement - using ${yesterdayStr}`);
-          
-          // Skip the buildDateRangeQueryString and directly create queryString
-          // This ensures maximum consistency with server-side logic
-          const queryStringParams = new URLSearchParams();
-          queryStringParams.set('brandId', brandId);
-          queryStringParams.set('from', yesterdayStr);
-          queryStringParams.set('to', yesterdayStr);
-          queryStringParams.set('preset', 'yesterday');
-          queryStringParams.set('enforce_single_day', 'true');
-          
-          const apiUrl = `/api/analytics/meta/campaigns?${queryStringParams.toString()}`
-          
-          console.log(`YESTERDAY OVERRIDE: Fetching Meta campaigns for yesterday (${yesterdayStr}) only`);
-          var response = await fetch(apiUrl);
-        } else {
-          // For non-yesterday presets, use the standard flow with buildDateRangeQueryString
-          // Build the API URL with normalized date range parameters
-          const queryString = buildDateRangeQueryString({
-            brandId: brandId,
-            from: modifiedFromDate || undefined,
-            to: modifiedToDate || undefined,
-            preset: presetValue || undefined,
-          });
-          
-          const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
-          
-          console.log(`Fetching Meta campaigns data...`);
-          
-          var response = await fetch(apiUrl);
+        // Add the date range if available
+        if (dateRange?.from) {
+          const formattedFromDate = new Date(dateRange.from)
+          formattedFromDate.setHours(0, 0, 0, 0)
+          params.append('from', formattedFromDate.toISOString().split('T')[0])
         }
         
-        console.log(`Meta campaigns response status: ${response.status} ${response.statusText}`);
+        if (dateRange?.to) {
+          const formattedToDate = new Date(dateRange.to)
+          formattedToDate.setHours(23, 59, 59, 999)
+          params.append('to', formattedToDate.toISOString().split('T')[0])
+        }
+        
+        // Special handling for yesterday preset
+        if (dateRange && 'from' in dateRange && 'to' in dateRange && 
+            dateRange.from && dateRange.to && 
+            (dateRange as any)._preset === 'yesterday') {
+          params.append('yesterday', 'true')
+        }
+        
+        const response = await fetch(`/api/analytics/meta/campaigns?${params.toString()}`)
         
         if (!response.ok) {
-          console.error(`Campaign fetch failed with status: ${response.status}`);
-          
-          if (response.status === 500) {
-            console.error('Server error fetching campaigns - using mock data');
-            // If server error, use mock data instead of failing completely
-            const mockCampaigns: Campaign[] = [
-              {
-                id: '1',
-                campaign_name: 'Summer Sale 2023',
-                status: 'ACTIVE',
-                spend: 1250.75,
-                impressions: 85000,
-                clicks: 3200,
-                ctr: 3.76,
-                conversions: 128,
-                cpa: 9.77,
-                roas: 4.2,
-                start_date: '2023-06-01',
-                end_date: '2023-08-31'
-              },
-              {
-                id: '2',
-                campaign_name: 'New Product Launch',
-                status: 'ACTIVE',
-                spend: 2450.50,
-                impressions: 120000,
-                clicks: 5800,
-                ctr: 4.83,
-                conversions: 210,
-                cpa: 11.67,
-                roas: 3.8,
-                start_date: '2023-09-15',
-                end_date: null
-              },
-              {
-                id: '3',
-                campaign_name: 'Holiday Special',
-                status: 'PAUSED',
-                spend: 850.25,
-                impressions: 45000,
-                clicks: 1800,
-                ctr: 4.00,
-                conversions: 72,
-                cpa: 11.81,
-                roas: 3.5,
-                start_date: '2023-11-01',
-                end_date: '2023-12-31'
-              },
-              {
-                id: '4',
-                campaign_name: 'Retargeting Campaign',
-                status: 'ACTIVE',
-                spend: 750.00,
-                impressions: 32000,
-                clicks: 1600,
-                ctr: 5.00,
-                conversions: 96,
-                cpa: 7.81,
-                roas: 5.2,
-                start_date: '2023-10-01',
-                end_date: null
-              },
-              {
-                id: '5',
-                campaign_name: 'Brand Awareness',
-                status: 'COMPLETED',
-                spend: 1800.00,
-                impressions: 150000,
-                clicks: 4500,
-                ctr: 3.00,
-                conversions: 90,
-                cpa: 20.00,
-                roas: 2.1,
-                start_date: '2023-05-01',
-                end_date: '2023-07-31'
-              }
-            ];
-            
-            // Also calculate metrics for mock data
-            setCampaigns(mockCampaigns);
-            
-            const totalClicks = mockCampaigns.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
-            const totalImpressions = mockCampaigns.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
-            const totalSpend = mockCampaigns.reduce((sum, campaign) => sum + (campaign.spend || 0), 0);
-            const totalRevenue = mockCampaigns.reduce((sum, campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
-            
-            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-            const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
-            
-            setMetrics(prev => ({
-              ...prev,
-              currentCTR: avgCTR,
-              currentRoas: avgRoas,
-              totalSpend,
-              totalClicks
-            }));
-            setLoading(false);
-            return;
-          }
-          
-          try {
-            // Try to extract error details from the response
-            const errorData = await response.json();
-            console.error('Error details:', errorData);
-            throw new Error(`Failed to fetch campaigns: ${response.status}${errorData.error ? ` - ${errorData.error}` : ''}`);
-          } catch (parseError) {
-            throw new Error(`Failed to fetch campaigns: ${response.status}`);
-          }
+          throw new Error(`Failed to fetch campaigns: ${response.status}`)
         }
         
         const data = await response.json()
@@ -239,44 +103,54 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         // If we have real data, use it
         if (data.campaigns && data.campaigns.length > 0) {
-          // Ensure all numeric fields are properly converted to numbers
-          const processedCampaigns = data.campaigns.map((campaign: any) => ({
-            ...campaign,
-            // Ensure all numeric values are properly converted from strings/nulls
-            spend: parseFloat(campaign.spend) || 0,
-            impressions: parseInt(campaign.impressions, 10) || 0, 
-            clicks: parseInt(campaign.clicks, 10) || 0,
-            ctr: parseFloat(campaign.ctr) || 0,
-            conversions: parseInt(campaign.conversions, 10) || 0,
-            cpa: parseFloat(campaign.cpa) || 0,
-            roas: parseFloat(campaign.roas) || 0
-          })) as Campaign[];
-          
-          setCampaigns(processedCampaigns);
+          setCampaigns(data.campaigns)
           
           // Calculate aggregated metrics
-          if (processedCampaigns.length > 0) {
-            const totalClicks = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.clicks || 0), 0);
-            const totalImpressions = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.impressions || 0), 0);
-            const totalSpend = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.spend || 0), 0);
-            const totalRevenue = processedCampaigns.reduce((sum: number, campaign: Campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
+          if (data.campaigns.length > 0) {
+            const totalClicks = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.clicks, 0);
+            const totalImpressions = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.impressions, 0);
+            const totalSpend = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + campaign.spend, 0);
+            const totalRevenue = data.campaigns.reduce((sum: number, campaign: Campaign) => sum + (campaign.roas * campaign.spend), 0);
             
             const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
             const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
             
-            // Calculate basic metrics anyway
-            setMetrics(prev => ({
-              ...prev,
-              currentCTR: avgCTR,
-              currentRoas: avgRoas,
-              totalSpend,
-              totalClicks
-            }));
+            // Check if we have comparison data
+            if (data.periodComparison && data.periodComparison.current && data.periodComparison.previous) {
+              const { current, previous } = data.periodComparison;
+              
+              const ctrChange = previous.ctr > 0 
+                ? ((avgCTR - previous.ctr) / previous.ctr) * 100 
+                : 0;
+                
+              const roasChange = previous.roas > 0 
+                ? ((avgRoas - previous.roas) / previous.roas) * 100 
+                : 0;
+                
+              setMetrics({
+                ctrChange,
+                roasChange,
+                currentCTR: avgCTR,
+                previousCTR: previous.ctr,
+                currentRoas: avgRoas,
+                previousRoas: previous.roas,
+                totalSpend,
+                totalClicks
+              });
+            } else {
+              // If no comparison data, at least set the current metrics
+              setMetrics(prev => ({
+                ...prev,
+                currentCTR: avgCTR,
+                currentRoas: avgRoas,
+                totalSpend,
+                totalClicks
+              }));
+            }
           }
         } else {
           // Otherwise use mock data
-          console.log('No campaigns data found, using mock data');
-          const mockCampaigns: Campaign[] = [
+          setCampaigns([
             {
               id: '1',
               campaign_name: 'Summer Sale 2023',
@@ -347,26 +221,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
               start_date: '2023-05-01',
               end_date: '2023-07-31'
             }
-          ];
-          
-          // Also calculate metrics for mock data
-          setCampaigns(mockCampaigns);
-          
-          const totalClicks = mockCampaigns.reduce((sum, campaign) => sum + (campaign.clicks || 0), 0);
-          const totalImpressions = mockCampaigns.reduce((sum, campaign) => sum + (campaign.impressions || 0), 0);
-          const totalSpend = mockCampaigns.reduce((sum, campaign) => sum + (campaign.spend || 0), 0);
-          const totalRevenue = mockCampaigns.reduce((sum, campaign) => sum + ((campaign.roas || 0) * (campaign.spend || 0)), 0);
-          
-          const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-          const avgRoas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
-          
-          setMetrics(prev => ({
-            ...prev,
-            currentCTR: avgCTR,
-            currentRoas: avgRoas,
-            totalSpend,
-            totalClicks
-          }));
+          ])
         }
       } catch (err) {
         console.error('Error fetching Meta campaigns:', err)
@@ -379,7 +234,7 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchCampaigns()
     }
-  }, [brandId, rawFromDate, rawToDate, presetValue])
+  }, [brandId, dateRange])
 
   // Sort function
   const sortedCampaigns = useMemo(() => {

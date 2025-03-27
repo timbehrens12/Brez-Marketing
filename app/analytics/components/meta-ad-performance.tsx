@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
-import { format } from 'date-fns'
+import { DateRange } from "react-day-picker"
 
 // Define interface for meta analytics data
 interface MetaAnalyticItem {
@@ -21,7 +21,10 @@ interface MetaAnalyticItem {
   ctr?: number | string;
 }
 
-export default function MetaAdPerformance({ brandId }: { brandId: string }) {
+export default function MetaAdPerformance({ brandId, dateRange }: { 
+  brandId: string,
+  dateRange?: DateRange
+}) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,144 +37,87 @@ export default function MetaAdPerformance({ brandId }: { brandId: string }) {
     previousClicks: 0
   })
 
-  // Get the date range from the parent context
-  const searchParams = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams('');
-    
-  const fromDate = searchParams.get('from')
-  const toDate = searchParams.get('to')
-  const preset = searchParams.get('preset')
-
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true);
+        setLoading(true)
         
-        // Special handling for yesterday preset to ensure consistency across all API calls
-        if (preset === 'yesterday') {
-          // Always calculate yesterday's exact date for consistency
-          const today = new Date();
-          const yesterday = new Date(today);
-          yesterday.setDate(today.getDate() - 1);
-          const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        // Build the URL with date range parameters
+        const params = new URLSearchParams({
+          brandId: brandId
+        })
+        
+        // Add the date range if available
+        if (dateRange?.from) {
+          const formattedFromDate = new Date(dateRange.from)
+          formattedFromDate.setHours(0, 0, 0, 0)
+          params.append('from', formattedFromDate.toISOString().split('T')[0])
+        }
+        
+        if (dateRange?.to) {
+          const formattedToDate = new Date(dateRange.to)
+          formattedToDate.setHours(23, 59, 59, 999)
+          params.append('to', formattedToDate.toISOString().split('T')[0])
+        }
+        
+        // Special handling for yesterday preset
+        if (dateRange && 'from' in dateRange && 'to' in dateRange && 
+            dateRange.from && dateRange.to && 
+            (dateRange as any)._preset === 'yesterday') {
+          params.append('yesterday', 'true')
+        }
+        
+        const response = await fetch(`/api/analytics/meta?${params.toString()}`)
+        const result = await response.json()
+        
+        if (result.error) {
+          throw new Error(result.error)
+        }
+        
+        // Ensure data is in the right format
+        const formattedData = (result.data || []).map((item: MetaAnalyticItem) => ({
+          campaign_name: item.campaign_name || 'Unknown Campaign',
+          spend: typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend || 0,
+          impressions: item.impressions || 0,
+          clicks: item.clicks || 0,
+          ctr: typeof item.ctr === 'string' ? parseFloat(item.ctr) : item.ctr || 0
+        }))
+        
+        setData(formattedData)
+        
+        // Calculate total metrics and changes if we have data from previous periods
+        if (result.periodComparison) {
+          const { current, previous } = result.periodComparison;
           
-          console.log(`YESTERDAY OVERRIDE: Forcing ad performance data for yesterday (${yesterdayStr}) only`);
-          
-          // Create URL params directly with consistent yesterday date
-          const queryParams = new URLSearchParams();
-          queryParams.set('brandId', brandId);
-          queryParams.set('from', yesterdayStr);
-          queryParams.set('to', yesterdayStr);
-          queryParams.set('preset', 'yesterday');
-          queryParams.set('enforce_single_day', 'true');
-          
-          const apiUrl = `/api/analytics/meta?${queryParams.toString()}`;
-          
-          console.log(`Fetching Meta ad performance for yesterday ONLY: ${apiUrl}`);
-          
-          const response = await fetch(apiUrl);
-          
-          console.log(`Meta ad performance response status: ${response.status} ${response.statusText}`);
-          
-          if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status} ${response.statusText}`);
-          }
-          
-          // Process response...
-          const result = await response.json();
-          
-          if (result.error) {
-            throw new Error(result.error);
-          }
-          
-          // Continue with processing result...
-          processApiResponse(result);
-        } 
-        // Standard date handling for non-yesterday presets
-        else {
-          // Build the API URL with date range parameters
-          let apiUrl = `/api/analytics/meta?brandId=${brandId}`;
-          
-          // Add date filtering parameters if available
-          if (fromDate) {
-            apiUrl += `&from=${fromDate}`;
-          }
-          if (toDate) {
-            apiUrl += `&to=${toDate}`;
-          }
-          if (preset) {
-            apiUrl += `&preset=${preset}`;
-          }
-          
-          console.log(`Fetching Meta ad performance data with: ${apiUrl}`);
-          
-          const response = await fetch(apiUrl);
-          
-          // Log detailed status information for debugging
-          console.log(`Meta ad performance response status: ${response.status} ${response.statusText}`);
-          
-          if (!response.ok) {
-            throw new Error(`API request failed with status ${response.status} ${response.statusText}`);
-          }
-          
-          const result = await response.json();
-          
-          if (result.error) {
-            throw new Error(result.error);
-          }
-          
-          // Process result...
-          processApiResponse(result);
+          const ctrChange = previous.ctr > 0 
+            ? ((current.ctr - previous.ctr) / previous.ctr) * 100 
+            : 0;
+            
+          const clicksChange = previous.clicks > 0 
+            ? ((current.clicks - previous.clicks) / previous.clicks) * 100 
+            : 0;
+            
+          setMetrics({
+            ctrChange,
+            clicksChange,
+            currentCTR: current.ctr,
+            previousCTR: previous.ctr,
+            currentClicks: current.clicks,
+            previousClicks: previous.clicks
+          });
         }
       } catch (err) {
-        console.error('Error fetching Meta analytics:', err);
-        setError('Failed to load Meta ad performance data');
+        console.error('Error fetching Meta analytics:', err)
+        setError('Failed to load Meta ad performance data')
       } finally {
-        setLoading(false);
-      }
-    }
-    
-    // Helper to process API response to avoid code duplication
-    function processApiResponse(result: any) {
-      // Ensure data is in the right format
-      const formattedData = (result.data || []).map((item: MetaAnalyticItem) => ({
-        campaign_name: item.campaign_name || 'Unknown Campaign',
-        spend: typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend || 0,
-        impressions: item.impressions || 0,
-        clicks: item.clicks || 0,
-        ctr: typeof item.ctr === 'string' ? parseFloat(item.ctr) : item.ctr || 0
-      }));
-      
-      setData(formattedData);
-      
-      // Calculate total metrics and changes if we have data from previous periods
-      if (result.periodComparison) {
-        const { current, previous } = result.periodComparison;
-        
-        const ctrChange = previous.ctr > 0 
-          ? ((current.ctr - previous.ctr) / previous.ctr) * 100 
-          : 0;
-          
-        const clicksChange = previous.clicks > 0 
-          ? ((current.clicks - previous.clicks) / previous.clicks) * 100 
-          : 0;
-          
-        setMetrics({
-          ctrChange,
-          clicksChange,
-          currentCTR: current.ctr,
-          previousCTR: previous.ctr,
-          currentClicks: current.clicks,
-          previousClicks: previous.clicks
-        });
+        setLoading(false)
       }
     }
 
     if (brandId) {
       fetchData()
     }
-  }, [brandId, fromDate, toDate, preset])
+  }, [brandId, dateRange])
 
   if (loading) {
     return (

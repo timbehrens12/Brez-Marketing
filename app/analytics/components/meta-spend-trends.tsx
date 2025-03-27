@@ -10,8 +10,12 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip"
+import { DateRange } from "react-day-picker"
 
-export default function MetaSpendTrends({ brandId }: { brandId: string }) {
+export default function MetaSpendTrends({ brandId, dateRange }: { 
+  brandId: string, 
+  dateRange?: DateRange 
+}) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,45 +28,37 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
     previousRoas: 0
   })
 
-  // Get the date range from the parent context
-  const searchParams = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams('');
-    
-  const fromDate = searchParams.get('from')
-  const toDate = searchParams.get('to')
-  const preset = searchParams.get('preset')
-
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true);
+        setLoading(true)
         
-        // Build the API URL with date range parameters
-        let apiUrl = `/api/metrics/meta?brandId=${brandId}`
+        // Build the URL with date range parameters
+        const params = new URLSearchParams({
+          brandId: brandId
+        })
         
-        // Add date filtering parameters if available
-        if (fromDate) {
-          apiUrl += `&from=${fromDate}`
-        }
-        if (toDate) {
-          apiUrl += `&to=${toDate}`
-        }
-        if (preset) {
-          apiUrl += `&preset=${preset}`
+        // Add the date range if available
+        if (dateRange?.from) {
+          const formattedFromDate = new Date(dateRange.from)
+          formattedFromDate.setHours(0, 0, 0, 0)
+          params.append('from', formattedFromDate.toISOString().split('T')[0])
         }
         
-        console.log(`Fetching Meta spend trends data with: ${apiUrl}`)
-        
-        const response = await fetch(apiUrl)
-        
-        // Log detailed status information for debugging
-        console.log(`Meta spend trends response status: ${response.status} ${response.statusText}`);
-        
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status} ${response.statusText}`);
+        if (dateRange?.to) {
+          const formattedToDate = new Date(dateRange.to)
+          formattedToDate.setHours(23, 59, 59, 999)
+          params.append('to', formattedToDate.toISOString().split('T')[0])
         }
         
+        // Special handling for yesterday preset
+        if (dateRange && 'from' in dateRange && 'to' in dateRange && 
+            dateRange.from && dateRange.to && 
+            (dateRange as any)._preset === 'yesterday') {
+          params.append('yesterday', 'true')
+        }
+        
+        const response = await fetch(`/api/metrics/meta?${params.toString()}`)
         const result = await response.json()
         
         if (result.error) {
@@ -106,7 +102,7 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
     if (brandId) {
       fetchData()
     }
-  }, [brandId, fromDate, toDate, preset])
+  }, [brandId, dateRange])
 
   if (loading) {
     return (

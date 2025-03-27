@@ -44,7 +44,7 @@ function Calendar({
         day_range_end: "day-range-end",
         day_selected:
           "bg-gray-700 text-white hover:bg-gray-600 hover:text-white focus:bg-gray-700 focus:text-white",
-        day_today: "bg-gray-800 text-white",
+        day_today: "",
         day_outside:
           "day-outside text-muted-foreground aria-selected:bg-gray-800/50 aria-selected:text-muted-foreground",
         day_disabled: "text-muted-foreground opacity-50",
@@ -62,10 +62,7 @@ function Calendar({
           backgroundColor: '#374151',
           color: 'white'
         },
-        today: {
-          backgroundColor: '#1f2937',
-          color: 'white'
-        },
+        today: {},
         range_middle: {
           backgroundColor: '#374151',
           color: 'white'
