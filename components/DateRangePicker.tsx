@@ -51,19 +51,19 @@ const presets = [
       // Create yesterday's date
       const yesterday = subDays(new Date(), 1);
       
-      // Format dates as ISO strings with 'yesterday' marker
+      // Format dates - use the same date for both from and to
       const yesterdayStart = startOfDay(yesterday);
-      const yesterdayEnd = endOfDay(yesterday);
       
-      // Add a special parameter to the date object
+      // Add a special parameter to the date object - use the same date for both
       const date = {
         from: yesterdayStart,
-        to: yesterdayEnd,
+        to: yesterdayStart, // Use same date for both to prevent API confusion
         // Add a property to identify this as the yesterday preset
         _preset: 'yesterday'
       };
       
-      console.log('Setting yesterday preset with special marker');
+      console.log('Setting yesterday preset with special marker - same date for both');
+      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
       
       return date;
     }

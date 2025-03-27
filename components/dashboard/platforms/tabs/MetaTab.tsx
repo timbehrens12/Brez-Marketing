@@ -218,8 +218,12 @@ export function MetaTab({
     };
   });
 
-  // Loading states
+  // Loading states - add more granular control
   const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
+  const [initialLoadStarted, setInitialLoadStarted] = useState<boolean>(false);
+  
+  // Add this after the loading states to ensure widget visibility during loading
+  const showLoadingPlaceholder = loading && !initialLoadStarted;
 
   // Refs to track component mount state
   const isMounted = useRef<boolean>(true);
@@ -437,6 +441,9 @@ export function MetaTab({
     setLoading(true);
     setIsDateChangeLoading(true);
     setError(null);
+    
+    // Mark that initial load has been started
+    setInitialLoadStarted(true);
     
     // Create a local variable to track if component is still mounted
     let isMounted = true;
@@ -754,9 +761,100 @@ export function MetaTab({
   useEffect(() => {
     if (brandId && !window._disableAutoMetaFetch) {
       console.log("Manually triggering Meta data load on component mount");
-      fetchMetaData();
+      
+      // Add a small delay to ensure we load after the initial render
+      setTimeout(() => {
+        // Preload data with forced parameters to ensure it always loads on first try
+        const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+                               (dateRange?.from && dateRange?.to && 
+                                isSameDay(dateRange.from, dateRange.to) && 
+                                isYesterday(dateRange.from));
+                                
+        if (isYesterdayPreset) {
+          console.log("INITIAL LOAD: Yesterday preset detected, using direct data loading");
+          
+          // Use a more direct approach for yesterday data to avoid any caching issues
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          const forcedParams = new URLSearchParams({
+            brandId: brandId,
+            from: yesterdayStr,
+            to: yesterdayStr,
+            preset: 'yesterday',
+            strict_date_range: 'true',
+            bypass_cache: 'true',
+            refresh: 'true',
+            force_load: 'true'
+          });
+          
+          console.log(`INITIAL LOAD: Force loading yesterday data with params: ${forcedParams.toString()}`);
+          
+          // Directly fetch the data
+          (async () => {
+            try {
+              const response = await fetch(`/api/metrics/meta?${forcedParams.toString()}`, {
+                cache: 'no-store',
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache'
+                }
+              });
+              
+              if (!response.ok) {
+                throw new Error(`Failed to fetch yesterday's data: ${response.status}`);
+              }
+              
+              const data = await response.json();
+              
+              console.log("INITIAL LOAD: Successfully loaded yesterday's data:", {
+                adSpend: data.adSpend,
+                impressions: data.impressions,
+                clicks: data.clicks,
+                dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
+              });
+              
+              // Immediately update the state with the fetched data
+              if (data) {
+                setMetricsData({
+                  adSpend: data.adSpend ?? 0,
+                  adSpendGrowth: data.adSpendGrowth ?? 0,
+                  impressions: data.impressions ?? 0,
+                  impressionGrowth: data.impressionGrowth ?? 0,
+                  clicks: data.clicks ?? 0,
+                  clickGrowth: data.clickGrowth ?? 0,
+                  conversions: data.conversions ?? 0,
+                  conversionGrowth: data.conversionGrowth ?? 0,
+                  ctr: data.ctr ?? 0,
+                  ctrGrowth: data.ctrGrowth ?? 0,
+                  cpc: data.cpc ?? 0,
+                  cpcLink: data.cpcLink ?? 0,
+                  costPerResult: data.costPerResult ?? 0,
+                  cprGrowth: data.cprGrowth ?? 0,
+                  roas: data.roas ?? 0,
+                  roasGrowth: data.roasGrowth ?? 0,
+                  frequency: data.frequency ?? 0,
+                  budget: data.budget ?? 0,
+                  reach: data.reach ?? 0,
+                  dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
+                });
+                setLoading(false);
+                initialLoadComplete.current = true;
+              }
+            } catch (error) {
+              console.error("INITIAL LOAD: Error fetching yesterday's data:", error);
+              // Fall back to regular fetch
+              fetchMetaData();
+            }
+          })();
+        } else {
+          // For other date ranges, use the regular fetch
+          fetchMetaData();
+        }
+      }, 100); // Small delay to ensure DOM is ready
     }
-  }, [brandId]);
+  }, [brandId, dateRange]);
 
   // Add a button to manually fetch data 
   const manuallyLoadData = () => {
@@ -1925,8 +2023,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) ? metricsData.adSpend : 0}
             change={typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? metricsData.adSpendGrowth : 0}
-                      data={[]}
-                      loading={false}
+            data={[]}
+            loading={showLoadingPlaceholder}
             refreshing={isRefreshingData}
             platform="meta"
             prefix="$"
@@ -1934,7 +2032,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             dateRange={dateRange}
             infoTooltip="Total amount spent on Meta ads"
             brandId={brandId}
-                      hideGraph={true}
+            hideGraph={true}
           />
           
           <MetricCard
@@ -1946,15 +2044,15 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={typeof metricsData?.roas === 'number' && !isNaN(metricsData.roas) ? metricsData.roas : 0}
             change={typeof metricsData?.roasGrowth === 'number' && !isNaN(metricsData.roasGrowth) ? metricsData.roasGrowth : 0}
-                      data={[]}
-                      loading={false}
+            data={[]}
+            loading={showLoadingPlaceholder}
             refreshing={isRefreshingData}
             platform="meta"
             suffix="x"
             dateRange={dateRange}
             infoTooltip="Return On Ad Spend (revenue divided by ad spend)"
             brandId={brandId}
-                      hideGraph={true}
+            hideGraph={true}
           />
           
           <MetricCard
@@ -1966,14 +2064,14 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={typeof metricsData?.impressions === 'number' && !isNaN(metricsData.impressions) ? metricsData.impressions : 0}
             change={typeof metricsData?.impressionGrowth === 'number' && !isNaN(metricsData.impressionGrowth) ? metricsData.impressionGrowth : 0}
-                      data={[]}
-                      loading={false}
+            data={[]}
+            loading={showLoadingPlaceholder}
             refreshing={isRefreshingData}
             platform="meta"
             dateRange={dateRange}
             infoTooltip="Number of times your ads were displayed to users"
             brandId={brandId}
-                      hideGraph={true}
+            hideGraph={true}
           />
           
           <MetricCard
@@ -1985,14 +2083,14 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={typeof metricsData?.clicks === 'number' && !isNaN(metricsData.clicks) ? metricsData.clicks : 0}
             change={typeof metricsData?.clickGrowth === 'number' && !isNaN(metricsData.clickGrowth) ? metricsData.clickGrowth : 0}
-                      data={[]}
-                      loading={false}
+            data={[]}
+            loading={showLoadingPlaceholder}
             refreshing={isRefreshingData}
             platform="meta"
             dateRange={dateRange}
             infoTooltip="Number of clicks on your ads"
             brandId={brandId}
-                      hideGraph={true}
+            hideGraph={true}
           />
         </div>
       </div>
