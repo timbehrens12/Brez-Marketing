@@ -6,21 +6,14 @@ import { format, isValid, isPast } from 'date-fns'
 // Define types for our data
 interface MetaInsight {
   campaign_id: string;
+  campaign_name: string;
+  status?: string;
   spend: string;
   impressions: string;
   clicks: string;
   conversions: string;
   date: string;
-  [key: string]: any;
-}
-
-interface MetaCampaign {
-  campaign_id: string;
-  campaign_name: string;
-  status: string;
-  estimated_revenue?: number;
-  start_time?: string;
-  stop_time?: string | null;
+  brand_id: string;
   [key: string]: any;
 }
 
@@ -153,16 +146,27 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    // First fetch all campaigns for this brand
-    const { data: campaignData, error: campaignError } = await supabase
-      .from('meta_campaigns')
-      .select('*')
+    // First fetch unique campaign IDs for this brand
+    const { data: uniqueCampaigns, error: campaignError } = await supabase
+      .from('meta_ad_insights')
+      .select('campaign_id, campaign_name')
       .eq('brand_id', brandId)
-    
+      .not('campaign_id', 'is', null)
+
     if (campaignError) {
       console.error('Database error fetching campaigns:', campaignError)
-      return NextResponse.json({ error: 'Failed to fetch Meta campaigns data' }, { status: 500 })
+      if (campaignError.code === '42P01') {
+        return NextResponse.json({ 
+          error: 'Table not found', 
+          details: 'The database table for Meta campaigns does not exist.',
+          code: campaignError.code,
+          message: campaignError.message
+        }, { status: 500 })
+      }
+      return NextResponse.json({ error: 'Failed to fetch Meta campaigns data', details: campaignError }, { status: 500 })
     }
+
+    console.log(`Found ${uniqueCampaigns?.length || 0} unique campaigns`)
 
     // Handle date range with more precision for exact queries
     let formattedFromDate: string | null = null
@@ -361,7 +365,15 @@ export async function GET(request: NextRequest) {
 
     if (insightsError) {
       console.error('Database error fetching insights:', insightsError)
-      return NextResponse.json({ error: 'Failed to fetch Meta insights data' }, { status: 500 })
+      if (insightsError.code === '42P01') {
+        return NextResponse.json({ 
+          error: 'Table not found', 
+          details: 'The database table for Meta insights does not exist.',
+          code: insightsError.code,
+          message: insightsError.message
+        }, { status: 500 })
+      }
+      return NextResponse.json({ error: 'Failed to fetch Meta insights data', details: insightsError }, { status: 500 })
     }
     
     console.log(`Retrieved ${insightsData?.length || 0} Meta insights records for date range`)
@@ -369,30 +381,30 @@ export async function GET(request: NextRequest) {
     // Start with empty campaigns array
     let campaigns: CampaignResponse[] = [];
     
-    // Process the data only if we have both campaigns and insights
-    if (campaignData && campaignData.length > 0) {
-      // Group insights by campaign_id - handle potential empty insights
-      const insightsByCampaign: Record<string, MetaInsight[]> = {};
+    // Process the data only if we have insights
+    if (insightsData && insightsData.length > 0) {
+      // Group insights by campaign_id
+      const campaignGroups = new Map<string, MetaInsight[]>();
       
-      if (insightsData && insightsData.length > 0) {
-        insightsData.forEach((insight: MetaInsight) => {
-          if (!insight.campaign_id) return;
-          
-          if (!insightsByCampaign[insight.campaign_id]) {
-            insightsByCampaign[insight.campaign_id] = [];
-          }
-          
-          insightsByCampaign[insight.campaign_id].push(insight);
-        });
-      }
+      insightsData.forEach((insight: MetaInsight) => {
+        if (!insight.campaign_id) return;
+        
+        if (!campaignGroups.has(insight.campaign_id)) {
+          campaignGroups.set(insight.campaign_id, []);
+        }
+        
+        campaignGroups.get(insight.campaign_id)!.push(insight);
+      });
       
-      // Process each campaign with its insights
-      campaigns = (campaignData as MetaCampaign[]).map(campaign => {
+      // Process each unique campaign from insights
+      campaigns = Array.from(campaignGroups.entries()).map(([campaignId, insights]) => {
         try {
-          const campaignInsights = insightsByCampaign[campaign.campaign_id] || [];
+          // Get the campaign name from the first insight (assuming it's consistent)
+          const campaignName = insights[0].campaign_name || 'Unnamed Campaign';
+          const status = insights[0].status || 'UNKNOWN';
           
           // Sum up metrics from all insights for this campaign
-          const totalSpend = campaignInsights.reduce(
+          const totalSpend = insights.reduce(
             (sum: number, insight: MetaInsight) => {
               try {
                 return sum + parseFloat(insight.spend || '0');
@@ -404,7 +416,7 @@ export async function GET(request: NextRequest) {
             0
           );
           
-          const totalImpressions = campaignInsights.reduce(
+          const totalImpressions = insights.reduce(
             (sum: number, insight: MetaInsight) => {
               try {
                 return sum + parseInt(insight.impressions || '0');
@@ -416,7 +428,7 @@ export async function GET(request: NextRequest) {
             0
           );
           
-          const totalClicks = campaignInsights.reduce(
+          const totalClicks = insights.reduce(
             (sum: number, insight: MetaInsight) => {
               try {
                 return sum + parseInt(insight.clicks || '0');
@@ -428,7 +440,7 @@ export async function GET(request: NextRequest) {
             0
           );
           
-          const totalConversions = campaignInsights.reduce(
+          const totalConversions = insights.reduce(
             (sum: number, insight: MetaInsight) => {
               try {
                 return sum + parseInt(insight.conversions || '0');
@@ -443,12 +455,17 @@ export async function GET(request: NextRequest) {
           // Calculate derived metrics
           const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
           const cpa = totalConversions > 0 ? totalSpend / totalConversions : 0;
-          const roas = totalSpend > 0 ? (campaign.estimated_revenue || 0) / totalSpend : 0;
+          const roas = totalSpend > 0 ? 0 : 0; // No estimated_revenue in this table
+          
+          // Find start and end dates from insights
+          const dates = insights.map(insight => new Date(insight.date));
+          const startDate = dates.length > 0 ? format(new Date(Math.min(...dates.map(d => d.getTime()))), 'yyyy-MM-dd') : null;
+          const endDate = dates.length > 0 ? format(new Date(Math.max(...dates.map(d => d.getTime()))), 'yyyy-MM-dd') : null;
           
           return {
-            id: campaign.campaign_id,
-            campaign_name: campaign.campaign_name || 'Unnamed Campaign',
-            status: campaign.status || 'UNKNOWN',
+            id: campaignId,
+            campaign_name: campaignName,
+            status: status,
             spend: totalSpend || 0,
             impressions: totalImpressions || 0,
             clicks: totalClicks || 0,
@@ -456,15 +473,15 @@ export async function GET(request: NextRequest) {
             conversions: totalConversions || 0,
             cpa: cpa || 0,
             roas: roas || 0,
-            start_date: campaign.start_time || null,
-            end_date: campaign.stop_time || null
+            start_date: startDate,
+            end_date: endDate
           };
         } catch (err) {
-          console.error(`Error processing campaign ${campaign.campaign_id}:`, err);
+          console.error(`Error processing campaign ${campaignId}:`, err);
           // Return a default campaign object with zeros to prevent the entire response from failing
           return {
-            id: campaign.campaign_id || 'unknown',
-            campaign_name: campaign.campaign_name || 'Error Processing Campaign',
+            id: campaignId || 'unknown',
+            campaign_name: 'Error Processing Campaign',
             status: 'ERROR',
             spend: 0,
             impressions: 0,
@@ -479,7 +496,7 @@ export async function GET(request: NextRequest) {
         }
       });
     } else {
-      console.log('No campaign data available or campaigns empty')
+      console.log('No insights data available')
     }
     
     // Sort by spend (descending)
@@ -508,7 +525,7 @@ export async function GET(request: NextRequest) {
           originalFromDate: fromDate,
           originalToDate: toDate
         },
-        campaignsCount: campaignData?.length || 0,
+        campaignsCount: uniqueCampaigns?.length || 0,
         insightsCount: insightsData?.length || 0,
         filteredCampaignsCount: activeCampaigns.length
       }
