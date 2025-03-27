@@ -525,6 +525,16 @@ export function MetaTab({
         }
       }
       
+      // CRITICAL: Final validation to prevent inconsistent parameters for yesterday
+      if (params.get('preset') === 'yesterday' && params.get('from') !== params.get('to')) {
+        console.log(`EMERGENCY FIX: Found inconsistent yesterday parameters. Forcing 'to' param to match 'from'`);
+        const fromValue = params.get('from');
+        if (fromValue) {
+          params.set('to', fromValue);
+          params.set('enforce_single_day', 'true');
+        }
+      }
+      
       // Add parameters to help debugging
       params.append('date_debug', 'true'); 
       params.append('bypass_cache', 'true');
@@ -555,8 +565,14 @@ export function MetaTab({
         if (isSingleDaySelection) {
           console.log(`SINGLE DAY: Fetching Meta data for specific date: ${fromParam}`);
         } else {
-          // Only use "DATE RANGE" label for actual ranges spanning multiple days
-          console.log(`DATE RANGE: Fetching Meta data from ${fromParam} to ${toParam}`);
+          // Never show date range for yesterday preset regardless of the actual params
+          if (isYesterdayPreset || params.has('enforce_single_day')) {
+            const exactDate = fromParam || toParam;
+            console.log(`FORCED SINGLE DAY: Using ${exactDate} for Meta data (overriding any range)`);
+          } else {
+            // Only use "DATE RANGE" label for actual ranges spanning multiple days
+            console.log(`DATE RANGE: Fetching Meta data from ${fromParam} to ${toParam}`);
+          }
         }
       }
       
