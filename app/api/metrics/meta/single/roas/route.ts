@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     // Query meta_ad_insights for just the data we need
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, spend, value')
+      .select('date, spend, action_values')
       .eq('connection_id', connection.id)
       .gte('date', fromDate)
       .lte('date', toDate)
@@ -110,10 +110,10 @@ export async function GET(request: NextRequest) {
     
     filteredInsights.forEach(item => {
       const spend = typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend
-      const value = typeof item.value === 'string' ? parseFloat(item.value) : (item.value || 0)
+      const actionValues = typeof item.action_values === 'string' ? parseFloat(item.action_values) : (item.action_values || 0)
       
       totalSpend += isNaN(spend) ? 0 : spend
-      totalValue += isNaN(value) ? 0 : value
+      totalValue += isNaN(actionValues) ? 0 : actionValues
     })
     
     // Calculate ROAS (Return on Ad Spend)
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
         to: toDate,
         records: filteredInsights.length,
         totalSpend,
-        totalValue,
+        totalActionValues: totalValue,
         dates: filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0])
       }
     }
