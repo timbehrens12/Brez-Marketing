@@ -2247,70 +2247,143 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, []);
 
-  // Direct handling for yesterday preset
+  // Function to fetch previous period data for real comparisons
   useEffect(() => {
-    if (dateRange?.from && dateRange?.to && 
-        dateRange.from.toISOString().includes('2025-03-26') && 
-        dateRange.to.toISOString().includes('2025-03-26')) {
-      
-      console.log("YESTERDAY PRESET DETECTED - Setting hard-coded growth values");
-      
-      // For yesterday preset, directly set growth values
-      setMetricsData(current => ({
-        ...current,
-        adSpendGrowth: 8.5,        // Hard-coded growth for yesterday
-        impressionGrowth: 12.3,
-        clickGrowth: 5.2,
-        conversionGrowth: 3.1,
-        ctrGrowth: -1.2,
-        cprGrowth: 2.1,
-        roasGrowth: 4.2
-      }));
-    }
-  }, [dateRange, metricsData.adSpend]);
-
-  // Listen for console logs to detect 'yesterday' preset
-  useEffect(() => {
-    const originalConsoleLog = console.log;
-    
-    console.log = function(...args) {
-      // Call the original console.log
-      originalConsoleLog.apply(console, args);
-      
-      // Check for logs indicating yesterday preset
-      try {
-        const logStr = args.join(' ');
-        if (
-          (typeof logStr === 'string' && logStr.includes('Setting yesterday preset')) ||
-          (typeof logStr === 'string' && logStr.includes('Yesterday date used')) ||
-          (typeof logStr === 'string' && logStr.includes('Setting date range from preset yesterday'))
-        ) {
-          console.warn("DETECTED YESTERDAY PRESET VIA LOGS - FIXING GROWTH VALUES");
+    // Only run if we have data to compare and date range is set
+    if (metricsData.adSpend > 0 && dateRange?.from && dateRange?.to) {
+      // Function to fetch previous period data for real comparisons
+      async function fetchPreviousPeriodData() {
+        if (!dateRange?.from || !dateRange?.to || !brandId) return;
+        
+        console.log("REAL COMPARISON: Fetching previous period data for accurate growth calculation");
+        
+        try {
+          // Calculate previous period date range
+          const currentPeriodDays = differenceInDays(dateRange.to, dateRange.from) + 1;
+          const previousPeriodEnd = subDays(dateRange.from, 1);
+          const previousPeriodStart = subDays(previousPeriodEnd, currentPeriodDays - 1);
           
-          // Give time for data to load before setting growth values
-          setTimeout(() => {
-            if (metricsData.adSpend > 0 && metricsData.adSpendGrowth === 0) {
-              setMetricsData(current => ({
-                ...current,
-                adSpendGrowth: 8.5,        // Hard-coded growth for yesterday
-                impressionGrowth: 12.3,
-                clickGrowth: 5.2,
-                conversionGrowth: 3.1,
-                ctrGrowth: -1.2,
-                cprGrowth: 2.1,
-                roasGrowth: 4.2
-              }));
-            }
-          }, 1500);
+          console.log(`Current period: ${format(dateRange.from, 'yyyy-MM-dd')} to ${format(dateRange.to, 'yyyy-MM-dd')} (${currentPeriodDays} days)`);
+          console.log(`Previous period: ${format(previousPeriodStart, 'yyyy-MM-dd')} to ${format(previousPeriodEnd, 'yyyy-MM-dd')} (${currentPeriodDays} days)`);
+          
+          // Build API query params
+          const params = new URLSearchParams({
+            brandId: brandId,
+            from: format(previousPeriodStart, 'yyyy-MM-dd'),
+            to: format(previousPeriodEnd, 'yyyy-MM-dd'),
+            previous_period: 'true',
+            bypass_cache: 'true'
+          });
+          
+          // Fetch previous period data
+          const response = await fetch(`/api/metrics/meta?${params.toString()}`, {
+            cache: 'no-cache',
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch previous period data: ${response.status}`);
+          }
+          
+          const previousData = await response.json();
+          
+          console.log("Previous period data:", previousData);
+          
+          // Calculate real growth percentages
+          if (previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0) {
+            // Current data
+            const currentAdSpend = metricsData.adSpend;
+            const currentImpressions = metricsData.impressions;
+            const currentClicks = metricsData.clicks;
+            const currentConversions = metricsData.conversions;
+            const currentCtr = metricsData.ctr;
+            const currentRoas = metricsData.roas;
+            
+            // Previous data
+            const previousAdSpend = previousData.adSpend;
+            const previousImpressions = previousData.impressions;
+            const previousClicks = previousData.clicks;
+            const previousConversions = previousData.conversions;
+            const previousCtr = previousData.ctr;
+            const previousRoas = previousData.roas;
+            
+            // Calculate real growth percentages
+            const calculateGrowth = (current: number, previous: number): number => {
+              if (previous <= 0) return 0;
+              return ((current - previous) / previous) * 100;
+            };
+            
+            const realAdSpendGrowth = calculateGrowth(currentAdSpend, previousAdSpend);
+            const realImpressionGrowth = calculateGrowth(currentImpressions, previousImpressions);
+            const realClickGrowth = calculateGrowth(currentClicks, previousClicks);
+            const realConversionGrowth = calculateGrowth(currentConversions, previousConversions);
+            const realCtrGrowth = calculateGrowth(currentCtr, previousCtr);
+            const realRoasGrowth = calculateGrowth(currentRoas, previousRoas);
+            
+            console.log("REAL GROWTH CALCULATED:", {
+              adSpendGrowth: realAdSpendGrowth.toFixed(1) + '%',
+              impressionGrowth: realImpressionGrowth.toFixed(1) + '%',
+              clickGrowth: realClickGrowth.toFixed(1) + '%'
+            });
+            
+            // Update metrics with real growth values
+            setMetricsData(current => ({
+              ...current,
+              adSpendGrowth: Math.round(realAdSpendGrowth * 10) / 10,        // Round to 1 decimal place
+              impressionGrowth: Math.round(realImpressionGrowth * 10) / 10,
+              clickGrowth: Math.round(realClickGrowth * 10) / 10,
+              conversionGrowth: Math.round(realConversionGrowth * 10) / 10,
+              ctrGrowth: Math.round(realCtrGrowth * 10) / 10,
+              roasGrowth: Math.round(realRoasGrowth * 10) / 10
+            }));
+            
+            // Store previous period data for reference
+            setPreviousData({
+              adSpend: previousAdSpend,
+              adSpendGrowth: 0,
+              impressions: previousImpressions,
+              impressionGrowth: 0,
+              clicks: previousClicks,
+              clickGrowth: 0,
+              conversions: previousConversions,
+              conversionGrowth: 0,
+              ctr: previousCtr,
+              ctrGrowth: 0,
+              cpc: 0,
+              costPerResult: 0,
+              cprGrowth: 0,
+              roas: previousRoas,
+              roasGrowth: 0,
+              frequency: 0,
+              budget: 0,
+              reach: 0,
+              dailyData: []
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching previous period data:", error);
         }
-      } catch (e) {}
-    };
-    
-    // Restore the original console.log when component unmounts
-    return () => {
-      console.log = originalConsoleLog;
-    };
-  }, []);
+      }
+      
+      // Call the function
+      fetchPreviousPeriodData();
+    }
+  }, [dateRange, metricsData.adSpend, brandId]);
+
+  // Add debug logging whenever metrics data changes
+  useEffect(() => {
+    if (metricsData.adSpend > 0) {
+      console.log("DEBUG - Current metrics data state:", {
+        adSpend: metricsData.adSpend,
+        adSpendGrowth: metricsData.adSpendGrowth,
+        formattedGrowth: new Intl.NumberFormat('en-US', {
+          style: 'percent',
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1
+        }).format(Math.abs(metricsData.adSpendGrowth) / 100)
+      });
+    }
+  }, [metricsData.adSpend, metricsData.adSpendGrowth]);
 
   return (
     <TooltipProvider>
@@ -2459,22 +2532,53 @@ Try creating at least one active campaign in Meta Ads Manager.
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            {/* SUPER SIMPLE, RELIABLE DISPLAY - GUARANTEED TO WORK */}
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            <span>8.5%</span>
+                            {metricsData.adSpendGrowth > 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                            ) : metricsData.adSpendGrowth < 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                            ) : (
+                              <span className="h-3 w-3 mr-1">-</span>
+                            )}
+                            {/* Display actual calculated percentage */}
+                            {typeof metricsData.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? (
+                              // Format as percentage with 1 decimal place
+                              new Intl.NumberFormat('en-US', {
+                                style: 'percent',
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1
+                              }).format(Math.abs(metricsData.adSpendGrowth) / 100)
+                            ) : (
+                              '0.0%'
+                            )}
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>
                             {metricsData.adSpend > 0 ? (
-                              `Increase of 8.5% compared to previous period`
+                              metricsData.adSpendGrowth > 0 ? 
+                                `Increase of ${new Intl.NumberFormat('en-US', {
+                                  style: 'percent',
+                                  minimumFractionDigits: 1,
+                                  maximumFractionDigits: 1
+                                }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` : 
+                                metricsData.adSpendGrowth < 0 ?
+                                  `Decrease of ${new Intl.NumberFormat('en-US', {
+                                    style: 'percent',
+                                    minimumFractionDigits: 1,
+                                    maximumFractionDigits: 1
+                                  }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` :
+                                  `No change compared to previous period`
                             ) : (
                               `No historical data available for comparison`
                             )}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
-                            Previous period amount: {metricsData.adSpend > 0 ? (
-                              formatCurrencyCompact(metricsData.adSpend / 1.085) // Fixed 8.5% growth
+                            Previous period amount: {previousData && previousData.adSpend > 0 ? (
+                              // Use actual previous period data that we fetched
+                              formatCurrencyCompact(previousData.adSpend)
+                            ) : metricsData.adSpend > 0 && metricsData.adSpendGrowth !== 0 ? (
+                              // Calculate based on current value and growth if needed
+                              formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth / 100))
                             ) : (
                               'Not available'
                             )}
