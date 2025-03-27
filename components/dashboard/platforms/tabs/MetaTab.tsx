@@ -264,25 +264,21 @@ export function MetaTab({
 
   // Check if we have data to display - with improved type safety
   const hasData = () => {
-    // More robust check that ensures we have actual data to display
-    // Use the metricsData state object instead of the metrics prop directly
+    // More robust check that ensures metrics is an object
+    // and has valid numeric properties before trying to use them
     return (
-      typeof metricsData === 'object' && 
-      metricsData !== null &&
-      (
-        (typeof metricsData.adSpend === 'number' && 
-        !isNaN(metricsData.adSpend) && 
-        metricsData.adSpend > 0) ||
-        
-        (typeof metricsData.impressions === 'number' && 
-        !isNaN(metricsData.impressions) && 
-        metricsData.impressions > 0) ||
-        
-        (typeof metricsData.clicks === 'number' && 
-        !isNaN(metricsData.clicks) && 
-        metricsData.clicks > 0)
-      )
-    );
+      typeof metrics === 'object' && 
+      metrics !== null &&
+      'adSpend' in metrics &&
+      typeof metrics.adSpend === 'number' && 
+      !isNaN(metrics.adSpend) &&
+      'impressions' in metrics &&
+      typeof metrics.impressions === 'number' && 
+      !isNaN(metrics.impressions) &&
+      'clicks' in metrics &&
+      typeof metrics.clicks === 'number' && 
+      !isNaN(metrics.clicks)
+    )
   }
 
   // Initialize metricsData using safeMetrics on mount and when metrics changes
@@ -300,16 +296,6 @@ export function MetaTab({
       }
       return;
     }
-    
-    // Add debug logs to help diagnose widget display issues
-    console.log("DEBUG - Metrics data received:", {
-      adSpend: metrics.adSpend,
-      impressions: metrics.impressions,
-      clicks: metrics.clicks,
-      from: dateRange?.from?.toISOString().split('T')[0],
-      to: dateRange?.to?.toISOString().split('T')[0],
-      _preset: (dateRange as any)?._preset
-    });
     
     // Set metrics from our sanitized object to ensure it's fully initialized
     try {
@@ -364,21 +350,13 @@ export function MetaTab({
       if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
         safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
       
-      // Log what we're actually setting to help diagnose widget display issues
-      console.log("DEBUG - Setting metricsData state:", {
-        adSpend: safeData.adSpend,
-        impressions: safeData.impressions,
-        clicks: safeData.clicks,
-        hasData: safeData.adSpend > 0 || safeData.impressions > 0 || safeData.clicks > 0
-      });
-      
       // Now update the state with our safe data object
       setMetricsData(safeData);
     } catch (error) {
       console.error("Error updating metrics state:", error);
       // On error, keep existing data instead of resetting to defaults
     }
-  }, [metrics, safeMetrics, dateRange, metricsData]);
+  }, [metrics, safeMetrics]);
 
   // Replace the above effect with a simpler one that only runs on mount to load campaigns
   useEffect(() => {
@@ -1486,6 +1464,94 @@ Try creating at least one active campaign in Meta Ads Manager.
         // Fetch data with a retry mechanism
         await fetchMetaData();
         
+        // Check if we actually got data back, if not, retry with more aggressive parameters
+        if (isComponentMounted && metricsData && 
+          (metricsData.adSpend === 0 && metricsData.impressions === 0 && metricsData.clicks === 0)) {
+          
+          console.log("Initial data fetch returned empty results, retrying with forced load...");
+          
+          // Short delay before retry
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Force a retry with bypass_cache and refresh parameters
+          const forceParams = new URLSearchParams({
+            brandId: brandId,
+            bypass_cache: 'true',
+            refresh: 'true',
+            force_load: 'true',
+            date_debug: 'true'
+          });
+          
+          // Add date range parameters
+          if (dateRange?.from) {
+            const formattedFromDate = new Date(dateRange.from);
+            formattedFromDate.setHours(0, 0, 0, 0);
+            forceParams.append('from', formattedFromDate.toISOString().split('T')[0]);
+            
+            // If yesterday preset, enforce same date for both
+            const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+                                     (isYesterday(dateRange.from));
+            
+            if (isYesterdayPreset) {
+              forceParams.append('to', formattedFromDate.toISOString().split('T')[0]);
+              forceParams.append('preset', 'yesterday');
+              console.log("Force loading yesterday data with exact date match");
+            } else if (dateRange?.to) {
+              const formattedToDate = new Date(dateRange.to);
+              formattedToDate.setHours(23, 59, 59, 999);
+              forceParams.append('to', formattedToDate.toISOString().split('T')[0]);
+            }
+          }
+          
+          console.log(`Force fetching data with params: ${forceParams.toString()}`);
+          
+          try {
+            const response = await fetch(`/api/metrics/meta?${forceParams.toString()}`, {
+              cache: 'no-store', 
+              headers: { 'Cache-Control': 'no-cache' }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed forced fetch: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log("Forced data fetch response:", {
+              adSpend: data.adSpend,
+              impressions: data.impressions,
+              clicks: data.clicks,
+              dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
+            });
+            
+            // Update state with the forced data
+            if (isComponentMounted && data) {
+              setMetricsData({
+                adSpend: data.adSpend ?? 0,
+                adSpendGrowth: data.adSpendGrowth ?? 0,
+                impressions: data.impressions ?? 0,
+                impressionGrowth: data.impressionGrowth ?? 0,
+                clicks: data.clicks ?? 0,
+                clickGrowth: data.clickGrowth ?? 0,
+                conversions: data.conversions ?? 0,
+                conversionGrowth: data.conversionGrowth ?? 0,
+                ctr: data.ctr ?? 0,
+                ctrGrowth: data.ctrGrowth ?? 0,
+                cpc: data.cpc ?? 0,
+                costPerResult: data.costPerResult ?? 0,
+                cprGrowth: data.cprGrowth ?? 0,
+                roas: data.roas ?? 0,
+                roasGrowth: data.roasGrowth ?? 0,
+                frequency: data.frequency ?? 0,
+                budget: data.budget ?? 0,
+                reach: data.reach ?? 0,
+                dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
+              });
+            }
+          } catch (retryError) {
+            console.error("Error during forced data fetch:", retryError);
+          }
+        }
+        
         // Only set initialLoadComplete if component is still mounted
         if (isComponentMounted) {
           initialLoadComplete.current = true;
@@ -1514,7 +1580,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       isComponentMounted = false;
       window._blockMetaApiCalls = true; // Block API calls during unmount
     };
-  }, [brandId]);
+  }, [brandId, dateRange]);
   
   // Effect to handle date range changes
   useEffect(() => {

@@ -51,25 +51,19 @@ const presets = [
       // Create yesterday's date
       const yesterday = subDays(new Date(), 1);
       
-      // Create a single day date range with both from and to set to yesterday
+      // Format dates as ISO strings with 'yesterday' marker
       const yesterdayStart = startOfDay(yesterday);
-      // Use the SAME DATE for both start and end to ensure no confusion
-      const yesterdayEnd = yesterdayStart;
+      const yesterdayEnd = endOfDay(yesterday);
       
       // Add a special parameter to the date object
       const date = {
         from: yesterdayStart,
-        to: yesterdayEnd, // Using same exact date object to avoid any possibility of difference
+        to: yesterdayEnd,
         // Add a property to identify this as the yesterday preset
         _preset: 'yesterday'
       };
       
-      // Log with more detail for debugging
-      console.log('Setting yesterday preset with special marker', {
-        from: yesterdayStart.toISOString().split('T')[0],
-        to: yesterdayEnd.toISOString().split('T')[0],
-        preset: 'yesterday'
-      });
+      console.log('Setting yesterday preset with special marker');
       
       return date;
     }
@@ -198,22 +192,37 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.to = now
     }
     
+    // Extra validation for yesterday preset to ensure exact same date
+    if (preset.value === 'yesterday') {
+      // Create yesterday's date
+      const yesterday = subDays(new Date(), 1);
+      const yesterdayStart = startOfDay(yesterday);
+      const yesterdayEnd = endOfDay(yesterday);
+      
+      // Ensure both from and to are exactly the same date for the API
+      newRange.from = yesterdayStart;
+      newRange.to = yesterdayStart; // Use start of day for both to avoid date mismatch
+      
+      // Keep the special marker using type assertion
+      (newRange as any)._preset = 'yesterday';
+      
+      console.log(`Setting yesterday preset with special marker - exact same date for both`);
+      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
+    }
+    
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
       from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0],
-      _preset: (newRange as any)._preset || null
+      to: newRange.to.toISOString().split('T')[0]
     });
     
     setTempDateRange(newRange)
     setSelectionStep('complete')
     
     // Apply immediately when a preset is selected
-    // Important: preserve any special properties like _preset when setting the date range
     setDateRange({
       from: newRange.from,
-      to: newRange.to,
-      ...(newRange as any)._preset ? { _preset: (newRange as any)._preset } : {}
+      to: newRange.to
     })
     setIsOpen(false)
   }
@@ -223,16 +232,13 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       // If only from date is selected, use same date for both
       const finalRange = {
         from: tempDateRange.from,
-        to: tempDateRange.to || tempDateRange.from,
-        // Preserve any special properties like _preset
-        ...(tempDateRange as any)._preset ? { _preset: (tempDateRange as any)._preset } : {}
+        to: tempDateRange.to || tempDateRange.from
       };
       
       // Log what we're applying
       console.log('Applying date range:', {
         from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0],
-        _preset: (finalRange as any)._preset || null
+        to: finalRange.to.toISOString().split('T')[0]
       });
       
       setDateRange(finalRange);
