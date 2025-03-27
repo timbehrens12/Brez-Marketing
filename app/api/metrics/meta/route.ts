@@ -10,7 +10,7 @@ interface MetaDataItem {
   conversions: string;
   reach: string;
   inline_link_clicks: string;
-  date_start: string;
+  date: string;
   [key: string]: any;
 }
 
@@ -267,9 +267,9 @@ export async function GET(request: NextRequest) {
       .from('meta_ad_insights')
       .select('*')
       .eq('connection_id', connection.id)
-      .gte('date_start', fromDate)
-      .lte('date_start', toDate)
-      .order('date_start', { ascending: true })
+      .gte('date', fromDate)
+      .lte('date', toDate)
+      .order('date', { ascending: true })
     
     if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
       // For yesterday preset, strictly filter to only include data from yesterday
       filteredInsights = filteredInsights.filter(item => {
         // Normalize the date format for comparison
-        const dateStart = new Date(item.date_start).toISOString().split('T')[0];
+        const dateStart = new Date(item.date).toISOString().split('T')[0];
         const exactMatch = dateStart === fromDate;
         
         if (!exactMatch) {
