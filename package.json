@@ -52,6 +52,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "latest",
     "class-variance-authority": "^0.7.1",
+    "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "cookie-parser": "^1.4.7",

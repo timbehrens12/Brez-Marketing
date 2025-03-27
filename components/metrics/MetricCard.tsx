@@ -15,7 +15,7 @@ import { MetricExplanation } from '@/components/dashboard/MetricExplanation'
 interface MetricCardProps {
   title: string | React.ReactNode
   value: string | number
-  change: number
+  change?: number
   data: MetricData[]
   prefix?: string
   suffix?: string
@@ -35,6 +35,7 @@ interface MetricCardProps {
   hideGraph?: boolean
   brandId?: string
   showChart?: boolean
+  hideChange?: boolean
 }
 
 // Define a proper type guard for DateRange
@@ -72,6 +73,7 @@ export function MetricCard({
   hideGraph = false,
   brandId,
   showChart = true,
+  hideChange = false,
 }: MetricCardProps & { brandId?: string }) {
   // Use a more robust conversion with error catching
   const safeValue = useMemo(() => {
@@ -243,7 +245,7 @@ export function MetricCard({
                 )}
               </div>
               
-              {!loading && !refreshing && !hidePercentageChange && typeof change === 'number' && !isNaN(change) && (
+              {!loading && !refreshing && !hidePercentageChange && !hideChange && typeof change === 'number' && !isNaN(change) && (
                 <div className="flex items-center mt-2">
                   <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${change > 0 ? "text-green-500 bg-green-500" : change < 0 ? "text-red-500 bg-red-500" : "text-gray-500 bg-gray-500"} bg-opacity-10`}>
                     <div className={`flex items-center`}>

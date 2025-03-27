@@ -113,15 +113,9 @@ export async function GET(request: NextRequest) {
       return sum + (isNaN(spend) ? 0 : spend)
     }, 0)
     
-    // Calculate growth (basic implementation)
-    // For more accurate growth, you'd compare to a previous period
-    // This is simplified for the example
-    const growth = 0
-    
-    // Return the results
+    // Return the results without growth data
     const result = {
       value: parseFloat(totalSpend.toFixed(2)),
-      growth,
       _meta: {
         from: fromDate,
         to: toDate,

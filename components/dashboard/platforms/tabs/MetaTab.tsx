@@ -1,11 +1,16 @@
 ﻿"use client"
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw } from "lucide-react"
+import classNames from "classnames"
+import { format } from "date-fns"
+import { withErrorBoundary } from '@/components/ui/error-boundary'
+import { isSameDay, isYesterday } from "date-fns"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
 import { 
-  LineChart, 
   Line, 
   BarChart, 
   Bar, 
@@ -20,9 +25,6 @@ import {
   Cell
 } from 'recharts'
 import { 
-  DollarSign, 
-  TrendingUp, 
-  MousePointer, 
   Activity, 
   Users, 
   BarChart2, 
@@ -31,11 +33,10 @@ import {
   Percent, 
   BrainCircuit, 
   Info, 
-  Loader2,
-  RefreshCw,
-  Settings,
+  AlertCircle,
   Target,
-  AlertCircle
+  Settings,
+  MousePointer
 } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -48,11 +49,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner"
 import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
-import { withErrorBoundary } from '@/components/ui/error-boundary'
-import { isSameDay, isYesterday } from "date-fns"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -2233,16 +2231,11 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
-            change={adSpendData.growth}
             data={[]}
             loading={adSpendData.isLoading}
-            refreshing={isRefreshingData}
-            platform="meta"
+            hideChange={true}
             prefix="$"
             valueFormat="currency"
-            dateRange={dateRange}
-            infoTooltip="Total amount spent on Meta ads"
-            brandId={brandId}
             hideGraph={true}
           />
         </div>
