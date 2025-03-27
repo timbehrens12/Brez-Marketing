@@ -2114,205 +2114,70 @@ Try creating at least one active campaign in Meta Ads Manager.
         </AlertBox>
       )}
       
-                {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Ad Spend</span>
-              </div>
-            }
-            value={typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) ? metricsData.adSpend : 0}
-            change={typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? metricsData.adSpendGrowth : 0}
-            data={[]}
-            loading={showLoadingPlaceholder}
-            refreshing={isRefreshingData}
-            platform="meta"
-            prefix="$"
-            valueFormat="currency"
-            dateRange={dateRange}
-            infoTooltip="Total amount spent on Meta ads"
-            brandId={brandId}
-            hideGraph={true}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Percent className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">ROAS</span>
-              </div>
-            }
-            value={typeof metricsData?.roas === 'number' && !isNaN(metricsData.roas) ? metricsData.roas : 0}
-            change={typeof metricsData?.roasGrowth === 'number' && !isNaN(metricsData.roasGrowth) ? metricsData.roasGrowth : 0}
-            data={[]}
-            loading={showLoadingPlaceholder}
-            refreshing={isRefreshingData}
-            platform="meta"
-            suffix="x"
-            dateRange={dateRange}
-            infoTooltip="Return On Ad Spend (revenue divided by ad spend)"
-            brandId={brandId}
-            hideGraph={true}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Impressions</span>
-              </div>
-            }
-            value={typeof metricsData?.impressions === 'number' && !isNaN(metricsData.impressions) ? metricsData.impressions : 0}
-            change={typeof metricsData?.impressionGrowth === 'number' && !isNaN(metricsData.impressionGrowth) ? metricsData.impressionGrowth : 0}
-            data={[]}
-            loading={showLoadingPlaceholder}
-            refreshing={isRefreshingData}
-            platform="meta"
-            dateRange={dateRange}
-            infoTooltip="Number of times your ads were displayed to users"
-            brandId={brandId}
-            hideGraph={true}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <MousePointer className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Clicks</span>
-              </div>
-            }
-            value={typeof metricsData?.clicks === 'number' && !isNaN(metricsData.clicks) ? metricsData.clicks : 0}
-            change={typeof metricsData?.clickGrowth === 'number' && !isNaN(metricsData.clickGrowth) ? metricsData.clickGrowth : 0}
-            data={[]}
-            loading={showLoadingPlaceholder}
-            refreshing={isRefreshingData}
-            platform="meta"
-            dateRange={dateRange}
-            infoTooltip="Number of clicks on your ads"
-            brandId={brandId}
-            hideGraph={true}
-          />
-        </div>
-      </div>
-      
-                {/* Spend Distribution - Add failsafe check */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Spend Trends */}
-        <Card className="bg-[#111] border-[#333] shadow-lg">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-400" />
-              Spend Distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-                      {metricsData?.adSpend && metricsData.adSpend > 0 ? (
-              <div className="h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Ad Spend', value: metricsData.adSpend || 0 }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#3B82F6"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    >
-                      <Cell key="cell-0" fill="#3B82F6" />
-                    </Pie>
-                    <RechartsTooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#222', 
-                        border: '1px solid #444',
-                        borderRadius: '4px',
-                        color: '#fff'
-                      }} 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Amount']}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
-                <BarChart className="h-10 w-10 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No Meta spend data available</p>
-                <p className="text-sm text-gray-500">Run ads in Meta Ads Manager to view spend distribution.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Platform KPIs */}
-                  <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-400" />
-              Campaign Metrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-                      {isLoadingCampaigns && !cachedCampaigns.length ? (
-              <div className="flex justify-center items-center h-[240px]">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-              </div>
-                      ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Active Campaigns</p>
-                    <p className="text-lg font-medium">
-                                {campaigns.length > 0 
-                                  ? campaigns.filter(c => c.status === 'ACTIVE').length
-                                  : cachedCampaigns.filter(c => c.status === 'ACTIVE').length}
-                    </p>
-                  </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
-                    <p className="text-lg font-medium">
-                      ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
-                    </p>
-                  </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                    <p className="text-lg font-medium">
-                      {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
-                    </p>
-                  </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
-                    <p className="text-lg font-medium">
-                      ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
-                    </p>
-                  </div>
+      {/* Platform KPIs - Now full width */}
+      <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Target className="h-4 w-4 text-blue-400" />
+            Campaign Metrics
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          {isLoadingCampaigns && !cachedCampaigns.length ? (
+            <div className="flex justify-center items-center h-[240px]">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+            </div>
+          ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                  <p className="text-xs text-gray-400 mb-1">Active Campaigns</p>
+                  <p className="text-lg font-medium">
+                    {campaigns.length > 0 
+                      ? campaigns.filter(c => c.status === 'ACTIVE').length
+                      : cachedCampaigns.filter(c => c.status === 'ACTIVE').length}
+                  </p>
                 </div>
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                    onClick={() => window.location.href = "/analytics"}
-                  >
-                    View Full Analytics
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                  <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
+                  <p className="text-lg font-medium">
+                    ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
+                  </p>
+                </div>
+                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                  <p className="text-xs text-gray-400 mb-1">Conversions</p>
+                  <p className="text-lg font-medium">
+                    {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
+                  </p>
+                </div>
+                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                  <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
+                  <p className="text-lg font-medium">
+                    ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
+                  </p>
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
-                <Activity className="h-10 w-10 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No campaign metrics available</p>
-                <p className="text-sm text-gray-500">You'll see metrics here once you have active campaigns with data.</p>
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => window.location.href = "/analytics"}
+                >
+                  View Full Analytics
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
+              <Activity className="h-10 w-10 text-gray-500 mb-4" />
+              <p className="text-gray-400 mb-2">No campaign metrics available</p>
+              <p className="text-sm text-gray-500">You'll see metrics here once you have active campaigns with data.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {/* Top Campaigns & AI Insights */}
       <div className="grid gap-6 md:grid-cols-2">
