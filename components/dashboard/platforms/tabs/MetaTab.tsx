@@ -2031,90 +2031,73 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
-  // Helper function to calculate the previous period date range
+  // Simplified helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
-    // Check for yesterday preset using _preset property
-    const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-      (dateRange?.from && dateRange?.to && 
-      isSameDay(dateRange.from, dateRange.to) && 
-      isYesterday(dateRange.from));
-      
-    // Debug logging to identify what's happening with the preset detection
-    console.log('Debug - Checking for yesterday preset:');
-    console.log('- _preset property:', (dateRange as any)?._preset);
-    console.log('- Dates match and isYesterday:', 
-      dateRange?.from && dateRange?.to && 
-      isSameDay(dateRange.from, dateRange.to) && 
-      isYesterday(dateRange.from));
-    console.log('- isYesterdayPreset result:', isYesterdayPreset);
+    console.log(`Calculating previous dates for range: ${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`);
     
-    if (isYesterdayPreset) {
-      // For "yesterday" preset, the previous period should be the day before yesterday
-      const dayBeforeYesterday = new Date()
-      dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2)
-      const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0]
+    // Case 1: Single day - always compare to the day before
+    const isSingleDay = isSameDay(from, to);
+    if (isSingleDay) {
+      // For a single day view, previous period is always the day before
+      const prevDay = new Date(from);
+      prevDay.setDate(prevDay.getDate() - 1);
+      const prevDayStr = prevDay.toISOString().split('T')[0];
       
-      console.log(`Yesterday preset detected, comparing to day before yesterday: ${dayBeforeYesterdayStr}`)
+      console.log(`Single day detected, comparing to previous day: ${prevDayStr}`);
       
       return {
-        prevFrom: dayBeforeYesterdayStr,
-        prevTo: dayBeforeYesterdayStr
-      }
+        prevFrom: prevDayStr,
+        prevTo: prevDayStr
+      };
     }
     
-    // For other date ranges, calculate the equivalent previous period
-    const currentRange = to.getTime() - from.getTime()
-    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24))
+    // Case 2: Date range - use equivalent previous period
+    const currentRange = to.getTime() - from.getTime();
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24));
     
-    const prevFrom = new Date(from)
-    prevFrom.setDate(prevFrom.getDate() - daysInRange)
+    const prevFrom = new Date(from);
+    prevFrom.setDate(prevFrom.getDate() - daysInRange);
     
-    const prevTo = new Date(to)
-    prevTo.setDate(prevTo.getDate() - daysInRange)
+    const prevTo = new Date(to);
+    prevTo.setDate(prevTo.getDate() - daysInRange);
+    
+    const prevFromStr = prevFrom.toISOString().split('T')[0];
+    const prevToStr = prevTo.toISOString().split('T')[0];
+    
+    console.log(`Multi-day range detected (${daysInRange} days), comparing to previous period: ${prevFromStr} to ${prevToStr}`);
     
     return {
-      prevFrom: prevFrom.toISOString().split('T')[0],
-      prevTo: prevTo.toISOString().split('T')[0]
-    }
+      prevFrom: prevFromStr,
+      prevTo: prevToStr
+    };
   }
   
-  // Helper function to get a descriptive label for the previous period
+  // Simplified helper function to get a descriptive label for the previous period
   const getPreviousPeriodLabel = (): string => {
     if (!dateRange || !dateRange.from || !dateRange.to) {
-      return "Previous period"
+      return "Previous period";
     }
     
-    // Use the same check for yesterday preset as in getPreviousPeriodDates
-    const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-      (dateRange?.from && dateRange?.to && 
-      isSameDay(dateRange.from, dateRange.to) && 
-      isYesterday(dateRange.from));
-      
-    if (isYesterdayPreset) {
-      return "Day before yesterday"
-    }
-    
-    const isSingleDay = dateRange.from.toDateString() === dateRange.to.toDateString()
+    // Case 1: Single day - always say "Previous day"
+    const isSingleDay = isSameDay(dateRange.from, dateRange.to);
     if (isSingleDay) {
-      return "Previous day"
+      return "Previous day";
     }
     
-    // Calculate days between
-    const currentRange = dateRange.to.getTime() - dateRange.from.getTime()
-    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24))
+    // Case 2: Multi-day range - use appropriate description
+    const currentRange = dateRange.to.getTime() - dateRange.from.getTime();
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24));
     
-    if (daysInRange <= 1) {
-      return "Previous day"
-    } else if (daysInRange <= 7) {
-      return "Previous week"
+    if (daysInRange <= 7) {
+      return "Previous period";
     } else if (daysInRange <= 31) {
-      return "Previous month"
+      return "Previous month";
     } else if (daysInRange <= 92) {
-      return "Previous quarter"
+      return "Previous quarter";
     } else if (daysInRange <= 366) {
-      return "Previous year"
+      return "Previous year";
     } else {
-      return "Previous period"
+      return "Previous period";
     }
   }
 
@@ -2133,39 +2116,19 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('brandId', brandId)
       params.append('metric', 'adSpend')
       
-      // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-        (dateRange?.from && dateRange?.to && 
-        isSameDay(dateRange.from, dateRange.to) && 
-        isYesterday(dateRange.from));
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
       
-      let fromDate: Date
-      let toDate: Date
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
       
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday')
-        
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        fromDate = yesterday
-        toDate = yesterday
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
-        
-        params.append('from', yesterdayStr)
-        params.append('to', yesterdayStr)
-        
-        console.log(`Setting yesterday preset for Ad Spend: ${yesterdayStr}`)
-      } else {
-        // Use the selected date range
-        fromDate = dateRange.from
-        toDate = dateRange.to
-        params.append('from', fromDate.toISOString().split('T')[0])
-        params.append('to', toDate.toISOString().split('T')[0])
-      }
+      // Log what we're doing
+      console.log(`Fetching Ad Spend for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
-      // Calculate previous period date range using our helper function
+      // Calculate previous period date range using our simplified helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-
+      
       // Fetch data for current period
       const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
       
@@ -2214,37 +2177,17 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('brandId', brandId)
       params.append('metric', 'roas')
       
-      // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-        (dateRange?.from && dateRange?.to && 
-        isSameDay(dateRange.from, dateRange.to) && 
-        isYesterday(dateRange.from));
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
       
-      let fromDate: Date
-      let toDate: Date
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
       
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday')
-        
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        fromDate = yesterday
-        toDate = yesterday
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
-        
-        params.append('from', yesterdayStr)
-        params.append('to', yesterdayStr)
-        
-        console.log(`Setting yesterday preset for ROAS: ${yesterdayStr}`)
-      } else {
-        // Use the selected date range
-        fromDate = dateRange.from
-        toDate = dateRange.to
-        params.append('from', fromDate.toISOString().split('T')[0])
-        params.append('to', toDate.toISOString().split('T')[0])
-      }
+      // Log what we're doing
+      console.log(`Fetching ROAS for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
-      // Calculate previous period date range using our helper function
+      // Calculate previous period date range using our simplified helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
@@ -2295,37 +2238,17 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('brandId', brandId)
       params.append('metric', 'impressions')
       
-      // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-        (dateRange?.from && dateRange?.to && 
-        isSameDay(dateRange.from, dateRange.to) && 
-        isYesterday(dateRange.from));
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
       
-      let fromDate: Date
-      let toDate: Date
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
       
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday')
-        
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        fromDate = yesterday
-        toDate = yesterday
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
-        
-        params.append('from', yesterdayStr)
-        params.append('to', yesterdayStr)
-        
-        console.log(`Setting yesterday preset for Impressions: ${yesterdayStr}`)
-      } else {
-        // Use the selected date range
-        fromDate = dateRange.from
-        toDate = dateRange.to
-        params.append('from', fromDate.toISOString().split('T')[0])
-        params.append('to', toDate.toISOString().split('T')[0])
-      }
+      // Log what we're doing
+      console.log(`Fetching Impressions for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
-      // Calculate previous period date range using our helper function
+      // Calculate previous period date range using our simplified helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
@@ -2376,37 +2299,17 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('brandId', brandId)
       params.append('metric', 'clicks')
       
-      // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-        (dateRange?.from && dateRange?.to && 
-        isSameDay(dateRange.from, dateRange.to) && 
-        isYesterday(dateRange.from));
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
       
-      let fromDate: Date
-      let toDate: Date
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
       
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday')
-        
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        fromDate = yesterday
-        toDate = yesterday
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
-        
-        params.append('from', yesterdayStr)
-        params.append('to', yesterdayStr)
-        
-        console.log(`Setting yesterday preset for Clicks: ${yesterdayStr}`)
-      } else {
-        // Use the selected date range
-        fromDate = dateRange.from
-        toDate = dateRange.to
-        params.append('from', fromDate.toISOString().split('T')[0])
-        params.append('to', toDate.toISOString().split('T')[0])
-      }
+      // Log what we're doing
+      console.log(`Fetching Clicks for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
-      // Calculate previous period date range using our helper function
+      // Calculate previous period date range using our simplified helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
