@@ -52,6 +52,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
+import { format } from 'date-fns'
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -429,32 +430,42 @@ export function MetaTab({
         brandId: brandId as string
       });
       
-      if (fromDate) {
-        // Ensure from date is set to the beginning of the day
-        const formattedFromDate = new Date(fromDate);
-        formattedFromDate.setHours(0, 0, 0, 0);
-        params.append('from', formattedFromDate.toISOString().split('T')[0]);
-      }
-      
-      if (toDate) {
-        // Ensure to date is set to the end of the day
-        const formattedToDate = new Date(toDate);
-        formattedToDate.setHours(23, 59, 59, 999);
+      // For yesterday preset, calculate yesterday's date exactly to ensure consistency
+      if (isYesterdayPreset) {
+        // Always override with server-calculated yesterday
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
         
-        // CRITICAL: If this is yesterday preset, use the same date for both from and to
-        // This ensures we get ONLY yesterday's data
-        if (isYesterdayPreset) {
-          params.append('to', params.get('from') || '');
-          console.log("YESTERDAY PRESET: Setting exact from/to match to ensure ONLY yesterday data");
-        } else {
+        console.log(`YESTERDAY OVERRIDE: Forcing yesterday date to ${yesterdayStr} regardless of URL params`);
+        
+        // Set both from and to to exactly yesterday
+        params.append('from', yesterdayStr);
+        params.append('to', yesterdayStr);
+        params.append('preset', 'yesterday');
+        params.append('enforce_single_day', 'true');
+      } 
+      // Handle normal date ranges
+      else {
+        if (fromDate) {
+          // Ensure from date is set to the beginning of the day
+          const formattedFromDate = new Date(fromDate);
+          formattedFromDate.setHours(0, 0, 0, 0);
+          params.append('from', formattedFromDate.toISOString().split('T')[0]);
+        }
+        
+        if (toDate) {
+          // Ensure to date is set to the end of the day
+          const formattedToDate = new Date(toDate);
+          formattedToDate.setHours(23, 59, 59, 999);
           params.append('to', formattedToDate.toISOString().split('T')[0]);
         }
-      }
-      
-      // Add the preset identifier if it exists
-      if (isYesterdayPreset) {
-        params.append('preset', 'yesterday');
-        console.log("Adding yesterday preset identifier to API call");
+        
+        // Add the preset identifier if it exists (for non-yesterday presets)
+        if ((dateRange as any)?._preset) {
+          params.append('preset', (dateRange as any)._preset);
+        }
       }
       
       // Add parameters to help debugging
@@ -470,8 +481,15 @@ export function MetaTab({
       const isSingleDayPreset = isYesterdayPreset || isTodayPreset;
       
       // Correctly log date range based on preset
-      if (isSingleDayPreset) {
-        console.log(`Fetching Meta data for a single day: ${params.get('from')} ${isTodayPreset ? '(today)' : '(yesterday)'}`);
+      if (isYesterdayPreset) {
+        // Calculate yesterday's date to use in the log
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        
+        console.log(`YESTERDAY PRESET: Fetching Meta data for yesterday: ${yesterdayStr}`);
+      } else if (isTodayPreset) {
+        console.log(`TODAY PRESET: Fetching Meta data for today: ${params.get('from')}`);
       } else {
         // Check if date parameters are the same (single day selection)
         const fromParam = params.get('from');
@@ -479,9 +497,9 @@ export function MetaTab({
         const isSingleDaySelection = fromParam && toParam && fromParam === toParam;
         
         if (isSingleDaySelection) {
-          console.log(`Fetching Meta data for a single day: ${fromParam}`);
+          console.log(`SINGLE DAY: Fetching Meta data for specific date: ${fromParam}`);
         } else {
-          console.log(`Fetching Meta data with date range: ${params.get('from')} to ${params.get('to')}`);
+          console.log(`DATE RANGE: Fetching Meta data from ${params.get('from')} to ${params.get('to')}`);
         }
       }
       

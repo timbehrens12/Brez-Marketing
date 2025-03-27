@@ -65,6 +65,14 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
 
   useEffect(() => {
     async function fetchCampaigns() {
+      // Guard against null brand ID
+      if (!brandId) {
+        console.error('No brand ID provided, cannot fetch campaigns');
+        setError('Missing brand ID');
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true)
         
@@ -79,23 +87,36 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
           const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
           
           console.log(`CAMPAIGNS TABLE: Strict yesterday enforcement - using ${yesterdayStr}`);
-          modifiedFromDate = yesterdayStr;
-          modifiedToDate = yesterdayStr;
+          
+          // Skip the buildDateRangeQueryString and directly create queryString
+          // This ensures maximum consistency with server-side logic
+          const queryStringParams = new URLSearchParams();
+          queryStringParams.set('brandId', brandId);
+          queryStringParams.set('from', yesterdayStr);
+          queryStringParams.set('to', yesterdayStr);
+          queryStringParams.set('preset', 'yesterday');
+          queryStringParams.set('enforce_single_day', 'true');
+          
+          const apiUrl = `/api/analytics/meta/campaigns?${queryStringParams.toString()}`
+          
+          console.log(`YESTERDAY OVERRIDE: Fetching Meta campaigns for yesterday (${yesterdayStr}) only`);
+          var response = await fetch(apiUrl);
+        } else {
+          // For non-yesterday presets, use the standard flow with buildDateRangeQueryString
+          // Build the API URL with normalized date range parameters
+          const queryString = buildDateRangeQueryString({
+            brandId: brandId,
+            from: modifiedFromDate || undefined,
+            to: modifiedToDate || undefined,
+            preset: presetValue || undefined,
+          });
+          
+          const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
+          
+          console.log(`Fetching Meta campaigns data...`);
+          
+          var response = await fetch(apiUrl);
         }
-        
-        // Build the API URL with normalized date range parameters
-        const queryString = buildDateRangeQueryString({
-          brandId: brandId!,
-          from: modifiedFromDate || undefined,
-          to: modifiedToDate || undefined,
-          preset: presetValue || undefined,
-        });
-        
-        const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
-        
-        console.log(`Fetching Meta campaigns data...`);
-        
-        const response = await fetch(apiUrl)
         
         console.log(`Meta campaigns response status: ${response.status} ${response.statusText}`);
         
