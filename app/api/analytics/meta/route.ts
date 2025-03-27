@@ -16,13 +16,14 @@ export async function GET(request: NextRequest) {
     const fromDate = url.searchParams.get('from')
     const toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
+    const enforceSingleDay = url.searchParams.get('enforce_single_day') === 'true'
     
     // Check for yesterday preset explicitly
     const isYesterdayPreset = preset === 'yesterday'
     const isTodayPreset = preset === 'today'
     
     // Log the requested date range for debugging
-    console.log(`Meta Analytics - Request date range: from=${fromDate}, to=${toDate}, brandId=${brandId}, preset=${preset}`)
+    console.log(`Meta Analytics - Request date range: from=${fromDate}, to=${toDate}, brandId=${brandId}, preset=${preset}, enforceSingleDay=${enforceSingleDay}`)
     
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
@@ -104,15 +105,28 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('brand_id', brandId)
     
-    // Add date filtering if provided
-    if (formattedFromDate) {
-      query = query.gte('date', formattedFromDate)
-      console.log(`Filtering from date: ${formattedFromDate}`)
+    // Special handling for single-day queries (yesterday, today, enforce_single_day, or when fromDate === toDate)
+    if ((formattedFromDate && formattedToDate && formattedFromDate === formattedToDate) || 
+        isYesterdayPreset || isTodayPreset || enforceSingleDay) {
+      // For consistency with other endpoints, always use the from date for single-day queries
+      const exactDate = formattedFromDate || formattedToDate;
+      if (exactDate) {
+        query = query.eq('date', exactDate);
+        console.log(`EXACT DATE MATCH: Filtering for single day: ${exactDate} only`);
+      }
     }
-    
-    if (formattedToDate) {
-      query = query.lte('date', formattedToDate)
-      console.log(`Filtering to date: ${formattedToDate}`)
+    // Regular date range handling for multi-day queries
+    else {
+      // Add date filtering if provided
+      if (formattedFromDate) {
+        query = query.gte('date', formattedFromDate);
+        console.log(`Filtering from date: ${formattedFromDate}`);
+      }
+      
+      if (formattedToDate) {
+        query = query.lte('date', formattedToDate);
+        console.log(`Filtering to date: ${formattedToDate}`);
+      }
     }
     
     // Execute the query
