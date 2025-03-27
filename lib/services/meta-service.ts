@@ -82,24 +82,54 @@ export async function fetchMetaAdInsights(
           `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,frequency,ctr,cpc,link_clicks,cost_per_inline_link_click,purchase_roas,website_purchase_roas,budget_remaining,objective&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
+        console.log(`[Meta] Response status for account ${account.id}: ${insightsResponse.status}`)
+        
+        // Check for non-200 response
+        if (!insightsResponse.ok) {
+          const errorText = await insightsResponse.text()
+          console.error(`[Meta] HTTP error fetching insights for account ${account.id}: ${insightsResponse.status} ${insightsResponse.statusText}`)
+          console.error(`[Meta] Error details: ${errorText}`)
+          continue
+        }
+
         const insightsData = await insightsResponse.json()
         
         if (insightsData.error) {
           console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
+          console.error(`[Meta] Error details:`, JSON.stringify(insightsData.error))
           continue
         }
         
-        if (insightsData.data && insightsData.data.length > 0) {
-          allInsights.push(...insightsData.data)
-          // Log the first item to check for daily data structure
-          if (insightsData.data[0]) {
-            console.log(`[Meta] Sample data format (first item):`, {
-              date_start: insightsData.data[0].date_start,
-              date_stop: insightsData.data[0].date_stop,
-              ad_id: insightsData.data[0].ad_id,
-              impressions: insightsData.data[0].impressions
-            })
+        // Try with a simplified fields list if needed
+        if (!insightsData.data || insightsData.data.length === 0) {
+          console.log(`[Meta] No data returned for account ${account.id}, trying with basic fields only`)
+          // Try with just the essential fields
+          const basicInsightsResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          )
+          
+          if (!basicInsightsResponse.ok) {
+            console.error(`[Meta] Basic API call also failed for account ${account.id}`)
+            continue
           }
+          
+          const basicInsightsData = await basicInsightsResponse.json()
+          if (basicInsightsData.data && basicInsightsData.data.length > 0) {
+            console.log(`[Meta] Successfully retrieved ${basicInsightsData.data.length} records with basic fields for account ${account.id}`)
+            allInsights.push(...basicInsightsData.data)
+          }
+          continue
+        }
+        
+        allInsights.push(...insightsData.data)
+        // Log the first item to check for daily data structure
+        if (insightsData.data[0]) {
+          console.log(`[Meta] Sample data format (first item):`, {
+            date_start: insightsData.data[0].date_start,
+            date_stop: insightsData.data[0].date_stop,
+            ad_id: insightsData.data[0].ad_id,
+            impressions: insightsData.data[0].impressions
+          })
         }
       } catch (error) {
         console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)

@@ -51,6 +51,7 @@ import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -73,7 +74,7 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
-// Find the type definition for MetricsDataType
+// Fix the MetricsDataType interface to include the new fields
 type MetricsDataType = {
   adSpend: number;
   adSpendGrowth: number;
@@ -92,10 +93,19 @@ type MetricsDataType = {
   roas: number;
   roasGrowth: number;
   frequency: number;
+  frequencyGrowth?: number;
   budget: number;
+  budgetGrowth?: number;
   reach: number;
+  reachGrowth?: number;
+  linkClicks?: number;
+  linkClicksGrowth?: number;
+  purchaseConversionValue?: number;
+  purchaseConversionValueGrowth?: number;
+  results?: number;
+  resultsGrowth?: number;
   dailyData: DailyDataItem[];
-}
+};
 
 // Add type definition for the global timeouts array
 declare global {
@@ -223,6 +233,7 @@ export function MetaTab({
       ctr: 0,
       ctrGrowth: 0,
       cpc: 0,
+      cpcLink: 0,
       costPerResult: 0,
       cprGrowth: 0,
       roas: 0,
@@ -569,6 +580,7 @@ export function MetaTab({
           ctr: 0,
           ctrGrowth: 0,
           cpc: 0,
+          cpcLink: 0,
           costPerResult: 0,
           cprGrowth: 0,
           roas: 0,
@@ -982,6 +994,7 @@ export function MetaTab({
               ctr: data.ctr ?? 0,
               ctrGrowth: data.ctrGrowth ?? 0,
               cpc: data.cpc ?? 0,
+              cpcLink: data.cpcLink ?? 0,
               costPerResult: data.costPerResult ?? 0,
               cprGrowth: data.cprGrowth ?? 0,
               roas: data.roas ?? 0,
@@ -1659,6 +1672,7 @@ Try creating at least one active campaign in Meta Ads Manager.
                 ctr: data.ctr ?? 0,
                 ctrGrowth: data.ctrGrowth ?? 0,
                 cpc: data.cpc ?? 0,
+                cpcLink: data.cpcLink ?? 0,
                 costPerResult: data.costPerResult ?? 0,
                 cprGrowth: data.cprGrowth ?? 0,
                 roas: data.roas ?? 0,
@@ -2478,6 +2492,53 @@ Try creating at least one active campaign in Meta Ads Manager.
     refreshAllMetricsDirectly()
   }
 
+  // Add a new force resync function around line 1080 (after refreshMetaData)
+  const forceResyncMetaData = async () => {
+    try {
+      setIsSyncing(true);
+      toast('Starting forced resync of Meta data...', {
+        description: 'This may take a few moments.',
+        duration: 5000
+      });
+      
+      // Call our new force resync endpoint
+      const response = await fetch(`/api/meta/resync?brandId=${brandId}&force=true&days=60`);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Force resync error:', errorData);
+        toast.error('Failed to resync Meta data', {
+          description: errorData.error || 'Unknown error',
+          duration: 5000
+        });
+        setIsSyncing(false);
+        return;
+      }
+      
+      const result = await response.json();
+      
+      toast.success('Meta data resynced successfully', {
+        description: `Synced ${result.count || 0} records. Refreshing dashboard...`,
+        duration: 5000
+      });
+      
+      // Wait a moment for the data to be processed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh the UI with the new data
+      await fetchMetaData();
+      
+      setIsSyncing(false);
+    } catch (error) {
+      console.error('Error during force resync:', error);
+      toast.error('Failed to resync Meta data', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+        duration: 5000
+      });
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -2489,30 +2550,70 @@ Try creating at least one active campaign in Meta Ads Manager.
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Meta Ads Performance</h2>
         <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-                      onClick={fetchMetaData}
-                      disabled={loading || isDateChangeLoading}
-                      className="flex items-center gap-1"
-                    >
-                      {loading || isDateChangeLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      <span>Refresh Data</span>
-          </Button>
-                    {brandId && (
-                      <MetaResyncButton 
-                        brandId={brandId} 
-                        days={60}
-                        onSuccess={() => {
-                          toast.success("Meta data resynced. Refreshing data...")
-                          fetchMetaData()
-                        }}
-                      />
-                    )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+              >
+                {loading || isDateChangeLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <span>Refresh</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[#111] border border-[#333]">
+              <DropdownMenuItem 
+                onClick={refreshAllMetricsDirectly}
+                className="flex items-center cursor-pointer hover:bg-[#222]"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Data
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={fetchMetaData}
+                className="flex items-center cursor-pointer hover:bg-[#222]"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Advanced Refresh
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={forceResyncMetaData}
+                className="flex items-center cursor-pointer hover:bg-[#222] text-red-400"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Force Resync (Clear & Reload)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-[#333]" />
+              <DropdownMenuItem 
+                onClick={testFetchMetaData}
+                className="flex items-center cursor-pointer hover:bg-[#222] text-gray-400"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Debug: Test API
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={toggleDebugControls}
+                className="flex items-center cursor-pointer hover:bg-[#222] text-gray-400"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Debug Controls
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {brandId && (
+            <MetaResyncButton 
+              brandId={brandId} 
+              days={60}
+              onSuccess={() => {
+                toast.success("Meta data resynced. Refreshing data...")
+                fetchMetaData()
+              }}
+            />
+          )}
         </div>
       </div>
                 
@@ -2818,7 +2919,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={metricsData.frequency || 0}
             data={[]}
             loading={loading || isManuallyRefreshing}
-            valueFormat="decimal"
+            valueFormat="number"
             hideGraph={true}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
