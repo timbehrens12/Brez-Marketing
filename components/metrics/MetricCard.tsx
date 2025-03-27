@@ -231,9 +231,8 @@ export function MetricCard({
         </CardHeader>
         <CardContent className="p-4 pt-2">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-3">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-500 mb-2" />
-              <p className="text-sm text-gray-400">Loading data...</p>
+            <div className="flex items-center h-8">
+              <div className="w-20 h-7 bg-gray-800 rounded animate-pulse"></div>
             </div>
           ) : (
             <>

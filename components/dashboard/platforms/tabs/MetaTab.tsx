@@ -2308,6 +2308,81 @@ Try creating at least one active campaign in Meta Ads Manager.
     await fetchAllMetricsDirectly()
   }
 
+  // Add a refresh timer state
+  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false)
+
+  // Function to refresh all metrics directly
+  const refreshAllMetricsDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot refresh metrics: Missing date range or brand ID")
+      return
+    }
+    
+    // Set loading states for all widgets
+    setAdSpendData(prev => ({ ...prev, isLoading: true }))
+    setRoasData(prev => ({ ...prev, isLoading: true }))
+    setImpressionsData(prev => ({ ...prev, isLoading: true }))
+    setClicksData(prev => ({ ...prev, isLoading: true }))
+    
+    // Set global refreshing state for UI feedback
+    setIsManuallyRefreshing(true)
+    
+    try {
+      console.log("Refreshing all metrics directly")
+      await Promise.all([
+        fetchAdSpendDirectly(),
+        fetchRoasDirectly(),
+        fetchImpressionsDirectly(),
+        fetchClicksDirectly()
+      ])
+      
+      // Show success toast
+      toast.success("Metrics refreshed successfully")
+    } catch (error) {
+      console.error("Error refreshing metrics:", error)
+      toast.error("Failed to refresh metrics")
+    } finally {
+      setIsManuallyRefreshing(false)
+    }
+  }
+  
+  // Setup auto-refresh on a 5-minute interval
+  useEffect(() => {
+    // Clear any existing timer first
+    if (refreshTimer) {
+      clearInterval(refreshTimer)
+    }
+    
+    // Set up a new 5-minute refresh interval
+    const timer = setInterval(() => {
+      console.log("Auto-refreshing metrics (5-minute interval)")
+      refreshAllMetricsDirectly()
+    }, 5 * 60 * 1000) // 5 minutes in milliseconds
+    
+    setRefreshTimer(timer)
+    
+    // Clean up on unmount
+    return () => {
+      if (refreshTimer) {
+        clearInterval(refreshTimer)
+      }
+    }
+  }, [dateRange, brandId])
+  
+  // Also refresh when isRefreshingData prop changes (to integrate with existing refresh mechanisms)
+  useEffect(() => {
+    if (isRefreshingData) {
+      console.log("Refreshing metrics due to parent component refresh trigger")
+      refreshAllMetricsDirectly()
+    }
+  }, [isRefreshingData])
+  
+  // Manual refresh button handler
+  const handleManualRefresh = () => {
+    refreshAllMetricsDirectly()
+  }
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -2392,6 +2467,25 @@ Try creating at least one active campaign in Meta Ads Manager.
               Meta connection active
             </p>
           </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleManualRefresh}
+            disabled={isManuallyRefreshing}
+            className="text-gray-400 hover:text-white"
+          >
+            {isManuallyRefreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Data
+              </>
+            )}
+          </Button>
         </div>
       ) : (
         <AlertBox type="info" icon={<Info className="h-4 w-4" />}>
@@ -2431,7 +2525,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={adSpendData.value}
             data={[]}
-            loading={adSpendData.isLoading}
+            loading={adSpendData.isLoading || isManuallyRefreshing}
             hideChange={true}
             prefix="$"
             valueFormat="currency"
@@ -2447,7 +2541,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={roasData.value}
             data={[]}
-            loading={roasData.isLoading}
+            loading={roasData.isLoading || isManuallyRefreshing}
             hideChange={true}
             suffix="x"
             valueFormat="number"
@@ -2463,7 +2557,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={impressionsData.value}
             data={[]}
-            loading={impressionsData.isLoading}
+            loading={impressionsData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
             hideGraph={true}
@@ -2478,7 +2572,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={clicksData.value}
             data={[]}
-            loading={clicksData.isLoading}
+            loading={clicksData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
             hideGraph={true}
