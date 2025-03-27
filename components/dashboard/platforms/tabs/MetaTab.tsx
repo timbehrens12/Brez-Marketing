@@ -2240,11 +2240,18 @@ Try creating at least one active campaign in Meta Ads Manager.
                             ) : metricsData.adSpendGrowth < 0 ? (
                               <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
                             ) : null}
-                            {formatPercentage(Math.abs(metricsData.adSpendGrowth))}
+                            {/* Format percentage based on API response (values are 0-100, not 0-1) */}
+                            {typeof metricsData.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && 
+                              new Intl.NumberFormat('en-US', {
+                                style: 'percent',
+                                minimumFractionDigits: 1,
+                                maximumFractionDigits: 1
+                              }).format(Math.abs(metricsData.adSpendGrowth) / 100)
+                            }
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{`${metricsData.adSpendGrowth > 0 ? 'Increase' : 'Decrease'} compared to previous period: ${formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth))}`}</p>
+                          <p>{`${metricsData.adSpendGrowth > 0 ? 'Increase' : 'Decrease'} compared to previous period: ${formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth / 100))}`}</p>
                           <p className="text-xs text-gray-400 mt-1">
                             {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
                               ? 'Compared to previous day'
