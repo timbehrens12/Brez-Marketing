@@ -35,8 +35,7 @@ import {
   RefreshCw,
   Settings,
   Target,
-  AlertCircle,
-  HelpCircle
+  AlertCircle
 } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -53,7 +52,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
-import { isSameDay, isYesterday, format, subDays, differenceInDays } from "date-fns"
+import { isSameDay, isYesterday } from "date-fns"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -194,37 +193,30 @@ export function MetaTab({
   const [isSyncing, setIsSyncing] = useState(false)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
-  const [metricsData, setMetricsData] = useState<MetricsDataType>({
-    adSpend: 0,
-    adSpendGrowth: 0,
-    impressions: 0,
-    impressionGrowth: 0,
-    clicks: 0,
-    clickGrowth: 0,
-    conversions: 0,
-    conversionGrowth: 0,
-    ctr: 0,
-    ctrGrowth: 0,
-    cpc: 0,
-    costPerResult: 0,
-    cprGrowth: 0,
-    roas: 0,
-    roasGrowth: 0,
-    frequency: 0,
-    budget: 0,
-    reach: 0,
-    dailyData: []
+  const [metricsData, setMetricsData] = useState<MetricsDataType>(() => {
+    // Initialize with zeros to prevent flashing all-time data
+    return {
+      adSpend: 0,
+      adSpendGrowth: 0,
+      impressions: 0,
+      impressionGrowth: 0,
+      clicks: 0,
+      clickGrowth: 0,
+      conversions: 0,
+      conversionGrowth: 0,
+      ctr: 0,
+      ctrGrowth: 0,
+      cpc: 0,
+      costPerResult: 0,
+      cprGrowth: 0,
+      roas: 0,
+      roasGrowth: 0,
+      frequency: 0,
+      budget: 0,
+      reach: 0,
+      dailyData: []
+    };
   });
-  
-  // Track the last valid metrics data (with non-zero values)
-  const [previousData, setPreviousData] = useState<MetricsDataType | null>(null)
-  
-  // Update previous data when we have valid metrics
-  useEffect(() => {
-    if (metricsData && (metricsData.adSpend > 0 || metricsData.impressions > 0 || metricsData.clicks > 0)) {
-      setPreviousData(metricsData)
-    }
-  }, [metricsData])
 
   // Loading states - add more granular control
   const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
@@ -866,9 +858,6 @@ export function MetaTab({
 
   // Add a button to manually fetch data 
   const manuallyLoadData = () => {
-    // Save current data state before refresh
-    const previousData = { ...metricsData };
-    
     // Create a date range for the last 30 days to ensure we get real data
     const endDate = new Date();
     const startDate = new Date();
@@ -936,40 +925,28 @@ export function MetaTab({
               dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
             }));
             
-            // Validate the data - only use it if it has valid values
-            const hasValidData = data && (
-              data.adSpend > 0 || data.impressions > 0 || data.clicks > 0 ||
-              (Array.isArray(data.dailyData) && data.dailyData.length > 0)
-            );
-            
-            // Update metrics state with the data we received only if it contains valid data
-            if (hasValidData) {
-              setMetricsData({
-                adSpend: data.adSpend ?? previousData.adSpend,
-                adSpendGrowth: data.adSpendGrowth ?? previousData.adSpendGrowth,
-                impressions: data.impressions ?? previousData.impressions,
-                impressionGrowth: data.impressionGrowth ?? previousData.impressionGrowth,
-                clicks: data.clicks ?? previousData.clicks,
-                clickGrowth: data.clickGrowth ?? previousData.clickGrowth,
-                conversions: data.conversions ?? previousData.conversions,
-                conversionGrowth: data.conversionGrowth ?? previousData.conversionGrowth,
-                ctr: data.ctr ?? previousData.ctr,
-                ctrGrowth: data.ctrGrowth ?? previousData.ctrGrowth,
-                cpc: data.cpc ?? previousData.cpc,
-                costPerResult: data.costPerResult ?? previousData.costPerResult,
-                cprGrowth: data.cprGrowth ?? previousData.cprGrowth,
-                roas: data.roas ?? previousData.roas,
-                roasGrowth: data.roasGrowth ?? previousData.roasGrowth,
-                frequency: data.frequency ?? previousData.frequency,
-                budget: data.budget ?? previousData.budget,
-                reach: data.reach ?? previousData.reach,
-                dailyData: Array.isArray(data.dailyData) ? data.dailyData : previousData.dailyData
-              });
-            } else {
-              console.log("DEBUG: Received empty data, preserving previous valid data", previousData.adSpend);
-              // Keep the previous data if the new data is empty/invalid
-              setMetricsData(previousData);
-            }
+            // Update metrics state with the data we received
+      setMetricsData({
+              adSpend: data.adSpend ?? 0,
+              adSpendGrowth: data.adSpendGrowth ?? 0,
+              impressions: data.impressions ?? 0,
+              impressionGrowth: data.impressionGrowth ?? 0,
+              clicks: data.clicks ?? 0,
+              clickGrowth: data.clickGrowth ?? 0,
+              conversions: data.conversions ?? 0,
+              conversionGrowth: data.conversionGrowth ?? 0,
+              ctr: data.ctr ?? 0,
+              ctrGrowth: data.ctrGrowth ?? 0,
+              cpc: data.cpc ?? 0,
+              costPerResult: data.costPerResult ?? 0,
+              cprGrowth: data.cprGrowth ?? 0,
+              roas: data.roas ?? 0,
+              roasGrowth: data.roasGrowth ?? 0,
+              frequency: data.frequency ?? 0,
+              budget: data.budget ?? 0,
+              reach: data.reach ?? 0,
+              dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
+            });
             
             // Log the values we just set to help with debugging
             console.log("DEBUG: Updated metrics data:", JSON.stringify({
@@ -986,12 +963,6 @@ export function MetaTab({
           } catch (error) {
             console.error('DEBUG: Error fetching Meta data:', error);
             
-            // On error, preserve the previous valid data
-            if (previousData.adSpend > 0) {
-              console.log("ERROR RECOVERY: Restoring previous valid data");
-              setMetricsData(previousData);
-            }
-            
             if (isMounted) {
               setError(error instanceof Error ? error.message : 'An error occurred');
               setLoading(false);
@@ -1002,34 +973,16 @@ export function MetaTab({
         
         // Call our custom fetch function
         fetchWithCurrentDates();
-      } finally {
+    } finally {
         // Wait a bit before restoring the settings to ensure the request completes
         setTimeout(() => {
           window._disableAutoMetaFetch = true;
           window._blockMetaApiCalls = true;
-          
-          // Double-check that we didn't lose valid data
-          if (metricsData.adSpend === 0 && previousData.adSpend > 0) {
-            console.log("FINAL PROTECTION: Restoring ad spend data after refresh");
-            setMetricsData(previousData);
-          }
         }, 2000);
       }
     } else {
-      // Add data protection for regular fetch too
-      const prevData = { ...metricsData };
-      
       // If auto fetch is enabled, just use the standard function
       fetchMetaData();
-      
-      // Check if data was reset to zero
-      setTimeout(() => {
-        if (isMounted.current && 
-            metricsData.adSpend === 0 && prevData.adSpend > 0) {
-          console.log("STANDARD FETCH PROTECTION: Restoring ad spend data");
-          setMetricsData(prevData);
-        }
-      }, 1000);
     }
   };
 
@@ -2044,322 +1997,12 @@ Try creating at least one active campaign in Meta Ads Manager.
     window._blockMetaApiCalls = false;
     window._disableAutoMetaFetch = false;
     
-    // Save the initial data to prevent losing it on auto-refresh
-    const savedMetricsData = { ...metricsData };
-    
-    // Handle component unmount
     return () => {
       isMounted.current = false;
       window._blockMetaApiCalls = true;
-      
-      // Preserve any valid data we had before unmounting
-      if (savedMetricsData.adSpend > 0 || savedMetricsData.impressions > 0 || savedMetricsData.clicks > 0) {
-        setMetricsData(savedMetricsData);
-      }
-      
       console.log("Meta tab unmounting, blocking API calls");
     };
   }, []);
-  
-  // Add a data preservation mechanism to prevent zeroing out valid data
-  useEffect(() => {
-    // Create a permanent backup of valid data
-    if (metricsData && (metricsData.adSpend > 0 || metricsData.impressions > 0 || metricsData.clicks > 0)) {
-      // Store in component state
-      const validData = { ...metricsData };
-      
-      // Create protection against data loss during refresh
-      const preserveValidData = () => {
-        if (isMounted.current) {
-          // Check if current data has been zeroed out but we had valid data before
-          if (metricsData.adSpend === 0 && metricsData.impressions === 0 && metricsData.clicks === 0 && 
-              validData.adSpend > 0) {
-            console.log("DATA LOSS PREVENTION: Restoring valid metrics data");
-            setMetricsData(validData);
-          }
-        }
-      };
-      
-      // Check shortly after any refresh operation
-      if (isRefreshingData) {
-        const timeoutId = setTimeout(preserveValidData, 300);
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [metricsData, isRefreshingData]);
-
-  // Update metrics whenever we get new data from the API
-  useEffect(() => {
-    if (metrics) {
-      const safeMetrics = { ...metrics }
-      const safeData: MetricsDataType = {
-        adSpend: 0,
-        adSpendGrowth: 0,
-        impressions: 0,
-        impressionGrowth: 0,
-        clicks: 0,
-        clickGrowth: 0,
-        conversions: 0,
-        conversionGrowth: 0,
-        ctr: 0,
-        ctrGrowth: 0,
-        cpc: 0,
-        costPerResult: 0,
-        cprGrowth: 0,
-        roas: 0,
-        roasGrowth: 0,
-        frequency: 0,
-        budget: 0,
-        reach: 0,
-        dailyData: []
-      }
-      
-      // Safely copy all metrics values
-      if (typeof safeMetrics.adSpend === 'number' && !isNaN(safeMetrics.adSpend))
-        safeData.adSpend = safeMetrics.adSpend
-        
-      if (typeof safeMetrics.adSpendGrowth === 'number' && !isNaN(safeMetrics.adSpendGrowth))
-        safeData.adSpendGrowth = safeMetrics.adSpendGrowth
-      
-      if (typeof safeMetrics.impressions === 'number' && !isNaN(safeMetrics.impressions))
-        safeData.impressions = safeMetrics.impressions
-        
-      if (typeof safeMetrics.impressionGrowth === 'number' && !isNaN(safeMetrics.impressionGrowth))
-        safeData.impressionGrowth = safeMetrics.impressionGrowth
-        
-      if (typeof safeMetrics.clicks === 'number' && !isNaN(safeMetrics.clicks))
-        safeData.clicks = safeMetrics.clicks
-        
-      if (typeof safeMetrics.clickGrowth === 'number' && !isNaN(safeMetrics.clickGrowth))
-        safeData.clickGrowth = safeMetrics.clickGrowth
-        
-      if (Array.isArray(safeMetrics.dailyData))
-        safeData.dailyData = safeMetrics.dailyData
-      
-      // For today's data, API often returns 0 growth - calculate a more meaningful value
-      if ((dateRange?.from && dateRange?.to && 
-           isSameDay(dateRange.from, new Date()) && isSameDay(dateRange.to, new Date()))) {
-        
-        console.log("Today's data detected, checking if we need to calculate growth manually");
-        
-        // If growth is zero but we have actual spend data, try to calculate it
-        if (safeData.adSpendGrowth === 0 && safeData.adSpend > 0) {
-          // If we have daily data, we can calculate a growth value
-          if (Array.isArray(safeData.dailyData) && safeData.dailyData.length > 1) {
-            // Sort by date to ensure correct order
-            const sortedData = [...safeData.dailyData].sort((a, b) => 
-              new Date(a.date).getTime() - new Date(b.date).getTime()
-            );
-            
-            const todayData = sortedData[sortedData.length - 1];
-            const yesterdayData = sortedData[sortedData.length - 2];
-            
-            if (yesterdayData && yesterdayData.spend > 0) {
-              const calculatedGrowth = ((todayData.spend - yesterdayData.spend) / yesterdayData.spend) * 100;
-              console.log(`Manually calculating growth: (${todayData.spend} - ${yesterdayData.spend}) / ${yesterdayData.spend} * 100 = ${calculatedGrowth}%`);
-              
-              // Update the growth value in our data
-              safeData.adSpendGrowth = Math.round(calculatedGrowth * 10) / 10;
-              
-              // If it's a reasonable value (not extreme), use it
-              if (safeData.adSpendGrowth > -500 && safeData.adSpendGrowth < 500) {
-                console.log("Using manually calculated growth:", safeData.adSpendGrowth);
-              } else {
-                // Set a reasonable value if calculated one is extreme
-                safeData.adSpendGrowth = calculatedGrowth > 0 ? 15 : -15;
-                console.log("Using default growth value instead of extreme calculated value");
-              }
-            }
-          } else {
-            // We don't have enough data for comparison, use a default value
-            console.log("Not enough daily data for comparison, using default growth value");
-            safeData.adSpendGrowth = 5.0; // Default to small positive growth
-          }
-        }
-      }
-      
-      console.log("DEBUG: adSpendGrowth value:", safeData.adSpendGrowth, "type:", typeof safeData.adSpendGrowth);
-      
-      // Update our metrics with potentially fixed growth values
-      setMetricsData(prevData => ({
-        ...prevData,
-        ...safeData
-      }));
-    }
-  }, [dateRange, metrics]);
-
-  // Initialize metrics with default data to prevent initial zero/empty values
-  useEffect(() => {
-    // Only set hardcoded metrics if we have no real data yet
-    if (metricsData.adSpend === 0 && metricsData.impressions === 0 && metricsData.clicks === 0) {
-      const defaultDate = new Date();
-      const yesterday = new Date(defaultDate);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      // Create sample daily data for a good looking chart
-      const sampleDailyData: DailyDataItem[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const spend = 25 + Math.random() * 15; // Random value between 25-40
-        
-        sampleDailyData.push({
-          date: date.toISOString().split('T')[0],
-          spend: spend,
-          impressions: Math.round(spend * 20),
-          clicks: Math.round(spend * 0.8),
-          conversions: Math.round(spend * 0.05),
-          ctr: 3.5 + Math.random() * 1,
-          roas: 1.2 + Math.random() * 1
-        });
-      }
-      
-      // Calculate total from daily data
-      const totalSpend = sampleDailyData.reduce((sum, day) => sum + day.spend, 0);
-      const totalImpressions = sampleDailyData.reduce((sum, day) => sum + day.impressions, 0);
-      const totalClicks = sampleDailyData.reduce((sum, day) => sum + day.clicks, 0);
-      
-      // Set sample data
-      setMetricsData({
-        ...metricsData,
-        adSpend: parseFloat(totalSpend.toFixed(2)),
-        adSpendGrowth: 7.5, // Default growth rate
-        impressions: totalImpressions,
-        impressionGrowth: 12.3,
-        clicks: totalClicks,
-        clickGrowth: 5.2,
-        conversions: Math.round(totalSpend * 0.05),
-        conversionGrowth: 3.1,
-        ctr: 3.8,
-        ctrGrowth: -1.2,
-        cpc: parseFloat((totalSpend / totalClicks).toFixed(2)),
-        costPerResult: parseFloat((totalSpend / (totalSpend * 0.05)).toFixed(2)),
-        cprGrowth: 2.1,
-        roas: 1.65,
-        roasGrowth: 4.2,
-        frequency: 1.3,
-        budget: parseFloat((totalSpend / 7).toFixed(2)),
-        reach: Math.round(totalImpressions * 0.7),
-        dailyData: sampleDailyData
-      });
-      
-      console.log("Initialized widget with sample data until real data loads");
-    }
-  }, []);
-
-  // Function to fetch previous period data for real comparisons
-  useEffect(() => {
-    // Only run if we have data to compare and date range is set
-    if (metricsData.adSpend > 0 && dateRange?.from && dateRange?.to) {
-      // Function to fetch previous period data for real comparisons
-      async function fetchPreviousPeriodData() {
-        if (!dateRange?.from || !dateRange?.to || !brandId) return;
-        
-        console.log("REAL COMPARISON: Fetching previous period data for accurate Ad Spend growth calculation");
-        
-        try {
-          // Calculate previous period date range
-          const currentPeriodDays = differenceInDays(dateRange.to, dateRange.from) + 1;
-          const previousPeriodEnd = subDays(dateRange.from, 1);
-          const previousPeriodStart = subDays(previousPeriodEnd, currentPeriodDays - 1);
-          
-          console.log(`Current period: ${format(dateRange.from, 'yyyy-MM-dd')} to ${format(dateRange.to, 'yyyy-MM-dd')} (${currentPeriodDays} days)`);
-          console.log(`Previous period: ${format(previousPeriodStart, 'yyyy-MM-dd')} to ${format(previousPeriodEnd, 'yyyy-MM-dd')} (${currentPeriodDays} days)`);
-          
-          // Build API query params
-          const params = new URLSearchParams({
-            brandId: brandId,
-            from: format(previousPeriodStart, 'yyyy-MM-dd'),
-            to: format(previousPeriodEnd, 'yyyy-MM-dd'),
-            previous_period: 'true',
-            bypass_cache: 'true'
-          });
-          
-          // Fetch previous period data
-          const response = await fetch(`/api/metrics/meta?${params.toString()}`, {
-            cache: 'no-cache',
-            headers: { 'Cache-Control': 'no-cache' }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch previous period data: ${response.status}`);
-          }
-          
-          const previousData = await response.json();
-          
-          console.log("Previous period data:", previousData);
-          
-          // Calculate ad spend growth percentage only
-          if (previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0) {
-            // Current and previous ad spend values
-            const currentAdSpend = metricsData.adSpend;
-            const previousAdSpend = previousData.adSpend;
-            
-            // Calculate ad spend growth percentage
-            const realAdSpendGrowth = previousAdSpend > 0 
-              ? ((currentAdSpend - previousAdSpend) / previousAdSpend) * 100
-              : 0;
-            
-            console.log("REAL AD SPEND GROWTH CALCULATED:", {
-              currentAdSpend: currentAdSpend.toFixed(2),
-              previousAdSpend: previousAdSpend.toFixed(2),
-              growthPercentage: realAdSpendGrowth.toFixed(1) + '%'
-            });
-            
-            // Update metrics with real ad spend growth value only
-            setMetricsData(current => ({
-              ...current,
-              adSpendGrowth: Math.round(realAdSpendGrowth * 10) / 10  // Round to 1 decimal place
-            }));
-            
-            // Store previous ad spend for reference
-            setPreviousData({
-              ...previousData,
-              adSpend: previousAdSpend
-            });
-          }
-        } catch (error) {
-          console.error("Error fetching previous period data:", error);
-        }
-      }
-      
-      // Call the function
-      fetchPreviousPeriodData();
-    }
-  }, [dateRange, metricsData.adSpend, brandId]);
-
-  // Add debug logging whenever metrics data changes
-  useEffect(() => {
-    if (metricsData.adSpend > 0) {
-      console.log("DEBUG - Current metrics data state:", {
-        adSpend: metricsData.adSpend,
-        adSpendGrowth: metricsData.adSpendGrowth,
-        formattedGrowth: new Intl.NumberFormat('en-US', {
-          style: 'percent',
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1
-        }).format(Math.abs(metricsData.adSpendGrowth) / 100)
-      });
-    }
-  }, [metricsData.adSpend, metricsData.adSpendGrowth]);
-
-  // Add debug logging whenever ad spend or growth changes
-  useEffect(() => {
-    if (metricsData.adSpend > 0) {
-      console.log("AD SPEND DATA UPDATE:", {
-        current: formatCurrencyCompact(metricsData.adSpend),
-        previous: previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0 
-          ? formatCurrencyCompact(previousData.adSpend) 
-          : 'Not available',
-        growthPercent: metricsData.adSpendGrowth.toFixed(1) + '%',
-        formattedGrowth: new Intl.NumberFormat('en-US', {
-          style: 'percent',
-          minimumFractionDigits: 1,
-          maximumFractionDigits: 1
-        }).format(Math.abs(metricsData.adSpendGrowth) / 100)
-      });
-    }
-  }, [metricsData.adSpend, metricsData.adSpendGrowth, previousData]);
 
   return (
     <TooltipProvider>
@@ -2471,235 +2114,101 @@ Try creating at least one active campaign in Meta Ads Manager.
         </AlertBox>
       )}
       
-      {/* Ad Spend Widget - New Implementation */}
-      <Card className="bg-[#111] border-[#333] shadow-lg">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-blue-400" />
-            Ad Spend
-          </CardTitle>
-          <CardDescription className="text-xs text-gray-400">
-            {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to) 
-              ? `For ${format(dateRange.from, 'MMMM d, yyyy')}`
-              : dateRange?.from && dateRange?.to
-                ? `From ${format(dateRange.from, 'MMMM d, yyyy')} to ${format(dateRange.to, 'MMMM d, yyyy')}`
-                : 'Select a date range'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex flex-col gap-2 animate-pulse py-2">
-              <div className="h-10 w-32 bg-gray-800 rounded-md"></div>
-              <div className="h-4 w-24 bg-gray-800 rounded-md"></div>
-            </div>
-          ) : (
-            <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">
-                    {(typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) && metricsData.adSpend > 0)
-                      ? formatCurrencyCompact(metricsData.adSpend) 
-                      : (typeof previousData?.adSpend === 'number' && previousData?.adSpend > 0) 
-                        ? formatCurrencyCompact(previousData.adSpend) + ' '
-                        : '$0'}
-                  </span>
-                  {typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            {metricsData.adSpendGrowth > 0 ? (
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                            ) : metricsData.adSpendGrowth < 0 ? (
-                              <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                            ) : (
-                              <span className="h-3 w-3 mr-1">-</span>
-                            )}
-                            {/* Display actual calculated percentage */}
-                            {typeof metricsData.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? (
-                              new Intl.NumberFormat('en-US', {
-                                style: 'percent',
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1
-                              }).format(Math.abs(metricsData.adSpendGrowth) / 100)
-                            ) : (
-                              '0.0%'
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {metricsData.adSpend > 0 ? (
-                              metricsData.adSpendGrowth > 0 ? 
-                                `Ad Spend increased by ${new Intl.NumberFormat('en-US', {
-                                  style: 'percent',
-                                  minimumFractionDigits: 1,
-                                  maximumFractionDigits: 1
-                                }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` : 
-                                metricsData.adSpendGrowth < 0 ?
-                                  `Ad Spend decreased by ${new Intl.NumberFormat('en-US', {
-                                    style: 'percent',
-                                    minimumFractionDigits: 1,
-                                    maximumFractionDigits: 1
-                                  }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period` :
-                                  `No change in Ad Spend compared to previous period`
-                            ) : (
-                              `No historical Ad Spend data available for comparison`
-                            )}
-                          </p>
-                          <div className="text-xs text-gray-500 mt-1">
-                            <p>Current period: {formatCurrencyCompact(metricsData.adSpend)}</p>
-                            <p>Previous period: {previousData && typeof previousData.adSpend === 'number' && previousData.adSpend > 0 ? (
-                              // Use actual previous period data that we fetched
-                              formatCurrencyCompact(previousData.adSpend)
-                            ) : metricsData.adSpend > 0 && metricsData.adSpendGrowth !== 0 ? (
-                              // Calculate based on current value and growth if needed
-                              formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth / 100))
-                            ) : (
-                              'Not available'
-                            )}</p>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
-                              ? 'Compared to previous day'
-                              : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 7
-                                ? 'Compared to previous week'
-                                : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 31
-                                  ? 'Compared to previous month'
-                                  : 'Compared to previous period'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <p className="text-xs text-gray-400 mt-1 flex items-center">
-                  Total ad spend for this period
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 ml-1 cursor-help opacity-70 hover:opacity-100 transition-opacity" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Comparison is based on the previous equivalent period</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
-                            ? `Previous day: ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
-                            : dateRange?.from && dateRange?.to
-                              ? `Previous period: ${format(subDays(dateRange.from, differenceInDays(dateRange.to, dateRange.from) + 1), 'MMM d')} - ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
-                              : 'Select a date range to see comparison details'}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </p>
+                {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
+      <div className="space-y-4">
+        {/* Just the Ad Spend MetricCard */}
+        <div className="grid grid-cols-1 gap-4">
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-blue-400" />
+                <span className="ml-0.5">Ad Spend</span>
               </div>
-              
-              <div className="flex flex-col gap-1 min-w-[180px]">
-                {(Array.isArray(metricsData?.dailyData) && metricsData.dailyData.length > 0 && metricsData.dailyData.some(day => day.spend > 0)) ? (
-                  <div className="h-[60px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={metricsData.dailyData.slice(-7)} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                        <Bar dataKey="spend" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                        <RechartsTooltip 
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-[#1a1a1a] border border-[#333] rounded-md p-2 text-xs">
-                                  <p className="font-medium">{new Date(data.date).toLocaleDateString()}</p>
-                                  <p>${data.spend.toFixed(2)}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[60px] bg-[#1a1a1a] rounded-md">
-                    <p className="text-xs text-gray-500">No daily data available</p>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-[10px] text-gray-500">
-                  <span>Last 7 days trend</span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Daily spend
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            }
+            value={typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) ? metricsData.adSpend : 0}
+            change={typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? metricsData.adSpendGrowth : 0}
+            data={[]}
+            loading={showLoadingPlaceholder}
+            refreshing={isRefreshingData}
+            platform="meta"
+            prefix="$"
+            valueFormat="currency"
+            dateRange={dateRange}
+            infoTooltip="Total amount spent on Meta ads"
+            brandId={brandId}
+            hideGraph={true}
+          />
+        </div>
+      </div>
       
-      {/* Platform KPIs - Now full width */}
-      <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Target className="h-4 w-4 text-blue-400" />
-            Campaign Metrics
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          {isLoadingCampaigns && !cachedCampaigns.length ? (
-            <div className="flex justify-center items-center h-[240px]">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-            </div>
-          ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                  <p className="text-xs text-gray-400 mb-1">Active Campaigns</p>
-                  <p className="text-lg font-medium">
-                    {campaigns.length > 0 
-                      ? campaigns.filter(c => c.status === 'ACTIVE').length
-                      : cachedCampaigns.filter(c => c.status === 'ACTIVE').length}
-                  </p>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Removed Spend Distribution Card */}
+        
+        {/* Platform KPIs */}
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Target className="h-4 w-4 text-blue-400" />
+              Campaign Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isLoadingCampaigns && !cachedCampaigns.length ? (
+              <div className="flex justify-center items-center h-[240px]">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              </div>
+            ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                    <p className="text-xs text-gray-400 mb-1">Active Campaigns</p>
+                    <p className="text-lg font-medium">
+                                {campaigns.length > 0 
+                                  ? campaigns.filter(c => c.status === 'ACTIVE').length
+                                  : cachedCampaigns.filter(c => c.status === 'ACTIVE').length}
+                    </p>
+                  </div>
+                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                    <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
+                    <p className="text-lg font-medium">
+                      ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
+                    </p>
+                  </div>
+                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                    <p className="text-xs text-gray-400 mb-1">Conversions</p>
+                    <p className="text-lg font-medium">
+                      {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
+                    </p>
+                  </div>
+                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
+                    <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
+                    <p className="text-lg font-medium">
+                      ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                  <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
-                  <p className="text-lg font-medium">
-                    ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
-                  </p>
-                </div>
-                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                  <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                  <p className="text-lg font-medium">
-                    {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
-                  </p>
-                </div>
-                <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                  <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
-                  <p className="text-lg font-medium">
-                    ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
-                  </p>
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                    onClick={() => window.location.href = "/analytics"}
+                  >
+                    View Full Analytics
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="mt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={() => window.location.href = "/analytics"}
-                >
-                  View Full Analytics
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
+                <Activity className="h-10 w-10 text-gray-500 mb-4" />
+                <p className="text-gray-400 mb-2">No campaign metrics available</p>
+                <p className="text-sm text-gray-500">You'll see metrics here once you have active campaigns with data.</p>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
-              <Activity className="h-10 w-10 text-gray-500 mb-4" />
-              <p className="text-gray-400 mb-2">No campaign metrics available</p>
-              <p className="text-sm text-gray-500">You'll see metrics here once you have active campaigns with data.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Top Campaigns & AI Insights */}
       <div className="grid gap-6 md:grid-cols-2">
