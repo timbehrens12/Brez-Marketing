@@ -52,7 +52,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
-import { isSameDay, isYesterday } from "date-fns"
+import { isSameDay, isYesterday, format } from "date-fns"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -2113,6 +2113,91 @@ Try creating at least one active campaign in Meta Ads Manager.
           </div>
         </AlertBox>
       )}
+      
+      {/* Ad Spend Widget - New Implementation */}
+      <Card className="bg-[#111] border-[#333] shadow-lg">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-blue-400" />
+            Ad Spend
+          </CardTitle>
+          <CardDescription className="text-xs text-gray-400">
+            {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to) 
+              ? `For ${format(dateRange.from, 'MMMM d, yyyy')}`
+              : dateRange?.from && dateRange?.to
+                ? `From ${format(dateRange.from, 'MMMM d, yyyy')} to ${format(dateRange.to, 'MMMM d, yyyy')}`
+                : 'Select a date range'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex flex-col gap-2 animate-pulse py-2">
+              <div className="h-10 w-32 bg-gray-800 rounded-md"></div>
+              <div className="h-4 w-24 bg-gray-800 rounded-md"></div>
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
+              <div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold">
+                    {typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) 
+                      ? formatCurrencyCompact(metricsData.adSpend) 
+                      : '$0'}
+                  </span>
+                  {typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && (
+                    <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                      {metricsData.adSpendGrowth > 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : metricsData.adSpendGrowth < 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                      ) : null}
+                      {formatPercentage(Math.abs(metricsData.adSpendGrowth))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Total ad spend for this period</p>
+              </div>
+              
+              <div className="flex flex-col gap-1 min-w-[180px]">
+                {Array.isArray(metricsData?.dailyData) && metricsData.dailyData.length > 0 ? (
+                  <div className="h-[60px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={metricsData.dailyData.slice(-7)} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                        <Bar dataKey="spend" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                        <RechartsTooltip 
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-[#1a1a1a] border border-[#333] rounded-md p-2 text-xs">
+                                  <p className="font-medium">{new Date(data.date).toLocaleDateString()}</p>
+                                  <p>${data.spend.toFixed(2)}</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[60px] bg-[#1a1a1a] rounded-md">
+                    <p className="text-xs text-gray-500">No daily data available</p>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-[10px] text-gray-500">
+                  <span>Last 7 days trend</span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Daily spend
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {/* Platform KPIs - Now full width */}
       <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
