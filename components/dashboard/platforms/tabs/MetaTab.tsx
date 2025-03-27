@@ -2314,136 +2314,23 @@ Try creating at least one active campaign in Meta Ads Manager.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex flex-col gap-2 animate-pulse py-2">
-              <div className="h-10 w-32 bg-gray-800 rounded-md"></div>
-              <div className="h-4 w-24 bg-gray-800 rounded-md"></div>
-            </div>
-          ) : (
-            <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold">
-                    {(typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) && metricsData.adSpend > 0)
-                      ? formatCurrencyCompact(metricsData.adSpend) 
-                      : (typeof previousData?.adSpend === 'number' && previousData?.adSpend > 0) 
-                        ? formatCurrencyCompact(previousData.adSpend) + ' '
-                        : '$0'}
-                  </span>
-                  {typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            {metricsData.adSpendGrowth > 0 ? (
-                              <TrendingUp className="h-3 w-3 mr-1" />
-                            ) : metricsData.adSpendGrowth < 0 ? (
-                              <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                            ) : null}
-                            {/* Format percentage based on API response (values are 0-100, not 0-1) */}
-                            {typeof metricsData.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && 
-                              new Intl.NumberFormat('en-US', {
-                                style: 'percent',
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1
-                              }).format(Math.abs(metricsData.adSpendGrowth) / 100)
-                            }
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {metricsData.adSpendGrowth > 0 
-                              ? `Increase of ${new Intl.NumberFormat('en-US', {
-                                style: 'percent',
-                                minimumFractionDigits: 1,
-                                maximumFractionDigits: 1
-                              }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period`
-                              : metricsData.adSpendGrowth < 0
-                                ? `Decrease of ${new Intl.NumberFormat('en-US', {
-                                  style: 'percent',
-                                  minimumFractionDigits: 1,
-                                  maximumFractionDigits: 1
-                                }).format(Math.abs(metricsData.adSpendGrowth) / 100)} compared to previous period`
-                                : `No change compared to previous period`
-                            }
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Previous period: {formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth / 100))}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
-                              ? 'Compared to previous day'
-                              : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 7
-                                ? 'Compared to previous week'
-                                : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 31
-                                  ? 'Compared to previous month'
-                                  : 'Compared to previous period'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <p className="text-xs text-gray-400 mt-1 flex items-center">
-                  Total ad spend for this period
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 ml-1 cursor-help opacity-70 hover:opacity-100 transition-opacity" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Comparison is based on the previous equivalent period</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
-                            ? `Previous day: ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
-                            : dateRange?.from && dateRange?.to
-                              ? `Previous period: ${format(subDays(dateRange.from, differenceInDays(dateRange.to, dateRange.from) + 1), 'MMM d')} - ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
-                              : 'Select a date range to see comparison details'}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </p>
-              </div>
-              
-              <div className="flex flex-col gap-1 min-w-[180px]">
-                {(Array.isArray(metricsData?.dailyData) && metricsData.dailyData.length > 0 && metricsData.dailyData.some(day => day.spend > 0)) ? (
-                  <div className="h-[60px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={metricsData.dailyData.slice(-7)} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                        <Bar dataKey="spend" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                        <RechartsTooltip 
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-[#1a1a1a] border border-[#333] rounded-md p-2 text-xs">
-                                  <p className="font-medium">{new Date(data.date).toLocaleDateString()}</p>
-                                  <p>${data.spend.toFixed(2)}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[60px] bg-[#1a1a1a] rounded-md">
-                    <p className="text-xs text-gray-500">No daily data available</p>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-[10px] text-gray-500">
-                  <span>Last 7 days trend</span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Daily spend
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
+          <MetricCard
+            title="Ad Spend"
+            value={metricsData.adSpend || 0}
+            change={metricsData.adSpendGrowth || 0}
+            prefix="$"
+            valueFormat="currency"
+            data={Array.isArray(metricsData.dailyData) ? metricsData.dailyData.map(d => ({
+              date: d.date,
+              value: d.spend || 0
+            })) : []}
+            loading={loading}
+            refreshing={isRefreshingData}
+            platform="meta"
+            dateRange={dateRange}
+            infoTooltip="Total ad spend for this period"
+            brandId={brandId}
+          />
         </CardContent>
       </Card>
       
