@@ -2003,20 +2003,34 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, []);
 
   // Add new state just for Ad Spend to keep it separate from other metrics
-  const [adSpendData, setAdSpendData] = useState<{
-    value: number;
-    growth: number;
-    isLoading: boolean;
-    lastUpdated: Date | null;
-  }>({
+  const [adSpendData, setAdSpendData] = useState({
     value: 0,
     growth: 0,
     isLoading: true,
-    lastUpdated: null
-  });
+    lastUpdated: null as Date | null
+  })
+  
+  // Add states for ROAS, Impressions, and Clicks
+  const [roasData, setRoasData] = useState({
+    value: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
+  const [impressionsData, setImpressionsData] = useState({
+    value: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
+  const [clicksData, setClicksData] = useState({
+    value: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
 
-  // Dedicated function to fetch just the Ad Spend data directly
-  const fetchAdSpendDirectly = useCallback(async () => {
+  // Fetch Ad Spend data directly from the database
+  const fetchAdSpendDirectly = async () => {
     if (!brandId || !dateRange?.from) return;
     
     console.log("AD SPEND WIDGET: Fetching ad spend data directly");
@@ -2092,22 +2106,207 @@ Try creating at least one active campaign in Meta Ads Manager.
         isLoading: false
       }));
     }
-  }, [brandId, dateRange]);
-
-  // Fetch ad spend data on component mount and date range changes
-  useEffect(() => {
-    if (brandId && dateRange?.from) {
-      fetchAdSpendDirectly();
+  }
+  
+  // Fetch ROAS data directly from the database
+  const fetchRoasDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch ROAS: Missing date range or brand ID")
+      return
     }
-  }, [brandId, dateRange, fetchAdSpendDirectly]);
-
-  // Also refetch on manual refresh
-  useEffect(() => {
-    if (isRefreshingData && brandId) {
-      console.log("AD SPEND WIDGET: Refreshing data");
-      fetchAdSpendDirectly();
+    
+    setRoasData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'roas')
+      
+      // Handle presets - check if the preset property exists on dateRange
+      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      
+      if (isYesterdayPreset) {
+        params.append('preset', 'yesterday')
+        
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        
+        params.append('from', yesterdayStr)
+        params.append('to', yesterdayStr)
+        
+        console.log(`Setting yesterday preset for ROAS: ${yesterdayStr}`)
+      } else {
+        // Use the selected date range
+        params.append('from', dateRange.from.toISOString().split('T')[0])
+        params.append('to', dateRange.to.toISOString().split('T')[0])
+      }
+      
+      // Fetch data from the API
+      const response = await fetch(`/api/metrics/meta/single/roas?${params.toString()}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setRoasData({
+          value: data.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`ROAS data fetched directly: ${data.value}`)
+      } else {
+        console.error("Error fetching ROAS data:", data.error)
+        setRoasData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in ROAS fetch:", error)
+      setRoasData(prev => ({ ...prev, isLoading: false }))
     }
-  }, [isRefreshingData, brandId, fetchAdSpendDirectly]);
+  }
+  
+  // Fetch Impressions data directly from the database
+  const fetchImpressionsDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Impressions: Missing date range or brand ID")
+      return
+    }
+    
+    setImpressionsData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'impressions')
+      
+      // Handle presets - check if the preset property exists on dateRange
+      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      
+      if (isYesterdayPreset) {
+        params.append('preset', 'yesterday')
+        
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        
+        params.append('from', yesterdayStr)
+        params.append('to', yesterdayStr)
+        
+        console.log(`Setting yesterday preset for Impressions: ${yesterdayStr}`)
+      } else {
+        // Use the selected date range
+        params.append('from', dateRange.from.toISOString().split('T')[0])
+        params.append('to', dateRange.to.toISOString().split('T')[0])
+      }
+      
+      // Fetch data from the API
+      const response = await fetch(`/api/metrics/meta/single/impressions?${params.toString()}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setImpressionsData({
+          value: data.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Impressions data fetched directly: ${data.value}`)
+      } else {
+        console.error("Error fetching Impressions data:", data.error)
+        setImpressionsData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Impressions fetch:", error)
+      setImpressionsData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
+  // Fetch Clicks data directly from the database
+  const fetchClicksDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Clicks: Missing date range or brand ID")
+      return
+    }
+    
+    setClicksData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'clicks')
+      
+      // Handle presets - check if the preset property exists on dateRange
+      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      
+      if (isYesterdayPreset) {
+        params.append('preset', 'yesterday')
+        
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        
+        params.append('from', yesterdayStr)
+        params.append('to', yesterdayStr)
+        
+        console.log(`Setting yesterday preset for Clicks: ${yesterdayStr}`)
+      } else {
+        // Use the selected date range
+        params.append('from', dateRange.from.toISOString().split('T')[0])
+        params.append('to', dateRange.to.toISOString().split('T')[0])
+      }
+      
+      // Fetch data from the API
+      const response = await fetch(`/api/metrics/meta/single/clicks?${params.toString()}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setClicksData({
+          value: data.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Clicks data fetched directly: ${data.value}`)
+      } else {
+        console.error("Error fetching Clicks data:", data.error)
+        setClicksData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Clicks fetch:", error)
+      setClicksData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
+  // Fetch all metrics data directly
+  const fetchAllMetricsDirectly = async () => {
+    await Promise.all([
+      fetchAdSpendDirectly(),
+      fetchRoasDirectly(),
+      fetchImpressionsDirectly(),
+      fetchClicksDirectly()
+    ])
+  }
+
+  // Update the useEffect to call the new fetch functions
+  useEffect(() => {
+    if (dateRange && dateRange.from && dateRange.to && brandId) {
+      console.log("Date range changed, fetching all metrics directly")
+      fetchAllMetricsDirectly()
+    }
+  }, [dateRange, brandId])
+
+  // Add a separate effect for initial load
+  useEffect(() => {
+    if (dateRange && dateRange.from && dateRange.to && brandId) {
+      console.log("Initial load, fetching all metrics directly")
+      fetchAllMetricsDirectly()
+    }
+  }, [])
+
+  // Update the manual refresh function
+  const refreshMetricsDirectly = async () => {
+    console.log("Manually refreshing all metrics directly")
+    await fetchAllMetricsDirectly()
+  }
 
   return (
     <TooltipProvider>
@@ -2221,8 +2420,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
-        {/* Ad Spend Widget - With direct DB connection */}
-        <div className="grid grid-cols-1 gap-4">
+        {/* Direct DB connection widgets with grid layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
@@ -2236,6 +2435,52 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideChange={true}
             prefix="$"
             valueFormat="currency"
+            hideGraph={true}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4 text-green-400" />
+                <span className="ml-0.5">ROAS</span>
+              </div>
+            }
+            value={roasData.value}
+            data={[]}
+            loading={roasData.isLoading}
+            hideChange={true}
+            suffix="x"
+            valueFormat="number"
+            hideGraph={true}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-indigo-400" />
+                <span className="ml-0.5">Impressions</span>
+              </div>
+            }
+            value={impressionsData.value}
+            data={[]}
+            loading={impressionsData.isLoading}
+            hideChange={true}
+            valueFormat="number"
+            hideGraph={true}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <MousePointerClick className="h-4 w-4 text-orange-400" />
+                <span className="ml-0.5">Clicks</span>
+              </div>
+            }
+            value={clicksData.value}
+            data={[]}
+            loading={clicksData.isLoading}
+            hideChange={true}
+            valueFormat="number"
             hideGraph={true}
           />
         </div>
