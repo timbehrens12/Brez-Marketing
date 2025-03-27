@@ -193,30 +193,37 @@ export function MetaTab({
   const [isSyncing, setIsSyncing] = useState(false)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
-  const [metricsData, setMetricsData] = useState<MetricsDataType>(() => {
-    // Initialize with zeros to prevent flashing all-time data
-    return {
-      adSpend: 0,
-      adSpendGrowth: 0,
-      impressions: 0,
-      impressionGrowth: 0,
-      clicks: 0,
-      clickGrowth: 0,
-      conversions: 0,
-      conversionGrowth: 0,
-      ctr: 0,
-      ctrGrowth: 0,
-      cpc: 0,
-      costPerResult: 0,
-      cprGrowth: 0,
-      roas: 0,
-      roasGrowth: 0,
-      frequency: 0,
-      budget: 0,
-      reach: 0,
-      dailyData: []
-    };
+  const [metricsData, setMetricsData] = useState<MetricsDataType>({
+    adSpend: 0,
+    adSpendGrowth: 0,
+    impressions: 0,
+    impressionGrowth: 0,
+    clicks: 0,
+    clickGrowth: 0,
+    conversions: 0,
+    conversionGrowth: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    cpc: 0,
+    costPerResult: 0,
+    cprGrowth: 0,
+    roas: 0,
+    roasGrowth: 0,
+    frequency: 0,
+    budget: 0,
+    reach: 0,
+    dailyData: []
   });
+  
+  // Track the last valid metrics data (with non-zero values)
+  const [previousData, setPreviousData] = useState<MetricsDataType | null>(null)
+  
+  // Update previous data when we have valid metrics
+  useEffect(() => {
+    if (metricsData && (metricsData.adSpend > 0 || metricsData.impressions > 0 || metricsData.clicks > 0)) {
+      setPreviousData(metricsData)
+    }
+  }, [metricsData])
 
   // Loading states - add more granular control
   const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
@@ -858,6 +865,9 @@ export function MetaTab({
 
   // Add a button to manually fetch data 
   const manuallyLoadData = () => {
+    // Save current data state before refresh
+    const previousData = { ...metricsData };
+    
     // Create a date range for the last 30 days to ensure we get real data
     const endDate = new Date();
     const startDate = new Date();
@@ -925,28 +935,40 @@ export function MetaTab({
               dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
             }));
             
-            // Update metrics state with the data we received
-      setMetricsData({
-              adSpend: data.adSpend ?? 0,
-              adSpendGrowth: data.adSpendGrowth ?? 0,
-              impressions: data.impressions ?? 0,
-              impressionGrowth: data.impressionGrowth ?? 0,
-              clicks: data.clicks ?? 0,
-              clickGrowth: data.clickGrowth ?? 0,
-              conversions: data.conversions ?? 0,
-              conversionGrowth: data.conversionGrowth ?? 0,
-              ctr: data.ctr ?? 0,
-              ctrGrowth: data.ctrGrowth ?? 0,
-              cpc: data.cpc ?? 0,
-              costPerResult: data.costPerResult ?? 0,
-              cprGrowth: data.cprGrowth ?? 0,
-              roas: data.roas ?? 0,
-              roasGrowth: data.roasGrowth ?? 0,
-              frequency: data.frequency ?? 0,
-              budget: data.budget ?? 0,
-              reach: data.reach ?? 0,
-              dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
-            });
+            // Validate the data - only use it if it has valid values
+            const hasValidData = data && (
+              data.adSpend > 0 || data.impressions > 0 || data.clicks > 0 ||
+              (Array.isArray(data.dailyData) && data.dailyData.length > 0)
+            );
+            
+            // Update metrics state with the data we received only if it contains valid data
+            if (hasValidData) {
+              setMetricsData({
+                adSpend: data.adSpend ?? previousData.adSpend,
+                adSpendGrowth: data.adSpendGrowth ?? previousData.adSpendGrowth,
+                impressions: data.impressions ?? previousData.impressions,
+                impressionGrowth: data.impressionGrowth ?? previousData.impressionGrowth,
+                clicks: data.clicks ?? previousData.clicks,
+                clickGrowth: data.clickGrowth ?? previousData.clickGrowth,
+                conversions: data.conversions ?? previousData.conversions,
+                conversionGrowth: data.conversionGrowth ?? previousData.conversionGrowth,
+                ctr: data.ctr ?? previousData.ctr,
+                ctrGrowth: data.ctrGrowth ?? previousData.ctrGrowth,
+                cpc: data.cpc ?? previousData.cpc,
+                costPerResult: data.costPerResult ?? previousData.costPerResult,
+                cprGrowth: data.cprGrowth ?? previousData.cprGrowth,
+                roas: data.roas ?? previousData.roas,
+                roasGrowth: data.roasGrowth ?? previousData.roasGrowth,
+                frequency: data.frequency ?? previousData.frequency,
+                budget: data.budget ?? previousData.budget,
+                reach: data.reach ?? previousData.reach,
+                dailyData: Array.isArray(data.dailyData) ? data.dailyData : previousData.dailyData
+              });
+            } else {
+              console.log("DEBUG: Received empty data, preserving previous valid data", previousData.adSpend);
+              // Keep the previous data if the new data is empty/invalid
+              setMetricsData(previousData);
+            }
             
             // Log the values we just set to help with debugging
             console.log("DEBUG: Updated metrics data:", JSON.stringify({
@@ -963,6 +985,12 @@ export function MetaTab({
           } catch (error) {
             console.error('DEBUG: Error fetching Meta data:', error);
             
+            // On error, preserve the previous valid data
+            if (previousData.adSpend > 0) {
+              console.log("ERROR RECOVERY: Restoring previous valid data");
+              setMetricsData(previousData);
+            }
+            
             if (isMounted) {
               setError(error instanceof Error ? error.message : 'An error occurred');
               setLoading(false);
@@ -973,16 +1001,34 @@ export function MetaTab({
         
         // Call our custom fetch function
         fetchWithCurrentDates();
-    } finally {
+      } finally {
         // Wait a bit before restoring the settings to ensure the request completes
         setTimeout(() => {
           window._disableAutoMetaFetch = true;
           window._blockMetaApiCalls = true;
+          
+          // Double-check that we didn't lose valid data
+          if (metricsData.adSpend === 0 && previousData.adSpend > 0) {
+            console.log("FINAL PROTECTION: Restoring ad spend data after refresh");
+            setMetricsData(previousData);
+          }
         }, 2000);
       }
     } else {
+      // Add data protection for regular fetch too
+      const prevData = { ...metricsData };
+      
       // If auto fetch is enabled, just use the standard function
       fetchMetaData();
+      
+      // Check if data was reset to zero
+      setTimeout(() => {
+        if (isMounted.current && 
+            metricsData.adSpend === 0 && prevData.adSpend > 0) {
+          console.log("STANDARD FETCH PROTECTION: Restoring ad spend data");
+          setMetricsData(prevData);
+        }
+      }, 1000);
     }
   };
 
@@ -1997,12 +2043,49 @@ Try creating at least one active campaign in Meta Ads Manager.
     window._blockMetaApiCalls = false;
     window._disableAutoMetaFetch = false;
     
+    // Save the initial data to prevent losing it on auto-refresh
+    const savedMetricsData = { ...metricsData };
+    
+    // Handle component unmount
     return () => {
       isMounted.current = false;
       window._blockMetaApiCalls = true;
+      
+      // Preserve any valid data we had before unmounting
+      if (savedMetricsData.adSpend > 0 || savedMetricsData.impressions > 0 || savedMetricsData.clicks > 0) {
+        setMetricsData(savedMetricsData);
+      }
+      
       console.log("Meta tab unmounting, blocking API calls");
     };
   }, []);
+  
+  // Add a data preservation mechanism to prevent zeroing out valid data
+  useEffect(() => {
+    // Create a permanent backup of valid data
+    if (metricsData && (metricsData.adSpend > 0 || metricsData.impressions > 0 || metricsData.clicks > 0)) {
+      // Store in component state
+      const validData = { ...metricsData };
+      
+      // Create protection against data loss during refresh
+      const preserveValidData = () => {
+        if (isMounted.current) {
+          // Check if current data has been zeroed out but we had valid data before
+          if (metricsData.adSpend === 0 && metricsData.impressions === 0 && metricsData.clicks === 0 && 
+              validData.adSpend > 0) {
+            console.log("DATA LOSS PREVENTION: Restoring valid metrics data");
+            setMetricsData(validData);
+          }
+        }
+      };
+      
+      // Check shortly after any refresh operation
+      if (isRefreshingData) {
+        const timeoutId = setTimeout(preserveValidData, 300);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [metricsData, isRefreshingData]);
 
   return (
     <TooltipProvider>
@@ -2140,9 +2223,11 @@ Try creating at least one active campaign in Meta Ads Manager.
               <div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-bold">
-                    {typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) 
+                    {(typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) && metricsData.adSpend > 0)
                       ? formatCurrencyCompact(metricsData.adSpend) 
-                      : '$0'}
+                      : (typeof previousData?.adSpend === 'number' && previousData?.adSpend > 0) 
+                        ? formatCurrencyCompact(previousData.adSpend) + ' '
+                        : '$0'}
                   </span>
                   {typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && (
                     <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
@@ -2159,7 +2244,7 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
               
               <div className="flex flex-col gap-1 min-w-[180px]">
-                {Array.isArray(metricsData?.dailyData) && metricsData.dailyData.length > 0 ? (
+                {(Array.isArray(metricsData?.dailyData) && metricsData.dailyData.length > 0 && metricsData.dailyData.some(day => day.spend > 0)) ? (
                   <div className="h-[60px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={metricsData.dailyData.slice(-7)} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
