@@ -2045,6 +2045,22 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
+  // Add state for Cost Per Result widget
+  const [costPerResultData, setCostPerResultData] = useState({
+    value: 0,
+    previousValue: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
+  // Add state for Cost Per Click widget
+  const [costPerClickData, setCostPerClickData] = useState({
+    value: 0,
+    previousValue: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
   // Simplified helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     console.log(`Calculating previous dates for range: ${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`);
@@ -2481,6 +2497,128 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
+  // Fetch Cost Per Result data directly from the database
+  const fetchCostPerResultDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Cost Per Result: Missing date range or brand ID")
+      return
+    }
+    
+    setCostPerResultData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'costPerResult')
+      
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Cost Per Result for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range using our simplified helper function
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/cost-per-result?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'costPerResult')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/cost-per-result?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setCostPerResultData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Cost Per Result data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Cost Per Result data:", data.error || prevData.error)
+        setCostPerResultData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Cost Per Result fetch:", error)
+      setCostPerResultData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
+  // Fetch Cost Per Click data directly from the database
+  const fetchCostPerClickDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Cost Per Click: Missing date range or brand ID")
+      return
+    }
+    
+    setCostPerClickData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'costPerClick')
+      
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Cost Per Click for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range using our simplified helper function
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/cost-per-click?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'costPerClick')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/cost-per-click?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setCostPerClickData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Cost Per Click data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Cost Per Click data:", data.error || prevData.error)
+        setCostPerClickData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Cost Per Click fetch:", error)
+      setCostPerClickData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
     await Promise.all([
@@ -2489,7 +2627,9 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchImpressionsDirectly(),
       fetchClicksDirectly(),
       fetchPurchaseValueDirectly(),
-      fetchResultsDirectly()
+      fetchResultsDirectly(),
+      fetchCostPerResultDirectly(),
+      fetchCostPerClickDirectly()
     ])
   }
 
@@ -2533,6 +2673,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     setClicksData(prev => ({ ...prev, isLoading: true }))
     setPurchaseValueData(prev => ({ ...prev, isLoading: true }))
     setResultsData(prev => ({ ...prev, isLoading: true }))
+    setCostPerResultData(prev => ({ ...prev, isLoading: true }))
+    setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -2545,7 +2687,9 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchImpressionsDirectly(),
         fetchClicksDirectly(),
         fetchPurchaseValueDirectly(),
-        fetchResultsDirectly()
+        fetchResultsDirectly(),
+        fetchCostPerResultDirectly(),
+        fetchCostPerClickDirectly()
       ])
       
       // Show success toast
@@ -2726,11 +2870,11 @@ Try creating at least one active campaign in Meta Ads Manager.
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
         {/* Direct DB connection widgets with grid layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-blue-400" />
+                <DollarSign className="h-4 w-4 text-green-400" />
                 <span className="ml-0.5">Ad Spend</span>
               </div>
             }
@@ -2738,11 +2882,9 @@ Try creating at least one active campaign in Meta Ads Manager.
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
             hideChange={true}
-            prefix="$"
             valueFormat="currency"
             hideGraph={true}
             previousValue={adSpendData.previousValue}
-            previousValuePrefix="$"
             previousValueFormat="currency"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -2751,7 +2893,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-green-400" />
+                <TrendingUp className="h-4 w-4 text-blue-400" />
                 <span className="ml-0.5">ROAS</span>
               </div>
             }
@@ -2759,12 +2901,12 @@ Try creating at least one active campaign in Meta Ads Manager.
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
             hideChange={true}
-            suffix="x"
             valueFormat="number"
+            suffix="x"
             hideGraph={true}
             previousValue={roasData.previousValue}
-            previousValueSuffix="x"
             previousValueFormat="number"
+            previousValueSuffix="x"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
@@ -2772,7 +2914,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-indigo-400" />
+                <Eye className="h-4 w-4 text-amber-400" />
                 <span className="ml-0.5">Impressions</span>
               </div>
             }
@@ -2791,7 +2933,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <MousePointerClick className="h-4 w-4 text-orange-400" />
+                <MousePointer className="h-4 w-4 text-indigo-400" />
                 <span className="ml-0.5">Clicks</span>
               </div>
             }
@@ -2818,11 +2960,9 @@ Try creating at least one active campaign in Meta Ads Manager.
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
             hideChange={true}
-            prefix="$"
             valueFormat="currency"
             hideGraph={true}
             previousValue={purchaseValueData.previousValue}
-            previousValuePrefix="$"
             previousValueFormat="currency"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -2843,6 +2983,44 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideGraph={true}
             previousValue={resultsData.previousValue}
             previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-orange-400" />
+                <span className="ml-0.5">Cost Per Result</span>
+              </div>
+            }
+            value={costPerResultData.value}
+            data={[]}
+            loading={costPerResultData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="currency"
+            hideGraph={true}
+            previousValue={costPerResultData.previousValue}
+            previousValueFormat="currency"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-teal-400" />
+                <span className="ml-0.5">Cost Per Click</span>
+              </div>
+            }
+            value={costPerClickData.value}
+            data={[]}
+            loading={costPerClickData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="currency"
+            hideGraph={true}
+            previousValue={costPerClickData.previousValue}
+            previousValueFormat="currency"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
