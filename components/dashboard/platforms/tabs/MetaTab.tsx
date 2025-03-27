@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart } from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
@@ -34,9 +34,7 @@ import {
   BrainCircuit, 
   Info, 
   AlertCircle,
-  Target,
   Settings,
-  MousePointer
 } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -2039,6 +2037,14 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
+  // Add state for the new Results widget
+  const [resultsData, setResultsData] = useState({
+    value: 0,
+    previousValue: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
   // Simplified helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     console.log(`Calculating previous dates for range: ${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`);
@@ -2414,6 +2420,67 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
+  // Fetch Results data directly from the database
+  const fetchResultsDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch Results: Missing date range or brand ID")
+      return
+    }
+    
+    setResultsData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'results')
+      
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Results for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range using our simplified helper function
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/results?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'results')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/results?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setResultsData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Results data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Results data:", data.error || prevData.error)
+        setResultsData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Results fetch:", error)
+      setResultsData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
     await Promise.all([
@@ -2421,7 +2488,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchRoasDirectly(),
       fetchImpressionsDirectly(),
       fetchClicksDirectly(),
-      fetchPurchaseValueDirectly()
+      fetchPurchaseValueDirectly(),
+      fetchResultsDirectly()
     ])
   }
 
@@ -2463,6 +2531,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     setRoasData(prev => ({ ...prev, isLoading: true }))
     setImpressionsData(prev => ({ ...prev, isLoading: true }))
     setClicksData(prev => ({ ...prev, isLoading: true }))
+    setPurchaseValueData(prev => ({ ...prev, isLoading: true }))
+    setResultsData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -2474,7 +2544,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchRoasDirectly(),
         fetchImpressionsDirectly(),
         fetchClicksDirectly(),
-        fetchPurchaseValueDirectly()
+        fetchPurchaseValueDirectly(),
+        fetchResultsDirectly()
       ])
       
       // Show success toast
@@ -2655,7 +2726,7 @@ Try creating at least one active campaign in Meta Ads Manager.
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
         {/* Direct DB connection widgets with grid layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
@@ -2753,6 +2824,25 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValue={purchaseValueData.previousValue}
             previousValuePrefix="$"
             previousValueFormat="currency"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Target className="h-4 w-4 text-red-400" />
+                <span className="ml-0.5">Results</span>
+              </div>
+            }
+            value={resultsData.value}
+            data={[]}
+            loading={resultsData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="number"
+            hideGraph={true}
+            previousValue={resultsData.previousValue}
+            previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
