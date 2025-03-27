@@ -35,7 +35,8 @@ import {
   RefreshCw,
   Settings,
   Target,
-  AlertCircle
+  AlertCircle,
+  HelpCircle
 } from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -52,7 +53,7 @@ import { useRouter } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
-import { isSameDay, isYesterday, format } from "date-fns"
+import { isSameDay, isYesterday, format, subDays, differenceInDays } from "date-fns"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -2230,17 +2231,54 @@ Try creating at least one active campaign in Meta Ads Manager.
                         : '$0'}
                   </span>
                   {typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) && (
-                    <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                      {metricsData.adSpendGrowth > 0 ? (
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                      ) : metricsData.adSpendGrowth < 0 ? (
-                        <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
-                      ) : null}
-                      {formatPercentage(Math.abs(metricsData.adSpendGrowth))}
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`text-sm flex items-center ${metricsData.adSpendGrowth > 0 ? 'text-green-500' : metricsData.adSpendGrowth < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                            {metricsData.adSpendGrowth > 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                            ) : metricsData.adSpendGrowth < 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1 transform rotate-180" />
+                            ) : null}
+                            {formatPercentage(Math.abs(metricsData.adSpendGrowth))}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{`${metricsData.adSpendGrowth > 0 ? 'Increase' : 'Decrease'} compared to previous period: ${formatCurrencyCompact(metricsData.adSpend / (1 + metricsData.adSpendGrowth))}`}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
+                              ? 'Compared to previous day'
+                              : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 7
+                                ? 'Compared to previous week'
+                                : dateRange?.from && dateRange?.to && differenceInDays(dateRange.to, dateRange.from) <= 31
+                                  ? 'Compared to previous month'
+                                  : 'Compared to previous period'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Total ad spend for this period</p>
+                <p className="text-xs text-gray-400 mt-1 flex items-center">
+                  Total ad spend for this period
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 ml-1 cursor-help opacity-70 hover:opacity-100 transition-opacity" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Comparison is based on the previous equivalent period</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {dateRange?.from && dateRange?.to && isSameDay(dateRange.from, dateRange.to)
+                            ? `Previous day: ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
+                            : dateRange?.from && dateRange?.to
+                              ? `Previous period: ${format(subDays(dateRange.from, differenceInDays(dateRange.to, dateRange.from) + 1), 'MMM d')} - ${format(subDays(dateRange.from, 1), 'MMM d, yyyy')}`
+                              : 'Select a date range to see comparison details'}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </p>
               </div>
               
               <div className="flex flex-col gap-1 min-w-[180px]">
