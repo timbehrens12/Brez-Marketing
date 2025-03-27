@@ -16,6 +16,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip"
 import { normalizeDateForApi, normalizeDateRangeForApi, buildDateRangeQueryString } from '@/lib/date-utils'
+import { format } from 'date-fns'
 
 interface Campaign {
   id: string;
@@ -67,11 +68,26 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
       try {
         setLoading(true)
         
+        // Special handling for yesterday preset
+        let modifiedFromDate = rawFromDate;
+        let modifiedToDate = rawToDate;
+        
+        if (presetValue === 'yesterday') {
+          // Force yesterday to be a single day
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+          
+          console.log(`CAMPAIGNS TABLE: Strict yesterday enforcement - using ${yesterdayStr}`);
+          modifiedFromDate = yesterdayStr;
+          modifiedToDate = yesterdayStr;
+        }
+        
         // Build the API URL with normalized date range parameters
         const queryString = buildDateRangeQueryString({
           brandId: brandId!,
-          from: rawFromDate || undefined,
-          to: rawToDate || undefined,
+          from: modifiedFromDate || undefined,
+          to: modifiedToDate || undefined,
           preset: presetValue || undefined,
         });
         

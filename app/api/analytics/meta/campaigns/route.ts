@@ -67,16 +67,23 @@ export async function GET(request: NextRequest) {
     
     // Similarly handle yesterday preset 
     if (preset === 'yesterday') {
+      // Calculate yesterday's date precisely using current date
       const today = new Date();
+      console.log(`Current server date: ${format(today, 'yyyy-MM-dd')}`);
+      
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
       const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
       
-      console.log(`'yesterday' preset detected - ENFORCING EXACT YESTERDAY DATE: ${yesterdayStr}`);
+      console.log(`*** CRITICAL YESTERDAY ENFORCEMENT *** Using exact server-calculated yesterday: ${yesterdayStr}`);
       
-      // Force both dates to be yesterday's exact date
+      // ALWAYS force both dates to be yesterday's exact date - absolutely no exceptions
+      // This overrides any dates that might have been provided in the request
       fromDate = yesterdayStr;
       toDate = yesterdayStr;
+      
+      // Force logs to help with debugging
+      console.log(`STRICT ENFORCEMENT: Yesterday preset date range is now FROM=${fromDate} TO=${toDate}`);
     }
     
     // Check for potential date format issues upfront
@@ -331,24 +338,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Build the query for insights (metrics)
-    let insightsQuery = supabase
+    let query = supabase
       .from('meta_ad_insights')
       .select('*')
       .eq('brand_id', brandId)
     
-    // Add date filtering if provided
-    if (formattedFromDate) {
-      insightsQuery = insightsQuery.gte('date', formattedFromDate)
-      console.log(`Filtering from date: ${formattedFromDate}`)
+    // Add date range filter with special handling for presets
+    if (isYesterdayPreset) {
+      // For yesterday preset, use the exact date we calculated earlier 
+      // and make sure both from and to are EXACTLY the same
+      const yesterdayDate = new Date()
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+      const exactYesterdayStr = format(yesterdayDate, 'yyyy-MM-dd')
+      
+      console.log(`DB QUERY: Using exact single-day date for yesterday: ${exactYesterdayStr}`)
+      query = query.eq('date', exactYesterdayStr)
     }
-    
-    if (formattedToDate) {
-      insightsQuery = insightsQuery.lte('date', formattedToDate)
-      console.log(`Filtering to date: ${formattedToDate}`)
+    else if (formattedFromDate && formattedToDate) {
+      if (formattedFromDate === formattedToDate) {
+        // For single day selections, use equality for exact match
+        console.log(`DB QUERY: Using single day equality match: date = ${formattedFromDate}`)
+        query = query.eq('date', formattedFromDate)
+      } else {
+        // Otherwise use date range
+        console.log(`DB QUERY: Using date range: ${formattedFromDate} to ${formattedToDate}`)
+        query = query
+          .gte('date', formattedFromDate)
+          .lte('date', formattedToDate)
+      }
     }
     
     // Fetch insights with date filtering
-    const { data: insightsData, error: insightsError } = await insightsQuery
+    const { data: insightsData, error: insightsError } = await query
 
     if (insightsError) {
       console.error('Database error fetching insights:', insightsError)
