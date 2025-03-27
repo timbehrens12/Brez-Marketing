@@ -463,7 +463,27 @@ export function MetaTab({
       params.append('force_load', 'true');
       params.append('strict_date_range', 'true'); // Add this to force strict date handling
       
-      console.log(`Fetching Meta data with date range: ${params.get('from')} to ${params.get('to')} ${isYesterdayPreset ? '(yesterday preset)' : ''}`);
+      // Check URL parameters for current date settings
+      const urlParams = new URL(window.location.href).searchParams;
+      const preset = urlParams.get('preset');
+      const isTodayPreset = preset === 'today';
+      const isSingleDayPreset = isYesterdayPreset || isTodayPreset;
+      
+      // Correctly log date range based on preset
+      if (isSingleDayPreset) {
+        console.log(`Fetching Meta data for a single day: ${params.get('from')} ${isTodayPreset ? '(today)' : '(yesterday)'}`);
+      } else {
+        // Check if date parameters are the same (single day selection)
+        const fromParam = params.get('from');
+        const toParam = params.get('to');
+        const isSingleDaySelection = fromParam && toParam && fromParam === toParam;
+        
+        if (isSingleDaySelection) {
+          console.log(`Fetching Meta data for a single day: ${fromParam}`);
+        } else {
+          console.log(`Fetching Meta data with date range: ${params.get('from')} to ${params.get('to')}`);
+        }
+      }
       
       const controller = new AbortController();
       const signal = controller.signal;

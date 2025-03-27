@@ -69,16 +69,15 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         // Build the API URL with normalized date range parameters
         const queryString = buildDateRangeQueryString({
-          brandId,
-          from: rawFromDate,
-          to: rawToDate,
-          preset: presetValue,
+          brandId: brandId!,
+          from: rawFromDate || undefined,
+          to: rawToDate || undefined,
+          preset: presetValue || undefined,
         });
         
         const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
         
-        // Simple logging without type issues
-        console.log(`Fetching Meta campaigns data with: ${apiUrl}`);
+        console.log(`Fetching Meta campaigns data...`);
         
         const response = await fetch(apiUrl)
         
