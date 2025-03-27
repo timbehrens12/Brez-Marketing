@@ -264,21 +264,25 @@ export function MetaTab({
 
   // Check if we have data to display - with improved type safety
   const hasData = () => {
-    // More robust check that ensures metrics is an object
-    // and has valid numeric properties before trying to use them
+    // More robust check that ensures we have actual data to display
+    // Use the metricsData state object instead of the metrics prop directly
     return (
-      typeof metrics === 'object' && 
-      metrics !== null &&
-      'adSpend' in metrics &&
-      typeof metrics.adSpend === 'number' && 
-      !isNaN(metrics.adSpend) &&
-      'impressions' in metrics &&
-      typeof metrics.impressions === 'number' && 
-      !isNaN(metrics.impressions) &&
-      'clicks' in metrics &&
-      typeof metrics.clicks === 'number' && 
-      !isNaN(metrics.clicks)
-    )
+      typeof metricsData === 'object' && 
+      metricsData !== null &&
+      (
+        (typeof metricsData.adSpend === 'number' && 
+        !isNaN(metricsData.adSpend) && 
+        metricsData.adSpend > 0) ||
+        
+        (typeof metricsData.impressions === 'number' && 
+        !isNaN(metricsData.impressions) && 
+        metricsData.impressions > 0) ||
+        
+        (typeof metricsData.clicks === 'number' && 
+        !isNaN(metricsData.clicks) && 
+        metricsData.clicks > 0)
+      )
+    );
   }
 
   // Initialize metricsData using safeMetrics on mount and when metrics changes
@@ -296,6 +300,16 @@ export function MetaTab({
       }
       return;
     }
+    
+    // Add debug logs to help diagnose widget display issues
+    console.log("DEBUG - Metrics data received:", {
+      adSpend: metrics.adSpend,
+      impressions: metrics.impressions,
+      clicks: metrics.clicks,
+      from: dateRange?.from?.toISOString().split('T')[0],
+      to: dateRange?.to?.toISOString().split('T')[0],
+      _preset: (dateRange as any)?._preset
+    });
     
     // Set metrics from our sanitized object to ensure it's fully initialized
     try {
@@ -350,13 +364,21 @@ export function MetaTab({
       if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
         safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
       
+      // Log what we're actually setting to help diagnose widget display issues
+      console.log("DEBUG - Setting metricsData state:", {
+        adSpend: safeData.adSpend,
+        impressions: safeData.impressions,
+        clicks: safeData.clicks,
+        hasData: safeData.adSpend > 0 || safeData.impressions > 0 || safeData.clicks > 0
+      });
+      
       // Now update the state with our safe data object
       setMetricsData(safeData);
     } catch (error) {
       console.error("Error updating metrics state:", error);
       // On error, keep existing data instead of resetting to defaults
     }
-  }, [metrics, safeMetrics]);
+  }, [metrics, safeMetrics, dateRange, metricsData]);
 
   // Replace the above effect with a simpler one that only runs on mount to load campaigns
   useEffect(() => {
