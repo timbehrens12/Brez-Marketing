@@ -2033,6 +2033,23 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
+    // Special case for yesterday preset - we need to compare to day before yesterday
+    const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+    if (isYesterdayPreset) {
+      // For "yesterday" preset, the previous period should be the day before yesterday
+      const dayBeforeYesterday = new Date()
+      dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2)
+      const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0]
+      
+      console.log(`Yesterday preset detected, comparing to day before yesterday: ${dayBeforeYesterdayStr}`)
+      
+      return {
+        prevFrom: dayBeforeYesterdayStr,
+        prevTo: dayBeforeYesterdayStr
+      }
+    }
+    
+    // For other date ranges, calculate the equivalent previous period
     const currentRange = to.getTime() - from.getTime()
     const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24))
     
