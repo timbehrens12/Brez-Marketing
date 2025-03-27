@@ -571,24 +571,24 @@ export function MetaTab({
 
       // Update metrics state with the data we received
       setMetricsData({
-        adSpend: data.adSpend ?? 0,
-        adSpendGrowth: data.adSpendGrowth ?? 0,
-        impressions: data.impressions ?? 0,
-        impressionGrowth: data.impressionGrowth ?? 0,
-        clicks: data.clicks ?? 0,
-        clickGrowth: data.clickGrowth ?? 0,
-        conversions: data.conversions ?? 0,
-        conversionGrowth: data.conversionGrowth ?? 0,
-        ctr: data.ctr ?? 0,
-        ctrGrowth: data.ctrGrowth ?? 0,
-        cpc: data.cpc ?? 0,
-        costPerResult: data.costPerResult ?? 0,
-        cprGrowth: data.cprGrowth ?? 0,
-        roas: data.roas ?? 0,
-        roasGrowth: data.roasGrowth ?? 0,
-        frequency: data.frequency ?? 0,
-        budget: data.budget ?? 0,
-        reach: data.reach ?? 0,
+        adSpend: typeof data.adSpend === 'number' ? parseFloat(data.adSpend.toString()) : 0,
+        adSpendGrowth: typeof data.adSpendGrowth === 'number' ? parseFloat(data.adSpendGrowth.toString()) : 0,
+        impressions: typeof data.impressions === 'number' ? parseInt(data.impressions.toString(), 10) : 0,
+        impressionGrowth: typeof data.impressionGrowth === 'number' ? parseFloat(data.impressionGrowth.toString()) : 0,
+        clicks: typeof data.clicks === 'number' ? parseInt(data.clicks.toString(), 10) : 0,
+        clickGrowth: typeof data.clickGrowth === 'number' ? parseFloat(data.clickGrowth.toString()) : 0,
+        conversions: typeof data.conversions === 'number' ? parseInt(data.conversions.toString(), 10) : 0,
+        conversionGrowth: typeof data.conversionGrowth === 'number' ? parseFloat(data.conversionGrowth.toString()) : 0,
+        ctr: typeof data.ctr === 'number' ? parseFloat(data.ctr.toString()) : 0,
+        ctrGrowth: typeof data.ctrGrowth === 'number' ? parseFloat(data.ctrGrowth.toString()) : 0,
+        cpc: typeof data.cpc === 'number' ? parseFloat(data.cpc.toString()) : 0,
+        costPerResult: typeof data.costPerResult === 'number' ? parseFloat(data.costPerResult.toString()) : 0,
+        cprGrowth: typeof data.cprGrowth === 'number' ? parseFloat(data.cprGrowth.toString()) : 0,
+        roas: typeof data.roas === 'number' ? parseFloat(data.roas.toString()) : 0,
+        roasGrowth: typeof data.roasGrowth === 'number' ? parseFloat(data.roasGrowth.toString()) : 0,
+        frequency: typeof data.frequency === 'number' ? parseFloat(data.frequency.toString()) : 0,
+        budget: typeof data.budget === 'number' ? parseFloat(data.budget.toString()) : 0,
+        reach: typeof data.reach === 'number' ? parseFloat(data.reach.toString()) : 0,
         dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
       });
       
@@ -702,24 +702,24 @@ export function MetaTab({
             
             // Update metrics state with the data we received
       setMetricsData({
-              adSpend: data.adSpend ?? 0,
-              adSpendGrowth: data.adSpendGrowth ?? 0,
-              impressions: data.impressions ?? 0,
-              impressionGrowth: data.impressionGrowth ?? 0,
-              clicks: data.clicks ?? 0,
-              clickGrowth: data.clickGrowth ?? 0,
-              conversions: data.conversions ?? 0,
-              conversionGrowth: data.conversionGrowth ?? 0,
-              ctr: data.ctr ?? 0,
-              ctrGrowth: data.ctrGrowth ?? 0,
-              cpc: data.cpc ?? 0,
-              costPerResult: data.costPerResult ?? 0,
-              cprGrowth: data.cprGrowth ?? 0,
-              roas: data.roas ?? 0,
-              roasGrowth: data.roasGrowth ?? 0,
-              frequency: data.frequency ?? 0,
-              budget: data.budget ?? 0,
-              reach: data.reach ?? 0,
+              adSpend: typeof data.adSpend === 'number' ? parseFloat(data.adSpend.toString()) : 0,
+              adSpendGrowth: typeof data.adSpendGrowth === 'number' ? parseFloat(data.adSpendGrowth.toString()) : 0,
+              impressions: typeof data.impressions === 'number' ? parseInt(data.impressions.toString(), 10) : 0,
+              impressionGrowth: typeof data.impressionGrowth === 'number' ? parseFloat(data.impressionGrowth.toString()) : 0,
+              clicks: typeof data.clicks === 'number' ? parseInt(data.clicks.toString(), 10) : 0,
+              clickGrowth: typeof data.clickGrowth === 'number' ? parseFloat(data.clickGrowth.toString()) : 0,
+              conversions: typeof data.conversions === 'number' ? parseInt(data.conversions.toString(), 10) : 0,
+              conversionGrowth: typeof data.conversionGrowth === 'number' ? parseFloat(data.conversionGrowth.toString()) : 0,
+              ctr: typeof data.ctr === 'number' ? parseFloat(data.ctr.toString()) : 0,
+              ctrGrowth: typeof data.ctrGrowth === 'number' ? parseFloat(data.ctrGrowth.toString()) : 0,
+              cpc: typeof data.cpc === 'number' ? parseFloat(data.cpc.toString()) : 0,
+              costPerResult: typeof data.costPerResult === 'number' ? parseFloat(data.costPerResult.toString()) : 0,
+              cprGrowth: typeof data.cprGrowth === 'number' ? parseFloat(data.cprGrowth.toString()) : 0,
+              roas: typeof data.roas === 'number' ? parseFloat(data.roas.toString()) : 0,
+              roasGrowth: typeof data.roasGrowth === 'number' ? parseFloat(data.roasGrowth.toString()) : 0,
+              frequency: typeof data.frequency === 'number' ? parseFloat(data.frequency.toString()) : 0,
+              budget: typeof data.budget === 'number' ? parseFloat(data.budget.toString()) : 0,
+              reach: typeof data.reach === 'number' ? parseFloat(data.reach.toString()) : 0,
               dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
             });
             
@@ -1350,24 +1350,24 @@ Try creating at least one active campaign in Meta Ads Manager.
           if (data && (data.adSpend > 0 || data.impressions > 0 || data.clicks > 0)) {
             // Update metrics state with the data we received
             setMetricsData({
-              adSpend: data.adSpend ?? 0,
-              adSpendGrowth: data.adSpendGrowth ?? 0,
-              impressions: data.impressions ?? 0,
-              impressionGrowth: data.impressionGrowth ?? 0,
-              clicks: data.clicks ?? 0,
-              clickGrowth: data.clickGrowth ?? 0,
-              conversions: data.conversions ?? 0,
-              conversionGrowth: data.conversionGrowth ?? 0,
-              ctr: data.ctr ?? 0,
-              ctrGrowth: data.ctrGrowth ?? 0,
-              cpc: data.cpc ?? 0,
-              costPerResult: data.costPerResult ?? 0,
-              cprGrowth: data.cprGrowth ?? 0,
-              roas: data.roas ?? 0,
-              roasGrowth: data.roasGrowth ?? 0,
-              frequency: data.frequency ?? 0,
-              budget: data.budget ?? 0,
-              reach: data.reach ?? 0,
+              adSpend: typeof data.adSpend === 'number' ? parseFloat(data.adSpend.toString()) : 0,
+              adSpendGrowth: typeof data.adSpendGrowth === 'number' ? parseFloat(data.adSpendGrowth.toString()) : 0,
+              impressions: typeof data.impressions === 'number' ? parseInt(data.impressions.toString(), 10) : 0,
+              impressionGrowth: typeof data.impressionGrowth === 'number' ? parseFloat(data.impressionGrowth.toString()) : 0,
+              clicks: typeof data.clicks === 'number' ? parseInt(data.clicks.toString(), 10) : 0,
+              clickGrowth: typeof data.clickGrowth === 'number' ? parseFloat(data.clickGrowth.toString()) : 0,
+              conversions: typeof data.conversions === 'number' ? parseInt(data.conversions.toString(), 10) : 0,
+              conversionGrowth: typeof data.conversionGrowth === 'number' ? parseFloat(data.conversionGrowth.toString()) : 0,
+              ctr: typeof data.ctr === 'number' ? parseFloat(data.ctr.toString()) : 0,
+              ctrGrowth: typeof data.ctrGrowth === 'number' ? parseFloat(data.ctrGrowth.toString()) : 0,
+              cpc: typeof data.cpc === 'number' ? parseFloat(data.cpc.toString()) : 0,
+              costPerResult: typeof data.costPerResult === 'number' ? parseFloat(data.costPerResult.toString()) : 0,
+              cprGrowth: typeof data.cprGrowth === 'number' ? parseFloat(data.cprGrowth.toString()) : 0,
+              roas: typeof data.roas === 'number' ? parseFloat(data.roas.toString()) : 0,
+              roasGrowth: typeof data.roasGrowth === 'number' ? parseFloat(data.roasGrowth.toString()) : 0,
+              frequency: typeof data.frequency === 'number' ? parseFloat(data.frequency.toString()) : 0,
+              budget: typeof data.budget === 'number' ? parseFloat(data.budget.toString()) : 0,
+              reach: typeof data.reach === 'number' ? parseFloat(data.reach.toString()) : 0,
               dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
             });
           }
@@ -1498,24 +1498,24 @@ Try creating at least one active campaign in Meta Ads Manager.
                 console.log("META REFRESH: Updating with new data");
                 // Update metrics state with the data we received
                 setMetricsData({
-                  adSpend: data.adSpend,
-                  adSpendGrowth: data.adSpendGrowth,
-                  impressions: data.impressions,
-                  impressionGrowth: data.impressionGrowth,
-                  clicks: data.clicks,
-                  clickGrowth: data.clickGrowth,
-                  conversions: data.conversions,
-                  conversionGrowth: data.conversionGrowth,
-                  ctr: data.ctr,
-                  ctrGrowth: data.ctrGrowth,
-                  cpc: data.cpc,
-                  costPerResult: data.costPerResult,
-                  cprGrowth: data.cprGrowth,
-                  roas: data.roas,
-                  roasGrowth: data.roasGrowth,
-                  frequency: data.frequency,
-                  budget: data.budget,
-                  reach: data.reach,
+                  adSpend: typeof data.adSpend === 'number' ? parseFloat(data.adSpend.toString()) : 0,
+                  adSpendGrowth: typeof data.adSpendGrowth === 'number' ? parseFloat(data.adSpendGrowth.toString()) : 0,
+                  impressions: typeof data.impressions === 'number' ? parseInt(data.impressions.toString(), 10) : 0,
+                  impressionGrowth: typeof data.impressionGrowth === 'number' ? parseFloat(data.impressionGrowth.toString()) : 0,
+                  clicks: typeof data.clicks === 'number' ? parseInt(data.clicks.toString(), 10) : 0,
+                  clickGrowth: typeof data.clickGrowth === 'number' ? parseFloat(data.clickGrowth.toString()) : 0,
+                  conversions: typeof data.conversions === 'number' ? parseInt(data.conversions.toString(), 10) : 0,
+                  conversionGrowth: typeof data.conversionGrowth === 'number' ? parseFloat(data.conversionGrowth.toString()) : 0,
+                  ctr: typeof data.ctr === 'number' ? parseFloat(data.ctr.toString()) : 0,
+                  ctrGrowth: typeof data.ctrGrowth === 'number' ? parseFloat(data.ctrGrowth.toString()) : 0,
+                  cpc: typeof data.cpc === 'number' ? parseFloat(data.cpc.toString()) : 0,
+                  costPerResult: typeof data.costPerResult === 'number' ? parseFloat(data.costPerResult.toString()) : 0,
+                  cprGrowth: typeof data.cprGrowth === 'number' ? parseFloat(data.cprGrowth.toString()) : 0,
+                  roas: typeof data.roas === 'number' ? parseFloat(data.roas.toString()) : 0,
+                  roasGrowth: typeof data.roasGrowth === 'number' ? parseFloat(data.roasGrowth.toString()) : 0,
+                  frequency: typeof data.frequency === 'number' ? parseFloat(data.frequency.toString()) : 0,
+                  budget: typeof data.budget === 'number' ? parseFloat(data.budget.toString()) : 0,
+                  reach: typeof data.reach === 'number' ? parseFloat(data.reach.toString()) : 0,
                   dailyData: Array.isArray(data.dailyData) && data.dailyData.length > 0 ? 
                     data.dailyData : currentMetrics.dailyData
                 });
@@ -1557,6 +1557,30 @@ Try creating at least one active campaign in Meta Ads Manager.
       };
     }
   }, [dateRange, brandId]);
+
+  // Add references to hold the last valid metric values
+  const lastValidMetricsRef = useRef<MetricsDataType>(createDefaultMetricsData());
+  
+  // Use the lastValidMetricsRef to prevent flickering to zero
+  const displayMetrics = useMemo(() => {
+    // If current metrics has zero values but we have valid prior data, use the prior data
+    if (
+      metricsData.adSpend === 0 && 
+      metricsData.impressions === 0 && 
+      metricsData.clicks === 0 && 
+      lastValidMetricsRef.current.adSpend > 0
+    ) {
+      console.log('Using last valid metrics to prevent flickering to zero');
+      return lastValidMetricsRef.current;
+    }
+    
+    // If we have valid data, update the ref
+    if (metricsData.adSpend > 0 || metricsData.impressions > 0 || metricsData.clicks > 0) {
+      lastValidMetricsRef.current = {...metricsData};
+    }
+    
+    return metricsData;
+  }, [metricsData]);
 
   return (
     <TooltipProvider>
@@ -1678,8 +1702,8 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Ad Spend</span>
               </div>
             }
-            value={typeof metricsData?.adSpend === 'number' && !isNaN(metricsData.adSpend) ? metricsData.adSpend : 0}
-            change={typeof metricsData?.adSpendGrowth === 'number' && !isNaN(metricsData.adSpendGrowth) ? metricsData.adSpendGrowth : 0}
+            value={typeof displayMetrics?.adSpend === 'number' && !isNaN(displayMetrics.adSpend) ? displayMetrics.adSpend : 0}
+            change={typeof displayMetrics?.adSpendGrowth === 'number' && !isNaN(displayMetrics.adSpendGrowth) ? displayMetrics.adSpendGrowth : 0}
                       data={[]}
                       loading={false}
             refreshing={isRefreshingData}
@@ -1699,8 +1723,8 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">ROAS</span>
               </div>
             }
-            value={typeof metricsData?.roas === 'number' && !isNaN(metricsData.roas) ? metricsData.roas : 0}
-            change={typeof metricsData?.roasGrowth === 'number' && !isNaN(metricsData.roasGrowth) ? metricsData.roasGrowth : 0}
+            value={typeof displayMetrics?.roas === 'number' && !isNaN(displayMetrics.roas) ? displayMetrics.roas : 0}
+            change={typeof displayMetrics?.roasGrowth === 'number' && !isNaN(displayMetrics.roasGrowth) ? displayMetrics.roasGrowth : 0}
                       data={[]}
                       loading={false}
             refreshing={isRefreshingData}
@@ -1719,8 +1743,8 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Impressions</span>
               </div>
             }
-            value={typeof metricsData?.impressions === 'number' && !isNaN(metricsData.impressions) ? metricsData.impressions : 0}
-            change={typeof metricsData?.impressionGrowth === 'number' && !isNaN(metricsData.impressionGrowth) ? metricsData.impressionGrowth : 0}
+            value={typeof displayMetrics?.impressions === 'number' && !isNaN(displayMetrics.impressions) ? displayMetrics.impressions : 0}
+            change={typeof displayMetrics?.impressionGrowth === 'number' && !isNaN(displayMetrics.impressionGrowth) ? displayMetrics.impressionGrowth : 0}
                       data={[]}
                       loading={false}
             refreshing={isRefreshingData}
@@ -1738,8 +1762,8 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Clicks</span>
               </div>
             }
-            value={typeof metricsData?.clicks === 'number' && !isNaN(metricsData.clicks) ? metricsData.clicks : 0}
-            change={typeof metricsData?.clickGrowth === 'number' && !isNaN(metricsData.clickGrowth) ? metricsData.clickGrowth : 0}
+            value={typeof displayMetrics?.clicks === 'number' && !isNaN(displayMetrics.clicks) ? displayMetrics.clicks : 0}
+            change={typeof displayMetrics?.clickGrowth === 'number' && !isNaN(displayMetrics.clickGrowth) ? displayMetrics.clickGrowth : 0}
                       data={[]}
                       loading={false}
             refreshing={isRefreshingData}
@@ -1763,13 +1787,13 @@ Try creating at least one active campaign in Meta Ads Manager.
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-                      {metricsData?.adSpend && metricsData.adSpend > 0 ? (
+            {displayMetrics?.adSpend && displayMetrics.adSpend > 0 ? (
               <div className="h-[240px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Ad Spend', value: metricsData.adSpend || 0 }
+                        { name: 'Ad Spend', value: displayMetrics.adSpend || 0 }
                       ]}
                       cx="50%"
                       cy="50%"
@@ -1829,19 +1853,19 @@ Try creating at least one active campaign in Meta Ads Manager.
                             <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
                     <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
                     <p className="text-lg font-medium">
-                      ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
+                      ${typeof displayMetrics?.cpc === 'number' && !isNaN(displayMetrics.cpc) ? displayMetrics.cpc.toFixed(2) : '0.00'}
                     </p>
                   </div>
                             <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
                     <p className="text-xs text-gray-400 mb-1">Conversions</p>
                     <p className="text-lg font-medium">
-                      {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
+                      {typeof displayMetrics?.conversions === 'number' && !isNaN(displayMetrics.conversions) ? Math.round(displayMetrics.conversions) : 0}
                     </p>
                   </div>
                             <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
                     <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
                     <p className="text-lg font-medium">
-                      ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
+                      ${typeof displayMetrics?.costPerResult === 'number' && !isNaN(displayMetrics.costPerResult) ? displayMetrics.costPerResult.toFixed(2) : '0.00'}
                     </p>
                   </div>
                 </div>
