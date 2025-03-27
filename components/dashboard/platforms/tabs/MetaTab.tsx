@@ -73,8 +73,8 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
-// Add an interface for the metrics data
-interface MetricsDataType {
+// Find the type definition for MetricsDataType
+type MetricsDataType = {
   adSpend: number;
   adSpendGrowth: number;
   impressions: number;
@@ -86,7 +86,7 @@ interface MetricsDataType {
   ctr: number;
   ctrGrowth: number;
   cpc: number;
-  cpcLink?: number;
+  cpcLink: number;
   costPerResult: number;
   cprGrowth: number;
   roas: number;
@@ -118,26 +118,35 @@ export function MetaTab({
 
   // Helper function to create a default metrics object
   const createDefaultMetricsData = (): MetricsDataType => {
-      return {
-        adSpend: 0,
-        adSpendGrowth: 0,
-        impressions: 0,
-        impressionGrowth: 0,
-        clicks: 0,
-        clickGrowth: 0,
-        conversions: 0,
-        conversionGrowth: 0,
-        ctr: 0,
-        ctrGrowth: 0,
-        cpc: 0,
-        cpcLink: 0,
-        costPerResult: 0,
-        cprGrowth: 0,
-        roas: 0,
-        roasGrowth: 0,
-        frequency: 0,
+    return {
+      adSpend: 0,
+      adSpendGrowth: 0,
+      impressions: 0,
+      impressionGrowth: 0,
+      clicks: 0,
+      clickGrowth: 0,
+      conversions: 0,
+      conversionGrowth: 0,
+      ctr: 0,
+      ctrGrowth: 0,
+      cpc: 0,
+      cpcLink: 0,
+      costPerResult: 0,
+      cprGrowth: 0,
+      roas: 0,
+      roasGrowth: 0,
+      frequency: 0,
+      frequencyGrowth: 0,
       budget: 0,
-        reach: 0,
+      budgetGrowth: 0,
+      reach: 0,
+      reachGrowth: 0,
+      linkClicks: 0,
+      linkClicksGrowth: 0,
+      purchaseConversionValue: 0,
+      purchaseConversionValueGrowth: 0,
+      results: 0,
+      resultsGrowth: 0,
       dailyData: [] as DailyDataItem[]
     };
   };
@@ -169,10 +178,19 @@ export function MetaTab({
       roas: typeof metrics.roas === 'number' && !isNaN(metrics.roas) ? metrics.roas : 0,
       roasGrowth: typeof metrics.roasGrowth === 'number' && !isNaN(metrics.roasGrowth) ? metrics.roasGrowth : 0,
       frequency: typeof metrics.frequency === 'number' && !isNaN(metrics.frequency) ? metrics.frequency : 0,
-        budget: typeof metrics.budget === 'number' && !isNaN(metrics.budget) ? metrics.budget : 0,
+      frequencyGrowth: typeof metrics.frequencyGrowth === 'number' && !isNaN(metrics.frequencyGrowth) ? metrics.frequencyGrowth : 0,
+      budget: typeof metrics.budget === 'number' && !isNaN(metrics.budget) ? metrics.budget : 0,
+      budgetGrowth: typeof metrics.budgetGrowth === 'number' && !isNaN(metrics.budgetGrowth) ? metrics.budgetGrowth : 0,
       reach: typeof metrics.reach === 'number' && !isNaN(metrics.reach) ? metrics.reach : 0,
-        dailyData: Array.isArray(metrics.dailyData) ? metrics.dailyData as DailyDataItem[] : [] as DailyDataItem[]
-      };
+      reachGrowth: typeof metrics.reachGrowth === 'number' && !isNaN(metrics.reachGrowth) ? metrics.reachGrowth : 0,
+      linkClicks: typeof metrics.linkClicks === 'number' && !isNaN(metrics.linkClicks) ? metrics.linkClicks : 0,
+      linkClicksGrowth: typeof metrics.linkClicksGrowth === 'number' && !isNaN(metrics.linkClicksGrowth) ? metrics.linkClicksGrowth : 0,
+      purchaseConversionValue: typeof metrics.purchaseConversionValue === 'number' && !isNaN(metrics.purchaseConversionValue) ? metrics.purchaseConversionValue : 0,
+      purchaseConversionValueGrowth: typeof metrics.purchaseConversionValueGrowth === 'number' && !isNaN(metrics.purchaseConversionValueGrowth) ? metrics.purchaseConversionValueGrowth : 0,
+      results: typeof metrics.results === 'number' && !isNaN(metrics.results) ? metrics.results : 0,
+      resultsGrowth: typeof metrics.resultsGrowth === 'number' && !isNaN(metrics.resultsGrowth) ? metrics.resultsGrowth : 0,
+      dailyData: Array.isArray(metrics.dailyData) ? metrics.dailyData as DailyDataItem[] : [] as DailyDataItem[]
+    };
     } catch (error) {
       console.error("Error creating safe metrics object:", error);
       // Return a default object if there was an error
@@ -345,10 +363,28 @@ export function MetaTab({
         safeData.roasGrowth = safeMetrics.roasGrowth;
       if (typeof safeMetrics.frequency === 'number' && !isNaN(safeMetrics.frequency)) 
         safeData.frequency = safeMetrics.frequency;
+      if (typeof safeMetrics.frequencyGrowth === 'number' && !isNaN(safeMetrics.frequencyGrowth)) 
+        safeData.frequencyGrowth = safeMetrics.frequencyGrowth;
       if (typeof safeMetrics.budget === 'number' && !isNaN(safeMetrics.budget)) 
         safeData.budget = safeMetrics.budget;
+      if (typeof safeMetrics.budgetGrowth === 'number' && !isNaN(safeMetrics.budgetGrowth)) 
+        safeData.budgetGrowth = safeMetrics.budgetGrowth;
       if (typeof safeMetrics.reach === 'number' && !isNaN(safeMetrics.reach)) 
         safeData.reach = safeMetrics.reach;
+      if (typeof safeMetrics.reachGrowth === 'number' && !isNaN(safeMetrics.reachGrowth)) 
+        safeData.reachGrowth = safeMetrics.reachGrowth;
+      if (typeof safeMetrics.linkClicks === 'number' && !isNaN(safeMetrics.linkClicks)) 
+        safeData.linkClicks = safeMetrics.linkClicks;
+      if (typeof safeMetrics.linkClicksGrowth === 'number' && !isNaN(safeMetrics.linkClicksGrowth)) 
+        safeData.linkClicksGrowth = safeMetrics.linkClicksGrowth;
+      if (typeof safeMetrics.purchaseConversionValue === 'number' && !isNaN(safeMetrics.purchaseConversionValue)) 
+        safeData.purchaseConversionValue = safeMetrics.purchaseConversionValue;
+      if (typeof safeMetrics.purchaseConversionValueGrowth === 'number' && !isNaN(safeMetrics.purchaseConversionValueGrowth)) 
+        safeData.purchaseConversionValueGrowth = safeMetrics.purchaseConversionValueGrowth;
+      if (typeof safeMetrics.results === 'number' && !isNaN(safeMetrics.results)) 
+        safeData.results = safeMetrics.results;
+      if (typeof safeMetrics.resultsGrowth === 'number' && !isNaN(safeMetrics.resultsGrowth)) 
+        safeData.resultsGrowth = safeMetrics.resultsGrowth;
       if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
         safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
       
@@ -733,13 +769,23 @@ export function MetaTab({
         ctr: responseData.ctr ?? 0,
         ctrGrowth: responseData.ctrGrowth ?? 0,
         cpc: responseData.cpc ?? 0,
+        cpcLink: responseData.cpcLink ?? 0,
         costPerResult: responseData.costPerResult ?? 0,
         cprGrowth: responseData.cprGrowth ?? 0,
         roas: responseData.roas ?? 0,
         roasGrowth: responseData.roasGrowth ?? 0,
         frequency: responseData.frequency ?? 0,
+        frequencyGrowth: responseData.frequencyGrowth ?? 0,
         budget: responseData.budget ?? 0,
+        budgetGrowth: responseData.budgetGrowth ?? 0,
         reach: responseData.reach ?? 0,
+        reachGrowth: responseData.reachGrowth ?? 0,
+        linkClicks: responseData.linkClicks ?? 0,
+        linkClicksGrowth: responseData.linkClicksGrowth ?? 0,
+        purchaseConversionValue: responseData.purchaseConversionValue ?? 0,
+        purchaseConversionValueGrowth: responseData.purchaseConversionValueGrowth ?? 0,
+        results: responseData.results ?? 0,
+        resultsGrowth: responseData.resultsGrowth ?? 0,
         dailyData: Array.isArray(responseData.dailyData) ? responseData.dailyData : []
       });
       
@@ -1535,27 +1581,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       try {
         // Clear any existing data first to prevent flashing
-        setMetricsData({
-          adSpend: 0,
-          adSpendGrowth: 0,
-          impressions: 0,
-          impressionGrowth: 0,
-          clicks: 0,
-          clickGrowth: 0,
-          conversions: 0,
-          conversionGrowth: 0,
-          ctr: 0,
-          ctrGrowth: 0,
-          cpc: 0,
-          costPerResult: 0,
-          cprGrowth: 0,
-          roas: 0,
-          roasGrowth: 0,
-          frequency: 0,
-          budget: 0,
-          reach: 0,
-          dailyData: []
-        });
+        setMetricsData(createDefaultMetricsData());
         
         // Fetch data with a retry mechanism
         await fetchMetaData();
@@ -2630,14 +2656,13 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-indigo-400" />
+                <LineChart className="h-4 w-4 text-purple-400" />
                 <span className="ml-0.5">Impressions</span>
               </div>
             }
             value={impressionsData.value}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -2656,11 +2681,145 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={clicksData.value}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
             previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          {/* New widgets start here */}
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 text-amber-400" />
+                <span className="ml-0.5">Budget</span>
+              </div>
+            }
+            value={metricsData.budget || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            prefix="$"
+            valueFormat="currency"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-emerald-500" />
+                <span className="ml-0.5">Purchase Value</span>
+              </div>
+            }
+            value={metricsData.purchaseConversionValue || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            prefix="$"
+            valueFormat="currency"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Target className="h-4 w-4 text-violet-500" />
+                <span className="ml-0.5">Results</span>
+              </div>
+            }
+            value={metricsData.results || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            valueFormat="number"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-teal-500" />
+                <span className="ml-0.5">Cost Per Result</span>
+              </div>
+            }
+            value={metricsData.costPerResult || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            prefix="$"
+            valueFormat="currency"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-rose-500" />
+                <span className="ml-0.5">Cost Per Click</span>
+              </div>
+            }
+            value={metricsData.cpc || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            prefix="$"
+            valueFormat="currency"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-pink-500" />
+                <span className="ml-0.5">CPC (Link)</span>
+              </div>
+            }
+            value={metricsData.cpcLink || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            prefix="$"
+            valueFormat="currency"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Percent className="h-4 w-4 text-sky-500" />
+                <span className="ml-0.5">CTR</span>
+              </div>
+            }
+            value={metricsData.ctr || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            suffix="%"
+            valueFormat="percentage"
+            hideGraph={true}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-indigo-500" />
+                <span className="ml-0.5">Frequency</span>
+              </div>
+            }
+            value={metricsData.frequency || 0}
+            data={[]}
+            loading={loading || isManuallyRefreshing}
+            valueFormat="decimal"
+            hideGraph={true}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />

@@ -22,7 +22,14 @@ interface DailyDataItem {
   conversions: number;
   ctr: number;
   roas: number;
-  [key: string]: string | number;
+  frequency?: number;
+  reach?: number;
+  linkClicks?: number;
+  costPerResult?: number;
+  results?: number;
+  budget?: number;
+  purchaseConversionValue?: number;
+  [key: string]: string | number | undefined;
 }
 
 interface ProcessedMetaData {
@@ -43,8 +50,17 @@ interface ProcessedMetaData {
   roas: number;
   roasGrowth: number;
   frequency: number;
+  frequencyGrowth: number;
   budget: number;
+  budgetGrowth: number;
   reach: number;
+  reachGrowth: number;
+  linkClicks: number;
+  linkClicksGrowth: number;
+  purchaseConversionValue: number;
+  purchaseConversionValueGrowth: number;
+  results: number;
+  resultsGrowth: number;
   dailyData: DailyDataItem[];
 }
 
@@ -432,8 +448,17 @@ function createEmptyDataStructure(): ProcessedMetaData {
     roas: 0,
     roasGrowth: 0,
     frequency: 0,
+    frequencyGrowth: 0,
     budget: 0,
+    budgetGrowth: 0,
     reach: 0,
+    reachGrowth: 0,
+    linkClicks: 0,
+    linkClicksGrowth: 0,
+    purchaseConversionValue: 0,
+    purchaseConversionValueGrowth: 0,
+    results: 0,
+    resultsGrowth: 0,
     dailyData: []
   }
 }
@@ -457,6 +482,11 @@ function processMetaData(data: any[]): ProcessedMetaData {
   let totalClicks = 0
   let totalConversions = 0
   let totalReach = 0
+  let totalFrequency = 0
+  let totalLinkClicks = 0
+  let totalResults = 0
+  let totalBudget = 0
+  let totalPurchaseConversionValue = 0
   
   // Process daily data
   const dailyData: DailyDataItem[] = []
@@ -477,6 +507,16 @@ function processMetaData(data: any[]): ProcessedMetaData {
     const daySpend = dayItems.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
     const dayImpressions = dayItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = dayItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
+    
+    // New metrics
+    const dayBudget = dayItems.reduce((sum, d) => sum + (parseFloat(d.budget) || 0), 0)
+    const dayReach = dayItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
+    const dayFrequency = dayReach > 0 ? dayImpressions / dayReach : 
+                       dayItems.reduce((sum, d) => sum + (parseFloat(d.frequency) || 0), 0) / dayItems.length || 0
+    const dayLinkClicks = dayItems.reduce((sum, d) => sum + (parseInt(d.link_clicks) || 0), 0)
+    const dayResults = dayItems.reduce((sum, d) => sum + (parseInt(d.results) || 0), 0)
+    const dayCostPerResult = dayResults > 0 ? daySpend / dayResults : 0
+    const dayPurchaseConversionValue = dayItems.reduce((sum, d) => sum + (parseFloat(d.purchase_conversion_value) || 0), 0)
     
     // Calculate conversions from actions array (purchase or conversion actions)
     let dayConversions = 0
@@ -499,20 +539,24 @@ function processMetaData(data: any[]): ProcessedMetaData {
     
     // Calculate ROAS (if we have conversion value data)
     let dayRoas = 0
-    dayItems.forEach(d => {
-      if (d.action_values && Array.isArray(d.action_values)) {
-        d.action_values.forEach((actionValue: any) => {
-          if (
-            actionValue.action_type === 'purchase' || 
-            actionValue.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            actionValue.action_type === 'omni_purchase'
-          ) {
-            dayRoas += parseFloat(actionValue.value) || 0
-          }
-        })
-      }
-    })
-    dayRoas = daySpend > 0 ? dayRoas / daySpend : 0
+    if (dayPurchaseConversionValue > 0 && daySpend > 0) {
+      dayRoas = dayPurchaseConversionValue / daySpend
+    } else {
+      dayItems.forEach(d => {
+        if (d.action_values && Array.isArray(d.action_values)) {
+          d.action_values.forEach((actionValue: any) => {
+            if (
+              actionValue.action_type === 'purchase' || 
+              actionValue.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+              actionValue.action_type === 'omni_purchase'
+            ) {
+              dayRoas += parseFloat(actionValue.value) || 0
+            }
+          })
+        }
+      })
+      dayRoas = daySpend > 0 ? dayRoas / daySpend : 0
+    }
     
     // Add to daily data array
     dailyData.push({
@@ -522,7 +566,14 @@ function processMetaData(data: any[]): ProcessedMetaData {
       clicks: dayClicks,
       conversions: dayConversions,
       ctr: dayCtr,
-      roas: dayRoas
+      roas: dayRoas,
+      frequency: dayFrequency,
+      reach: dayReach,
+      linkClicks: dayLinkClicks,
+      costPerResult: dayCostPerResult,
+      results: dayResults,
+      budget: dayBudget,
+      purchaseConversionValue: dayPurchaseConversionValue
     })
     
     // Add to totals
@@ -530,6 +581,12 @@ function processMetaData(data: any[]): ProcessedMetaData {
     totalImpressions += dayImpressions
     totalClicks += dayClicks
     totalConversions += dayConversions
+    totalReach += dayReach
+    totalFrequency += dayFrequency * dayItems.length // Weight by number of records
+    totalLinkClicks += dayLinkClicks
+    totalResults += dayResults
+    totalBudget += dayBudget
+    totalPurchaseConversionValue += dayPurchaseConversionValue
   })
   
   console.log(`Aggregated ${dailyData.length} unique days of data, total spend: ${totalSpend}`)
@@ -546,17 +603,26 @@ function processMetaData(data: any[]): ProcessedMetaData {
   const ctrGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'ctr') : 0
   const roasGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'roas') : 0
   
+  // New growth metrics
+  const frequencyGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'frequency') : 0
+  const reachGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'reach') : 0
+  const linkClicksGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'linkClicks') : 0
+  const resultsGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'results') : 0
+  const budgetGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'budget') : 0
+  const purchaseConversionValueGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'purchaseConversionValue') : 0
+  
   // Calculate overall metrics
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0
-  const cpcLink = totalClicks > 0 ? totalSpend / totalClicks : 0
-  const costPerResult = totalConversions > 0 ? totalSpend / totalConversions : 0
-  const roas = totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0 // Assuming $50 per conversion if not available
-  const cprGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'cpr') : 0
-  const frequency = totalReach > 0 ? totalImpressions / totalReach : 1
+  const cpcLink = totalLinkClicks > 0 ? totalSpend / totalLinkClicks : 0
+  const costPerResult = totalResults > 0 ? totalSpend / totalResults : 0
+  const roas = totalPurchaseConversionValue > 0 ? totalPurchaseConversionValue / totalSpend : 
+               (totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0) // Assuming $50 per conversion if no value available
+  const cprGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'costPerResult') : 0
+  const frequency = dailyData.length > 0 ? totalFrequency / dailyData.length : 0
   
   // Add debug info
-  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%`)
+  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, budget=${totalBudget}, results=${totalResults}`)
   
   return {
     adSpend: totalSpend,
@@ -576,8 +642,17 @@ function processMetaData(data: any[]): ProcessedMetaData {
     roas,
     roasGrowth,
     frequency,
-    budget: totalSpend > 0 ? totalSpend / dailyData.length : 0, // Average daily budget
+    frequencyGrowth,
+    budget: totalBudget,
+    budgetGrowth,
     reach: totalReach,
+    reachGrowth,
+    linkClicks: totalLinkClicks,
+    linkClicksGrowth,
+    purchaseConversionValue: totalPurchaseConversionValue,
+    purchaseConversionValueGrowth,
+    results: totalResults,
+    resultsGrowth,
     dailyData
   }
 }

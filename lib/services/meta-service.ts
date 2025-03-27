@@ -79,7 +79,7 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,frequency,ctr,cpc,link_clicks,cost_per_inline_link_click,purchase_roas,website_purchase_roas,budget_remaining,objective&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
         const insightsData = await insightsResponse.json()
@@ -146,6 +146,43 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
+        // Extract purchase conversion value from action_values
+        let purchaseConversionValue = 0;
+        if (insight.action_values && Array.isArray(insight.action_values)) {
+          const purchaseValues = insight.action_values.filter((action: any) => 
+            action.action_type === 'purchase' || 
+            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+            action.action_type === 'omni_purchase'
+          );
+          
+          if (purchaseValues.length > 0) {
+            purchaseConversionValue = purchaseValues.reduce((sum: number, item: any) => 
+              sum + (parseFloat(item.value) || 0), 0);
+          }
+        }
+        
+        // Count results from actions (usually the primary campaign objective)
+        let results = 0;
+        if (insight.actions && Array.isArray(insight.actions)) {
+          // Determine which action types to count based on campaign objective
+          // This is a simplified version - in reality, different objectives track different result types
+          const resultActions = insight.actions.filter((action: any) => 
+            action.action_type === 'purchase' || 
+            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+            action.action_type === 'omni_purchase' ||
+            action.action_type === 'lead' ||
+            action.action_type === 'landing_page_view'
+          );
+          
+          if (resultActions.length > 0) {
+            results = resultActions.reduce((sum: number, item: any) => 
+              sum + (parseInt(item.value) || 0), 0);
+          }
+        }
+        
+        // Calculate cost per result if we have results
+        const costPerResult = results > 0 ? parseFloat(insight.spend) / results : 0;
+        
         return {
           brand_id: brandId,
           connection_id: connection.id,
@@ -162,7 +199,18 @@ export async function fetchMetaAdInsights(
           spend: parseFloat(insight.spend || '0'),
           date: recordDate,
           actions: insight.actions || [],
-          action_values: insight.action_values || []
+          action_values: insight.action_values || [],
+          // New fields
+          budget: parseFloat(insight.budget_remaining || '0'),
+          purchase_conversion_value: purchaseConversionValue,
+          results: results,
+          cost_per_result: costPerResult,
+          cost_per_click: parseFloat(insight.cpc || '0'),
+          cost_per_link_click: parseFloat(insight.cost_per_inline_link_click || '0'),
+          click_through_rate: parseFloat(insight.ctr || '0'),
+          frequency: parseFloat(insight.frequency || '0'),
+          reach: parseInt(insight.reach || '0'),
+          link_clicks: parseInt(insight.link_clicks || '0')
         };
       })
       
