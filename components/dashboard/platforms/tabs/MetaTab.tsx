@@ -422,15 +422,13 @@ export function MetaTab({
       
       // Detect the special yesterday preset
       const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday';
-
-      // Important: Do not modify the dates for yesterday when handling specific presets
-      // This is ensuring only yesterday's data shows without combining today's data
       
+      // Create consistent query parameters for all API calls
       const params = new URLSearchParams({
         brandId: brandId as string
       });
       
-      // For yesterday preset, calculate yesterday's date exactly to ensure consistency
+      // For yesterday preset, calculate yesterday's date exactly to ensure consistency across all API calls
       if (isYesterdayPreset) {
         // Always override with server-calculated yesterday
         const today = new Date();
@@ -445,6 +443,10 @@ export function MetaTab({
         params.append('to', yesterdayStr);
         params.append('preset', 'yesterday');
         params.append('enforce_single_day', 'true');
+        
+        // Override the local from/to dates to ensure consistency in logs
+        fromDate = yesterday;
+        toDate = yesterday;
       } 
       // Handle normal date ranges
       else {
@@ -474,22 +476,21 @@ export function MetaTab({
       params.append('force_load', 'true');
       params.append('strict_date_range', 'true'); // Add this to force strict date handling
       
+      // Store the consistent parameters for use in all API calls
+      const metaApiParams = params.toString();
+      
       // Check URL parameters for current date settings
       const urlParams = new URL(window.location.href).searchParams;
       const preset = urlParams.get('preset');
       const isTodayPreset = preset === 'today';
-      const isSingleDayPreset = isYesterdayPreset || isTodayPreset;
       
       // Correctly log date range based on preset
       if (isYesterdayPreset) {
-        // Calculate yesterday's date to use in the log
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
-        
-        console.log(`YESTERDAY PRESET: Fetching Meta data for yesterday: ${yesterdayStr}`);
+        // Use our calculated yesterday date from above for consistent logging
+        const fromParam = params.get('from');
+        console.log(`YESTERDAY PRESET: Fetching Meta data for yesterday ONLY: ${fromParam} (single day)`);
       } else if (isTodayPreset) {
-        console.log(`TODAY PRESET: Fetching Meta data for today: ${params.get('from')}`);
+        console.log(`TODAY PRESET: Fetching Meta data for today: ${params.get('from')} (single day)`);
       } else {
         // Check if date parameters are the same (single day selection)
         const fromParam = params.get('from');
@@ -499,7 +500,8 @@ export function MetaTab({
         if (isSingleDaySelection) {
           console.log(`SINGLE DAY: Fetching Meta data for specific date: ${fromParam}`);
         } else {
-          console.log(`DATE RANGE: Fetching Meta data from ${params.get('from')} to ${params.get('to')}`);
+          // Only use "DATE RANGE" label for actual ranges spanning multiple days
+          console.log(`DATE RANGE: Fetching Meta data from ${fromParam} to ${toParam}`);
         }
       }
       
@@ -532,7 +534,7 @@ export function MetaTab({
         }
       }, 20000); // Force loading to end after 20 seconds maximum
       
-      const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
+      const response = await fetch(`/api/metrics/meta?${metaApiParams}`, { 
         signal,
         // Force refresh from network, not cache
         cache: 'no-cache',
