@@ -13,17 +13,14 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const fromDate = url.searchParams.get('from')
-    const toDate = url.searchParams.get('to')
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
     const enforceSingleDay = url.searchParams.get('enforce_single_day') === 'true'
     
-    // Check for yesterday preset explicitly
-    const isYesterdayPreset = preset === 'yesterday'
-    const isTodayPreset = preset === 'today'
-    
-    // Log the requested date range for debugging
-    console.log(`Meta Analytics - Request date range: from=${fromDate}, to=${toDate}, brandId=${brandId}, preset=${preset}, enforceSingleDay=${enforceSingleDay}`)
+    // Log the initial raw request
+    console.log(`META ANALYTICS API - Raw request: ${request.url}`);
+    console.log(`Initial parameters: from=${fromDate}, to=${toDate}, preset=${preset}, enforceSingleDay=${enforceSingleDay}`);
     
     if (!brandId) {
       return NextResponse.json({ error: 'Missing brandId parameter' }, { status: 400 })
@@ -35,110 +32,135 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    // Handle date range with more precision for exact queries
-    let formattedFromDate: string | null = null
-    let formattedToDate: string | null = null
+    // Special detection for yesterday preset
+    const isYesterdayPreset = preset === 'yesterday'
+    const hasYesterdayInUrl = isYesterdayPreset || request.url.includes('yesterday');
     
-    // Special handling for yesterday preset
-    if (isYesterdayPreset) {
-      console.log('YESTERDAY PRESET DETECTED - ENFORCING STRICT SINGLE DAY QUERY')
+    // CRITICAL: For yesterday, we ALWAYS force the exact same date for both from and to
+    if (hasYesterdayInUrl || enforceSingleDay) {
+      // For yesterday preset, ALWAYS calculate yesterday's date exactly
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const exactYesterdayStr = format(yesterday, 'yyyy-MM-dd');
       
-      // Use exactly yesterday's date for both from and to
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      formattedFromDate = format(yesterday, 'yyyy-MM-dd')
-      formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
+      console.log(`YESTERDAY OVERRIDE: Forcing exact date ${exactYesterdayStr} for both from and to parameters`);
       
-      console.log(`Using strict yesterday-only query: from=${formattedFromDate}, to=${formattedToDate}`)
-    }
-    // Special handling for today preset
-    else if (isTodayPreset) {
-      console.log('TODAY PRESET DETECTED - ENFORCING STRICT SINGLE DAY QUERY')
+      // Hard override both dates to be exactly the same
+      fromDate = exactYesterdayStr;
+      toDate = exactYesterdayStr;
       
-      // Use exactly today's date for both from and to
-      const today = new Date()
-      formattedFromDate = format(today, 'yyyy-MM-dd')
-      formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
+      // Execute query with exact date match for yesterday
+      const { data, error } = await supabase
+        .from('meta_ad_insights')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('date', exactYesterdayStr) // Use EXACT date equality for yesterday
+        .order('date', { ascending: false });
       
-      console.log(`Using strict today-only query: from=${formattedFromDate}, to=${formattedToDate}`)
-    }
-    // Normal handling for explicit date parameters
-    else if (fromDate && toDate) {
-      try {
-        const parsedFromDate = new Date(fromDate)
-        formattedFromDate = format(parsedFromDate, 'yyyy-MM-dd')
-        
-        const parsedToDate = new Date(toDate)
-        formattedToDate = format(parsedToDate, 'yyyy-MM-dd')
-        
-        // Check if this is a single-day query (from and to are the same)
-        if (formattedFromDate === formattedToDate) {
-          console.log(`Single day query detected: ${formattedFromDate}`)
+      if (error) {
+        console.error('Database error:', error);
+        return NextResponse.json({ error: 'Failed to fetch Meta analytics data' }, { status: 500 });
+      }
+      
+      console.log(`YESTERDAY QUERY: Retrieved ${data?.length || 0} Meta records for ${exactYesterdayStr} only`);
+      
+      return NextResponse.json({ 
+        data,
+        _debug: {
+          requestedDateRange: { 
+            fromDate: exactYesterdayStr,
+            toDate: exactYesterdayStr,
+            preset: 'yesterday_forced',
+            dateType: 'exact_single_day'
+          },
+          recordsCount: data?.length || 0
         }
-        
-      } catch (e) {
-        console.error(`Invalid date format: ${fromDate} or ${toDate}`, e)
-      }
+      });
     }
-    // Handle only from date specified
-    else if (fromDate) {
+    
+    // Handle normal date range queries (non-yesterday)
+    let formattedFromDate: string | null = null;
+    let formattedToDate: string | null = null;
+    
+    // Format the from date if provided
+    if (fromDate) {
       try {
-        const parsedFromDate = new Date(fromDate)
-        formattedFromDate = format(parsedFromDate, 'yyyy-MM-dd')
+        const parsedFromDate = new Date(fromDate);
+        formattedFromDate = format(parsedFromDate, 'yyyy-MM-dd');
       } catch (e) {
-        console.error(`Invalid from date format: ${fromDate}`, e)
+        console.error(`Invalid from date format: ${fromDate}`, e);
       }
     }
-    // Handle only to date specified
-    else if (toDate) {
+    
+    // Format the to date if provided
+    if (toDate) {
       try {
-        const parsedToDate = new Date(toDate)
-        formattedToDate = format(parsedToDate, 'yyyy-MM-dd')
+        const parsedToDate = new Date(toDate);
+        formattedToDate = format(parsedToDate, 'yyyy-MM-dd');
       } catch (e) {
-        console.error(`Invalid to date format: ${toDate}`, e)
+        console.error(`Invalid to date format: ${toDate}`, e);
       }
     }
-
-    // Build the query
+    
+    // Special handling for single day selections (when from=to)
+    if (formattedFromDate && formattedToDate && formattedFromDate === formattedToDate) {
+      console.log(`SINGLE DAY SELECTION: Using exact date match for ${formattedFromDate}`);
+      
+      // Use exact date equality for single day selections
+      const { data, error } = await supabase
+        .from('meta_ad_insights')
+        .select('*')
+        .eq('brand_id', brandId)
+        .eq('date', formattedFromDate) // Exact date match
+        .order('date', { ascending: false });
+      
+      if (error) {
+        console.error('Database error:', error);
+        return NextResponse.json({ error: 'Failed to fetch Meta analytics data' }, { status: 500 });
+      }
+      
+      console.log(`SINGLE DAY QUERY: Retrieved ${data?.length || 0} Meta records for ${formattedFromDate} only`);
+      
+      return NextResponse.json({ 
+        data,
+        _debug: {
+          requestedDateRange: { 
+            fromDate: formattedFromDate,
+            toDate: formattedFromDate,
+            preset: preset,
+            dateType: 'exact_single_day'
+          },
+          recordsCount: data?.length || 0
+        }
+      });
+    }
+    
+    // Standard date range query (multi-day)
     let query = supabase
       .from('meta_ad_insights')
       .select('*')
-      .eq('brand_id', brandId)
+      .eq('brand_id', brandId);
     
-    // Special handling for single-day queries (yesterday, today, enforce_single_day, or when fromDate === toDate)
-    if ((formattedFromDate && formattedToDate && formattedFromDate === formattedToDate) || 
-        isYesterdayPreset || isTodayPreset || enforceSingleDay) {
-      // For consistency with other endpoints, always use the from date for single-day queries
-      const exactDate = formattedFromDate || formattedToDate;
-      if (exactDate) {
-        query = query.eq('date', exactDate);
-        console.log(`EXACT DATE MATCH: Filtering for single day: ${exactDate} only`);
-      }
-    }
-    // Regular date range handling for multi-day queries
-    else {
-      // Add date filtering if provided
-      if (formattedFromDate) {
-        query = query.gte('date', formattedFromDate);
-        console.log(`Filtering from date: ${formattedFromDate}`);
-      }
-      
-      if (formattedToDate) {
-        query = query.lte('date', formattedToDate);
-        console.log(`Filtering to date: ${formattedToDate}`);
-      }
+    // Add date filtering for range queries
+    if (formattedFromDate) {
+      query = query.gte('date', formattedFromDate);
+      console.log(`DATE RANGE: From date >= ${formattedFromDate}`);
     }
     
-    // Execute the query
-    const { data, error } = await query.order('date', { ascending: false })
+    if (formattedToDate) {
+      query = query.lte('date', formattedToDate);
+      console.log(`DATE RANGE: To date <= ${formattedToDate}`);
+    }
+    
+    // Execute the multi-day query
+    const { data, error } = await query.order('date', { ascending: false });
     
     if (error) {
-      console.error('Database error:', error)
-      return NextResponse.json({ error: 'Failed to fetch Meta analytics data' }, { status: 500 })
+      console.error('Database error:', error);
+      return NextResponse.json({ error: 'Failed to fetch Meta analytics data' }, { status: 500 });
     }
-
-    // Log the retrieved records count for debugging
-    console.log(`Retrieved ${data?.length || 0} Meta analytics records`)
+    
+    console.log(`DATE RANGE QUERY: Retrieved ${data?.length || 0} Meta records from ${formattedFromDate} to ${formattedToDate}`);
     
     return NextResponse.json({ 
       data,
@@ -146,18 +168,19 @@ export async function GET(request: NextRequest) {
         requestedDateRange: { 
           fromDate: formattedFromDate || fromDate, 
           toDate: formattedToDate || toDate,
-          preset: preset
+          preset: preset,
+          dateType: 'date_range'
         },
         recordsCount: data?.length || 0
       }
-    })
+    });
   } catch (error) {
-    console.error('Error in Meta analytics endpoint:', error)
+    console.error('Error in Meta analytics endpoint:', error);
     return NextResponse.json({ 
       error: 'Server error', 
       details: typeof error === 'object' && error !== null && 'message' in error 
         ? (error.message as string) 
         : 'Unknown error'
-    }, { status: 500 })
+    }, { status: 500 });
   }
 } 
