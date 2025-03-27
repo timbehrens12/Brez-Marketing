@@ -51,7 +51,6 @@ import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -74,8 +73,8 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
-// Fix the MetricsDataType interface to include the new fields
-type MetricsDataType = {
+// Add an interface for the metrics data
+interface MetricsDataType {
   adSpend: number;
   adSpendGrowth: number;
   impressions: number;
@@ -87,25 +86,16 @@ type MetricsDataType = {
   ctr: number;
   ctrGrowth: number;
   cpc: number;
-  cpcLink: number;
+  cpcLink?: number;
   costPerResult: number;
   cprGrowth: number;
   roas: number;
   roasGrowth: number;
   frequency: number;
-  frequencyGrowth?: number;
   budget: number;
-  budgetGrowth?: number;
   reach: number;
-  reachGrowth?: number;
-  linkClicks?: number;
-  linkClicksGrowth?: number;
-  purchaseConversionValue?: number;
-  purchaseConversionValueGrowth?: number;
-  results?: number;
-  resultsGrowth?: number;
   dailyData: DailyDataItem[];
-};
+}
 
 // Add type definition for the global timeouts array
 declare global {
@@ -128,35 +118,26 @@ export function MetaTab({
 
   // Helper function to create a default metrics object
   const createDefaultMetricsData = (): MetricsDataType => {
-    return {
-      adSpend: 0,
-      adSpendGrowth: 0,
-      impressions: 0,
-      impressionGrowth: 0,
-      clicks: 0,
-      clickGrowth: 0,
-      conversions: 0,
-      conversionGrowth: 0,
-      ctr: 0,
-      ctrGrowth: 0,
-      cpc: 0,
-      cpcLink: 0,
-      costPerResult: 0,
-      cprGrowth: 0,
-      roas: 0,
-      roasGrowth: 0,
-      frequency: 0,
-      frequencyGrowth: 0,
+      return {
+        adSpend: 0,
+        adSpendGrowth: 0,
+        impressions: 0,
+        impressionGrowth: 0,
+        clicks: 0,
+        clickGrowth: 0,
+        conversions: 0,
+        conversionGrowth: 0,
+        ctr: 0,
+        ctrGrowth: 0,
+        cpc: 0,
+        cpcLink: 0,
+        costPerResult: 0,
+        cprGrowth: 0,
+        roas: 0,
+        roasGrowth: 0,
+        frequency: 0,
       budget: 0,
-      budgetGrowth: 0,
-      reach: 0,
-      reachGrowth: 0,
-      linkClicks: 0,
-      linkClicksGrowth: 0,
-      purchaseConversionValue: 0,
-      purchaseConversionValueGrowth: 0,
-      results: 0,
-      resultsGrowth: 0,
+        reach: 0,
       dailyData: [] as DailyDataItem[]
     };
   };
@@ -188,19 +169,10 @@ export function MetaTab({
       roas: typeof metrics.roas === 'number' && !isNaN(metrics.roas) ? metrics.roas : 0,
       roasGrowth: typeof metrics.roasGrowth === 'number' && !isNaN(metrics.roasGrowth) ? metrics.roasGrowth : 0,
       frequency: typeof metrics.frequency === 'number' && !isNaN(metrics.frequency) ? metrics.frequency : 0,
-      frequencyGrowth: typeof metrics.frequencyGrowth === 'number' && !isNaN(metrics.frequencyGrowth) ? metrics.frequencyGrowth : 0,
-      budget: typeof metrics.budget === 'number' && !isNaN(metrics.budget) ? metrics.budget : 0,
-      budgetGrowth: typeof metrics.budgetGrowth === 'number' && !isNaN(metrics.budgetGrowth) ? metrics.budgetGrowth : 0,
+        budget: typeof metrics.budget === 'number' && !isNaN(metrics.budget) ? metrics.budget : 0,
       reach: typeof metrics.reach === 'number' && !isNaN(metrics.reach) ? metrics.reach : 0,
-      reachGrowth: typeof metrics.reachGrowth === 'number' && !isNaN(metrics.reachGrowth) ? metrics.reachGrowth : 0,
-      linkClicks: typeof metrics.linkClicks === 'number' && !isNaN(metrics.linkClicks) ? metrics.linkClicks : 0,
-      linkClicksGrowth: typeof metrics.linkClicksGrowth === 'number' && !isNaN(metrics.linkClicksGrowth) ? metrics.linkClicksGrowth : 0,
-      purchaseConversionValue: typeof metrics.purchaseConversionValue === 'number' && !isNaN(metrics.purchaseConversionValue) ? metrics.purchaseConversionValue : 0,
-      purchaseConversionValueGrowth: typeof metrics.purchaseConversionValueGrowth === 'number' && !isNaN(metrics.purchaseConversionValueGrowth) ? metrics.purchaseConversionValueGrowth : 0,
-      results: typeof metrics.results === 'number' && !isNaN(metrics.results) ? metrics.results : 0,
-      resultsGrowth: typeof metrics.resultsGrowth === 'number' && !isNaN(metrics.resultsGrowth) ? metrics.resultsGrowth : 0,
-      dailyData: Array.isArray(metrics.dailyData) ? metrics.dailyData as DailyDataItem[] : [] as DailyDataItem[]
-    };
+        dailyData: Array.isArray(metrics.dailyData) ? metrics.dailyData as DailyDataItem[] : [] as DailyDataItem[]
+      };
     } catch (error) {
       console.error("Error creating safe metrics object:", error);
       // Return a default object if there was an error
@@ -233,7 +205,6 @@ export function MetaTab({
       ctr: 0,
       ctrGrowth: 0,
       cpc: 0,
-      cpcLink: 0,
       costPerResult: 0,
       cprGrowth: 0,
       roas: 0,
@@ -374,28 +345,10 @@ export function MetaTab({
         safeData.roasGrowth = safeMetrics.roasGrowth;
       if (typeof safeMetrics.frequency === 'number' && !isNaN(safeMetrics.frequency)) 
         safeData.frequency = safeMetrics.frequency;
-      if (typeof safeMetrics.frequencyGrowth === 'number' && !isNaN(safeMetrics.frequencyGrowth)) 
-        safeData.frequencyGrowth = safeMetrics.frequencyGrowth;
       if (typeof safeMetrics.budget === 'number' && !isNaN(safeMetrics.budget)) 
         safeData.budget = safeMetrics.budget;
-      if (typeof safeMetrics.budgetGrowth === 'number' && !isNaN(safeMetrics.budgetGrowth)) 
-        safeData.budgetGrowth = safeMetrics.budgetGrowth;
       if (typeof safeMetrics.reach === 'number' && !isNaN(safeMetrics.reach)) 
         safeData.reach = safeMetrics.reach;
-      if (typeof safeMetrics.reachGrowth === 'number' && !isNaN(safeMetrics.reachGrowth)) 
-        safeData.reachGrowth = safeMetrics.reachGrowth;
-      if (typeof safeMetrics.linkClicks === 'number' && !isNaN(safeMetrics.linkClicks)) 
-        safeData.linkClicks = safeMetrics.linkClicks;
-      if (typeof safeMetrics.linkClicksGrowth === 'number' && !isNaN(safeMetrics.linkClicksGrowth)) 
-        safeData.linkClicksGrowth = safeMetrics.linkClicksGrowth;
-      if (typeof safeMetrics.purchaseConversionValue === 'number' && !isNaN(safeMetrics.purchaseConversionValue)) 
-        safeData.purchaseConversionValue = safeMetrics.purchaseConversionValue;
-      if (typeof safeMetrics.purchaseConversionValueGrowth === 'number' && !isNaN(safeMetrics.purchaseConversionValueGrowth)) 
-        safeData.purchaseConversionValueGrowth = safeMetrics.purchaseConversionValueGrowth;
-      if (typeof safeMetrics.results === 'number' && !isNaN(safeMetrics.results)) 
-        safeData.results = safeMetrics.results;
-      if (typeof safeMetrics.resultsGrowth === 'number' && !isNaN(safeMetrics.resultsGrowth)) 
-        safeData.resultsGrowth = safeMetrics.resultsGrowth;
       if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
         safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
       
@@ -580,7 +533,6 @@ export function MetaTab({
           ctr: 0,
           ctrGrowth: 0,
           cpc: 0,
-          cpcLink: 0,
           costPerResult: 0,
           cprGrowth: 0,
           roas: 0,
@@ -781,23 +733,13 @@ export function MetaTab({
         ctr: responseData.ctr ?? 0,
         ctrGrowth: responseData.ctrGrowth ?? 0,
         cpc: responseData.cpc ?? 0,
-        cpcLink: responseData.cpcLink ?? 0,
         costPerResult: responseData.costPerResult ?? 0,
         cprGrowth: responseData.cprGrowth ?? 0,
         roas: responseData.roas ?? 0,
         roasGrowth: responseData.roasGrowth ?? 0,
         frequency: responseData.frequency ?? 0,
-        frequencyGrowth: responseData.frequencyGrowth ?? 0,
         budget: responseData.budget ?? 0,
-        budgetGrowth: responseData.budgetGrowth ?? 0,
         reach: responseData.reach ?? 0,
-        reachGrowth: responseData.reachGrowth ?? 0,
-        linkClicks: responseData.linkClicks ?? 0,
-        linkClicksGrowth: responseData.linkClicksGrowth ?? 0,
-        purchaseConversionValue: responseData.purchaseConversionValue ?? 0,
-        purchaseConversionValueGrowth: responseData.purchaseConversionValueGrowth ?? 0,
-        results: responseData.results ?? 0,
-        resultsGrowth: responseData.resultsGrowth ?? 0,
         dailyData: Array.isArray(responseData.dailyData) ? responseData.dailyData : []
       });
       
@@ -994,7 +936,6 @@ export function MetaTab({
               ctr: data.ctr ?? 0,
               ctrGrowth: data.ctrGrowth ?? 0,
               cpc: data.cpc ?? 0,
-              cpcLink: data.cpcLink ?? 0,
               costPerResult: data.costPerResult ?? 0,
               cprGrowth: data.cprGrowth ?? 0,
               roas: data.roas ?? 0,
@@ -1594,7 +1535,27 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       try {
         // Clear any existing data first to prevent flashing
-        setMetricsData(createDefaultMetricsData());
+        setMetricsData({
+          adSpend: 0,
+          adSpendGrowth: 0,
+          impressions: 0,
+          impressionGrowth: 0,
+          clicks: 0,
+          clickGrowth: 0,
+          conversions: 0,
+          conversionGrowth: 0,
+          ctr: 0,
+          ctrGrowth: 0,
+          cpc: 0,
+          costPerResult: 0,
+          cprGrowth: 0,
+          roas: 0,
+          roasGrowth: 0,
+          frequency: 0,
+          budget: 0,
+          reach: 0,
+          dailyData: []
+        });
         
         // Fetch data with a retry mechanism
         await fetchMetaData();
@@ -1672,7 +1633,6 @@ Try creating at least one active campaign in Meta Ads Manager.
                 ctr: data.ctr ?? 0,
                 ctrGrowth: data.ctrGrowth ?? 0,
                 cpc: data.cpc ?? 0,
-                cpcLink: data.cpcLink ?? 0,
                 costPerResult: data.costPerResult ?? 0,
                 cprGrowth: data.cprGrowth ?? 0,
                 roas: data.roas ?? 0,
@@ -2492,53 +2452,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     refreshAllMetricsDirectly()
   }
 
-  // Add a new force resync function around line 1080 (after refreshMetaData)
-  const forceResyncMetaData = async () => {
-    try {
-      setIsSyncing(true);
-      toast('Starting forced resync of Meta data...', {
-        description: 'This may take a few moments.',
-        duration: 5000
-      });
-      
-      // Call our new force resync endpoint
-      const response = await fetch(`/api/meta/resync?brandId=${brandId}&force=true&days=60`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Force resync error:', errorData);
-        toast.error('Failed to resync Meta data', {
-          description: errorData.error || 'Unknown error',
-          duration: 5000
-        });
-        setIsSyncing(false);
-        return;
-      }
-      
-      const result = await response.json();
-      
-      toast.success('Meta data resynced successfully', {
-        description: `Synced ${result.count || 0} records. Refreshing dashboard...`,
-        duration: 5000
-      });
-      
-      // Wait a moment for the data to be processed
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Refresh the UI with the new data
-      await fetchMetaData();
-      
-      setIsSyncing(false);
-    } catch (error) {
-      console.error('Error during force resync:', error);
-      toast.error('Failed to resync Meta data', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-        duration: 5000
-      });
-      setIsSyncing(false);
-    }
-  };
-
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -2550,70 +2463,30 @@ Try creating at least one active campaign in Meta Ads Manager.
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Meta Ads Performance</h2>
         <div className="flex space-x-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-              >
-                {loading || isDateChangeLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <span>Refresh</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[#111] border border-[#333]">
-              <DropdownMenuItem 
-                onClick={refreshAllMetricsDirectly}
-                className="flex items-center cursor-pointer hover:bg-[#222]"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Data
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={fetchMetaData}
-                className="flex items-center cursor-pointer hover:bg-[#222]"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Advanced Refresh
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={forceResyncMetaData}
-                className="flex items-center cursor-pointer hover:bg-[#222] text-red-400"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Force Resync (Clear & Reload)
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#333]" />
-              <DropdownMenuItem 
-                onClick={testFetchMetaData}
-                className="flex items-center cursor-pointer hover:bg-[#222] text-gray-400"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Debug: Test API
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={toggleDebugControls}
-                className="flex items-center cursor-pointer hover:bg-[#222] text-gray-400"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Debug Controls
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {brandId && (
-            <MetaResyncButton 
-              brandId={brandId} 
-              days={60}
-              onSuccess={() => {
-                toast.success("Meta data resynced. Refreshing data...")
-                fetchMetaData()
-              }}
-            />
-          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+                      onClick={fetchMetaData}
+                      disabled={loading || isDateChangeLoading}
+                      className="flex items-center gap-1"
+                    >
+                      {loading || isDateChangeLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      <span>Refresh Data</span>
+          </Button>
+                    {brandId && (
+                      <MetaResyncButton 
+                        brandId={brandId} 
+                        days={60}
+                        onSuccess={() => {
+                          toast.success("Meta data resynced. Refreshing data...")
+                          fetchMetaData()
+                        }}
+                      />
+                    )}
         </div>
       </div>
                 
@@ -2757,13 +2630,14 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <LineChart className="h-4 w-4 text-purple-400" />
+                <Activity className="h-4 w-4 text-indigo-400" />
                 <span className="ml-0.5">Impressions</span>
               </div>
             }
             value={impressionsData.value}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -2782,145 +2656,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={clicksData.value}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
             previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          {/* New widgets start here */}
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 text-amber-400" />
-                <span className="ml-0.5">Budget</span>
-              </div>
-            }
-            value={metricsData.budget || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            prefix="$"
-            valueFormat="currency"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-emerald-500" />
-                <span className="ml-0.5">Purchase Value</span>
-              </div>
-            }
-            value={metricsData.purchaseConversionValue || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            prefix="$"
-            valueFormat="currency"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Target className="h-4 w-4 text-violet-500" />
-                <span className="ml-0.5">Results</span>
-              </div>
-            }
-            value={metricsData.results || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            valueFormat="number"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-teal-500" />
-                <span className="ml-0.5">Cost Per Result</span>
-              </div>
-            }
-            value={metricsData.costPerResult || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            prefix="$"
-            valueFormat="currency"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-rose-500" />
-                <span className="ml-0.5">Cost Per Click</span>
-              </div>
-            }
-            value={metricsData.cpc || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            prefix="$"
-            valueFormat="currency"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-pink-500" />
-                <span className="ml-0.5">CPC (Link)</span>
-              </div>
-            }
-            value={metricsData.cpcLink || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            prefix="$"
-            valueFormat="currency"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Percent className="h-4 w-4 text-sky-500" />
-                <span className="ml-0.5">CTR</span>
-              </div>
-            }
-            value={metricsData.ctr || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            suffix="%"
-            valueFormat="percentage"
-            hideGraph={true}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-indigo-500" />
-                <span className="ml-0.5">Frequency</span>
-              </div>
-            }
-            value={metricsData.frequency || 0}
-            data={[]}
-            loading={loading || isManuallyRefreshing}
-            valueFormat="number"
-            hideGraph={true}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />

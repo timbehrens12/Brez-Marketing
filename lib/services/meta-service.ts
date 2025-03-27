@@ -79,57 +79,27 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,frequency,ctr,cpc,link_clicks,cost_per_inline_link_click,purchase_roas,website_purchase_roas,budget_remaining,objective&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
-        console.log(`[Meta] Response status for account ${account.id}: ${insightsResponse.status}`)
-        
-        // Check for non-200 response
-        if (!insightsResponse.ok) {
-          const errorText = await insightsResponse.text()
-          console.error(`[Meta] HTTP error fetching insights for account ${account.id}: ${insightsResponse.status} ${insightsResponse.statusText}`)
-          console.error(`[Meta] Error details: ${errorText}`)
-          continue
-        }
-
         const insightsData = await insightsResponse.json()
         
         if (insightsData.error) {
           console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
-          console.error(`[Meta] Error details:`, JSON.stringify(insightsData.error))
           continue
         }
         
-        // Try with a simplified fields list if needed
-        if (!insightsData.data || insightsData.data.length === 0) {
-          console.log(`[Meta] No data returned for account ${account.id}, trying with basic fields only`)
-          // Try with just the essential fields
-          const basicInsightsResponse = await fetch(
-            `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
-          )
-          
-          if (!basicInsightsResponse.ok) {
-            console.error(`[Meta] Basic API call also failed for account ${account.id}`)
-            continue
+        if (insightsData.data && insightsData.data.length > 0) {
+          allInsights.push(...insightsData.data)
+          // Log the first item to check for daily data structure
+          if (insightsData.data[0]) {
+            console.log(`[Meta] Sample data format (first item):`, {
+              date_start: insightsData.data[0].date_start,
+              date_stop: insightsData.data[0].date_stop,
+              ad_id: insightsData.data[0].ad_id,
+              impressions: insightsData.data[0].impressions
+            })
           }
-          
-          const basicInsightsData = await basicInsightsResponse.json()
-          if (basicInsightsData.data && basicInsightsData.data.length > 0) {
-            console.log(`[Meta] Successfully retrieved ${basicInsightsData.data.length} records with basic fields for account ${account.id}`)
-            allInsights.push(...basicInsightsData.data)
-          }
-          continue
-        }
-        
-        allInsights.push(...insightsData.data)
-        // Log the first item to check for daily data structure
-        if (insightsData.data[0]) {
-          console.log(`[Meta] Sample data format (first item):`, {
-            date_start: insightsData.data[0].date_start,
-            date_stop: insightsData.data[0].date_stop,
-            ad_id: insightsData.data[0].ad_id,
-            impressions: insightsData.data[0].impressions
-          })
         }
       } catch (error) {
         console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)
@@ -176,43 +146,6 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
-        // Extract purchase conversion value from action_values
-        let purchaseConversionValue = 0;
-        if (insight.action_values && Array.isArray(insight.action_values)) {
-          const purchaseValues = insight.action_values.filter((action: any) => 
-            action.action_type === 'purchase' || 
-            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            action.action_type === 'omni_purchase'
-          );
-          
-          if (purchaseValues.length > 0) {
-            purchaseConversionValue = purchaseValues.reduce((sum: number, item: any) => 
-              sum + (parseFloat(item.value) || 0), 0);
-          }
-        }
-        
-        // Count results from actions (usually the primary campaign objective)
-        let results = 0;
-        if (insight.actions && Array.isArray(insight.actions)) {
-          // Determine which action types to count based on campaign objective
-          // This is a simplified version - in reality, different objectives track different result types
-          const resultActions = insight.actions.filter((action: any) => 
-            action.action_type === 'purchase' || 
-            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            action.action_type === 'omni_purchase' ||
-            action.action_type === 'lead' ||
-            action.action_type === 'landing_page_view'
-          );
-          
-          if (resultActions.length > 0) {
-            results = resultActions.reduce((sum: number, item: any) => 
-              sum + (parseInt(item.value) || 0), 0);
-          }
-        }
-        
-        // Calculate cost per result if we have results
-        const costPerResult = results > 0 ? parseFloat(insight.spend) / results : 0;
-        
         return {
           brand_id: brandId,
           connection_id: connection.id,
@@ -229,18 +162,7 @@ export async function fetchMetaAdInsights(
           spend: parseFloat(insight.spend || '0'),
           date: recordDate,
           actions: insight.actions || [],
-          action_values: insight.action_values || [],
-          // New fields
-          budget: parseFloat(insight.budget_remaining || '0'),
-          purchase_conversion_value: purchaseConversionValue,
-          results: results,
-          cost_per_result: costPerResult,
-          cost_per_click: parseFloat(insight.cpc || '0'),
-          cost_per_link_click: parseFloat(insight.cost_per_inline_link_click || '0'),
-          click_through_rate: parseFloat(insight.ctr || '0'),
-          frequency: parseFloat(insight.frequency || '0'),
-          reach: parseInt(insight.reach || '0'),
-          link_clicks: parseInt(insight.link_clicks || '0')
+          action_values: insight.action_values || []
         };
       })
       
