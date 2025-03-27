@@ -2033,8 +2033,21 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
-    // Special case for yesterday preset - we need to compare to day before yesterday
-    const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+    // Check for yesterday preset using _preset property
+    const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+      (dateRange?.from && dateRange?.to && 
+      isSameDay(dateRange.from, dateRange.to) && 
+      isYesterday(dateRange.from));
+      
+    // Debug logging to identify what's happening with the preset detection
+    console.log('Debug - Checking for yesterday preset:');
+    console.log('- _preset property:', (dateRange as any)?._preset);
+    console.log('- Dates match and isYesterday:', 
+      dateRange?.from && dateRange?.to && 
+      isSameDay(dateRange.from, dateRange.to) && 
+      isYesterday(dateRange.from));
+    console.log('- isYesterdayPreset result:', isYesterdayPreset);
+    
     if (isYesterdayPreset) {
       // For "yesterday" preset, the previous period should be the day before yesterday
       const dayBeforeYesterday = new Date()
@@ -2071,7 +2084,12 @@ Try creating at least one active campaign in Meta Ads Manager.
       return "Previous period"
     }
     
-    const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+    // Use the same check for yesterday preset as in getPreviousPeriodDates
+    const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+      (dateRange?.from && dateRange?.to && 
+      isSameDay(dateRange.from, dateRange.to) && 
+      isYesterday(dateRange.from));
+      
     if (isYesterdayPreset) {
       return "Day before yesterday"
     }
@@ -2116,7 +2134,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('metric', 'adSpend')
       
       // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+        (dateRange?.from && dateRange?.to && 
+        isSameDay(dateRange.from, dateRange.to) && 
+        isYesterday(dateRange.from));
       
       let fromDate: Date
       let toDate: Date
@@ -2142,9 +2163,9 @@ Try creating at least one active campaign in Meta Ads Manager.
         params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Calculate previous period date range
+      // Calculate previous period date range using our helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-      
+
       // Fetch data for current period
       const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
       
@@ -2194,7 +2215,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('metric', 'roas')
       
       // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+        (dateRange?.from && dateRange?.to && 
+        isSameDay(dateRange.from, dateRange.to) && 
+        isYesterday(dateRange.from));
       
       let fromDate: Date
       let toDate: Date
@@ -2220,7 +2244,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Calculate previous period date range
+      // Calculate previous period date range using our helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
@@ -2272,7 +2296,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('metric', 'impressions')
       
       // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+        (dateRange?.from && dateRange?.to && 
+        isSameDay(dateRange.from, dateRange.to) && 
+        isYesterday(dateRange.from));
       
       let fromDate: Date
       let toDate: Date
@@ -2298,7 +2325,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Calculate previous period date range
+      // Calculate previous period date range using our helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
@@ -2350,7 +2377,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('metric', 'clicks')
       
       // Handle presets - check if the preset property exists on dateRange
-      const isYesterdayPreset = (dateRange as any)?.preset === 'yesterday'
+      const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
+        (dateRange?.from && dateRange?.to && 
+        isSameDay(dateRange.from, dateRange.to) && 
+        isYesterday(dateRange.from));
       
       let fromDate: Date
       let toDate: Date
@@ -2376,7 +2406,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         params.append('to', toDate.toISOString().split('T')[0])
       }
       
-      // Calculate previous period date range
+      // Calculate previous period date range using our helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
