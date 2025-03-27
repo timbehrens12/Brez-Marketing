@@ -77,7 +77,8 @@ export default function MetaCampaignsTable({ brandId }: { brandId: string }) {
         
         const apiUrl = `/api/analytics/meta/campaigns?${queryString}`
         
-        console.log(`Fetching Meta campaigns data with: ${apiUrl}`)
+        // Simple logging without type issues
+        console.log(`Fetching Meta campaigns data with: ${apiUrl}`);
         
         const response = await fetch(apiUrl)
         

@@ -75,6 +75,30 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Similarly handle yesterday preset to ensure consistency
+    if (preset === 'yesterday') {
+      // First check if both dates are identical (as they should be)
+      if (fromDate && toDate && fromDate === toDate) {
+        console.log(`'yesterday' preset with matching dates detected. Using provided date: ${fromDate}`);
+        // Dates are consistent, no changes needed
+      } else if (fromDate && toDate) {
+        console.warn(`'yesterday' preset detected with mismatched dates. Ensuring both dates match.`);
+        console.warn(`Original dates: from=${fromDate}, to=${toDate}. Setting both to: ${fromDate}`);
+        
+        // Force both dates to be the same (using from date)
+        toDate = fromDate;
+      } else {
+        // If dates are missing, calculate yesterday
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+        
+        console.warn(`'yesterday' preset missing dates. Setting both to calculated yesterday: ${yesterdayStr}`);
+        fromDate = yesterdayStr;
+        toDate = yesterdayStr;
+      }
+    }
+    
     // Check for potential date format issues upfront
     if (fromDate && !isValid(new Date(fromDate))) {
       console.error(`Invalid from date format received: ${fromDate}`)
@@ -154,26 +178,33 @@ export async function GET(request: NextRequest) {
       
       try {
         // Use exactly yesterday's date for both from and to
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        
-        // Ensure the date is valid
-        if (isValid(yesterday)) {
-          formattedFromDate = format(yesterday, 'yyyy-MM-dd')
-          formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
-          
-          console.log(`Using strict yesterday-only query: from=${formattedFromDate}, to=${formattedToDate}`)
+        // We may have already normalized this above, so check
+        if (fromDate && toDate && fromDate === toDate && isValid(new Date(fromDate))) {
+          console.log(`Using preset-provided yesterday date: ${fromDate}`);
+          formattedFromDate = fromDate;
+          formattedToDate = formattedFromDate;
         } else {
-          console.error('Invalid date generated for yesterday preset')
-          // Fallback to a reasonable default (yesterday from today)
-          formattedFromDate = format(new Date(currentDate.setDate(currentDate.getDate() - 1)), 'yyyy-MM-dd')
-          formattedToDate = formattedFromDate
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          
+          // Ensure the date is valid
+          if (isValid(yesterday)) {
+            formattedFromDate = format(yesterday, 'yyyy-MM-dd')
+            formattedToDate = formattedFromDate  // Same day - critical for single day accuracy
+            
+            console.log(`Using strict yesterday-only query: from=${formattedFromDate}, to=${formattedToDate}`)
+          } else {
+            console.error('Invalid date generated for yesterday preset')
+            // Fallback to a reasonable default (yesterday from today)
+            formattedFromDate = format(new Date(currentDate.setDate(currentDate.getDate() - 1)), 'yyyy-MM-dd')
+            formattedToDate = formattedFromDate
+          }
         }
       } catch (e) {
         console.error('Error handling yesterday preset:', e)
         // Provide a safe fallback
-        formattedFromDate = currentDateStr
-        formattedToDate = currentDateStr
+        formattedFromDate = format(new Date(currentDate.setDate(currentDate.getDate() - 1)), 'yyyy-MM-dd')
+        formattedToDate = formattedFromDate
       }
     }
     // Special handling for today preset

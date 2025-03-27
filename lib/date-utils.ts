@@ -115,6 +115,29 @@ export function buildDateRangeQueryString(
     return queryParams.toString();
   }
   
+  // Special handling for yesterday preset to ensure backend consistency
+  if (params.preset === 'yesterday') {
+    // Use the exact date from params since this should be the normalized date 
+    // that was already calculated in the DateRangePicker
+    if (params.from && typeof params.from === 'string') {
+      const yesterdayDate = params.from;
+      queryParams.set('from', yesterdayDate);
+      queryParams.set('to', yesterdayDate); // Use exact same string for to
+      queryParams.set('preset', 'yesterday');
+      
+      console.log(`Setting yesterday preset with exact date parameters: from=${yesterdayDate}, to=${yesterdayDate}`);
+      
+      // Add any additional parameters
+      Object.entries(params).forEach(([key, value]) => {
+        if (key !== 'brandId' && key !== 'from' && key !== 'to' && key !== 'preset' && value !== undefined) {
+          queryParams.set(key, String(value));
+        }
+      });
+      
+      return queryParams.toString();
+    }
+  }
+  
   // Normalize and add date range parameters
   if (params.from || params.to) {
     const { from, to } = normalizeDateRangeForApi(params.from, params.to);
