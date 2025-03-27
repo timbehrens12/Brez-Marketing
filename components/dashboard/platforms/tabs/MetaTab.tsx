@@ -192,13 +192,39 @@ export function MetaTab({
   const [isSyncing, setIsSyncing] = useState(false)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
-  const [metricsData, setMetricsData] = useState<MetricsDataType>(createDefaultMetricsData)
+  const [metricsData, setMetricsData] = useState<MetricsDataType>(() => {
+    // Initialize with zeros to prevent flashing all-time data
+    return {
+      adSpend: 0,
+      adSpendGrowth: 0,
+      impressions: 0,
+      impressionGrowth: 0,
+      clicks: 0,
+      clickGrowth: 0,
+      conversions: 0,
+      conversionGrowth: 0,
+      ctr: 0,
+      ctrGrowth: 0,
+      cpc: 0,
+      costPerResult: 0,
+      cprGrowth: 0,
+      roas: 0,
+      roasGrowth: 0,
+      frequency: 0,
+      budget: 0,
+      reach: 0,
+      dailyData: []
+    };
+  });
 
-  // Add a new state to track date change loading
-  const [isDateChangeLoading, setIsDateChangeLoading] = useState(false);
+  // Loading states
+  const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
 
-  // Add a flag to prevent concurrent fetches
-  const isFetching = useRef(false);
+  // Refs to track component mount state
+  const isMounted = useRef<boolean>(true);
+  const isFetching = useRef<boolean>(false);
+  const initialLoadComplete = useRef<boolean>(false);
+  const dateRangeRef = useRef(dateRange);
 
   // Add this state near the other state declarations
   const [showDebugControls, setShowDebugControls] = useState(false);
@@ -419,47 +445,87 @@ export function MetaTab({
       let fromDate = dateRange?.from;
       let toDate = dateRange?.to;
       
-      // Detect the special yesterday preset
+      // Check if we have a valid date range before proceeding
+      if (!fromDate && !toDate) {
+        console.log("No date range provided, aborting fetch");
+        setError("Invalid date range");
+        setLoading(false);
+        setIsDateChangeLoading(false);
+        return;
+      }
+      
+      // Detect special presets
       const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday';
       const isToday = (dateRange as any)?._preset === 'today';
+      const isCustomRange = !isYesterdayPreset && !isToday;
 
       const params = new URLSearchParams({
         brandId: brandId as string,
-        strict_date_range: 'true', // Always enforce strict date handling
-        bypass_cache: 'true',      // Always bypass cache for fresh data
-        date_debug: 'true'         // Enable date debugging
+        strict_date_range: 'true',  // Always enforce strict date handling
+        bypass_cache: 'true',       // Always bypass cache for fresh data
+        date_debug: 'true',         // Enable date debugging
+        refresh: 'true'             // Force refresh every time to prevent stale data
       });
       
-      if (fromDate) {
+      // Handle special presets with explicit date determination
+      if (isYesterdayPreset) {
         // For yesterday preset, use exact date match
-        if (isYesterdayPreset) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          yesterday.setHours(0, 0, 0, 0);
-          params.append('from', yesterday.toISOString().split('T')[0]);
-          params.append('to', yesterday.toISOString().split('T')[0]); // Same date for both
-          params.append('preset', 'yesterday');
-        } 
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        params.append('from', yesterdayStr);
+        params.append('to', yesterdayStr); // Same date for both
+        params.append('preset', 'yesterday');
+        console.log(`Using yesterday preset with exact date: ${yesterdayStr}`);
+      } 
+      else if (isToday) {
         // For today preset, use today's date only
-        else if (isToday) {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          params.append('from', today.toISOString().split('T')[0]);
-          params.append('to', today.toISOString().split('T')[0]); // Same date for both
-          params.append('preset', 'today');
-        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        params.append('from', todayStr);
+        params.append('to', todayStr); // Same date for both
+        params.append('preset', 'today');
+        console.log(`Using today preset with exact date: ${todayStr}`);
+      }
+      else if (fromDate) {
         // For normal date ranges
-        else {
-          const formattedFromDate = new Date(fromDate);
-          formattedFromDate.setHours(0, 0, 0, 0);
-          params.append('from', formattedFromDate.toISOString().split('T')[0]);
-          
-          if (toDate) {
-            const formattedToDate = new Date(toDate);
-            formattedToDate.setHours(23, 59, 59, 999);
-            params.append('to', formattedToDate.toISOString().split('T')[0]);
-          }
+        const formattedFromDate = new Date(fromDate);
+        formattedFromDate.setHours(0, 0, 0, 0);
+        params.append('from', formattedFromDate.toISOString().split('T')[0]);
+        
+        if (toDate) {
+          const formattedToDate = new Date(toDate);
+          formattedToDate.setHours(23, 59, 59, 999);
+          params.append('to', formattedToDate.toISOString().split('T')[0]);
         }
+      }
+      
+      // Prevent flash of old data by clearing metrics before API call for specific presets
+      if (isYesterdayPreset || isToday) {
+        // Reset metrics to prevent flash of old data when switching between presets
+        setMetricsData({
+          adSpend: 0,
+          adSpendGrowth: 0,
+          impressions: 0,
+          impressionGrowth: 0,
+          clicks: 0,
+          clickGrowth: 0,
+          conversions: 0,
+          conversionGrowth: 0,
+          ctr: 0,
+          ctrGrowth: 0,
+          cpc: 0,
+          costPerResult: 0,
+          cprGrowth: 0,
+          roas: 0,
+          roasGrowth: 0,
+          frequency: 0,
+          budget: 0,
+          reach: 0,
+          dailyData: []
+        });
       }
       
       console.log(`Fetching Meta data with params:`, Object.fromEntries(params.entries()));
@@ -483,13 +549,70 @@ export function MetaTab({
         }
       }, 30000);
       
-      const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-        signal,
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache'
+      // Retry logic to ensure data loads correctly
+      let retryCount = 0;
+      const maxRetries = 2;
+      let response = null;
+      let responseData = null;
+      
+      while (retryCount <= maxRetries && isMounted) {
+        try {
+          // Add retry identifier to params
+          if (retryCount > 0) {
+            params.set('retry', retryCount.toString());
+            console.log(`Retry attempt ${retryCount} for Meta data`);
+          }
+          
+          response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
+            signal,
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Failed to fetch Meta data: ${response.status}`);
+          }
+          
+          responseData = await response.json();
+          
+          // Check if we have valid data or if we should retry
+          const hasAnyData = responseData && (
+            responseData.adSpend > 0 || 
+            responseData.impressions > 0 || 
+            responseData.clicks > 0 ||
+            (Array.isArray(responseData.dailyData) && responseData.dailyData.length > 0)
+          );
+          
+          // For today preset, we may have zeros, which is legitimate - don't retry
+          if (hasAnyData || isToday) {
+            break; // We have valid data, exit retry loop
+          }
+          
+          // For yesterday and custom ranges, if we got zeros, retry
+          if ((isYesterdayPreset || isCustomRange) && !hasAnyData && retryCount < maxRetries) {
+            console.log(`No data received for ${isYesterdayPreset ? 'yesterday' : 'custom range'}, retrying...`);
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+            continue;
+          }
+          
+          // If we've exhausted retries or got legitimate zeros, break
+          break;
+          
+        } catch (error) {
+          console.error(`Error in fetch attempt ${retryCount}:`, error);
+          if (retryCount < maxRetries) {
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          } else {
+            throw error; // Re-throw after max retries
+          }
         }
-      });
+      }
       
       clearTimeout(timeoutId);
       
@@ -497,17 +620,14 @@ export function MetaTab({
         return cleanup;
       }
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch Meta data: ${response.status}`);
+      if (!responseData) {
+        throw new Error("Failed to fetch Meta data after retries");
       }
       
-      const data = await response.json();
-      
       // Validate date range in response
-      if (data._dateRange) {
-        const responseFrom = new Date(data._dateRange.from);
-        const responseTo = new Date(data._dateRange.to);
+      if (responseData._dateRange) {
+        const responseFrom = new Date(responseData._dateRange.from);
+        const responseTo = new Date(responseData._dateRange.to);
         const requestedFrom = new Date(params.get('from') || '');
         const requestedTo = new Date(params.get('to') || '');
         
@@ -527,41 +647,61 @@ export function MetaTab({
         }
       }
       
-      // Skip update if we got all zeros and no daily data (unless first load)
-      const hasRealData = data.adSpend > 0 || data.impressions > 0 || data.clicks > 0 || 
-                         (Array.isArray(data.dailyData) && data.dailyData.length > 0);
+      // Skip update if we got all zeros and no daily data (unless first load or Today preset)
+      const hasRealData = responseData.adSpend > 0 || 
+                         responseData.impressions > 0 || 
+                         responseData.clicks > 0 || 
+                         (Array.isArray(responseData.dailyData) && responseData.dailyData.length > 0);
                            
-      if (!hasRealData && metricsData.adSpend > 0) {
-        toast.warning("No Meta data available", {
-          description: "No data found for the selected date range.",
-          duration: 4000
-        });
+      if (!hasRealData && metricsData.adSpend > 0 && !isToday) {
+        // For today and yesterday, zero data might be legitimate
+        if (!isYesterdayPreset && !isToday) {
+          toast.warning("No Meta data available", {
+            description: "No data found for the selected date range.",
+            duration: 4000
+          });
+        } else {
+          // For yesterday and today, show more specific message
+          toast.info(`No ${isYesterdayPreset ? 'yesterday' : 'today'}'s data`, {
+            description: `No Meta ad data found for ${isYesterdayPreset ? 'yesterday' : 'today'}.`,
+            duration: 4000
+          });
+        }
         setLoading(false);
         setIsDateChangeLoading(false);
         return cleanup;
       }
 
+      // Log the data we received for debugging
+      console.log(`Received Meta data:`, {
+        adSpend: responseData.adSpend,
+        impressions: responseData.impressions,
+        clicks: responseData.clicks,
+        dailyDataLength: responseData.dailyData?.length || 0,
+        preset: isYesterdayPreset ? 'yesterday' : isToday ? 'today' : 'custom'
+      });
+
       // Update metrics with validated data
       setMetricsData({
-        adSpend: data.adSpend ?? 0,
-        adSpendGrowth: data.adSpendGrowth ?? 0,
-        impressions: data.impressions ?? 0,
-        impressionGrowth: data.impressionGrowth ?? 0,
-        clicks: data.clicks ?? 0,
-        clickGrowth: data.clickGrowth ?? 0,
-        conversions: data.conversions ?? 0,
-        conversionGrowth: data.conversionGrowth ?? 0,
-        ctr: data.ctr ?? 0,
-        ctrGrowth: data.ctrGrowth ?? 0,
-        cpc: data.cpc ?? 0,
-        costPerResult: data.costPerResult ?? 0,
-        cprGrowth: data.cprGrowth ?? 0,
-        roas: data.roas ?? 0,
-        roasGrowth: data.roasGrowth ?? 0,
-        frequency: data.frequency ?? 0,
-        budget: data.budget ?? 0,
-        reach: data.reach ?? 0,
-        dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
+        adSpend: responseData.adSpend ?? 0,
+        adSpendGrowth: responseData.adSpendGrowth ?? 0,
+        impressions: responseData.impressions ?? 0,
+        impressionGrowth: responseData.impressionGrowth ?? 0,
+        clicks: responseData.clicks ?? 0,
+        clickGrowth: responseData.clickGrowth ?? 0,
+        conversions: responseData.conversions ?? 0,
+        conversionGrowth: responseData.conversionGrowth ?? 0,
+        ctr: responseData.ctr ?? 0,
+        ctrGrowth: responseData.ctrGrowth ?? 0,
+        cpc: responseData.cpc ?? 0,
+        costPerResult: responseData.costPerResult ?? 0,
+        cprGrowth: responseData.cprGrowth ?? 0,
+        roas: responseData.roas ?? 0,
+        roasGrowth: responseData.roasGrowth ?? 0,
+        frequency: responseData.frequency ?? 0,
+        budget: responseData.budget ?? 0,
+        reach: responseData.reach ?? 0,
+        dailyData: Array.isArray(responseData.dailyData) ? responseData.dailyData : []
       });
       
       setLoading(false);
@@ -1240,113 +1380,118 @@ Try creating at least one active campaign in Meta Ads Manager.
     return ((secondTotal - firstTotal) / firstTotal) * 100;
   }, []);
 
-  // Add a special effect just for initial component mount
+  // Initial data load on component mount
   useEffect(() => {
-    // Only run once on component mount
+    if (!brandId) return;
+    
+    // Flag to track if component is unmounted during fetch
+    let isComponentMounted = true;
+    
     const loadInitialData = async () => {
-      // Don't attempt to load if no brand ID
-      if (!brandId) return;
+      if (!dateRange || !dateRange.from) {
+        console.log("No date range for initial Meta data load, skipping");
+        setLoading(false);
+        return;
+      }
       
-      console.log("Running initial Meta data load on component mount");
-      setLoading(true);
+      // Prevent double fetching during initial load
+      if (isFetching.current) {
+        console.log("Already fetching Meta data, skipping duplicate fetch");
+        return;
+      }
+      
+      console.log("Initial Meta data load starting");
+      isFetching.current = true;
       
       try {
-        // Create a date range for the last 30 days to ensure we get real data
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 30);
+        // Clear any existing data first to prevent flashing
+        setMetricsData({
+          adSpend: 0,
+          adSpendGrowth: 0,
+          impressions: 0,
+          impressionGrowth: 0,
+          clicks: 0,
+          clickGrowth: 0,
+          conversions: 0,
+          conversionGrowth: 0,
+          ctr: 0,
+          ctrGrowth: 0,
+          cpc: 0,
+          costPerResult: 0,
+          cprGrowth: 0,
+          roas: 0,
+          roasGrowth: 0,
+          frequency: 0,
+          budget: 0,
+          reach: 0,
+          dailyData: []
+        });
         
-        const currentDateRange = {
-          from: startDate,
-          to: endDate
-        };
+        // Fetch data with a retry mechanism
+        await fetchMetaData();
         
-        // Temporary remove block flags to ensure this initial load works
-        const originalBlockFlag = window._blockMetaApiCalls;
-        const originalDisableFlag = window._disableAutoMetaFetch;
-        
-        window._blockMetaApiCalls = false;
-        window._disableAutoMetaFetch = false;
-        
-        try {
-          // Create a custom fetch function that uses the current date range
-          const params = new URLSearchParams({
-            brandId: brandId as string
-          });
-          
-          // Use the current date range instead of the global one
-          params.append('from', currentDateRange.from.toISOString().split('T')[0]);
-          params.append('to', currentDateRange.to.toISOString().split('T')[0]);
-          params.append('initial_load', 'true');
-          
-          console.log(`Initial Meta data load with params: ${params.toString()}`);
-          
-          const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-            cache: 'no-store'
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch Meta data: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          console.log("Initial Meta data load received:", JSON.stringify({
-            adSpend: data.adSpend,
-            impressions: data.impressions,
-            clicks: data.clicks,
-            roas: data.roas,
-            dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
-          }));
-          
-          // Only update if we got meaningful data
-          if (data && (data.adSpend > 0 || data.impressions > 0 || data.clicks > 0)) {
-            // Update metrics state with the data we received
-            setMetricsData({
-              adSpend: data.adSpend ?? 0,
-              adSpendGrowth: data.adSpendGrowth ?? 0,
-              impressions: data.impressions ?? 0,
-              impressionGrowth: data.impressionGrowth ?? 0,
-              clicks: data.clicks ?? 0,
-              clickGrowth: data.clickGrowth ?? 0,
-              conversions: data.conversions ?? 0,
-              conversionGrowth: data.conversionGrowth ?? 0,
-              ctr: data.ctr ?? 0,
-              ctrGrowth: data.ctrGrowth ?? 0,
-              cpc: data.cpc ?? 0,
-              costPerResult: data.costPerResult ?? 0,
-              cprGrowth: data.cprGrowth ?? 0,
-              roas: data.roas ?? 0,
-              roasGrowth: data.roasGrowth ?? 0,
-              frequency: data.frequency ?? 0,
-              budget: data.budget ?? 0,
-              reach: data.reach ?? 0,
-              dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
-            });
-          }
-        } finally {
-          // Always restore the original flags
-          window._blockMetaApiCalls = originalBlockFlag;
-          window._disableAutoMetaFetch = originalDisableFlag;
+        // Only set initialLoadComplete if component is still mounted
+        if (isComponentMounted) {
+          initialLoadComplete.current = true;
         }
-        
-        // Also load campaigns data if needed
-        if (campaigns.length === 0) {
-          setIsLoadingCampaigns(true);
-          await fetchCampaigns();
+      } catch (error) {
+        console.error("Error during initial Meta data load:", error);
+        if (isComponentMounted) {
+          setError(error instanceof Error ? error.message : "Failed to load Meta data");
         }
-      } catch (err) {
-        console.error("Error in initial Meta data load:", err);
       } finally {
-        setLoading(false);
-        setIsDateChangeLoading(false);
+        if (isComponentMounted) {
+          setLoading(false);
+          isFetching.current = false;
+        }
       }
     };
     
-    // Run the initial data load
+    // Load data on mount
     loadInitialData();
     
-  }, []); // Empty dependency array to run only once on mount
+    // Update dateRangeRef for future change detection
+    dateRangeRef.current = dateRange;
+    
+    // Cleanup function
+    return () => {
+      isComponentMounted = false;
+      window._blockMetaApiCalls = true; // Block API calls during unmount
+    };
+  }, [brandId]);
+  
+  // Effect to handle date range changes
+  useEffect(() => {
+    if (!dateRange || !brandId) return;
+    
+    // Skip if component is unmounting
+    if (!isMounted.current) return;
+    
+    // Skip if we're still doing initial load
+    if (loading && !initialLoadComplete.current) return;
+    
+    // Skip if the date range hasn't actually changed
+    if (!dateRangeChanged(dateRangeRef.current, dateRange)) {
+      console.log("Date range unchanged, skipping redundant fetch");
+      return;
+    }
+    
+    console.log(`Date range changed to ${dateRange.from?.toDateString()} - ${dateRange.to?.toDateString()}, fetching new data`);
+    
+    // Update ref for next change detection
+    dateRangeRef.current = dateRange;
+    
+    // Fetch data for new date range with a small delay to prevent UI jank
+    const timeoutId = setTimeout(() => {
+      if (isMounted.current) {
+        fetchMetaData();
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [dateRange, brandId]);
 
   // Add an effect to handle data refresh that maintains date ranges
 
@@ -1510,6 +1655,31 @@ Try creating at least one active campaign in Meta Ads Manager.
       };
     }
   }, [dateRange, brandId]);
+
+  // Prevent unnecessary refetches by tracking if dates have changed
+  const dateRangeChanged = (oldRange: any, newRange: any) => {
+    if (!oldRange || !newRange) return true;
+    
+    const oldFrom = oldRange.from?.toISOString();
+    const oldTo = oldRange.to?.toISOString();
+    const newFrom = newRange.from?.toISOString();
+    const newTo = newRange.to?.toISOString();
+    
+    return oldFrom !== newFrom || oldTo !== newTo;
+  };
+
+  // Effect to track component mount state
+  useEffect(() => {
+    isMounted.current = true;
+    window._blockMetaApiCalls = false;
+    window._disableAutoMetaFetch = false;
+    
+    return () => {
+      isMounted.current = false;
+      window._blockMetaApiCalls = true;
+      console.log("Meta tab unmounting, blocking API calls");
+    };
+  }, []);
 
   return (
     <TooltipProvider>
