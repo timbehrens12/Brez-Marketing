@@ -1,14 +1,14 @@
--- Add frequency column to meta_ad_insights table if it doesn't exist
+-- Add reach column to meta_ad_insights table if it doesn't exist
 ALTER TABLE public.meta_ad_insights 
-ADD COLUMN IF NOT EXISTS frequency NUMERIC DEFAULT 0,
-ADD COLUMN IF NOT EXISTS reach INTEGER DEFAULT 0; -- We need reach to calculate frequency
+ADD COLUMN IF NOT EXISTS reach INTEGER DEFAULT 0;
 
--- Update the function to calculate frequency
+-- Update the function to handle the reach field
 CREATE OR REPLACE FUNCTION update_meta_calculated_metrics()
 RETURNS TRIGGER AS $$
 DECLARE
   purchase_value NUMERIC := 0;
   result_count INT := 0;
+  reach_value INT := 0;
 BEGIN
   -- Extract purchase conversion value from action_values JSON
   SELECT COALESCE(SUM(CAST(x.value AS NUMERIC)), 0) INTO purchase_value
@@ -49,26 +49,6 @@ BEGIN
     NEW.click_through_rate := 0;
   END IF;
   
-  -- Extract reach from action array if it exists
-  NEW.reach := 0; -- Default value
-  
-  -- Look for reach in the action array
-  IF NEW.actions IS NOT NULL AND jsonb_array_length(NEW.actions) > 0 THEN
-    -- Try to find reach metric in actions
-    SELECT COALESCE(CAST(x.value AS INTEGER), 0) INTO NEW.reach
-    FROM jsonb_array_elements(NEW.actions) AS action, 
-         jsonb_to_record(action) AS x(action_type text, value text)
-    WHERE x.action_type = 'reach'
-    LIMIT 1;
-  END IF;
-  
-  -- Calculate frequency if we have reach and impressions
-  IF NEW.reach > 0 AND NEW.impressions > 0 THEN
-    NEW.frequency := NEW.impressions::NUMERIC / NEW.reach::NUMERIC;
-  ELSE
-    NEW.frequency := 0;
-  END IF;
-  
   -- Update the timestamp
   NEW.updated_at := CURRENT_TIMESTAMP;
   
@@ -76,14 +56,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Update all existing records to calculate frequency
-UPDATE public.meta_ad_insights SET 
-  impressions = impressions
-WHERE id > 0;
+-- Recreate the trigger
+DROP TRIGGER IF EXISTS calculate_meta_metrics ON public.meta_ad_insights;
+
+CREATE TRIGGER calculate_meta_metrics
+BEFORE INSERT OR UPDATE OF impressions, clicks, spend, actions, action_values
+ON public.meta_ad_insights
+FOR EACH ROW
+EXECUTE FUNCTION update_meta_calculated_metrics();
 
 -- Notify of completion
 DO $$
 BEGIN
-  RAISE NOTICE 'Frequency column added and populated.';
+  RAISE NOTICE 'Meta reach column added.';
 END
 $$; 

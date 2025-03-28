@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, Repeat } from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
@@ -102,6 +102,14 @@ declare global {
     _blockMetaApiCalls?: boolean;
     _disableAutoMetaFetch?: boolean;
   }
+}
+
+// Properly define the type for all metric state objects
+type MetricDataState = {
+  value: number;
+  previousValue: number;
+  isLoading: boolean;
+  lastUpdated: Date | null;
 }
 
 export function MetaTab({ 
@@ -2069,12 +2077,12 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
-  // Add frequency state after the CTR state
-  const [frequencyData, setFrequencyData] = useState({
+  // Add state for reach data
+  const [reachData, setReachData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null
   })
   
   // Improved helper function to calculate the previous period date range
@@ -2934,20 +2942,20 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // Add function to fetch Frequency data
-  const fetchFrequencyDirectly = async () => {
+  // Fetch reach data directly from the database
+  const fetchReachDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch Frequency: Missing date range or brand ID")
+      console.log("Cannot fetch reach: Missing date range or brand ID")
       return
     }
     
-    setFrequencyData(prev => ({ ...prev, isLoading: true }))
+    setReachData(prev => ({ ...prev, isLoading: true }))
     
     try {
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'frequency')
+      params.append('metric', 'reach')
       
       // Set date parameters
       const fromDate = dateRange.from
@@ -2957,41 +2965,41 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Frequency for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching Reach for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
-      // Calculate previous period date range using our helper function
+      // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/frequency?${params.toString()}`)
+      const response = await fetch(`/api/metrics/meta/single/reach?${params.toString()}`)
       
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'frequency')
+      prevParams.append('metric', 'reach')
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/frequency?${prevParams.toString()}`)
+      const prevResponse = await fetch(`/api/metrics/meta/single/reach?${prevParams.toString()}`)
       
       // Process responses
       const data = await response.json()
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setFrequencyData({
+        setReachData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Frequency data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Reach data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Frequency data:", data.error || prevData.error)
-        setFrequencyData(prev => ({ ...prev, isLoading: false }))
+        console.error("Error fetching Reach data:", data.error || prevData.error)
+        setReachData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Frequency fetch:", error)
-      setFrequencyData(prev => ({ ...prev, isLoading: false }))
+      console.error("Error in Reach fetch:", error)
+      setReachData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3007,7 +3015,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerResultDirectly(),
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
-      fetchFrequencyDirectly()
+      fetchReachDirectly()
     ])
   }
 
@@ -3054,7 +3062,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCostPerResultData(prev => ({ ...prev, isLoading: true }))
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
-    setFrequencyData(prev => ({ ...prev, isLoading: true }))
+    setReachData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -3071,7 +3079,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerResultDirectly(),
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
-        fetchFrequencyDirectly()
+        fetchReachDirectly()
       ])
       
       // Show success toast
@@ -3315,6 +3323,25 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-purple-400" />
+                <span className="ml-0.5">Reach</span>
+              </div>
+            }
+            value={reachData.value}
+            data={[]}
+            loading={reachData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="number"
+            hideGraph={true}
+            previousValue={reachData.previousValue}
+            previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
                 <MousePointer className="h-4 w-4 text-indigo-400" />
                 <span className="ml-0.5">Clicks</span>
               </div>
@@ -3422,27 +3449,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideGraph={true}
             previousValue={ctrData.previousValue}
             previousValueFormat="percentage"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Repeat className="h-4 w-4 text-purple-400" />
-                <span className="ml-0.5">Frequency</span>
-              </div>
-            }
-            value={frequencyData.value}
-            data={[]}
-            loading={frequencyData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            suffix="x"
-            hideGraph={true}
-            previousValue={frequencyData.previousValue}
-            previousValueFormat="number"
-            previousValueSuffix="x"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
