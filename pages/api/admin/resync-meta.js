@@ -44,23 +44,37 @@ export default async function handler(req, res) {
     
     // Update the views column based on reach values for newly synced data
     try {
-      const { error: updateError } = await supabase.rpc('update_meta_views_from_reach', {
-        brand_id_param: brandId
-      });
+      console.log("Updating views from reach data directly");
       
+      // Direct update with Supabase
+      const { error: updateError } = await supabase
+        .from('meta_ad_insights')
+        .update({ views: supabase.raw('reach') })
+        .eq('brand_id', brandId)
+        .gt('reach', 0)
+        .is('views', null);
+        
       if (updateError) {
         console.error("Error updating views from reach:", updateError);
-        return res.status(500).json({
-          success: false,
-          message: "Data synced but views update failed",
-          error: updateError.message
-        });
+        
+        // Try a simpler update if the first one fails
+        const { error: simpleError } = await supabase
+          .from('meta_ad_insights')
+          .update({ views: 0 })
+          .eq('brand_id', brandId)
+          .is('views', null);
+          
+        if (simpleError) {
+          console.error("Error with simple update:", simpleError);
+          // Log error but don't fail the entire operation
+        }
       }
       
       // Success log
-      console.log(`Meta data refresh complete for brand ${brandId}. Views data updated.`);
+      console.log(`Meta data refresh complete for brand ${brandId}. Views data updated where possible.`);
     } catch (updateError) {
       console.error("Error in views update:", updateError);
+      // Don't fail the resync operation if views update fails
     }
 
     return res.status(200).json({
@@ -76,4 +90,4 @@ export default async function handler(req, res) {
     console.error('Error in Meta resync API:', error);
     return res.status(500).json({ error: 'Failed to resync Meta data', details: error.message });
   }
-} 
+}

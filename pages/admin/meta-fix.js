@@ -107,6 +107,11 @@ export default function MetaFixPage() {
           <p className="font-semibold">Database Changes:</p>
           <p>A new <code>views</code> column has been added to the <code>meta_ad_insights</code> table. This column is populated from the <code>reach</code> data when syncing with Meta. This ensures views data is stored directly in the database for optimal performance.</p>
         </div>
+
+        <div className="mt-4 bg-red-100 dark:bg-red-900 p-3 rounded">
+          <p className="font-semibold">Meta API Update:</p>
+          <p>Facebook's Meta API no longer supports the <code>page_views</code> field in ad insights. This is why you're seeing the error: "<code>page_views is not valid for fields param</code>". We've updated our code to use <code>reach</code> data instead to power the Views widget.</p>
+        </div>
       </div>
 
       <div className="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg mb-6">
