@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     // Query meta_ad_insights for clicks and impressions
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, clicks, impressions')
+      .select('date, clicks, impressions, click_through_rate')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -76,38 +76,50 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total impressions and total clicks
-    let totalImpressions = 0
-    let totalClicks = 0
+    // Calculate average click through rate from stored values
+    let totalCTR = 0
+    let validRecords = 0
     
     insights.forEach(insight => {
-      // Add up the impressions
-      totalImpressions += parseInt(insight.impressions) || 0
-      
-      // Add up the clicks
-      totalClicks += parseInt(insight.clicks) || 0
+      if (insight.click_through_rate != null && insight.click_through_rate > 0) {
+        totalCTR += parseFloat(insight.click_through_rate.toString())
+        validRecords++
+      }
     })
     
-    // Calculate CTR (Click-Through Rate)
-    let ctr = 0
-    if (totalImpressions > 0) {
-      ctr = totalClicks / totalImpressions
+    // Average CTR across all records
+    let avgCTR = 0
+    if (validRecords > 0) {
+      avgCTR = totalCTR / validRecords
+    } else {
+      // Fallback calculation if no stored CTR values found
+      // This handles the case where data exists but was imported before we added the trigger
+      let totalImpressions = 0
+      let totalClicks = 0
+      
+      insights.forEach(insight => {
+        totalImpressions += parseInt(insight.impressions) || 0
+        totalClicks += parseInt(insight.clicks) || 0
+      })
+      
+      if (totalImpressions > 0) {
+        avgCTR = (totalClicks / totalImpressions) * 100
+      }
     }
     
     // Return the result
     const result = {
-      value: parseFloat((ctr * 100).toFixed(2)), // Convert to percentage and round to 2 decimal places
+      value: parseFloat(avgCTR.toFixed(2)),
       _meta: {
         from,
         to,
         records: insights.length,
-        totalImpressions,
-        totalClicks,
+        source: validRecords > 0 ? 'database' : 'calculated',
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`CTR API: Returning CTR = ${result.value}%, based on ${insights.length} records (impressions: ${totalImpressions}, clicks: ${totalClicks})`)
+    console.log(`CTR API: Returning CTR = ${result.value}%, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {

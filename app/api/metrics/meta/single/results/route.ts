@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights including the actions array
+    // Query meta_ad_insights including the results column and actions array for fallback
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, actions')
+      .select('date, results, actions')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -76,29 +76,35 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate "results" from the actions array
-    // In Meta, "results" typically refers to the primary objective of the campaign
-    // Common action_types for results include: 'purchase', 'lead', 'offsite_conversion', etc.
-    
+    // Try to use the stored results first
+    let hasStoredResults = insights.some(insight => insight.results > 0)
     let totalResults = 0
     
-    insights.forEach(insight => {
-      if (insight.actions && Array.isArray(insight.actions)) {
-        insight.actions.forEach((action: any) => {
-          if (
-            action.action_type === 'purchase' || 
-            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            action.action_type === 'omni_purchase' ||
-            action.action_type === 'lead' ||
-            action.action_type === 'offsite_conversion.fb_pixel_lead' ||
-            action.action_type === 'complete_registration'
-          ) {
-            const value = parseFloat(action.value) || 0
-            totalResults += value
-          }
-        })
-      }
-    })
+    if (hasStoredResults) {
+      // Sum up the stored results values
+      totalResults = insights.reduce((sum, insight) => sum + (insight.results || 0), 0)
+    } else {
+      // Fallback: Calculate "results" from the actions array
+      // In Meta, "results" typically refers to the primary objective of the campaign
+      // Common action_types for results include: 'purchase', 'lead', 'offsite_conversion', etc.
+      insights.forEach(insight => {
+        if (insight.actions && Array.isArray(insight.actions)) {
+          insight.actions.forEach((action: any) => {
+            if (
+              action.action_type === 'purchase' || 
+              action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+              action.action_type === 'omni_purchase' ||
+              action.action_type === 'lead' ||
+              action.action_type === 'offsite_conversion.fb_pixel_lead' ||
+              action.action_type === 'complete_registration'
+            ) {
+              const value = parseFloat(action.value) || 0
+              totalResults += value
+            }
+          })
+        }
+      })
+    }
     
     // Return the result
     const result = {
@@ -107,11 +113,12 @@ export async function GET(request: NextRequest) {
         from,
         to,
         records: insights.length,
+        source: hasStoredResults ? 'database' : 'calculated',
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`META RESULTS API: Returning results = ${result.value}, based on ${insights.length} records`)
+    console.log(`META RESULTS API: Returning results = ${result.value}, based on ${insights.length} records (source: ${hasStoredResults ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {

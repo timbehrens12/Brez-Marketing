@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     // Query meta_ad_insights for clicks and spend
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, clicks, spend')
+      .select('date, clicks, spend, cost_per_click')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -76,38 +76,50 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total spend and total clicks
-    let totalSpend = 0
-    let totalClicks = 0
+    // Get average CPC from stored values
+    let totalCPC = 0
+    let validRecords = 0
     
     insights.forEach(insight => {
-      // Add up the spend
-      totalSpend += parseFloat(insight.spend) || 0
-      
-      // Add up the clicks
-      totalClicks += parseInt(insight.clicks) || 0
+      if (insight.cost_per_click != null && insight.cost_per_click > 0) {
+        totalCPC += parseFloat(insight.cost_per_click.toString())
+        validRecords++
+      }
     })
     
-    // Calculate cost per click
-    let costPerClick = 0
-    if (totalClicks > 0) {
-      costPerClick = totalSpend / totalClicks
+    // Calculate average CPC
+    let avgCPC = 0
+    if (validRecords > 0) {
+      avgCPC = totalCPC / validRecords
+    } else {
+      // Fallback calculation if no stored CPC values found
+      // This handles the case where data exists but was imported before we added the trigger
+      let totalSpend = 0
+      let totalClicks = 0
+      
+      insights.forEach(insight => {
+        totalSpend += parseFloat(insight.spend) || 0
+        totalClicks += parseInt(insight.clicks) || 0
+      })
+      
+      if (totalClicks > 0) {
+        avgCPC = totalSpend / totalClicks
+      }
     }
     
     // Return the result
     const result = {
-      value: parseFloat(costPerClick.toFixed(2)),
+      value: parseFloat(avgCPC.toFixed(2)),
       _meta: {
         from,
         to,
         records: insights.length,
-        totalSpend,
-        totalClicks,
+        source: validRecords > 0 ? 'database' : 'calculated',
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`COST PER CLICK API: Returning CPC = ${result.value}, based on ${insights.length} records (spend: ${totalSpend}, clicks: ${totalClicks})`)
+    console.log(`COST PER CLICK API: Returning CPC = ${result.value}, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {

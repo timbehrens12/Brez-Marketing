@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights for purchase_conversion_value data
+    // Query meta_ad_insights for purchase_conversion_value and action_values data as fallback
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, purchase_conversion_value')
+      .select('date, purchase_conversion_value, action_values')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -77,13 +77,45 @@ export async function GET(request: NextRequest) {
     }
     
     // Filter out records with null or undefined purchase_conversion_value
-    const validInsights = insights.filter(item => 
+    const validInsightsWithStoredValues = insights.filter(item => 
       item.purchase_conversion_value !== null && 
-      item.purchase_conversion_value !== undefined
+      item.purchase_conversion_value !== undefined &&
+      parseFloat(item.purchase_conversion_value) > 0
     )
     
-    // If no valid records, return zero
-    if (validInsights.length === 0) {
+    let totalValue = 0
+    let dataSource = 'database'
+    
+    // Check if we have valid stored purchase_conversion_value
+    if (validInsightsWithStoredValues.length > 0) {
+      // Calculate the sum of purchase_conversion_value
+      totalValue = validInsightsWithStoredValues.reduce((sum, item) => {
+        const value = typeof item.purchase_conversion_value === 'string' 
+          ? parseFloat(item.purchase_conversion_value) 
+          : item.purchase_conversion_value
+        return sum + (isNaN(value) ? 0 : value)
+      }, 0)
+    } else {
+      // Fallback: Calculate from action_values JSON
+      dataSource = 'calculated'
+      
+      insights.forEach(insight => {
+        if (insight.action_values && Array.isArray(insight.action_values)) {
+          insight.action_values.forEach((actionValue: any) => {
+            if (
+              actionValue.action_type === 'purchase' || 
+              actionValue.action_type === 'offsite_conversion.fb_pixel_purchase'
+            ) {
+              const value = parseFloat(actionValue.value) || 0
+              totalValue += value
+            }
+          })
+        }
+      })
+    }
+    
+    // If no valid records or total is 0, return zero
+    if (totalValue === 0) {
       return NextResponse.json({
         value: 0,
         _meta: {
@@ -95,16 +127,12 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate the sum of purchase_conversion_value
-    const totalValue = validInsights.reduce((sum, item) => {
-      const value = typeof item.purchase_conversion_value === 'string' 
-        ? parseFloat(item.purchase_conversion_value) 
-        : item.purchase_conversion_value
-      return sum + (isNaN(value) ? 0 : value)
-    }, 0)
+    // Calculate the average based on valid records count
+    const recordCount = validInsightsWithStoredValues.length > 0 
+      ? validInsightsWithStoredValues.length 
+      : insights.length
     
-    // Calculate the average
-    const averageValue = totalValue / validInsights.length
+    const averageValue = totalValue / recordCount
     
     // Return the result
     const result = {
@@ -112,13 +140,14 @@ export async function GET(request: NextRequest) {
       _meta: {
         from,
         to,
-        records: validInsights.length,
+        records: recordCount,
         totalValue: parseFloat(totalValue.toFixed(2)),
-        dates: validInsights.map(item => new Date(item.date).toISOString().split('T')[0])
+        source: dataSource,
+        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`PURCHASE CONVERSION VALUE API: Returning avg value = ${result.value}, based on ${validInsights.length} records`)
+    console.log(`PURCHASE CONVERSION VALUE API: Returning avg value = ${result.value}, based on ${recordCount} records (source: ${dataSource})`)
     
     return NextResponse.json(result)
   } catch (error) {

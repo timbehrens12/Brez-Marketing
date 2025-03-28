@@ -50,10 +50,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights including the actions array and spend
+    // Query meta_ad_insights including the actions array, spend, and cost_per_result
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, actions, spend')
+      .select('date, actions, spend, results, cost_per_result')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -76,52 +76,72 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total spend and total results
-    let totalSpend = 0
-    let totalResults = 0
+    // Get average cost per result from stored values
+    let totalCPR = 0
+    let validRecords = 0
     
     insights.forEach(insight => {
-      // Add up the spend
-      totalSpend += parseFloat(insight.spend) || 0
-      
-      // Calculate results from actions array
-      if (insight.actions && Array.isArray(insight.actions)) {
-        insight.actions.forEach((action: any) => {
-          if (
-            action.action_type === 'purchase' || 
-            action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
-            action.action_type === 'omni_purchase' ||
-            action.action_type === 'lead' ||
-            action.action_type === 'offsite_conversion.fb_pixel_lead' ||
-            action.action_type === 'complete_registration'
-          ) {
-            const value = parseFloat(action.value) || 0
-            totalResults += value
-          }
-        })
+      if (insight.cost_per_result != null && insight.cost_per_result > 0) {
+        totalCPR += parseFloat(insight.cost_per_result.toString())
+        validRecords++
       }
     })
     
-    // Calculate cost per result
-    let costPerResult = 0
-    if (totalResults > 0) {
-      costPerResult = totalSpend / totalResults
+    // Calculate average cost per result
+    let avgCPR = 0
+    if (validRecords > 0) {
+      avgCPR = totalCPR / validRecords
+    } else {
+      // Fallback calculation if no stored CPR values found
+      // This handles the case where data exists but was imported before we added the trigger
+      let totalSpend = 0
+      let totalResults = 0
+      
+      insights.forEach(insight => {
+        // Add up the spend
+        totalSpend += parseFloat(insight.spend) || 0
+        
+        // Use stored results value if available, otherwise calculate from actions
+        if (insight.results > 0) {
+          totalResults += insight.results
+        } else {
+          // Calculate results from actions array
+          if (insight.actions && Array.isArray(insight.actions)) {
+            insight.actions.forEach((action: any) => {
+              if (
+                action.action_type === 'purchase' || 
+                action.action_type === 'offsite_conversion.fb_pixel_purchase' ||
+                action.action_type === 'omni_purchase' ||
+                action.action_type === 'lead' ||
+                action.action_type === 'offsite_conversion.fb_pixel_lead' ||
+                action.action_type === 'complete_registration'
+              ) {
+                const value = parseFloat(action.value) || 0
+                totalResults += value
+              }
+            })
+          }
+        }
+      })
+      
+      if (totalResults > 0) {
+        avgCPR = totalSpend / totalResults
+      }
     }
     
     // Return the result
     const result = {
-      value: parseFloat(costPerResult.toFixed(2)),
+      value: parseFloat(avgCPR.toFixed(2)),
       _meta: {
         from,
         to,
         records: insights.length,
-        totalSpend,
-        totalResults,
+        source: validRecords > 0 ? 'database' : 'calculated',
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`COST PER RESULT API: Returning CPR = ${result.value}, based on ${insights.length} records (spend: ${totalSpend}, results: ${totalResults})`)
+    console.log(`COST PER RESULT API: Returning CPR = ${result.value}, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {
