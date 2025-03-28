@@ -8,6 +8,7 @@ export default function MetaFixPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState(null);
   const [resyncResult, setResyncResult] = useState(null);
+  const [diagnosticResults, setDiagnosticResults] = useState(null);
 
   // Load brands from localstorage
   useEffect(() => {
@@ -113,6 +114,12 @@ export default function MetaFixPage() {
           <code>bash scripts/update-views-column.sh</code>
         </div>
         <p>After running the migration, resync your Meta data using the button below.</p>
+        
+        <div className="mt-4 bg-red-100 dark:bg-red-900 p-3 rounded">
+          <p className="font-bold">Server Port Change Notice:</p>
+          <p>We've detected that your server is running on port 3001 instead of 3000. This may be causing issues with Meta data retrieval.</p>
+          <p>Update your API calls and application to use port 3001, or restart your server to use port 3000.</p>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -182,6 +189,78 @@ export default function MetaFixPage() {
           <h2 className="text-lg font-semibold mb-2">Resync Results</h2>
           <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto max-h-80">
             <pre className="text-sm">{JSON.stringify(resyncResult, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col space-y-4 mb-6">
+        <h2 className="text-xl font-semibold">Advanced Diagnostics</h2>
+        
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <h3 className="text-lg font-medium mb-2">Database Diagnostics</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Run a full database check to diagnose Meta data issues.
+          </p>
+          
+          <div className="flex space-x-2">
+            <button
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  const response = await fetch(`/api/admin/debug-meta-db?token=debug-meta-data${brandId ? `&brandId=${brandId}` : ''}`);
+                  const data = await response.json();
+                  setDiagnosticResults(JSON.stringify(data, null, 2));
+                } catch (error) {
+                  setDiagnosticResults(JSON.stringify({ error: error.message }, null, 2));
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md disabled:opacity-50"
+              disabled={isLoading}
+            >
+              Run Database Check
+            </button>
+            
+            {/* Add helper button to run utility scripts */}
+            <button
+              onClick={async () => {
+                try {
+                  setIsLoading(true);
+                  // First check if the utility functions exist
+                  const response = await fetch(`/api/admin/debug-meta-db?token=debug-meta-data`);
+                  const data = await response.json();
+                  
+                  // If the required functions don't exist, display a message asking to run the SQL script
+                  if (data?.database?.tableCheckError || data?.database?.columnsError) {
+                    setDiagnosticResults(
+                      "Helper functions are missing in the database. Please run the following command:\n\n" +
+                      "psql $SUPABASE_DB_URL -f scripts/add_db_helper_functions.sql\n\n" +
+                      "Once done, click 'Run Database Check' again."
+                    );
+                  } else {
+                    setDiagnosticResults("Helper functions already exist in the database. You can proceed with 'Run Database Check'.");
+                  }
+                } catch (error) {
+                  setDiagnosticResults(JSON.stringify({ error: error.message }, null, 2));
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50"
+              disabled={isLoading}
+            >
+              Check DB Utilities
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {diagnosticResults && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Diagnostic Results</h2>
+          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto max-h-80">
+            <pre className="text-sm">{diagnosticResults}</pre>
           </div>
         </div>
       )}
