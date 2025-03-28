@@ -88,113 +88,43 @@ export default async function handler(req, res) {
     // Determine available fields from the sample
     const availableFields = sampleRecord ? Object.keys(sampleRecord) : [];
     
-    // Add a check for the views column in the database
-    let dbHasViewsColumn = false;
-    
-    try {
-      // Check if the views column exists in the database
-      const { data: columnCheck, error } = await supabase.rpc(
-        'check_column_exists',
-        { table_name: 'meta_ad_insights', column_name: 'views' }
-      );
-      
-      if (!error) {
-        dbHasViewsColumn = columnCheck;
+    return res.status(200).json({
+      success: true,
+      message: 'Meta API check complete',
+      connection: {
+        id: connection.id,
+        brandId: connection.brand_id,
+        platform: connection.platform_type,
+        status: connection.status
+      },
+      account: {
+        id: testAccount.id,
+        name: testAccount.name
+      },
+      dateRange: {
+        from: startDateStr,
+        to: endDateStr
+      },
+      apiResponse: {
+        recordCount: insightsData.data?.length || 0,
+        hasPageViews,
+        hasReach,
+        availableFields,
+        sampleRecord: sampleRecord ? {
+          impressions: sampleRecord.impressions,
+          clicks: sampleRecord.clicks,
+          spend: sampleRecord.spend,
+          reach: sampleRecord.reach,
+          inline_link_clicks: sampleRecord.inline_link_clicks,
+          page_views: sampleRecord.page_views
+        } : null,
+        viewsData: {
+          available: hasReach,
+          field: 'reach',
+          value: sampleRecord?.reach || null
+        }
       }
-      
-      // Fetch a sample record from the database to check if it has views data
-      const { data: sampleDbRecord, error: dbError } = await supabase
-        .from('meta_ad_insights')
-        .select('views, reach')
-        .eq('brand_id', brandId)
-        .limit(1)
-        .single();
-      
-      // Add database diagnostics to the response
-      return res.status(200).json({
-        success: true,
-        message: 'Meta API check complete',
-        connection: {
-          id: connection.id,
-          brandId: connection.brand_id,
-          platform: connection.platform_type,
-          status: connection.status
-        },
-        account: {
-          id: testAccount.id,
-          name: testAccount.name
-        },
-        dateRange: {
-          from: startDateStr,
-          to: endDateStr
-        },
-        database: {
-          hasViewsColumn: dbHasViewsColumn,
-          sampleRecord: sampleDbRecord
-        },
-        apiResponse: {
-          recordCount: insightsData.data?.length || 0,
-          hasPageViews,
-          hasReach,
-          availableFields,
-          sampleRecord: sampleRecord ? {
-            impressions: sampleRecord.impressions,
-            clicks: sampleRecord.clicks,
-            spend: sampleRecord.spend,
-            reach: sampleRecord.reach,
-            inline_link_clicks: sampleRecord.inline_link_clicks,
-            page_views: sampleRecord.page_views
-          } : null,
-          viewsData: {
-            available: hasReach,
-            field: 'reach',
-            value: sampleRecord?.reach || null
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error checking database columns:', error);
-      
-      // Return response without the database check results
-      return res.status(200).json({
-        success: true,
-        message: 'Meta API check complete (database checks failed)',
-        connection: {
-          id: connection.id,
-          brandId: connection.brand_id,
-          platform: connection.platform_type,
-          status: connection.status
-        },
-        account: {
-          id: testAccount.id,
-          name: testAccount.name
-        },
-        dateRange: {
-          from: startDateStr,
-          to: endDateStr
-        },
-        apiResponse: {
-          recordCount: insightsData.data?.length || 0,
-          hasPageViews,
-          hasReach,
-          availableFields,
-          sampleRecord: sampleRecord ? {
-            impressions: sampleRecord.impressions,
-            clicks: sampleRecord.clicks,
-            spend: sampleRecord.spend,
-            reach: sampleRecord.reach,
-            inline_link_clicks: sampleRecord.inline_link_clicks,
-            page_views: sampleRecord.page_views
-          } : null,
-          viewsData: {
-            available: hasReach,
-            field: 'reach',
-            value: sampleRecord?.reach || null,
-            errorCheckingDatabase: true
-          }
-        }
-      });
-    }
+    });
   } catch (error) {
     console.error('Error in Meta API check:', error);
     return res.status(500).json({ 

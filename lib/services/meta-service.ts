@@ -146,9 +146,6 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
-        // Calculate views - using reach data from the Meta API
-        const views = parseInt(insight.reach || '0');
-        
         return {
           brand_id: brandId,
           connection_id: connection.id,
@@ -164,7 +161,6 @@ export async function fetchMetaAdInsights(
           clicks: parseInt(insight.clicks || '0'),
           spend: parseFloat(insight.spend || '0'),
           reach: parseInt(insight.reach || '0'),
-          views: views, // Add views column, populated from reach
           link_clicks: parseInt(insight.inline_link_clicks || '0'),
           page_views: parseInt(insight.page_views || '0'),
           date: recordDate,

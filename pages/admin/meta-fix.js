@@ -8,6 +8,8 @@ export default function MetaFixPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState(null);
   const [resyncResult, setResyncResult] = useState(null);
+  const [dbCheckResult, setDbCheckResult] = useState(null);
+  const [days, setDays] = useState(90);
 
   // Load brands from localstorage
   useEffect(() => {
@@ -54,6 +56,38 @@ export default function MetaFixPage() {
     }
   };
 
+  const checkDatabase = async () => {
+    if (!brandId) {
+      setStatus('Error: Please enter a brand ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('Checking database for views/reach data...');
+    
+    try {
+      const response = await fetch(`/api/admin/check-db-views?token=fix-meta-data&brandId=${brandId}`);
+      const data = await response.json();
+      
+      setDbCheckResult(data);
+      
+      if (data.success) {
+        if (data.recordsWithReach) {
+          setStatus(`Database check complete: Found ${data.stats.withReach} records with reach data out of ${data.stats.total} total records`);
+        } else {
+          setStatus(`Database check complete: No reach data found in any of the ${data.stats.total} records. You need to resync Meta data.`);
+        }
+      } else {
+        setStatus(`Database check error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error checking database:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resyncMetaData = async () => {
     if (!brandId) {
       setStatus('Error: Please enter a brand ID');
@@ -64,13 +98,13 @@ export default function MetaFixPage() {
     setStatus('Resyncing Meta data (this may take a minute)...');
     
     try {
-      const response = await fetch(`/api/admin/resync-meta?token=fix-meta-data&brandId=${brandId}`);
+      const response = await fetch(`/api/admin/resync-meta?token=fix-meta-data&brandId=${brandId}&days=${days}`);
       const data = await response.json();
       
       setResyncResult(data);
       
       if (data.success) {
-        setStatus(`Resync complete: Processed ${data.count} records`);
+        setStatus(`Resync complete: Processed ${data.count} records for the last ${days} days`);
       } else {
         setStatus(`Resync error: ${data.error}`);
       }
@@ -95,6 +129,7 @@ export default function MetaFixPage() {
         <ol className="list-decimal pl-5 space-y-2">
           <li>Enter your brand ID or select a brand</li>
           <li>Click "Run Diagnostics" to check if Meta API is working</li>
+          <li>Click "Check Database for Views Data" to see if there are views/reach data in the database</li>
           <li>Click "Force Resync" to pull fresh data from Meta</li>
           <li>Return to your dashboard to verify data is now showing</li>
         </ol>
@@ -104,67 +139,117 @@ export default function MetaFixPage() {
         </div>
       </div>
 
-      <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 p-4 rounded-lg mb-6">
-        <h2 className="font-semibold mb-2">Database Migration Required</h2>
-        <p className="mb-2">The Views widget now requires a <code>views</code> column in the <code>meta_ad_insights</code> table. Run the following to add this column:</p>
-        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded font-mono text-sm mb-2 overflow-x-auto">
-          <code>cd /path/to/project</code><br />
-          <code>export SUPABASE_DB_URL=postgresql://postgres:password@localhost:5432/postgres</code><br />
-          <code>bash scripts/update-views-column.sh</code>
-        </div>
-        <p>After running the migration, resync your Meta data using the button below.</p>
-      </div>
-
-      <div className="mb-6">
-        <label className="block mb-2">Brand ID</label>
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            value={brandId}
-            onChange={(e) => setBrandId(e.target.value)}
-            className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600 flex-grow"
-            placeholder="Enter brand ID"
-          />
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label htmlFor="brandId" className="block text-sm font-medium mb-1">Brand ID</label>
+            <input
+              type="text"
+              id="brandId"
+              value={brandId}
+              onChange={(e) => setBrandId(e.target.value)}
+              className="px-3 py-2 border rounded-md w-full dark:bg-gray-800 dark:border-gray-700"
+              placeholder="Enter your brand ID"
+              disabled={isLoading}
+            />
+          </div>
           
           {brands.length > 0 && (
-            <select 
-              className="border p-2 rounded dark:bg-gray-700 dark:border-gray-600"
-              onChange={(e) => setBrandId(e.target.value)}
-              value={brandId}
-            >
-              <option value="">Select a brand</option>
-              {brands.map(brand => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name || brand.id}
-                </option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-1">Select Brand</label>
+              <select 
+                className="px-3 py-2 border rounded-md w-full dark:bg-gray-800 dark:border-gray-700"
+                value=""
+                onChange={(e) => e.target.value && setBrandId(e.target.value)}
+                disabled={isLoading}
+              >
+                <option value="">Select a brand</option>
+                {brands.map(brand => (
+                  <option key={brand.id} value={brand.id}>{brand.name}</option>
+                ))}
+              </select>
+            </div>
           )}
+
+          <div className="flex-1">
+            <label htmlFor="days" className="block text-sm font-medium mb-1">Days to Fetch</label>
+            <input
+              type="number"
+              id="days"
+              value={days}
+              onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 30))}
+              className="px-3 py-2 border rounded-md w-full dark:bg-gray-800 dark:border-gray-700"
+              min="1"
+              max="180"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-500 mt-1">Fetches data for the last X days (30-90 recommended)</p>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={runDiagnostics}
+            disabled={isLoading}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isLoading && diagnosticData === null ? 'Running...' : 'Run Diagnostics'}
+          </button>
+          
+          <button
+            onClick={checkDatabase}
+            disabled={isLoading}
+            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50"
+          >
+            {isLoading && dbCheckResult === null ? 'Checking...' : 'Check Database for Views Data'}
+          </button>
+          
+          <button
+            onClick={resyncMetaData}
+            disabled={isLoading}
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
+          >
+            {isLoading && resyncResult === null ? 'Resyncing...' : 'Force Resync Meta Data'}
+          </button>
+        </div>
+        
+        <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded">
+          <p className="font-mono">{status}</p>
         </div>
       </div>
 
-      <div className="flex space-x-4 mb-6">
-        <button
-          onClick={runDiagnostics}
-          disabled={isLoading}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Run Diagnostics
-        </button>
-        
-        <button
-          onClick={resyncMetaData}
-          disabled={isLoading}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Force Resync
-        </button>
-      </div>
-
-      {status && (
-        <div className={`p-4 rounded-lg mb-6 ${status.includes('Error') ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}`}>
-          {status}
-          {isLoading && <span className="ml-2 inline-block animate-pulse">...</span>}
+      {dbCheckResult && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold mb-2">Database Check Results</h2>
+          
+          <div className="space-y-2 mb-4">
+            <p><strong>Total Records:</strong> {dbCheckResult.stats.total}</p>
+            <p><strong>Records with Views Data:</strong> {dbCheckResult.stats.withReach}</p>
+            <p><strong>Records without Views Data:</strong> {dbCheckResult.stats.withoutReach}</p>
+            
+            <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+              <p className="text-sm mb-1">
+                <strong>Status:</strong> {dbCheckResult.recordsWithReach ? 
+                  '✅ Database has views data' : 
+                  '❌ No views data in database'}
+              </p>
+              
+              {!dbCheckResult.recordsWithReach && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  You need to resync Meta data to populate views/reach.
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {dbCheckResult.sampleRecords && dbCheckResult.sampleRecords.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-2">Sample Records with Views Data:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(dbCheckResult.sampleRecords, null, 2)}</pre>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

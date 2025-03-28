@@ -3333,11 +3333,6 @@ Try creating at least one active campaign in Meta Ads Manager.
                     )}
         </div>
       </div>
-
-      {/* Data accuracy disclaimer */}
-      <div className="mb-4 p-3 bg-gray-800 border border-gray-700 rounded-md text-xs text-gray-300">
-        <p><span className="font-semibold">Note:</span> Metrics displayed here may differ slightly from Meta's own dashboard due to API sync timing, different attribution models, and data processing methods. Views data is based on Meta's "reach" metric.</p>
-      </div>
                 
                 {/* Debug controls - add a keyboard shortcut to show/hide it */}
                 <div className="mb-4">

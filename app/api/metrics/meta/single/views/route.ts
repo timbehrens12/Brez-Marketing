@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Specialized API endpoint for fetching Views data directly from database
+ * Specialized API endpoint for fetching Views data directly
  * This endpoint is optimized for speed and simplicity, fetching only
  * what's needed for the Views widget
  * 
- * NOTE: This uses the 'views' column from the meta_ad_insights table,
- * which stores the number of people who saw the ads.
+ * NOTE: This uses the 'reach' field from Meta API, which represents 
+ * the number of people who saw the ads (views).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights for views data (stored views column)
+    // Query meta_ad_insights for reach data (views)
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, views')
+      .select('date, reach')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -79,31 +79,30 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total views
+    // Calculate total views (using reach)
     let totalViews = 0
     let recordsWithViews = 0
     
     // Debug: Show raw values
     const debugValues = insights.slice(0, 5).map(insight => ({
       date: insight.date,
-      views: insight.views
+      reach: insight.reach
     }));
-    console.log(`VIEWS API DEBUG: Raw views values from first 5 records:`, JSON.stringify(debugValues));
+    console.log(`VIEWS API DEBUG: Raw reach values from first 5 records:`, JSON.stringify(debugValues));
     
     insights.forEach(insight => {
-      if (insight.views && !isNaN(insight.views) && insight.views > 0) {
-        totalViews += parseInt(insight.views)
+      if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
+        totalViews += parseInt(insight.reach)
         recordsWithViews++
       }
     })
     
     // If no views data is found, add debugging log
     if (recordsWithViews === 0) {
-      console.log(`VIEWS API WARNING: No views data found in any of the ${insights.length} records. This may indicate that:
-      1. The views column is missing from meta_ad_insights table
-      2. The meta_ad_insights table hasn't been updated with the latest data that includes views
-      3. You may need to run the SQL migration to add the views column
-      4. You may need to resync Meta data`)
+      console.log(`VIEWS API WARNING: No reach/views data found in any of the ${insights.length} records. This may indicate that:
+      1. The Meta API is not returning reach data
+      2. The meta_ad_insights table hasn't been updated with the latest data that includes reach
+      3. You may need to resync Meta data`)
     }
     
     // Return the result
