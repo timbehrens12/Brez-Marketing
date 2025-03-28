@@ -3333,6 +3333,11 @@ Try creating at least one active campaign in Meta Ads Manager.
                     )}
         </div>
       </div>
+
+      {/* Data accuracy disclaimer */}
+      <div className="mb-4 p-3 bg-gray-800 border border-gray-700 rounded-md text-xs text-gray-300">
+        <p><span className="font-semibold">Note:</span> Metrics displayed here may differ slightly from Meta's own dashboard due to API sync timing, different attribution models, and data processing methods. Views data is based on Meta's "reach" metric.</p>
+      </div>
                 
                 {/* Debug controls - add a keyboard shortcut to show/hide it */}
                 <div className="mb-4">
@@ -3427,11 +3432,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
-        {/* Disclaimer about Meta data */}
-        <div className="text-xs text-gray-500 italic">
-          <p>Note: Metrics may vary slightly from Meta's dashboard due to attribution window differences and data processing timing.</p>
-        </div>
-        
         {/* Direct DB connection widgets with grid layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
@@ -3631,12 +3631,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               <div className="flex items-center gap-1.5">
                 <Eye className="h-4 w-4 text-purple-400" />
                 <span className="ml-0.5">Views</span>
-                <span 
-                  className="ml-1 cursor-help text-gray-400 text-xs" 
-                  title="Views represent the number of people who saw your ads (Meta's reach metric). This may differ slightly from Meta's dashboard due to data processing and attribution methods."
-                >
-                  (?)
-                </span>
               </div>
             }
             value={viewsData.value}
