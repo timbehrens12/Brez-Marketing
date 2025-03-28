@@ -5,8 +5,6 @@ import { createClient } from '@supabase/supabase-js'
  * Specialized API endpoint for fetching Reach data directly
  * This endpoint is optimized for speed and simplicity, fetching only
  * what's needed for the Reach widget
- * 
- * NOTE: This also serves as a fallback for the views endpoint if the views column doesn't exist yet
  */
 export async function GET(request: NextRequest) {
   try {
@@ -82,13 +80,6 @@ export async function GET(request: NextRequest) {
     let totalReach = 0
     let recordsWithReach = 0
     
-    // Debug: Show raw values
-    const debugValues = insights.slice(0, 5).map(insight => ({
-      date: insight.date,
-      reach: insight.reach
-    }));
-    console.log(`REACH API DEBUG: Raw reach values from first 5 records:`, JSON.stringify(debugValues));
-    
     insights.forEach(insight => {
       if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
         totalReach += parseInt(insight.reach)
@@ -116,7 +107,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value}, based on ${insights.length} records (reach data found in ${recordsWithReach} records)`)
+    console.log(`REACH API: Returning reach = ${result.value}, based on ${insights.length} records (reach data found in ${insights.filter(i => i.reach > 0).length} records)`)
     
     return NextResponse.json(result)
   } catch (error) {
