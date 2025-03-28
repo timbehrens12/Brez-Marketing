@@ -33,12 +33,23 @@ END $$;
 DO $$
 BEGIN
     RAISE NOTICE '-------------------------------------------------------------';
-    RAISE NOTICE 'IMPORTANT: You need to refresh your Meta data to populate the views column';
-    RAISE NOTICE 'Follow these steps:';
+    RAISE NOTICE 'IMPORTANT: You need to perform a FULL RESYNC of Meta data';
+    RAISE NOTICE '';
+    RAISE NOTICE 'The views detection has been improved to check multiple sources';
+    RAISE NOTICE 'of video view data from Meta, including:';
+    RAISE NOTICE '- video_views field';
+    RAISE NOTICE '- video_plays field';
+    RAISE NOTICE '- video_play_actions array';
+    RAISE NOTICE '- video-related entries in the actions array';
+    RAISE NOTICE '';
+    RAISE NOTICE 'Follow these steps for a complete resync:';
     RAISE NOTICE '1. Go to your dashboard';
     RAISE NOTICE '2. Click on "Refresh Data" in the Meta Ads section';
-    RAISE NOTICE '3. Use the "Resync" button to fetch fresh data from Meta API';
+    RAISE NOTICE '3. Use the "Resync" button with a longer date range (60+ days)';
+    RAISE NOTICE '   to fetch fresh data from Meta API';
     RAISE NOTICE '';
-    RAISE NOTICE 'The new data will include video views from your Meta ads.';
+    RAISE NOTICE 'If views still show as 0, please check the server logs for';
+    RAISE NOTICE 'detailed information about what video metrics were found in';
+    RAISE NOTICE 'your Meta Ads data.';
     RAISE NOTICE '-------------------------------------------------------------';
 END $$; 

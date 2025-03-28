@@ -79,7 +79,7 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,video_play_actions&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,video_play_actions,video_plays,video_view_time,video_views,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
         const insightsData = await insightsResponse.json()
@@ -162,7 +162,7 @@ export async function fetchMetaAdInsights(
           spend: parseFloat(insight.spend || '0'),
           reach: parseInt(insight.reach || '0'),
           link_clicks: parseInt(insight.inline_link_clicks || '0'),
-          views: extractVideoViews(insight.video_play_actions || []),
+          views: extractAllVideoViews(insight),
           date: recordDate,
           actions: insight.actions || [],
           action_values: insight.action_values || []
@@ -274,7 +274,7 @@ export async function fetchMetaMetrics(brandId: string) {
   }
 }
 
-// Helper function to extract video views from video_play_actions array
+// Update the helper function to be more comprehensive in extracting video views
 function extractVideoViews(videoPlayActions: any[]): number {
   if (!Array.isArray(videoPlayActions) || videoPlayActions.length === 0) {
     return 0;
@@ -289,5 +289,58 @@ function extractVideoViews(videoPlayActions: any[]): number {
     }
   });
   
+  console.log(`[Meta] Found ${totalViews} video views from video_play_actions`);
+  return totalViews;
+}
+
+// New comprehensive function to extract all types of video views
+function extractAllVideoViews(insight: any): number {
+  let totalViews = 0;
+  
+  // Log the insight object to see what fields are available
+  console.log(`[Meta] Video metrics available:`, {
+    hasVideoPlayActions: !!insight.video_play_actions,
+    hasVideoPlays: !!insight.video_plays,
+    hasVideoViews: !!insight.video_views,
+    hasP25: !!insight.video_p25_watched_actions,
+    hasP50: !!insight.video_p50_watched_actions,
+    hasP75: !!insight.video_p75_watched_actions,
+    hasP100: !!insight.video_p100_watched_actions,
+    adName: insight.ad_name
+  });
+
+  // Check direct video_views field (most likely field for views)
+  if (insight.video_views && !isNaN(insight.video_views)) {
+    totalViews += parseInt(insight.video_views);
+    console.log(`[Meta] Found ${insight.video_views} from video_views field`);
+  }
+  
+  // Check video_plays field
+  if (insight.video_plays && !isNaN(insight.video_plays)) {
+    totalViews += parseInt(insight.video_plays);
+    console.log(`[Meta] Found ${insight.video_plays} from video_plays field`);
+  }
+  
+  // Check video_play_actions array (original approach)
+  if (Array.isArray(insight.video_play_actions) && insight.video_play_actions.length > 0) {
+    insight.video_play_actions.forEach((action: any) => {
+      if (action && action.value && !isNaN(action.value)) {
+        totalViews += parseInt(action.value);
+        console.log(`[Meta] Found ${action.value} from video_play_actions entry`);
+      }
+    });
+  }
+  
+  // Check for video views in the actions array (common way Meta reports video views)
+  if (Array.isArray(insight.actions) && insight.actions.length > 0) {
+    insight.actions.forEach((action: any) => {
+      if (action && action.action_type && action.action_type.includes('video') && action.value && !isNaN(action.value)) {
+        totalViews += parseInt(action.value);
+        console.log(`[Meta] Found ${action.value} video actions of type "${action.action_type}"`);
+      }
+    });
+  }
+  
+  console.log(`[Meta] Total video views found for ad "${insight.ad_name}": ${totalViews}`);
   return totalViews;
 } 
