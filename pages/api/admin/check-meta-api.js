@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     
     // Make test API call to check fields
     const insightsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${testAccount.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,page_views&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+      `https://graph.facebook.com/v18.0/${testAccount.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
     );
     
     const insightsData = await insightsResponse.json();
@@ -74,14 +74,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // Extract sample data and check for page_views
+    // Extract sample data and check for view data (using reach field)
     let sampleRecord = null;
-    let hasPageViews = false;
     let hasReach = false;
     
     if (insightsData.data && insightsData.data.length > 0) {
       sampleRecord = insightsData.data[0];
-      hasPageViews = 'page_views' in sampleRecord;
       hasReach = 'reach' in sampleRecord;
     }
     
@@ -107,16 +105,13 @@ export default async function handler(req, res) {
       },
       apiResponse: {
         recordCount: insightsData.data?.length || 0,
-        hasPageViews,
-        hasReach,
         availableFields,
         sampleRecord: sampleRecord ? {
           impressions: sampleRecord.impressions,
           clicks: sampleRecord.clicks,
           spend: sampleRecord.spend,
           reach: sampleRecord.reach,
-          inline_link_clicks: sampleRecord.inline_link_clicks,
-          page_views: sampleRecord.page_views
+          inline_link_clicks: sampleRecord.inline_link_clicks
         } : null,
         viewsData: {
           available: hasReach,

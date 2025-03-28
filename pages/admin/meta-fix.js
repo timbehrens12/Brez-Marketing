@@ -18,6 +18,7 @@ export default function MetaFixPage() {
     from: '',
     to: ''
   });
+  const [schemaFixResult, setSchemaFixResult] = useState(null);
 
   // Load brands from localstorage
   useEffect(() => {
@@ -246,6 +247,30 @@ export default function MetaFixPage() {
     }
   };
 
+  const runSchemaFix = async () => {
+    setIsLoading(true);
+    setStatus('Running database schema fix...');
+    
+    try {
+      const response = await fetch(`/api/admin/run-schema-fix?token=fix-meta-data`);
+      const data = await response.json();
+      
+      setSchemaFixResult(data);
+      
+      if (data.success) {
+        setStatus(`Schema fix complete: ${data.message}`);
+      } else {
+        setStatus(`Schema fix error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error running schema fix:', error);
+      setStatus(`Error: ${error.message}`);
+      setSchemaFixResult({ error: error.message });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <Head>
@@ -356,53 +381,61 @@ export default function MetaFixPage() {
           <p className="text-xs text-gray-500 mt-1">Use this to debug the Views API endpoint with specific dates</p>
         </div>
 
-        <div className="flex flex-wrap gap-4">
-          <button
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button 
             onClick={runDiagnostics}
-            disabled={isLoading}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+            disabled={isLoading || !brandId}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && diagnosticData === null ? 'Running...' : 'Run Diagnostics'}
+            Run Diagnostics
           </button>
-          
+
           <button
             onClick={checkDatabaseConnection}
             disabled={isLoading}
-            className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 disabled:opacity-50"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && dbConnectionResult === null ? 'Checking...' : 'Check Database Connection'}
+            Check Database Connection
           </button>
-          
+
           <button
             onClick={checkDirectMeta}
-            disabled={isLoading}
-            className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:opacity-50"
+            disabled={isLoading || !brandId}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && directMetaResult === null ? 'Checking...' : 'Direct Meta API Check'}
+            Direct Meta API Check
           </button>
-          
+
           <button
             onClick={checkDatabase}
-            disabled={isLoading}
-            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 disabled:opacity-50"
+            disabled={isLoading || !brandId}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && dbCheckResult === null ? 'Checking...' : 'Check Database for Views Data'}
+            Check Database for Views Data
           </button>
-          
+
           <button
             onClick={resyncMetaData}
-            disabled={isLoading}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50"
+            disabled={isLoading || !brandId}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && resyncResult === null ? 'Resyncing...' : 'Force Resync Meta Data'}
+            Force Resync Meta Data
+          </button>
+
+          <button
+            onClick={emergencyFix}
+            disabled={isLoading || !brandId}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          >
+            🚨 EMERGENCY META FIX
           </button>
           
           <button
-            onClick={emergencyFix}
+            onClick={runSchemaFix}
             disabled={isLoading}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded disabled:opacity-50"
           >
-            {isLoading && emergencyFixResult === null ? '🚨 FIXING...' : '🚨 EMERGENCY META FIX'}
+            🔧 Fix Database Schema
           </button>
         </div>
         
@@ -645,12 +678,62 @@ export default function MetaFixPage() {
         </div>
       )}
 
-      <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 p-4 rounded-lg">
-        <h2 className="font-semibold mb-2">Troubleshooting Tips</h2>
-        <ul className="list-disc pl-5 space-y-2">
+      {/* Schema Fix Results */}
+      {schemaFixResult && (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-2">Database Schema Fix Results</h2>
+          <div className="bg-white shadow overflow-hidden rounded-lg p-4 mb-4">
+            <div className="flex items-center mb-2">
+              <span className="font-semibold mr-2">Status:</span>
+              <span className={schemaFixResult.success ? "text-green-600" : "text-red-600"}>
+                {schemaFixResult.success ? "✅ Success" : "❌ Failed"}
+              </span>
+            </div>
+            
+            {schemaFixResult.success && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="font-semibold">Meta insights table exists:</span> {' '}
+                    <span className={schemaFixResult.tableExists ? "text-green-600" : "text-red-600"}>
+                      {schemaFixResult.tableExists ? "✅ Yes" : "❌ No"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Views column exists:</span> {' '}
+                    <span className={schemaFixResult.viewsColumnExists ? "text-green-600" : "text-red-600"}>
+                      {schemaFixResult.viewsColumnExists ? "✅ Yes" : "❌ No"}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-green-600 font-medium">
+                    Database schema updated. Now use the Emergency Meta Fix button to reload data.
+                  </p>
+                </div>
+              </>
+            )}
+            
+            {schemaFixResult.error && (
+              <div className="bg-red-50 p-3 rounded border border-red-100 mt-2">
+                <p className="text-red-600 font-medium">Error: {schemaFixResult.error}</p>
+                {schemaFixResult.details && (
+                  <p className="text-red-500 mt-1">{schemaFixResult.details}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+        <h3 className="text-xl font-semibold mb-2">Troubleshooting Tips</h3>
+        <ul className="list-disc pl-5">
           <li>If diagnostics show Meta API is working but you still see zero values, try the Force Resync option</li>
           <li>After resyncing, refresh your dashboard completely (hard refresh with Ctrl+F5)</li>
-          <li>Check if the <strong>reach field</strong> appears in the diagnostic data - this is what powers the "Views" widget</li>
+          <li>Check if the reach field appears in the diagnostic data - this is what powers the "Views" widget</li>
+          <li className="text-red-600 font-medium">The issue is that the API doesn't support "page_views" field - it should be using "reach" for views data. Run the <code>scripts/update_meta_schema.sql</code> script to fix the database schema, then use Emergency Meta Fix.</li>
           <li>If all else fails, contact support with your diagnostic results</li>
         </ul>
       </div>

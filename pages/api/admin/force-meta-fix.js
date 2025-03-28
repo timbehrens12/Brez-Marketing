@@ -46,19 +46,8 @@ export default async function handler(req, res) {
 
     console.log(`[Meta Fix] Starting emergency fix for brand ${brandId} from ${startDateStr} to ${endDateStr}`);
 
-    // 1. Check if meta_ad_insights table exists and has the right columns
-    const { data: tableExists } = await supabase.from('information_schema.tables')
-      .select('table_name')
-      .eq('table_schema', 'public')
-      .eq('table_name', 'meta_ad_insights')
-      .single();
-    
-    if (!tableExists) {
-      return res.status(500).json({
-        error: 'meta_ad_insights table does not exist',
-        fix: 'Run the database setup script to create the meta_ad_insights table'
-      });
-    }
+    // 1. Check if meta_ad_insights table exists and create it if needed
+    await ensureTableExists(supabase, brandId, connection.id, startDateStr);
 
     // 2. First clear existing data for this brand and date range
     console.log(`[Meta Fix] Clearing existing data`);
@@ -107,8 +96,9 @@ export default async function handler(req, res) {
       console.log(`[Meta Fix] Fetching insights for account ${account.name} (${account.id})`);
       
       try {
+        // Note: Removed page_views from the fields list
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,page_views&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         );
         
         const insightsData = await insightsResponse.json();
@@ -161,6 +151,7 @@ export default async function handler(req, res) {
         recordDate = startDateStr;
       }
       
+      // Using views=reach instead of page_views
       return {
         brand_id: brandId,
         connection_id: connection.id,
@@ -177,7 +168,7 @@ export default async function handler(req, res) {
         spend: parseFloat(insight.spend || '0'),
         reach: parseInt(insight.reach || '0'),
         link_clicks: parseInt(insight.inline_link_clicks || '0'),
-        page_views: parseInt(insight.page_views || '0'),
+        views: parseInt(insight.reach || '0'), // Use reach as views
         date: recordDate,
         actions: insight.actions || [],
         action_values: insight.action_values || [],
@@ -243,4 +234,109 @@ export default async function handler(req, res) {
       stack: error.stack
     });
   }
-} 
+}
+
+// Helper function to ensure the table exists with the right columns
+async function ensureTableExists(supabase, brandId, connectionId, dateStr) {
+  // Check if table exists
+  const { data: tableInfo, error: tableError } = await supabase
+    .from('information_schema.tables')
+    .select('table_name')
+    .eq('table_schema', 'public')
+    .eq('table_name', 'meta_ad_insights')
+    .single();
+  
+  const tableExists = !!tableInfo;
+  
+  if (!tableExists) {
+    console.log('[Meta Fix] Table does not exist, creating it');
+    
+    try {
+      // Try direct insertion to create the table
+      const { error: insertError } = await supabase
+        .from('meta_ad_insights')
+        .insert([{
+          brand_id: brandId,
+          connection_id: connectionId,
+          date: dateStr,
+          impressions: 0,
+          clicks: 0,
+          spend: 0,
+          reach: 0,
+          link_clicks: 0,
+          views: 0
+        }]);
+      
+      if (insertError) {
+        console.error('[Meta Fix] Error creating table via insert:', insertError);
+        throw new Error(`Failed to create table: ${insertError.message}`);
+      }
+      
+      // Clean up the dummy record
+      await supabase
+        .from('meta_ad_insights')
+        .delete()
+        .eq('brand_id', brandId)
+        .eq('date', dateStr);
+      
+      console.log('[Meta Fix] Table created successfully');
+    } catch (error) {
+      console.error('[Meta Fix] Table creation failed:', error);
+      throw error;
+    }
+  } else {
+    // Table exists, check if views column exists
+    const { data: columns, error: columnError } = await supabase
+      .from('information_schema.columns')
+      .select('column_name')
+      .eq('table_schema', 'public')
+      .eq('table_name', 'meta_ad_insights');
+    
+    if (columnError) {
+      console.error('[Meta Fix] Error checking columns:', columnError);
+      return; // Continue anyway
+    }
+    
+    const columnNames = columns.map(col => col.column_name);
+    const hasViews = columnNames.includes('views');
+    
+    if (!hasViews) {
+      console.log('[Meta Fix] Adding views column');
+      
+      try {
+        // Try direct insertion with views column to implicitly add it
+        const { error: insertError } = await supabase
+          .from('meta_ad_insights')
+          .insert([{
+            brand_id: brandId,
+            connection_id: connectionId,
+            date: dateStr,
+            impressions: 0,
+            clicks: 0,
+            spend: 0,
+            reach: 0,
+            link_clicks: 0,
+            views: 0
+          }]);
+        
+        if (insertError) {
+          console.error('[Meta Fix] Error adding views column via insert:', insertError);
+          // Continue anyway
+        } else {
+          // Clean up the dummy record
+          await supabase
+            .from('meta_ad_insights')
+            .delete()
+            .eq('brand_id', brandId)
+            .eq('date', dateStr)
+            .eq('impressions', 0);
+          
+          console.log('[Meta Fix] Views column added successfully');
+        }
+      } catch (error) {
+        console.error('[Meta Fix] Adding views column failed:', error);
+        // Continue anyway
+      }
+    }
+  }
+}
