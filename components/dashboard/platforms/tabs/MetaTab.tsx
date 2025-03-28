@@ -3607,9 +3607,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             loading={frequencyData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
+            decimals={2}
             hideGraph={true}
             previousValue={frequencyData.previousValue}
             previousValueFormat="number"
+            previousValueDecimals={2}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
