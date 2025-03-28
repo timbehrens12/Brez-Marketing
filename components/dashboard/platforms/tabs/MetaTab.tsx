@@ -3209,7 +3209,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     try {
       console.log("Refreshing all metrics directly")
-      await Promise.all([
+      
+      // Use Promise.all to fetch all metrics concurrently
+      const promises = [
         fetchAdSpendDirectly(),
         fetchRoasDirectly(),
         fetchImpressionsDirectly(),
@@ -3222,13 +3224,30 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchReachDirectly(),
         fetchPageViewsDirectly(),
         fetchLinkClicksDirectly()
-      ])
+      ]
+      
+      // Wait for all fetches to complete
+      await Promise.all(promises)
       
       // Show success toast
       toast.success("Metrics refreshed successfully")
     } catch (error) {
       console.error("Error refreshing metrics:", error)
       toast.error("Failed to refresh metrics")
+      
+      // Reset loading states on error
+      setAdSpendData(prev => ({ ...prev, isLoading: false }))
+      setRoasData(prev => ({ ...prev, isLoading: false }))
+      setImpressionsData(prev => ({ ...prev, isLoading: false }))
+      setClicksData(prev => ({ ...prev, isLoading: false }))
+      setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
+      setResultsData(prev => ({ ...prev, isLoading: false }))
+      setCostPerResultData(prev => ({ ...prev, isLoading: false }))
+      setCostPerClickData(prev => ({ ...prev, isLoading: false }))
+      setCtrData(prev => ({ ...prev, isLoading: false }))
+      setReachData(prev => ({ ...prev, isLoading: false }))
+      setPageViewsData(prev => ({ ...prev, isLoading: false }))
+      setLinkClicksData(prev => ({ ...prev, isLoading: false }))
     } finally {
       setIsManuallyRefreshing(false)
     }
