@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * Specialized API endpoint for fetching Views data directly
- * This endpoint is optimized for fetching video view metrics from Meta campaigns
+ * This endpoint is optimized for fetching campaign views from Meta
  */
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const to = url.searchParams.get('to')
     
     // Log the request
-    console.log(`META VIEWS API: Fetching view data for brand ${brandId} from ${from} to ${to}`)
+    console.log(`VIEWS API: Fetching campaign views for brand ${brandId} from ${from} to ${to}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -115,14 +115,14 @@ export async function GET(request: NextRequest) {
     
     // If no data is found, add debugging log
     if (recordsWithViews === 0) {
-      console.log(`META VIEWS API WARNING: No valid views data found in any of the ${insights.length} records.`)
+      console.log(`VIEWS API WARNING: No valid views data found in any of the ${insights.length} records.`)
       console.log(`This may indicate that:
-      1. Your Meta campaigns don't include video ads
+      1. Your Meta campaigns aren't reporting view metrics
       2. The meta_ad_insights table hasn't been updated with the latest data
-      3. You need to resync Meta data to pull fresh video view metrics`)
+      3. You need to resync Meta data to pull fresh campaign metrics`)
     } else {
-      console.log(`META VIEWS API: Found ${recordsWithViews} records with views data totaling ${totalViews} views`)
-      console.log(`META VIEWS API: Views data found across ${campaignsWithViews.size} different campaigns`)
+      console.log(`VIEWS API: Found ${recordsWithViews} records with views data totaling ${totalViews} views`)
+      console.log(`VIEWS API: Views data found across ${campaignsWithViews.size} different campaigns`)
     }
     
     // Return the result
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Meta Views endpoint:', error)
+    console.error('Error in Views API endpoint:', error)
     return NextResponse.json({ 
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

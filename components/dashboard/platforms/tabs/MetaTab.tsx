@@ -3040,7 +3040,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching campaign views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
@@ -3067,7 +3067,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Campaign views data fetched: ${data.value}, Previous: ${prevData.value}`)
         
         // Additional logging for debugging views data
         if (data._meta) {
@@ -3076,8 +3076,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         }
         
         if (data.value === 0) {
-          console.log(`WARNING: No views found. Make sure your Facebook campaigns include video content.`)
-          console.log(`Views data must be pulled from video ads, it represents video views from your campaigns.`)
+          console.log(`WARNING: No views found for this date range. Ensure your Meta data has been synced recently.`)
         }
       } else {
         console.error("Error fetching Views data:", data.error || prevData.error)
@@ -3609,28 +3608,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <BarChart2 className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Views</span>
-              </div>
-            }
-            value={viewsData.value}
-            data={[]}
-            loading={viewsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            decimals={2}
-            hideGraph={true}
-            previousValue={viewsData.previousValue}
-            previousValueFormat="number"
-            previousValueDecimals={2}
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Video className="h-4 w-4 text-purple-400" />
+                <Eye className="h-4 w-4 text-blue-400" />
                 <span className="ml-0.5">Views</span>
               </div>
             }

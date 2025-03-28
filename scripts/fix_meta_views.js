@@ -1,10 +1,10 @@
 /**
- * Meta Video Views Fix Script
+ * Meta Campaign Views Fix Script
  * 
  * This script helps fix issues with Meta campaign views:
  * 1. Cleans up duplicate views columns in the database
- * 2. Ensures the correct data structure for video views
- * 3. Resyncs Meta data to get fresh video views metrics
+ * 2. Ensures the correct data structure for campaign views
+ * 3. Resyncs Meta data to get fresh campaign metrics
  * 
  * Usage:
  * node scripts/fix_meta_views.js --brand-id YOUR_BRAND_ID [--days 30]
@@ -139,11 +139,11 @@ const req = http.request(options, (res) => {
       console.log(JSON.stringify(parsedData, null, 2));
       
       console.log('\nMeta data resync initiated!');
-      console.log('Please check your dashboard in a few minutes to see updated video views data.');
+      console.log('Please check your dashboard in a few minutes to see updated campaign views data.');
       console.log('\nImportant notes:');
-      console.log('1. Video views data is only available for campaigns with video content');
-      console.log('2. The views metric represents the number of times your videos were viewed');
-      console.log('3. If your campaigns don\'t have video content, this metric will show 0');
+      console.log('1. Views data comes directly from your Meta campaigns');
+      console.log('2. The views metric represents the number of campaign views');
+      console.log('3. If your campaigns are new or have low traffic, this metric may show 0');
     } catch (e) {
       console.log(responseData);
     }
@@ -152,7 +152,7 @@ const req = http.request(options, (res) => {
     console.log('If you still see duplicate Views widgets or 0 views:');
     console.log('1. Restart your development server');
     console.log('2. Check your developer console for any errors');
-    console.log('3. Make sure your Meta campaigns include video content');
+    console.log('3. Make sure your Meta campaigns are active and have enough impressions');
   });
 });
 
@@ -161,7 +161,7 @@ req.on('error', (error) => {
   console.log('\nTroubleshooting:');
   console.log('1. Make sure your application is running on localhost:3000');
   console.log('2. Try resyncing data directly from your dashboard');
-  console.log('3. Check your Meta campaign settings to ensure you have video content');
+  console.log('3. Check your Meta campaign settings to ensure they are active and getting impressions');
 });
 
 req.write(data);

@@ -79,7 +79,7 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,video_play_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_play_curve_actions&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,views&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
         const insightsData = await insightsResponse.json()
@@ -146,26 +146,8 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
-        // Parse video views information
-        let views = 0;
-        
-        // First try the video_play_actions field (most common)
-        if (insight.video_play_actions && insight.video_play_actions.length > 0) {
-          for (const action of insight.video_play_actions) {
-            if (action.value && !isNaN(action.value)) {
-              views += parseInt(action.value);
-            }
-          }
-        }
-        
-        // If no video_play_actions, check for actions with action_type 'video_view'
-        if (views === 0 && insight.actions && insight.actions.length > 0) {
-          for (const action of insight.actions) {
-            if (action.action_type === 'video_view' && action.value && !isNaN(action.value)) {
-              views += parseInt(action.value);
-            }
-          }
-        }
+        // Remove all the video-specific parsing logic
+        let views = parseInt(insight.views || '0');
         
         return {
           brand_id: brandId,
