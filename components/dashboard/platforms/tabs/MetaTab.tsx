@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target } from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, Video } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
@@ -2085,7 +2085,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
-  const [pageViewsData, setPageViewsData] = useState<MetricDataState>({
+  const [viewsData, setViewsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: false,
@@ -3017,20 +3017,20 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // Fetch frequency data directly from the database
-  const fetchPageViewsDirectly = async () => {
+  // Fetch views data directly from the database
+  const fetchViewsDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch page views: Missing date range or brand ID")
+      console.log("Cannot fetch views: Missing date range or brand ID")
       return
     }
     
-    setPageViewsData(prev => ({ ...prev, isLoading: true }))
+    setViewsData(prev => ({ ...prev, isLoading: true }))
     
     try {
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'page_views')
+      params.append('metric', 'views')
       
       // Set date parameters
       const fromDate = dateRange.from
@@ -3040,41 +3040,41 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Page Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/page_views?${params.toString()}`)
+      const response = await fetch(`/api/metrics/meta/single/views?${params.toString()}`)
       
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'page_views')
+      prevParams.append('metric', 'views')
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/page_views?${prevParams.toString()}`)
+      const prevResponse = await fetch(`/api/metrics/meta/single/views?${prevParams.toString()}`)
       
       // Process responses
       const data = await response.json()
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setPageViewsData({
+        setViewsData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Page Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Page Views data:", data.error || prevData.error)
-        setPageViewsData(prev => ({ ...prev, isLoading: false }))
+        console.error("Error fetching Views data:", data.error || prevData.error)
+        setViewsData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Page Views fetch:", error)
-      setPageViewsData(prev => ({ ...prev, isLoading: false }))
+      console.error("Error in Views fetch:", error)
+      setViewsData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3152,7 +3152,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
       fetchReachDirectly(),
-      fetchPageViewsDirectly(),
+      fetchViewsDirectly(),
       fetchLinkClicksDirectly()
     ])
   }
@@ -3201,7 +3201,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
-    setPageViewsData(prev => ({ ...prev, isLoading: true }))
+    setViewsData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
@@ -3220,7 +3220,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
-        fetchPageViewsDirectly(),
+        fetchViewsDirectly(),
         fetchLinkClicksDirectly()
       ])
       
@@ -3598,19 +3598,40 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <Eye className="h-4 w-4 text-purple-400" />
-                <span className="ml-0.5">Page Views</span>
+                <BarChart2 className="h-4 w-4 text-blue-400" />
+                <span className="ml-0.5">Views</span>
               </div>
             }
-            value={pageViewsData.value}
+            value={viewsData.value}
             data={[]}
-            loading={pageViewsData.isLoading || isManuallyRefreshing}
+            loading={viewsData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="number"
+            decimals={2}
+            hideGraph={true}
+            previousValue={viewsData.previousValue}
+            previousValueFormat="number"
+            previousValueDecimals={2}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Video className="h-4 w-4 text-purple-400" />
+                <span className="ml-0.5">Views</span>
+              </div>
+            }
+            value={viewsData.value}
+            data={[]}
+            loading={viewsData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
             decimals={0}
             hideGraph={true}
-            previousValue={pageViewsData.previousValue}
-            previousValueFormat="number"
+            previousValue={viewsData.previousValue}
+            previousValueFormat="number" 
             previousValueDecimals={0}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
