@@ -2063,15 +2063,19 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
-    console.log(`Calculating previous dates for range: ${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`);
+    // Normalize dates to avoid timezone issues - work with dates at the day level only
+    const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    
+    console.log(`Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
     
     // Case 1: Single day - always compare to the day before
-    const isSingleDay = isSameDay(from, to);
+    const isSingleDay = isSameDay(fromNormalized, toNormalized);
     if (isSingleDay) {
       // For a single day view, previous period is always the day before
-      const prevDay = new Date(from);
+      const prevDay = new Date(fromNormalized);
       prevDay.setDate(prevDay.getDate() - 1);
-      const prevDayStr = prevDay.toISOString().split('T')[0];
+      const prevDayStr = toLocalISODateString(prevDay);
       
       console.log(`Single day detected, comparing to previous day: ${prevDayStr}`);
       
@@ -2083,59 +2087,59 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // Case 2: "Last 7 days" preset (Mar 21-27 → should compare to Mar 14-20)
     // Check if this is the last 7 days preset by looking at the range size and end date
-    const rangeDays = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const rangeDays = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
     
     // If we have a 7-day range ending yesterday, it's likely the "Last 7 days" preset
-    const isLast7Days = rangeDays === 7 && isSameDay(to, yesterday);
+    const isLast7Days = rangeDays === 7 && isSameDay(toNormalized, yesterday);
     if (isLast7Days) {
       // For last 7 days, previous period should be the 7 days before that (not overlapping)
-      const prevFrom = new Date(from);
+      const prevFrom = new Date(fromNormalized);
       prevFrom.setDate(prevFrom.getDate() - 7);
       
-      const prevTo = new Date(to);
+      const prevTo = new Date(toNormalized);
       prevTo.setDate(prevTo.getDate() - 7);
       
       console.log(`"Last 7 days" preset detected, comparing to previous 7 days:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${prevFrom.toISOString().split('T')[0]} to ${prevTo.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
       });
       
       return {
-        prevFrom: prevFrom.toISOString().split('T')[0],
-        prevTo: prevTo.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(prevFrom),
+        prevTo: toLocalISODateString(prevTo)
       };
     }
     
     // Case 3: "Last 30 days" preset (similar logic to Last 7 days)
-    const isLast30Days = rangeDays === 30 && isSameDay(to, yesterday);
+    const isLast30Days = rangeDays === 30 && isSameDay(toNormalized, yesterday);
     if (isLast30Days) {
       // For last 30 days, previous period should be the 30 days before that (not overlapping)
-      const prevFrom = new Date(from);
+      const prevFrom = new Date(fromNormalized);
       prevFrom.setDate(prevFrom.getDate() - 30);
       
-      const prevTo = new Date(to);
+      const prevTo = new Date(toNormalized);
       prevTo.setDate(prevTo.getDate() - 30);
       
       console.log(`"Last 30 days" preset detected, comparing to previous 30 days:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${prevFrom.toISOString().split('T')[0]} to ${prevTo.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
       });
       
       return {
-        prevFrom: prevFrom.toISOString().split('T')[0],
-        prevTo: prevTo.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(prevFrom),
+        prevTo: toLocalISODateString(prevTo)
       };
     }
     
     // Case 4: "This month" preset (from start of current month to today)
     const now = new Date();
     const startOfCurrentMonth = startOfMonth(now);
-    if (isSameDay(from, startOfCurrentMonth)) {
+    if (isSameDay(fromNormalized, startOfCurrentMonth)) {
       // Get the days in current period
-      const daysInCurrentPeriod = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const daysInCurrentPeriod = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       
       // Previous period should be same number of days in previous month
       const prevMonthStart = startOfMonth(subMonths(now, 1));
@@ -2143,40 +2147,40 @@ Try creating at least one active campaign in Meta Ads Manager.
       prevMonthEnd.setDate(prevMonthStart.getDate() + daysInCurrentPeriod - 1);
       
       console.log(`"This month" pattern detected, comparing to same days in previous month:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${prevMonthStart.toISOString().split('T')[0]} to ${prevMonthEnd.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevMonthStart)} to ${toLocalISODateString(prevMonthEnd)}`
       });
       
       return {
-        prevFrom: prevMonthStart.toISOString().split('T')[0],
-        prevTo: prevMonthEnd.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(prevMonthStart),
+        prevTo: toLocalISODateString(prevMonthEnd)
       };
     }
     
     // Case 5: "Last month" preset (entire previous month)
     const startOfLastMonth = startOfMonth(subMonths(now, 1));
     const endOfLastMonth = endOfMonth(subMonths(now, 1));
-    if (isSameDay(from, startOfLastMonth) && isSameDay(to, endOfLastMonth)) {
+    if (isSameDay(fromNormalized, startOfLastMonth) && isSameDay(toNormalized, endOfLastMonth)) {
       // Previous period should be the month before last
       const startOfPrevMonth = startOfMonth(subMonths(now, 2));
       const endOfPrevMonth = endOfMonth(subMonths(now, 2));
       
       console.log(`"Last month" pattern detected, comparing to the month before last:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${startOfPrevMonth.toISOString().split('T')[0]} to ${endOfPrevMonth.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(startOfPrevMonth)} to ${toLocalISODateString(endOfPrevMonth)}`
       });
       
       return {
-        prevFrom: startOfPrevMonth.toISOString().split('T')[0],
-        prevTo: endOfPrevMonth.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(startOfPrevMonth),
+        prevTo: toLocalISODateString(endOfPrevMonth)
       };
     }
     
     // Case 6: "This year" preset (from start of year to today)
     const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
-    if (isSameDay(from, startOfCurrentYear)) {
+    if (isSameDay(fromNormalized, startOfCurrentYear)) {
       // Get the days in current period
-      const daysInCurrentPeriod = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const daysInCurrentPeriod = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       
       // Previous period should be same number of days in previous year
       const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
@@ -2184,50 +2188,50 @@ Try creating at least one active campaign in Meta Ads Manager.
       prevYearEnd.setDate(prevYearStart.getDate() + daysInCurrentPeriod - 1);
       
       console.log(`"This year" pattern detected, comparing to same days in previous year:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${prevYearStart.toISOString().split('T')[0]} to ${prevYearEnd.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevYearStart)} to ${toLocalISODateString(prevYearEnd)}`
       });
       
       return {
-        prevFrom: prevYearStart.toISOString().split('T')[0],
-        prevTo: prevYearEnd.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(prevYearStart),
+        prevTo: toLocalISODateString(prevYearEnd)
       };
     }
     
     // Case 7: "Last year" preset (entire previous year)
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
-    if (isSameDay(from, startOfLastYear) && isSameDay(to, endOfLastYear)) {
+    if (isSameDay(fromNormalized, startOfLastYear) && isSameDay(toNormalized, endOfLastYear)) {
       // Previous period should be the year before last
       const startOfPrevYear = new Date(now.getFullYear() - 2, 0, 1);
       const endOfPrevYear = new Date(now.getFullYear() - 2, 11, 31);
       
       console.log(`"Last year" pattern detected, comparing to the year before last:`, {
-        currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
-        prevRange: `${startOfPrevYear.toISOString().split('T')[0]} to ${endOfPrevYear.toISOString().split('T')[0]}`
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(startOfPrevYear)} to ${toLocalISODateString(endOfPrevYear)}`
       });
       
       return {
-        prevFrom: startOfPrevYear.toISOString().split('T')[0],
-        prevTo: endOfPrevYear.toISOString().split('T')[0]
+        prevFrom: toLocalISODateString(startOfPrevYear),
+        prevTo: toLocalISODateString(endOfPrevYear)
       };
     }
     
     // Case 8: Default for custom date ranges - use equivalent previous period
-    const currentRange = to.getTime() - from.getTime();
+    const currentRange = toNormalized.getTime() - fromNormalized.getTime();
     const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
     
-    const prevFrom = new Date(from);
+    const prevFrom = new Date(fromNormalized);
     prevFrom.setDate(prevFrom.getDate() - daysInRange);
     
-    const prevTo = new Date(to);
+    const prevTo = new Date(toNormalized);
     prevTo.setDate(prevTo.getDate() - daysInRange);
     
-    const prevFromStr = prevFrom.toISOString().split('T')[0];
-    const prevToStr = prevTo.toISOString().split('T')[0];
+    const prevFromStr = toLocalISODateString(prevFrom);
+    const prevToStr = toLocalISODateString(prevTo);
     
     console.log(`Custom range detected (${daysInRange} days), comparing to previous period:`, {
-      currentRange: `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`,
+      currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
       prevRange: `${prevFromStr} to ${prevToStr}`
     });
     
@@ -2237,91 +2241,132 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }
   
-  // Improved helper function to get a descriptive label for the previous period
+  // Delete the existing getPreviousPeriodLabel function and replace with this fixed version
   const getPreviousPeriodLabel = (): string => {
     if (!dateRange || !dateRange.from || !dateRange.to) {
       return "Previous period";
     }
     
-    // Get the date info from the current range
-    const from = dateRange.from;
-    const to = dateRange.to;
+    // Create fresh date objects to avoid any timezone issues
+    const fromDate = new Date(
+      dateRange.from.getFullYear(),
+      dateRange.from.getMonth(),
+      dateRange.from.getDate()
+    );
     
-    // Calculate previous dates
-    const { prevFrom, prevTo } = getPreviousPeriodDates(from, to);
+    const toDate = new Date(
+      dateRange.to.getFullYear(),
+      dateRange.to.getMonth(),
+      dateRange.to.getDate()
+    );
     
-    // Format dates in a readable format (e.g., Mar 14 - Mar 20)
-    const formatDateShort = (dateStr: string) => {
-      const date = new Date(dateStr);
+    // Helper function to format dates consistently
+    const formatDate = (date: Date): string => {
       return format(date, "MMM d");
     };
     
+    // Calculate days in the range
+    const daysInRange = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
     // Case 1: Single day - show the previous day with date
-    const isSingleDay = isSameDay(from, to);
-    if (isSingleDay) {
-      return `Previous day (${formatDateShort(prevFrom)})`;
+    if (isSameDay(fromDate, toDate)) {
+      const prevDay = new Date(fromDate);
+      prevDay.setDate(prevDay.getDate() - 1);
+      return `Previous day (${formatDate(prevDay)})`;
     }
     
     // Case 2: Handle specific presets by checking date patterns
-    
-    // Get date info for comparison
     const now = new Date();
-    const yesterday = new Date();
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
     
-    // Check for "Last 7 days" preset
-    const rangeDays = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const isLast7Days = rangeDays === 7 && isSameDay(to, yesterday);
-    if (isLast7Days) {
-      return `Previous 7 days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // Last 7 days preset: today is 28th, range should be 21-27
+    if (daysInRange === 7 && isSameDay(toDate, yesterday)) {
+      const prevFromDate = new Date(fromDate);
+      prevFromDate.setDate(prevFromDate.getDate() - 7);
+      
+      const prevToDate = new Date(toDate);
+      prevToDate.setDate(prevToDate.getDate() - 7);
+      
+      return `Previous 7 days (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
     }
     
-    // Check for "Last 30 days" preset
-    const isLast30Days = rangeDays === 30 && isSameDay(to, yesterday);
-    if (isLast30Days) {
-      return `Previous 30 days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // Last 30 days preset
+    if (daysInRange === 30 && isSameDay(toDate, yesterday)) {
+      const prevFromDate = new Date(fromDate);
+      prevFromDate.setDate(prevFromDate.getDate() - 30);
+      
+      const prevToDate = new Date(toDate);
+      prevToDate.setDate(prevToDate.getDate() - 30);
+      
+      return `Previous 30 days (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
     }
     
-    // Check for "This month" preset
-    const startOfCurrentMonth = startOfMonth(now);
-    if (isSameDay(from, startOfCurrentMonth)) {
-      return `Previous month's equivalent (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // This month preset
+    const currentMonthStart = startOfMonth(now);
+    if (isSameDay(fromDate, currentMonthStart)) {
+      const prevMonthStart = startOfMonth(subMonths(now, 1));
+      const dayDiff = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+      const prevMonthEnd = new Date(prevMonthStart);
+      prevMonthEnd.setDate(prevMonthStart.getDate() + dayDiff);
+      
+      return `Previous month's equivalent (${formatDate(prevMonthStart)} - ${formatDate(prevMonthEnd)})`;
     }
     
-    // Check for "Last month" preset
-    const startOfLastMonth = startOfMonth(subMonths(now, 1));
-    const endOfLastMonth = endOfMonth(subMonths(now, 1));
-    if (isSameDay(from, startOfLastMonth) && isSameDay(to, endOfLastMonth)) {
-      return `Month before last (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // Last month preset
+    const lastMonthStart = startOfMonth(subMonths(now, 1));
+    const lastMonthEnd = endOfMonth(subMonths(now, 1));
+    if (isSameDay(fromDate, lastMonthStart) && isSameDay(toDate, lastMonthEnd)) {
+      const prevMonthStart = startOfMonth(subMonths(now, 2));
+      const prevMonthEnd = endOfMonth(subMonths(now, 2));
+      
+      return `Month before last (${formatDate(prevMonthStart)} - ${formatDate(prevMonthEnd)})`;
     }
     
-    // Check for "This year" preset
-    const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
-    if (isSameDay(from, startOfCurrentYear)) {
-      return `Previous year's equivalent (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // This year preset
+    const thisYearStart = new Date(now.getFullYear(), 0, 1);
+    if (isSameDay(fromDate, thisYearStart)) {
+      const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
+      const dayDiff = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+      const prevYearEnd = new Date(prevYearStart);
+      prevYearEnd.setDate(prevYearStart.getDate() + dayDiff);
+      
+      return `Previous year's equivalent (${formatDate(prevYearStart)} - ${formatDate(prevYearEnd)})`;
     }
     
-    // Check for "Last year" preset
-    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
-    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
-    if (isSameDay(from, startOfLastYear) && isSameDay(to, endOfLastYear)) {
-      return `Year before last (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // Last year preset
+    const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+    const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
+    if (isSameDay(fromDate, lastYearStart) && isSameDay(toDate, lastYearEnd)) {
+      const prevYearStart = new Date(now.getFullYear() - 2, 0, 1);
+      const prevYearEnd = new Date(now.getFullYear() - 2, 11, 31);
+      
+      return `Year before last (${formatDate(prevYearStart)} - ${formatDate(prevYearEnd)})`;
     }
     
-    // Case 3: Default - use range length for custom date ranges
-    if (rangeDays <= 7) {
-      return `Previous ${rangeDays} days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
-    } else if (rangeDays <= 31) {
-      return `Previous period (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
-    } else if (rangeDays <= 92) {
-      return `Previous quarter (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
-    } else if (rangeDays <= 366) {
-      return `Previous year (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+    // Default case - custom date range
+    const prevFromDate = new Date(fromDate);
+    prevFromDate.setDate(prevFromDate.getDate() - daysInRange);
+    
+    const prevToDate = new Date(toDate);
+    prevToDate.setDate(prevToDate.getDate() - daysInRange);
+    
+    if (daysInRange <= 7) {
+      return `Previous ${daysInRange} days (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
+    } else if (daysInRange <= 31) {
+      return `Previous period (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
+    } else if (daysInRange <= 92) {
+      return `Previous quarter (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
     } else {
-      return `Previous period (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
+      return `Previous period (${formatDate(prevFromDate)} - ${formatDate(prevToDate)})`;
     }
-  }
+  };
+
+  // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
+  const toLocalISODateString = (date: Date): string => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
 
   // Fetch Ad Spend data directly from the database
   const fetchAdSpendDirectly = async () => {
