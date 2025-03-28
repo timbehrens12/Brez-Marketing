@@ -6,7 +6,7 @@ import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDow
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
-import { isSameDay, isYesterday } from "date-fns"
+import { isSameDay, isYesterday, subDays, startOfMonth, subMonths, endOfMonth } from "date-fns"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import type { Metrics } from "@/types/metrics"
 import type { DateRange } from "react-day-picker"
@@ -2061,11 +2061,11 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
-  // Simplified helper function to calculate the previous period date range
+  // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     console.log(`Calculating previous dates for range: ${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}`);
     
-    // Case 1: Single day - always compare to the day before
+    // Case 1: Single day (Today or Yesterday) - always compare to the day before
     const isSingleDay = isSameDay(from, to);
     if (isSingleDay) {
       // For a single day view, previous period is always the day before
@@ -2081,9 +2081,125 @@ Try creating at least one active campaign in Meta Ads Manager.
       };
     }
     
-    // Case 2: Date range - use equivalent previous period
+    // Case 2: Handle specific preset patterns
+    
+    // "Last 7 days" preset (yesterday to 7 days ago)
+    const yesterday = subDays(new Date(), 1);
+    if (isSameDay(to, yesterday) && isSameDay(from, subDays(new Date(), 7))) {
+      // Previous period should be the 7 days before that
+      const prevFrom = subDays(from, 7);
+      const prevTo = subDays(to, 7);
+      
+      console.log(`"Last 7 days" pattern detected, comparing to previous 7 days`);
+      
+      return {
+        prevFrom: prevFrom.toISOString().split('T')[0],
+        prevTo: prevTo.toISOString().split('T')[0]
+      };
+    }
+    
+    // "Last 30 days" preset (yesterday to 30 days ago)
+    if (isSameDay(to, yesterday) && isSameDay(from, subDays(new Date(), 30))) {
+      // Previous period should be the 30 days before that
+      const prevFrom = subDays(from, 30);
+      const prevTo = subDays(to, 30);
+      
+      console.log(`"Last 30 days" pattern detected, comparing to previous 30 days`);
+      
+      return {
+        prevFrom: prevFrom.toISOString().split('T')[0],
+        prevTo: prevTo.toISOString().split('T')[0]
+      };
+    }
+    
+    // "This week" preset
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const startOfThisWeek = subDays(now, dayOfWeek);
+    if (isSameDay(from, startOfThisWeek)) {
+      // Previous period should be last week (same number of days)
+      const daysInCurrentPeriod = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prevFrom = subDays(from, 7);
+      const prevTo = new Date(prevFrom);
+      prevTo.setDate(prevFrom.getDate() + daysInCurrentPeriod - 1);
+      
+      console.log(`"This week" pattern detected, comparing to same days in previous week`);
+      
+      return {
+        prevFrom: prevFrom.toISOString().split('T')[0],
+        prevTo: prevTo.toISOString().split('T')[0]
+      };
+    }
+    
+    // "This month" preset
+    const startOfCurrentMonth = startOfMonth(new Date());
+    if (isSameDay(from, startOfCurrentMonth)) {
+      // Previous period should be the equivalent days in the previous month
+      const daysInCurrentPeriod = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prevFrom = startOfMonth(subMonths(new Date(), 1));
+      const prevTo = new Date(prevFrom);
+      prevTo.setDate(prevFrom.getDate() + daysInCurrentPeriod - 1);
+      
+      console.log(`"This month" pattern detected, comparing to same days in previous month`);
+      
+      return {
+        prevFrom: prevFrom.toISOString().split('T')[0],
+        prevTo: prevTo.toISOString().split('T')[0]
+      };
+    }
+    
+    // "Last month" preset
+    const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
+    const endOfLastMonth = endOfMonth(subMonths(new Date(), 1));
+    if (isSameDay(from, startOfLastMonth) && isSameDay(to, endOfLastMonth)) {
+      // Previous period should be the month before last
+      const startOfPrevMonth = startOfMonth(subMonths(new Date(), 2));
+      const endOfPrevMonth = endOfMonth(subMonths(new Date(), 2));
+      
+      console.log(`"Last month" pattern detected, comparing to the month before last`);
+      
+      return {
+        prevFrom: startOfPrevMonth.toISOString().split('T')[0],
+        prevTo: endOfPrevMonth.toISOString().split('T')[0]
+      };
+    }
+    
+    // "This year" preset
+    const startOfCurrentYear = new Date(new Date().getFullYear(), 0, 1);
+    if (isSameDay(from, startOfCurrentYear)) {
+      // Previous period should be the same range in the previous year
+      const daysInCurrentPeriod = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const prevFrom = new Date(new Date().getFullYear() - 1, 0, 1);
+      const prevTo = new Date(prevFrom);
+      prevTo.setDate(prevFrom.getDate() + daysInCurrentPeriod - 1);
+      
+      console.log(`"This year" pattern detected, comparing to same days in previous year`);
+      
+      return {
+        prevFrom: prevFrom.toISOString().split('T')[0],
+        prevTo: prevTo.toISOString().split('T')[0]
+      };
+    }
+    
+    // "Last year" preset
+    const startOfLastYear = new Date(new Date().getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(new Date().getFullYear() - 1, 11, 31);
+    if (isSameDay(from, startOfLastYear) && isSameDay(to, endOfLastYear)) {
+      // Previous period should be the year before last
+      const startOfPrevYear = new Date(new Date().getFullYear() - 2, 0, 1);
+      const endOfPrevYear = new Date(new Date().getFullYear() - 2, 11, 31);
+      
+      console.log(`"Last year" pattern detected, comparing to the year before last`);
+      
+      return {
+        prevFrom: startOfPrevYear.toISOString().split('T')[0],
+        prevTo: endOfPrevYear.toISOString().split('T')[0]
+      };
+    }
+    
+    // Case 3: Default - equivalent previous period based on range length
     const currentRange = to.getTime() - from.getTime();
-    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24));
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
     
     const prevFrom = new Date(from);
     prevFrom.setDate(prevFrom.getDate() - daysInRange);
@@ -2094,7 +2210,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     const prevFromStr = prevFrom.toISOString().split('T')[0];
     const prevToStr = prevTo.toISOString().split('T')[0];
     
-    console.log(`Multi-day range detected (${daysInRange} days), comparing to previous period: ${prevFromStr} to ${prevToStr}`);
+    console.log(`Custom range detected (${daysInRange} days), comparing to previous period: ${prevFromStr} to ${prevToStr}`);
     
     return {
       prevFrom: prevFromStr,
@@ -2102,7 +2218,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }
   
-  // Simplified helper function to get a descriptive label for the previous period
+  // Improved helper function to get a descriptive label for the previous period
   const getPreviousPeriodLabel = (): string => {
     if (!dateRange || !dateRange.from || !dateRange.to) {
       return "Previous period";
@@ -2114,12 +2230,59 @@ Try creating at least one active campaign in Meta Ads Manager.
       return "Previous day";
     }
     
-    // Case 2: Multi-day range - use appropriate description
+    // Case 2: Handle specific preset patterns
+    const now = new Date();
+    const yesterday = subDays(now, 1);
+    
+    // "Last 7 days" preset
+    if (isSameDay(dateRange.to, yesterday) && isSameDay(dateRange.from, subDays(now, 7))) {
+      return "Previous 7 days";
+    }
+    
+    // "Last 30 days" preset
+    if (isSameDay(dateRange.to, yesterday) && isSameDay(dateRange.from, subDays(now, 30))) {
+      return "Previous 30 days";
+    }
+    
+    // "This week" preset
+    const dayOfWeek = now.getDay(); 
+    const startOfThisWeek = subDays(now, dayOfWeek);
+    if (isSameDay(dateRange.from, startOfThisWeek)) {
+      return "Last week";
+    }
+    
+    // "This month" preset
+    const startOfCurrentMonth = startOfMonth(now);
+    if (isSameDay(dateRange.from, startOfCurrentMonth)) {
+      return "Last month";
+    }
+    
+    // "Last month" preset
+    const startOfLastMonth = startOfMonth(subMonths(now, 1));
+    const endOfLastMonth = endOfMonth(subMonths(now, 1));
+    if (isSameDay(dateRange.from, startOfLastMonth) && isSameDay(dateRange.to, endOfLastMonth)) {
+      return "Month before last";
+    }
+    
+    // "This year" preset
+    const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
+    if (isSameDay(dateRange.from, startOfCurrentYear)) {
+      return "Last year";
+    }
+    
+    // "Last year" preset
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+    if (isSameDay(dateRange.from, startOfLastYear) && isSameDay(dateRange.to, endOfLastYear)) {
+      return "Year before last";
+    }
+    
+    // Case 3: Default - base on range length
     const currentRange = dateRange.to.getTime() - dateRange.from.getTime();
     const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24));
     
     if (daysInRange <= 7) {
-      return "Previous period";
+      return "Previous week";
     } else if (daysInRange <= 31) {
       return "Previous month";
     } else if (daysInRange <= 92) {
@@ -2313,6 +2476,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       setImpressionsData(prev => ({ ...prev, isLoading: false }))
     }
   }
+  
   
   // Fetch Clicks data directly from the database
   const fetchClicksDirectly = async () => {
