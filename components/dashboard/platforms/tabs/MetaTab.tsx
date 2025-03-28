@@ -1162,7 +1162,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         showDiagnosticDialog(message)
         toast.info("No data found in Meta account")
       }
-      } catch (err) {
+    } catch (err) {
       console.error("Error testing Meta data fetch:", err)
       toast.error("Failed to test fetch Meta data. Please try again.")
     }
@@ -3594,7 +3594,418 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
-        {/* Campaign Performance section removed */}
+        {/* Campaign Performance Overview */}
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="pb-3 border-b border-[#333]">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <LineChart className="h-4 w-4 text-blue-400" />
+                Campaign Performance
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => fetchCampaigns()}
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" />
+                  Refresh
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]">
+                      <SlidersHorizontal className="h-3 w-3 mr-2" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#111] border-[#333]">
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Highest Spend
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Highest ROAS
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Lowest CPC
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Most Impressions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoadingCampaigns && !cachedCampaigns.length ? (
+              <div className="flex justify-center items-center h-[400px]">
+                <div className="flex flex-col items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+                  <p className="text-sm text-gray-400">Loading campaign data...</p>
+                </div>
+              </div>
+            ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
+              <div>
+                {/* Campaign Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-xs text-gray-400">Total Active Campaigns</h3>
+                        <p className="text-2xl font-semibold mt-1">
+                          {(campaigns.length > 0 ? campaigns : cachedCampaigns).filter(c => c.status === 'ACTIVE').length}
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <Layers className="h-5 w-5 text-blue-400" />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {(campaigns.length > 0 ? campaigns : cachedCampaigns).filter(c => c.status !== 'ACTIVE').length} paused
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-xs text-gray-400">Total Spend</h3>
+                        <p className="text-2xl font-semibold mt-1">
+                          ${(campaigns.length > 0 ? campaigns : cachedCampaigns).reduce((sum, c) => sum + (typeof c.spend === 'number' ? c.spend : 0), 0).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                        <DollarSign className="h-5 w-5 text-green-400" />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Across all campaigns
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-xs text-gray-400">Avg. ROAS</h3>
+                        <p className="text-2xl font-semibold mt-1">
+                          {(() => {
+                            const campaignsData = campaigns.length > 0 ? campaigns : cachedCampaigns;
+                            const validCampaigns = campaignsData.filter(c => typeof c.roas === 'number' && c.spend > 0);
+                            
+                            if (validCampaigns.length === 0) return '0.00';
+                            
+                            const totalSpend = validCampaigns.reduce((sum, c) => sum + c.spend, 0);
+                            const weightedRoas = validCampaigns.reduce((sum, c) => sum + (c.roas * c.spend), 0);
+                            
+                            return (weightedRoas / totalSpend).toFixed(2);
+                          })()}x
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-purple-400" />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Weighted average
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-xs text-gray-400">Avg. CTR</h3>
+                        <p className="text-2xl font-semibold mt-1">
+                          {(() => {
+                            const campaignsData = campaigns.length > 0 ? campaigns : cachedCampaigns;
+                            const validCampaigns = campaignsData.filter(c => 
+                              typeof c.ctr === 'number' && 
+                              typeof c.impressions === 'number' && 
+                              c.impressions > 0
+                            );
+                            
+                            if (validCampaigns.length === 0) return '0.00';
+                            
+                            const totalImpressions = validCampaigns.reduce((sum, c) => sum + c.impressions, 0);
+                            const weightedCtr = validCampaigns.reduce((sum, c) => sum + (c.ctr * c.impressions), 0);
+                            
+                            return (weightedCtr / totalImpressions).toFixed(2);
+                          })()}%
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                        <MousePointerClick className="h-5 w-5 text-amber-400" />
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Weighted average
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Campaign Table with Improved UI */}
+                <div className="divide-y divide-[#222]">
+                  {(campaigns.length > 0 ? campaigns : cachedCampaigns).map((campaign, index) => (
+                    <Collapsible key={campaign.campaign_id || index} className="overflow-hidden">
+                      <CollapsibleTrigger className="w-full text-left p-4 hover:bg-[#1a1a1a] flex items-center justify-between transition-all ease-in-out duration-200">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-3 w-3 rounded-full ${campaign.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                          <div>
+                            <h3 className="font-medium text-sm text-white">{campaign.campaign_name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-gray-400">ID: {campaign.campaign_id}</span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${campaign.status === 'ACTIVE' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'}`}>
+                                {campaign.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-medium">${typeof campaign.spend === 'number' ? campaign.spend.toFixed(2) : '0.00'}</span>
+                            <span className="text-xs text-gray-400">Total Spend</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-medium">{typeof campaign.impressions === 'number' ? campaign.impressions.toLocaleString() : '0'}</span>
+                            <span className="text-xs text-gray-400">Impressions</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-medium">{typeof campaign.clicks === 'number' ? campaign.clicks.toLocaleString() : '0'}</span>
+                            <span className="text-xs text-gray-400">Clicks</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className={`text-sm font-medium ${campaign.roas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
+                              {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x
+                            </span>
+                            <span className="text-xs text-gray-400">ROAS</span>
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="p-4 pt-0 bg-[#0a0a0a]">
+                          {/* Campaign Performance Visualization */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-4">
+                            <div className="col-span-2 bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                              <h4 className="text-sm font-medium mb-3 text-gray-300">Performance Metrics</h4>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 mb-1">CTR</span>
+                                  <span className="text-base font-medium">
+                                    {typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(2) : '0.00'}%
+                                  </span>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <span className={`text-xs ${campaign.ctr > 1 ? 'text-green-400' : 'text-gray-400'}`}>
+                                      {campaign.ctr > 1 ? 'Good' : 'Low'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 mb-1">CPC</span>
+                                  <span className="text-base font-medium">
+                                    ${typeof campaign.cpc === 'number' ? campaign.cpc.toFixed(2) : '0.00'}
+                                  </span>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <span className={`text-xs ${campaign.cpc < 2 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                      {campaign.cpc < 2 ? 'Good' : 'High'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 mb-1">Conversions</span>
+                                  <span className="text-base font-medium">
+                                    {typeof campaign.conversions === 'number' ? campaign.conversions : '0'}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-xs text-gray-400 mb-1">Cost/Conv.</span>
+                                  <span className="text-base font-medium">
+                                    ${campaign.conversions > 0 && campaign.spend > 0 
+                                      ? (campaign.spend / campaign.conversions).toFixed(2) 
+                                      : '0.00'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Performance Visualization - Modern Bar chart */}
+                              <div className="mt-6">
+                                <h4 className="text-xs font-medium mb-3 text-gray-300">Performance Metrics</h4>
+                                <div className="space-y-5">
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-gray-400">CTR</span>
+                                      <span className="text-xs font-medium">{typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(2) : '0.00'}%</span>
+                                    </div>
+                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
+                                        style={{ width: `${Math.min(campaign.ctr * 5, 100)}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-gray-400">Conversion Rate</span>
+                                      <span className="text-xs font-medium">
+                                        {campaign.conversions > 0 && campaign.clicks > 0 
+                                          ? ((campaign.conversions / campaign.clicks) * 100).toFixed(2)
+                                          : '0.00'}%
+                                      </span>
+                                    </div>
+                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full" 
+                                        style={{ width: `${campaign.conversions > 0 && campaign.clicks > 0 
+                                          ? Math.min((campaign.conversions / campaign.clicks) * 100 * 2, 100) 
+                                          : 0}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-gray-400">ROAS</span>
+                                      <span className={`text-xs font-medium ${campaign.roas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x
+                                      </span>
+                                    </div>
+                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
+                                      <div 
+                                        className={`h-full rounded-full ${
+                                          campaign.roas >= 2 ? 'bg-gradient-to-r from-green-600 to-green-400' : 
+                                          campaign.roas >= 1 ? 'bg-gradient-to-r from-green-600 to-green-400' : 
+                                          'bg-gradient-to-r from-red-600 to-red-400'
+                                        }`}
+                                        style={{ width: `${Math.min(campaign.roas * 25, 100)}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Campaign Insights & Recommendations - Improved */}
+                            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                              <h4 className="text-sm font-medium mb-3 text-gray-300">Campaign Insights</h4>
+                              
+                              {campaign.roas < 1 ? (
+                                <div className="p-4 bg-gradient-to-r from-red-900/20 to-red-800/10 border border-red-800/30 rounded-lg mb-4">
+                                  <div className="flex items-start gap-3">
+                                    <AlertCircle className="h-5 w-5 text-red-400 mt-0.5" />
+                                    <div>
+                                      <p className="text-sm text-red-300 font-medium">Low ROAS Alert</p>
+                                      <p className="text-xs text-gray-300 mt-1">This campaign is not profitable with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : campaign.roas > 2 ? (
+                                <div className="p-4 bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-800/30 rounded-lg mb-4">
+                                  <div className="flex items-start gap-3">
+                                    <TrendingUp className="h-5 w-5 text-green-400 mt-0.5" />
+                                    <div>
+                                      <p className="text-sm text-green-300 font-medium">High Performance</p>
+                                      <p className="text-xs text-gray-300 mt-1">This campaign is performing exceptionally with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-4 bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 border border-yellow-800/30 rounded-lg mb-4">
+                                  <div className="flex items-start gap-3">
+                                    <Info className="h-5 w-5 text-yellow-400 mt-0.5" />
+                                    <div>
+                                      <p className="text-sm text-yellow-300 font-medium">Average Performance</p>
+                                      <p className="text-xs text-gray-300 mt-1">This campaign is performing adequately with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <h4 className="text-sm font-medium mb-3 text-gray-300 mt-4">AI Recommendations</h4>
+                              <ul className="space-y-3">
+                                {campaign.ctr < 1 && (
+                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
+                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-blue-900/30 flex items-center justify-center">
+                                      <ArrowUpRight className="h-3.5 w-3.5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-blue-400">Improve CTR</span>
+                                      <p className="text-xs text-gray-400 mt-0.5">Refresh creative assets and enhance ad copy to increase engagement</p>
+                                    </div>
+                                  </li>
+                                )}
+                                {campaign.cpc > 1.5 && (
+                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
+                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-green-900/30 flex items-center justify-center">
+                                      <ArrowDownRight className="h-3.5 w-3.5 text-green-400" />
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-green-400">Reduce Cost</span>
+                                      <p className="text-xs text-gray-400 mt-0.5">Refine audience targeting to improve relevance and lower CPC</p>
+                                    </div>
+                                  </li>
+                                )}
+                                {campaign.roas < 1 && (
+                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
+                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-red-900/30 flex items-center justify-center">
+                                      <AlertCircle className="h-3.5 w-3.5 text-red-400" />
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-red-400">Critical Action</span>
+                                      <p className="text-xs text-gray-400 mt-0.5">Consider pausing or restructuring this campaign to minimize losses</p>
+                                    </div>
+                                  </li>
+                                )}
+                                {campaign.roas > 2 && (
+                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
+                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-green-900/30 flex items-center justify-center">
+                                      <PlusCircle className="h-3.5 w-3.5 text-green-400" />
+                                    </div>
+                                    <div>
+                                      <span className="text-xs font-medium text-green-400">Scale Opportunity</span>
+                                      <p className="text-xs text-gray-400 mt-0.5">Increase budget for this high-performing campaign to maximize returns</p>
+                                    </div>
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          </div>
+                          
+                          {/* Action Buttons Section */}
+                          <div className="flex items-center justify-end gap-2 mt-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs bg-blue-900/20 hover:bg-blue-900/30 border-blue-800/30 text-blue-300"
+                              onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-2" />
+                              Open in Meta Ads Manager
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center p-12">
+                <Activity className="h-12 w-12 text-gray-500 mb-4" />
+                <p className="text-gray-400 mb-2">No campaign data available</p>
+                <p className="text-sm text-gray-500 max-w-md">Create campaigns in Meta Ads Manager or check your API connection settings to start seeing campaign performance data here.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-6 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Meta Ads Manager
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
       {/* END OF NEW CAMPAIGN PERFORMANCE SECTION */}
               </>
