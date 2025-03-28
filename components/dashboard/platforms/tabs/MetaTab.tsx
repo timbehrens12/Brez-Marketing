@@ -2061,6 +2061,14 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null as Date | null
   })
   
+  // Add state for CTR (Click-Through Rate) widget
+  const [ctrData, setCtrData] = useState({
+    value: 0,
+    previousValue: 0,
+    isLoading: true,
+    lastUpdated: null as Date | null
+  })
+  
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -2857,6 +2865,67 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
+  // Add function to fetch CTR (Click-Through Rate) data
+  const fetchCtrDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch CTR: Missing date range or brand ID")
+      return
+    }
+    
+    setCtrData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'ctr')
+      
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching CTR for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range using our simplified helper function
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/click-through-rate?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'ctr')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/click-through-rate?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setCtrData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`CTR data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching CTR data:", data.error || prevData.error)
+        setCtrData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in CTR fetch:", error)
+      setCtrData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
     await Promise.all([
@@ -2867,7 +2936,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchPurchaseValueDirectly(),
       fetchResultsDirectly(),
       fetchCostPerResultDirectly(),
-      fetchCostPerClickDirectly()
+      fetchCostPerClickDirectly(),
+      fetchCtrDirectly()
     ])
   }
 
@@ -2913,6 +2983,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setResultsData(prev => ({ ...prev, isLoading: true }))
     setCostPerResultData(prev => ({ ...prev, isLoading: true }))
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
+    setCtrData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -2927,7 +2998,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchPurchaseValueDirectly(),
         fetchResultsDirectly(),
         fetchCostPerResultDirectly(),
-        fetchCostPerClickDirectly()
+        fetchCostPerClickDirectly(),
+        fetchCtrDirectly()
       ])
       
       // Show success toast
@@ -3259,6 +3331,25 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideGraph={true}
             previousValue={costPerClickData.previousValue}
             previousValueFormat="currency"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <MousePointerClick className="h-4 w-4 text-orange-400" />
+                <span className="ml-0.5">CTR</span>
+              </div>
+            }
+            value={ctrData.value}
+            data={[]}
+            loading={ctrData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="percentage"
+            hideGraph={true}
+            previousValue={ctrData.previousValue}
+            previousValueFormat="percentage"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
