@@ -2085,7 +2085,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
-  const [frequencyData, setFrequencyData] = useState<MetricDataState>({
+  const [pageViewsData, setPageViewsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: false,
@@ -3018,19 +3018,19 @@ Try creating at least one active campaign in Meta Ads Manager.
   }
   
   // Fetch frequency data directly from the database
-  const fetchFrequencyDirectly = async () => {
+  const fetchPageViewsDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch frequency: Missing date range or brand ID")
+      console.log("Cannot fetch page views: Missing date range or brand ID")
       return
     }
     
-    setFrequencyData(prev => ({ ...prev, isLoading: true }))
+    setPageViewsData(prev => ({ ...prev, isLoading: true }))
     
     try {
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'frequency')
+      params.append('metric', 'page_views')
       
       // Set date parameters
       const fromDate = dateRange.from
@@ -3040,41 +3040,41 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Frequency for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching Page Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/frequency?${params.toString()}`)
+      const response = await fetch(`/api/metrics/meta/single/page_views?${params.toString()}`)
       
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'frequency')
+      prevParams.append('metric', 'page_views')
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/frequency?${prevParams.toString()}`)
+      const prevResponse = await fetch(`/api/metrics/meta/single/page_views?${prevParams.toString()}`)
       
       // Process responses
       const data = await response.json()
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setFrequencyData({
+        setPageViewsData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Frequency data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Page Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Frequency data:", data.error || prevData.error)
-        setFrequencyData(prev => ({ ...prev, isLoading: false }))
+        console.error("Error fetching Page Views data:", data.error || prevData.error)
+        setPageViewsData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Frequency fetch:", error)
-      setFrequencyData(prev => ({ ...prev, isLoading: false }))
+      console.error("Error in Page Views fetch:", error)
+      setPageViewsData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3152,7 +3152,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
       fetchReachDirectly(),
-      fetchFrequencyDirectly(),
+      fetchPageViewsDirectly(),
       fetchLinkClicksDirectly()
     ])
   }
@@ -3201,7 +3201,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
-    setFrequencyData(prev => ({ ...prev, isLoading: true }))
+    setPageViewsData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
@@ -3220,7 +3220,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
-        fetchFrequencyDirectly(),
+        fetchPageViewsDirectly(),
         fetchLinkClicksDirectly()
       ])
       
@@ -3598,18 +3598,20 @@ Try creating at least one active campaign in Meta Ads Manager.
           <MetricCard
             title={
               <div className="flex items-center gap-1.5">
-                <BarChart2 className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Frequency</span>
+                <Eye className="h-4 w-4 text-purple-400" />
+                <span className="ml-0.5">Page Views</span>
               </div>
             }
-            value={frequencyData.value}
+            value={pageViewsData.value}
             data={[]}
-            loading={frequencyData.isLoading || isManuallyRefreshing}
+            loading={pageViewsData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
+            decimals={0}
             hideGraph={true}
-            previousValue={frequencyData.previousValue}
+            previousValue={pageViewsData.previousValue}
             previousValueFormat="number"
+            previousValueDecimals={0}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
