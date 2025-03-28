@@ -3068,6 +3068,17 @@ Try creating at least one active campaign in Meta Ads Manager.
           lastUpdated: new Date()
         })
         console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        
+        // Additional logging for debugging views data
+        if (data._meta) {
+          console.log(`Views debug info: Found ${data._meta.recordsWithViews} records with views out of ${data._meta.records} total records`)
+          console.log(`Views dates analyzed: ${data._meta.dates?.join(', ')}`)
+        }
+        
+        if (data.value === 0) {
+          console.log(`WARNING: No views found. Make sure your Facebook campaigns include video content.`)
+          console.log(`Views data must be pulled from video ads, it represents video views from your campaigns.`)
+        }
       } else {
         console.error("Error fetching Views data:", data.error || prevData.error)
         setViewsData(prev => ({ ...prev, isLoading: false }))

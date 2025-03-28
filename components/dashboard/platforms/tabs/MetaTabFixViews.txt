@@ -1,0 +1,58 @@
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <MousePointerClick className="h-4 w-4 text-orange-400" />
+                <span className="ml-0.5">CTR</span>
+              </div>
+            }
+            value={ctrData.value}
+            data={[]}
+            loading={ctrData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="percentage"
+            hideGraph={true}
+            previousValue={ctrData.previousValue}
+            previousValueFormat="percentage"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <Video className="h-4 w-4 text-purple-400" />
+                <span className="ml-0.5">Video Views</span>
+              </div>
+            }
+            value={viewsData.value}
+            data={[]}
+            loading={viewsData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="number"
+            decimals={0}
+            hideGraph={true}
+            previousValue={viewsData.previousValue}
+            previousValueFormat="number" 
+            previousValueDecimals={0}
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <MousePointer className="h-4 w-4 text-green-400" />
+                <span className="ml-0.5">Link Clicks</span>
+              </div>
+            }
+            value={linkClicksData.value}
+            data={[]}
+            loading={linkClicksData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="number"
+            hideGraph={true}
+            previousValue={linkClicksData.previousValue}
+            previousValueFormat="number"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          /> 
