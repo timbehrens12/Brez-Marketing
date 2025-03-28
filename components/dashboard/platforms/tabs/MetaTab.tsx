@@ -3920,6 +3920,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         </Card>
         
         {/* AI Insights Section */}
+        /*
         <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
           <CardHeader className="pb-3 border-b border-[#333]">
             <div className="flex justify-between items-center">
@@ -3999,8 +4000,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             )}
           </CardContent>
         </Card>
+        */
         
         {/* Optimization Opportunities Card */}
+        /*
         <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
           <CardHeader className="pb-3 border-b border-[#333]">
             <CardTitle className="text-base font-medium flex items-center gap-2">
@@ -4069,6 +4072,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             </div>
           </CardContent>
         </Card>
+        */
       </div>
       {/* END OF NEW CAMPAIGN PERFORMANCE SECTION */}
               </>
