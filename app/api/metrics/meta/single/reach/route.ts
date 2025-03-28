@@ -78,11 +78,22 @@ export async function GET(request: NextRequest) {
     
     // Calculate total reach
     let totalReach = 0
+    let recordsWithReach = 0
+    
     insights.forEach(insight => {
-      if (insight.reach && !isNaN(insight.reach)) {
+      if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
         totalReach += parseInt(insight.reach)
+        recordsWithReach++
       }
     })
+    
+    // If no reach data is found, add debugging log
+    if (recordsWithReach === 0) {
+      console.log(`REACH API WARNING: No reach data found in any of the ${insights.length} records. This may indicate that:
+      1. The Meta API is not returning reach data
+      2. The meta_ad_insights table hasn't been updated with the latest data that includes reach
+      3. You may need to resync Meta data`)
+    }
     
     // Return the result
     const result = {
@@ -91,11 +102,12 @@ export async function GET(request: NextRequest) {
         from,
         to,
         records: insights.length,
+        recordsWithReach,
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value}, based on ${insights.length} records`)
+    console.log(`REACH API: Returning reach = ${result.value}, based on ${insights.length} records (reach data found in ${insights.filter(i => i.reach > 0).length} records)`)
     
     return NextResponse.json(result)
   } catch (error) {
