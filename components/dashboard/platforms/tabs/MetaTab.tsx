@@ -3045,31 +3045,55 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
-      // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/views?${params.toString()}`)
-      
-      // Fetch data for previous period
-      const prevParams = new URLSearchParams()
-      prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'views')
-      prevParams.append('from', prevFrom)
-      prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/views?${prevParams.toString()}`)
-      
-      // Process responses
-      const data = await response.json()
-      const prevData = await prevResponse.json()
-      
-      if (!data.error && !prevData.error) {
-        setViewsData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
-        console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
-      } else {
-        console.error("Error fetching Views data:", data.error || prevData.error)
+      try {
+        // Try to fetch from the views endpoint first
+        // Fetch data for current period
+        const response = await fetch(`/api/metrics/meta/single/views?${params.toString()}`)
+        
+        // Fetch data for previous period
+        const prevParams = new URLSearchParams()
+        prevParams.append('brandId', brandId)
+        prevParams.append('metric', 'views')
+        prevParams.append('from', prevFrom)
+        prevParams.append('to', prevTo)
+        const prevResponse = await fetch(`/api/metrics/meta/single/views?${prevParams.toString()}`)
+        
+        // Process responses
+        const data = await response.json()
+        const prevData = await prevResponse.json()
+        
+        if (!data.error && !prevData.error) {
+          setViewsData({
+            value: data.value || 0,
+            previousValue: prevData.value || 0,
+            isLoading: false,
+            lastUpdated: new Date()
+          })
+          console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        } else {
+          // If there's an error with the views endpoint, try using reach as a fallback
+          console.warn("Error fetching from views endpoint, trying reach as fallback:", data.error || prevData.error)
+          const fallbackResponse = await fetch(`/api/metrics/meta/single/reach?${params.toString()}`)
+          const fallbackPrevResponse = await fetch(`/api/metrics/meta/single/reach?${prevParams.toString()}`)
+          
+          const fallbackData = await fallbackResponse.json()
+          const fallbackPrevData = await fallbackPrevResponse.json()
+          
+          if (!fallbackData.error && !fallbackPrevData.error) {
+            setViewsData({
+              value: fallbackData.value || 0,
+              previousValue: fallbackPrevData.value || 0,
+              isLoading: false,
+              lastUpdated: new Date()
+            })
+            console.log(`Views data fetched from reach fallback: ${fallbackData.value}, Previous: ${fallbackPrevData.value}`)
+          } else {
+            console.error("Error fetching Views data from both endpoints:", data.error || prevData.error)
+            setViewsData(prev => ({ ...prev, isLoading: false }))
+          }
+        }
+      } catch (error) {
+        console.error("Error in Views fetch:", error)
         setViewsData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {

@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights for reach data (views)
+    // Query meta_ad_insights for views data (using views column)
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, reach')
+      .select('date, views')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -79,29 +79,29 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total views (using reach)
+    // Calculate total views
     let totalViews = 0
     let recordsWithViews = 0
     
     // Debug: Show raw values
     const debugValues = insights.slice(0, 5).map(insight => ({
       date: insight.date,
-      reach: insight.reach
+      views: insight.views
     }));
-    console.log(`VIEWS API DEBUG: Raw reach values from first 5 records:`, JSON.stringify(debugValues));
+    console.log(`VIEWS API DEBUG: Raw views values from first 5 records:`, JSON.stringify(debugValues));
     
     insights.forEach(insight => {
-      if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
-        totalViews += parseInt(insight.reach)
+      if (insight.views && !isNaN(insight.views) && insight.views > 0) {
+        totalViews += parseInt(insight.views)
         recordsWithViews++
       }
     })
     
     // If no views data is found, add debugging log
     if (recordsWithViews === 0) {
-      console.log(`VIEWS API WARNING: No reach/views data found in any of the ${insights.length} records. This may indicate that:
-      1. The Meta API is not returning reach data
-      2. The meta_ad_insights table hasn't been updated with the latest data that includes reach
+      console.log(`VIEWS API WARNING: No views data found in any of the ${insights.length} records. This may indicate that:
+      1. The Meta API is not returning views data
+      2. The meta_ad_insights table hasn't been updated with the latest data that includes views
       3. You may need to resync Meta data`)
     }
     

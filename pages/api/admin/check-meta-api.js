@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     
     // Make test API call to check fields
     const insightsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${testAccount.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+      `https://graph.facebook.com/v18.0/${testAccount.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks,page_views&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
     );
     
     const insightsData = await insightsResponse.json();
@@ -74,18 +74,52 @@ export default async function handler(req, res) {
       });
     }
 
-    // Extract sample data and check for view data (using reach field)
+    // Extract sample data and check for page_views
     let sampleRecord = null;
+    let hasPageViews = false;
     let hasReach = false;
     
     if (insightsData.data && insightsData.data.length > 0) {
       sampleRecord = insightsData.data[0];
+      hasPageViews = 'page_views' in sampleRecord;
       hasReach = 'reach' in sampleRecord;
     }
     
     // Determine available fields from the sample
     const availableFields = sampleRecord ? Object.keys(sampleRecord) : [];
     
+    // Check if we need to update our database records 
+    // to ensure views column is populated
+    let dbViewsStatus = {
+      columnExists: false,
+      recordsWithData: 0,
+      needsUpdate: false
+    };
+    
+    try {
+      // Check if views column exists
+      const { data: columnData } = await supabase.rpc('check_column_exists', {
+        table_name_param: 'meta_ad_insights',
+        column_name_param: 'views'
+      });
+      
+      dbViewsStatus.columnExists = columnData || false;
+      
+      // If column exists, check how many records have data
+      if (dbViewsStatus.columnExists) {
+        const { data: countData } = await supabase.rpc('count_non_zero_views', {
+          brand_id_param: brandId
+        });
+        
+        dbViewsStatus.recordsWithData = countData || 0;
+        dbViewsStatus.needsUpdate = countData === 0;
+      } else {
+        dbViewsStatus.needsUpdate = true;
+      }
+    } catch (error) {
+      console.error("Error checking database views status:", error);
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Meta API check complete',
@@ -105,19 +139,25 @@ export default async function handler(req, res) {
       },
       apiResponse: {
         recordCount: insightsData.data?.length || 0,
+        hasPageViews,
+        hasReach,
         availableFields,
         sampleRecord: sampleRecord ? {
           impressions: sampleRecord.impressions,
           clicks: sampleRecord.clicks,
           spend: sampleRecord.spend,
           reach: sampleRecord.reach,
-          inline_link_clicks: sampleRecord.inline_link_clicks
+          inline_link_clicks: sampleRecord.inline_link_clicks,
+          page_views: sampleRecord.page_views
         } : null,
         viewsData: {
           available: hasReach,
           field: 'reach',
           value: sampleRecord?.reach || null
         }
+      },
+      databaseStatus: {
+        views: dbViewsStatus
       }
     });
   } catch (error) {

@@ -163,6 +163,7 @@ export async function fetchMetaAdInsights(
           reach: parseInt(insight.reach || '0'),
           link_clicks: parseInt(insight.inline_link_clicks || '0'),
           page_views: parseInt(insight.page_views || '0'),
+          views: parseInt(insight.reach || '0'),
           date: recordDate,
           actions: insight.actions || [],
           action_values: insight.action_values || []

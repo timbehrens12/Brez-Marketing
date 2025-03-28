@@ -4,8 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
   // Simple security - check for a token
-  const { token, brandId, days } = req.query;
-  const daysToFetch = parseInt(days) || 90; // Default to 90 days, longer than normal to ensure history
+  const { token, brandId } = req.query;
   
   if (token !== 'fix-meta-data') {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -33,45 +32,40 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Brand not found' });
     }
 
-    // Calculate date range (90 days back by default)
+    // Calculate date range (90 days back)
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - daysToFetch);
-
-    // First, clear existing data for this brand and date range
-    console.log(`[Meta Resync] Clearing existing data for brand ${brandId} from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
-    
-    const { error: deleteError } = await supabase
-      .from('meta_ad_insights')
-      .delete()
-      .eq('brand_id', brandId)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .lte('date', endDate.toISOString().split('T')[0]);
-    
-    if (deleteError) {
-      console.error('[Meta Resync] Error clearing existing data:', deleteError);
-      return res.status(500).json({ 
-        error: 'Failed to clear existing data', 
-        details: deleteError 
-      });
-    }
+    startDate.setDate(startDate.getDate() - 90);
 
     // Start resync process
-    console.log(`[Meta Resync] Starting Meta resync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    console.log(`Starting Meta resync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
     
     const result = await fetchMetaAdInsights(brandId, startDate, endDate);
     
-    if (!result.success) {
-      return res.status(500).json({
-        success: false,
-        error: result.error || 'Failed to resync Meta data',
-        details: result.details || {}
+    // Update the views column based on reach values for newly synced data
+    try {
+      const { error: updateError } = await supabase.rpc('update_meta_views_from_reach', {
+        brand_id_param: brandId
       });
+      
+      if (updateError) {
+        console.error("Error updating views from reach:", updateError);
+        return res.status(500).json({
+          success: false,
+          message: "Data synced but views update failed",
+          error: updateError.message
+        });
+      }
+      
+      // Success log
+      console.log(`Meta data refresh complete for brand ${brandId}. Views data updated.`);
+    } catch (updateError) {
+      console.error("Error in views update:", updateError);
     }
-    
+
     return res.status(200).json({
-      success: true,
-      message: `Meta data resync complete. This has refreshed all data including the 'reach' field used for Views.`,
+      success: result.success,
+      message: result.message || 'Meta data resync complete',
       count: result.count || 0,
       dateRange: {
         from: startDate.toISOString(),
