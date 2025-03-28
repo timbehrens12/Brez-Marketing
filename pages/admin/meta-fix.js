@@ -8,6 +8,7 @@ export default function MetaFixPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState(null);
   const [resyncResult, setResyncResult] = useState(null);
+  const [viewsUpdateResult, setViewsUpdateResult] = useState(null);
 
   // Load brands from localstorage
   useEffect(() => {
@@ -82,6 +83,34 @@ export default function MetaFixPage() {
     }
   };
 
+  const updateViewsDirectly = async () => {
+    if (!brandId) {
+      setStatus('Error: Please enter a brand ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('Directly updating views from reach data...');
+    
+    try {
+      const response = await fetch(`/api/admin/direct-views-update?token=fix-meta-data&brandId=${brandId}`);
+      const data = await response.json();
+      
+      setViewsUpdateResult(data);
+      
+      if (data.success) {
+        setStatus(`Views update complete: Updated ${data.recordsUpdated} records`);
+      } else {
+        setStatus(`Views update error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating views:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <Head>
@@ -111,6 +140,11 @@ export default function MetaFixPage() {
         <div className="mt-4 bg-red-100 dark:bg-red-900 p-3 rounded">
           <p className="font-semibold">Meta API Update:</p>
           <p>Facebook's Meta API no longer supports the <code>page_views</code> field in ad insights. This is why you're seeing the error: "<code>page_views is not valid for fields param</code>". We've updated our code to use <code>reach</code> data instead to power the Views widget.</p>
+        </div>
+
+        <div className="mt-4 bg-purple-100 dark:bg-purple-900 p-3 rounded">
+          <p className="font-semibold">New Direct Fix:</p>
+          <p>If you're seeing zeros in the Views widget despite having reach data, use the <strong>"Update Views Only"</strong> button below. This will directly update the views column from existing reach data without requiring a full Meta API resync.</p>
         </div>
       </div>
 
@@ -169,6 +203,14 @@ export default function MetaFixPage() {
         >
           Force Resync
         </button>
+        
+        <button
+          onClick={updateViewsDirectly}
+          disabled={isLoading}
+          className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        >
+          Update Views Only
+        </button>
       </div>
 
       {status && (
@@ -193,6 +235,40 @@ export default function MetaFixPage() {
           <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto max-h-80">
             <pre className="text-sm">{JSON.stringify(resyncResult, null, 2)}</pre>
           </div>
+        </div>
+      )}
+      
+      {viewsUpdateResult && (
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Views Update Results</h2>
+          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto max-h-80">
+            <pre className="text-sm">{JSON.stringify(viewsUpdateResult, null, 2)}</pre>
+          </div>
+          {viewsUpdateResult.sampleData && viewsUpdateResult.sampleData.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-semibold mb-2">Sample Data</h3>
+              <div className="bg-white dark:bg-gray-700 p-4 rounded border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Date</th>
+                      <th className="text-left p-2">Reach</th>
+                      <th className="text-left p-2">Views</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewsUpdateResult.sampleData.map((item, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="p-2">{item.date}</td>
+                        <td className="p-2">{item.reach}</td>
+                        <td className="p-2">{item.views}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
