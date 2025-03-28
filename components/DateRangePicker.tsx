@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears, startOfMonth, isBefore, isAfter, isSameMonth, endOfMonth } from "date-fns"
+import { format, subDays, isSameDay, isYesterday, isToday, startOfDay, endOfDay, addMonths, subMonths, addYears, subYears, startOfMonth, isBefore, isAfter, isSameMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns"
 import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -50,39 +50,74 @@ const presets = [
     getDate: () => {
       // Create yesterday's date
       const yesterday = subDays(new Date(), 1);
-      
-      // Format dates - use the same date for both from and to
       const yesterdayStart = startOfDay(yesterday);
+      const yesterdayEnd = endOfDay(yesterday);
       
-      // Add a special parameter to the date object - use the same date for both
-      const date = {
+      return {
         from: yesterdayStart,
-        to: yesterdayStart, // Use same date for both to prevent API confusion
-        // Add a property to identify this as the yesterday preset
-        _preset: 'yesterday'
+        to: yesterdayEnd
       };
-      
-      console.log('Setting yesterday preset with special marker - same date for both');
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
-      
-      return date;
     }
   },
   {
     name: 'Last 7 days',
     value: 'last7',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 6)),
-      to: endOfDay(new Date())
-    })
+    getDate: () => {
+      // Last 7 completed days (excluding today)
+      const today = new Date();
+      return {
+        from: startOfDay(subDays(today, 7)),
+        to: endOfDay(subDays(today, 1))
+      };
+    }
+  },
+  {
+    name: 'Last 14 days',
+    value: 'last14',
+    getDate: () => {
+      // Last 14 completed days (excluding today)
+      const today = new Date();
+      return {
+        from: startOfDay(subDays(today, 14)),
+        to: endOfDay(subDays(today, 1))
+      };
+    }
   },
   {
     name: 'Last 30 days',
     value: 'last30',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 29)),
-      to: endOfDay(new Date())
-    })
+    getDate: () => {
+      // Last 30 completed days (excluding today)
+      const today = new Date();
+      return {
+        from: startOfDay(subDays(today, 30)),
+        to: endOfDay(subDays(today, 1))
+      };
+    }
+  },
+  {
+    name: 'This week',
+    value: 'thisWeek',
+    getDate: () => {
+      const today = new Date();
+      return {
+        from: startOfWeek(today, { weekStartsOn: 1 }), // Week starts on Monday
+        to: endOfDay(today)
+      };
+    }
+  },
+  {
+    name: 'Last week',
+    value: 'lastWeek',
+    getDate: () => {
+      const today = new Date();
+      const lastWeekStart = startOfWeek(subDays(today, 7), { weekStartsOn: 1 });
+      const lastWeekEnd = endOfWeek(lastWeekStart, { weekStartsOn: 1 });
+      return {
+        from: lastWeekStart,
+        to: lastWeekEnd
+      };
+    }
   },
   {
     name: 'This month',
@@ -99,6 +134,18 @@ const presets = [
       from: startOfDay(startOfMonth(subMonths(new Date(), 1))),
       to: endOfDay(endOfMonth(subMonths(new Date(), 1)))
     })
+  },
+  {
+    name: 'Maximum',
+    value: 'maximum',
+    getDate: () => {
+      // Assuming we want to go back a reasonable amount, like 2 years
+      const today = new Date();
+      return {
+        from: startOfDay(subYears(today, 2)),
+        to: endOfDay(today)
+      };
+    }
   }
 ];
 
@@ -113,6 +160,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
   const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
+  const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null)
   
   // Get current date for comparison
   const today = new Date()
@@ -125,6 +173,20 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       setSelectionStep('start')
       // Set current month to show current month on right, previous month on left
       setCurrentMonth(prevMonth => subMonths(new Date(), 1))
+      
+      // Find if current date range matches any preset
+      setSelectedPreset(null)
+      for (const preset of presets) {
+        const presetDate = preset.getDate()
+        if (
+          dateRange?.from && dateRange?.to && 
+          isSameDay(dateRange.from, presetDate.from) && 
+          isSameDay(dateRange.to, presetDate.to)
+        ) {
+          setSelectedPreset(preset.value)
+          break
+        }
+      }
     }
   }, [isOpen, dateRange])
 
@@ -148,8 +210,8 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       }
     }
 
-    // If no preset matches, show date range
-    return `${format(currentDate.from, "LLL dd, y")} - ${format(currentDate.to, "LLL dd, y")}`
+    // If no preset matches, show custom date range
+    return `Custom: ${format(currentDate.from, "LLL dd, y")} - ${format(currentDate.to, "LLL dd, y")}`
   }
 
   const handleCalendarSelect = (newDateRange: DateRange | undefined) => {
@@ -180,6 +242,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     }
     
     setTempDateRange(adjustedRange)
+    
+    // When user selects dates manually, set to custom
+    setSelectedPreset('custom')
   }
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
@@ -192,32 +257,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.to = now
     }
     
-    // Extra validation for yesterday preset to ensure exact same date
-    if (preset.value === 'yesterday') {
-      // Create yesterday's date
-      const yesterday = subDays(new Date(), 1);
-      const yesterdayStart = startOfDay(yesterday);
-      const yesterdayEnd = endOfDay(yesterday);
-      
-      // Ensure both from and to are exactly the same date for the API
-      newRange.from = yesterdayStart;
-      newRange.to = yesterdayStart; // Use start of day for both to avoid date mismatch
-      
-      // Keep the special marker using type assertion
-      (newRange as any)._preset = 'yesterday';
-      
-      console.log(`Setting yesterday preset with special marker - exact same date for both`);
-      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
-    }
-    
-    // Important: explicitly log what we're setting to help with debugging
-    console.log(`Setting date range from preset ${preset.value}: `, {
-      from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0]
-    });
-    
     setTempDateRange(newRange)
     setSelectionStep('complete')
+    setSelectedPreset(preset.value)
     
     // Apply immediately when a preset is selected
     setDateRange({
@@ -234,12 +276,6 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         from: tempDateRange.from,
         to: tempDateRange.to || tempDateRange.from
       };
-      
-      // Log what we're applying
-      console.log('Applying date range:', {
-        from: finalRange.from.toISOString().split('T')[0],
-        to: finalRange.to.toISOString().split('T')[0]
-      });
       
       setDateRange(finalRange);
     }
@@ -298,8 +334,13 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                 {presets.map((preset) => (
                   <Button
                     key={preset.value}
-                    variant="ghost"
-                    className="w-full justify-start text-white hover:bg-[#222222]"
+                    variant={selectedPreset === preset.value ? "default" : "ghost"}
+                    className={cn(
+                      "w-full justify-start text-white",
+                      selectedPreset === preset.value 
+                        ? "bg-blue-600 hover:bg-blue-700" 
+                        : "hover:bg-[#222222]"
+                    )}
                     onClick={() => {
                       handlePresetSelect(preset)
                     }}
@@ -307,6 +348,22 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                     {preset.name}
                   </Button>
                 ))}
+                {/* Custom option */}
+                <Button
+                  key="custom"
+                  variant={selectedPreset === 'custom' ? "default" : "ghost"}
+                  className={cn(
+                    "w-full justify-start text-white",
+                    selectedPreset === 'custom' 
+                      ? "bg-blue-600 hover:bg-blue-700" 
+                      : "hover:bg-[#222222]"
+                  )}
+                  onClick={() => {
+                    setSelectedPreset('custom')
+                  }}
+                >
+                  Custom
+                </Button>
               </div>
               <div className="pl-4 flex-1">
                 {/* Month navigation controls - simplified */}
