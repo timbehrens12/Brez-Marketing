@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, Video } from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
@@ -2085,14 +2085,15 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
-  const [viewsData, setViewsData] = useState<MetricDataState>({
+  const [linkClicksData, setLinkClicksData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: false,
     lastUpdated: null
   })
   
-  const [linkClicksData, setLinkClicksData] = useState<MetricDataState>({
+  // Add budgetData state after linkClicksData
+  const [budgetData, setBudgetData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: false,
@@ -3017,77 +3018,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // Fetch views data directly from the database
-  const fetchViewsDirectly = async () => {
-    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch views: Missing date range or brand ID")
-      return
-    }
-    
-    setViewsData(prev => ({ ...prev, isLoading: true }))
-    
-    try {
-      // Construct URL params for current period
-      const params = new URLSearchParams()
-      params.append('brandId', brandId)
-      params.append('metric', 'views')
-      
-      // Set date parameters
-      const fromDate = dateRange.from
-      const toDate = dateRange.to
-      
-      params.append('from', fromDate.toISOString().split('T')[0])
-      params.append('to', toDate.toISOString().split('T')[0])
-      
-      // Log what we're doing
-      console.log(`Fetching campaign views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
-      
-      // Calculate previous period date range
-      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-      
-      // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/views?${params.toString()}`)
-      
-      // Fetch data for previous period
-      const prevParams = new URLSearchParams()
-      prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'views')
-      prevParams.append('from', prevFrom)
-      prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/views?${prevParams.toString()}`)
-      
-      // Process responses
-      const data = await response.json()
-      const prevData = await prevResponse.json()
-      
-      if (!data.error && !prevData.error) {
-        setViewsData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
-        console.log(`Campaign views data fetched: ${data.value}, Previous: ${prevData.value}`)
-        
-        // Additional logging for debugging views data
-        if (data._meta) {
-          console.log(`Views debug info: Found ${data._meta.recordsWithViews} records with views out of ${data._meta.records} total records`)
-          console.log(`Views dates analyzed: ${data._meta.dates?.join(', ')}`)
-        }
-        
-        if (data.value === 0) {
-          console.log(`WARNING: No views found for this date range. Ensure your Meta data has been synced recently.`)
-        }
-      } else {
-        console.error("Error fetching Views data:", data.error || prevData.error)
-        setViewsData(prev => ({ ...prev, isLoading: false }))
-      }
-    } catch (error) {
-      console.error("Error in Views fetch:", error)
-      setViewsData(prev => ({ ...prev, isLoading: false }))
-    }
-  }
-  
   // Fetch link clicks data directly from the database
   const fetchLinkClicksDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
@@ -3149,6 +3079,67 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
+  // Fetch budget data directly from the database
+  const fetchBudgetDirectly = async () => {
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch budget: Missing date range or brand ID")
+      return
+    }
+    
+    setBudgetData(prev => ({ ...prev, isLoading: true }))
+    
+    try {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'budget')
+      
+      // Set date parameters
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Budget for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single/budget?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'budget')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single/budget?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (!data.error && !prevData.error) {
+        setBudgetData({
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
+        console.log(`Budget data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+      } else {
+        console.error("Error fetching Budget data:", data.error || prevData.error)
+        setBudgetData(prev => ({ ...prev, isLoading: false }))
+      }
+    } catch (error) {
+      console.error("Error in Budget fetch:", error)
+      setBudgetData(prev => ({ ...prev, isLoading: false }))
+    }
+  }
+  
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
     await Promise.all([
@@ -3162,8 +3153,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
       fetchReachDirectly(),
-      fetchViewsDirectly(),
-      fetchLinkClicksDirectly()
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly()
     ])
   }
 
@@ -3211,8 +3202,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
-    setViewsData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
+    setBudgetData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -3230,8 +3221,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
-        fetchViewsDirectly(),
-        fetchLinkClicksDirectly()
+        fetchLinkClicksDirectly(),
+        fetchBudgetDirectly()
       ])
       
       // Show success toast
@@ -3601,27 +3592,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             hideGraph={true}
             previousValue={ctrData.previousValue}
             previousValueFormat="percentage"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Eye className="h-4 w-4 text-blue-400" />
-                <span className="ml-0.5">Views</span>
-              </div>
-            }
-            value={viewsData.value}
-            data={[]}
-            loading={viewsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            decimals={0}
-            hideGraph={true}
-            previousValue={viewsData.previousValue}
-            previousValueFormat="number" 
-            previousValueDecimals={0}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />

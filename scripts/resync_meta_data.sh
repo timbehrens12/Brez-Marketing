@@ -19,16 +19,15 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 --brand-id BRAND_ID [--days DAYS]"
       exit 1
       ;;
   esac
 done
 
-# Check if brand_id is provided
+# Validate required parameters
 if [ -z "$BRAND_ID" ]; then
   echo "Error: --brand-id is required"
-  echo "Usage: $0 --brand-id BRAND_ID [--days DAYS]"
+  echo "Usage: $0 --brand-id <BRAND_ID> [--days <DAYS>]"
   exit 1
 fi
 
@@ -36,18 +35,12 @@ fi
 END_DATE=$(date +%Y-%m-%d)
 START_DATE=$(date -d "$END_DATE -$DAYS days" +%Y-%m-%d)
 
-echo "Resyncing Meta data for brand ID: $BRAND_ID"
-echo "Date range: $START_DATE to $END_DATE"
+echo "Resyncing Meta data for brand $BRAND_ID from $START_DATE to $END_DATE"
 
-# Make the API request to resync the data
-curl -X POST "http://localhost:3000/api/platforms/meta/resync" \
+# Make API request to resync
+curl -X POST "http://localhost:3000/api/meta/resync" \
   -H "Content-Type: application/json" \
-  -d "{
-    \"brandId\": \"$BRAND_ID\",
-    \"startDate\": \"$START_DATE\",
-    \"endDate\": \"$END_DATE\"
-  }"
+  -d "{\"brandId\":\"$BRAND_ID\",\"startDate\":\"$START_DATE\",\"endDate\":\"$END_DATE\"}"
 
 echo ""
-echo "Resync request sent! Check your dashboard in a few minutes to see updated view data."
-echo "If the views are still not showing, make sure your Meta campaigns include video content that can generate views." 
+echo "Resync request sent! Check the dashboard to see if reach data is now populated." 
