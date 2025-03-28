@@ -98,6 +98,10 @@ export default function MetaFixPage() {
           <li>Click "Force Resync" to pull fresh data from Meta</li>
           <li>Return to your dashboard to verify data is now showing</li>
         </ol>
+        <div className="mt-4 bg-blue-100 dark:bg-blue-900 p-3 rounded">
+          <p className="font-semibold">Views Widget Fix:</p>
+          <p>The "Views" widget now uses the <code>reach</code> field from Meta API, which represents the number of people who saw your ads. This fix will ensure that the Views data appears correctly in your dashboard.</p>
+        </div>
       </div>
 
       <div className="mb-6">
@@ -176,7 +180,7 @@ export default function MetaFixPage() {
         <ul className="list-disc pl-5 space-y-2">
           <li>If diagnostics show Meta API is working but you still see zero values, try the Force Resync option</li>
           <li>After resyncing, refresh your dashboard completely (hard refresh with Ctrl+F5)</li>
-          <li>Check if the page_views field appears in the diagnostic data - if not, you may need to update your Meta API permissions</li>
+          <li>Check if the <strong>reach field</strong> appears in the diagnostic data - this is what powers the "Views" widget</li>
           <li>If all else fails, contact support with your diagnostic results</li>
         </ul>
       </div>

@@ -2085,7 +2085,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
-  const [pageViewsData, setPageViewsData] = useState<MetricDataState>({
+  const [viewsData, setViewsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: false,
@@ -3017,20 +3017,20 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // Fetch frequency data directly from the database
-  const fetchPageViewsDirectly = async () => {
+  // Fetch views data directly from the database (previously called fetchPageViewsDirectly)
+  const fetchViewsDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch page views: Missing date range or brand ID")
+      console.log("Cannot fetch views: Missing date range or brand ID")
       return
     }
     
-    setPageViewsData(prev => ({ ...prev, isLoading: true }))
+    setViewsData(prev => ({ ...prev, isLoading: true }))
     
     try {
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'page_views')
+      params.append('metric', 'views')
       
       // Set date parameters
       const fromDate = dateRange.from
@@ -3040,41 +3040,41 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Page Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching Views for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
       // Calculate previous period date range
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/page_views?${params.toString()}`)
+      const response = await fetch(`/api/metrics/meta/single/views?${params.toString()}`)
       
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'page_views')
+      prevParams.append('metric', 'views')
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/page_views?${prevParams.toString()}`)
+      const prevResponse = await fetch(`/api/metrics/meta/single/views?${prevParams.toString()}`)
       
       // Process responses
       const data = await response.json()
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setPageViewsData({
+        setViewsData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Page Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Views data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("Error fetching Page Views data:", data.error || prevData.error)
-        setPageViewsData(prev => ({ ...prev, isLoading: false }))
+        console.error("Error fetching Views data:", data.error || prevData.error)
+        setViewsData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Page Views fetch:", error)
-      setPageViewsData(prev => ({ ...prev, isLoading: false }))
+      console.error("Error in Views fetch:", error)
+      setViewsData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3141,20 +3141,27 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
-    await Promise.all([
-      fetchAdSpendDirectly(),
-      fetchRoasDirectly(),
-      fetchImpressionsDirectly(),
-      fetchClicksDirectly(),
-      fetchPurchaseValueDirectly(),
-      fetchResultsDirectly(),
-      fetchCostPerResultDirectly(),
-      fetchCostPerClickDirectly(),
-      fetchCtrDirectly(),
-      fetchReachDirectly(),
-      fetchPageViewsDirectly(),
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot fetch metrics: Missing date range or brand ID")
+      return
+    }
+    
+    try {
+      fetchAdSpendDirectly()
+      fetchRoasDirectly()
+      fetchImpressionsDirectly()
+      fetchClicksDirectly()
+      fetchPurchaseValueDirectly()
+      fetchResultsDirectly()
+      fetchCostPerResultDirectly()
+      fetchCostPerClickDirectly()
+      fetchCtrDirectly()
+      fetchReachDirectly()
+      fetchViewsDirectly()
       fetchLinkClicksDirectly()
-    ])
+    } catch (error) {
+      console.error("Error in fetchAllMetricsDirectly:", error)
+    }
   }
 
   // Update the useEffect to call the new fetch functions
@@ -3175,8 +3182,17 @@ Try creating at least one active campaign in Meta Ads Manager.
 
   // Update the manual refresh function
   const refreshMetricsDirectly = async () => {
-    console.log("Manually refreshing all metrics directly")
-    await fetchAllMetricsDirectly()
+    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
+      console.log("Cannot refresh metrics: Missing date range or brand ID")
+      return
+    }
+    
+    try {
+      fetchAllMetricsDirectly()
+      console.log("Metrics refresh initiated")
+    } catch (error) {
+      console.error("Error in refreshMetricsDirectly:", error)
+    }
   }
 
   // Add a refresh timer state
@@ -3201,17 +3217,15 @@ Try creating at least one active campaign in Meta Ads Manager.
     setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
-    setPageViewsData(prev => ({ ...prev, isLoading: true }))
+    setViewsData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
     
     try {
-      console.log("Refreshing all metrics directly")
-      
-      // Use Promise.all to fetch all metrics concurrently
-      const promises = [
+      // Fetch all metrics in parallel
+      await Promise.all([
         fetchAdSpendDirectly(),
         fetchRoasDirectly(),
         fetchImpressionsDirectly(),
@@ -3222,20 +3236,13 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
-        fetchPageViewsDirectly(),
+        fetchViewsDirectly(),
         fetchLinkClicksDirectly()
-      ]
-      
-      // Wait for all fetches to complete
-      await Promise.all(promises)
-      
-      // Show success toast
-      toast.success("Metrics refreshed successfully")
+      ])
     } catch (error) {
-      console.error("Error refreshing metrics:", error)
-      toast.error("Failed to refresh metrics")
+      console.error("Error in refreshAllMetricsDirectly:", error)
       
-      // Reset loading states on error
+      // Reset loading states if there was an error
       setAdSpendData(prev => ({ ...prev, isLoading: false }))
       setRoasData(prev => ({ ...prev, isLoading: false }))
       setImpressionsData(prev => ({ ...prev, isLoading: false }))
@@ -3246,7 +3253,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       setCostPerClickData(prev => ({ ...prev, isLoading: false }))
       setCtrData(prev => ({ ...prev, isLoading: false }))
       setReachData(prev => ({ ...prev, isLoading: false }))
-      setPageViewsData(prev => ({ ...prev, isLoading: false }))
+      setViewsData(prev => ({ ...prev, isLoading: false }))
       setLinkClicksData(prev => ({ ...prev, isLoading: false }))
     } finally {
       setIsManuallyRefreshing(false)
@@ -3618,17 +3625,17 @@ Try creating at least one active campaign in Meta Ads Manager.
             title={
               <div className="flex items-center gap-1.5">
                 <Eye className="h-4 w-4 text-purple-400" />
-                <span className="ml-0.5">Page Views</span>
+                <span className="ml-0.5">Views</span>
               </div>
             }
-            value={pageViewsData.value}
+            value={viewsData.value}
             data={[]}
-            loading={pageViewsData.isLoading || isManuallyRefreshing}
+            loading={viewsData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
             decimals={0}
             hideGraph={true}
-            previousValue={pageViewsData.previousValue}
+            previousValue={viewsData.previousValue}
             previousValueFormat="number"
             previousValueDecimals={0}
             showPreviousPeriod={true}

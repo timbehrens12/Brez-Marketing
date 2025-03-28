@@ -77,10 +77,12 @@ export default async function handler(req, res) {
     // Extract sample data and check for page_views
     let sampleRecord = null;
     let hasPageViews = false;
+    let hasReach = false;
     
     if (insightsData.data && insightsData.data.length > 0) {
       sampleRecord = insightsData.data[0];
       hasPageViews = 'page_views' in sampleRecord;
+      hasReach = 'reach' in sampleRecord;
     }
     
     // Determine available fields from the sample
@@ -106,6 +108,7 @@ export default async function handler(req, res) {
       apiResponse: {
         recordCount: insightsData.data?.length || 0,
         hasPageViews,
+        hasReach,
         availableFields,
         sampleRecord: sampleRecord ? {
           impressions: sampleRecord.impressions,
@@ -114,7 +117,12 @@ export default async function handler(req, res) {
           reach: sampleRecord.reach,
           inline_link_clicks: sampleRecord.inline_link_clicks,
           page_views: sampleRecord.page_views
-        } : null
+        } : null,
+        viewsData: {
+          available: hasReach,
+          field: 'reach',
+          value: sampleRecord?.reach || null
+        }
       }
     });
   } catch (error) {
