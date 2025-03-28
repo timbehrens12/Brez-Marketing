@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target } from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, PlusCircle, Layers, Wallet, ChevronDown } from "lucide-react"
+import { Sparkles, Image as ImageIcon } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
 import { withErrorBoundary } from '@/components/ui/error-boundary'
@@ -49,6 +50,8 @@ import Link from "next/link"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import MetaResyncButton from "@/components/meta-resync-button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -3636,207 +3639,438 @@ Try creating at least one active campaign in Meta Ads Manager.
         </div>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Removed Spend Distribution Card */}
-        
-        {/* Platform KPIs */}
+      {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
+      <div className="space-y-6 mt-6">
+        {/* Campaign Performance Overview */}
         <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-3 border-b border-[#333]">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <LineChart className="h-4 w-4 text-blue-400" />
+                Campaign Performance
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => fetchCampaigns()}
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" />
+                  Refresh
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]">
+                      <SlidersHorizontal className="h-3 w-3 mr-2" />
+                      Sort
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-[#111] border-[#333]">
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Highest Spend
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Highest ROAS
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Lowest CPC
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
+                      Most Impressions
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoadingCampaigns && !cachedCampaigns.length ? (
+              <div className="flex justify-center items-center h-[400px]">
+                <div className="flex flex-col items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+                  <p className="text-sm text-gray-400">Loading campaign data...</p>
+                </div>
+              </div>
+            ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
+              <div className="divide-y divide-[#222]">
+                {(campaigns.length > 0 ? campaigns : cachedCampaigns).map((campaign, index) => (
+                  <Collapsible key={campaign.campaign_id || index} className="overflow-hidden">
+                    <CollapsibleTrigger className="w-full text-left p-4 hover:bg-[#1a1a1a] flex items-center justify-between transition-all ease-in-out duration-200">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-3 w-3 rounded-full ${campaign.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                        <div>
+                          <h3 className="font-medium text-sm text-white">{campaign.campaign_name}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-400">ID: {campaign.campaign_id}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-[#333] text-gray-300">{campaign.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-medium">${typeof campaign.spend === 'number' ? campaign.spend.toFixed(2) : '0.00'}</span>
+                          <span className="text-xs text-gray-400">Total Spend</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-medium">{typeof campaign.impressions === 'number' ? campaign.impressions.toLocaleString() : '0'}</span>
+                          <span className="text-xs text-gray-400">Impressions</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-medium">{typeof campaign.clicks === 'number' ? campaign.clicks.toLocaleString() : '0'}</span>
+                          <span className="text-xs text-gray-400">Clicks</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`text-sm font-medium ${campaign.roas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
+                            {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x
+                          </span>
+                          <span className="text-xs text-gray-400">ROAS</span>
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200" />
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="p-4 pt-0 bg-[#0a0a0a]">
+                        {/* Campaign Details & Performance Metrics */}
+                        <div className="grid grid-cols-3 gap-4 mb-4 mt-4">
+                          <div className="col-span-2 bg-[#1a1a1a] rounded-lg p-4 border border-[#333]">
+                            <h4 className="text-sm font-medium mb-3 text-gray-300">Performance Metrics</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 mb-1">CTR</span>
+                                <span className="text-base font-medium">
+                                  {typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(2) : '0.00'}%
+                                </span>
+                                <div className="flex items-center gap-1 mt-1">
+                                  <span className={`text-xs ${campaign.ctr > 1 ? 'text-green-400' : 'text-gray-400'}`}>
+                                    {campaign.ctr > 1 ? 'Good' : 'Low'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 mb-1">CPC</span>
+                                <span className="text-base font-medium">
+                                  ${typeof campaign.cpc === 'number' ? campaign.cpc.toFixed(2) : '0.00'}
+                                </span>
+                                <div className="flex items-center gap-1 mt-1">
+                                  <span className={`text-xs ${campaign.cpc < 2 ? 'text-green-400' : 'text-yellow-400'}`}>
+                                    {campaign.cpc < 2 ? 'Good' : 'High'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 mb-1">Conversions</span>
+                                <span className="text-base font-medium">
+                                  {typeof campaign.conversions === 'number' ? campaign.conversions : '0'}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-xs text-gray-400 mb-1">Cost/Conv.</span>
+                                <span className="text-base font-medium">
+                                  ${campaign.conversions > 0 && campaign.spend > 0 
+                                    ? (campaign.spend / campaign.conversions).toFixed(2) 
+                                    : '0.00'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Performance Visualization - Bar chart representation */}
+                            <div className="mt-6">
+                              <h4 className="text-xs font-medium mb-3 text-gray-300">Relative Performance</h4>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs w-24 text-gray-400">CTR</span>
+                                  <div className="h-2 bg-[#333] flex-1 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-blue-500 rounded-full"
+                                      style={{ width: `${Math.min(campaign.ctr * 5, 100)}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs w-24 text-gray-400">Conversion Rate</span>
+                                  <div className="h-2 bg-[#333] flex-1 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-green-500 rounded-full" 
+                                      style={{ width: `${campaign.conversions > 0 && campaign.clicks > 0 
+                                        ? Math.min((campaign.conversions / campaign.clicks) * 100 * 2, 100) 
+                                        : 0}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs w-24 text-gray-400">ROAS</span>
+                                  <div className="h-2 bg-[#333] flex-1 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full ${campaign.roas >= 1 ? 'bg-green-500' : 'bg-red-500'}`}
+                                      style={{ width: `${Math.min(campaign.roas * 25, 100)}%` }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Campaign Insights & Recommendations */}
+                          <div className="bg-[#1a1a1a] rounded-lg p-4 border border-[#333]">
+                            <h4 className="text-sm font-medium mb-3 text-gray-300">Campaign Insights</h4>
+                            {campaign.roas < 1 ? (
+                              <div className="p-3 bg-red-900/20 border border-red-800/30 rounded-md mb-3">
+                                <p className="text-xs text-red-300 font-medium">Low ROAS Alert</p>
+                                <p className="text-xs text-gray-300 mt-1">This campaign is not profitable with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                              </div>
+                            ) : campaign.roas > 2 ? (
+                              <div className="p-3 bg-green-900/20 border border-green-800/30 rounded-md mb-3">
+                                <p className="text-xs text-green-300 font-medium">High Performance</p>
+                                <p className="text-xs text-gray-300 mt-1">This campaign is performing well with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                              </div>
+                            ) : (
+                              <div className="p-3 bg-yellow-900/20 border border-yellow-800/30 rounded-md mb-3">
+                                <p className="text-xs text-yellow-300 font-medium">Average Performance</p>
+                                <p className="text-xs text-gray-300 mt-1">This campaign is performing adequately with a ROAS of {campaign.roas.toFixed(2)}x.</p>
+                              </div>
+                            )}
+                            
+                            <h4 className="text-sm font-medium mb-2 text-gray-300 mt-4">Recommendations</h4>
+                            <ul className="space-y-2">
+                              {campaign.ctr < 1 && (
+                                <li className="flex items-start gap-2">
+                                  <ArrowUpRight className="h-3 w-3 text-blue-400 mt-0.5" />
+                                  <span className="text-xs">Improve ad creative to increase click-through rate</span>
+                                </li>
+                              )}
+                              {campaign.cpc > 1.5 && (
+                                <li className="flex items-start gap-2">
+                                  <ArrowDownRight className="h-3 w-3 text-green-400 mt-0.5" />
+                                  <span className="text-xs">Optimize targeting to reduce cost per click</span>
+                                </li>
+                              )}
+                              {campaign.roas < 1 && (
+                                <li className="flex items-start gap-2">
+                                  <AlertCircle className="h-3 w-3 text-red-400 mt-0.5" />
+                                  <span className="text-xs">Consider pausing or restructuring this campaign</span>
+                                </li>
+                              )}
+                              {campaign.roas > 2 && (
+                                <li className="flex items-start gap-2">
+                                  <PlusCircle className="h-3 w-3 text-green-400 mt-0.5" />
+                                  <span className="text-xs">Consider increasing budget for this high-performing campaign</span>
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                        
+                        {/* Ad Sets Section */}
+                        <div className="mt-6">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-medium text-gray-300">Ad Sets</h4>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-7 px-2 text-xs bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                              onClick={() => alert('This functionality will load ad sets for this campaign')}
+                            >
+                              View All Ad Sets
+                            </Button>
+                          </div>
+                          
+                          {/* Placeholder for Ad Sets - To be replaced with real data in future */}
+                          <div className="border border-dashed border-[#333] rounded-lg p-6 flex flex-col items-center justify-center">
+                            <Layers className="h-10 w-10 text-gray-500 mb-2" />
+                            <p className="text-sm text-gray-400">Ad set data will be displayed here</p>
+                            <p className="text-xs text-gray-500 mt-1">Future implementation will show individual ad sets within this campaign</p>
+                          </div>
+                          
+                          {/* Future implementation notes */}
+                          <div className="flex items-center justify-center mt-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs bg-blue-900/20 hover:bg-blue-900/30 border-blue-800/30 text-blue-300"
+                              onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
+                            >
+                              <ExternalLink className="h-3 w-3 mr-2" />
+                              Open in Meta Ads Manager
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center p-12">
+                <Activity className="h-12 w-12 text-gray-500 mb-4" />
+                <p className="text-gray-400 mb-2">No campaign data available</p>
+                <p className="text-sm text-gray-500 max-w-md">Create campaigns in Meta Ads Manager or check your API connection settings to start seeing campaign performance data here.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-6 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Meta Ads Manager
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* AI Insights Section */}
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="pb-3 border-b border-[#333]">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <BrainCircuit className="h-4 w-4 text-indigo-400" />
+                AI Performance Insights
+              </CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                onClick={generateAiInsights}
+              >
+                <RefreshCw className="h-3 w-3 mr-2" />
+                Generate New Insights
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isLoadingInsights ? (
+              <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+                <p className="text-sm text-gray-400">Generating AI insights...</p>
+              </div>
+            ) : aiInsights ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-indigo-900/20 border border-indigo-800/30 rounded-md">
+                  <p className="text-sm leading-relaxed">{aiInsights}</p>
+                </div>
+                
+                {/* AI Recommendation Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                  <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-full bg-blue-900/40 p-1.5">
+                        <Users className="h-4 w-4 text-blue-400" />
+                      </div>
+                      <h3 className="font-medium text-sm">Audience Targeting</h3>
+                    </div>
+                    <p className="text-xs text-gray-400">Create lookalike audiences based on your high-value customers to improve conversion rates.</p>
+                  </div>
+                  
+                  <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-full bg-green-900/40 p-1.5">
+                        <DollarSign className="h-4 w-4 text-green-400" />
+                      </div>
+                      <h3 className="font-medium text-sm">Budget Optimization</h3>
+                    </div>
+                    <p className="text-xs text-gray-400">Shift budget from underperforming campaigns to your top performers to maximize ROAS.</p>
+                  </div>
+                  
+                  <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-full bg-amber-900/40 p-1.5">
+                        <BarChart2 className="h-4 w-4 text-amber-400" />
+                      </div>
+                      <h3 className="font-medium text-sm">Creative Strategy</h3>
+                    </div>
+                    <p className="text-xs text-gray-400">Test different ad formats, including video content which typically outperforms static images.</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+                <BrainCircuit className="h-8 w-8 text-indigo-400 opacity-60" />
+                <p className="text-sm text-gray-400">Generate AI insights about your Meta Ads performance</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-2 bg-indigo-900/30 border-indigo-600/30 hover:bg-indigo-900/50 text-indigo-300"
+                  onClick={generateAiInsights}
+                >
+                  Generate Insights
+                  <Sparkles className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Optimization Opportunities Card */}
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="pb-3 border-b border-[#333]">
             <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-400" />
-              Campaign Metrics
+              <Zap className="h-4 w-4 text-amber-400" />
+              Optimization Opportunities
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            {isLoadingCampaigns && !cachedCampaigns.length ? (
-              <div className="flex justify-center items-center h-[240px]">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-              </div>
-            ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Active Campaigns</p>
-                    <p className="text-lg font-medium">
-                                {campaigns.length > 0 
-                                  ? campaigns.filter(c => c.status === 'ACTIVE').length
-                                  : cachedCampaigns.filter(c => c.status === 'ACTIVE').length}
-                    </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="rounded-full bg-amber-900/40 p-2">
+                    <Target className="h-5 w-5 text-amber-400" />
                   </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Avg. CPC</p>
-                    <p className="text-lg font-medium">
-                      ${typeof metricsData?.cpc === 'number' && !isNaN(metricsData.cpc) ? metricsData.cpc.toFixed(2) : '0.00'}
-                    </p>
-                  </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Conversions</p>
-                    <p className="text-lg font-medium">
-                      {typeof metricsData?.conversions === 'number' && !isNaN(metricsData.conversions) ? Math.round(metricsData.conversions) : 0}
-                    </p>
-                  </div>
-                            <div className="bg-[#1A1A1A] rounded-lg p-3 border border-[#333] hover:border-[#444] transition-colors">
-                    <p className="text-xs text-gray-400 mb-1">Cost/Conv.</p>
-                    <p className="text-lg font-medium">
-                      ${typeof metricsData?.costPerResult === 'number' && !isNaN(metricsData.costPerResult) ? metricsData.costPerResult.toFixed(2) : '0.00'}
-                    </p>
-                  </div>
+                  <h3 className="font-medium">Audience Expansion</h3>
                 </div>
+                <p className="text-xs text-gray-400">Currently targeting audiences are too narrow, limiting your reach potential.</p>
                 <div className="mt-4">
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                    onClick={() => window.location.href = "/analytics"}
+                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
                   >
-                    View Full Analytics
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    View Opportunity
                   </Button>
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
-                <Activity className="h-10 w-10 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No campaign metrics available</p>
-                <p className="text-sm text-gray-500">You'll see metrics here once you have active campaigns with data.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Top Campaigns & AI Insights */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Top Campaigns */}
-                  <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <BarChart2 className="h-4 w-4 text-blue-400" />
-              Top Performing Campaigns
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-                      {isLoadingCampaigns && !cachedCampaigns.length ? (
-              <div className="flex justify-center items-center h-[240px]">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-              </div>
-                      ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
-              <div className="space-y-4">
-                          {(campaigns.length > 0 ? campaigns : cachedCampaigns).slice(0, 3).map((campaign, index) => (
-                            <div key={index} className="flex items-center justify-between border-b border-[#222] pb-3 last:border-0 last:pb-0 hover:bg-[#1a1a1a1a] p-2 rounded-md transition-colors">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-200 truncate w-[200px]">{campaign.campaign_name}</h4>
-                                <div className="flex items-center gap-1 mt-1">
-                                  <span className={`w-2 h-2 rounded-full ${campaign.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
-                                  <p className="text-xs text-gray-400">{campaign.status}</p>
-                                </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-medium">${typeof campaign.spend === 'number' ? campaign.spend.toFixed(2) : '0.00'}</p>
-                      <p className="text-xs text-gray-400">ROAS: {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x</p>
-                    </div>
+              
+              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="rounded-full bg-green-900/40 p-2">
+                    <Wallet className="h-5 w-5 text-green-400" />
                   </div>
-                ))}
+                  <h3 className="font-medium">Budget Reallocation</h3>
+                </div>
+                <p className="text-xs text-gray-400">Redistribute your budget from low-performing campaigns to your most successful ones.</p>
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
+                  >
+                    View Opportunity
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-6 h-[240px]">
-                <Settings className="h-10 w-10 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No campaign data available</p>
-                <p className="text-sm text-gray-500">Create campaigns in Meta Ads Manager to see performance data here.</p>
+              
+              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="rounded-full bg-blue-900/40 p-2">
+                    <ImageIcon className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <h3 className="font-medium">Creative Refresh</h3>
+                </div>
+                <p className="text-xs text-gray-400">Some of your ad creatives have been running for over 30 days and may be experiencing fatigue.</p>
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
+                  >
+                    View Opportunity
+                  </Button>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* AI Insights */}
-                  <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <BrainCircuit className="h-4 w-4 text-indigo-400" />
-              AI Performance Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoadingInsights ? (
-              <div className="h-[200px] flex flex-col items-center justify-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
-                <p className="text-sm text-gray-400">Generating insights...</p>
-              </div>
-            ) : aiInsights ? (
-              <div className="space-y-4">
-                          <div className="p-3 bg-indigo-900/20 border border-indigo-800/30 rounded-md">
-                <p className="text-sm">{aiInsights}</p>
-                          </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={generateAiInsights}
-                >
-                  Refresh Insights
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="h-[200px] flex flex-col items-center justify-center gap-3">
-                <BrainCircuit className="h-6 w-6 text-indigo-400" />
-                <p className="text-sm text-gray-400">Generate AI insights about your Meta Ads performance</p>
-                <Button 
-                  variant="outline" 
-                  className="bg-indigo-900/30 border-indigo-600/30 hover:bg-indigo-900/50 text-indigo-300"
-                  onClick={generateAiInsights}
-                >
-                  Generate Insights
-                  <BrainCircuit className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Actionable Recommendations */}
-                <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Activity className="h-4 w-4 text-blue-400" />
-            Optimize Your Meta Ads
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="rounded-full bg-blue-900/40 p-1.5">
-                  <Users className="h-4 w-4 text-blue-400" />
-                </div>
-                <h3 className="font-medium text-sm">Audience Targeting</h3>
-              </div>
-              <p className="text-xs text-gray-400">Create lookalike audiences based on your high-value customers to improve conversion rates.</p>
-            </div>
-            
-                      <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="rounded-full bg-green-900/40 p-1.5">
-                  <DollarSign className="h-4 w-4 text-green-400" />
-                </div>
-                <h3 className="font-medium text-sm">Budget Optimization</h3>
-              </div>
-              <p className="text-xs text-gray-400">Shift budget from underperforming campaigns to your top performers to maximize ROAS.</p>
-            </div>
-            
-                      <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="rounded-full bg-amber-900/40 p-1.5">
-                  <BarChart2 className="h-4 w-4 text-amber-400" />
-                </div>
-                <h3 className="font-medium text-sm">Ad Creative</h3>
-              </div>
-              <p className="text-xs text-gray-400">Test different ad formats, including video content which typically outperforms static images.</p>
-            </div>
-      </div>
-        </CardContent>
-      </Card>
+      {/* END OF NEW CAMPAIGN PERFORMANCE SECTION */}
               </>
             )
           } catch (error) {
