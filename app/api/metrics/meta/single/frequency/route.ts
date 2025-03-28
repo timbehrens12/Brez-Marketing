@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Specialized API endpoint for fetching Page Views data directly
+ * Specialized API endpoint for fetching Frequency data directly
  * This endpoint is optimized for speed and simplicity, fetching only
- * what's needed for the Page Views widget
+ * what's needed for the Frequency widget
+ * 
+ * Frequency is calculated as: impressions / reach
  */
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +16,7 @@ export async function GET(request: NextRequest) {
     const to = url.searchParams.get('to')
     
     // Log the request
-    console.log(`PAGE VIEWS API: Fetching for brand ${brandId} from ${from} to ${to}`)
+    console.log(`FREQUENCY API: Fetching for brand ${brandId} from ${from} to ${to}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -50,10 +52,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Query meta_ad_insights for page_views data
+    // Query meta_ad_insights for impressions and reach data
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, page_views')
+      .select('date, impressions, reach')
       .eq('connection_id', connection.id)
       .gte('date', from)
       .lte('date', to)
@@ -76,42 +78,51 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total page views
-    let totalPageViews = 0
-    let recordsWithPageViews = 0
+    // Calculate total impressions and reach
+    let totalImpressions = 0
+    let totalReach = 0
+    let recordsWithData = 0
     
     insights.forEach(insight => {
-      if (insight.page_views && !isNaN(insight.page_views) && insight.page_views > 0) {
-        totalPageViews += parseInt(insight.page_views)
-        recordsWithPageViews++
+      if (insight.impressions && insight.reach && 
+          !isNaN(insight.impressions) && !isNaN(insight.reach) && 
+          insight.impressions > 0 && insight.reach > 0) {
+        totalImpressions += parseInt(insight.impressions)
+        totalReach += parseInt(insight.reach)
+        recordsWithData++
       }
     })
     
-    // If no page views data is found, add debugging log
-    if (recordsWithPageViews === 0) {
-      console.log(`PAGE VIEWS API WARNING: No page views data found in any of the ${insights.length} records. This may indicate that:
-      1. The Meta API is not returning page_views data
-      2. The meta_ad_insights table hasn't been updated with the latest data that includes page_views
+    // Calculate frequency (impressions/reach)
+    let frequency = totalReach > 0 ? totalImpressions / totalReach : 0
+    
+    // If no data is found, add debugging log
+    if (recordsWithData === 0) {
+      console.log(`FREQUENCY API WARNING: No valid impressions/reach data found in any of the ${insights.length} records. This may indicate that:
+      1. The Meta API is not returning required data
+      2. The meta_ad_insights table hasn't been updated with the latest data
       3. You may need to resync Meta data`)
     }
     
-    // Return the result
+    // Return the result, rounded to 2 decimal places
     const result = {
-      value: totalPageViews,
+      value: parseFloat(frequency.toFixed(2)),
       _meta: {
         from,
         to,
         records: insights.length,
-        recordsWithPageViews,
+        recordsWithData,
+        totalImpressions,
+        totalReach,
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`PAGE VIEWS API: Returning page_views = ${result.value}, based on ${insights.length} records (page_views data found in ${recordsWithPageViews} records)`)
+    console.log(`FREQUENCY API: Returning frequency = ${result.value}, based on ${insights.length} records (${recordsWithData} with data). Impressions: ${totalImpressions}, Reach: ${totalReach}`)
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Page Views metric endpoint:', error)
+    console.error('Error in Frequency metric endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

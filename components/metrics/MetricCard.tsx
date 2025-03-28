@@ -24,7 +24,6 @@ interface MetricCardProps {
   refreshing?: boolean
   initialLoading?: boolean
   valueFormat?: "number" | "percentage" | "currency"
-  decimals?: number
   platform?: string
   infoTooltip?: string
   includesRefunds?: boolean
@@ -41,7 +40,6 @@ interface MetricCardProps {
   previousValuePrefix?: string
   previousValueSuffix?: string
   previousValueFormat?: "number" | "percentage" | "currency"
-  previousValueDecimals?: number
   showPreviousPeriod?: boolean
   previousPeriodLabel?: string
 }
@@ -70,7 +68,6 @@ export function MetricCard({
   refreshing = false,
   initialLoading = false,
   valueFormat = "number",
-  decimals = 0,
   platform = "meta",
   infoTooltip,
   includesRefunds = false,
@@ -87,7 +84,6 @@ export function MetricCard({
   previousValuePrefix = "",
   previousValueSuffix = "",
   previousValueFormat = "number",
-  previousValueDecimals = 0,
   showPreviousPeriod = false,
   previousPeriodLabel = "Previous period",
 }: MetricCardProps & { brandId?: string }) {
@@ -123,10 +119,7 @@ export function MetricCard({
           } else if (valueFormat === 'percentage') {
             return `${prefix}${parsed.toFixed(1)}%${suffix}`;
           } else {
-            // For number format, respect the decimals prop
-            return decimals > 0
-              ? `${prefix}${parsed.toFixed(decimals)}${suffix}`
-              : `${prefix}${Math.round(parsed).toLocaleString()}${suffix}`;
+            return `${prefix}${Math.round(parsed).toLocaleString()}${suffix}`;
           }
         }
         // If not numeric, return as is with prefix/suffix
@@ -142,10 +135,7 @@ export function MetricCard({
       } else if (valueFormat === 'percentage') {
         return `${prefix}${num.toFixed(1)}%${suffix}`;
       } else {
-        // For number format, respect the decimals prop
-        return decimals > 0
-          ? `${prefix}${num.toFixed(decimals)}${suffix}`
-          : `${prefix}${Math.round(num).toLocaleString()}${suffix}`;
+        return `${prefix}${Math.round(num).toLocaleString()}${suffix}`;
       }
     } catch (error) {
       console.error("Error formatting value:", error);
@@ -242,10 +232,7 @@ export function MetricCard({
       } else if (previousValueFormat === 'percentage') {
         return `${previousValuePrefix}${num.toFixed(1)}%${previousValueSuffix}`;
       } else {
-        // For number format, respect the previousValueDecimals prop
-        return previousValueDecimals > 0
-          ? `${previousValuePrefix}${num.toFixed(previousValueDecimals)}${previousValueSuffix}`
-          : `${previousValuePrefix}${Math.round(num).toLocaleString()}${previousValueSuffix}`;
+        return `${previousValuePrefix}${Math.round(num).toLocaleString()}${previousValueSuffix}`;
       }
     } catch (error) {
       console.error("Error formatting previous value:", error);
