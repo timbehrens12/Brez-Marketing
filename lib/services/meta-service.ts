@@ -79,7 +79,7 @@ export async function fetchMetaAdInsights(
       
       try {
         const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
         
         const insightsData = await insightsResponse.json()
@@ -161,6 +161,7 @@ export async function fetchMetaAdInsights(
           clicks: parseInt(insight.clicks || '0'),
           spend: parseFloat(insight.spend || '0'),
           reach: parseInt(insight.reach || '0'),
+          link_clicks: parseInt(insight.inline_link_clicks || '0'),
           date: recordDate,
           actions: insight.actions || [],
           action_values: insight.action_values || []
