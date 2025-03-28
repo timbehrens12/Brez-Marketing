@@ -3614,6 +3614,25 @@ Try creating at least one active campaign in Meta Ads Manager.
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
+          
+          <MetricCard
+            title={
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-green-500" />
+                <span className="ml-0.5">Budget</span>
+              </div>
+            }
+            value={budgetData.value}
+            data={[]}
+            loading={budgetData.isLoading || isManuallyRefreshing}
+            hideChange={true}
+            valueFormat="currency"
+            hideGraph={true}
+            previousValue={budgetData.previousValue}
+            previousValueFormat="currency"
+            showPreviousPeriod={true}
+            previousPeriodLabel={getPreviousPeriodLabel()}
+          />
         </div>
       </div>
       

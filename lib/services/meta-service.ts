@@ -72,12 +72,44 @@ export async function fetchMetaAdInsights(
     const endDateStr = endDate.toISOString().split('T')[0]
 
     let allInsights = []
+    let campaignBudgets = new Map()
     
     // For each ad account, fetch insights
     for (const account of accountsData.data) {
       console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
       
       try {
+        // First fetch campaign information to get budgets
+        const campaignsResponse = await fetch(
+          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
+        )
+        
+        const campaignsData = await campaignsResponse.json()
+        
+        if (campaignsData.data && campaignsData.data.length > 0) {
+          for (const campaign of campaignsData.data) {
+            let totalBudget = 0
+            
+            // Add daily budget (converted from cents to dollars)
+            if (campaign.daily_budget) {
+              const dailyBudget = parseFloat(campaign.daily_budget) / 100
+              totalBudget += dailyBudget
+            }
+            
+            // Add lifetime budget (converted from cents to dollars) 
+            if (campaign.lifetime_budget) {
+              const lifetimeBudget = parseFloat(campaign.lifetime_budget) / 100
+              totalBudget += lifetimeBudget
+            }
+            
+            // Store budget for this campaign
+            campaignBudgets.set(campaign.id, totalBudget)
+          }
+          
+          console.log(`[Meta] Fetched budget info for ${campaignsData.data.length} campaigns`)
+        }
+        
+        // Now fetch the insights data
         const insightsResponse = await fetch(
           `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
         )
@@ -146,6 +178,9 @@ export async function fetchMetaAdInsights(
           recordDate = startDateStr;
         }
         
+        // Get budget for this campaign if available
+        const budget = campaignBudgets.has(insight.campaign_id) ? campaignBudgets.get(insight.campaign_id) : 0;
+        
         return {
           brand_id: brandId,
           connection_id: connection.id,
@@ -162,6 +197,7 @@ export async function fetchMetaAdInsights(
           spend: parseFloat(insight.spend || '0'),
           reach: parseInt(insight.reach || '0'),
           link_clicks: parseInt(insight.inline_link_clicks || '0'),
+          budget: budget,
           date: recordDate,
           actions: insight.actions || [],
           action_values: insight.action_values || []
