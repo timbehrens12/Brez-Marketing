@@ -10,6 +10,14 @@ export default function MetaFixPage() {
   const [resyncResult, setResyncResult] = useState(null);
   const [dbCheckResult, setDbCheckResult] = useState(null);
   const [days, setDays] = useState(90);
+  const [dbConnectionResult, setDbConnectionResult] = useState(null);
+  const [directMetaResult, setDirectMetaResult] = useState(null);
+  const [emergencyFixResult, setEmergencyFixResult] = useState(null);
+  const [viewsApiResult, setViewsApiResult] = useState(null);
+  const [customDateRange, setCustomDateRange] = useState({
+    from: '',
+    to: ''
+  });
 
   // Load brands from localstorage
   useEffect(() => {
@@ -50,6 +58,61 @@ export default function MetaFixPage() {
       }
     } catch (error) {
       console.error('Error running diagnostics:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkDatabaseConnection = async () => {
+    setIsLoading(true);
+    setStatus('Checking database connection...');
+    
+    try {
+      const response = await fetch(`/api/admin/check-database-connection?token=fix-meta-data`);
+      const data = await response.json();
+      
+      setDbConnectionResult(data);
+      
+      if (data.success) {
+        setStatus(`Database connection check complete: ${data.data.metaInsightsCount} Meta insights records found`);
+      } else {
+        setStatus(`Database connection error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error checking database connection:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const checkDirectMeta = async () => {
+    if (!brandId) {
+      setStatus('Error: Please enter a brand ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('Checking Meta API directly...');
+    
+    try {
+      const response = await fetch(`/api/admin/direct-meta-check?token=fix-meta-data&brandId=${brandId}`);
+      const data = await response.json();
+      
+      setDirectMetaResult(data);
+      
+      if (data.success) {
+        if (data.insights.success) {
+          setStatus(`Meta API check complete: Found ${data.insights.recordCount} insight records directly from Meta API`);
+        } else {
+          setStatus(`Meta API check complete but couldn't fetch insights: ${data.insights.error?.message || 'Unknown error'}`);
+        }
+      } else {
+        setStatus(`Meta API check error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error checking Meta API:', error);
       setStatus(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -110,6 +173,73 @@ export default function MetaFixPage() {
       }
     } catch (error) {
       console.error('Error resyncing data:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const emergencyFix = async () => {
+    if (!brandId) {
+      setStatus('Error: Please enter a brand ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('EMERGENCY FIX: Direct database sync in progress...');
+    
+    try {
+      const response = await fetch(`/api/admin/force-meta-fix?token=fix-meta-data&brandId=${brandId}&days=${days}`);
+      const data = await response.json();
+      
+      setEmergencyFixResult(data);
+      
+      if (data.success) {
+        setStatus(`🚨 EMERGENCY FIX COMPLETE: Inserted ${data.stats.totalInserted} records directly into database!`);
+      } else {
+        setStatus(`🚨 EMERGENCY FIX FAILED: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error with emergency fix:', error);
+      setStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const debugViewsApi = async () => {
+    if (!brandId) {
+      setStatus('Error: Please enter a brand ID');
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus('Debugging Views/Reach API endpoint...');
+    
+    try {
+      const queryParams = new URLSearchParams({
+        token: 'fix-meta-data',
+        brandId
+      });
+      
+      if (customDateRange.from && customDateRange.to) {
+        queryParams.append('from', customDateRange.from);
+        queryParams.append('to', customDateRange.to);
+      }
+      
+      const response = await fetch(`/api/admin/debug-views-api?${queryParams.toString()}`);
+      const data = await response.json();
+      
+      setViewsApiResult(data);
+      
+      if (data.success) {
+        const { recordCount, recordsWithViews, totalViews } = data.debug.rawData;
+        setStatus(`Views API debug: ${recordCount} records found, ${recordsWithViews} with views data, totaling ${totalViews} views`);
+      } else {
+        setStatus(`Views API debug error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error debugging Views API:', error);
       setStatus(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -187,6 +317,45 @@ export default function MetaFixPage() {
           </div>
         </div>
         
+        {/* Custom date range for debugging */}
+        <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md mb-4">
+          <h3 className="text-sm font-medium mb-2">Custom Date Range for Debugging</h3>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <label htmlFor="fromDate" className="block text-xs mb-1">From Date</label>
+              <input
+                type="date"
+                id="fromDate"
+                value={customDateRange.from}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
+                className="px-3 py-2 border rounded-md w-full text-sm dark:bg-gray-800 dark:border-gray-700"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex-1">
+              <label htmlFor="toDate" className="block text-xs mb-1">To Date</label>
+              <input
+                type="date"
+                id="toDate"
+                value={customDateRange.to}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
+                className="px-3 py-2 border rounded-md w-full text-sm dark:bg-gray-800 dark:border-gray-700"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex-none self-end">
+              <button
+                onClick={debugViewsApi}
+                disabled={isLoading}
+                className="px-3 py-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 disabled:opacity-50 text-sm"
+              >
+                {isLoading && viewsApiResult === null ? 'Debugging...' : 'Debug Views API'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">Use this to debug the Views API endpoint with specific dates</p>
+        </div>
+
         <div className="flex flex-wrap gap-4">
           <button
             onClick={runDiagnostics}
@@ -194,6 +363,22 @@ export default function MetaFixPage() {
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
           >
             {isLoading && diagnosticData === null ? 'Running...' : 'Run Diagnostics'}
+          </button>
+          
+          <button
+            onClick={checkDatabaseConnection}
+            disabled={isLoading}
+            className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 disabled:opacity-50"
+          >
+            {isLoading && dbConnectionResult === null ? 'Checking...' : 'Check Database Connection'}
+          </button>
+          
+          <button
+            onClick={checkDirectMeta}
+            disabled={isLoading}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:opacity-50"
+          >
+            {isLoading && directMetaResult === null ? 'Checking...' : 'Direct Meta API Check'}
           </button>
           
           <button
@@ -211,12 +396,91 @@ export default function MetaFixPage() {
           >
             {isLoading && resyncResult === null ? 'Resyncing...' : 'Force Resync Meta Data'}
           </button>
+          
+          <button
+            onClick={emergencyFix}
+            disabled={isLoading}
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50"
+          >
+            {isLoading && emergencyFixResult === null ? '🚨 FIXING...' : '🚨 EMERGENCY META FIX'}
+          </button>
         </div>
         
         <div className="bg-gray-200 dark:bg-gray-700 p-3 rounded">
           <p className="font-mono">{status}</p>
         </div>
       </div>
+
+      {/* Database Connection Results */}
+      {dbConnectionResult && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold mb-2">Database Connection Results</h2>
+          
+          <div className="space-y-2 mb-4">
+            <p><strong>Database Connected:</strong> {dbConnectionResult.database.connected ? '✅ Yes' : '❌ No'}</p>
+            <p><strong>Meta Insights Table Exists:</strong> {dbConnectionResult.tables.metaAdInsightsExists ? '✅ Yes' : '❌ No'}</p>
+            <p><strong>Total Tables:</strong> {dbConnectionResult.tables.totalTables}</p>
+            <p><strong>Brands Count:</strong> {dbConnectionResult.data.brandsCount}</p>
+            <p><strong>Meta Connections Count:</strong> {dbConnectionResult.data.metaConnectionsCount}</p>
+            <p><strong>Meta Insights Count:</strong> {dbConnectionResult.data.metaInsightsCount}</p>
+            
+            <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+              <p className="text-sm mb-1">
+                <strong>Status:</strong> {dbConnectionResult.database.connected 
+                  ? '✅ Database is connected' 
+                  : '❌ Database connection issue'}
+              </p>
+              
+              {dbConnectionResult.database.error && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Error: {dbConnectionResult.database.error}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-60">
+            <pre className="text-xs">{JSON.stringify(dbConnectionResult, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Meta API Check Results */}
+      {directMetaResult && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
+          <h2 className="text-lg font-semibold mb-2">Direct Meta API Check Results</h2>
+          
+          <div className="space-y-2 mb-4">
+            <p><strong>Connection:</strong> ID: {directMetaResult.connection?.id}</p>
+            <p><strong>Ad Accounts:</strong> {directMetaResult.accounts?.count || 0} found</p>
+            <p><strong>Insights API:</strong> {directMetaResult.insights?.success ? '✅ Working' : '❌ Error'}</p>
+            <p><strong>Insights Records:</strong> {directMetaResult.insights?.recordCount || 0}</p>
+            
+            <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+              <p className="text-sm mb-1">
+                <strong>Status:</strong> {directMetaResult.insights?.success 
+                  ? '✅ Meta API is working correctly' 
+                  : '❌ Meta API returned an error'}
+              </p>
+              
+              {directMetaResult.insights?.error && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Error: {JSON.stringify(directMetaResult.insights.error)}
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {directMetaResult.insights?.sampleData && (
+            <div>
+              <h3 className="font-semibold mb-2">Sample Data:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(directMetaResult.insights.sampleData, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {dbCheckResult && (
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
@@ -268,6 +532,116 @@ export default function MetaFixPage() {
           <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-auto max-h-80">
             <pre className="text-sm">{JSON.stringify(resyncResult, null, 2)}</pre>
           </div>
+        </div>
+      )}
+
+      {/* Emergency Fix Results */}
+      {emergencyFixResult && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border-2 border-red-500">
+          <h2 className="text-lg font-semibold mb-2 text-red-500">🚨 Emergency Fix Results</h2>
+          
+          <div className="space-y-2 mb-4">
+            <p><strong>Records Fetched:</strong> {emergencyFixResult.stats?.totalFetched || 0}</p>
+            <p><strong>Records Inserted:</strong> {emergencyFixResult.stats?.totalInserted || 0}</p>
+            <p><strong>Date Range:</strong> {emergencyFixResult.stats?.dateRange?.from} to {emergencyFixResult.stats?.dateRange?.to}</p>
+            
+            <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+              <p className="text-sm mb-1">
+                <strong>Status:</strong> {emergencyFixResult.success 
+                  ? '✅ Emergency fix completed successfully' 
+                  : '❌ Emergency fix failed'}
+              </p>
+              
+              {emergencyFixResult.error && (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Error: {emergencyFixResult.error}
+                </p>
+              )}
+              
+              {emergencyFixResult.success && (
+                <div className="mt-2">
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    ✅ Data has been directly inserted into the database!
+                  </p>
+                  <p className="text-sm mt-1">
+                    You should now go to the dashboard and check if your Meta data is appearing correctly.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {emergencyFixResult.fetchErrors && emergencyFixResult.fetchErrors.length > 0 && (
+            <div className="mt-3">
+              <h3 className="font-semibold mb-1">Fetch Errors:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(emergencyFixResult.fetchErrors, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+          
+          {emergencyFixResult.insertErrors && emergencyFixResult.insertErrors.length > 0 && (
+            <div className="mt-3">
+              <h3 className="font-semibold mb-1">Insert Errors:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(emergencyFixResult.insertErrors, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+          
+          {emergencyFixResult.sampleInsight && (
+            <div className="mt-3">
+              <h3 className="font-semibold mb-1">Sample Record:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(emergencyFixResult.sampleInsight, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Views API Debug Results */}
+      {viewsApiResult && (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border-2 border-teal-500">
+          <h2 className="text-lg font-semibold mb-2 text-teal-500">Views API Debug Results</h2>
+          
+          <div className="space-y-2 mb-4">
+            <p><strong>Total Records:</strong> {viewsApiResult.debug?.rawData?.recordCount || 0}</p>
+            <p><strong>Records With Views:</strong> {viewsApiResult.debug?.rawData?.recordsWithViews || 0}</p>
+            <p><strong>Total Views Value:</strong> {viewsApiResult.debug?.rawData?.totalViews || 0}</p>
+            <p><strong>Date Range:</strong> {viewsApiResult.debug?.params?.from} to {viewsApiResult.debug?.params?.to}</p>
+            
+            <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+              <p className="text-sm mb-1">
+                <strong>API Output Simulation:</strong> {viewsApiResult.debug?.viewsApiSimulation?.explanation}
+              </p>
+              
+              {viewsApiResult.debug?.rawData?.recordsWithViews === 0 && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                  ⚠️ The Views widget shows zero because there are no records with reach &gt; 0 in the date range.
+                  <br />Try using the Emergency Fix to populate the database with fresh data.
+                </p>
+              )}
+            </div>
+          </div>
+          
+          {viewsApiResult.debug?.rawData?.recordSample && viewsApiResult.debug.rawData.recordSample.length > 0 && (
+            <div className="mt-3">
+              <h3 className="font-semibold mb-1">Sample Records:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-40">
+                <pre className="text-xs">{JSON.stringify(viewsApiResult.debug.rawData.recordSample, null, 2)}</pre>
+              </div>
+            </div>
+          )}
+          
+          {viewsApiResult.debug?.sampleFullRecords && viewsApiResult.debug.sampleFullRecords.length > 0 && (
+            <div className="mt-3">
+              <h3 className="font-semibold mb-1">Full Record Samples:</h3>
+              <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto max-h-60">
+                <pre className="text-xs">{JSON.stringify(viewsApiResult.debug.sampleFullRecords, null, 2)}</pre>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
