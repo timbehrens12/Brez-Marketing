@@ -22,6 +22,7 @@ interface DailyDataItem {
   conversions: number;
   ctr: number;
   roas: number;
+  reach: number;
   [key: string]: string | number;
 }
 
@@ -477,6 +478,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     const daySpend = dayItems.reduce((sum, d) => sum + (parseFloat(d.spend) || 0), 0)
     const dayImpressions = dayItems.reduce((sum, d) => sum + (parseInt(d.impressions) || 0), 0)
     const dayClicks = dayItems.reduce((sum, d) => sum + (parseInt(d.clicks) || 0), 0)
+    const dayReach = dayItems.reduce((sum, d) => sum + (parseInt(d.reach) || 0), 0)
     
     // Calculate conversions from actions array (purchase or conversion actions)
     let dayConversions = 0
@@ -522,7 +524,8 @@ function processMetaData(data: any[]): ProcessedMetaData {
       clicks: dayClicks,
       conversions: dayConversions,
       ctr: dayCtr,
-      roas: dayRoas
+      roas: dayRoas,
+      reach: dayReach
     })
     
     // Add to totals
@@ -530,6 +533,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     totalImpressions += dayImpressions
     totalClicks += dayClicks
     totalConversions += dayConversions
+    totalReach += dayReach
   })
   
   console.log(`Aggregated ${dailyData.length} unique days of data, total spend: ${totalSpend}`)
@@ -556,7 +560,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
   const frequency = totalReach > 0 ? totalImpressions / totalReach : 1
   
   // Add debug info
-  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%`)
+  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, reach=${totalReach}`)
   
   return {
     adSpend: totalSpend,
