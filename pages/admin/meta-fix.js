@@ -104,6 +104,17 @@ export default function MetaFixPage() {
         </div>
       </div>
 
+      <div className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 p-4 rounded-lg mb-6">
+        <h2 className="font-semibold mb-2">Database Migration Required</h2>
+        <p className="mb-2">The Views widget now requires a <code>views</code> column in the <code>meta_ad_insights</code> table. Run the following to add this column:</p>
+        <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded font-mono text-sm mb-2 overflow-x-auto">
+          <code>cd /path/to/project</code><br />
+          <code>export SUPABASE_DB_URL=postgresql://postgres:password@localhost:5432/postgres</code><br />
+          <code>bash scripts/update-views-column.sh</code>
+        </div>
+        <p>After running the migration, resync your Meta data using the button below.</p>
+      </div>
+
       <div className="mb-6">
         <label className="block mb-2">Brand ID</label>
         <div className="flex space-x-2">
