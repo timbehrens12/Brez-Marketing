@@ -2243,10 +2243,23 @@ Try creating at least one active campaign in Meta Ads Manager.
       return "Previous period";
     }
     
-    // Case 1: Single day - always say "Previous day"
-    const isSingleDay = isSameDay(dateRange.from, dateRange.to);
+    // Get the date info from the current range
+    const from = dateRange.from;
+    const to = dateRange.to;
+    
+    // Calculate previous dates
+    const { prevFrom, prevTo } = getPreviousPeriodDates(from, to);
+    
+    // Format dates in a readable format (e.g., Mar 14 - Mar 20)
+    const formatDateShort = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return format(date, "MMM d");
+    };
+    
+    // Case 1: Single day - show the previous day with date
+    const isSingleDay = isSameDay(from, to);
     if (isSingleDay) {
-      return "Previous day";
+      return `Previous day (${formatDateShort(prevFrom)})`;
     }
     
     // Case 2: Handle specific presets by checking date patterns
@@ -2258,55 +2271,55 @@ Try creating at least one active campaign in Meta Ads Manager.
     yesterday.setHours(0, 0, 0, 0);
     
     // Check for "Last 7 days" preset
-    const rangeDays = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    const isLast7Days = rangeDays === 7 && isSameDay(dateRange.to, yesterday);
+    const rangeDays = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const isLast7Days = rangeDays === 7 && isSameDay(to, yesterday);
     if (isLast7Days) {
-      return "Previous 7 days";
+      return `Previous 7 days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
     // Check for "Last 30 days" preset
-    const isLast30Days = rangeDays === 30 && isSameDay(dateRange.to, yesterday);
+    const isLast30Days = rangeDays === 30 && isSameDay(to, yesterday);
     if (isLast30Days) {
-      return "Previous 30 days";
+      return `Previous 30 days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
     // Check for "This month" preset
     const startOfCurrentMonth = startOfMonth(now);
-    if (isSameDay(dateRange.from, startOfCurrentMonth)) {
-      return "Previous month (same days)";
+    if (isSameDay(from, startOfCurrentMonth)) {
+      return `Previous month's equivalent (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
     // Check for "Last month" preset
     const startOfLastMonth = startOfMonth(subMonths(now, 1));
     const endOfLastMonth = endOfMonth(subMonths(now, 1));
-    if (isSameDay(dateRange.from, startOfLastMonth) && isSameDay(dateRange.to, endOfLastMonth)) {
-      return "Month before last";
+    if (isSameDay(from, startOfLastMonth) && isSameDay(to, endOfLastMonth)) {
+      return `Month before last (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
     // Check for "This year" preset
     const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
-    if (isSameDay(dateRange.from, startOfCurrentYear)) {
-      return "Previous year (same days)";
+    if (isSameDay(from, startOfCurrentYear)) {
+      return `Previous year's equivalent (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
     // Check for "Last year" preset
     const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
     const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
-    if (isSameDay(dateRange.from, startOfLastYear) && isSameDay(dateRange.to, endOfLastYear)) {
-      return "Year before last";
+    if (isSameDay(from, startOfLastYear) && isSameDay(to, endOfLastYear)) {
+      return `Year before last (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
     
-    // Case 3: Default - use range length to determine label
+    // Case 3: Default - use range length for custom date ranges
     if (rangeDays <= 7) {
-      return "Previous week";
+      return `Previous ${rangeDays} days (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     } else if (rangeDays <= 31) {
-      return "Previous month";
+      return `Previous period (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     } else if (rangeDays <= 92) {
-      return "Previous quarter";
+      return `Previous quarter (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     } else if (rangeDays <= 366) {
-      return "Previous year";
+      return `Previous year (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     } else {
-      return "Previous period";
+      return `Previous period (${formatDateShort(prevFrom)} - ${formatDateShort(prevTo)})`;
     }
   }
 

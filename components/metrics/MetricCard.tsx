@@ -336,9 +336,15 @@ export function MetricCard({
                               <TooltipContent 
                                 side="top" 
                                 align="center"
-                                className="z-50 bg-black border border-gray-800 text-xs p-2"
+                                className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
                               >
-                                <p>{previousPeriodLabel}: {formattedPrevValue}</p>
+                                <div className="space-y-1">
+                                  <p className="font-medium">{previousPeriodLabel}</p>
+                                  <p className="text-gray-300">Amount: {formattedPrevValue}</p>
+                                  {previousPeriodLabel.includes('(') && previousPeriodLabel.includes('days') && (
+                                    <p className="text-gray-400 text-[10px]">For exact comparison with current range</p>
+                                  )}
+                                </div>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -364,9 +370,20 @@ export function MetricCard({
                         <TooltipContent 
                           side="top" 
                           align="center"
-                          className="z-50 bg-black border border-gray-800 text-xs p-2"
+                          className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
                         >
-                          <p>{getComparisonText(change, dateRange)}</p>
+                          <div className="space-y-1">
+                            <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
+                            <p className="text-gray-300">Current: {formatSafeValue()}</p>
+                            <p className="text-gray-300">Previous: {previousValue ? (
+                              previousValueFormat === 'currency' 
+                                ? `${previousValuePrefix}${previousValue.toFixed(2)}${previousValueSuffix}` 
+                                : previousValueFormat === 'percentage'
+                                  ? `${previousValuePrefix}${previousValue.toFixed(1)}%${previousValueSuffix}`
+                                  : `${previousValuePrefix}${Math.round(previousValue).toLocaleString()}${previousValueSuffix}`
+                            ) : 'N/A'}</p>
+                            <p className="text-gray-400 text-[10px]">{previousPeriodLabel || 'Comparing equivalent time periods'}</p>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
