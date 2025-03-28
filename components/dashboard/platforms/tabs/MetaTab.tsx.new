@@ -3872,76 +3872,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           </CardContent>
         </Card>
         
-        {/* Optimization Opportunities Card */}
-        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-3 border-b border-[#333]">
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4 text-amber-400" />
-              Optimization Opportunities
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="rounded-full bg-amber-900/40 p-2">
-                    <Target className="h-5 w-5 text-amber-400" />
-                  </div>
-                  <h3 className="font-medium">Audience Expansion</h3>
-                </div>
-                <p className="text-xs text-gray-400">Currently targeting audiences are too narrow, limiting your reach potential.</p>
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
-                  >
-                    View Opportunity
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="rounded-full bg-green-900/40 p-2">
-                    <Wallet className="h-5 w-5 text-green-400" />
-                  </div>
-                  <h3 className="font-medium">Budget Reallocation</h3>
-                </div>
-                <p className="text-xs text-gray-400">Redistribute your budget from low-performing campaigns to your most successful ones.</p>
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
-                  >
-                    View Opportunity
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="bg-[#1a1a1a] border border-[#333] hover:border-[#444] rounded-lg p-4 transition-colors">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="rounded-full bg-blue-900/40 p-2">
-                    <ImageIcon className="h-5 w-5 text-blue-400" />
-                  </div>
-                  <h3 className="font-medium">Creative Refresh</h3>
-                </div>
-                <p className="text-xs text-gray-400">Some of your ad creatives have been running for over 30 days and may be experiencing fatigue.</p>
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full text-xs bg-[#111] border-[#333] hover:bg-[#222]"
-                  >
-                    View Opportunity
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </div>
       {/* END OF NEW CAMPAIGN PERFORMANCE SECTION */}
               </>
             )
@@ -3973,3 +3904,4 @@ export default withErrorBoundary(MetaTab, {
     console.error("MetaTab error caught by boundary:", error)
   }
 })
+
