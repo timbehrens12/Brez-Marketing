@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, PlusCircle, Layers, Wallet, ChevronDown } from "lucide-react"
+import { 
+  DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, 
+  ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, 
+  MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, 
+  PlusCircle, Layers, Wallet, ChevronDown, Lightbulb, Activity,
+  BrainCircuit, AlertCircle, Info, Percent, CalendarRange, 
+  BarChart2, ArrowRight, Settings, Users
+} from "lucide-react"
 import { Sparkles, Image as ImageIcon } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
@@ -25,18 +32,6 @@ import {
   Pie,
   Cell
 } from 'recharts'
-import { 
-  Activity, 
-  Users, 
-  BarChart2, 
-  ArrowRight, 
-  CalendarRange, 
-  Percent, 
-  BrainCircuit, 
-  Info, 
-  AlertCircle,
-  Settings,
-} from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCurrencyCompact, formatNumberCompact, formatPercentage } from "@/lib/formatters"
@@ -3594,6 +3589,382 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
+        {/* Conversion Funnel Analysis - Replacing Campaign Performance widget */}
+        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
+          <CardHeader className="pb-3 border-b border-[#333]">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Activity className="h-4 w-4 text-indigo-400" />
+                Conversion Funnel Analysis
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={handleManualRefresh}
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isManuallyRefreshing ? (
+              <div className="flex justify-center items-center h-[300px]">
+                <div className="flex flex-col items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
+                  <p className="text-sm text-gray-400">Refreshing data...</p>
+                </div>
+              </div>
+            ) : hasData() ? (
+              <div>
+                {/* Top Section - Conversion Metrics Breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <Eye className="h-4 w-4 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Impressions</p>
+                        <p className="text-xl font-semibold">{formatNumberCompact(impressionsData.value)}</p>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }}></div>
+                    </div>
+                    <p className="text-xs text-gray-400">Total number of ad impressions</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <MousePointerClick className="h-4 w-4 text-amber-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Clicks</p>
+                        <p className="text-xl font-semibold">{formatNumberCompact(clicksData.value)}</p>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
+                      {impressionsData.value > 0 && (
+                        <div 
+                          className="h-full bg-amber-500 rounded-full" 
+                          style={{ width: `${Math.min((clicksData.value / impressionsData.value) * 100, 100)}%` }}
+                        ></div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 flex items-center justify-between">
+                      <span>Click-through rate</span>
+                      <span className="font-medium">{impressionsData.value > 0 ? 
+                        ((clicksData.value / impressionsData.value) * 100).toFixed(2) : '0.00'}%</span>
+                    </p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <Target className="h-4 w-4 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Conversions</p>
+                        <p className="text-xl font-semibold">{formatNumberCompact(resultsData.value)}</p>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
+                      {clicksData.value > 0 && (
+                        <div 
+                          className="h-full bg-green-500 rounded-full" 
+                          style={{ width: `${Math.min((resultsData.value / clicksData.value) * 100, 100)}%` }}
+                        ></div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 flex items-center justify-between">
+                      <span>Conversion rate</span>
+                      <span className="font-medium">{clicksData.value > 0 ? 
+                        ((resultsData.value / clicksData.value) * 100).toFixed(2) : '0.00'}%</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Funnel Visualization */}
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium mb-4 text-gray-300">Conversion Funnel</h3>
+                  
+                  <div className="relative">
+                    <div className="h-[200px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={[
+                            {
+                              name: 'Impressions',
+                              value: impressionsData.value,
+                              fill: '#3b82f6',
+                              percentage: '100%'
+                            },
+                            {
+                              name: 'Clicks',
+                              value: clicksData.value,
+                              fill: '#f59e0b',
+                              percentage: impressionsData.value > 0 ? 
+                                ((clicksData.value / impressionsData.value) * 100).toFixed(2) + '%' : '0%'
+                            },
+                            {
+                              name: 'Conversions',
+                              value: resultsData.value,
+                              fill: '#10b981',
+                              percentage: clicksData.value > 0 ? 
+                                ((resultsData.value / clicksData.value) * 100).toFixed(2) + '%' : '0%'
+                            },
+                            {
+                              name: 'Return',
+                              value: roasData.value * adSpendData.value,
+                              fill: '#8b5cf6',
+                              percentage: adSpendData.value > 0 ? 
+                                (roasData.value * 100).toFixed(0) + '%' : '0%'
+                            },
+                          ]}
+                          layout="vertical"
+                          margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
+                          <XAxis 
+                            type="number" 
+                            hide={true}
+                          />
+                          <YAxis 
+                            type="category" 
+                            dataKey="name" 
+                            tick={{ fill: '#888', fontSize: 12 }} 
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Bar 
+                            dataKey="value" 
+                            shape={(props: any) => {
+                              // Create trapezoid shape for funnel effect
+                              const { x, y, width, height, fill } = props;
+                              const pathWidth = width * 0.85; // Adjust path width as needed
+                              const top = pathWidth * (1 - (props.index * 0.15));
+                              const bottom = pathWidth * (1 - ((props.index + 1) * 0.15));
+                                    
+                              return (
+                                <path 
+                                  d={`
+                                    M ${x},${y}
+                                    L ${x + top},${y}
+                                    L ${x + bottom},${y + height}
+                                    L ${x},${y + height}
+                                    Z
+                                  `}
+                                  fill={fill}
+                                  fillOpacity={0.9}
+                                  stroke="#111"
+                                  strokeWidth={1}
+                                />
+                              );
+                            }}
+                            minPointSize={2}
+                            barSize={30}
+                            label={(props: any) => {
+                              const { x, y, width, value, percentage, index } = props;
+                              return (
+                                <g>
+                                  <text 
+                                    x={x + width * 0.5} 
+                                    y={y + 15} 
+                                    textAnchor="middle" 
+                                    fill="#fff" 
+                                    fontSize={12}
+                                    fontWeight="500"
+                                  >
+                                    {formatNumberCompact(Number(value))}
+                                  </text>
+                                  <text 
+                                    x={x + width * 0.85} 
+                                    y={y + 15} 
+                                    textAnchor="end" 
+                                    fill="#aaa" 
+                                    fontSize={11}
+                                  >
+                                    {percentage}
+                                  </text>
+                                </g>
+                              );
+                            }}
+                          />
+                          <RechartsTooltip
+                            formatter={(value: any, name, props) => {
+                              const { payload } = props;
+                              let numberValue: number;
+                              if (typeof value === 'string') {
+                                numberValue = parseFloat(value);
+                              } else if (Array.isArray(value)) {
+                                numberValue = Number(value[0]);
+                              } else {
+                                numberValue = Number(value);
+                              }
+                              return [
+                                formatNumberCompact(numberValue), 
+                                `${payload.name} (${payload.percentage})`
+                              ];
+                            }}
+                            contentStyle={{
+                              backgroundColor: '#1a1a1a',
+                              border: '1px solid #333',
+                              borderRadius: '4px',
+                              padding: '8px 12px',
+                            }}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Performance Insights */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                    <h4 className="text-sm font-medium mb-3 text-gray-300 flex items-center gap-2">
+                      <BrainCircuit className="h-4 w-4 text-purple-400" />
+                      Performance Insights
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      {ctrData.value < 1 && (
+                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                          <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-amber-400 font-medium">Low Click-Through Rate</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Your CTR of {ctrData.value.toFixed(2)}% is below optimal levels. Consider refreshing your creative assets.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(impressionsData.value > 0 && 
+                       clicksData.value > 0 && 
+                       (clicksData.value / impressionsData.value) < 0.02) && (
+                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                          <ArrowUpRight className="h-4 w-4 text-blue-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-blue-400 font-medium">Impression to Click Gap</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              There's a significant drop-off from impressions to clicks. Your ad creative or targeting may need improvement.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(clicksData.value > 0 && 
+                       resultsData.value > 0 && 
+                       (resultsData.value / clicksData.value) < 0.05) && (
+                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                          <ArrowUpRight className="h-4 w-4 text-green-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-green-400 font-medium">Click to Conversion Gap</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Your landing page or offer may need optimization. Many users click but don't convert.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {roasData.value < 1 && (
+                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                          <AlertCircle className="h-4 w-4 text-red-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-red-400 font-medium">Negative Return on Ad Spend</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Your ROAS of {roasData.value.toFixed(2)}x means you're losing money on ad spend. Review your highest-cost campaigns.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {roasData.value >= 2 && (
+                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                          <TrendingUp className="h-4 w-4 text-green-400 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-green-400 font-medium">Strong ROAS Performance</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Your ROAS of {roasData.value.toFixed(2)}x indicates profitable ad campaigns. Consider scaling successful campaigns.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+                    <h4 className="text-sm font-medium mb-3 text-gray-300 flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-yellow-400" />
+                      Recommendations
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                        <ArrowUpRight className="h-4 w-4 text-purple-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-purple-400 font-medium">Optimize Upper Funnel</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {impressionsData.value > 0 && clicksData.value / impressionsData.value < 0.02 
+                              ? "Focus on improving ad creative and targeting to increase CTR."
+                              : "Broaden targeting to increase reach while maintaining current engagement levels."}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                        <ArrowUpRight className="h-4 w-4 text-indigo-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-indigo-400 font-medium">Improve Mid-Funnel</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {clicksData.value > 0 && resultsData.value / clicksData.value < 0.05 
+                              ? "Enhance landing page experience and conversion paths to turn more clicks into conversions."
+                              : "Test different call-to-actions and landing page variants to improve conversion rate."}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
+                        <ArrowUpRight className="h-4 w-4 text-green-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-green-400 font-medium">Boost Bottom Funnel</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {roasData.value < 1.5
+                              ? "Focus on increasing average order value or creating upsell opportunities to improve ROAS."
+                              : "Implement retargeting campaigns to bring converted customers back for repeat purchases."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center p-12">
+                <Activity className="h-12 w-12 text-gray-500 mb-4" />
+                <p className="text-gray-400 mb-2">No data available</p>
+                <p className="text-sm text-gray-500 max-w-md">Connect your Meta Ads account or run campaigns to see conversion funnel analysis.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-6 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
+                  onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Meta Ads Manager
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Next widget (Campaign Performance Table) - Keep this part as is */}
         {/* Campaign Performance Overview */}
         <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
           <CardHeader className="pb-3 border-b border-[#333]">
