@@ -3141,7 +3141,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false)
 
   // Function to refresh all metrics directly
-  const refreshAllMetricsDirectly = async () => {
+  const refreshAllMetricsDirectly = useCallback(async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
       console.log("Cannot refresh metrics: Missing date range or brand ID")
       return
@@ -3189,7 +3189,11 @@ Try creating at least one active campaign in Meta Ads Manager.
     } finally {
       setIsManuallyRefreshing(false)
     }
-  }
+  }, [dateRange, brandId, 
+     fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
+     fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
+     fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
+     fetchReachDirectly, fetchLinkClicksDirectly, fetchBudgetDirectly]);
   
   // Setup auto-refresh on a 5-minute interval
   useEffect(() => {
@@ -3226,6 +3230,35 @@ Try creating at least one active campaign in Meta Ads Manager.
   const handleManualRefresh = () => {
     refreshAllMetricsDirectly()
   }
+
+  // Store a stable reference to the refresh function
+  const refreshAllMetricsDirectlyRef = useRef(refreshAllMetricsDirectly);
+
+  // Update the ref when the function changes
+  useEffect(() => {
+    refreshAllMetricsDirectlyRef.current = refreshAllMetricsDirectly;
+  }, [refreshAllMetricsDirectly]);
+
+  // Add a listener for the metaDataRefreshed event from the dashboard
+  useEffect(() => {
+    // Define the event handler
+    const handleMetaDataRefreshed = (event: CustomEvent) => {
+      // Check if this event is for our brand
+      if (event.detail?.brandId === brandId) {
+        console.log("Received metaDataRefreshed event, refreshing metrics directly");
+        // Use the ref to always access the latest version of the function
+        refreshAllMetricsDirectlyRef.current();
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+
+    // Cleanup on component unmount
+    return () => {
+      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+    };
+  }, [brandId]);
 
   return (
     <TooltipProvider>

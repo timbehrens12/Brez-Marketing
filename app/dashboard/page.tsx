@@ -489,17 +489,18 @@ export default function DashboardPage() {
   }, [selectedBrandId, dateRange]);
 
   // Modify the fetchMetaMetrics function to use a current date range and respect initialLoad
-  async function fetchMetaMetrics(initialLoad = false) {
-    // IMPORTANT: When a date range is explicitly set by DateRangePicker, do not make a second fetch
-    if (dateRange?.from && dateRange?.to) {
-      console.log('Skipping Meta metrics fetch - date range already set by picker');
-      return null;
+  async function fetchMetaMetrics(initialLoad = false, forceRefresh = false) {
+    // Allow overriding date range when forcing a refresh
+    if (!forceRefresh && dateRange?.from && dateRange?.to) {
+      console.log('Using date range from picker for Meta metrics fetch');
     }
     
-    // Don't fetch Meta metrics if the block flag is set and it's not an initial load
+    // Don't fetch Meta metrics if the block flag is set and it's not an initial load or forced refresh
     if (typeof window !== 'undefined' && 
-        (window._blockMetaApiCalls || 
-         (window._disableAutoMetaFetch && !initialLoad && !isRefreshingData))) {
+        window._blockMetaApiCalls && 
+        !forceRefresh && 
+        !initialLoad && 
+        !isRefreshingData) {
       console.log('Blocking Meta metrics fetch - auto fetch disabled or component inactive');
       return null;
     }
@@ -507,19 +508,30 @@ export default function DashboardPage() {
     if (!selectedBrandId) return;
     
     try {
-      // Use current date to ensure we always have data
-      const now = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Use date range from picker if available, otherwise use last 30 days
+      let startDate, endDate;
       
-      // Format dates properly
-      const startDate = formatDate(thirtyDaysAgo);
-      const endDate = formatDate(now);
+      if (dateRange?.from && dateRange?.to) {
+        startDate = formatDate(dateRange.from);
+        endDate = formatDate(dateRange.to);
+      } else {
+        // Use current date to ensure we always have data
+        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        // Format dates properly
+        startDate = formatDate(thirtyDaysAgo);
+        endDate = formatDate(now);
+      }
         
       console.log(`Fetching Meta metrics with date range: ${startDate} to ${endDate}`);
       
+      // Add a cache-busting parameter to ensure we get fresh data when forcing refresh
+      const cacheBuster = forceRefresh ? `&t=${new Date().getTime()}` : '';
+      
       const metaResponse = await fetch(
-        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}&initial_load=${initialLoad}`
+        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}&initial_load=${initialLoad}&force_refresh=${forceRefresh}${cacheBuster}`
       );
       
       if (!metaResponse.ok) {
@@ -549,9 +561,20 @@ export default function DashboardPage() {
           ctr: metaData.ctr ?? prev.ctr ?? 0,
           ctrGrowth: metaData.ctrGrowth ?? prev.ctrGrowth ?? 0,
           clicks: metaData.clicks ?? prev.clicks ?? 0,
-          clickGrowth: metaData.clickGrowth ?? prev.clickGrowth ?? 0
+          clickGrowth: metaData.clickGrowth ?? prev.clickGrowth ?? 0,
+          conversions: metaData.conversions ?? prev.conversions ?? 0,
+          conversionGrowth: metaData.conversionGrowth ?? prev.conversionGrowth ?? 0,
+          costPerResult: metaData.costPerResult ?? prev.costPerResult ?? 0,
+          cprGrowth: metaData.cprGrowth ?? prev.cprGrowth ?? 0,
+          dailyData: metaData.dailyData ?? prev.dailyData ?? []
         }));
       }
+      
+      // Dispatch a custom event to notify MetaTab components about the refresh
+      // This will be handled by the MetaTab to run refreshAllMetricsDirectly()
+      window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+        detail: { brandId: selectedBrandId, timestamp: new Date().getTime() }
+      }));
       
       return metaData;
     } catch (error) {
@@ -675,7 +698,8 @@ export default function DashboardPage() {
       if (activePlatforms.meta) {
         try {
           // Call the fetchMetaMetrics function directly with proper error handling
-          await fetchMetaMetrics();
+          // Force refresh to ensure we get fresh data
+          await fetchMetaMetrics(false, true);
         } catch (error) {
           console.error('Error fetching Meta metrics during refresh:', error);
         }
@@ -782,16 +806,19 @@ export default function DashboardPage() {
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
       if (selectedBrandId) {
+        console.log('Running 5-minute automatic refresh for all data...');
         // For periodic refreshes, we don't want to show the full-screen loader
         setInitialDataLoad(false);
+        // Call fetchAllData which handles both Shopify and Meta data
         fetchAllData();
+        // Update the last refreshed timestamp
         setLastRefreshed(new Date());
       }
-    }, 300000); // Refresh every 5 minutes
+    }, 300000); // 300000 ms = 5 minutes
     
     // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, [selectedBrandId, dateRange, activePlatforms]);
+  }, [selectedBrandId]);
 
   // Instead, add explicit call to fetchAllData when brand is selected
   useEffect(() => {
