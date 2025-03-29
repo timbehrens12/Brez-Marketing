@@ -3234,37 +3234,8 @@ Try creating at least one active campaign in Meta Ads Manager.
           try {
             return (
               <>
-      {/* Header Section with refresh button */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Meta Ads Performance</h2>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-                      onClick={fetchMetaData}
-                      disabled={loading || isDateChangeLoading}
-                      className="flex items-center gap-1"
-                    >
-                      {loading || isDateChangeLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
-                      <span>Refresh Data</span>
-          </Button>
-                    {brandId && (
-                      <MetaResyncButton 
-                        brandId={brandId} 
-                        days={60}
-                        onSuccess={() => {
-                          toast.success("Meta data resynced. Refreshing data...")
-                          fetchMetaData()
-                        }}
-                      />
-                    )}
-        </div>
-      </div>
-                
+      {/* Header Section with refresh button - Removed as requested */}
+
                 {/* Debug controls - add a keyboard shortcut to show/hide it */}
                 <div className="mb-4">
                   {showDebugControls && (
@@ -3302,59 +3273,7 @@ Try creating at least one active campaign in Meta Ads Manager.
                   title="Toggle debug controls (hidden)"
                 ></div>
       
-      {/* Meta Connection Status Banner */}
-      {hasData() ? (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-[#111] border border-[#333] mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-400"></div>
-            <p className="text-sm">
-              Meta connection active
-            </p>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleManualRefresh}
-            disabled={isManuallyRefreshing}
-            className="text-gray-400 hover:text-white"
-          >
-            {isManuallyRefreshing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Refreshing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Data
-              </>
-            )}
-          </Button>
-        </div>
-      ) : (
-        <AlertBox type="info" icon={<Info className="h-4 w-4" />}>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <div>
-              <p className="text-sm mb-1">No Meta data available for the selected date range</p>
-              <p className="text-xs text-gray-400">
-                Connect your Meta Ads account or run campaigns to see metrics. 
-                <Link href="/help/meta-setup" className="ml-1 underline">Learn more</Link>
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="default"
-                size="sm"
-                onClick={runDiagnostics}
-                className="whitespace-nowrap"
-              >
-                <AlertCircle className="h-4 w-4 mr-2" />
-                Run Diagnostics
-              </Button>
-            </div>
-          </div>
-        </AlertBox>
-      )}
+      {/* Meta Connection Status Banner - Removed as requested */}
       
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
