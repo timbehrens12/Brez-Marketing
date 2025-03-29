@@ -24,10 +24,25 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
+    // First, check if there's an active Meta connection for this brand
+    const { data: connection, error: connectionError } = await supabase
+      .from('platform_connections')
+      .select('id, access_token')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+      .single()
+    
+    if (connectionError && connectionError.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Connection error:', connectionError)
+    }
+
+    const accessToken = connection?.access_token
+
     // Get unique campaigns from meta_ad_insights instead of the non-existent meta_campaigns table
     const { data, error } = await supabase
       .from('meta_ad_insights')
-      .select('campaign_id, campaign_name, spend, impressions, clicks, date')
+      .select('campaign_id, campaign_name, spend, impressions, clicks, date, budget')
       .eq('brand_id', brandId)
       .order('date', { ascending: false })
       
@@ -57,6 +72,7 @@ export async function GET(request: NextRequest) {
           roas: 0,
           ctr: 0,
           cpc: 0,
+          budget: Number(insight.budget) || 0, // Include budget from the first record
           status: 'ACTIVE', // Default status since we don't have this in the insights table
           last_updated: insight.date
         });
@@ -69,11 +85,92 @@ export async function GET(request: NextRequest) {
       campaign.impressions += Number(insight.impressions) || 0;
       campaign.clicks += Number(insight.clicks) || 0;
       
+      // Update budget if this record has it and the current one doesn't
+      if (insight.budget && !campaign.budget) {
+        campaign.budget = Number(insight.budget) || 0;
+      }
+      
       // Keep track of the most recent date
       if (new Date(insight.date) > new Date(campaign.last_updated)) {
         campaign.last_updated = insight.date;
+        // Use the budget from the most recent record if available
+        if (insight.budget) {
+          campaign.budget = Number(insight.budget) || 0;
+        }
       }
     });
+    
+    // If we have an access token, fetch campaign budget information directly from Meta API
+    if (accessToken && campaignMap.size > 0) {
+      try {
+        // Get a list of unique campaign IDs
+        const campaignIds = Array.from(campaignMap.keys()).filter(id => {
+          // Only include campaigns that don't already have budget data
+          const campaign = campaignMap.get(id);
+          return !campaign.budget || campaign.budget === 0;
+        });
+        
+        if (campaignIds.length > 0) {
+          console.log(`Fetching budget info from Meta API for ${campaignIds.length} campaigns`);
+          
+          // First, get the ad accounts for this brand
+          const accountsResponse = await fetch(
+            `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${accessToken}`
+          );
+          
+          if (!accountsResponse.ok) {
+            throw new Error(`Failed to fetch ad accounts: ${accountsResponse.status}`);
+          }
+          
+          const accountsData = await accountsResponse.json();
+          
+          if (accountsData.data && accountsData.data.length > 0) {
+            // For each ad account, fetch campaign budget info
+            for (const account of accountsData.data) {
+              const campaignsResponse = await fetch(
+                `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,status&access_token=${accessToken}`
+              );
+              
+              if (!campaignsResponse.ok) {
+                console.warn(`Failed to fetch campaigns for account ${account.id}: ${campaignsResponse.status}`);
+                continue;
+              }
+              
+              const campaignsData = await campaignsResponse.json();
+              
+              if (campaignsData.data && campaignsData.data.length > 0) {
+                for (const apiCampaign of campaignsData.data) {
+                  if (campaignMap.has(apiCampaign.id)) {
+                    const campaign = campaignMap.get(apiCampaign.id);
+                    
+                    // Update the campaign status
+                    campaign.status = apiCampaign.status === 'ACTIVE' ? 'ACTIVE' : 
+                                      apiCampaign.status === 'PAUSED' ? 'PAUSED' : 
+                                      apiCampaign.status === 'ARCHIVED' ? 'ARCHIVED' : 'COMPLETED';
+                    
+                    // Calculate budget (daily_budget or lifetime_budget)
+                    // Note: Budget values from the API are in cents, so divide by 100 to get dollars
+                    let budget = 0;
+                    if (apiCampaign.daily_budget) {
+                      budget = Number(apiCampaign.daily_budget) / 100;
+                    } else if (apiCampaign.lifetime_budget) {
+                      budget = Number(apiCampaign.lifetime_budget) / 100;
+                    }
+                    
+                    if (budget > 0) {
+                      campaign.budget = budget;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (apiError) {
+        console.error('Error fetching campaign budget from Meta API:', apiError);
+        // Continue with existing data, don't fail the entire request
+      }
+    }
     
     // Convert the Map to an array and calculate derived metrics
     const campaigns = Array.from(campaignMap.values()).map(campaign => {
@@ -94,6 +191,7 @@ export async function GET(request: NextRequest) {
       campaign.roas = campaign.roas || 0;
       campaign.ctr = campaign.ctr || 0;
       campaign.cpc = campaign.cpc || 0;
+      campaign.budget = campaign.budget || 0;
       
       return campaign;
     });

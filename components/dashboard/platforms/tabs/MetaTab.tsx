@@ -3717,6 +3717,10 @@ Try creating at least one active campaign in Meta Ads Manager.
                             <span className="text-xs text-gray-400">Total Spend</span>
                           </div>
                           <div className="flex flex-col items-end">
+                            <span className="text-sm font-medium">${typeof campaign.budget === 'number' ? campaign.budget.toFixed(2) : '0.00'}</span>
+                            <span className="text-xs text-gray-400">Budget</span>
+                          </div>
+                          <div className="flex flex-col items-end">
                             <span className="text-sm font-medium">{typeof campaign.impressions === 'number' ? campaign.impressions.toLocaleString() : '0'}</span>
                             <span className="text-xs text-gray-400">Impressions</span>
                           </div>
@@ -3775,6 +3779,48 @@ Try creating at least one active campaign in Meta Ads Manager.
                                       ? (campaign.spend / campaign.conversions).toFixed(2) 
                                       : '0.00'}
                                   </span>
+                                </div>
+                              </div>
+                              
+                              {/* Budget and Spend Information */}
+                              <div className="mt-4 mb-2">
+                                <h4 className="text-xs font-medium mb-3 text-gray-300">Budget & Spend</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="p-3 rounded-lg bg-gradient-to-br from-[#222] to-[#333] border border-[#444]">
+                                    <span className="text-xs text-gray-400">Daily Budget</span>
+                                    <p className="text-lg font-medium mt-1">
+                                      ${typeof campaign.budget === 'number' ? campaign.budget.toFixed(2) : '0.00'}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-gray-400">Spend:</span>
+                                      <span className="text-xs text-white">${typeof campaign.spend === 'number' ? campaign.spend.toFixed(2) : '0.00'}</span>
+                                    </div>
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-gradient-to-br from-[#222] to-[#333] border border-[#444]">
+                                    <span className="text-xs text-gray-400">Spend Efficiency</span>
+                                    <p className="text-lg font-medium mt-1">
+                                      {campaign.budget && campaign.budget > 0 ? 
+                                        `${Math.min(Math.round((campaign.spend / campaign.budget) * 100), 100)}%` : 
+                                        'N/A'}
+                                    </p>
+                                    <div className={`flex items-center gap-2 mt-1 ${
+                                      campaign.budget && campaign.budget > 0 && (campaign.spend / campaign.budget) <= 0.9 ? 
+                                        'text-green-400' : 
+                                        campaign.budget && campaign.budget > 0 && (campaign.spend / campaign.budget) <= 1 ? 
+                                          'text-yellow-400' : 
+                                          'text-red-400'
+                                    }`}>
+                                      <span className="text-xs">
+                                        {campaign.budget && campaign.budget > 0 ? 
+                                          (campaign.spend / campaign.budget) <= 0.8 ? 
+                                            'Under budget' : 
+                                            (campaign.spend / campaign.budget) <= 1 ? 
+                                              'Near budget' : 
+                                              'Over budget' : 
+                                          'No budget set'}
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                               
