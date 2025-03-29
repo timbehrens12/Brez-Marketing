@@ -19,8 +19,7 @@ const MetaTab: React.FC<MetaTabProps> = ({ brandId }) => {
       <div className="mt-6">
         <p className="text-sm text-gray-400">
           Note: This dashboard shows baseline metrics for your Meta Ads campaigns. 
-          All data is refreshed automatically when you use the refresh button 
-          in the top navigation bar.
+          The dashboard refresh button will perform a complete Meta API data resync to ensure metrics are accurate.
         </p>
       </div>
     </div>

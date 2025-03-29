@@ -197,6 +197,9 @@ const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) =>
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">Meta Ads Metrics</CardTitle>
+        <p className="text-xs text-gray-400 mt-1">
+          The dashboard refresh button will resync data directly from the Meta API to ensure accurate metrics.
+        </p>
       </CardHeader>
       <CardContent>
         {renderMetricItem('Budget', metrics?.budget, 0, false, true)}
