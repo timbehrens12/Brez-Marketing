@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { 
-  DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, 
-  ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, 
-  MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, 
-  PlusCircle, Layers, Wallet, ChevronDown, Lightbulb, Activity,
-  BrainCircuit, AlertCircle, Info, Percent, CalendarRange, 
-  BarChart2, ArrowRight, Settings, Users
-} from "lucide-react"
+import { DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, PlusCircle, Layers, Wallet, ChevronDown, PieChart as PieChartIcon, PieChart2 } from "lucide-react"
 import { Sparkles, Image as ImageIcon } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
@@ -30,8 +23,25 @@ import {
   Legend,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  ScatterChart,
+  Scatter,
+  ReferenceLine,
+  Label,
+  ZAxis
 } from 'recharts'
+import { 
+  Activity, 
+  Users, 
+  BarChart2, 
+  ArrowRight, 
+  CalendarRange, 
+  Percent, 
+  BrainCircuit, 
+  Info, 
+  AlertCircle,
+  Settings,
+} from "lucide-react"
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { formatCurrencyCompact, formatNumberCompact, formatPercentage } from "@/lib/formatters"
@@ -3589,15 +3599,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
-        {/* Conversion Funnel Analysis - Replacing Campaign Performance widget */}
+        {/* Campaign Performance Overview */}
         <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
           <CardHeader className="pb-3 border-b border-[#333]">
             <div className="flex justify-between items-center">
               <CardTitle className="text-base font-medium flex items-center gap-2">
-                <Activity className="h-4 w-4 text-indigo-400" />
-                Conversion Funnel Analysis
+                <BarChart2 className="h-4 w-4 text-purple-400" />
+                Performance Analytics
               </CardTitle>
               <div className="flex items-center gap-2">
+                <Badge className="bg-green-500/20 hover:bg-green-500/20 text-green-400 border-green-500/30">
+                  {roasData.value >= 1 ? 'Profitable' : 'Needs Optimization'}
+                </Badge>
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -3611,770 +3624,222 @@ Try creating at least one active campaign in Meta Ads Manager.
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            {isManuallyRefreshing ? (
-              <div className="flex justify-center items-center h-[300px]">
-                <div className="flex flex-col items-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
-                  <p className="text-sm text-gray-400">Refreshing data...</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="h-4 w-4 text-green-400" />
+                    <span className="text-xs text-gray-400">ROAS/CPC Ratio</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-gray-400 cursor-help">
+                          <Info className="h-3 w-3" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1a1a1a] border-[#333] p-2 max-w-xs">
+                        <p className="text-xs">Higher is better. Shows how much return you get relative to your click costs.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold">
+                    {(() => {
+                      const ratio = roasData.value > 0 && costPerClickData.value > 0 
+                        ? roasData.value / costPerClickData.value 
+                        : 0;
+                      return ratio.toFixed(2);
+                    })()}x
+                  </span>
+                  <span className={`text-xs ${
+                    roasData.value > costPerClickData.value ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {roasData.value > costPerClickData.value ? 'Good' : 'Poor'}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-[#333] w-full mt-2 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-600 to-green-400 rounded-full" 
+                    style={{ 
+                      width: `${Math.min(
+                        (roasData.value / (costPerClickData.value || 1)) * 25, 100
+                      )}%` 
+                    }}
+                  ></div>
                 </div>
               </div>
-            ) : hasData() ? (
-              <div>
-                {/* Top Section - Conversion Metrics Breakdown */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <Eye className="h-4 w-4 text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Impressions</p>
-                        <p className="text-xl font-semibold">{formatNumberCompact(impressionsData.value)}</p>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }}></div>
-                    </div>
-                    <p className="text-xs text-gray-400">Total number of ad impressions</p>
+              
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 text-blue-400" />
+                    <span className="text-xs text-gray-400">CPA/AOV Ratio</span>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                        <MousePointerClick className="h-4 w-4 text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Clicks</p>
-                        <p className="text-xl font-semibold">{formatNumberCompact(clicksData.value)}</p>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
-                      {impressionsData.value > 0 && (
-                        <div 
-                          className="h-full bg-amber-500 rounded-full" 
-                          style={{ width: `${Math.min((clicksData.value / impressionsData.value) * 100, 100)}%` }}
-                        ></div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 flex items-center justify-between">
-                      <span>Click-through rate</span>
-                      <span className="font-medium">{impressionsData.value > 0 ? 
-                        ((clicksData.value / impressionsData.value) * 100).toFixed(2) : '0.00'}%</span>
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <Target className="h-4 w-4 text-green-400" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400">Conversions</p>
-                        <p className="text-xl font-semibold">{formatNumberCompact(resultsData.value)}</p>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-[#333] w-full mt-1.5 mb-2 rounded-full overflow-hidden">
-                      {clicksData.value > 0 && (
-                        <div 
-                          className="h-full bg-green-500 rounded-full" 
-                          style={{ width: `${Math.min((resultsData.value / clicksData.value) * 100, 100)}%` }}
-                        ></div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 flex items-center justify-between">
-                      <span>Conversion rate</span>
-                      <span className="font-medium">{clicksData.value > 0 ? 
-                        ((resultsData.value / clicksData.value) * 100).toFixed(2) : '0.00'}%</span>
-                    </p>
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-gray-400 cursor-help">
+                          <Info className="h-3 w-3" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-[#1a1a1a] border-[#333] p-2 max-w-xs">
+                        <p className="text-xs">Lower is better. Shows cost per acquisition compared to average order value.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-                
-                {/* Funnel Visualization */}
-                <div className="mt-6">
-                  <h3 className="text-sm font-medium mb-4 text-gray-300">Conversion Funnel</h3>
-                  
-                  <div className="relative">
-                    <div className="h-[200px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            {
-                              name: 'Impressions',
-                              value: impressionsData.value,
-                              fill: '#3b82f6',
-                              percentage: '100%'
-                            },
-                            {
-                              name: 'Clicks',
-                              value: clicksData.value,
-                              fill: '#f59e0b',
-                              percentage: impressionsData.value > 0 ? 
-                                ((clicksData.value / impressionsData.value) * 100).toFixed(2) + '%' : '0%'
-                            },
-                            {
-                              name: 'Conversions',
-                              value: resultsData.value,
-                              fill: '#10b981',
-                              percentage: clicksData.value > 0 ? 
-                                ((resultsData.value / clicksData.value) * 100).toFixed(2) + '%' : '0%'
-                            },
-                            {
-                              name: 'Return',
-                              value: roasData.value * adSpendData.value,
-                              fill: '#8b5cf6',
-                              percentage: adSpendData.value > 0 ? 
-                                (roasData.value * 100).toFixed(0) + '%' : '0%'
-                            },
-                          ]}
-                          layout="vertical"
-                          margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#333" />
-                          <XAxis 
-                            type="number" 
-                            hide={true}
-                          />
-                          <YAxis 
-                            type="category" 
-                            dataKey="name" 
-                            tick={{ fill: '#888', fontSize: 12 }} 
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <Bar 
-                            dataKey="value" 
-                            shape={(props: any) => {
-                              // Create trapezoid shape for funnel effect
-                              const { x, y, width, height, fill } = props;
-                              const pathWidth = width * 0.85; // Adjust path width as needed
-                              const top = pathWidth * (1 - (props.index * 0.15));
-                              const bottom = pathWidth * (1 - ((props.index + 1) * 0.15));
-                                    
-                              return (
-                                <path 
-                                  d={`
-                                    M ${x},${y}
-                                    L ${x + top},${y}
-                                    L ${x + bottom},${y + height}
-                                    L ${x},${y + height}
-                                    Z
-                                  `}
-                                  fill={fill}
-                                  fillOpacity={0.9}
-                                  stroke="#111"
-                                  strokeWidth={1}
-                                />
-                              );
-                            }}
-                            minPointSize={2}
-                            barSize={30}
-                            label={(props: any) => {
-                              const { x, y, width, value, percentage, index } = props;
-                              return (
-                                <g>
-                                  <text 
-                                    x={x + width * 0.5} 
-                                    y={y + 15} 
-                                    textAnchor="middle" 
-                                    fill="#fff" 
-                                    fontSize={12}
-                                    fontWeight="500"
-                                  >
-                                    {formatNumberCompact(Number(value))}
-                                  </text>
-                                  <text 
-                                    x={x + width * 0.85} 
-                                    y={y + 15} 
-                                    textAnchor="end" 
-                                    fill="#aaa" 
-                                    fontSize={11}
-                                  >
-                                    {percentage}
-                                  </text>
-                                </g>
-                              );
-                            }}
-                          />
-                          <RechartsTooltip
-                            formatter={(value: any, name, props) => {
-                              const { payload } = props;
-                              let numberValue: number;
-                              if (typeof value === 'string') {
-                                numberValue = parseFloat(value);
-                              } else if (Array.isArray(value)) {
-                                numberValue = Number(value[0]);
-                              } else {
-                                numberValue = Number(value);
-                              }
-                              return [
-                                formatNumberCompact(numberValue), 
-                                `${payload.name} (${payload.percentage})`
-                              ];
-                            }}
-                            contentStyle={{
-                              backgroundColor: '#1a1a1a',
-                              border: '1px solid #333',
-                              borderRadius: '4px',
-                              padding: '8px 12px',
-                            }}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-bold">
+                    {(() => {
+                      // Calculate CPA
+                      const conversions = resultsData.value || 1;
+                      const cpa = adSpendData.value / conversions;
+                      // Use purchase value as AOV
+                      const aov = purchaseValueData.value || 1;
+                      const ratio = cpa / aov;
+                      return ratio.toFixed(2);
+                    })()}
+                  </span>
+                  <span className={`text-xs ${
+                    adSpendData.value / (resultsData.value || 1) < purchaseValueData.value ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {adSpendData.value / (resultsData.value || 1) < purchaseValueData.value ? 'Efficient' : 'Expensive'}
+                  </span>
                 </div>
-                
-                {/* Performance Insights */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                    <h4 className="text-sm font-medium mb-3 text-gray-300 flex items-center gap-2">
-                      <BrainCircuit className="h-4 w-4 text-purple-400" />
-                      Performance Insights
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      {ctrData.value < 1 && (
-                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                          <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5" />
-                          <div>
-                            <p className="text-xs text-amber-400 font-medium">Low Click-Through Rate</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Your CTR of {ctrData.value.toFixed(2)}% is below optimal levels. Consider refreshing your creative assets.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {(impressionsData.value > 0 && 
-                       clicksData.value > 0 && 
-                       (clicksData.value / impressionsData.value) < 0.02) && (
-                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                          <ArrowUpRight className="h-4 w-4 text-blue-400 mt-0.5" />
-                          <div>
-                            <p className="text-xs text-blue-400 font-medium">Impression to Click Gap</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              There's a significant drop-off from impressions to clicks. Your ad creative or targeting may need improvement.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {(clicksData.value > 0 && 
-                       resultsData.value > 0 && 
-                       (resultsData.value / clicksData.value) < 0.05) && (
-                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                          <ArrowUpRight className="h-4 w-4 text-green-400 mt-0.5" />
-                          <div>
-                            <p className="text-xs text-green-400 font-medium">Click to Conversion Gap</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Your landing page or offer may need optimization. Many users click but don't convert.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {roasData.value < 1 && (
-                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                          <AlertCircle className="h-4 w-4 text-red-400 mt-0.5" />
-                          <div>
-                            <p className="text-xs text-red-400 font-medium">Negative Return on Ad Spend</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Your ROAS of {roasData.value.toFixed(2)}x means you're losing money on ad spend. Review your highest-cost campaigns.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {roasData.value >= 2 && (
-                        <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                          <TrendingUp className="h-4 w-4 text-green-400 mt-0.5" />
-                          <div>
-                            <p className="text-xs text-green-400 font-medium">Strong ROAS Performance</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Your ROAS of {roasData.value.toFixed(2)}x indicates profitable ad campaigns. Consider scaling successful campaigns.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                    <h4 className="text-sm font-medium mb-3 text-gray-300 flex items-center gap-2">
-                      <Lightbulb className="h-4 w-4 text-yellow-400" />
-                      Recommendations
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                        <ArrowUpRight className="h-4 w-4 text-purple-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-purple-400 font-medium">Optimize Upper Funnel</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {impressionsData.value > 0 && clicksData.value / impressionsData.value < 0.02 
-                              ? "Focus on improving ad creative and targeting to increase CTR."
-                              : "Broaden targeting to increase reach while maintaining current engagement levels."}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                        <ArrowUpRight className="h-4 w-4 text-indigo-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-indigo-400 font-medium">Improve Mid-Funnel</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {clicksData.value > 0 && resultsData.value / clicksData.value < 0.05 
-                              ? "Enhance landing page experience and conversion paths to turn more clicks into conversions."
-                              : "Test different call-to-actions and landing page variants to improve conversion rate."}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3 p-2 rounded-md bg-[#1a1a1a]/50">
-                        <ArrowUpRight className="h-4 w-4 text-green-400 mt-0.5" />
-                        <div>
-                          <p className="text-xs text-green-400 font-medium">Boost Bottom Funnel</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {roasData.value < 1.5
-                              ? "Focus on increasing average order value or creating upsell opportunities to improve ROAS."
-                              : "Implement retargeting campaigns to bring converted customers back for repeat purchases."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="h-1.5 bg-[#333] w-full mt-2 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full ${
+                      adSpendData.value / (resultsData.value || 1) < purchaseValueData.value
+                        ? 'bg-gradient-to-r from-green-600 to-green-400'
+                        : 'bg-gradient-to-r from-red-600 to-red-400'
+                    }`}
+                    style={{ 
+                      width: `${Math.min(
+                        100 - (adSpendData.value / (resultsData.value || 1)) / (purchaseValueData.value || 1) * 50, 100
+                      )}%` 
+                    }}
+                  ></div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-12">
-                <Activity className="h-12 w-12 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No data available</p>
-                <p className="text-sm text-gray-500 max-w-md">Connect your Meta Ads account or run campaigns to see conversion funnel analysis.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-6 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Open Meta Ads Manager
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Next widget (Campaign Performance Table) - Keep this part as is */}
-        {/* Campaign Performance Overview */}
-        <Card className="bg-[#111] border-[#333] shadow-lg overflow-hidden">
-          <CardHeader className="pb-3 border-b border-[#333]">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <LineChart className="h-4 w-4 text-blue-400" />
-                Campaign Performance
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={() => fetchCampaigns()}
-                >
-                  <RefreshCw className="h-3 w-3 mr-2" />
-                  Refresh
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]">
-                      <SlidersHorizontal className="h-3 w-3 mr-2" />
-                      Sort
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="bg-[#111] border-[#333]">
-                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
-                      Highest Spend
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
-                      Highest ROAS
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
-                      Lowest CPC
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-xs hover:bg-[#222]">
-                      Most Impressions
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoadingCampaigns && !cachedCampaigns.length ? (
-              <div className="flex justify-center items-center h-[400px]">
-                <div className="flex flex-col items-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-4" />
-                  <p className="text-sm text-gray-400">Loading campaign data...</p>
+            
+            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
+              <h3 className="text-sm font-medium mb-3 text-gray-300 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-amber-400" />
+                ROI Efficiency Matrix
+              </h3>
+              
+              <div className="relative h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart
+                    margin={{ top: 5, right: 20, bottom: 20, left: 20 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis 
+                      type="number" 
+                      dataKey="x" 
+                      name="CPC" 
+                      stroke="#666"
+                      unit="$" 
+                      domain={[0, 'dataMax + 1']}
+                      label={{ 
+                        value: 'Cost Per Click ($)', 
+                        position: 'bottom', 
+                        offset: 0,
+                        fill: '#666',
+                        fontSize: 12
+                      }}
+                    />
+                    <YAxis 
+                      type="number" 
+                      dataKey="y" 
+                      name="CTR" 
+                      stroke="#666"
+                      unit="%" 
+                      domain={[0, 'dataMax + 1']}
+                      label={{ 
+                        value: 'Click-Through Rate (%)', 
+                        angle: -90, 
+                        position: 'left',
+                        fill: '#666',
+                        fontSize: 12
+                      }}
+                    />
+                    <ZAxis 
+                      type="number" 
+                      dataKey="z" 
+                      range={[50, 400]} 
+                      name="ROAS" 
+                      unit="x"
+                    />
+                    <RechartsTooltip
+                      cursor={{ strokeDasharray: '3 3' }}
+                      contentStyle={{ 
+                        backgroundColor: '#1a1a1a', 
+                        border: '1px solid #333',
+                        borderRadius: '4px',
+                        color: '#fff'
+                      }}
+                      formatter={(value: any, name: any) => {
+                        if (name === 'CPC') return [`$${Number(value).toFixed(2)}`, 'Cost Per Click'];
+                        if (name === 'CTR') return [`${Number(value).toFixed(2)}%`, 'Click-Through Rate'];
+                        if (name === 'ROAS') return [`${Number(value).toFixed(2)}x`, 'Return On Ad Spend'];
+                        return [value, name];
+                      }}
+                    />
+                    <Scatter 
+                      name="Campaigns" 
+                      data={[
+                        // Generate data points for each campaign or date
+                        ...((campaigns && campaigns.length > 0 ? campaigns : cachedCampaigns) || [])
+                          .filter(c => 
+                            typeof c.cpc === 'number' && 
+                            typeof c.ctr === 'number' && 
+                            typeof c.roas === 'number'
+                          )
+                          .map(c => ({
+                            x: c.cpc,
+                            y: c.ctr,
+                            z: c.roas,
+                            name: c.campaign_name
+                          })),
+                        // Add a point for overall performance
+                        {
+                          x: costPerClickData.value,
+                          y: ctrData.value,
+                          z: roasData.value,
+                          name: 'Overall Performance'
+                        }
+                      ]} 
+                      fill="#4ade80"
+                    />
+                    <ReferenceLine y={2} stroke="#666" strokeDasharray="3 3">
+                      <Label value="Good CTR" position="right" fill="#666" fontSize={10} />
+                    </ReferenceLine>
+                    <ReferenceLine x={1} stroke="#666" strokeDasharray="3 3">
+                      <Label value="Target CPC" position="top" fill="#666" fontSize={10} />
+                    </ReferenceLine>
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="flex justify-between mt-3 text-xs text-gray-400">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                  <span>Low ROAS (&lt;1x)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                  <span>Average ROAS (1-2x)</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  <span>High ROAS (&gt;2x)</span>
                 </div>
               </div>
-            ) : (campaigns && campaigns.length > 0) || (cachedCampaigns && cachedCampaigns.length > 0) ? (
-              <div>
-                {/* Campaign Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-xs text-gray-400">Total Active Campaigns</h3>
-                        <p className="text-2xl font-semibold mt-1">
-                          {(campaigns.length > 0 ? campaigns : cachedCampaigns).filter(c => c.status === 'ACTIVE').length}
-                        </p>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                        <Layers className="h-5 w-5 text-blue-400" />
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {(campaigns.length > 0 ? campaigns : cachedCampaigns).filter(c => c.status !== 'ACTIVE').length} paused
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-xs text-gray-400">Total Spend</h3>
-                        <p className="text-2xl font-semibold mt-1">
-                          ${(campaigns.length > 0 ? campaigns : cachedCampaigns).reduce((sum, c) => sum + (typeof c.spend === 'number' ? c.spend : 0), 0).toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                        <DollarSign className="h-5 w-5 text-green-400" />
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Across all campaigns
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-xs text-gray-400">Avg. ROAS</h3>
-                        <p className="text-2xl font-semibold mt-1">
-                          {(() => {
-                            const campaignsData = campaigns.length > 0 ? campaigns : cachedCampaigns;
-                            const validCampaigns = campaignsData.filter(c => typeof c.roas === 'number' && c.spend > 0);
-                            
-                            if (validCampaigns.length === 0) return '0.00';
-                            
-                            const totalSpend = validCampaigns.reduce((sum, c) => sum + c.spend, 0);
-                            const weightedRoas = validCampaigns.reduce((sum, c) => sum + (c.roas * c.spend), 0);
-                            
-                            return (weightedRoas / totalSpend).toFixed(2);
-                          })()}x
-                        </p>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                        <TrendingUp className="h-5 w-5 text-purple-400" />
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Weighted average
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333] flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-xs text-gray-400">Avg. CTR</h3>
-                        <p className="text-2xl font-semibold mt-1">
-                          {(() => {
-                            const campaignsData = campaigns.length > 0 ? campaigns : cachedCampaigns;
-                            const validCampaigns = campaignsData.filter(c => 
-                              typeof c.ctr === 'number' && 
-                              typeof c.impressions === 'number' && 
-                              c.impressions > 0
-                            );
-                            
-                            if (validCampaigns.length === 0) return '0.00';
-                            
-                            const totalImpressions = validCampaigns.reduce((sum, c) => sum + c.impressions, 0);
-                            const weightedCtr = validCampaigns.reduce((sum, c) => sum + (c.ctr * c.impressions), 0);
-                            
-                            return (weightedCtr / totalImpressions).toFixed(2);
-                          })()}%
-                        </p>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                        <MousePointerClick className="h-5 w-5 text-amber-400" />
-                      </div>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Weighted average
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Campaign Table with Improved UI */}
-                <div className="divide-y divide-[#222]">
-                  {(campaigns.length > 0 ? campaigns : cachedCampaigns).map((campaign, index) => (
-                    <Collapsible key={campaign.campaign_id || index} className="overflow-hidden">
-                      <CollapsibleTrigger className="w-full text-left p-4 hover:bg-[#1a1a1a] flex items-center justify-between transition-all ease-in-out duration-200">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-3 w-3 rounded-full ${campaign.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                          <div>
-                            <h3 className="font-medium text-sm text-white">{campaign.campaign_name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-400">ID: {campaign.campaign_id}</span>
-                              <span className={`text-xs px-1.5 py-0.5 rounded ${campaign.status === 'ACTIVE' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'}`}>
-                                {campaign.status}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <div className="flex flex-col items-end">
-                            <span className="text-sm font-medium">${typeof campaign.spend === 'number' ? campaign.spend.toFixed(2) : '0.00'}</span>
-                            <span className="text-xs text-gray-400">Total Spend</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-sm font-medium">{typeof campaign.impressions === 'number' ? campaign.impressions.toLocaleString() : '0'}</span>
-                            <span className="text-xs text-gray-400">Impressions</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-sm font-medium">{typeof campaign.clicks === 'number' ? campaign.clicks.toLocaleString() : '0'}</span>
-                            <span className="text-xs text-gray-400">Clicks</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className={`text-sm font-medium ${campaign.roas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
-                              {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x
-                            </span>
-                            <span className="text-xs text-gray-400">ROAS</span>
-                          </div>
-                          <ChevronDown className="h-4 w-4 text-gray-400 transition-transform duration-200" />
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="p-4 pt-0 bg-[#0a0a0a]">
-                          {/* Campaign Performance Visualization */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-4">
-                            <div className="col-span-2 bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                              <h4 className="text-sm font-medium mb-3 text-gray-300">Performance Metrics</h4>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                <div className="flex flex-col">
-                                  <span className="text-xs text-gray-400 mb-1">CTR</span>
-                                  <span className="text-base font-medium">
-                                    {typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(2) : '0.00'}%
-                                  </span>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <span className={`text-xs ${campaign.ctr > 1 ? 'text-green-400' : 'text-gray-400'}`}>
-                                      {campaign.ctr > 1 ? 'Good' : 'Low'}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs text-gray-400 mb-1">CPC</span>
-                                  <span className="text-base font-medium">
-                                    ${typeof campaign.cpc === 'number' ? campaign.cpc.toFixed(2) : '0.00'}
-                                  </span>
-                                  <div className="flex items-center gap-1 mt-1">
-                                    <span className={`text-xs ${campaign.cpc < 2 ? 'text-green-400' : 'text-yellow-400'}`}>
-                                      {campaign.cpc < 2 ? 'Good' : 'High'}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs text-gray-400 mb-1">Conversions</span>
-                                  <span className="text-base font-medium">
-                                    {typeof campaign.conversions === 'number' ? campaign.conversions : '0'}
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-xs text-gray-400 mb-1">Cost/Conv.</span>
-                                  <span className="text-base font-medium">
-                                    ${campaign.conversions > 0 && campaign.spend > 0 
-                                      ? (campaign.spend / campaign.conversions).toFixed(2) 
-                                      : '0.00'}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Performance Visualization - Modern Bar chart */}
-                              <div className="mt-6">
-                                <h4 className="text-xs font-medium mb-3 text-gray-300">Performance Metrics</h4>
-                                <div className="space-y-5">
-                                  <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-gray-400">CTR</span>
-                                      <span className="text-xs font-medium">{typeof campaign.ctr === 'number' ? campaign.ctr.toFixed(2) : '0.00'}%</span>
-                                    </div>
-                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
-                                      <div 
-                                        className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full"
-                                        style={{ width: `${Math.min(campaign.ctr * 5, 100)}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-gray-400">Conversion Rate</span>
-                                      <span className="text-xs font-medium">
-                                        {campaign.conversions > 0 && campaign.clicks > 0 
-                                          ? ((campaign.conversions / campaign.clicks) * 100).toFixed(2)
-                                          : '0.00'}%
-                                      </span>
-                                    </div>
-                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
-                                      <div 
-                                        className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full" 
-                                        style={{ width: `${campaign.conversions > 0 && campaign.clicks > 0 
-                                          ? Math.min((campaign.conversions / campaign.clicks) * 100 * 2, 100) 
-                                          : 0}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-gray-400">ROAS</span>
-                                      <span className={`text-xs font-medium ${campaign.roas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
-                                        {typeof campaign.roas === 'number' ? campaign.roas.toFixed(2) : '0.00'}x
-                                      </span>
-                                    </div>
-                                    <div className="h-2 bg-[#333] rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full rounded-full ${
-                                          campaign.roas >= 2 ? 'bg-gradient-to-r from-green-600 to-green-400' : 
-                                          campaign.roas >= 1 ? 'bg-gradient-to-r from-green-600 to-green-400' : 
-                                          'bg-gradient-to-r from-red-600 to-red-400'
-                                        }`}
-                                        style={{ width: `${Math.min(campaign.roas * 25, 100)}%` }}
-                                      ></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {/* Campaign Insights & Recommendations - Improved */}
-                            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-4 border border-[#333]">
-                              <h4 className="text-sm font-medium mb-3 text-gray-300">Campaign Insights</h4>
-                              
-                              {campaign.roas < 1 ? (
-                                <div className="p-4 bg-gradient-to-r from-red-900/20 to-red-800/10 border border-red-800/30 rounded-lg mb-4">
-                                  <div className="flex items-start gap-3">
-                                    <AlertCircle className="h-5 w-5 text-red-400 mt-0.5" />
-                                    <div>
-                                      <p className="text-sm text-red-300 font-medium">Low ROAS Alert</p>
-                                      <p className="text-xs text-gray-300 mt-1">This campaign is not profitable with a ROAS of {campaign.roas.toFixed(2)}x.</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : campaign.roas > 2 ? (
-                                <div className="p-4 bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-800/30 rounded-lg mb-4">
-                                  <div className="flex items-start gap-3">
-                                    <TrendingUp className="h-5 w-5 text-green-400 mt-0.5" />
-                                    <div>
-                                      <p className="text-sm text-green-300 font-medium">High Performance</p>
-                                      <p className="text-xs text-gray-300 mt-1">This campaign is performing exceptionally with a ROAS of {campaign.roas.toFixed(2)}x.</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="p-4 bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 border border-yellow-800/30 rounded-lg mb-4">
-                                  <div className="flex items-start gap-3">
-                                    <Info className="h-5 w-5 text-yellow-400 mt-0.5" />
-                                    <div>
-                                      <p className="text-sm text-yellow-300 font-medium">Average Performance</p>
-                                      <p className="text-xs text-gray-300 mt-1">This campaign is performing adequately with a ROAS of {campaign.roas.toFixed(2)}x.</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <h4 className="text-sm font-medium mb-3 text-gray-300 mt-4">AI Recommendations</h4>
-                              <ul className="space-y-3">
-                                {campaign.ctr < 1 && (
-                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
-                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-blue-900/30 flex items-center justify-center">
-                                      <ArrowUpRight className="h-3.5 w-3.5 text-blue-400" />
-                                    </div>
-                                    <div>
-                                      <span className="text-xs font-medium text-blue-400">Improve CTR</span>
-                                      <p className="text-xs text-gray-400 mt-0.5">Refresh creative assets and enhance ad copy to increase engagement</p>
-                                    </div>
-                                  </li>
-                                )}
-                                {campaign.cpc > 1.5 && (
-                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
-                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-green-900/30 flex items-center justify-center">
-                                      <ArrowDownRight className="h-3.5 w-3.5 text-green-400" />
-                                    </div>
-                                    <div>
-                                      <span className="text-xs font-medium text-green-400">Reduce Cost</span>
-                                      <p className="text-xs text-gray-400 mt-0.5">Refine audience targeting to improve relevance and lower CPC</p>
-                                    </div>
-                                  </li>
-                                )}
-                                {campaign.roas < 1 && (
-                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
-                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-red-900/30 flex items-center justify-center">
-                                      <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-                                    </div>
-                                    <div>
-                                      <span className="text-xs font-medium text-red-400">Critical Action</span>
-                                      <p className="text-xs text-gray-400 mt-0.5">Consider pausing or restructuring this campaign to minimize losses</p>
-                                    </div>
-                                  </li>
-                                )}
-                                {campaign.roas > 2 && (
-                                  <li className="flex items-start gap-3 p-2 rounded-md hover:bg-[#222] transition-colors">
-                                    <div className="mt-0.5 h-6 w-6 rounded-full bg-green-900/30 flex items-center justify-center">
-                                      <PlusCircle className="h-3.5 w-3.5 text-green-400" />
-                                    </div>
-                                    <div>
-                                      <span className="text-xs font-medium text-green-400">Scale Opportunity</span>
-                                      <p className="text-xs text-gray-400 mt-0.5">Increase budget for this high-performing campaign to maximize returns</p>
-                                    </div>
-                                  </li>
-                                )}
-                              </ul>
-                            </div>
-                          </div>
-                          
-                          {/* Action Buttons Section */}
-                          <div className="flex items-center justify-end gap-2 mt-4">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-xs bg-blue-900/20 hover:bg-blue-900/30 border-blue-800/30 text-blue-300"
-                              onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3 mr-2" />
-                              Open in Meta Ads Manager
-                            </Button>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-12">
-                <Activity className="h-12 w-12 text-gray-500 mb-4" />
-                <p className="text-gray-400 mb-2">No campaign data available</p>
-                <p className="text-sm text-gray-500 max-w-md">Create campaigns in Meta Ads Manager or check your API connection settings to start seeing campaign performance data here.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-6 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={() => window.open('https://www.facebook.com/ads/manager', '_blank')}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Open Meta Ads Manager
-                </Button>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
