@@ -3260,6 +3260,29 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [brandId]);
 
+  // Add resetDataAndResync function that will trigger a full data resync
+  const resetDataAndResync = useCallback(async () => {
+    // Set manual refresh flag
+    setIsManuallyRefreshing(true);
+    
+    try {
+      // Dispatch event to notify that meta data is being resynced
+      window.dispatchEvent(new CustomEvent('metaResyncStarted', { 
+        detail: { brandId, timestamp: Date.now() }
+      }));
+      
+      // The actual resync will be handled by the MetaResyncButton component
+      
+    } catch (error) {
+      console.error('Error during meta resync:', error);
+    } finally {
+      // Set timeout to allow some time for the resync process
+      setTimeout(() => {
+        setIsManuallyRefreshing(false);
+      }, 1000);
+    }
+  }, [brandId]);
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -3555,13 +3578,23 @@ Try creating at least one active campaign in Meta Ads Manager.
                 Campaign Performance
               </CardTitle>
               <div className="flex items-center gap-2">
+                {/* Add MetaResyncButton next to the existing refresh button */}
+                <MetaResyncButton 
+                  brandId={brandId} 
+                  days={90} 
+                  onSuccess={() => {
+                    // This callback will be triggered after successful resync
+                    refreshAllMetricsDirectly();
+                  }}
+                />
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="h-8 bg-[#1a1a1a] hover:bg-[#222] border-[#333]"
-                  onClick={() => fetchCampaigns()}
+                  onClick={refreshAllMetricsDirectly} 
+                  disabled={isManuallyRefreshing}
+                  className="px-3 py-1.5 h-8 bg-[#1a1a1a] hover:bg-[#222] text-white border-[#333]"
                 >
-                  <RefreshCw className="h-3 w-3 mr-2" />
+                  <RefreshCw className={`h-3 w-3 mr-2 ${isManuallyRefreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
                 <DropdownMenu>
