@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Area, AreaChart, ComposedChart, Bar } from 'recharts'
-import { ArrowUpRight, TrendingUp, DollarSign, PieChart, Info, ArrowDownRight, AlertCircle } from 'lucide-react'
+import { TrendingUp, DollarSign, PieChart, Info, BarChart, ArrowRightLeft } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -28,7 +28,9 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
     profitableSpend: 0,
     unprofitableSpend: 0,
     profitability: 0,
-    trendDirection: 'neutral'
+    trendDirection: 'neutral',
+    totalRevenue: 0,
+    profit: 0
   })
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
         const formattedData = (result.dailyData || []).map((item: any) => ({
           ...item,
           date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          revenue: item.spend > 0 ? item.roas * item.spend : 0,
           profit: item.spend > 0 ? (item.roas * item.spend) - item.spend : 0
         }));
         
@@ -60,6 +63,8 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
           const weightedRoasSum = result.dailyData.reduce((total: number, day: any) => 
             total + ((day.roas || 0) * (day.spend || 0)), 0);
           const averageRoas = totalSpend > 0 ? weightedRoasSum / totalSpend : 0;
+          const totalRevenue = totalSpend * averageRoas;
+          const profit = totalRevenue - totalSpend;
           
           // Calculate profitable vs unprofitable spend
           const profitableSpend = result.dailyData
@@ -98,7 +103,9 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
               profitableSpend,
               unprofitableSpend,
               profitability,
-              trendDirection
+              trendDirection,
+              totalRevenue,
+              profit
             });
           }
         }
@@ -163,8 +170,8 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-400" />
-            Spend & ROAS Performance
+            <BarChart className="h-5 w-5 text-blue-400" />
+            Ad Performance Metrics
           </CardTitle>
           <div className="flex items-center gap-2">
             {renderAlertBadge()}
@@ -195,135 +202,164 @@ export default function MetaSpendTrends({ brandId }: { brandId: string }) {
             </TooltipProvider>
           </div>
         </div>
-        <div className="flex justify-between mt-2">
-          <div className="grid grid-cols-3 gap-4 w-full">
-            <div className="flex flex-col justify-center items-center p-2 rounded-md bg-[#1a1a1a] border border-[#333]">
-              <div className="flex items-center gap-1.5 mb-1">
-                <DollarSign className="h-3 w-3 text-green-400" />
-                <span className="text-xs text-gray-400">Total Spend</span>
-              </div>
-              <span className="text-sm font-semibold">${Math.round(metrics.totalSpend)}</span>
+        
+        <div className="grid grid-cols-4 gap-3 mt-3 mb-1">
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333] flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1.5">
+              <DollarSign className="h-3.5 w-3.5 text-purple-400" />
+              <h3 className="text-xs font-medium text-gray-300">Ad Spend</h3>
             </div>
-            <div className="flex flex-col justify-center items-center p-2 rounded-md bg-[#1a1a1a] border border-[#333]">
-              <div className="flex items-center gap-1.5 mb-1">
-                <PieChart className="h-3 w-3 text-blue-400" />
-                <span className="text-xs text-gray-400">Avg ROAS</span>
-              </div>
-              <div className="flex items-center">
-                <span className={`text-sm font-semibold ${metrics.averageRoas >= 1 ? 'text-green-400' : 'text-red-400'}`}>
-                  {metrics.averageRoas.toFixed(2)}x
-                </span>
-              </div>
+            <p className="text-xl font-semibold">${metrics.totalSpend.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+            <div className={`text-xs mt-1 ${metrics.spendChange >= 0 ? 'text-blue-400' : 'text-red-400'}`}>
+              {metrics.spendChange >= 0 ? '+' : ''}{metrics.spendChange.toFixed(1)}% vs prev.
             </div>
-            <div className="flex flex-col justify-center items-center p-2 rounded-md bg-[#1a1a1a] border border-[#333]">
-              <div className="flex items-center gap-1.5 mb-1">
-                {metrics.roasChange >= 0 ? (
-                  <ArrowUpRight className="h-3 w-3 text-green-400" />
-                ) : (
-                  <ArrowDownRight className="h-3 w-3 text-red-400" />
-                )}
-                <span className="text-xs text-gray-400">ROAS Change</span>
-              </div>
-              <span className={`text-sm font-semibold ${metrics.roasChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {metrics.roasChange >= 0 ? '+' : ''}{metrics.roasChange.toFixed(1)}%
-              </span>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333] flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1.5">
+              <ArrowRightLeft className="h-3.5 w-3.5 text-blue-400" />
+              <h3 className="text-xs font-medium text-gray-300">ROAS</h3>
+            </div>
+            <p className={`text-xl font-semibold ${metrics.averageRoas >= 1 ? 'text-blue-400' : 'text-red-400'}`}>
+              {metrics.averageRoas.toFixed(2)}x
+            </p>
+            <div className={`text-xs mt-1 ${metrics.roasChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {metrics.roasChange >= 0 ? '+' : ''}{metrics.roasChange.toFixed(1)}% vs prev.
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333] flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1.5">
+              <TrendingUp className="h-3.5 w-3.5 text-green-400" />
+              <h3 className="text-xs font-medium text-gray-300">Revenue</h3>
+            </div>
+            <p className="text-xl font-semibold">${metrics.totalRevenue.toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+            <div className="text-xs mt-1 text-gray-400">From ad-driven sales</div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-[#1a1a1a] to-[#222] rounded-lg p-3 border border-[#333] flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-1.5">
+              <PieChart className="h-3.5 w-3.5 text-amber-400" />
+              <h3 className="text-xs font-medium text-gray-300">Efficiency</h3>
+            </div>
+            <p className="text-xl font-semibold">{metrics.profitability.toFixed(1)}%</p>
+            <div className={`text-xs mt-1 ${metrics.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {metrics.profit >= 0 ? 'Profit' : 'Loss'}: ${Math.abs(metrics.profit).toLocaleString(undefined, {maximumFractionDigits: 0})}
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
-            <defs>
-              <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-              </linearGradient>
-              <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4ade80" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              stroke="#666"
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={{ stroke: '#444' }}
-            />
-            <YAxis 
-              yAxisId="left" 
-              stroke="#8884d8" 
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={{ stroke: '#444' }}
-              tickFormatter={(value) => `$${value}`}
-            />
-            <YAxis 
-              yAxisId="right" 
-              orientation="right" 
-              stroke="#4ade80"
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={{ stroke: '#444' }}
-              tickFormatter={(value) => `${value}x`}
-            />
-            <RechartsTooltip 
-              contentStyle={{ 
-                backgroundColor: '#1a1a1a', 
-                border: '1px solid #333',
-                borderRadius: '4px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                color: '#fff'
-              }}
-              formatter={(value, name) => {
-                if (name === 'Spend') return [`$${Number(value).toFixed(2)}`, name];
-                if (name === 'ROAS') return [`${Number(value).toFixed(2)}x`, name];
-                if (name === 'Profit/Loss') return [`$${Number(value).toFixed(2)}`, name];
-                return [value, name];
-              }}
-              labelFormatter={(label) => `Date: ${label}`}
-            />
-            <Area 
-              yAxisId="left"
-              type="monotone" 
-              dataKey="spend" 
-              name="Spend"
-              stroke="#8884d8" 
-              strokeWidth={2}
-              fill="url(#colorSpend)"
-              activeDot={{ r: 6, strokeWidth: 0 }}
-            />
-            <Line 
-              yAxisId="right" 
-              type="monotone" 
-              dataKey="roas" 
-              name="ROAS" 
-              stroke="#4ade80" 
-              strokeWidth={2}
-              dot={{ r: 0 }}
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#4ade80' }}
-            />
-            <Bar
-              yAxisId="left"
-              dataKey="profit"
-              name="Profit/Loss"
-              fill="rgba(74, 222, 128, 0.4)"
-              stroke="#4ade80"
-              strokeWidth={1}
-              radius={[4, 4, 0, 0]}
-            />
-            <Legend 
-              wrapperStyle={{ 
-                paddingTop: '10px',
-                fontSize: '12px' 
-              }}
-              iconType="circle"
-              iconSize={8}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
+        <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-3 mb-3">
+          <div className="text-xs text-gray-300 mb-2 font-medium">Daily Performance Trends</div>
+          <ResponsiveContainer width="100%" height={280}>
+            <ComposedChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+              <defs>
+                <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#7B61FF" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#7B61FF" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#52A9FF" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#52A9FF" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#1EE0AC" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#1EE0AC" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#666"
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={{ stroke: '#444' }}
+              />
+              <YAxis 
+                yAxisId="left" 
+                stroke="#7B61FF" 
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={{ stroke: '#444' }}
+                tickFormatter={(value) => `$${value}`}
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right" 
+                stroke="#1EE0AC"
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={{ stroke: '#444' }}
+                tickFormatter={(value) => `${value}x`}
+              />
+              <RechartsTooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1a1a1a', 
+                  border: '1px solid #333',
+                  borderRadius: '4px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                  color: '#fff'
+                }}
+                formatter={(value, name) => {
+                  if (name === 'Spend') return [`$${Number(value).toFixed(2)}`, name];
+                  if (name === 'ROAS') return [`${Number(value).toFixed(2)}x`, name];
+                  if (name === 'Revenue') return [`$${Number(value).toFixed(2)}`, name];
+                  if (name === 'Profit/Loss') return [`$${Number(value).toFixed(2)}`, name];
+                  return [value, name];
+                }}
+                labelFormatter={(label) => `Date: ${label}`}
+              />
+              <Area 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="spend" 
+                name="Spend"
+                stroke="#7B61FF" 
+                strokeWidth={2}
+                fill="url(#colorSpend)"
+                activeDot={{ r: 6, strokeWidth: 0 }}
+              />
+              <Area 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="revenue" 
+                name="Revenue"
+                stroke="#52A9FF" 
+                strokeWidth={2}
+                fill="url(#colorRevenue)"
+                activeDot={{ r: 6, strokeWidth: 0 }}
+              />
+              <Line 
+                yAxisId="right" 
+                type="monotone" 
+                dataKey="roas" 
+                name="ROAS" 
+                stroke="#1EE0AC" 
+                strokeWidth={2}
+                dot={{ r: 0 }}
+                activeDot={{ r: 6, strokeWidth: 0, fill: '#1EE0AC' }}
+              />
+              <Bar
+                yAxisId="left"
+                dataKey="profit"
+                name="Profit/Loss"
+                fill="rgba(30, 224, 172, 0.4)"
+                stroke="#1EE0AC"
+                strokeWidth={1}
+                radius={[4, 4, 0, 0]}
+              />
+              <Legend 
+                wrapperStyle={{ 
+                  paddingTop: '10px',
+                  fontSize: '12px' 
+                }}
+                iconType="circle"
+                iconSize={8}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )
