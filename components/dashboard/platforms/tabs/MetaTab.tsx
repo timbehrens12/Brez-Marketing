@@ -113,6 +113,7 @@ type MetricDataState = {
   previousValue: number;
   isLoading: boolean;
   lastUpdated: Date | null;
+  dailyData?: Array<{ date: string; value: number }>;
 }
 
 export function MetaTab({ 
@@ -1965,72 +1966,81 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, []);
 
   // Update the state types to include previous period data
-  const [adSpendData, setAdSpendData] = useState({
+  const [adSpendData, setAdSpendData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
-  const [roasData, setRoasData] = useState({
+  const [roasData, setRoasData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
-  const [impressionsData, setImpressionsData] = useState({
+  const [impressionsData, setImpressionsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
-  const [clicksData, setClicksData] = useState({
+  const [clicksData, setClicksData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for the new Purchase Conversion Value widget
-  const [purchaseValueData, setPurchaseValueData] = useState({
+  const [purchaseValueData, setPurchaseValueData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for the new Results widget
-  const [resultsData, setResultsData] = useState({
+  const [resultsData, setResultsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for Cost Per Result widget
-  const [costPerResultData, setCostPerResultData] = useState({
+  const [costPerResultData, setCostPerResultData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for Cost Per Click widget
-  const [costPerClickData, setCostPerClickData] = useState({
+  const [costPerClickData, setCostPerClickData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for CTR (Click-Through Rate) widget
-  const [ctrData, setCtrData] = useState({
+  const [ctrData, setCtrData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null,
+    dailyData: []
   })
   
   // Add state for reach data
@@ -2384,6 +2394,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       params.append('from', fromDate.toISOString().split('T')[0])
       params.append('to', toDate.toISOString().split('T')[0])
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
       // Log what we're doing
       console.log(`Fetching Ad Spend for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
@@ -2407,13 +2418,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; spend?: number }) => ({
+              date: item.date,
+              value: item.spend || 0
+            }))
+          : [];
+            
         setAdSpendData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
         console.error("Error fetching Ad Spend data:", data.error || prevData.error)
         setAdSpendData(prev => ({ ...prev, isLoading: false }))
@@ -2438,6 +2458,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'roas')
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
       // Set date parameters - simple approach
       const fromDate = dateRange.from
@@ -2468,13 +2489,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; roas?: number }) => ({
+              date: item.date,
+              value: item.roas || 0
+            }))
+          : [];
+        
         setRoasData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`ROAS data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`ROAS data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
         console.error("Error fetching ROAS data:", data.error || prevData.error)
         setRoasData(prev => ({ ...prev, isLoading: false }))
@@ -2499,6 +2529,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'impressions')
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
       // Set date parameters - simple approach
       const fromDate = dateRange.from
@@ -2529,13 +2560,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; impressions?: number }) => ({
+              date: item.date,
+              value: item.impressions || 0
+            }))
+          : [];
+        
         setImpressionsData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`Impressions data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Impressions data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
         console.error("Error fetching Impressions data:", data.error || prevData.error)
         setImpressionsData(prev => ({ ...prev, isLoading: false }))
@@ -2561,6 +2601,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'clicks')
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
       // Set date parameters - simple approach
       const fromDate = dateRange.from
@@ -2591,13 +2632,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; clicks?: number }) => ({
+              date: item.date,
+              value: item.clicks || 0
+            }))
+          : [];
+        
         setClicksData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
         console.error("Error fetching Clicks data:", data.error || prevData.error)
         setClicksData(prev => ({ ...prev, isLoading: false }))
@@ -2611,7 +2661,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Fetch Purchase Conversion Value data directly from the database
   const fetchPurchaseValueDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch Purchase Conversion Value: Missing date range or brand ID")
+      console.log("Cannot fetch Purchase Value: Missing date range or brand ID")
       return
     }
     
@@ -2621,7 +2671,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'purchaseValue')
+      params.append('metric', 'purchase-conversion-value')
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
       // Set date parameters - simple approach
       const fromDate = dateRange.from
@@ -2631,7 +2682,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       params.append('to', toDate.toISOString().split('T')[0])
       
       // Log what we're doing
-      console.log(`Fetching Purchase Conversion Value for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      console.log(`Fetching Purchase Value for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
       
       // Calculate previous period date range using our simplified helper function
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
@@ -2642,7 +2693,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'purchaseValue')
+      prevParams.append('metric', 'purchase-conversion-value')
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/purchase-conversion-value?${prevParams.toString()}`)
@@ -2652,19 +2703,28 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; value?: number }) => ({
+              date: item.date,
+              value: item.value || 0
+            }))
+          : [];
+        
         setPurchaseValueData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`Purchase Conversion Value data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Purchase Value data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
-        console.error("Error fetching Purchase Conversion Value data:", data.error || prevData.error)
+        console.error("Error fetching Purchase Value data:", data.error || prevData.error)
         setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Purchase Conversion Value fetch:", error)
+      console.error("Error in Purchase Value fetch:", error)
       setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
     }
   }
@@ -2916,7 +2976,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Fetch reach data directly from the database
   const fetchReachDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch reach: Missing date range or brand ID")
+      console.log("Cannot fetch Reach: Missing date range or brand ID")
       return
     }
     
@@ -2927,8 +2987,9 @@ Try creating at least one active campaign in Meta Ads Manager.
       const params = new URLSearchParams()
       params.append('brandId', brandId)
       params.append('metric', 'reach')
+      params.append('includeDaily', 'true') // Add parameter to request daily data
       
-      // Set date parameters
+      // Set date parameters - simple approach
       const fromDate = dateRange.from
       const toDate = dateRange.to
       
@@ -2956,14 +3017,23 @@ Try creating at least one active campaign in Meta Ads Manager.
       const data = await response.json()
       const prevData = await prevResponse.json()
       
-      if (!data.error && !prevData.error) {
+      if (response.ok && prevResponse.ok) {
+        // Transform daily data from the API response into the format expected by MetricLineChart
+        const dailyData = Array.isArray(data.dailyData) 
+          ? data.dailyData.map((item: { date: string; reach?: number }) => ({
+              date: item.date,
+              value: item.reach || 0
+            }))
+          : [];
+        
         setReachData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          dailyData: dailyData
         })
-        console.log(`Reach data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Reach data fetched directly: ${data.value}, Previous: ${prevData.value}, Daily data points: ${dailyData.length}`)
       } else {
         console.error("Error fetching Reach data:", data.error || prevData.error)
         setReachData(prev => ({ ...prev, isLoading: false }))
@@ -3320,15 +3390,16 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
-            data={[]}
+            data={adSpendData.dailyData || []}
             loading={adSpendData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="currency"
-            hideGraph={true}
             previousValue={adSpendData.previousValue}
             previousValueFormat="currency"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
@@ -3339,17 +3410,18 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={roasData.value}
-            data={[]}
+            data={roasData.dailyData || []}
             loading={roasData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
             suffix="x"
-            hideGraph={true}
             previousValue={roasData.previousValue}
             previousValueFormat="number"
             previousValueSuffix="x"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
@@ -3360,15 +3432,16 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={impressionsData.value}
-            data={[]}
+            data={impressionsData.dailyData || []}
             loading={impressionsData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
-            hideGraph={true}
             previousValue={impressionsData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
@@ -3379,15 +3452,16 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={reachData.value}
-            data={[]}
+            data={reachData.dailyData || []}
             loading={reachData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
-            hideGraph={true}
             previousValue={reachData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
@@ -3398,15 +3472,16 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={clicksData.value}
-            data={[]}
+            data={clicksData.dailyData || []}
             loading={clicksData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="number"
-            hideGraph={true}
             previousValue={clicksData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
@@ -3417,15 +3492,16 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={purchaseValueData.value}
-            data={[]}
+            data={purchaseValueData.dailyData || []}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
             hideChange={true}
             valueFormat="currency"
-            hideGraph={true}
             previousValue={purchaseValueData.previousValue}
             previousValueFormat="currency"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            dateRange={dateRange}
+            showChart={true}
           />
           
           <MetricCard
