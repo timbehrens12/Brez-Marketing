@@ -38,7 +38,6 @@ import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
-import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -425,7 +424,45 @@ export default function DashboardPage() {
         };
         
         if (isMounted.current) {
-          setMetrics(safeMetrics);
+          setMetrics(prevMetrics => ({
+            ...prevMetrics,
+            totalSales: data.totalSales ?? prevMetrics.totalSales,
+            salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
+            ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
+            ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
+            unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
+            unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
+            averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
+            aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
+            customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
+            retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
+            conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
+            conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
+            returnRate: data.returnRate ?? prevMetrics.returnRate,
+            returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
+            conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
+            ctr: data.ctr ?? prevMetrics.ctr,
+            ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
+            clicks: data.clicks ?? prevMetrics.clicks,
+            clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
+            impressions: data.impressions ?? prevMetrics.impressions,
+            impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
+            adSpend: data.adSpend ?? prevMetrics.adSpend,
+            adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
+            roas: data.roas ?? prevMetrics.roas,
+            roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
+            conversions: data.conversions ?? prevMetrics.conversions,
+            costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
+            cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
+            topProducts: data.topProducts ?? prevMetrics.topProducts,
+            revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
+            dailyData: data.dailyData ?? prevMetrics.dailyData,
+            customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
+            salesData: data.salesData ?? prevMetrics.salesData,
+            ordersData: data.ordersData ?? prevMetrics.ordersData,
+            aovData: data.aovData ?? prevMetrics.aovData,
+            unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
+          }));
         }
         
       } catch (error) {
@@ -570,7 +607,42 @@ export default function DashboardPage() {
         const data = await response.json()
         setMetrics(prevMetrics => ({
           ...prevMetrics,
-          ...data
+          totalSales: data.totalSales ?? prevMetrics.totalSales,
+          salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
+          ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
+          ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
+          unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
+          unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
+          averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
+          aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
+          customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
+          retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
+          conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
+          conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
+          returnRate: data.returnRate ?? prevMetrics.returnRate,
+          returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
+          conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
+          ctr: data.ctr ?? prevMetrics.ctr,
+          ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
+          clicks: data.clicks ?? prevMetrics.clicks,
+          clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
+          impressions: data.impressions ?? prevMetrics.impressions,
+          impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
+          adSpend: data.adSpend ?? prevMetrics.adSpend,
+          adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
+          roas: data.roas ?? prevMetrics.roas,
+          roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
+          conversions: data.conversions ?? prevMetrics.conversions,
+          costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
+          cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
+          topProducts: data.topProducts ?? prevMetrics.topProducts,
+          revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
+          dailyData: data.dailyData ?? prevMetrics.dailyData,
+          customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
+          salesData: data.salesData ?? prevMetrics.salesData,
+          ordersData: data.ordersData ?? prevMetrics.ordersData,
+          aovData: data.aovData ?? prevMetrics.aovData,
+          unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
         }))
         
         // Sync inventory data from Shopify
@@ -896,8 +968,6 @@ export default function DashboardPage() {
                 <MetaSpendTrends brandId={selectedBrandId} />
                 <MetaAdPerformance brandId={selectedBrandId} />
               </div>
-              
-              <MetaCampaignsTable brandId={selectedBrandId} />
             </div>
           </WidgetManager>
         </>
