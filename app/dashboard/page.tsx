@@ -36,8 +36,6 @@ import { addDays, startOfDay, endOfDay } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
-import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
-import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -46,6 +44,7 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
+import { PerformanceOverview } from '@/components/dashboard/modern-metrics/PerformanceOverview'
 
 interface WidgetData {
   shopify?: any;
@@ -992,8 +991,11 @@ export default function DashboardPage() {
           >
             <div className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MetaSpendTrends brandId={selectedBrandId} />
-                <MetaAdPerformance brandId={selectedBrandId} />
+                <PerformanceOverview 
+                  brandId={selectedBrandId} 
+                  metrics={metrics}
+                  loading={isLoading || isRefreshingData}
+                />
               </div>
             </div>
           </WidgetManager>
