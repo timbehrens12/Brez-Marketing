@@ -150,6 +150,9 @@ export default function DashboardPage() {
   // Add a ref to track if we're still mounted
   const isMounted = useRef(true);
 
+  // Track the number of auto-refresh cycles so we can do a full resync periodically
+  const autoRefreshCountRef = useRef(0);
+
   // Set the global flag on component mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -584,7 +587,7 @@ export default function DashboardPage() {
   }
 
   // Modify the fetchAllData function to use isRefreshingData instead of isLoading
-  const fetchAllData = async () => {
+  const fetchAllData = async (forceFullMetaResync = false) => {
     if (!selectedBrandId) return
     
     // Use isRefreshingData for refreshes, but set isLoading for initial load
@@ -603,6 +606,15 @@ export default function DashboardPage() {
       if (activePlatforms.shopify && shopifyConnection) {
         // First, sync Shopify orders to ensure we have the latest data
         try {
+          // Show toast only if not in initial data load
+          if (!initialDataLoad) {
+            toast({
+              title: "Syncing Shopify Data",
+              description: "Pulling fresh order data from Shopify...",
+              variant: "default"
+            });
+          }
+          
           const syncOrdersResponse = await fetch('/api/shopify/sync', {
             method: 'POST',
             headers: {
@@ -697,8 +709,69 @@ export default function DashboardPage() {
       // Fetch Meta data - Use the fetchMetaMetrics function we defined
       if (activePlatforms.meta) {
         try {
-          // Call the fetchMetaMetrics function directly with proper error handling
-          // Force refresh to ensure we get fresh data
+          // If forceFullMetaResync is true or it's a manual refresh (from refresh button),
+          // perform a full Meta resync first
+          if (forceFullMetaResync) {
+            console.log('Performing full Meta data resync before refresh');
+            
+            // Show toast to inform user that a full resync is happening
+            if (!initialDataLoad) {
+              const toastId = toast({
+                title: "Syncing Meta Data",
+                description: "Performing a full resync from Meta Ads API...",
+                variant: "default"
+              });
+            }
+            
+            // Default to 30 days of data
+            const days = 30;
+            
+            try {
+              const resyncResponse = await fetch('/api/meta/resync', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ brandId: selectedBrandId, days })
+              });
+              
+              if (!resyncResponse.ok) {
+                const errorData = await resyncResponse.json();
+                console.error('Failed to perform full Meta resync:', errorData);
+                
+                if (!initialDataLoad) {
+                  toast({
+                    title: "Meta Sync Issue",
+                    description: "There was a problem refreshing Meta data. Trying standard refresh...",
+                    variant: "destructive"
+                  });
+                }
+              } else {
+                const resyncData = await resyncResponse.json();
+                console.log(`Meta resync completed successfully. Found ${resyncData.count || 0} records.`);
+                
+                if (!initialDataLoad && resyncData.count > 0) {
+                  toast({
+                    title: "Meta Data Refreshed",
+                    description: `Successfully pulled ${resyncData.count} records from Meta Ads API.`,
+                    variant: "default"
+                  });
+                }
+                
+                // Dispatch a custom event to notify Meta components about the resync
+                window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+                  detail: { brandId: selectedBrandId, timestamp: Date.now() }
+                }));
+              }
+            } catch (resyncError) {
+              console.error('Error during Meta resync:', resyncError);
+            }
+            
+            // Wait a moment for the resync to complete
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          
+          // Now call the normal fetchMetaMetrics function with force refresh
           await fetchMetaMetrics(false, true);
         } catch (error) {
           console.error('Error fetching Meta metrics during refresh:', error);
@@ -739,28 +812,29 @@ export default function DashboardPage() {
     // For manual refreshes, we don't want to show the full-screen loader
     setInitialDataLoad(false)
     
-    // Show toast to inform user that refresh is happening
+    // Show toast to inform user that refresh is happening with more detailed info
     toast({
-      title: "Refreshing data",
-      description: "Syncing latest data from your connected platforms. This may take a few moments...",
+      title: "Complete Data Refresh",
+      description: "Performing a full data sync from all connected platforms including a complete Meta Ads resync. This may take up to 30 seconds...",
       variant: "default"
     })
     
     try {
-      await fetchAllData()
+      // For manual refresh (clicking the button), always do a full Meta resync
+      await fetchAllData(true)
       setLastRefreshed(new Date())
       
       // Add a notification about the refresh
       addNotification({
         title: "Dashboard Refreshed",
-        message: "Your dashboard data has been updated with the latest metrics",
+        message: "Your dashboard data has been updated with the latest metrics from all platforms",
         type: "system"
       })
       
       // Show success toast
       toast({
-        title: "Data refreshed",
-        description: "Your dashboard has been updated with the latest data.",
+        title: "Data refresh complete",
+        description: "Your dashboard has been updated with fresh data directly from all connected platforms.",
         variant: "default"
       })
     } catch (error) {
@@ -809,8 +883,20 @@ export default function DashboardPage() {
         console.log('Running 5-minute automatic refresh for all data...');
         // For periodic refreshes, we don't want to show the full-screen loader
         setInitialDataLoad(false);
-        // Call fetchAllData which handles both Shopify and Meta data
-        fetchAllData();
+        
+        // Increment the auto refresh counter
+        autoRefreshCountRef.current += 1;
+        
+        // Every 2nd cycle (every 10 minutes), do a full Meta resync to ensure data is fresh
+        const shouldDoFullResync = autoRefreshCountRef.current % 2 === 0;
+        
+        if (shouldDoFullResync) {
+          console.log('Performing full Meta resync on 10-minute cycle');
+        }
+        
+        // Call fetchAllData with appropriate resync flag
+        fetchAllData(shouldDoFullResync);
+        
         // Update the last refreshed timestamp
         setLastRefreshed(new Date());
       }
@@ -824,7 +910,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (selectedBrandId && !initialDataLoad) {
       // Only do this when there's an actual change (not on initial render)
-      fetchAllData();
+      // For initial brand load, do a full resync to ensure data is fresh
+      fetchAllData(true);
     }
   }, [selectedBrandId]);
 
