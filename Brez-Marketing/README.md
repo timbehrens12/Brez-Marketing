@@ -1,53 +1,60 @@
-# Marketing Dashboard
+# Brez Marketing Dashboard
 
-A comprehensive marketing analytics dashboard for tracking and visualizing performance across multiple platforms including Shopify, Meta (Facebook/Instagram), and Google Ads.
+Marketing dashboard for tracking ad campaign performance across different platforms.
 
 ## Features
 
-- **Multi-platform Integration**: Connect to Shopify, Meta (Facebook/Instagram), and Google Ads
-- **Unified Dashboard**: View all your marketing performance in one place
-- **Real-time Analytics**: Track revenue, ROAS, ad spend, and more
-- **Campaign Insights**: Analyze campaign performance across platforms
-- **Customer Geography**: Visualize customer locations on an interactive 3D globe
-- **Customizable Widgets**: Arrange dashboard components to suit your needs
+### Campaign Performance Tracking
+- Track spend, impressions, clicks, conversions, and other key metrics
+- View campaign status and budget information
+- Compare performance across different platforms
 
-## Setup
+### Date Range Filtering
+- Filter campaign performance data by date range
+- View historical performance trends
+- Compare current period with previous periods
+
+### Platforms
+- Meta (Facebook & Instagram)
+- Google Ads (coming soon)
+- TikTok (coming soon)
+
+## Getting Started
 
 ### Prerequisites
-
-- Node.js 18 or higher
-- Supabase account for database
-- Accounts on platforms you want to integrate (Shopify, Meta, Google Ads)
+- Node.js 16+
+- Supabase account
+- Meta Business Account with access to ads
 
 ### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd marketing-dashboard
-```
-
+1. Clone the repository
 2. Install dependencies:
-```bash
-npm install
-```
-
+   ```bash
+   npm install
+   ```
 3. Set up environment variables:
-```bash
-cp .env.example .env.local
-```
-Then edit `.env.local` to add your API keys and credentials.
+   ```bash
+   cp .env.example .env.local
+   ```
+4. Update `.env.local` with your credentials
+5. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-4. Run the development server:
-```bash
-npm run dev
-```
+### Database Setup
+Run the SQL scripts in the `scripts` directory to set up the database schema.
 
-5. Setup database tables:
-```bash
-# Run these scripts in your Supabase SQL editor
-# See scripts directory for SQL files
-```
+## Recent Updates
+
+### Meta Campaign Date Range Filtering (March 2025)
+Added the ability to filter campaign data by date range:
+- Created a new table to store daily campaign metrics
+- Added API endpoints for fetching date-specific data
+- Updated UI to support date range selection
+- Improved budget detection for more accurate reporting
+
+See `scripts/README.md` for more details on implementation.
 
 ## Platform Integration Guide
 

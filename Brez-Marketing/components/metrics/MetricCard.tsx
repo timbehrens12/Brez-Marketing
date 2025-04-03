@@ -15,7 +15,7 @@ import { MetricExplanation } from '@/components/dashboard/MetricExplanation'
 interface MetricCardProps {
   title: string | React.ReactNode
   value: string | number
-  change: number
+  change?: number
   data: MetricData[]
   prefix?: string
   suffix?: string
@@ -24,6 +24,7 @@ interface MetricCardProps {
   refreshing?: boolean
   initialLoading?: boolean
   valueFormat?: "number" | "percentage" | "currency"
+  decimals?: number
   platform?: string
   infoTooltip?: string
   includesRefunds?: boolean
@@ -35,6 +36,14 @@ interface MetricCardProps {
   hideGraph?: boolean
   brandId?: string
   showChart?: boolean
+  hideChange?: boolean
+  previousValue?: number
+  previousValuePrefix?: string
+  previousValueSuffix?: string
+  previousValueFormat?: "number" | "percentage" | "currency"
+  previousValueDecimals?: number
+  showPreviousPeriod?: boolean
+  previousPeriodLabel?: string
 }
 
 // Define a proper type guard for DateRange
@@ -61,6 +70,7 @@ export function MetricCard({
   refreshing = false,
   initialLoading = false,
   valueFormat = "number",
+  decimals = 0,
   platform = "meta",
   infoTooltip,
   includesRefunds = false,
@@ -72,6 +82,14 @@ export function MetricCard({
   hideGraph = false,
   brandId,
   showChart = true,
+  hideChange = false,
+  previousValue = 0,
+  previousValuePrefix = "",
+  previousValueSuffix = "",
+  previousValueFormat = "number",
+  previousValueDecimals = 0,
+  showPreviousPeriod = false,
+  previousPeriodLabel = "Previous period",
 }: MetricCardProps & { brandId?: string }) {
   // Use a more robust conversion with error catching
   const safeValue = useMemo(() => {
@@ -105,7 +123,10 @@ export function MetricCard({
           } else if (valueFormat === 'percentage') {
             return `${prefix}${parsed.toFixed(1)}%${suffix}`;
           } else {
-            return `${prefix}${Math.round(parsed).toLocaleString()}${suffix}`;
+            // For number format, respect the decimals prop
+            return decimals > 0
+              ? `${prefix}${parsed.toFixed(decimals)}${suffix}`
+              : `${prefix}${Math.round(parsed).toLocaleString()}${suffix}`;
           }
         }
         // If not numeric, return as is with prefix/suffix
@@ -121,7 +142,10 @@ export function MetricCard({
       } else if (valueFormat === 'percentage') {
         return `${prefix}${num.toFixed(1)}%${suffix}`;
       } else {
-        return `${prefix}${Math.round(num).toLocaleString()}${suffix}`;
+        // For number format, respect the decimals prop
+        return decimals > 0
+          ? `${prefix}${num.toFixed(decimals)}${suffix}`
+          : `${prefix}${Math.round(num).toLocaleString()}${suffix}`;
       }
     } catch (error) {
       console.error("Error formatting value:", error);
@@ -180,6 +204,55 @@ export function MetricCard({
     }
   };
   
+  // Calculate percentage change from previous period
+  const calculatePercentChange = (): { value: number; isPositive: boolean; isZero: boolean } => {
+    try {
+      // Prevent division by zero
+      if (previousValue === 0) {
+        return { value: 0, isPositive: false, isZero: true };
+      }
+      
+      const currentValue = Number(value);
+      const change = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
+      
+      return { 
+        value: Math.abs(change), // Absolute value for display 
+        isPositive: change > 0,
+        isZero: change === 0
+      };
+    } catch (error) {
+      console.error("Error calculating percentage change:", error);
+      return { value: 0, isPositive: false, isZero: true };
+    }
+  };
+
+  // Format previous value for tooltip
+  const formatPreviousValue = () => {
+    try {
+      if (previousValue === undefined || previousValue === null) {
+        return `${previousValuePrefix}0${previousValueSuffix}`;
+      }
+      
+      // Handle numeric values
+      const num = Number(previousValue);
+      if (isNaN(num)) return `${previousValuePrefix}0${previousValueSuffix}`;
+      
+      if (previousValueFormat === 'currency') {
+        return `${previousValuePrefix}${num.toFixed(2)}${previousValueSuffix}`;
+      } else if (previousValueFormat === 'percentage') {
+        return `${previousValuePrefix}${num.toFixed(1)}%${previousValueSuffix}`;
+      } else {
+        // For number format, respect the previousValueDecimals prop
+        return previousValueDecimals > 0
+          ? `${previousValuePrefix}${num.toFixed(previousValueDecimals)}${previousValueSuffix}`
+          : `${previousValuePrefix}${Math.round(num).toLocaleString()}${previousValueSuffix}`;
+      }
+    } catch (error) {
+      console.error("Error formatting previous value:", error);
+      return `${previousValuePrefix}0${previousValueSuffix}`;
+    }
+  };
+  
   // If in initial loading state, show loading card
   if (initialLoading) {
     return (
@@ -229,9 +302,8 @@ export function MetricCard({
         </CardHeader>
         <CardContent className="p-4 pt-2">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-3">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-500 mb-2" />
-              <p className="text-sm text-gray-400">Loading data...</p>
+            <div className="flex items-center h-8">
+              <div className="w-20 h-7 bg-gray-800 rounded animate-pulse"></div>
             </div>
           ) : (
             <>
@@ -243,7 +315,60 @@ export function MetricCard({
                 )}
               </div>
               
-              {!loading && !refreshing && !hidePercentageChange && typeof change === 'number' && !isNaN(change) && (
+              {/* Show percentage change from previous period */}
+              {showPreviousPeriod && !loading && !refreshing && previousValue !== undefined && (
+                <div className="mt-1">
+                  {(() => {
+                    const percentChange = calculatePercentChange();
+                    const formattedPrevValue = formatPreviousValue();
+                    
+                    return (
+                      <div className="flex items-center">
+                        <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                          percentChange.isZero 
+                            ? "text-gray-500 bg-gray-500/10" 
+                            : percentChange.isPositive 
+                              ? "text-green-500 bg-green-500/10" 
+                              : "text-red-500 bg-red-500/10"
+                        }`}>
+                          <div className="flex items-center">
+                            {percentChange.isZero ? (
+                              <Minus className="w-3 h-3 mr-1" />
+                            ) : percentChange.isPositive ? (
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                            ) : (
+                              <TrendingDown className="w-3 h-3 mr-1" />
+                            )}
+                            <span>{percentChange.isZero ? '0%' : `${percentChange.value.toFixed(1)}%`}</span>
+                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help ml-1">
+                                <Info className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent 
+                                side="top" 
+                                align="center"
+                                className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                              >
+                                <div className="space-y-1">
+                                  <p className="font-medium">{previousPeriodLabel}</p>
+                                  <p className="text-gray-300">Amount: {formattedPrevValue}</p>
+                                  {previousPeriodLabel.includes('(') && previousPeriodLabel.includes('days') && (
+                                    <p className="text-gray-400 text-[10px]">For exact comparison with current range</p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              
+              {!loading && !refreshing && !hidePercentageChange && !hideChange && typeof change === 'number' && !isNaN(change) && (
                 <div className="flex items-center mt-2">
                   <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${change > 0 ? "text-green-500 bg-green-500" : change < 0 ? "text-red-500 bg-red-500" : "text-gray-500 bg-gray-500"} bg-opacity-10`}>
                     <div className={`flex items-center`}>
@@ -258,9 +383,20 @@ export function MetricCard({
                         <TooltipContent 
                           side="top" 
                           align="center"
-                          className="z-50 bg-black border border-gray-800 text-xs p-2"
+                          className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
                         >
-                          <p>{getComparisonText(change, dateRange)}</p>
+                          <div className="space-y-1">
+                            <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
+                            <p className="text-gray-300">Current: {formatSafeValue()}</p>
+                            <p className="text-gray-300">Previous: {previousValue ? (
+                              previousValueFormat === 'currency' 
+                                ? `${previousValuePrefix}${previousValue.toFixed(2)}${previousValueSuffix}` 
+                                : previousValueFormat === 'percentage'
+                                  ? `${previousValuePrefix}${previousValue.toFixed(1)}%${previousValueSuffix}`
+                                  : `${previousValuePrefix}${Math.round(previousValue).toLocaleString()}${previousValueSuffix}`
+                            ) : 'N/A'}</p>
+                            <p className="text-gray-400 text-[10px]">{previousPeriodLabel || 'Comparing equivalent time periods'}</p>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

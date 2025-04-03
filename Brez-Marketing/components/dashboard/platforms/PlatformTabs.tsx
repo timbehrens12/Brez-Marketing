@@ -245,40 +245,43 @@ export function PlatformTabs({
 
   return (
     <Tabs defaultValue="site" className="w-full" onValueChange={handleValueChange}>
-      <TabsList className="flex justify-center items-center space-x-4 w-full max-w-[600px] h-16 mx-auto mb-10 bg-[#1A1A1A] border border-[#333] rounded-lg p-2">
+      <TabsList className="flex justify-between sm:justify-center items-center sm:space-x-4 w-full max-w-[600px] h-14 mx-auto mb-10 bg-black/30 backdrop-blur-lg border border-zinc-800/40 rounded-2xl p-2 shadow-lg">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="site" 
-                className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "site" 
-                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222]"
+                    ? "bg-gradient-to-b from-zinc-800/80 to-zinc-900/90 text-white shadow-md" 
+                    : "hover:bg-zinc-800/20"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <div 
-                    className={`relative w-10 h-10 flex items-center justify-center ${
+                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
                       activeTab === "site" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.5)]"
+                        ? "text-white" 
+                        : "text-gray-400 group-hover:text-gray-200"
                     }`}
-                    style={activeTab === "site" ? { '--glow-color': '255, 255, 255' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/PZCtbwG.png" 
-                      alt="Brez Logo" 
-                      width={36} 
-                      height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "site" ? "scale-110" : ""}`}
+                      alt="Brez" 
+                      width={24} 
+                      height={24} 
+                      className="object-contain drop-shadow-md"
                     />
                   </div>
+                  <span className="text-sm font-medium hidden sm:inline">Home</span>
                 </div>
+                {activeTab === "site" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/30 rounded-full"></div>
+                )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Brez</p>
+            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+              <p>Dashboard Overview</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -289,34 +292,37 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="shopify" 
                 disabled={!platforms.shopify}
-                className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "shopify" 
-                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222]"
+                    ? "bg-gradient-to-b from-green-950/40 to-zinc-900/90 text-white shadow-md" 
+                    : "hover:bg-zinc-800/20"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <div 
-                    className={`relative w-10 h-10 flex items-center justify-center ${
+                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
                       activeTab === "shopify" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(150,191,72,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(150,191,72,0.5)]"
+                        ? "text-green-400" 
+                        : "text-gray-400 group-hover:text-gray-200"
                     }`}
-                    style={activeTab === "shopify" ? { '--glow-color': '150, 191, 72' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/cnCcupx.png" 
-                      alt="Shopify logo" 
-                      width={36} 
-                      height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "shopify" ? "scale-110" : ""}`}
+                      alt="Shopify" 
+                      width={24} 
+                      height={24} 
+                      className="object-contain drop-shadow-md"
                     />
                   </div>
+                  <span className="text-sm font-medium hidden sm:inline">Store</span>
                 </div>
+                {activeTab === "shopify" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500/50 rounded-full"></div>
+                )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Shopify</p>
+            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+              <p>Shopify Store Metrics</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -327,34 +333,37 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="meta" 
                 disabled={!platforms.meta}
-                className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "meta" 
-                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222]"
+                    ? "bg-gradient-to-b from-gray-900/80 to-zinc-900/90 text-white shadow-md" 
+                    : "hover:bg-zinc-800/20"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <div 
-                    className={`relative w-10 h-10 flex items-center justify-center ${
+                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
                       activeTab === "meta" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(24,119,242,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(24,119,242,0.5)]"
+                        ? "text-gray-300" 
+                        : "text-gray-400 group-hover:text-gray-200"
                     }`}
-                    style={activeTab === "meta" ? { '--glow-color': '24, 119, 242' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta logo" 
-                      width={36} 
-                      height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "meta" ? "scale-110" : ""}`}
+                      alt="Meta" 
+                      width={24} 
+                      height={24} 
+                      className="object-contain drop-shadow-md"
                     />
                   </div>
+                  <span className="text-sm font-medium hidden sm:inline">Meta</span>
                 </div>
+                {activeTab === "meta" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-500/50 rounded-full"></div>
+                )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Meta Ads</p>
+            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+              <p>Meta Ads Analytics</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -364,35 +373,38 @@ export function PlatformTabs({
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="tiktok" 
-                disabled={false}
-                className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                disabled={!platforms.tiktok}
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "tiktok" 
-                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222]"
+                    ? "bg-gradient-to-b from-pink-950/40 to-zinc-900/90 text-white shadow-md" 
+                    : "hover:bg-zinc-800/20"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <div 
-                    className={`relative w-10 h-10 flex items-center justify-center ${
+                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
                       activeTab === "tiktok" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(255,0,80,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(255,0,80,0.5)]"
+                        ? "text-pink-400" 
+                        : "text-gray-400 group-hover:text-gray-200"
                     }`}
-                    style={activeTab === "tiktok" ? { '--glow-color': '255, 0, 80' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/AXHa9UT.png" 
-                      alt="TikTok logo" 
-                      width={36} 
-                      height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "tiktok" ? "scale-110" : ""}`}
+                      alt="TikTok" 
+                      width={24} 
+                      height={24} 
+                      className="object-contain drop-shadow-md"
                     />
                   </div>
+                  <span className="text-sm font-medium hidden sm:inline">TikTok</span>
                 </div>
+                {activeTab === "tiktok" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-pink-500/50 rounded-full"></div>
+                )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>TikTok Ads</p>
+            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+              <p>TikTok Ads Performance</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -402,35 +414,38 @@ export function PlatformTabs({
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="googleads" 
-                disabled={false}
-                className={`group rounded-md w-24 h-12 text-gray-300 transition-all duration-300 ease-in-out ${
+                disabled={!platforms.googleads}
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "googleads" 
-                    ? "bg-[#2A2A2A] border-[#444] border text-white animate-pulse-subtle" 
-                    : "hover:bg-[#222]"
+                    ? "bg-gradient-to-b from-indigo-950/40 to-zinc-900/90 text-white shadow-md" 
+                    : "hover:bg-zinc-800/20"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2">
                   <div 
-                    className={`relative w-10 h-10 flex items-center justify-center ${
+                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
                       activeTab === "googleads" 
-                        ? "filter drop-shadow-[0_0_5px_rgba(66,133,244,0.8)] animate-glow-pulse" 
-                        : "transition-all duration-300 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(66,133,244,0.5)]"
+                        ? "text-indigo-400" 
+                        : "text-gray-400 group-hover:text-gray-200"
                     }`}
-                    style={activeTab === "googleads" ? { '--glow-color': '66, 133, 244' } as React.CSSProperties : {}}
                   >
                     <Image 
                       src="https://i.imgur.com/TavV4UJ.png" 
-                      alt="Google Ads logo" 
-                      width={36} 
-                      height={36} 
-                      className={`object-contain transition-transform duration-300 hover:scale-110 ${activeTab === "googleads" ? "scale-110" : ""}`}
+                      alt="Google Ads" 
+                      width={24} 
+                      height={24} 
+                      className="object-contain drop-shadow-md"
                     />
                   </div>
+                  <span className="text-sm font-medium hidden sm:inline">Google</span>
                 </div>
+                {activeTab === "googleads" && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500/50 rounded-full"></div>
+                )}
               </TabsTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-              <p>Google Ads</p>
+            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
+              <p>Google Ads Metrics</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

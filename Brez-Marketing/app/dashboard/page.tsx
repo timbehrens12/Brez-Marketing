@@ -38,7 +38,6 @@ import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
 import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
-import MetaCampaignsTable from '@/app/analytics/components/meta-campaigns-table'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -150,6 +149,9 @@ export default function DashboardPage() {
 
   // Add a ref to track if we're still mounted
   const isMounted = useRef(true);
+
+  // Track the number of auto-refresh cycles so we can do a full resync periodically
+  const autoRefreshCountRef = useRef(0);
 
   // Set the global flag on component mount
   useEffect(() => {
@@ -425,7 +427,45 @@ export default function DashboardPage() {
         };
         
         if (isMounted.current) {
-          setMetrics(safeMetrics);
+          setMetrics(prevMetrics => ({
+            ...prevMetrics,
+            totalSales: data.totalSales ?? prevMetrics.totalSales,
+            salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
+            ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
+            ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
+            unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
+            unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
+            averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
+            aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
+            customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
+            retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
+            conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
+            conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
+            returnRate: data.returnRate ?? prevMetrics.returnRate,
+            returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
+            conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
+            ctr: data.ctr ?? prevMetrics.ctr,
+            ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
+            clicks: data.clicks ?? prevMetrics.clicks,
+            clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
+            impressions: data.impressions ?? prevMetrics.impressions,
+            impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
+            adSpend: data.adSpend ?? prevMetrics.adSpend,
+            adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
+            roas: data.roas ?? prevMetrics.roas,
+            roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
+            conversions: data.conversions ?? prevMetrics.conversions,
+            costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
+            cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
+            topProducts: data.topProducts ?? prevMetrics.topProducts,
+            revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
+            dailyData: data.dailyData ?? prevMetrics.dailyData,
+            customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
+            salesData: data.salesData ?? prevMetrics.salesData,
+            ordersData: data.ordersData ?? prevMetrics.ordersData,
+            aovData: data.aovData ?? prevMetrics.aovData,
+            unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
+          }));
         }
         
       } catch (error) {
@@ -451,18 +491,16 @@ export default function DashboardPage() {
     loadMetrics();
   }, [selectedBrandId, dateRange]);
 
-  // Modify the fetchMetaMetrics function to use a current date range and respect initialLoad
-  async function fetchMetaMetrics(initialLoad = false) {
-    // IMPORTANT: When a date range is explicitly set by DateRangePicker, do not make a second fetch
-    if (dateRange?.from && dateRange?.to) {
-      console.log('Skipping Meta metrics fetch - date range already set by picker');
-      return null;
-    }
+  // Modify the fetchMetaMetrics function to ensure it includes all parameters
+  const fetchMetaMetrics = async (initialLoad: boolean = false, forceRefresh: boolean = false) => {
+    console.log(`fetchMetaMetrics called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
-    // Don't fetch Meta metrics if the block flag is set and it's not an initial load
+    // Don't fetch Meta metrics if the block flag is set and it's not an initial load or forced refresh
     if (typeof window !== 'undefined' && 
-        (window._blockMetaApiCalls || 
-         (window._disableAutoMetaFetch && !initialLoad && !isRefreshingData))) {
+        window._blockMetaApiCalls && 
+        !forceRefresh && 
+        !initialLoad && 
+        !isRefreshingData) {
       console.log('Blocking Meta metrics fetch - auto fetch disabled or component inactive');
       return null;
     }
@@ -470,19 +508,30 @@ export default function DashboardPage() {
     if (!selectedBrandId) return;
     
     try {
-      // Use current date to ensure we always have data
-      const now = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      // Use date range from picker if available, otherwise use last 30 days
+      let startDate, endDate;
       
-      // Format dates properly
-      const startDate = formatDate(thirtyDaysAgo);
-      const endDate = formatDate(now);
+      if (dateRange?.from && dateRange?.to) {
+        startDate = formatDate(dateRange.from);
+        endDate = formatDate(dateRange.to);
+      } else {
+        // Use current date to ensure we always have data
+        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         
-      console.log(`Fetching Meta metrics with date range: ${startDate} to ${endDate}`);
+        // Format dates properly
+        startDate = formatDate(thirtyDaysAgo);
+        endDate = formatDate(now);
+      }
+        
+      console.log(`Fetching Meta metrics with date range: ${startDate} to ${endDate}, forceRefresh: ${forceRefresh}`);
+      
+      // Add a cache-busting parameter to ensure we get fresh data when forcing refresh
+      const cacheBuster = forceRefresh ? `&t=${new Date().getTime()}` : '';
       
       const metaResponse = await fetch(
-        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}&initial_load=${initialLoad}`
+        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}&initial_load=${initialLoad}&force_refresh=${forceRefresh}${cacheBuster}`
       );
       
       if (!metaResponse.ok) {
@@ -512,9 +561,20 @@ export default function DashboardPage() {
           ctr: metaData.ctr ?? prev.ctr ?? 0,
           ctrGrowth: metaData.ctrGrowth ?? prev.ctrGrowth ?? 0,
           clicks: metaData.clicks ?? prev.clicks ?? 0,
-          clickGrowth: metaData.clickGrowth ?? prev.clickGrowth ?? 0
+          clickGrowth: metaData.clickGrowth ?? prev.clickGrowth ?? 0,
+          conversions: metaData.conversions ?? prev.conversions ?? 0,
+          conversionGrowth: metaData.conversionGrowth ?? prev.conversionGrowth ?? 0,
+          costPerResult: metaData.costPerResult ?? prev.costPerResult ?? 0,
+          cprGrowth: metaData.cprGrowth ?? prev.cprGrowth ?? 0,
+          dailyData: metaData.dailyData ?? prev.dailyData ?? []
         }));
       }
+      
+      // Dispatch a custom event to notify MetaTab components about the refresh
+      // This will be handled by the MetaTab to run refreshAllMetricsDirectly()
+      window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+        detail: { brandId: selectedBrandId, timestamp: new Date().getTime(), forceRefresh }
+      }));
       
       return metaData;
     } catch (error) {
@@ -524,7 +584,7 @@ export default function DashboardPage() {
   }
 
   // Modify the fetchAllData function to use isRefreshingData instead of isLoading
-  const fetchAllData = async () => {
+  const fetchAllData = async (forceFullMetaResync = false) => {
     if (!selectedBrandId) return
     
     // Use isRefreshingData for refreshes, but set isLoading for initial load
@@ -543,6 +603,15 @@ export default function DashboardPage() {
       if (activePlatforms.shopify && shopifyConnection) {
         // First, sync Shopify orders to ensure we have the latest data
         try {
+          // Show toast only if not in initial data load
+          if (!initialDataLoad) {
+            toast({
+              title: "Syncing Shopify Data",
+              description: "Pulling fresh order data from Shopify...",
+              variant: "default"
+            });
+          }
+          
           const syncOrdersResponse = await fetch('/api/shopify/sync', {
             method: 'POST',
             headers: {
@@ -570,7 +639,42 @@ export default function DashboardPage() {
         const data = await response.json()
         setMetrics(prevMetrics => ({
           ...prevMetrics,
-          ...data
+          totalSales: data.totalSales ?? prevMetrics.totalSales,
+          salesGrowth: data.salesGrowth ?? prevMetrics.salesGrowth,
+          ordersPlaced: data.ordersPlaced ?? prevMetrics.ordersPlaced,
+          ordersGrowth: data.ordersGrowth ?? prevMetrics.ordersGrowth,
+          unitsSold: data.unitsSold ?? prevMetrics.unitsSold,
+          unitsGrowth: data.unitsGrowth ?? prevMetrics.unitsGrowth,
+          averageOrderValue: data.averageOrderValue ?? prevMetrics.averageOrderValue,
+          aovGrowth: data.aovGrowth ?? prevMetrics.aovGrowth,
+          customerRetentionRate: data.customerRetentionRate ?? prevMetrics.customerRetentionRate,
+          retentionGrowth: data.retentionGrowth ?? prevMetrics.retentionGrowth,
+          conversionRate: data.conversionRate ?? prevMetrics.conversionRate,
+          conversionGrowth: data.conversionGrowth ?? prevMetrics.conversionGrowth,
+          returnRate: data.returnRate ?? prevMetrics.returnRate,
+          returnGrowth: data.returnGrowth ?? prevMetrics.returnGrowth,
+          conversionRateGrowth: data.conversionRateGrowth ?? prevMetrics.conversionRateGrowth,
+          ctr: data.ctr ?? prevMetrics.ctr,
+          ctrGrowth: data.ctrGrowth ?? prevMetrics.ctrGrowth,
+          clicks: data.clicks ?? prevMetrics.clicks,
+          clickGrowth: data.clickGrowth ?? prevMetrics.clickGrowth,
+          impressions: data.impressions ?? prevMetrics.impressions,
+          impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
+          adSpend: data.adSpend ?? prevMetrics.adSpend,
+          adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
+          roas: data.roas ?? prevMetrics.roas,
+          roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
+          conversions: data.conversions ?? prevMetrics.conversions,
+          costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
+          cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
+          topProducts: data.topProducts ?? prevMetrics.topProducts,
+          revenueByDay: data.revenueByDay ?? prevMetrics.revenueByDay,
+          dailyData: data.dailyData ?? prevMetrics.dailyData,
+          customerSegments: data.customerSegments ?? prevMetrics.customerSegments,
+          salesData: data.salesData ?? prevMetrics.salesData,
+          ordersData: data.ordersData ?? prevMetrics.ordersData,
+          aovData: data.aovData ?? prevMetrics.aovData,
+          unitsSoldData: data.unitsSoldData ?? prevMetrics.unitsSoldData
         }))
         
         // Sync inventory data from Shopify
@@ -602,8 +706,85 @@ export default function DashboardPage() {
       // Fetch Meta data - Use the fetchMetaMetrics function we defined
       if (activePlatforms.meta) {
         try {
-          // Call the fetchMetaMetrics function directly with proper error handling
-          await fetchMetaMetrics();
+          // If forceFullMetaResync is true or it's a manual refresh (from refresh button),
+          // perform a full Meta resync first
+          if (forceFullMetaResync) {
+            console.log('Performing full Meta data resync before refresh');
+            
+            // Show toast to inform user that a full resync is happening
+            if (!initialDataLoad) {
+              const toastId = toast({
+                title: "Syncing Meta Data",
+                description: "Performing a full resync from Meta Ads API...",
+                variant: "default"
+              });
+            }
+            
+            // Default to 30 days of data
+            const days = 30;
+            
+            try {
+              const resyncResponse = await fetch('/api/meta/resync', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                  brandId: selectedBrandId, 
+                  days,
+                  refresh_cache: true,
+                  force_refresh: true
+                })
+              });
+              
+              if (!resyncResponse.ok) {
+                const errorData = await resyncResponse.json();
+                console.error('Failed to perform full Meta resync:', errorData);
+                
+                if (!initialDataLoad) {
+                  toast({
+                    title: "Meta Sync Issue",
+                    description: "There was a problem refreshing Meta data. Trying standard refresh...",
+                    variant: "destructive"
+                  });
+                }
+              } else {
+                const resyncData = await resyncResponse.json();
+                console.log(`Meta resync completed successfully. Found ${resyncData.count || 0} records.`);
+                
+                if (!initialDataLoad && resyncData.count > 0) {
+                  toast({
+                    title: "Meta Data Refreshed",
+                    description: `Successfully pulled ${resyncData.count} records from Meta Ads API.`,
+                    variant: "default"
+                  });
+                }
+                
+                // Also fetch the campaigns directly to ensure we have the latest data
+                try {
+                  const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&refresh=true&t=${Date.now()}`);
+                  if (campaignsResponse.ok) {
+                    console.log("Campaigns refreshed successfully");
+                  }
+                } catch (campaignError) {
+                  console.error("Error refreshing campaigns:", campaignError);
+                }
+                
+                // Dispatch a custom event to notify Meta components about the resync
+                window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+                  detail: { brandId: selectedBrandId, timestamp: Date.now(), forceRefresh: true }
+                }));
+              }
+            } catch (resyncError) {
+              console.error('Error during Meta resync:', resyncError);
+            }
+            
+            // Wait a moment for the resync to complete
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+          
+          // Now call the normal fetchMetaMetrics function with force refresh
+          await fetchMetaMetrics(false, true);
         } catch (error) {
           console.error('Error fetching Meta metrics during refresh:', error);
         }
@@ -643,28 +824,45 @@ export default function DashboardPage() {
     // For manual refreshes, we don't want to show the full-screen loader
     setInitialDataLoad(false)
     
-    // Show toast to inform user that refresh is happening
+    // Show toast to inform user that refresh is happening with more detailed info
     toast({
-      title: "Refreshing data",
-      description: "Syncing latest data from your connected platforms. This may take a few moments...",
+      title: "Complete Data Refresh",
+      description: "Performing a full data sync from all connected platforms including a complete Meta Ads resync. This may take up to 30 seconds...",
       variant: "default"
     })
     
     try {
-      await fetchAllData()
+      // Explicitly trigger a Meta data refresh by dispatching the event first
+      if (activePlatforms.meta) {
+        // Dispatch a global refresh event that our components are listening for
+        window.dispatchEvent(new CustomEvent('page-refresh', { 
+          detail: { brandId: selectedBrandId, timestamp: Date.now() }
+        }));
+        
+        // Also dispatch the legacy event for backward compatibility
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { brandId: selectedBrandId, timestamp: Date.now(), forceRefresh: true }
+        }));
+        
+        // Give the event a moment to be processed - our new handler is more efficient
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // For manual refresh (clicking the button), always do a full Meta resync
+      await fetchAllData(true)
       setLastRefreshed(new Date())
       
       // Add a notification about the refresh
       addNotification({
         title: "Dashboard Refreshed",
-        message: "Your dashboard data has been updated with the latest metrics",
+        message: "Your dashboard data has been updated with the latest metrics from all platforms",
         type: "system"
       })
       
       // Show success toast
       toast({
-        title: "Data refreshed",
-        description: "Your dashboard has been updated with the latest data.",
+        title: "Data refresh complete",
+        description: "Your dashboard has been updated with fresh data directly from all connected platforms.",
         variant: "default"
       })
     } catch (error) {
@@ -710,22 +908,38 @@ export default function DashboardPage() {
     // Set up interval for periodic refresh
     const interval = setInterval(() => {
       if (selectedBrandId) {
+        console.log('Running 5-minute automatic refresh for all data...');
         // For periodic refreshes, we don't want to show the full-screen loader
         setInitialDataLoad(false);
-        fetchAllData();
+        
+        // Increment the auto refresh counter
+        autoRefreshCountRef.current += 1;
+        
+        // Every 2nd cycle (every 10 minutes), do a full Meta resync to ensure data is fresh
+        const shouldDoFullResync = autoRefreshCountRef.current % 2 === 0;
+        
+        if (shouldDoFullResync) {
+          console.log('Performing full Meta resync on 10-minute cycle');
+        }
+        
+        // Call fetchAllData with appropriate resync flag
+        fetchAllData(shouldDoFullResync);
+        
+        // Update the last refreshed timestamp
         setLastRefreshed(new Date());
       }
-    }, 300000); // Refresh every 5 minutes
+    }, 300000); // 300000 ms = 5 minutes
     
     // Clean up interval on unmount
     return () => clearInterval(interval);
-  }, [selectedBrandId, dateRange, activePlatforms]);
+  }, [selectedBrandId]);
 
   // Instead, add explicit call to fetchAllData when brand is selected
   useEffect(() => {
     if (selectedBrandId && !initialDataLoad) {
       // Only do this when there's an actual change (not on initial render)
-      fetchAllData();
+      // For initial brand load, do a full resync to ensure data is fresh
+      fetchAllData(true);
     }
   }, [selectedBrandId]);
 
@@ -896,8 +1110,6 @@ export default function DashboardPage() {
                 <MetaSpendTrends brandId={selectedBrandId} />
                 <MetaAdPerformance brandId={selectedBrandId} />
               </div>
-              
-              <MetaCampaignsTable brandId={selectedBrandId} />
             </div>
           </WidgetManager>
         </>

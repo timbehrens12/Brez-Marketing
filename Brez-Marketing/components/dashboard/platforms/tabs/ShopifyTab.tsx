@@ -49,7 +49,7 @@ export function ShopifyTab({
   initialDataLoad = false
 }: ShopifyTabProps) {
   if (!connection) return <div>No Shopify connection found</div>
-  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-blue-500 mr-2" /> Loading metrics...</div>
+  if (initialDataLoad) return <div className="flex items-center justify-center p-6"><Activity className="h-8 w-8 animate-spin text-gray-400 mr-2" /> Loading metrics...</div>
 
   const safeMetrics: SafeMetrics = {
     ...metrics,

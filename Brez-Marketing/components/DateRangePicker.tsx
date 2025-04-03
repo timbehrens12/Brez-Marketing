@@ -51,19 +51,19 @@ const presets = [
       // Create yesterday's date
       const yesterday = subDays(new Date(), 1);
       
-      // Format dates as ISO strings with 'yesterday' marker
+      // Format dates - use the same date for both from and to
       const yesterdayStart = startOfDay(yesterday);
-      const yesterdayEnd = endOfDay(yesterday);
       
-      // Add a special parameter to the date object
+      // Add a special parameter to the date object - use the same date for both
       const date = {
         from: yesterdayStart,
-        to: yesterdayEnd,
+        to: yesterdayStart, // Use same date for both to prevent API confusion
         // Add a property to identify this as the yesterday preset
         _preset: 'yesterday'
       };
       
-      console.log('Setting yesterday preset with special marker');
+      console.log('Setting yesterday preset with special marker - same date for both');
+      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
       
       return date;
     }
@@ -72,17 +72,53 @@ const presets = [
     name: 'Last 7 days',
     value: 'last7',
     getDate: () => ({
-      from: startOfDay(subDays(new Date(), 6)),
-      to: endOfDay(new Date())
+      from: startOfDay(subDays(new Date(), 7)),
+      to: endOfDay(subDays(new Date(), 1))
     })
   },
   {
     name: 'Last 30 days',
     value: 'last30',
     getDate: () => ({
-      from: startOfDay(subDays(new Date(), 29)),
-      to: endOfDay(new Date())
+      from: startOfDay(subDays(new Date(), 30)),
+      to: endOfDay(subDays(new Date(), 1))
     })
+  },
+  {
+    name: 'This week',
+    value: 'thisWeek',
+    getDate: () => {
+      // Get the current date
+      const today = new Date();
+      
+      // Ensure we're using the current date, not any cached or future date
+      const safeToday = new Date(); // Fresh date to avoid any issues
+      
+      // Get the day of week (0 = Sunday, 1 = Monday, etc.)
+      const dayOfWeek = safeToday.getDay();
+      
+      // Calculate the first day of the week (Sunday)
+      const startDate = new Date(safeToday);
+      startDate.setDate(safeToday.getDate() - dayOfWeek);
+      
+      // Create proper DateRange object with the entire week
+      const dateRange = {
+        from: startOfDay(startDate),
+        to: endOfDay(safeToday)
+      };
+      
+      // Add detailed logging for debugging
+      console.log(`"This week" calculation:`, {
+        today: safeToday.toISOString(),
+        dayOfWeek,
+        startDate: dateRange.from.toISOString(),
+        endDate: dateRange.to.toISOString(),
+        startFormatted: format(dateRange.from, 'yyyy-MM-dd'),
+        endFormatted: format(dateRange.to, 'yyyy-MM-dd')
+      });
+      
+      return dateRange;
+    }
   },
   {
     name: 'This month',
@@ -99,6 +135,28 @@ const presets = [
       from: startOfDay(startOfMonth(subMonths(new Date(), 1))),
       to: endOfDay(endOfMonth(subMonths(new Date(), 1)))
     })
+  },
+  {
+    name: 'This year',
+    value: 'thisYear',
+    getDate: () => {
+      const now = new Date();
+      return {
+        from: startOfDay(new Date(now.getFullYear(), 0, 1)),
+        to: endOfDay(now)
+      };
+    }
+  },
+  {
+    name: 'Last year',
+    value: 'lastYear',
+    getDate: () => {
+      const lastYear = new Date().getFullYear() - 1;
+      return {
+        from: startOfDay(new Date(lastYear, 0, 1)),
+        to: endOfDay(new Date(lastYear, 11, 31))
+      };
+    }
   }
 ];
 
@@ -113,6 +171,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
   const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
+  const [activePreset, setActivePreset] = React.useState<string | null>(null)
   
   // Get current date for comparison
   const today = new Date()
@@ -125,11 +184,42 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       setSelectionStep('start')
       // Set current month to show current month on right, previous month on left
       setCurrentMonth(prevMonth => subMonths(new Date(), 1))
+      
+      // Determine if the current dateRange matches any preset
+      setActivePreset(getActivePresetFromDateRange(dateRange))
     }
   }, [isOpen, dateRange])
 
+  // Helper function to determine which preset matches the current date range
+  const getActivePresetFromDateRange = (range: DateRange | undefined): string | null => {
+    if (!range?.from || !range?.to) return null
+    
+    for (const preset of presets) {
+      const presetRange = preset.getDate()
+      if (
+        isSameDay(range.from, presetRange.from) && 
+        isSameDay(range.to, presetRange.to)
+      ) {
+        return preset.value
+      }
+    }
+    
+    return null // No matching preset found
+  }
+
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
     if (!currentDate?.from || !currentDate?.to) return "Pick a date range"
+
+    // If from and to are the same date, just show that date
+    if (isSameDay(currentDate.from, currentDate.to)) {
+      return format(currentDate.from, "LLL dd, y")
+    }
+    
+    // If active preset is set, use its name
+    if (activePreset) {
+      const preset = presets.find(p => p.value === activePreset)
+      if (preset) return preset.name
+    }
 
     // Check for preset matches
     if (isToday(currentDate.from) && isToday(currentDate.to)) return "Today"
@@ -143,7 +233,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       }
     }
 
-    // If no preset matches, show date range
+    // If no preset matches, show date range and mark as custom
     return `${format(currentDate.from, "LLL dd, y")} - ${format(currentDate.to, "LLL dd, y")}`
   }
 
@@ -164,16 +254,20 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       adjustedRange.to = now
     }
     
-    setTempDateRange(adjustedRange)
-    
-    // If both from and to are selected, mark as complete
-    if (adjustedRange.from && adjustedRange.to) {
+    // When the first date is clicked, set both from and to to the same date
+    if (selectionStep === 'start' && adjustedRange.from) {
+      adjustedRange.to = adjustedRange.from
       setSelectionStep('complete')
     } 
-    // If only from is selected, prompt for end date
-    else if (adjustedRange.from) {
-      setSelectionStep('end')
+    // When second click happens
+    else if (selectionStep === 'end' && adjustedRange.from && adjustedRange.to) {
+      setSelectionStep('complete')
     }
+    
+    // Clear active preset since user has manually selected dates
+    setActivePreset(null)
+    
+    setTempDateRange(adjustedRange)
   }
 
   const handlePresetSelect = (preset: typeof presets[0]) => {
@@ -186,10 +280,45 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.to = now
     }
     
+    // Extra handling for specific presets to ensure proper date ranges
+    if (preset.value === 'yesterday') {
+      // Create yesterday's date
+      const yesterday = subDays(new Date(), 1);
+      const yesterdayStart = startOfDay(yesterday);
+      const yesterdayEnd = endOfDay(yesterday);
+      
+      // Ensure both from and to are exactly the same date for the API
+      newRange.from = yesterdayStart;
+      newRange.to = yesterdayStart; // Use start of day for both to avoid date mismatch
+      
+      // Keep the special marker using type assertion
+      (newRange as any)._preset = 'yesterday';
+      
+      console.log(`Setting yesterday preset with special marker - exact same date for both`);
+      console.log(`Yesterday date used: ${yesterdayStart.toISOString().split('T')[0]}`);
+    }
+    else if (preset.value === 'thisWeek') {
+      // Additional validation for this week preset
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - dayOfWeek);
+      
+      // Override the dates just to be sure
+      newRange.from = startOfDay(startDate);
+      newRange.to = endOfDay(today);
+      
+      console.log(`Setting this week preset with explicit date calculation`);
+      console.log(`Date range: ${format(newRange.from, 'yyyy-MM-dd')} to ${format(newRange.to, 'yyyy-MM-dd')}`);
+    }
+    
+    // Set the active preset
+    setActivePreset(preset.value)
+    
     // Important: explicitly log what we're setting to help with debugging
     console.log(`Setting date range from preset ${preset.value}: `, {
-      from: newRange.from.toISOString().split('T')[0],
-      to: newRange.to.toISOString().split('T')[0]
+      from: format(newRange.from, 'yyyy-MM-dd'),
+      to: format(newRange.to, 'yyyy-MM-dd')
     });
     
     setTempDateRange(newRange)
@@ -204,17 +333,20 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }
 
   const handleApply = () => {
-    if (tempDateRange?.from && tempDateRange?.to) {
+    if (tempDateRange?.from) {
+      // If only from date is selected, use same date for both
+      const finalRange = {
+        from: tempDateRange.from,
+        to: tempDateRange.to || tempDateRange.from
+      };
+      
       // Log what we're applying
       console.log('Applying date range:', {
-        from: tempDateRange.from.toISOString().split('T')[0],
-        to: tempDateRange.to.toISOString().split('T')[0]
+        from: finalRange.from.toISOString().split('T')[0],
+        to: finalRange.to.toISOString().split('T')[0]
       });
       
-      setDateRange({
-        from: tempDateRange.from,
-        to: tempDateRange.to
-      })
+      setDateRange(finalRange);
     }
     setIsOpen(false)
   }
@@ -258,15 +390,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
           >
             <CalendarIcon className="mr-2 h-4 w-4 text-white" />
             {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                </>
-              ) : (
-                format(dateRange.from, "LLL dd, y")
-              )
+              getSelectedPresetLabel(dateRange)
             ) : (
-              <span>Pick a date range</span>
+              <span>Pick a date</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -278,7 +404,9 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   <Button
                     key={preset.value}
                     variant="ghost"
-                    className="w-full justify-start text-white hover:bg-[#222222]"
+                    className={`w-full justify-start text-white hover:bg-[#222222] ${
+                      activePreset === preset.value ? 'bg-[#222222] border-l-2 border-blue-500 pl-3' : ''
+                    }`}
                     onClick={() => {
                       handlePresetSelect(preset)
                     }}
@@ -286,6 +414,23 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                     {preset.name}
                   </Button>
                 ))}
+                
+                {/* Add a Custom option that becomes selected when dates are manually chosen */}
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start text-white hover:bg-[#222222] ${
+                    tempDateRange?.from && tempDateRange?.to && !activePreset ? 'bg-[#222222] border-l-2 border-blue-500 pl-3' : ''
+                  }`}
+                  onClick={() => {
+                    // Custom dates already selected - just apply them
+                    if (tempDateRange?.from && tempDateRange?.to) {
+                      setActivePreset(null)
+                      handleApply()
+                    }
+                  }}
+                >
+                  Custom
+                </Button>
               </div>
               <div className="pl-4 flex-1">
                 {/* Month navigation controls - simplified */}
@@ -338,13 +483,39 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   </div>
                 </div>
                 
+                {selectionStep === 'end' && (
+                  <div className="text-sm text-blue-400 mb-2">
+                    {/* Clicking again will select a range */}
+                    Select end date or click the same date for single-day selection
+                  </div>
+                )}
+                
                 <Calendar
                   initialFocus
                   mode="range"
                   month={currentMonth}
                   defaultMonth={currentMonth}
                   selected={tempDateRange}
-                  onSelect={handleCalendarSelect}
+                  onSelect={(range) => {
+                    if (!range) return;
+                    
+                    // When first clicking a date
+                    if (!range.to && range.from) {
+                      // Auto-select same date for both from and to on first click
+                      const singleDateRange = { from: range.from, to: range.from };
+                      handleCalendarSelect(singleDateRange);
+                      
+                      // Since user manually selected a date, clear active preset
+                      setActivePreset(null);
+                      return;
+                    }
+                    
+                    // When clicking a second time
+                    handleCalendarSelect(range);
+                    
+                    // Since user manually selected a date range, clear active preset
+                    setActivePreset(null);
+                  }}
                   numberOfMonths={2}
                   showOutsideDays={false}
                   disabled={{ after: new Date() }}
@@ -374,7 +545,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
               <Button 
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!dateRange?.from || !dateRange?.to}
+                disabled={!tempDateRange?.from}
                 onClick={handleApply}
               >
                 Apply

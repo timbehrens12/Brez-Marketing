@@ -101,6 +101,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   const [tempDateRange, setTempDateRange] = React.useState<DateRange | undefined>(dateRange)
   const [selectionStep, setSelectionStep] = React.useState<'start' | 'end' | 'complete'>('start')
   const [currentMonth, setCurrentMonth] = React.useState<Date>(dateRange?.from || new Date())
+  const [isSingleDateMode, setIsSingleDateMode] = React.useState(true)
   
   // Get current date for comparison
   const today = new Date()
@@ -117,7 +118,12 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
   }, [isOpen, dateRange])
 
   const getSelectedPresetLabel = (currentDate: DateRange): string => {
-    if (!currentDate?.from || !currentDate?.to) return "Pick a date range"
+    if (!currentDate?.from || !currentDate?.to) return "Pick a date"
+
+    // For same day selections, show just the date without range format
+    if (currentDate.from && currentDate.to && isSameDay(currentDate.from, currentDate.to)) {
+      return format(currentDate.from, "LLL dd, y")
+    }
 
     // Check for preset matches
     if (isToday(currentDate.from) && isToday(currentDate.to)) return "Today"
@@ -151,28 +157,54 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
     if (adjustedRange.to && adjustedRange.to > now) {
       adjustedRange.to = now
     }
+
+    // First click always sets a single date
+    if (selectionStep === 'start' || isSingleDateMode) {
+      if (adjustedRange.from) {
+        adjustedRange.to = adjustedRange.from
+        setSelectionStep('complete')
+      }
+    } else if (selectionStep === 'end') {
+      // Second click completes the range
+      if (adjustedRange.from && adjustedRange.to) {
+        setSelectionStep('complete')
+      }
+    }
     
     setTempDateRange(adjustedRange)
+  }
+
+  // For single date mode calendar
+  const handleSingleDateSelect = (date: Date | undefined) => {
+    if (!date) return
     
-    // If both from and to are selected, mark as complete
-    if (adjustedRange.from && adjustedRange.to) {
-      setSelectionStep('complete')
-    } 
-    // If only from is selected, prompt for end date
-    else if (adjustedRange.from) {
-      setSelectionStep('end')
-    }
+    const now = new Date()
+    // Ensure no future dates
+    const adjustedDate = date > now ? now : date
+    
+    // Set both from and to to the same date
+    setTempDateRange({ from: adjustedDate, to: adjustedDate })
+    setSelectionStep('complete')
   }
 
   const handleApply = () => {
-    if (tempDateRange?.from && tempDateRange?.to) {
-      setDateRange({
-        from: tempDateRange.from,
-        to: tempDateRange.to
-      })
+    if (tempDateRange?.from) {
+      if (isSingleDateMode) {
+        // For single date mode, set both from and to to the same date
+        setDateRange({
+          from: tempDateRange.from,
+          to: tempDateRange.from
+        });
+      } else if (tempDateRange?.to) {
+        // For range mode, ensure both from and to are set
+        setDateRange({
+          from: tempDateRange.from,
+          to: tempDateRange.to
+        });
+      }
     }
-    setIsOpen(false)
-  }
+    setIsOpen(false);
+  };
 
   const handleCancel = () => {
     setTempDateRange(dateRange)
@@ -188,8 +220,20 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
       newRange.to = now
     }
     
+    // If it's Today or Yesterday and in single mode, just use a single date
+    if (isSingleDateMode || preset.value === 'today' || preset.value === 'yesterday') {
+      // For single day presets in single mode, use just the from date
+      if (isSameDay(newRange.from, newRange.to)) {
+        newRange.to = newRange.from;
+      }
+    }
+    
     setTempDateRange(newRange)
     setSelectionStep('complete')
+    
+    // Apply the preset immediately
+    setDateRange(newRange)
+    setIsOpen(false)
   }
 
   const handlePreviousMonth = () => {
@@ -226,7 +270,10 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
           >
             <CalendarIcon className="mr-2 h-4 w-4 text-white" />
             {dateRange?.from ? (
-              dateRange.to ? (
+              // For same day selections, show single date format
+              dateRange.from && dateRange.to && isSameDay(dateRange.from, dateRange.to) ? (
+                format(dateRange.from, "LLL dd, y")
+              ) : dateRange.to ? (
                 <>
                   {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
                 </>
@@ -234,12 +281,33 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                 format(dateRange.from, "LLL dd, y")
               )
             ) : (
-              <span>Pick a date range</span>
+              <span>Pick a date</span>
             )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <div className="space-y-4 p-4 bg-[#111111] text-white">
+            <div className="flex justify-between items-center">
+              <div className="text-sm font-medium">
+                {tempDateRange?.from
+                  ? tempDateRange.from && tempDateRange.to && isSameDay(tempDateRange.from, tempDateRange.to)
+                    ? `Selected: ${format(tempDateRange.from, "LLL dd, y")}`
+                    : `${format(tempDateRange.from, "LLL dd, y")} - ${format(tempDateRange.to || tempDateRange.from, "LLL dd, y")}`
+                  : isSingleDateMode ? "Pick a date" : "Pick a date range"
+                }
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs bg-[#222222] hover:bg-[#333333] text-white"
+                onClick={() => {
+                  setIsSingleDateMode(prev => !prev)
+                  setSelectionStep('start')
+                }}
+              >
+                {isSingleDateMode ? "Enable Range Mode" : "Enable Single Mode"}
+              </Button>
+            </div>
             <div className="flex">
               <div className="border-r pr-4 flex flex-col space-y-1">
                 {presets.map((preset) => (
@@ -306,25 +374,66 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
                   </div>
                 </div>
                 
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  month={currentMonth}
-                  defaultMonth={currentMonth}
-                  selected={tempDateRange}
-                  onSelect={handleCalendarSelect}
-                  numberOfMonths={2}
-                  showOutsideDays={false}
-                  disabled={{ after: new Date() }}
-                  fromMonth={undefined}
-                  toMonth={today}
-                  className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
-                  components={{
-                    IconLeft: () => null,
-                    IconRight: () => null,
-                    Caption: CustomCaption
-                  }}
-                />
+                {selectionStep === 'end' && !isSingleDateMode && tempDateRange?.from && (
+                  <div className="text-sm text-blue-400 mb-2">
+                    Select end date
+                  </div>
+                )}
+                
+                {isSingleDateMode ? (
+                  <Calendar
+                    initialFocus
+                    mode="single"
+                    month={currentMonth}
+                    defaultMonth={currentMonth}
+                    selected={tempDateRange?.from}
+                    onSelect={handleSingleDateSelect}
+                    numberOfMonths={2}
+                    showOutsideDays={false}
+                    disabled={{ after: new Date() }}
+                    fromMonth={undefined}
+                    toMonth={today}
+                    className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
+                    components={{
+                      IconLeft: () => null,
+                      IconRight: () => null,
+                      Caption: CustomCaption
+                    }}
+                  />
+                ) : (
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    month={currentMonth}
+                    defaultMonth={currentMonth}
+                    selected={tempDateRange}
+                    onSelect={(range) => {
+                      if (!range) return;
+                      
+                      // When first clicking a date in range mode
+                      if (!range.to && range.from) {
+                        // Auto-select same date for both from and to on first click
+                        const singleDateRange = { from: range.from, to: range.from };
+                        handleCalendarSelect(singleDateRange);
+                        return;
+                      }
+                      
+                      // When clicking a second time
+                      handleCalendarSelect(range);
+                    }}
+                    numberOfMonths={2}
+                    showOutsideDays={false}
+                    disabled={{ after: new Date() }}
+                    fromMonth={undefined}
+                    toMonth={today}
+                    className="text-white [&_.rdp-day]:text-white [&_.rdp-day_button:hover]:bg-[#222222] [&_.rdp-head_row]:!hidden [&_.rdp-head_cell]:!hidden [&_th]:!hidden"
+                    components={{
+                      IconLeft: () => null,
+                      IconRight: () => null,
+                      Caption: CustomCaption
+                    }}
+                  />
+                )}
                 <div className="text-xs text-gray-400 mt-2 italic">
                   Future dates are disabled. You can only select dates up to today.
                 </div>
@@ -342,7 +451,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
               <Button 
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={!tempDateRange?.from || !tempDateRange?.to}
+                disabled={isSingleDateMode ? !tempDateRange?.from : (!tempDateRange?.from || !tempDateRange?.to)}
                 onClick={handleApply}
               >
                 Apply

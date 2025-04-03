@@ -14,9 +14,4 @@ export function useMetrics() {
   const context = useContext(MetricsContext)
   if (!context) throw new Error('useMetrics must be used within MetricsProvider')
   return context
-}
-
-const setMetricsData = (data) => {
-  console.log('Setting metrics data:', data);
-  setMetrics(data);
-}; 
+} 

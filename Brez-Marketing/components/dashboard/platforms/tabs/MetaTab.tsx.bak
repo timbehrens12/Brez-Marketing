@@ -1,0 +1,499 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useState, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { 
+  DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, 
+  ArrowDownRight, ArrowUpRight, RefreshCw, ShoppingCart, Eye, 
+  MousePointer, Target, SlidersHorizontal, Zap, ExternalLink, 
+  PlusCircle, Layers, Wallet, ChevronDown, PiggyBank, 
+  CircleDollarSign, Circle, Coins, Users, BarChart2,
+  Sparkles, Image as ImageIcon, Activity, ArrowRight, 
+  CalendarIcon, Check, ChevronsUpDown, Clock, Download, 
+  FacebookIcon, MoreHorizontal, PenTool, SettingsIcon, 
+  Terminal, User2, Wrench, CalendarRange, Percent, Info
+} from "lucide-react"
+import classNames from "classnames"
+import { format } from "date-fns"
+import { withErrorBoundary } from '@/components/ui/error-boundary'
+import { isSameDay, isYesterday, subDays, startOfMonth, subMonths, endOfMonth } from "date-fns"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import type { Metrics } from "@/types/metrics"
+import type { DateRange } from "react-day-picker"
+import { 
+  Line, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer, 
+  Legend,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts'
+import { 
+  BrainCircuit, 
+  AlertCircle,
+  Settings,
+} from "lucide-react"
+import { MetricCard } from "@/components/metrics/MetricCard"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatCurrencyCompact, formatNumberCompact, formatPercentage } from "@/lib/formatters"
+import Image from "next/image"
+import { AlertBox } from "@/components/ui/alert-box"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from "sonner"
+import Link from "next/link"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { CampaignWidget } from "./CampaignWidget" // Import the new CampaignWidget component
+
+interface MetaTabProps {
+  dateRange: DateRange | undefined
+  metrics: any
+  isLoading: boolean
+  isRefreshingData?: boolean
+  initialDataLoad?: boolean
+  brandId: string
+}
+
+interface DailyDataItem {
+  date: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  ctr: number;
+  roas: number;
+  value?: number;
+  [key: string]: string | number | undefined;
+}
+
+// Add an interface for the metrics data
+interface MetricsDataType {
+  adSpend: number;
+  adSpendGrowth: number;
+  impressions: number;
+  impressionGrowth: number;
+  clicks: number;
+  clickGrowth: number;
+  conversions: number;
+  conversionGrowth: number;
+  ctr: number;
+  ctrGrowth: number;
+  cpc: number;
+  cpcLink?: number;
+  costPerResult: number;
+  cprGrowth: number;
+  roas: number;
+  roasGrowth: number;
+  frequency: number;
+  budget: number;
+  reach: number;
+  dailyData: DailyDataItem[];
+}
+
+// Add type definition for the global timeouts array
+declare global {
+  interface Window {
+    _metaTimeouts?: ReturnType<typeof setTimeout>[];
+    _blockMetaApiCalls?: boolean;
+    _disableAutoMetaFetch?: boolean;
+  }
+}
+
+// Properly define the type for all metric state objects
+type MetricDataState = {
+  value: number;
+  previousValue: number;
+  isLoading: boolean;
+  lastUpdated: Date | null;
+}
+
+export function MetaTab({ 
+  dateRange, 
+  metrics, 
+  isLoading, 
+  isRefreshingData = false, 
+  initialDataLoad = false, 
+  brandId 
+}: MetaTabProps) {
+  const mountTimeRef = useRef(Date.now());
+
+  // Helper function to create a default metrics object
+  const createDefaultMetricsData = (): MetricsDataType => {
+      return {
+        adSpend: 0,
+        adSpendGrowth: 0,
+        impressions: 0,
+        impressionGrowth: 0,
+        clicks: 0,
+        clickGrowth: 0,
+        conversions: 0,
+        conversionGrowth: 0,
+        ctr: 0,
+        ctrGrowth: 0,
+        cpc: 0,
+        cpcLink: 0,
+        costPerResult: 0,
+        cprGrowth: 0,
+        roas: 0,
+        roasGrowth: 0,
+        frequency: 0,
+      budget: 0,
+        reach: 0,
+      dailyData: [] as DailyDataItem[]
+    };
+  };
+
+  // Create a safe version of metrics to use internally with error handling
+  const safeMetrics = useMemo(() => {
+    try {
+      if (!metrics || typeof metrics !== 'object') {
+        console.log("Creating default metrics object - metrics prop is invalid");
+        return createDefaultMetricsData();
+    }
+    
+    // Otherwise, create a safe copy with checks for each property
+    return {
+      adSpend: typeof metrics.adSpend === 'number' && !isNaN(metrics.adSpend) ? metrics.adSpend : 0,
+      adSpendGrowth: typeof metrics.adSpendGrowth === 'number' && !isNaN(metrics.adSpendGrowth) ? metrics.adSpendGrowth : 0,
+      impressions: typeof metrics.impressions === 'number' && !isNaN(metrics.impressions) ? metrics.impressions : 0,
+      impressionGrowth: typeof metrics.impressionGrowth === 'number' && !isNaN(metrics.impressionGrowth) ? metrics.impressionGrowth : 0,
+      clicks: typeof metrics.clicks === 'number' && !isNaN(metrics.clicks) ? metrics.clicks : 0,
+      clickGrowth: typeof metrics.clickGrowth === 'number' && !isNaN(metrics.clickGrowth) ? metrics.clickGrowth : 0,
+      conversions: typeof metrics.conversions === 'number' && !isNaN(metrics.conversions) ? metrics.conversions : 0,
+      conversionGrowth: typeof metrics.conversionGrowth === 'number' && !isNaN(metrics.conversionGrowth) ? metrics.conversionGrowth : 0,
+      ctr: typeof metrics.ctr === 'number' && !isNaN(metrics.ctr) ? metrics.ctr : 0,
+      ctrGrowth: typeof metrics.ctrGrowth === 'number' && !isNaN(metrics.ctrGrowth) ? metrics.ctrGrowth : 0,
+      cpc: typeof metrics.cpc === 'number' && !isNaN(metrics.cpc) ? metrics.cpc : 0,
+      cpcLink: typeof metrics.cpcLink === 'number' && !isNaN(metrics.cpcLink) ? metrics.cpcLink : 0,
+      costPerResult: typeof metrics.costPerResult === 'number' && !isNaN(metrics.costPerResult) ? metrics.costPerResult : 0,
+      cprGrowth: typeof metrics.cprGrowth === 'number' && !isNaN(metrics.cprGrowth) ? metrics.cprGrowth : 0,
+      roas: typeof metrics.roas === 'number' && !isNaN(metrics.roas) ? metrics.roas : 0,
+      roasGrowth: typeof metrics.roasGrowth === 'number' && !isNaN(metrics.roasGrowth) ? metrics.roasGrowth : 0,
+      frequency: typeof metrics.frequency === 'number' && !isNaN(metrics.frequency) ? metrics.frequency : 0,
+        budget: typeof metrics.budget === 'number' && !isNaN(metrics.budget) ? metrics.budget : 0,
+      reach: typeof metrics.reach === 'number' && !isNaN(metrics.reach) ? metrics.reach : 0,
+        dailyData: Array.isArray(metrics.dailyData) ? metrics.dailyData as DailyDataItem[] : [] as DailyDataItem[]
+      };
+    } catch (error) {
+      console.error("Error creating safe metrics object:", error);
+      // Return a default object if there was an error
+      return createDefaultMetricsData();
+    }
+  }, [metrics]);
+  
+  const [metaData, setMetaData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedTimeFrame, setSelectedTimeFrame] = useState<string>("7d")
+  const [topCampaigns, setTopCampaigns] = useState<any[]>([])
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [campaigns, setCampaigns] = useState<any[]>([])
+  const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
+  const [metricsData, setMetricsData] = useState<MetricsDataType>(() => {
+    // Initialize with zeros to prevent flashing all-time data
+    return {
+      adSpend: 0,
+      adSpendGrowth: 0,
+      impressions: 0,
+      impressionGrowth: 0,
+      clicks: 0,
+      clickGrowth: 0,
+      conversions: 0,
+      conversionGrowth: 0,
+      ctr: 0,
+      ctrGrowth: 0,
+      cpc: 0,
+      costPerResult: 0,
+      cprGrowth: 0,
+      roas: 0,
+      roasGrowth: 0,
+      frequency: 0,
+      budget: 0,
+      reach: 0,
+      dailyData: []
+    };
+  });
+
+  // Loading states - add more granular control
+  const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
+  const [initialLoadStarted, setInitialLoadStarted] = useState<boolean>(false);
+  
+  // Add this after the loading states to ensure widget visibility during loading
+  const showLoadingPlaceholder = loading && !initialLoadStarted;
+
+  // Refs to track component mount state
+  const isMounted = useRef<boolean>(true);
+  const isFetching = useRef<boolean>(false);
+  const initialLoadComplete = useRef<boolean>(false);
+  const dateRangeRef = useRef(dateRange);
+
+  // Add this state near the other state declarations
+  const [showDebugControls, setShowDebugControls] = useState(false);
+
+  // Add this function to toggle debug controls
+  const toggleDebugControls = () => {
+    setShowDebugControls(prev => !prev);
+  };
+
+  // Add a useEffect to save campaigns to localStorage cache when available
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      try {
+        localStorage.setItem(`meta-campaigns-${brandId}`, JSON.stringify(campaigns));
+        setCachedCampaigns(campaigns);
+      } catch (e) {
+        console.error("Error caching campaigns:", e);
+      }
+    }
+  }, [campaigns, brandId]);
+
+  // Add a useEffect to load cached campaigns from localStorage on mount
+  useEffect(() => {
+    if (brandId) {
+      try {
+        const cached = localStorage.getItem(`meta-campaigns-${brandId}`);
+        if (cached) {
+          const parsedCache = JSON.parse(cached);
+          setCachedCampaigns(parsedCache);
+        }
+      } catch (e) {
+        console.error("Error loading cached campaigns:", e);
+      }
+    }
+  }, [brandId]);
+
+  // Check if we have data to display - with improved type safety
+  const hasData = () => {
+    // More robust check that ensures metrics is an object
+    // and has valid numeric properties before trying to use them
+    return (
+      typeof metrics === 'object' && 
+      metrics !== null &&
+      'adSpend' in metrics &&
+      typeof metrics.adSpend === 'number' && 
+      !isNaN(metrics.adSpend) &&
+      'impressions' in metrics &&
+      typeof metrics.impressions === 'number' && 
+      !isNaN(metrics.impressions) &&
+      'clicks' in metrics &&
+      typeof metrics.clicks === 'number' && 
+      !isNaN(metrics.clicks)
+    )
+  }
+
+  // Initialize metricsData using safeMetrics on mount and when metrics changes
+  useEffect(() => {
+    if (!metrics || typeof metrics !== 'object') {
+      // Handle case when metrics is null or undefined
+      // Set default values but don't crash
+      try {
+        // Only set default metrics if we don't already have data
+        if (!metricsData.adSpend && !metricsData.clicks && !metricsData.impressions) {
+          setMetricsData(createDefaultMetricsData());
+        }
+      } catch (e) {
+        console.error("Error setting default metrics:", e);
+      }
+      return;
+    }
+    
+    // Set metrics from our sanitized object to ensure it's fully initialized
+    try {
+      // First check if safeMetrics exists and is an object
+      if (!safeMetrics || typeof safeMetrics !== 'object') {
+        console.error("safeMetrics is not a valid object");
+        return;
+      }
+      
+      // Create a local object starting with current values to prevent flickering
+      const safeData = {...metricsData};
+      
+      // Only update properties if they exist and are valid in safeMetrics
+      if (typeof safeMetrics.adSpend === 'number' && !isNaN(safeMetrics.adSpend)) 
+        safeData.adSpend = safeMetrics.adSpend;
+      if (typeof safeMetrics.adSpendGrowth === 'number' && !isNaN(safeMetrics.adSpendGrowth)) 
+        safeData.adSpendGrowth = safeMetrics.adSpendGrowth;
+      if (typeof safeMetrics.impressions === 'number' && !isNaN(safeMetrics.impressions)) 
+        safeData.impressions = safeMetrics.impressions;
+      if (typeof safeMetrics.impressionGrowth === 'number' && !isNaN(safeMetrics.impressionGrowth)) 
+        safeData.impressionGrowth = safeMetrics.impressionGrowth;
+      if (typeof safeMetrics.clicks === 'number' && !isNaN(safeMetrics.clicks)) 
+        safeData.clicks = safeMetrics.clicks;
+      if (typeof safeMetrics.clickGrowth === 'number' && !isNaN(safeMetrics.clickGrowth)) 
+        safeData.clickGrowth = safeMetrics.clickGrowth;
+      if (typeof safeMetrics.conversions === 'number' && !isNaN(safeMetrics.conversions)) 
+        safeData.conversions = safeMetrics.conversions;
+      if (typeof safeMetrics.conversionGrowth === 'number' && !isNaN(safeMetrics.conversionGrowth)) 
+        safeData.conversionGrowth = safeMetrics.conversionGrowth;
+      if (typeof safeMetrics.ctr === 'number' && !isNaN(safeMetrics.ctr)) 
+        safeData.ctr = safeMetrics.ctr;
+      if (typeof safeMetrics.ctrGrowth === 'number' && !isNaN(safeMetrics.ctrGrowth)) 
+        safeData.ctrGrowth = safeMetrics.ctrGrowth;
+      if (typeof safeMetrics.cpc === 'number' && !isNaN(safeMetrics.cpc)) 
+        safeData.cpc = safeMetrics.cpc;
+      if (typeof safeMetrics.cpcLink === 'number' && !isNaN(safeMetrics.cpcLink)) 
+        safeData.cpcLink = safeMetrics.cpcLink;
+      if (typeof safeMetrics.costPerResult === 'number' && !isNaN(safeMetrics.costPerResult)) 
+        safeData.costPerResult = safeMetrics.costPerResult;
+      if (typeof safeMetrics.cprGrowth === 'number' && !isNaN(safeMetrics.cprGrowth)) 
+        safeData.cprGrowth = safeMetrics.cprGrowth;
+      if (typeof safeMetrics.roas === 'number' && !isNaN(safeMetrics.roas)) 
+        safeData.roas = safeMetrics.roas;
+      if (typeof safeMetrics.roasGrowth === 'number' && !isNaN(safeMetrics.roasGrowth)) 
+        safeData.roasGrowth = safeMetrics.roasGrowth;
+      if (typeof safeMetrics.frequency === 'number' && !isNaN(safeMetrics.frequency)) 
+        safeData.frequency = safeMetrics.frequency;
+      if (typeof safeMetrics.budget === 'number' && !isNaN(safeMetrics.budget)) 
+        safeData.budget = safeMetrics.budget;
+      if (typeof safeMetrics.reach === 'number' && !isNaN(safeMetrics.reach)) 
+        safeData.reach = safeMetrics.reach;
+      if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
+        safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
+      
+      // Now update the state with our safe data object
+      setMetricsData(safeData);
+    } catch (error) {
+      console.error("Error updating metrics state:", error);
+      // On error, keep existing data instead of resetting to defaults
+    }
+  }, [metrics, safeMetrics]);
+
+  // Replace the above effect with a simpler one that only runs on mount to load campaigns
+  useEffect(() => {
+    // Only fetch campaigns on initial mount if we have a brand ID
+    if (brandId && campaigns.length === 0 && !isLoadingCampaigns) {
+      setIsLoadingCampaigns(true);
+      fetchCampaigns().finally(() => {
+        isFetching.current = false;
+      });
+    }
+  }, [brandId]); // Only depend on brandId to prevent repeated calls
+
+  // Function to fetch Meta campaigns data
+  async function fetchCampaigns() {
+    // Don't make API calls if the block flags are set
+    if (window._blockMetaApiCalls || window._disableAutoMetaFetch) {
+      console.log("Blocking Meta campaigns API call - auto fetch disabled or component unmounted");
+      return;
+    }
+    
+    if (!brandId) return
+    
+    // Show the loading state
+    setIsLoadingCampaigns(true);
+    console.log("[Meta Campaigns] Fetching campaign data with date range:", dateRange);
+    
+    try {
+      // Always use the date-range endpoint for more accurate data
+      let apiUrl;
+      
+      // Format dates for consistent API usage
+      const formatDateForApi = (date: Date): string => {
+        // Always use YYYY-MM-DD format for API requests
+        return date.toISOString().split('T')[0];
+      };
+      
+      // If date range is selected, use that range
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = new Date(dateRange.from);
+        const toDate = new Date(dateRange.to);
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(23, 59, 59, 999);
+        
+        // Format dates as YYYY-MM-DD
+        const fromStr = formatDateForApi(fromDate);
+        const toStr = formatDateForApi(toDate);
+        
+        console.log(`[Meta Campaigns] Using date range: ${fromStr} to ${toStr}`);
+        // Add include_all=true to get all campaigns even if they have no data in the range
+        // Add debug=true to get detailed debugging information
+        apiUrl = `/api/meta/campaigns/date-range?brandId=${brandId}&from=${fromStr}&to=${toStr}&include_all=true&debug=true`;
+      } else {
+        // If no date range, use the last 30 days as default
+        const toDate = new Date();
+        const fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - 30);
+        
+        // Format dates as YYYY-MM-DD
+        const fromStr = formatDateForApi(fromDate);
+        const toStr = formatDateForApi(toDate);
+        
+        console.log(`[Meta Campaigns] No date range selected, using last 30 days: ${fromStr} to ${toStr}`);
+        // Add include_all=true to get all campaigns even if they have no data in the range
+        // Add debug=true to get detailed debugging information
+        apiUrl = `/api/meta/campaigns/date-range?brandId=${brandId}&from=${fromStr}&to=${toStr}&include_all=true&debug=true`;
+      }
+      
+      // Fetch campaign data from date-range endpoint - includes all campaigns (active and inactive)
+      // that existed during the time period, with current budget values
+      const response = await fetch(apiUrl, {
+        signal: AbortSignal.timeout(15000), // 15 second timeout
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaigns: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log(`[Meta Campaigns] Received ${data.campaigns?.length || 0} campaigns from API`);
+      const fetchedCampaigns = data.campaigns || [];
+      
+      // Process campaigns received from the API
+      if (fetchedCampaigns.length > 0) {
+        // IMPORTANT: Budget values always come directly from Meta API via a direct call
+        // and reflect the CURRENT campaign budget, regardless of the date range filter
+        const processedCampaigns = fetchedCampaigns.map((campaign: any) => ({
+          ...campaign,
+          // Ensure budget data is reliable and properly typed
+          budget: Number(campaign.budget || 0),
+          budget_type: campaign.budget_type || 'unknown',
+          budget_source: campaign.budget_source || 'api_response',
+        }));
+        
+        setCampaigns(processedCampaigns);
+        setCachedCampaigns(processedCampaigns);
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error in fetchCampaigns:', error);
+      setError('Failed to fetch campaign data');
+      setLoading(false);
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  }
+
+  async function fetchMetaData() {
+    // Don't make API calls if the block flags are set
+    if (window._blockMetaApiCalls || window._disableAutoMetaFetch) {
+      console.log("Blocking Meta API call - auto fetch disabled or component unmounted");
+      return;
+    }
+    
+    if (!brandId) return;
+    
+    try {
+      // Implementation will be added later as needed
+      console.log("fetchMetaData function called");
+    } catch (error) {
+      console.error("Error fetching Meta data:", error);
+    }
+  }
+
