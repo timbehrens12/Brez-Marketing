@@ -151,109 +151,58 @@ export function AdComponent({
     
     setIsLoading(true);
     
-    // Track which endpoint we used
-    let usedDirectFetch = false;
-    let usedCachedData = false;
-    
     try {
-      // Show a loading toast for manual refreshes
-      let loadingToast;
+      let url = `/api/meta/ads?brandId=${brandId}&adsetId=${adsetId}`;
+      
+      // Add forceRefresh parameter if needed
       if (forceRefresh) {
-        loadingToast = toast.loading("Fetching ads...");
+        url += '&forceRefresh=true';
       }
       
-      let url = `/api/meta/ads/direct-fetch`;
-      console.log(`[AdComponent] Fetching ads for ad set ${adsetId}`);
-      
-      // Use POST for better reliability and to match CampaignWidget pattern
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          adsetId,
-          forceRefresh,
-          dateRange: dateRange?.from && dateRange?.to ? {
-            from: dateRange.from.toISOString().split('T')[0],
-            to: dateRange.to.toISOString().split('T')[0]
-          } : undefined
-        }),
-      });
-      
-      if (!isMountedRef.current) {
-        if (loadingToast) toast.dismiss(loadingToast);
-        return;
+      // Add date range parameters if available
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${fromDate}&to=${toDate}`;
       }
       
-      const data = await response.json();
+      console.log(`[AdComponent] Fetching ads for ad set ${adsetId} ${forceRefresh ? '(force refresh)' : ''}`);
       
-      // Dismiss loading toast
-      if (loadingToast) toast.dismiss(loadingToast);
+      const response = await fetch(url);
+      
+      if (!isMountedRef.current) return;
       
       if (response.ok) {
-        // Check if this is a rate limit response with cached data
-        if (data.source === 'cached_due_to_rate_limit') {
-          usedCachedData = true;
-          console.log(`[AdComponent] Using cached ads due to Meta API rate limits`);
-          
-          if (forceRefresh) {
-            toast.warning("Meta API rate limit reached", {
-              description: "Using cached data instead. Some metrics may not be up to date.",
-              duration: 5000
-            });
-          }
-        } else if (data.warning === 'Meta API rate limit reached') {
-          if (forceRefresh) {
-            toast.warning("Meta API rate limit reached", {
-              description: data.message || "Please try again in a few minutes",
-              duration: 5000
-            });
-          }
-        } else if (forceRefresh) {
-          // Show success toast only for manual refresh
-          if (data.ads && data.ads.length > 0) {
-            toast.success(`Loaded ${data.ads.length} ads`, {
-              description: data.message || "Ad data refreshed successfully"
-            });
-          } else {
-            toast.info("No ads found", {
-              description: "This ad set doesn't have any ads"
-            });
-          }
-        }
-        
+        const data = await response.json();
         console.log(`[AdComponent] Loaded ${data.ads?.length || 0} ads from ${data.source || 'unknown'}`);
         
         if (isMountedRef.current) {
-          // Ensure valid array
-          const validAds = Array.isArray(data.ads) ? data.ads : [];
-          setAds(validAds);
+          setAds(data.ads || []);
           setLastRefresh(new Date());
+          
+          // Show success toast on manual refresh
+          if (forceRefresh) {
+            toast.success("Ads refreshed", {
+              description: `Loaded ${data.ads?.length || 0} ads for this ad set`
+            });
+          }
         }
       } else {
-        console.error("[AdComponent] Failed to fetch ads:", data?.error || response.statusText);
+        console.error("[AdComponent] Failed to fetch ads:", await response.text());
         
         if (isMountedRef.current && forceRefresh) {
           toast.error("Failed to refresh ads", {
-            description: data?.error || "There was an error loading ads for this ad set"
+            description: "There was an error loading ads for this ad set"
           });
-          
-          setAds([]);
         }
       }
     } catch (error) {
       console.error("[AdComponent] Error fetching ads:", error);
       
-      if (isMountedRef.current) {
-        setAds([]);
-        
-        if (forceRefresh) {
-          toast.error("Error loading ads", {
-            description: (error as Error)?.message || "An unexpected error occurred"
-          });
-        }
+      if (isMountedRef.current && forceRefresh) {
+        toast.error("Error loading ads", {
+          description: "An unexpected error occurred"
+        });
       }
     } finally {
       if (isMountedRef.current) {
