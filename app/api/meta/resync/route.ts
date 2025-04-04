@@ -22,23 +22,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Get parameters from both URL and request body
+    // Get query parameters
     const searchParams = request.nextUrl.searchParams
-    const paramBrandId = searchParams.get('brandId')
-    
-    // Get body content if present
-    let bodyParams = {}
-    try {
-      bodyParams = await request.json()
-    } catch (e) {
-      // No body provided or invalid JSON, continue with URL params
-      console.log('[Meta Resync] No valid JSON body provided, using URL params only')
-    }
-    
-    // Combine parameters, prioritizing body params
-    const brandId = (bodyParams as any).brandId || paramBrandId
-    const days = (bodyParams as any).days || 90 // Default to 90 days
-    const forceRefresh = (bodyParams as any).force_refresh || true
+    const brandId = searchParams.get('brandId')
     
     if (!brandId) {
       return NextResponse.json(
@@ -46,8 +32,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    
-    console.log(`[Meta Resync] Starting complete resync for brand: ${brandId}, days: ${days}, force_refresh: ${forceRefresh}`)
     
     // Initialize Supabase client
     const supabase = createClient(
@@ -72,7 +56,6 @@ export async function POST(request: NextRequest) {
     }
     
     // 2. Delete existing meta_ad_insights for this brand
-    console.log(`[Meta Resync] Clearing existing Meta insights for brand: ${brandId}`)
     const { error: deleteError } = await supabase
       .from('meta_ad_insights')
       .delete()
@@ -86,78 +69,27 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
     
-    // 3. Calculate date range (last N days)
+    // 3. Calculate date range (last 90 days)
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(endDate.getDate() - days)
-    
-    console.log(`[Meta Resync] Fetching Meta data from ${startDate.toISOString()} to ${endDate.toISOString()}`)
+    startDate.setDate(endDate.getDate() - 90)
     
     // 4. Fetch and save new data
     const result = await fetchMetaAdInsights(brandId, startDate, endDate, false)
     
     if (result.success) {
       // 5. Also refresh campaigns and ad sets
-      console.log(`[Meta Resync] Successfully refreshed insights, now syncing campaigns...`)
-      
-      // Construct full URLs for internal requests
-      const baseUrl = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      
-      // Synchronize campaigns
-      try {
-        const campaignResponse = await fetch(`${baseUrl}/api/meta/campaigns/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.API_SECRET_KEY || 'internal-call'}`
-          },
-          body: JSON.stringify({
-            brandId,
-            forceRefresh: true
-          })
-        })
-        
-        if (!campaignResponse.ok) {
-          console.warn('[Meta Resync] Warning: Failed to sync campaigns:', await campaignResponse.text())
-        } else {
-          console.log('[Meta Resync] Successfully synced campaigns')
-        }
-      } catch (error) {
-        console.error('[Meta Resync] Error syncing campaigns:', error)
-        // Continue despite error
-      }
-      
-      // Refresh ad sets
-      try {
-        const adsetsResponse = await fetch(`${baseUrl}/api/meta/adsets/refresh-all?brandId=${brandId}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.API_SECRET_KEY || 'internal-call'}`
-          }
-        })
-        
-        if (!adsetsResponse.ok) {
-          console.warn('[Meta Resync] Warning: Failed to refresh adsets:', await adsetsResponse.text())
-        } else {
-          console.log('[Meta Resync] Successfully refreshed ad sets')
-        }
-      } catch (error) {
-        console.error('[Meta Resync] Error refreshing ad sets:', error)
-        // Continue despite error
-      }
+      await fetch(`/api/meta/campaigns/sync?brandId=${brandId}`, { method: 'POST' })
+      await fetch(`/api/meta/adsets/refresh-all?brandId=${brandId}`, { method: 'POST' })
       
       return NextResponse.json({
         success: true,
         message: 'Successfully resynchronized Meta data',
-        insights: result.count || 0,
+        insights: result.insights || 0,
         startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        days
+        endDate: endDate.toISOString()
       })
     } else {
-      console.error('[Meta Resync] Failed to fetch insights:', result.error)
       return NextResponse.json({
         error: 'Failed to fetch new Meta insights',
         details: result.error

@@ -248,6 +248,8 @@ export function MetaTab({
   const [topCampaigns, setTopCampaigns] = useState<any[]>([])
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [debugMode, setDebugMode] = useState(false)
+  
   const [isResyncing, setIsResyncing] = useState(false)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
@@ -470,7 +472,6 @@ export function MetaTab({
     
     if (forceRefresh) {
       setIsRefreshing(true);
-      console.log(`[MetaTab] 🔄 Force refreshing campaign data (fetchId: ${fetchId})`);
     }
     
     // Log the fetch request
@@ -482,8 +483,6 @@ export function MetaTab({
       // Add forceRefresh parameter if needed
       if (forceRefresh) {
         url += `&forceRefresh=true`;
-        // Add a timestamp to bust cache
-        url += `&_t=${Date.now()}`;
       }
       
       // Add date range parameters if available
@@ -504,19 +503,15 @@ export function MetaTab({
       try {
         const response = await fetch(url, {
           signal: controller.signal,
-          cache: forceRefresh ? 'no-store' : 'no-cache', // Avoid browser cache
+          cache: 'no-cache', // Avoid browser cache
           headers: {
-            'x-fetch-id': fetchId.toString(), // Help debug with request ID
-            'Cache-Control': forceRefresh ? 'no-cache, no-store, must-revalidate' : 'no-cache',
-            'Pragma': 'no-cache'
+            'x-fetch-id': fetchId.toString() // Help debug with request ID
           }
         });
         
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`[MetaTab] Failed to fetch campaign data (${response.status}): ${errorText}`);
           throw new Error(`Failed to fetch campaign data (status ${response.status})`);
         }
       
@@ -554,14 +549,6 @@ export function MetaTab({
             };
             console.log(`[MetaTab] Updated lastFetchedDates to: ${JSON.stringify(lastFetchedDates.current)}`);
           }
-          
-          // If force refreshing, also trigger a metrics refresh
-          if (forceRefresh) {
-            console.log(`[MetaTab] Force refresh requested, refreshing metrics after campaign fetch`);
-            setTimeout(() => {
-              refreshAllMetricsDirectly(true);
-            }, 1000);
-          }
         } else {
           console.log(`[MetaTab] Campaign data unchanged, skipping update (fetchId: ${fetchId})`);
         }
@@ -572,7 +559,7 @@ export function MetaTab({
         if (forceRefresh) {
           // Show success toast using sonner toast
           toast.success("Campaigns refreshed", {
-            description: `Successfully refreshed ${data.campaigns.length} campaigns from Meta`
+            description: `Successfully refreshed ${data.campaigns.length} campaigns`
           });
         }
         
@@ -3469,670 +3456,60 @@ Try creating at least one active campaign in Meta Ads Manager.
     setIsManuallyRefreshing(true)
     
     try {
-      console.log(`[MetaTab] Refreshing all metrics directly${bypassCache ? ' with cache bypass' : ''}`)
-      
-      // Format dates for API calls
-      const fromDate = dateRange.from.toISOString().split('T')[0]
-      const toDate = dateRange.to.toISOString().split('T')[0]
+      console.log(`Refreshing all metrics directly${bypassCache ? ' with cache bypass' : ''}`)
       
       // Append refresh and bypass_cache params to all endpoints if needed
       const params = new URLSearchParams()
       if (bypassCache) {
         params.append('bypass_cache', 'true')
         params.append('refresh', 'true')
-        // Add random parameter to truly force cache busting
-        params.append('_t', Date.now().toString())
       }
       
       // Create fetch functions with the appropriate parameters
       const fetchWithParams = async (endpoint: string) => {
-        const hasQueryParams = endpoint.includes('?')
-        const url = `${endpoint}${hasQueryParams ? '&' : '?'}${params.toString()}`
-        console.log(`[MetaTab] Fetching with params: ${url}`)
-        const response = await fetch(url, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'X-Force-Refresh': bypassCache ? 'true' : 'false'
-          }
-        })
-        
-        if (!response.ok) {
-          console.error(`[MetaTab] Error fetching ${url}: ${response.status}`)
-          const text = await response.text()
-          console.error(`[MetaTab] Response: ${text}`)
-          throw new Error(`Failed to fetch metrics: ${response.status}`)
-        }
-        
-        return response
+        const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`
+        return fetch(url)
       }
       
-      // First, clear the in-memory cache if bypassing cache
+      // Format dates
+      const fromDateStr = dateRange.from.toISOString().split('T')[0];
+      const toDateStr = dateRange.to.toISOString().split('T')[0];
+      
+      // Call fetch functions with the option to bypass cache
+      await Promise.all([
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/spend?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchAdSpendDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/roas?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchRoasDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/impressions?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchImpressionsDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/clicks?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchClicksDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/purchase-conversion-value?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchPurchaseValueDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/results?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchResultsDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/cost-per-result?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchCostPerResultDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/cost-per-click?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchCostPerClickDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/ctr?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchCtrDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/reach?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchReachDirectly(),
+        bypassCache ? fetchWithParams(`/api/metrics/meta/single/link_clicks?brandId=${brandId}&from=${fromDateStr}&to=${toDateStr}`) : fetchLinkClicksDirectly()
+      ])
+      
+      // Force refresh the data after a short delay
       if (bypassCache) {
-        try {
-          console.log('[MetaTab] Clearing local storage cache')
-          localStorage.removeItem('meta-metrics-cache')
-          sessionStorage.removeItem('meta-metrics-cache')
-        } catch (e) {
-          console.warn('[MetaTab] Failed to clear cache:', e)
-        }
-      }
-      
-      // Basic set of requests to refresh meta data
-      const requests = [
-        fetchWithParams(`/api/metrics/meta/single/spend?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/roas?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/impressions?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/clicks?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/purchase-conversion-value?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/results?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/cost-per-result?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/cost-per-click?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/ctr?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/reach?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
-        fetchWithParams(`/api/metrics/meta/single/link_clicks?brandId=${brandId}&from=${fromDate}&to=${toDate}`)
-      ]
-      
-      // Execute all requests in parallel
-      const results = await Promise.allSettled(requests)
-      
-      // Log results
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          console.log(`[MetaTab] Request ${index} succeeded: ${result.value.url}`)
-        } else {
-          console.error(`[MetaTab] Request ${index} failed:`, result.reason)
-        }
-      })
-      
-      // If bypassing cache, force reload campaign data
-      if (bypassCache) {
-        console.log('[MetaTab] Force refreshing campaigns and Meta data')
-        
-        // Wait a bit for the database to update
         setTimeout(() => {
-          fetchCampaigns(true)
-          fetchMetaData()
-        }, 2000)
+          fetchMetaData();
+        }, 1000);
       }
       
       // Show success toast
-      toast.success("Metrics refreshed successfully", {
-        description: bypassCache ? "Forced a complete refresh of all metrics" : "Updated with latest data"
-      })
+      toast.success("Metrics refreshed successfully")
     } catch (error) {
-      console.error("[MetaTab] Error refreshing metrics:", error)
-      toast.error("Failed to refresh metrics", {
-        description: error instanceof Error ? error.message : "Unknown error occurred"
-      })
+      console.error("Error refreshing metrics:", error)
+      toast.error("Failed to refresh metrics")
     } finally {
       setIsManuallyRefreshing(false)
-      
-      // Set loading states to false for all widgets
-      setTimeout(() => {
-        setAdSpendData(prev => ({ ...prev, isLoading: false }))
-        setRoasData(prev => ({ ...prev, isLoading: false }))
-        setImpressionsData(prev => ({ ...prev, isLoading: false }))
-        setClicksData(prev => ({ ...prev, isLoading: false }))
-        setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
-        setResultsData(prev => ({ ...prev, isLoading: false }))
-        setCostPerResultData(prev => ({ ...prev, isLoading: false }))
-        setCostPerClickData(prev => ({ ...prev, isLoading: false }))
-        setCtrData(prev => ({ ...prev, isLoading: false }))
-        setReachData(prev => ({ ...prev, isLoading: false }))
-        setLinkClicksData(prev => ({ ...prev, isLoading: false }))
-        setBudgetData(prev => ({ ...prev, isLoading: false }))
-      }, 1000)
     }
   }, [dateRange, brandId, 
      fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
      fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
      fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
      fetchReachDirectly, fetchLinkClicksDirectly, fetchMetaData]);
-  
-  // Setup auto-refresh on a 5-minute interval
-  useEffect(() => {
-    // Clear any existing timer first
-    if (refreshTimer) {
-      clearInterval(refreshTimer)
-    }
-    
-    // Set up a new 5-minute refresh interval
-    const timer = setInterval(() => {
-      console.log("Auto-refreshing metrics (5-minute interval)")
-      refreshAllMetricsDirectly()
-    }, 5 * 60 * 1000) // 5 minutes in milliseconds
-    
-    setRefreshTimer(timer)
-    
-    // Clean up on unmount
-    return () => {
-      if (refreshTimer) {
-        clearInterval(refreshTimer)
-      }
-    }
-  }, [dateRange, brandId])
-  
-  // Also refresh when isRefreshingData prop changes (to integrate with existing refresh mechanisms)
-  useEffect(() => {
-    if (isRefreshingData) {
-      console.log("Refreshing metrics due to parent component refresh trigger")
-      refreshAllMetricsDirectly()
-    }
-  }, [isRefreshingData])
-  
-  // Manual refresh button handler
-  const handleManualRefresh = () => {
-    refreshAllMetricsDirectly()
-  }
-
-  // Store a stable reference to the refresh function
-  const refreshAllMetricsDirectlyRef = useRef(refreshAllMetricsDirectly);
-
-  // Update the ref when the function changes
-  useEffect(() => {
-    refreshAllMetricsDirectlyRef.current = refreshAllMetricsDirectly;
-  }, [refreshAllMetricsDirectly]);
-
-  // Add a listener for the metaDataRefreshed event from the dashboard
-  useEffect(() => {
-    // Define the event handler
-    const handleMetaDataRefreshed = (event: CustomEvent) => {
-      // Check if this event is for our brand
-      if (event.detail?.brandId === brandId) {
-        console.log("Received metaDataRefreshed event", event.detail);
-        
-        // If forceRefresh is set to true in the event, force a full refresh
-        if (event.detail?.forceRefresh) {
-          console.log("Force refresh requested, fetching latest campaigns data");
-          
-          // Force a fetch from the API to get the most up-to-date data
-          fetchCampaigns();
-        }
-        
-        // Always refresh the metrics display
-        refreshAllMetricsDirectlyRef.current();
-      }
-    };
-
-    // Add the event listener
-    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-
-    // Cleanup on component unmount
-    return () => {
-      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-    };
-  }, [brandId]);
-
-  // Function to manually sync Meta insights data
-  const syncMetaInsights = async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      toast.error("Cannot sync data - missing brand ID or date range");
-      return;
-    }
-    
-    toast.info("Syncing Meta insights data...", {
-      description: "This might take a moment depending on the date range.",
-      duration: 5000
-    });
-    
-    setIsManuallyRefreshing(true);
-    
-    try {
-      // Format dates in YYYY-MM-DD format
-      const startDate = dateRange.from.toISOString().split('T')[0];
-      const endDate = dateRange.to.toISOString().split('T')[0];
-      
-      const response = await fetch('/api/meta/insights/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          brandId,
-          startDate,
-          endDate,
-          forceRefresh: true
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to sync Meta insights');
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success("Meta insights synced successfully", {
-          description: `Synced ${result.count || 0} records from Meta.`,
-          duration: 5000
-        });
-        
-        // After successful sync, refresh the data
-        refreshMetaData();
-      } else {
-        throw new Error(result.error || 'Failed to sync Meta insights');
-      }
-    } catch (error) {
-      console.error('Error syncing Meta insights:', error);
-      toast.error("Failed to sync Meta insights", {
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 5000
-      });
-    } finally {
-      setIsManuallyRefreshing(false);
-    }
-  };
-
-  // Add debug mode state
-  const [debugMode, setDebugMode] = useState(false);
-  
-  // Toggle debug mode with key combo (Ctrl+Shift+D)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        e.preventDefault();
-        setDebugMode(prev => !prev);
-        console.log('Debug mode toggled:', !debugMode);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [debugMode]);
-
-  // Debug date ranges
-  const debugDateRange = async () => {
-    if (!brandId) return;
-    
-    // Get current date
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Get date range strings if available
-    const fromDateStr = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : today;
-    const toDateStr = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : today;
-    
-    console.log(`[MetaTab DEBUG] Current date range: ${fromDateStr} to ${toDateStr}`);
-    
-    try {
-      // Call debug endpoint
-      const response = await fetch(`/api/meta/debug-dates?brandId=${brandId}&date=${today}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[MetaTab DEBUG] Date debug results:', data);
-        
-        // Show debug info in toast
-        toast.info(`Date Debug Info`, {
-          description: `Today's date: ${today}, DB records: ${data.todayDataCount}, Sample dates: ${data.sampleDates.slice(0,3).join(', ')}`,
-          duration: 10000
-        });
-      }
-    } catch (error) {
-      console.error('Error in debug date range:', error);
-    }
-  };
-
-  // Format the campaigns data from the API response
-  const formatCampaigns = (campaigns: any[] = []) => {
-    // Add has_data_in_range flag to each campaign
-    return campaigns.map(campaign => {
-      // Ensure daily_insights exists and is an array
-      const daily_insights = campaign.daily_insights || [];
-      
-      // Deep copy to avoid reference issues
-      const formattedCampaign = {
-        ...campaign,
-        // Make sure these values are properly typed
-        budget: parseFloat(campaign.budget || 0),
-        spent: parseFloat(campaign.spent || 0),
-        impressions: parseInt(campaign.impressions || 0, 10),
-        reach: parseInt(campaign.reach || 0, 10),
-        clicks: parseInt(campaign.clicks || 0, 10),
-        conversions: parseInt(campaign.conversions || 0, 10),
-        ctr: parseFloat(campaign.ctr || 0),
-        cpc: parseFloat(campaign.cpc || 0),
-        cost_per_conversion: parseFloat(campaign.cost_per_conversion || 0),
-        roas: parseFloat(campaign.roas || 0),
-        adset_budget_total: parseFloat(campaign.adset_budget_total || 0),
-        daily_insights
-      };
-      
-      return formattedCampaign;
-    });
-  };
-  
-  // Function to refresh ad set budgets for all campaigns
-  const refreshCampaignAdSetBudgets = async () => {
-    if (!brandId) return;
-    
-    setIsRefreshing(true);
-    
-    try {
-      // Call API endpoint to refresh ad sets for all campaigns
-      const response = await fetch(`/api/meta/adsets/refresh-all?brandId=${brandId}`, {
-        method: 'POST',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to refresh ad set budgets');
-      }
-      
-      const data = await response.json();
-      
-      // Show success toast
-      toast.success("Ad set budgets refreshed", {
-        description: `Updated budget totals for ${data.refreshedCampaigns || 0} campaigns`,
-      });
-      
-      // Refresh campaigns to show updated budgets
-      await fetchCampaigns(true);
-      
-      return data;
-    } catch (error) {
-      console.error('[MetaTab] Error refreshing ad set budgets:', error);
-      
-      toast.error("Failed to refresh ad set budgets", {
-        description: "There was an error refreshing ad set budgets. Please try again.",
-      });
-      
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const refreshAllData = useCallback(async () => {
-    // Show loading toast notification
-    toast.loading("Refreshing all Meta data for selected date range...", { id: "meta-refresh-all" });
-    
-    setIsLoadingCampaigns(true);
-    
-    try {
-      // Step 1: Refresh campaigns for the date range
-      await fetchCampaigns(true);
-      
-      // Step 2: Refresh ad set budgets for all campaigns
-      await refreshCampaignAdSetBudgets();
-      
-      // Success message
-      toast.success("Data refreshed successfully", { id: "meta-refresh-all" });
-      
-      // Also refresh metrics if available
-      if (refreshMetricsDirectly) {
-        refreshMetricsDirectly();
-      }
-    } catch (error) {
-      console.error("Error refreshing all data:", error);
-      
-      // Error message
-      toast.error("Error refreshing data", { 
-        id: "meta-refresh-all",
-        description: "There was a problem refreshing Meta data. Please try again."
-      });
-    } finally {
-      setIsLoadingCampaigns(false);
-    }
-  }, [fetchCampaigns, refreshCampaignAdSetBudgets, refreshMetricsDirectly]);
-  
-  // Refresh data when date range changes
-  useEffect(() => {
-    if (dateRange?.from && dateRange?.to) {
-      console.log("[MetaTab] Date range changed, refreshing data");
-      
-      // Only auto-fetch on date change if initial load has been completed
-      if (initialLoadStarted) {
-        // Don't auto-refresh on initial mount to avoid duplicate fetches
-        fetchCampaigns(false);
-      }
-    }
-  }, [dateRange, fetchCampaigns, initialLoadStarted]);
-
-  // Add a global refresh handler that is used by the main refresh button and auto-refresh
-  const refreshAllMetaData = async (triggerBrandId: string): Promise<boolean> => {
-    console.log(`[MetaTab] 🔄 Global refresh triggered for brandId: ${triggerBrandId}`);
-    
-    // Skip if a fetch is already in progress
-    if (isMetaFetchInProgress()) {
-      console.log(`[MetaTab] ⚠️ Global refresh skipped - fetch already in progress`);
-      return false;
-    }
-    
-    // Generate a unique request ID for this refresh
-    const refreshId = `global-refresh-${Date.now()}`;
-    
-    // Acquire a global lock for this refresh operation
-    if (!acquireMetaFetchLock(refreshId)) {
-      console.log(`[MetaTab] ⛔ Failed to acquire global lock for refresh`);
-      return false;
-    }
-    
-    try {
-      console.log(`[MetaTab] 🚀 Starting global refresh (${refreshId})`);
-      
-      // Step 1: Fetch fresh data from Meta API and update database
-      const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Refresh-ID': refreshId
-        }
-      });
-      
-      if (!syncResponse.ok) {
-        console.error(`[MetaTab] Failed to sync Meta data from API: ${syncResponse.status}`);
-        toast.error("Failed to refresh Meta data from API");
-        return false;
-      }
-      
-      console.log(`[MetaTab] ✅ Meta API sync completed`);
-      
-      // Step 2: Refresh campaigns with latest data
-      await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'X-Refresh-ID': refreshId
-        }
-      });
-      
-      console.log(`[MetaTab] ✅ Campaign data refreshed`);
-      
-      // Step 3: Refresh ad sets data
-      await fetch(`/api/meta/update-campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Refresh-ID': refreshId
-        }
-      });
-      
-      console.log(`[MetaTab] ✅ Ad set budgets refreshed`);
-      
-      // Step 4: Refresh metrics for the dashboard
-      await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'X-Refresh-ID': refreshId
-        }
-      });
-      
-      console.log(`[MetaTab] ✅ Metrics refreshed`);
-      
-      // Success! Dispatch a custom event to notify any components that might be listening
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('meta-data-refreshed', {
-          detail: {
-            success: true,
-            refreshId,
-            timestamp: new Date().toISOString()
-          }
-        }));
-      }
-      
-      toast.success("Meta data refreshed successfully");
-      return true;
-    } catch (error) {
-      console.error(`[MetaTab] Error during global refresh:`, error);
-      toast.error("Failed to refresh Meta data");
-      return false;
-    } finally {
-      // Always release the lock when done
-      releaseMetaFetchLock(refreshId);
-    }
-  };
-
-  // Update the effect that handles auto-refresh to use the global refresh handler
-  useEffect(() => {
-    // Skip if auto-refresh is disabled or the component is unmounting
-    if (window._disableAutoMetaFetch || !isMounted.current) return;
-    
-    // Only run the auto-refresh if we have a brand ID
-    if (brandId) {
-      console.log(`[MetaTab] Setting up 5-minute auto-refresh for Meta data`);
-      
-      // Set up a 5-minute interval for auto-refresh
-      const intervalId = setInterval(() => {
-        // Only refresh if the component is still mounted and the page is visible
-        if (isMounted.current && document.visibilityState === 'visible') {
-          console.log(`[MetaTab] Auto-refresh triggered`);
-          refreshAllMetaData(brandId).then(success => {
-            if (success) {
-              console.log(`[MetaTab] Auto-refresh completed successfully`);
-            } else {
-              console.log(`[MetaTab] Auto-refresh completed with errors`);
-            }
-          });
-        }
-      }, 5 * 60 * 1000); // 5 minutes in milliseconds
-      
-      // Clean up the interval when the component unmounts
-      return () => {
-        clearInterval(intervalId);
-        console.log(`[MetaTab] Cleaned up 5-minute auto-refresh interval`);
-      };
-    }
-  }, [brandId]);
-
-  // Listen for global page refresh event
-  useEffect(() => {
-    // Skip if component is unmounted
-    if (!isMounted.current) return;
-    
-    // Define the event handler
-    const handleGlobalRefresh = () => {
-      console.log(`[MetaTab] Global page refresh detected`);
-      
-      // Only refresh if we have a brand ID
-      if (!brandId) {
-        console.log(`[MetaTab] No brand ID available, skipping refresh`);
-        return;
-      }
-      
-      // Trigger the refresh with the current brand ID
-      refreshAllMetaData(brandId).then(success => {
-        if (success) {
-          console.log(`[MetaTab] Global refresh completed successfully`);
-        } else {
-          console.log(`[MetaTab] Global refresh completed with errors`);
-        }
-      });
-    };
-    
-    // Register the event listener for the global refresh button
-    window.addEventListener('page-refresh', handleGlobalRefresh);
-    
-    // Expose the refresh function to the window for external access
-    if (typeof window !== 'undefined') {
-      // @ts-ignore - Add the refresh function to the window object
-      window._refreshMetaData = () => refreshAllMetaData(brandId);
-    }
-    
-    // Clean up the event listener when the component unmounts
-    return () => {
-      window.removeEventListener('page-refresh', handleGlobalRefresh);
-      
-      // Clean up the exposed function
-      if (typeof window !== 'undefined') {
-        // @ts-ignore
-        delete window._refreshMetaData;
-      }
-    };
-  }, [brandId, refreshAllMetaData]);
-
-  // Add a proper date comparison function to avoid infinite loops
-  const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {
-    if (!date1 && !date2) return true;
-    if (!date1 || !date2) return false;
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
-  };
-
-  // Store previous date range for comparison
-  const prevDateRangeRef = useRef<{from?: Date, to?: Date}>({});
-
-  // Add a useEffect to log date range changes
-  useEffect(() => {
-    if (!dateRange?.from || !dateRange?.to) return;
-
-    // Compare with previous date range to avoid unnecessary refreshes
-    const fromChanged = !areDatesEqual(prevDateRangeRef.current.from, dateRange.from);
-    const toChanged = !areDatesEqual(prevDateRangeRef.current.to, dateRange.to);
-    
-    // Only refresh if dates actually changed
-    if (!fromChanged && !toChanged) {
-      return;
-    }
-    
-    console.log("[MetaTab] Date range changed, refreshing data");
-    
-    // Update the reference for next comparison
-    prevDateRangeRef.current = {
-      from: dateRange.from,
-      to: dateRange.to
-    };
-    
-    const fromDateStr = dateRange.from.toISOString().split('T')[0]; 
-    const toDateStr = dateRange.to.toISOString().split('T')[0];
-    
-    // If the date is today, log specifically that we're looking at today's data
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    if (fromDateStr === todayStr && toDateStr === todayStr) {
-      console.log(`[MetaTab] Today's date detected: ${todayStr}`);
-    }
-    
-    // Use a debounce to avoid multiple rapid fetches
-    const fetchId = Date.now();
-    console.log(`[MetaTab] 🔐 Acquired fetch lock for fetchId: ${fetchId}`);
-    
-    if (acquireMetaFetchLock(fetchId)) {
-      // First show loading state
-      setIsLoadingCampaigns(true);
-      
-      // Fetch campaigns data with the new date range
-      fetchCampaigns()
-        .then(() => {
-          console.log('[MetaTab] Campaigns refreshed after date range change');
-          
-          // Also refresh metric data
-          if (typeof refreshMetricsDirectly === 'function') {
-            return refreshMetricsDirectly();
-          }
-        })
-        .then(() => {
-          console.log('[MetaTab] Metrics refreshed after date range change');
-        })
-        .finally(() => {
-          releaseMetaFetchLock(fetchId);
-          console.log(`[MetaTab] 🔓 Released fetch lock (fetchId: ${fetchId})`);
-        });
-    } else {
-      console.log(`[MetaTab] ⛔ Failed to acquire fetch lock, skipping fetch (fetchId: ${fetchId})`);
-    }
-  }, [dateRange]);
 
   // Add this new function to completely reset and refresh all Meta data
   const resetAndRefreshAllMetaData = async () => {
@@ -4222,7 +3599,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // 6. Manually trigger another refresh to pick up any changes
       setTimeout(() => {
         fetchMetaData();
-        refreshAllData();
+        refreshMetaData();
       }, 5000);
       
       return true;
@@ -4258,8 +3635,47 @@ Try creating at least one active campaign in Meta Ads Manager.
         duration: 10000
       });
       
-      // Call the comprehensive reset and refresh function
-      await resetAndRefreshAllMetaData();
+      // Call the resync endpoint
+      const response = await fetch(`/api/meta/resync?brandId=${brandId}`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resync data');
+      }
+      
+      const data = await response.json();
+      
+      // Show success message
+      toast.success("Meta data resync complete", {
+        description: `Successfully resynced ${data.insights || 0} data points.`,
+        duration: 10000
+      });
+      
+      // Wait a moment to ensure data is properly committed to the database
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Clear any cached data in the browser
+      try {
+        localStorage.removeItem('meta-metrics-cache');
+      } catch (e) {
+        console.error("Failed to clear local storage cache:", e);
+      }
+      
+      // Refresh all metrics directly - force cache bypass
+      if (refreshAllMetricsDirectly) {
+        console.log("Manually refreshing all metrics after resync");
+        await refreshAllMetricsDirectly(true); // Pass true to force bypass cache
+      }
+      
+      // Force a full refresh of campaigns, too
+      if (fetchCampaigns) {
+        await fetchCampaigns(true);
+      }
+      
+      // Refresh all data to ensure UI is updated
+      refreshMetaData();
       
     } catch (error) {
       console.error('[MetaTab] Resync error:', error);
@@ -4273,422 +3689,117 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   };
 
+  // Function to refresh ad set budgets for all campaigns
+  const refreshCampaignAdSetBudgets = async () => {
+    if (!brandId) return;
+    
+    setIsRefreshing(true);
+    
+    try {
+      // Call API endpoint to refresh ad sets for all campaigns
+      const response = await fetch(`/api/meta/adsets/refresh-all?brandId=${brandId}`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh ad set budgets');
+      }
+      
+      const data = await response.json();
+      
+      // Show success toast
+      toast.success("Ad set budgets refreshed", {
+        description: `Updated budget totals for ${data.refreshedCampaigns || 0} campaigns`,
+      });
+      
+      // Refresh campaigns to show updated budgets
+      await fetchCampaigns(true);
+      
+      return data;
+    } catch (error) {
+      console.error('[MetaTab] Error refreshing ad set budgets:', error);
+      
+      toast.error("Failed to refresh ad set budgets", {
+        description: "There was an error refreshing ad set budgets. Please try again.",
+      });
+      
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  
+  // Format the campaigns data from the API response
+  const formatCampaigns = (campaigns: any[] = []) => {
+    // Add has_data_in_range flag to each campaign
+    return campaigns.map(campaign => {
+      // Ensure daily_insights exists and is an array
+      const daily_insights = campaign.daily_insights || [];
+      
+      // Deep copy to avoid reference issues
+      const formattedCampaign = {
+        ...campaign,
+        // Make sure these values are properly typed
+        budget: parseFloat(campaign.budget || 0),
+        spent: parseFloat(campaign.spent || 0),
+        impressions: parseInt(campaign.impressions || 0, 10),
+        reach: parseInt(campaign.reach || 0, 10),
+        clicks: parseInt(campaign.clicks || 0, 10),
+        conversions: parseInt(campaign.conversions || 0, 10),
+        ctr: parseFloat(campaign.ctr || 0),
+        cpc: parseFloat(campaign.cpc || 0),
+        cost_per_conversion: parseFloat(campaign.cost_per_conversion || 0),
+        roas: parseFloat(campaign.roas || 0),
+        adset_budget_total: parseFloat(campaign.adset_budget_total || 0),
+        daily_insights
+      };
+      
+      return formattedCampaign;
+    });
+  };
+
+  // Debug date ranges
+  const debugDateRange = async () => {
+    if (!brandId) return;
+    
+    // Get current date
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get date range strings if available
+    const fromDateStr = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : today;
+    const toDateStr = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : today;
+    
+    console.log(`[MetaTab DEBUG] Current date range: ${fromDateStr} to ${toDateStr}`);
+    
+    try {
+      // Call debug endpoint
+      const response = await fetch(`/api/meta/debug-dates?brandId=${brandId}&date=${today}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[MetaTab DEBUG] Date debug results:', data);
+        
+        // Show debug info in toast
+        toast.info(`Date Debug Info`, {
+          description: `Today's date: ${today}, DB records: ${data.todayDataCount}, Sample dates: ${data.sampleDates?.slice(0,3).join(', ')}`,
+          duration: 10000
+        });
+      }
+    } catch (error) {
+      console.error('Error in debug date range:', error);
+    }
+  };
+
   return (
     <TooltipProvider>
-      <div className="space-y-8">
-        {(() => {
-          try {
-            return (
-              <>
-                {/* Debug controls - add a keyboard shortcut to show/hide it */}
-                <div className="mb-4">
-                  {showDebugControls && (
-                    <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-md mb-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="text-sm font-semibold mb-2">Debug Controls</div>
-                        
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={manuallyLoadData}
-                            className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded-md"
-                          >
-                            Force Fetch Meta Data
-                          </button>
-                          
-                          <button
-                            onClick={debugDateRange}
-                            className="px-3 py-1 text-xs bg-orange-700 hover:bg-orange-600 text-white rounded-md"
-                          >
-                            Debug Date Range
-                          </button>
-                          
-                          {debugMode && (
-                            <button
-                              onClick={() => {
-                                // Force refresh campaigns with debug params
-                                const today = new Date().toISOString().split('T')[0];
-                                fetch(`/api/meta/campaigns/date-range?brandId=${brandId}&from=${today}&to=${today}&include_all=true&debug=true`)
-                                  .then(res => res.json())
-                                  .then(data => {
-                                    console.log('[DEBUG] Today\'s campaigns data:', data);
-                                    toast.info(`Found ${data.campaignsWithData} campaigns with data today`);
-                                  })
-                                  .catch(err => console.error('Debug fetch error:', err));
-                              }}
-                              className="px-3 py-1 text-xs bg-red-700 hover:bg-red-600 text-white rounded-md"
-                            >
-                              Check Today's Data
-                            </button>
-                          )}
-                          
-                          <div className="text-xs text-gray-400">
-                            <div>Meta Data Status:</div>
-                            <div>Ad Spend: {metricsData.adSpend}</div>
-                            <div>ROAS: {metricsData.roas}</div>
-                            <div>Impressions: {metricsData.impressions}</div>
-                            <div>Clicks: {metricsData.clicks}</div>
-                            <div>Loading: {loading ? 'Yes' : 'No'}</div>
-                            <div>Auto-Fetch Disabled: {window._disableAutoMetaFetch ? 'Yes' : 'No'}</div>
-                            {dateRange?.from && dateRange?.to && (
-                              <div className="mt-2 pt-2 border-t border-gray-700">
-                                <div>Date Range:</div>
-                                <div>From: {dateRange.from.toISOString().split('T')[0]}</div>
-                                <div>To: {dateRange.to.toISOString().split('T')[0]}</div>
-                                {(() => {
-                                  const today = new Date().toISOString().split('T')[0];
-                                  const fromStr = dateRange.from.toISOString().split('T')[0];
-                                  const toStr = dateRange.to.toISOString().split('T')[0];
-                                  
-                                  if (fromStr === today && toStr === today) {
-                                    return (
-                                      <div className="text-green-500 font-bold">
-                                        Today's Date Selected!
-                          </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-      {/* Header Section with refresh button - Removed as requested */}
-
-                {/* Add a hidden button in the corner to trigger debug mode */}
-                <div 
-                  className="fixed bottom-4 right-4 w-6 h-6 bg-transparent z-50 cursor-pointer"
-                  onClick={toggleDebugControls}
-                  title="Toggle debug controls (hidden)"
-                ></div>
-      
-      {/* Meta Connection Status Banner - Removed as requested */}
-      
-                {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
-      <div className="space-y-4">
-        {/* Meta Data Overview Heading */}
-        <div className="flex items-center mb-4">
-          <LineChart className="h-5 w-5 text-gray-400 mr-2" />
-          <h2 className="text-lg font-semibold">Meta Data Overview - All Ads Combined</h2>
-          <div className="ml-auto">
-            <Badge variant="outline" className="bg-gray-900/30 text-gray-400 border-gray-800 px-2">
-              Aggregated Metrics
-            </Badge>
-          </div>
-        </div>
-        
-        {/* Direct DB connection widgets with grid layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-green-400" />
-                <span className="ml-0.5">Ad Spend</span>
-              </div>
-            }
-            value={adSpendData.value}
-            data={[]}
-            loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={adSpendData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-gray-400" />
-                <span className="ml-0.5">ROAS</span>
-              </div>
-            }
-            value={roasData.value}
-            data={[]}
-            loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            suffix="x"
-            hideGraph={true}
-            previousValue={roasData.previousValue}
-            previousValueFormat="number"
-            previousValueSuffix="x"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Eye className="h-4 w-4 text-amber-400" />
-                <span className="ml-0.5">Impressions</span>
-              </div>
-            }
-            value={impressionsData.value}
-            data={[]}
-            loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={impressionsData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-purple-400" />
-                <span className="ml-0.5">Reach</span>
-              </div>
-            }
-            value={reachData.value}
-            data={[]}
-            loading={reachData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={reachData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <MousePointer className="h-4 w-4 text-indigo-400" />
-                <span className="ml-0.5">Clicks</span>
-              </div>
-            }
-            value={clicksData.value}
-            data={[]}
-            loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={clicksData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <ShoppingCart className="h-4 w-4 text-purple-400" />
-                <span className="ml-0.5">Avg. Purchase Value</span>
-              </div>
-            }
-            value={purchaseValueData.value}
-            data={[]}
-            loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={purchaseValueData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Target className="h-4 w-4 text-red-400" />
-                <span className="ml-0.5">Results</span>
-              </div>
-            }
-            value={resultsData.value}
-            data={[]}
-            loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={resultsData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-orange-400" />
-                <span className="ml-0.5">Cost Per Result</span>
-              </div>
-            }
-            value={costPerResultData.value}
-            data={[]}
-            loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={costPerResultData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-teal-400" />
-                <span className="ml-0.5">Cost Per Click</span>
-              </div>
-            }
-            value={costPerClickData.value}
-            data={[]}
-            loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={costPerClickData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <MousePointerClick className="h-4 w-4 text-orange-400" />
-                <span className="ml-0.5">CTR</span>
-              </div>
-            }
-            value={ctrData.value}
-            data={[]}
-            loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="percentage"
-            hideGraph={true}
-            previousValue={ctrData.previousValue}
-            previousValueFormat="percentage"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <MousePointer className="h-4 w-4 text-green-400" />
-                <span className="ml-0.5">Link Clicks</span>
-              </div>
-            }
-            value={linkClicksData.value}
-            data={[]}
-            loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={linkClicksData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
-        </div>
-      </div>
-      
-      {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
-      <div className="space-y-6 mt-6">
-        {/* Meta data control panel */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Campaign Performance</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10"
-              onClick={handleResyncData}
-              disabled={isResyncing || isDateChangeLoading}
-            >
-              {isResyncing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resyncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="mr-2 h-4 w-4" />
-                  Resync Data
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      
-        <CampaignWidget 
-          brandId={brandId || ''}
-          campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-          isLoading={isLoadingCampaigns}
-          isSyncing={isSyncing}
-          dateRange={dateRange}
-          onRefresh={fetchCampaigns}
-          onSync={async () => {
-            toast.loading("Syncing Meta campaigns...", { id: "meta-campaigns-sync" })
-            
-            try {
-              const response = await fetch(`/api/meta/campaigns/sync`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  brandId,
-                  forceRefresh: true
-                }),
-              })
-              
-              if (response.ok) {
-                toast.success("Meta campaigns synced", { id: "meta-campaigns-sync" })
-                // Reload campaigns after sync
-                fetchCampaigns()
-              } else {
-                toast.error("Failed to sync Meta campaigns", { id: "meta-campaigns-sync" })
-              }
-            } catch (error) {
-              console.error("Error syncing Meta campaigns:", error)
-              toast.error("Error syncing Meta campaigns", { id: "meta-campaigns-sync" })
-            }
-          }}
-        />
-      </div>
-              </>
-            )
-          } catch (error) {
-            console.error('Error rendering MetaTab:', error);
-            // Return a fallback UI in case of rendering errors
-            return (
-              <div className="p-6 border border-red-800 bg-red-900/10 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4 text-red-400">Something went wrong</h2>
-                <p className="mb-4">There was an error rendering the Meta dashboard.</p>
-                <Button 
-                  onClick={() => window.location.reload()}
-                  variant="destructive"
-                >
-                  Reload Page
-                </Button>
-    </div>
-            );
-          }
-        })()}
+      <div className="p-6 border border-red-800 bg-red-900/10 rounded-lg">
+        <h2 className="text-xl font-semibold mb-4 text-red-400">Something went wrong</h2>
+        <p className="mb-4">There was an error rendering the Meta dashboard.</p>
+        <Button 
+          onClick={() => window.location.reload()}
+          variant="destructive"
+        >
+          Reload Page
+        </Button>
       </div>
     </TooltipProvider>
   )
