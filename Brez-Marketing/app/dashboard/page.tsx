@@ -11,7 +11,7 @@
  * 5. Manual refreshes using the refresh button always use the corner loading indicator
  */
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useAuth, SignIn } from "@clerk/nextjs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlatformTabs } from "@/components/dashboard/platforms/PlatformTabs"
@@ -21,7 +21,6 @@ import { supabase } from "@/lib/supabase"
 import BrandSelector from "@/components/BrandSelector"
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { defaultMetrics, type Metrics, type CustomerSegments } from '@/types/metrics'
-import type { MetaMetrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { calculateMetrics } from "@/lib/metrics"
 import { MetricCard } from "@/components/metrics/MetricCard"
@@ -32,13 +31,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePicker } from "@/components/DateRangePicker"
 import { WidgetManager } from "@/components/dashboard/WidgetManager"
 import { useMetrics } from "@/lib/contexts/MetricsContext"
-import { addDays, startOfDay, endOfDay } from "date-fns"
+import { addDays, startOfDay, endOfDay, format, isAfter, isBefore, parseISO, subDays } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
-import MetaAdPerformance from '@/app/analytics/components/meta-ad-performance'
-import MetaSpendTrends from '@/app/analytics/components/meta-spend-trends'
-import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { RefreshCw, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
@@ -46,6 +42,25 @@ import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
+import { StatusBadge } from '@/components/dashboard/StatusBadge'
+import { BrandSelectionTrigger } from '@/components/dashboard/BrandSelectionTrigger'
+import { LongTextFormatter } from '@/lib/utils/longText'
+import useBrandIdParam from '@/lib/hooks/useBrandIdParam'
+import {
+  getFilteredConnections,
+  getPlatformStatusFromConnections
+} from '@/lib/utils/platformUtils'
+import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
+import { Button } from "@/components/ui/button"
+import { fetchHelper } from "@/lib/utils/fetchHelper"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
+import { MetricsContext } from "@/contexts/metricsContext"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Brand } from "@/types/brand"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import useSWR from 'swr'
 
 interface WidgetData {
   shopify?: any;
@@ -1106,10 +1121,7 @@ export default function DashboardPage() {
             brands={brands}
           >
             <div className="space-y-6 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MetaSpendTrends brandId={selectedBrandId} />
-                <MetaAdPerformance brandId={selectedBrandId} />
-              </div>
+              {/* Widgets removed */}
             </div>
           </WidgetManager>
         </>

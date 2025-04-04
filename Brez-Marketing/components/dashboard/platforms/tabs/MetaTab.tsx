@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, 
@@ -53,7 +53,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { CampaignWidget } from "./CampaignWidget" // Import the new CampaignWidget component
+import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
+import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -3396,8 +3397,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
       fetchReachDirectly(),
-      fetchLinkClicksDirectly(),
-      fetchBudgetDirectly()
+      fetchLinkClicksDirectly()
     ])
   }
 
@@ -3464,8 +3464,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
-        fetchLinkClicksDirectly(),
-        fetchBudgetDirectly()
+        fetchLinkClicksDirectly()
       ])
       
       // Show success toast
@@ -3480,7 +3479,7 @@ Try creating at least one active campaign in Meta Ads Manager.
      fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
      fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
      fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
-     fetchReachDirectly, fetchLinkClicksDirectly, fetchBudgetDirectly]);
+     fetchReachDirectly, fetchLinkClicksDirectly]);
   
   // Setup auto-refresh on a 5-minute interval
   useEffect(() => {
@@ -4354,24 +4353,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="ml-0.5">Budget</span>
-              </div>
-            }
-            value={budgetData.value}
-            data={[]}
-            loading={budgetData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            hideGraph={true}
-            previousValue={budgetData.previousValue}
-            previousValueFormat="currency"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
+          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
         </div>
       </div>
       
@@ -4412,7 +4394,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
           }}
         />
-                                  </div>
+      </div>
               </>
             )
           } catch (error) {
