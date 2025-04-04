@@ -239,52 +239,145 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Function to check statuses for multiple campaigns
+  // Fetch ad sets for a campaign - Updated with better error handling
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+    if (!brandId || !isMountedRef.current || !campaignId) return;
+    
+    // Cancel any existing ad set fetch
+    pendingRequestsRef.current.forEach(controller => {
+      try {
+        controller.abort();
+      } catch (e) {
+        // Ignore abort errors
+      }
+    });
+    
+    // Clear any existing ad sets to show fresh loading state
+    setAdSets([]);
+    setIsLoadingAdSets(true);
+    
+    const controller = createAbortController();
+    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
+    
+    try {
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
+      
+      // Add date range parameters if available
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${fromDate}&to=${toDate}`;
+      }
+      
+      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      
+      const response = await fetch(url, { signal: controller.signal });
+      
+      if (!isMountedRef.current) return;
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ad sets: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
+      
+      if (isMountedRef.current) {
+        // Ensure we have a valid array of ad sets
+        const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+        setAdSets(validAdSets);
+        
+        // Toast notification that ad sets were loaded
+        if (validAdSets.length > 0) {
+          toast.success(`Loaded ${validAdSets.length} ad sets`);
+        } else {
+          toast.info("No ad sets found for this campaign");
+          console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+        }
+        
+        // Dispatch events for budgets to update regardless of ad set count
+        console.log('[CampaignWidget] Dispatching status changed events');
+        window.dispatchEvent(
+          new CustomEvent('adSetStatusChanged', {
+            detail: {
+              brandId,
+              campaignId,
+              timestamp: new Date().toISOString()
+            }
+          })
+        );
+        
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('campaignStatusChanged', {
+              detail: {
+                brandId,
+                timestamp: new Date().toISOString()
+              }
+            })
+          );
+        }, 100);
+      }
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        console.log("[CampaignWidget] Ad set fetch aborted");
+        return;
+      }
+      
+      console.error("[CampaignWidget] Error fetching ad sets:", error);
+      
+      if (isMountedRef.current) {
+        toast.error(`Error loading ad sets: ${(error as Error).message}`);
+        setAdSets([]);
+      }
+    } finally {
+      if (isMountedRef.current) {
+        // Add a slight delay to avoid flickering
+        setTimeout(() => {
+          setIsLoadingAdSets(false);
+        }, 300);
+      }
+      
+      // Clean up abort controller
+      removeAbortController(controller);
+    }
+  }, [brandId, createAbortController, dateRange, removeAbortController]);
+  
+  // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[]) => {
-    if (!brandId || !isMountedRef.current) return;
+    if (!brandId || !isMountedRef.current || campaignsToCheck.length === 0) return;
     
-    // Priority order:
-    // 1. Recently modified campaigns (might be in transition)
-    // 2. Inactive campaigns (could be active now but UI doesn't reflect it)
-    // 3. All other campaigns
+    // Log what we're doing
+    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns`);
     
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
-    
-    // Create a scoring function for campaigns
-    const getPriority = (campaign: Campaign): number => {
-      let score = 0;
+    // Prioritize campaigns: expanded > active > recently modified > others
+    const prioritizedCampaigns = [...campaignsToCheck].sort((a, b) => {
+      // Put expanded campaign first
+      if (a.campaign_id === expandedCampaign) return -1;
+      if (b.campaign_id === expandedCampaign) return 1;
       
-      // Recently refreshed campaigns might be in transition
-      const lastRefresh = new Date(campaign.last_refresh_date);
-      if (lastRefresh > oneHourAgo) {
-        score += 5;
-      }
+      // Then active campaigns
+      const aActive = a.status.toUpperCase() === 'ACTIVE';
+      const bActive = b.status.toUpperCase() === 'ACTIVE';
       
-      // Inactive campaigns that might have been turned on
-      if (campaign.status.toUpperCase() !== 'ACTIVE') {
-        score += 3;
-      }
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
       
-      // Campaigns with data in range are more relevant
-      if (campaign.has_data_in_range) {
-        score += 1;
-      }
+      // Then recently modified ones
+      const aDate = new Date(a.last_refresh_date || 0);
+      const bDate = new Date(b.last_refresh_date || 0);
       
-      return score;
-    };
+      // More recent ones first
+      return bDate.getTime() - aDate.getTime();
+    });
     
-    // Sort campaigns by priority score (highest first)
-    const prioritizedCampaigns = [...campaignsToCheck]
-      .sort((a, b) => getPriority(b) - getPriority(a))
-      .slice(0, 10); // Limit to 10 campaigns to avoid API overload
-    
-    if (prioritizedCampaigns.length === 0) return;
-    
-    console.log(`[CampaignWidget] Batch checking status for ${prioritizedCampaigns.length} campaigns`);
+    // Limit to 5 campaigns for efficiency
+    const batchSize = 5;
+    const campaignsToProcess = prioritizedCampaigns.slice(0, batchSize);
     
     // Check each campaign's status with a slight delay between requests
-    prioritizedCampaigns.forEach((campaign, index) => {
+    campaignsToProcess.forEach((campaign, index) => {
       // Add a small delay between requests to avoid rate limiting
       setTimeout(() => {
         if (!isMountedRef.current) return;
@@ -296,8 +389,7 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
           },
           body: JSON.stringify({
             brandId,
-            campaignId: campaign.campaign_id,
-            silent: true // Don't show toasts for batch updates
+            campaignId: campaign.campaign_id
           })
         })
         .then(response => {
@@ -319,6 +411,12 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
               )
             );
             
+            // If this is the expanded campaign, refresh its ad sets
+            if (expandedCampaign === campaign.campaign_id) {
+              console.log(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
+              fetchAdSets(campaign.campaign_id, true);
+            }
+            
             // Notify parent component to refresh the data
             if (onRefresh) {
               onRefresh();
@@ -330,7 +428,7 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
         });
       }, index * 200); // Stagger requests 200ms apart
     });
-  }, [brandId, onRefresh, isMountedRef]);
+  }, [brandId, onRefresh, isMountedRef, expandedCampaign, fetchAdSets]);
   
   // Keep local state in sync with props
   useEffect(() => {
@@ -474,210 +572,6 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     }
   }, [brandId, fetchCurrentBudgets]);
   
-  // Fetch ad sets for a campaign - COPIED EXACTLY from original widget
-  const fetchAdSets = useCallback(async (campaignId: string) => {
-    if (!brandId || !isMountedRef.current || !campaignId) return;
-    
-    // Cancel any existing ad set fetch
-    pendingRequestsRef.current.forEach(controller => {
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignore abort errors
-      }
-    });
-    
-    // Clear any existing ad sets
-    setAdSets([]);
-    setIsLoadingAdSets(true);
-    
-    const controller = createAbortController();
-    
-    try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=true`;
-      
-      // Add date range parameters if available
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-      }
-      
-      console.log(`[CampaignWidget] Fetching ad sets for campaign ${campaignId} with date range: ${dateRange?.from?.toLocaleDateString()} to ${dateRange?.to?.toLocaleDateString()}`);
-      
-      const response = await fetch(url, { signal: controller.signal });
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`[CampaignWidget] Loaded ${data.adSets?.length || 0} ad sets for campaign ${campaignId} from ${data.source || 'unknown'}`);
-        
-        if (isMountedRef.current) {
-          setAdSets(data.adSets || []);
-          
-          // Toast notification that ad sets were loaded
-          toast.success(`Loaded ${data.adSets?.length || 0} ad sets for this campaign`);
-          
-          // Dispatch custom event for budgets to update
-          console.log('[CampaignWidget] Dispatching adSetStatusChanged event');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          // Ensure budget data is also refreshed
-          setTimeout(() => {
-            console.log('[CampaignWidget] Dispatching campaignStatusChanged event');
-            window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
-                detail: {
-                  brandId,
-                  timestamp: new Date().toISOString()
-                }
-              })
-            );
-          }, 100);
-        }
-      } else {
-        if (isMountedRef.current) {
-          toast.error("Failed to load ad sets for this campaign");
-          setAdSets([]);
-        }
-      }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
-        return;
-      }
-      
-      console.error("Error fetching ad sets:", error);
-      
-      if (isMountedRef.current) {
-        toast.error("Unexpected error occurred while loading ad sets");
-        setAdSets([]);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
-          setIsLoadingAdSets(false);
-        }, 500);
-      }
-      
-      // Clean up abort controller
-      removeAbortController(controller);
-    }
-  }, [brandId, createAbortController, dateRange, removeAbortController]);
-  
-  // Function to manually refresh campaign status with a more direct approach
-  const refreshCampaignStatus = useCallback(async (campaignId: string, silent: boolean = false) => {
-    if (!brandId || !isMountedRef.current) return;
-    
-    // Show loading toast for non-silent requests
-    const toastId = silent ? null : toast.loading("Checking campaign status...");
-    
-    try {
-      console.log(`[CampaignWidget] ${silent ? 'Silently r' : 'R'}efreshing campaign status for ${campaignId}`);
-      
-      // Use the new direct API endpoint to check campaign status
-      const statusResponse = await fetch(`/api/meta/campaign-status-check`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          campaignId,
-          silent
-        }),
-      });
-      
-      if (statusResponse.ok) {
-        const statusData = await statusResponse.json();
-        
-        // If we got status data back, apply it immediately to the UI
-        if (statusData.status) {
-          console.log(`[CampaignWidget] Received status update: ${statusData.status} for campaign ${campaignId}`);
-          
-          // Find campaign in list and update its status immediately
-          const updatedCampaigns = localCampaigns.map(c => {
-            if (c.campaign_id === campaignId) {
-              // Only toast if status actually changed and not silent
-              if (c.status.toUpperCase() !== statusData.status.toUpperCase() && !silent) {
-                if (toastId) toast.dismiss(toastId);
-                toast.success(`Campaign status updated: ${c.status} → ${statusData.status}`);
-              } else if (!silent) {
-                if (toastId) toast.dismiss(toastId);
-                toast.success(`Campaign status confirmed: ${statusData.status}`);
-              }
-              
-              // Return updated campaign
-              return {
-                ...c,
-                status: statusData.status,
-                last_refresh_date: statusData.timestamp
-              };
-            }
-            return c;
-          });
-          
-          // Update local state for immediate UI update
-          setLocalCampaigns(updatedCampaigns);
-          
-          // If the campaign is expanded and has ad sets, check if we need to refresh them
-          if (expandedCampaign === campaignId && adSets.length > 0) {
-            console.log(`[CampaignWidget] Refreshing ad sets after campaign status update`);
-            fetchAdSets(campaignId);
-          }
-          
-          // Notify parent component about the status change if status actually changed
-          if (updatedCampaigns.some(c => c.campaign_id === campaignId && c.status !== statusData.status)) {
-            if (onRefresh && typeof onRefresh === 'function') {
-              onRefresh();
-            }
-          }
-          
-          // Also notify listeners about the status change for other components
-          window.dispatchEvent(
-            new CustomEvent('campaignStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                status: statusData.status,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          return;
-        } else if (!silent) {
-          // If we didn't get a status back but the API call succeeded
-          if (toastId) toast.dismiss(toastId);
-          toast.success(statusData.message || "Refreshed campaign status");
-          onRefresh();
-        }
-      } else if (!silent) {
-        // Handle error response
-        const errorData = await statusResponse.json();
-        console.error(`[CampaignWidget] Status check failed:`, errorData);
-        if (toastId) toast.dismiss(toastId);
-        toast.error(errorData.error || "Failed to refresh campaign status");
-      }
-    } catch (error) {
-      console.error("Error refreshing campaign status:", error);
-      if (!silent && toastId) {
-        toast.dismiss(toastId);
-        toast.error("Error checking campaign status");
-      }
-    }
-  }, [brandId, expandedCampaign, fetchAdSets, adSets.length, localCampaigns, onRefresh]);
-  
   // Listen for global refresh triggers
   useEffect(() => {
     // Create a listener function
@@ -716,45 +610,111 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     prevRefreshRef.current = onRefresh;
   }, [onRefresh, localCampaigns, checkCampaignStatuses, isMountedRef]);
   
+  // Function to manually refresh campaign status with a more direct approach
+  const refreshCampaignStatus = async (campaign: Campaign) => {
+    const toastId = toast.loading(`Checking campaign status...`);
+    
+    try {
+      const response = await fetch('/api/meta/campaign-status-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          campaignId: campaign.campaign_id,
+          refreshStatus: true,
+          forceRefresh: true
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Update local campaign status
+        const updatedCampaigns = localCampaigns.map(c => {
+          if (c.campaign_id === campaign.campaign_id) {
+            return { ...c, status: data.status };
+          }
+          return c;
+        });
+        
+        setLocalCampaigns(updatedCampaigns);
+        
+        // Also trigger a refresh to ensure the UI is updated
+        onRefresh();
+        
+        toast.success(`Status updated to ${data.status}`, {
+          id: toastId,
+          description: data.message || "Campaign status refreshed successfully"
+        });
+      } else if (data.source === 'cached_due_to_rate_limit') {
+        toast.warning("Using cached status", {
+          id: toastId,
+          description: "Meta API rate limit reached. Using cached data instead."
+        });
+        
+        // Still update local state with the cached status
+        const updatedCampaigns = localCampaigns.map(c => {
+          if (c.campaign_id === campaign.campaign_id) {
+            return { ...c, status: data.status };
+          }
+          return c;
+        });
+        
+        setLocalCampaigns(updatedCampaigns);
+      } else {
+        toast.error("Failed to refresh status", {
+          id: toastId,
+          description: data.error || "There was an error checking the campaign status"
+        });
+      }
+    } catch (error) {
+      console.error(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error);
+      toast.error("Error checking status", {
+        id: toastId,
+        description: (error as Error).message || "An unexpected error occurred"
+      });
+    }
+  };
+  
   // Toggle campaign expand - UPDATED to check campaign status
-  const toggleCampaignExpand = useCallback((campaignId: string) => {
-    setExpandedCampaign(prev => {
-      // If we're closing the current expanded campaign, also close any expanded ad set
-      if (prev === campaignId) {
-        setExpandedAdSet(null);
-        return null;
-      }
-      return campaignId;
-    });
-    
-    // If we're opening a different campaign, close any expanded ad set
-    if (expandedCampaign !== campaignId) {
-      setExpandedAdSet(null);
-    }
-    
-    // If we're expanding a campaign and there are no ad sets, fetch them
-    if (expandedCampaign !== campaignId) {
-      // Set loading state immediately
-      setIsLoadingAdSets(true); 
-      // Clear any existing ad sets to show fresh loading state
+  const toggleCampaignExpand = async (campaignId: string) => {
+    // Close any other expanded campaign
+    if (expandedCampaign && expandedCampaign !== campaignId) {
+      setExpandedCampaign(null);
       setAdSets([]);
-      
-      // Get the campaign from the list
-      const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
-      
-      // Check if campaign is ACTIVE or needs a status refresh
-      if (campaign) {
-        console.log(`[CampaignWidget] Expanding campaign ${campaignId} with status ${campaign.status}`);
+    }
+
+    // Toggle the campaign
+    if (expandedCampaign === campaignId) {
+      setExpandedCampaign(null);
+      setAdSets([]);
+    } else {
+      setExpandedCampaign(campaignId);
+      setAdSets([]);
+      setIsLoadingAdSets(true);
+
+      try {
+        // Find the campaign in the list
+        const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
         
-        // For all campaigns, do a quick status check in the background
-        // This helps ensure the UI is always showing the correct status
-        refreshCampaignStatus(campaignId);
-        
-        // Fetch the ad sets
-        fetchAdSets(campaignId);
+        if (campaign) {
+          // For all campaigns, do a quick status check in the background
+          // This helps ensure the UI is always showing the correct status
+          refreshCampaignStatus(campaign);
+          
+          // Fetch the ad sets
+          await fetchAdSets(campaignId);
+        }
+      } catch (error) {
+        console.error("Error fetching ad sets:", error);
+        toast.error("Error loading ad sets");
+      } finally {
+        setIsLoadingAdSets(false);
       }
     }
-  }, [expandedCampaign, fetchAdSets, localCampaigns, refreshCampaignStatus]);
+  };
   
   // Toggle sort order
   const toggleSortOrder = () => {
@@ -1162,7 +1122,7 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
                               className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                refreshCampaignStatus(campaign.campaign_id);
+                                refreshCampaignStatus(campaign);
                               }}
                               title="Refresh Campaign Status"
                             >
@@ -1339,25 +1299,25 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
                                                 let value: number;
                                                 switch (metricId) {
                                                   case 'spent':
-                                                    value = adSet.spent;
+                                                    value = adSet.spent || 0;
                                                     break;
                                                   case 'impressions':
-                                                    value = adSet.impressions;
+                                                    value = adSet.impressions || 0;
                                                     break;
                                                   case 'clicks':
-                                                    value = adSet.clicks;
+                                                    value = adSet.clicks || 0;
                                                     break;
                                                   case 'ctr':
-                                                    value = adSet.ctr;
+                                                    value = adSet.ctr || 0;
                                                     break;
                                                   case 'cpc':
-                                                    value = adSet.cpc;
+                                                    value = adSet.cpc || 0;
                                                     break;
                                                   case 'conversions':
-                                                    value = adSet.conversions;
+                                                    value = adSet.conversions || 0;
                                                     break;
                                                   case 'cost_per_conversion':
-                                                    value = adSet.cost_per_conversion;
+                                                    value = adSet.cost_per_conversion || 0;
                                                     break;
                                                   case 'reach':
                                                     value = adSet.reach || 0;

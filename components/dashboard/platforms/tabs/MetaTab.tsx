@@ -11,7 +11,8 @@ import {
   Sparkles, Image as ImageIcon, Activity, ArrowRight, 
   CalendarIcon, Check, ChevronsUpDown, Clock, Download, 
   FacebookIcon, MoreHorizontal, PenTool, SettingsIcon, 
-  Terminal, User2, Wrench, CalendarRange, Percent, Info
+  Terminal, User2, Wrench, CalendarRange, Percent, Info, 
+  RefreshCcw
 } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
@@ -247,6 +248,7 @@ export function MetaTab({
   const [topCampaigns, setTopCampaigns] = useState<any[]>([])
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isResyncing, setIsResyncing] = useState(false)
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [cachedCampaigns, setCachedCampaigns] = useState<any[]>([])
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
@@ -4024,6 +4026,59 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [dateRange]);
 
+  // Add this handler function somewhere in the MetaTab component
+  const handleResyncData = async () => {
+    if (!brandId || isResyncing) return;
+    
+    // Confirm with the user
+    const confirmed = confirm(
+      "This will clear and rebuild all Meta metrics data from scratch. This process may take several minutes. Do you want to continue?"
+    );
+    
+    if (!confirmed) return;
+    
+    setIsResyncing(true);
+    
+    try {
+      // Show toast that we're starting the resync
+      toast.info("Starting Meta data resync", {
+        description: "This process will take several minutes to complete.",
+        duration: 10000
+      });
+      
+      // Call the resync endpoint
+      const response = await fetch(`/api/meta/resync?brandId=${brandId}`, {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resync data');
+      }
+      
+      const data = await response.json();
+      
+      // Show success message
+      toast.success("Meta data resync complete", {
+        description: `Successfully resynced ${data.insights || 0} data points.`,
+        duration: 10000
+      });
+      
+      // Refresh the data
+      refreshAllData();
+      
+    } catch (error) {
+      console.error('[MetaTab] Resync error:', error);
+      
+      toast.error("Error resyncing Meta data", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 10000
+      });
+    } finally {
+      setIsResyncing(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4359,6 +4414,32 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
+        {/* Meta data control panel */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Campaign Performance</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-500/30 hover:border-red-500/50 hover:bg-red-500/10"
+              onClick={handleResyncData}
+              disabled={isResyncing || isDateChangeLoading}
+            >
+              {isResyncing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resyncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Resync Data
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      
         <CampaignWidget 
           brandId={brandId || ''}
           campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}

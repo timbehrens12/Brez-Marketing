@@ -1,80 +1,106 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { fetchMetaAdInsights } from '@/lib/services/meta-service'
 
+export const dynamic = 'force-dynamic'
+
 /**
- * API endpoint to clear and resync Meta data for a brand with a custom date range
- * This is useful for testing and fixing data issues
+ * API endpoint to resynchronize Meta data from scratch
+ * This endpoint will clear the meta_ad_insights table for the brand
+ * and then refetch all insights from Meta API
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get params from request body
-    const { brandId, days = 60 } = await request.json()
+    // Verify user authentication
+    const { userId } = auth()
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - You must be logged in to access this resource' },
+        { status: 401 }
+      )
+    }
+    
+    // Get query parameters
+    const searchParams = request.nextUrl.searchParams
+    const brandId = searchParams.get('brandId')
     
     if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Brand ID is required' },
+        { status: 400 }
+      )
     }
-
+    
     // Initialize Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Calculate date range
-    const endDate = new Date()
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - (days || 60))
+    // 1. Get the active Meta connection for this brand
+    const { data: connection, error: connectionError } = await supabase
+      .from('platform_connections')
+      .select('*')
+      .eq('brand_id', brandId)
+      .eq('platform_type', 'meta')
+      .eq('status', 'active')
+      .single()
     
-    // Format dates for display
-    const startDateStr = startDate.toISOString().split('T')[0]
-    const endDateStr = endDate.toISOString().split('T')[0]
+    if (connectionError || !connection) {
+      console.error('[Meta Resync] Failed to get Meta connection:', connectionError)
+      return NextResponse.json({ 
+        error: 'No active Meta connection found for this brand' 
+      }, { status: 404 })
+    }
     
-    console.log(`[Meta Resync] Starting resync for brand ${brandId} from ${startDateStr} to ${endDateStr}`)
-
-    // First, clear existing data for this brand and date range
-    console.log(`[Meta Resync] Clearing existing data`)
+    // 2. Delete existing meta_ad_insights for this brand
     const { error: deleteError } = await supabase
       .from('meta_ad_insights')
       .delete()
       .eq('brand_id', brandId)
-      .gte('date', startDateStr)
-      .lte('date', endDateStr)
     
     if (deleteError) {
-      console.error(`[Meta Resync] Error clearing existing data:`, deleteError)
-      return NextResponse.json({ 
-        error: 'Failed to clear existing data', 
-        details: deleteError 
+      console.error('[Meta Resync] Error deleting existing Meta insights:', deleteError)
+      return NextResponse.json({
+        error: 'Failed to clean existing data',
+        details: deleteError.message
       }, { status: 500 })
     }
-
-    // Now fetch and store new data
-    console.log(`[Meta Resync] Fetching new data`)
-    const result = await fetchMetaAdInsights(
-      brandId,
-      startDate,
-      endDate
-    )
     
-    if (!result.success) {
-      console.error(`[Meta Resync] Error fetching data:`, result.error)
-      return NextResponse.json({ 
-        error: 'Failed to fetch Meta data', 
-        details: result.error 
+    // 3. Calculate date range (last 90 days)
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - 90)
+    
+    // 4. Fetch and save new data
+    const result = await fetchMetaAdInsights(brandId, startDate, endDate, false)
+    
+    if (result.success) {
+      // 5. Also refresh campaigns and ad sets
+      await fetch(`/api/meta/campaigns/sync?brandId=${brandId}`, { method: 'POST' })
+      await fetch(`/api/meta/adsets/refresh-all?brandId=${brandId}`, { method: 'POST' })
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Successfully resynchronized Meta data',
+        insights: result.insights || 0,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      })
+    } else {
+      return NextResponse.json({
+        error: 'Failed to fetch new Meta insights',
+        details: result.error
       }, { status: 500 })
     }
-
+  } catch (error: any) {
+    console.error('[Meta Resync] Error:', error)
+    
     return NextResponse.json({
-      success: true,
-      message: `Meta data resynced successfully for brand ${brandId} from ${startDateStr} to ${endDateStr}`,
-      count: result.count || 0
-    })
-  } catch (error) {
-    console.error('[Meta Resync] Server error:', error)
-    return NextResponse.json({ 
-      error: 'Server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to resynchronize Meta data',
+      details: error.message
     }, { status: 500 })
   }
 } 
