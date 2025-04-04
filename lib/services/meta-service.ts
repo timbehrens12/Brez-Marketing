@@ -71,8 +71,9 @@ export async function fetchMetaAdInsights(
     const startDateStr = startDate.toISOString().split('T')[0]
     const endDateStr = endDate.toISOString().split('T')[0]
 
-    let allInsights = []
+    let allInsights: any[] = []
     let campaignBudgets = new Map()
+    let insightsCount = 0
     
     // For each ad account, fetch insights
     for (const account of accountsData.data) {
@@ -118,37 +119,31 @@ export async function fetchMetaAdInsights(
         
         if (insightsData.error) {
           console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)
+          // Continue with other accounts rather than failing completely
           continue
         }
         
-        if (insightsData.data && insightsData.data.length > 0) {
-          allInsights.push(...insightsData.data)
-          // Log the first item to check for daily data structure
-          if (insightsData.data[0]) {
-            console.log(`[Meta] Sample data format (first item):`, {
-              date_start: insightsData.data[0].date_start,
-              date_stop: insightsData.data[0].date_stop,
-              ad_id: insightsData.data[0].ad_id,
-              impressions: insightsData.data[0].impressions
-            })
-          }
+        if (!insightsData.data || insightsData.data.length === 0) {
+          console.log(`[Meta] No insights found for account ${account.id}`)
+          continue
         }
+        
+        console.log(`[Meta] Fetched ${insightsData.data.length} insights for account ${account.id}`)
+        allInsights = [...allInsights, ...insightsData.data]
+        insightsCount += insightsData.data.length
       } catch (error) {
-        console.error(`[Meta] Error fetching insights for account ${account.id}:`, error)
+        console.error(`[Meta] Error fetching data for account ${account.id}:`, error)
+        // Continue with other accounts rather than failing completely
       }
     }
-
-    console.log(`[Meta] Fetched a total of ${allInsights.length} insights across all accounts`)
     
-    // Log count of distinct dates
-    const uniqueDates = new Set(allInsights.filter((insight: any) => insight.date_start).map((insight: any) => insight.date_start))
-    console.log(`[Meta] Data contains ${uniqueDates.size} unique dates (expected: ~${Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1)} days)`)
+    console.log(`[Meta] Total insights fetched: ${allInsights.length}`)
     
     if (allInsights.length === 0) {
       return { 
-        success: true, 
-        message: 'No insights data available for the specified period',
-        insights: []
+        success: false, 
+        error: 'No insights data found for the selected date range',
+        count: 0
       }
     }
 
@@ -202,20 +197,38 @@ export async function fetchMetaAdInsights(
           actions: insight.actions || [],
           action_values: insight.action_values || []
         };
-      })
+      });
       
-      const { error: insertError } = await supabase
-        .from('meta_ad_insights')
-        .upsert(enrichedInsights)
+      // Split into batches to avoid payload size limits
+      const BATCH_SIZE = 500;
+      console.log(`[Meta] Inserting ${enrichedInsights.length} records in batches of ${BATCH_SIZE}`)
       
-      if (insertError) {
-        console.error(`[Meta] Error storing insights:`, insertError)
-        return { 
-          success: false, 
-          error: 'Failed to store Meta insights',
-          details: insertError
+      for (let i = 0; i < enrichedInsights.length; i += BATCH_SIZE) {
+        const batch = enrichedInsights.slice(i, i + BATCH_SIZE);
+        
+        console.log(`[Meta] Inserting batch ${Math.floor(i/BATCH_SIZE) + 1} of ${Math.ceil(enrichedInsights.length/BATCH_SIZE)} (${batch.length} records)`)
+        
+        try {
+          const { error: insertError } = await supabase
+            .from('meta_ad_insights')
+            .upsert(batch, { 
+              onConflict: 'brand_id,account_id,campaign_id,adset_id,ad_id,date',
+              ignoreDuplicates: false
+            });
+          
+          if (insertError) {
+            console.error(`[Meta] Error inserting batch ${Math.floor(i/BATCH_SIZE) + 1}:`, insertError);
+            // Continue with next batch rather than failing completely
+          } else {
+            console.log(`[Meta] Successfully inserted batch ${Math.floor(i/BATCH_SIZE) + 1}`);
+          }
+        } catch (error) {
+          console.error(`[Meta] Exception inserting batch ${Math.floor(i/BATCH_SIZE) + 1}:`, error);
+          // Continue with next batch
         }
       }
+      
+      console.log(`[Meta] Finished inserting all data`);
     }
     
     return { 

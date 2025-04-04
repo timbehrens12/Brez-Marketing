@@ -470,6 +470,7 @@ export function MetaTab({
     
     if (forceRefresh) {
       setIsRefreshing(true);
+      console.log(`[MetaTab] 🔄 Force refreshing campaign data (fetchId: ${fetchId})`);
     }
     
     // Log the fetch request
@@ -481,6 +482,8 @@ export function MetaTab({
       // Add forceRefresh parameter if needed
       if (forceRefresh) {
         url += `&forceRefresh=true`;
+        // Add a timestamp to bust cache
+        url += `&_t=${Date.now()}`;
       }
       
       // Add date range parameters if available
@@ -501,19 +504,23 @@ export function MetaTab({
       try {
         const response = await fetch(url, {
           signal: controller.signal,
-          cache: 'no-cache', // Avoid browser cache
+          cache: forceRefresh ? 'no-store' : 'no-cache', // Avoid browser cache
           headers: {
-            'x-fetch-id': fetchId.toString() // Help debug with request ID
+            'x-fetch-id': fetchId.toString(), // Help debug with request ID
+            'Cache-Control': forceRefresh ? 'no-cache, no-store, must-revalidate' : 'no-cache',
+            'Pragma': 'no-cache'
           }
         });
         
         clearTimeout(timeoutId);
         
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[MetaTab] Failed to fetch campaign data (${response.status}): ${errorText}`);
           throw new Error(`Failed to fetch campaign data (status ${response.status})`);
-      }
+        }
       
-      const data = await response.json();
+        const data = await response.json();
         
         // Only update state if component is still mounted
         if (!isMounted.current) {
@@ -547,6 +554,14 @@ export function MetaTab({
             };
             console.log(`[MetaTab] Updated lastFetchedDates to: ${JSON.stringify(lastFetchedDates.current)}`);
           }
+          
+          // If force refreshing, also trigger a metrics refresh
+          if (forceRefresh) {
+            console.log(`[MetaTab] Force refresh requested, refreshing metrics after campaign fetch`);
+            setTimeout(() => {
+              refreshAllMetricsDirectly(true);
+            }, 1000);
+          }
         } else {
           console.log(`[MetaTab] Campaign data unchanged, skipping update (fetchId: ${fetchId})`);
         }
@@ -557,7 +572,7 @@ export function MetaTab({
         if (forceRefresh) {
           // Show success toast using sonner toast
           toast.success("Campaigns refreshed", {
-            description: `Successfully refreshed ${data.campaigns.length} campaigns`
+            description: `Successfully refreshed ${data.campaigns.length} campaigns from Meta`
           });
         }
         
@@ -3454,50 +3469,121 @@ Try creating at least one active campaign in Meta Ads Manager.
     setIsManuallyRefreshing(true)
     
     try {
-      console.log(`Refreshing all metrics directly${bypassCache ? ' with cache bypass' : ''}`)
+      console.log(`[MetaTab] Refreshing all metrics directly${bypassCache ? ' with cache bypass' : ''}`)
+      
+      // Format dates for API calls
+      const fromDate = dateRange.from.toISOString().split('T')[0]
+      const toDate = dateRange.to.toISOString().split('T')[0]
       
       // Append refresh and bypass_cache params to all endpoints if needed
       const params = new URLSearchParams()
       if (bypassCache) {
         params.append('bypass_cache', 'true')
         params.append('refresh', 'true')
+        // Add random parameter to truly force cache busting
+        params.append('_t', Date.now().toString())
       }
       
       // Create fetch functions with the appropriate parameters
       const fetchWithParams = async (endpoint: string) => {
-        const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`
-        return fetch(url)
+        const hasQueryParams = endpoint.includes('?')
+        const url = `${endpoint}${hasQueryParams ? '&' : '?'}${params.toString()}`
+        console.log(`[MetaTab] Fetching with params: ${url}`)
+        const response = await fetch(url, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'X-Force-Refresh': bypassCache ? 'true' : 'false'
+          }
+        })
+        
+        if (!response.ok) {
+          console.error(`[MetaTab] Error fetching ${url}: ${response.status}`)
+          const text = await response.text()
+          console.error(`[MetaTab] Response: ${text}`)
+          throw new Error(`Failed to fetch metrics: ${response.status}`)
+        }
+        
+        return response
       }
       
-      // Call fetch functions with the option to bypass cache
-      await Promise.all([
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/spend?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchAdSpendDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/roas?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchRoasDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/impressions?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchImpressionsDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/clicks?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchClicksDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/purchase-conversion-value?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchPurchaseValueDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/results?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchResultsDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/cost-per-result?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchCostPerResultDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/cost-per-click?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchCostPerClickDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/ctr?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchCtrDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/reach?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchReachDirectly(),
-        bypassCache ? fetchWithParams(`/api/metrics/meta/single/link_clicks?brandId=${brandId}&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`) : fetchLinkClicksDirectly()
-      ])
-      
-      // Force refresh the data after a short delay
+      // First, clear the in-memory cache if bypassing cache
       if (bypassCache) {
+        try {
+          console.log('[MetaTab] Clearing local storage cache')
+          localStorage.removeItem('meta-metrics-cache')
+          sessionStorage.removeItem('meta-metrics-cache')
+        } catch (e) {
+          console.warn('[MetaTab] Failed to clear cache:', e)
+        }
+      }
+      
+      // Basic set of requests to refresh meta data
+      const requests = [
+        fetchWithParams(`/api/metrics/meta/single/spend?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/roas?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/impressions?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/clicks?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/purchase-conversion-value?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/results?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/cost-per-result?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/cost-per-click?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/ctr?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/reach?brandId=${brandId}&from=${fromDate}&to=${toDate}`),
+        fetchWithParams(`/api/metrics/meta/single/link_clicks?brandId=${brandId}&from=${fromDate}&to=${toDate}`)
+      ]
+      
+      // Execute all requests in parallel
+      const results = await Promise.allSettled(requests)
+      
+      // Log results
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`[MetaTab] Request ${index} succeeded: ${result.value.url}`)
+        } else {
+          console.error(`[MetaTab] Request ${index} failed:`, result.reason)
+        }
+      })
+      
+      // If bypassing cache, force reload campaign data
+      if (bypassCache) {
+        console.log('[MetaTab] Force refreshing campaigns and Meta data')
+        
+        // Wait a bit for the database to update
         setTimeout(() => {
-          fetchMetaData();
-        }, 1000);
+          fetchCampaigns(true)
+          fetchMetaData()
+        }, 2000)
       }
       
       // Show success toast
-      toast.success("Metrics refreshed successfully")
+      toast.success("Metrics refreshed successfully", {
+        description: bypassCache ? "Forced a complete refresh of all metrics" : "Updated with latest data"
+      })
     } catch (error) {
-      console.error("Error refreshing metrics:", error)
-      toast.error("Failed to refresh metrics")
+      console.error("[MetaTab] Error refreshing metrics:", error)
+      toast.error("Failed to refresh metrics", {
+        description: error instanceof Error ? error.message : "Unknown error occurred"
+      })
     } finally {
       setIsManuallyRefreshing(false)
+      
+      // Set loading states to false for all widgets
+      setTimeout(() => {
+        setAdSpendData(prev => ({ ...prev, isLoading: false }))
+        setRoasData(prev => ({ ...prev, isLoading: false }))
+        setImpressionsData(prev => ({ ...prev, isLoading: false }))
+        setClicksData(prev => ({ ...prev, isLoading: false }))
+        setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
+        setResultsData(prev => ({ ...prev, isLoading: false }))
+        setCostPerResultData(prev => ({ ...prev, isLoading: false }))
+        setCostPerClickData(prev => ({ ...prev, isLoading: false }))
+        setCtrData(prev => ({ ...prev, isLoading: false }))
+        setReachData(prev => ({ ...prev, isLoading: false }))
+        setLinkClicksData(prev => ({ ...prev, isLoading: false }))
+        setBudgetData(prev => ({ ...prev, isLoading: false }))
+      }, 1000)
     }
   }, [dateRange, brandId, 
      fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
@@ -4053,33 +4139,91 @@ Try creating at least one active campaign in Meta Ads Manager.
     if (!brandId) return;
     
     try {
+      console.log('[MetaTab] Starting complete Meta data resync and refresh');
+      
       // 1. Call the resync endpoint to rebuild all Meta data
       const resyncResponse = await fetch(`/api/meta/resync?brandId=${brandId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          brandId,
+          days: 90, // Get last 90 days of data
+          force_refresh: true,
+          refresh_cache: true
+        })
       });
       
       if (!resyncResponse.ok) {
         const errorData = await resyncResponse.json();
-        throw new Error(errorData.error || 'Failed to resync data');
+        console.error('[MetaTab] Resync endpoint error:', errorData);
+        throw new Error(errorData.error || `Failed to resync data: ${resyncResponse.status}`);
       }
       
-      // Allow some time for the database to update
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const resyncResult = await resyncResponse.json();
+      console.log('[MetaTab] Resync completed successfully:', resyncResult);
       
-      // 2. Fetch all campaigns with forceRefresh=true
+      // Allow some time for the database to update
+      toast.loading("Waiting for database update...", { duration: 3000 });
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // 2. Fetch Meta insights for this date range
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 90);
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      toast.loading("Syncing Meta insights data...", { duration: 5000 });
+      
+      try {
+        const insightsResponse = await fetch('/api/meta/insights/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            brandId,
+            startDate: startDateStr,
+            endDate: endDateStr,
+            forceRefresh: true
+          })
+        });
+        
+        if (!insightsResponse.ok) {
+          console.warn('[MetaTab] Insights sync warning:', await insightsResponse.text());
+        } else {
+          console.log('[MetaTab] Insights sync success:', await insightsResponse.json());
+        }
+      } catch (error) {
+        console.error('[MetaTab] Insights sync error:', error);
+        // Continue with other steps even if this fails
+      }
+      
+      // 3. Fetch all campaigns with forceRefresh=true
+      toast.loading("Fetching campaigns with force refresh...", { duration: 3000 });
       await fetchCampaigns(true);
       
       // Allow time between requests
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 3. Force refresh all metrics with bypass_cache=true 
+      // 4. Force refresh all metrics with bypass_cache=true 
+      toast.loading("Refreshing all metrics with cache bypass...", { duration: 3000 });
       await refreshAllMetricsDirectly(true);
       
-      // 4. Inform the user that everything has been refreshed
+      // 5. Inform the user that everything has been refreshed
       toast.success("Meta data has been completely reset and refreshed", {
         description: "All metrics, campaigns, and ad sets have been updated.",
         duration: 5000
       });
+      
+      // 6. Manually trigger another refresh to pick up any changes
+      setTimeout(() => {
+        fetchMetaData();
+        refreshAllData();
+      }, 5000);
       
       return true;
     } catch (error) {
