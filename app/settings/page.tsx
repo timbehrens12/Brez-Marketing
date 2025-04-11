@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,11 @@ import { useSupabase } from '@/lib/hooks/useSupabase'
 import { MetaConnectButton } from "@/components/dashboard/platforms/MetaConnectButton"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CustomerSyncButton } from "@/components/dashboard/CustomerSyncButton"
+import { UserProfileSettings } from "@/components/settings/UserProfileSettings"
+import { AppearanceSettings } from "@/components/settings/AppearanceSettings"
+import { PlatformSettings } from "@/components/settings/PlatformSettings"
+import { EditBrandDialog } from "@/components/settings/EditBrandDialog"
+import { AlertCircle, Settings, Compass, PaintBrush, UserCircle, Building } from "lucide-react"
 
 // Constants for data retention
 const META_DATA_RETENTION_DAYS = 90
@@ -31,10 +37,13 @@ export default function SettingsPage() {
   const { user } = useUser()
   const { brands, selectedBrandId, setSelectedBrandId, refreshBrands } = useBrandContext()
   const [isAddingBrand, setIsAddingBrand] = useState(false)
+  const [isEditingBrand, setIsEditingBrand] = useState(false)
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null)
   const [newBrandName, setNewBrandName] = useState("")
   const [newBrandImage, setNewBrandImage] = useState<File | null>(null)
   const [connections, setConnections] = useState<PlatformConnection[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile")
   const supabase = useSupabase()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -275,22 +284,24 @@ export default function SettingsPage() {
       console.log('Brand added:', data)
       await refreshBrands()
       
-      // Close dialog
-      const closeButton = document.querySelector('[aria-label="Close"]') as HTMLButtonElement
-      closeButton?.click()
-      
-      // Reset form
+      // Reset form and close the add brand dialog
       setNewBrandName("")
       setNewBrandImage(null)
+      setIsAddingBrand(false)
+      toast.success('Brand added successfully')
     } catch (error) {
       console.error('Error adding brand:', error)
-      alert('Failed to add brand. Please try again.')
+      toast.error('Failed to add brand. Please try again.')
     }
   }
 
   const handleEditBrand = async (brandId: string) => {
-    // Implement edit functionality
-    console.log('Edit brand:', brandId)
+    // Find the brand to edit
+    const brand = brands.find(b => b.id === brandId)
+    if (brand) {
+      setEditingBrand(brand)
+      setIsEditingBrand(true)
+    }
   }
 
   const handleDeleteBrand = async (brandId: string) => {
@@ -411,16 +422,6 @@ export default function SettingsPage() {
       // This functionality is now handled through the meta_ad_insights table
       // No need to track it separately in the deprecated meta_data_tracking table
       console.log('Meta data access tracking is now handled through meta_ad_insights')
-      
-      // If needed, we could add a flag or entry in the new table
-      // await supabase
-      //   .from('meta_ad_insights')
-      //   .upsert({
-      //     brand_id: brandId,
-      //     last_accessed: new Date().toISOString(),
-      //     timestamp: new Date().toISOString(),
-      //     is_access_tracking: true
-      //   })
     } catch (error) {
       console.error('Error updating Meta data access:', error)
     }
@@ -640,239 +641,300 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-6 max-w-[1600px] mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-white">Settings</h1>
-        <Button 
-          variant="destructive"
-          className="bg-red-600 hover:bg-red-700 text-white"
-          onClick={handleClearAllData}
-        >
-          Clear All Data
-        </Button>
       </div>
 
-      <div className="grid gap-6">
-        {/* Account Settings Card */}
-        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium text-white">Account Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-gray-200">Email Notifications</Label>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Daily Reports</span>
-                <Switch />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Weekly Analytics</span>
-                <Switch />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Brand Management Card */}
-        <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-medium text-white">Brand Management</CardTitle>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-[#2A2A2A] hover:bg-[#333]">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Brand
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="bg-[#1A1A1A] border-b border-[#2A2A2A] p-0 w-full justify-start mb-4">
+          <TabsTrigger 
+            value="profile" 
+            className="data-[state=active]:bg-[#222] data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-4 py-3 text-sm"
+          >
+            <UserCircle className="h-4 w-4 mr-2" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger 
+            value="brands" 
+            className="data-[state=active]:bg-[#222] data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-4 py-3 text-sm"
+          >
+            <Building className="h-4 w-4 mr-2" />
+            Brands & Connections
+          </TabsTrigger>
+          <TabsTrigger 
+            value="appearance" 
+            className="data-[state=active]:bg-[#222] data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-4 py-3 text-sm"
+          >
+            <PaintBrush className="h-4 w-4 mr-2" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger 
+            value="advanced" 
+            className="data-[state=active]:bg-[#222] data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-4 py-3 text-sm"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Advanced
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="profile" className="mt-0 space-y-6">
+          <UserProfileSettings user={user} />
+        </TabsContent>
+        
+        <TabsContent value="appearance" className="mt-0 space-y-6">
+          <AppearanceSettings />
+        </TabsContent>
+        
+        <TabsContent value="advanced" className="mt-0 space-y-6">
+          <Card className="bg-[#1A1A1A] border-[#2A2A2A]">
+            <CardHeader>
+              <CardTitle className="text-lg font-medium text-white flex items-center">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Danger Zone
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-[#2A2A2A] rounded-md border border-red-900">
+                <h3 className="text-md font-medium text-white mb-2">Clear All Data</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  This will permanently delete all your brands, connections, and associated data. This action cannot be undone.
+                </p>
+                <Button 
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={handleClearAllData}
+                >
+                  Clear All Data
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-[#2A2A2A] border-[#333] text-white">
-                <DialogHeader>
-                  <DialogTitle>Add New Brand</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={async (e) => {
-                  e.preventDefault()
-                  console.log('Form submitted, brand name:', newBrandName)
-                  try {
-                    await handleAddBrand()
-                    console.log('Brand added successfully')
-                  } catch (error) {
-                    console.error('Error adding brand:', error)
-                  }
-                }}>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Brand Name</Label>
-                      <Input 
-                        required
-                        value={newBrandName}
-                        onChange={(e) => setNewBrandName(e.target.value)}
-                        className="bg-[#333] border-[#444] text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label>Brand Logo (optional)</Label>
-                      <Input 
-                        type="file"
-                        onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
-                        className="bg-[#333] border-[#444] text-white"
-                        accept="image/*"
-                      />
-                    </div>
-                    <Button 
-                      type="submit"
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      Add Brand
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent className="space-y-4">
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="brands" className="mt-0">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-medium text-white">Brand Management</h2>
+            <Button 
+              onClick={() => setIsAddingBrand(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Add New Brand
+            </Button>
+          </div>
+          
+          {/* Brand list */}
+          <div className="space-y-4">
             {brands.length > 0 ? (
               brands.map(brand => (
-                <div key={brand.id} className="space-y-2">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
-                    <div className="flex items-center gap-3">
-                      {brand.image_url ? (
-                        <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
-                          {brand.name[0].toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-white">{brand.name}</span>
-                        <div className="flex gap-2 mt-1">
-                          {connections.filter(c => c.brand_id === brand.id).map(connection => (
-                            <div key={connection.id} className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300">
-                              <img src={`/${connection.platform_type}-icon.png`} alt={connection.platform_type} className="w-3 h-3" />
-                              {connection.platform_type === 'shopify' ? connection.shop : connection.platform_type}
+                <Card key={brand.id} className="bg-[#1A1A1A] border-[#2A2A2A]">
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-[#2A2A2A]">
+                        <div className="flex items-center gap-3">
+                          {brand.image_url ? (
+                            <img src={brand.image_url} alt={brand.name} className="w-10 h-10 rounded-full" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-[#333] flex items-center justify-center text-white">
+                              {brand.name[0].toUpperCase()}
                             </div>
-                          ))}
+                          )}
+                          <div>
+                            <span className="text-white">{brand.name}</span>
+                            <div className="flex gap-2 mt-1">
+                              {connections.filter(c => c.brand_id === brand.id).map(connection => (
+                                <div key={connection.id} className="flex items-center gap-1 px-2 py-1 rounded bg-[#333] text-xs text-gray-300">
+                                  <img src={`/${connection.platform_type}-icon.png`} alt={connection.platform_type} className="w-3 h-3" />
+                                  {connection.platform_type === 'shopify' ? connection.shop : connection.platform_type}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            className="hover:bg-[#333]"
+                            onClick={() => handleBrandSelect(brand.id)}
+                          >
+                            {selectedBrandId === brand.id ? 'Hide Connections' : 'Manage Connections'}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="hover:bg-[#333]" 
+                            onClick={() => handleEditBrand(brand.id)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            className="hover:bg-[#333] text-red-400 hover:text-red-300" 
+                            onClick={() => handleDeleteBrand(brand.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="hover:bg-[#333]"
-                        onClick={() => handleBrandSelect(brand.id)}
-                      >
-                        Manage Connections
-                      </Button>
-                      <Button variant="ghost" className="hover:bg-[#333]" onClick={() => handleEditBrand(brand.id)}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" className="hover:bg-[#333] text-red-400 hover:text-red-300" onClick={() => handleDeleteBrand(brand.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
 
-                  {/* Platform connections panel */}
-                  {selectedBrandId === brand.id && (
-                    <div className="ml-12 p-4 rounded-lg bg-[#222] space-y-3">
-                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
-                        <div className="flex items-center gap-3">
-                          <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
-                          <span className="text-white">Shopify</span>
-                        </div>
-                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') ? (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-red-400 hover:text-red-300"
-                            onClick={() => handleDisconnect('shopify', brand.id)}
-                            disabled={disconnectingPlatforms[`shopify-${brand.id}`]}
-                          >
-                            {disconnectingPlatforms[`shopify-${brand.id}`] ? (
-                              <>
-                                <span className="mr-2">Disconnecting</span>
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              </>
+                      {/* Platform connections panel */}
+                      {selectedBrandId === brand.id && (
+                        <div className="ml-12 p-4 rounded-lg bg-[#222] space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                            <div className="flex items-center gap-3">
+                              <img src="/shopify-icon.png" alt="Shopify" className="w-6 h-6" />
+                              <span className="text-white">Shopify</span>
+                            </div>
+                            {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') ? (
+                              <Button 
+                                variant="outline" 
+                                className="border-[#333] text-red-400 hover:text-red-300"
+                                onClick={() => handleDisconnect('shopify', brand.id)}
+                                disabled={disconnectingPlatforms[`shopify-${brand.id}`]}
+                              >
+                                {disconnectingPlatforms[`shopify-${brand.id}`] ? (
+                                  <>
+                                    <span className="mr-2">Disconnecting</span>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  </>
+                                ) : (
+                                  'Disconnect'
+                                )}
+                              </Button>
                             ) : (
-                              'Disconnect'
+                              <Button 
+                                variant="outline" 
+                                className="border-[#333] text-gray-400 hover:text-white"
+                                onClick={() => handleConnect('shopify', brand.id)}
+                              >
+                                Connect
+                              </Button>
                             )}
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('shopify', brand.id)}
-                          >
-                            Connect
-                          </Button>
-                        )}
-                      </div>
+                          </div>
 
-                      <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
-                        <div className="flex items-center gap-3">
-                          <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
-                          <span className="text-white">Meta Ads</span>
-                        </div>
-                        {connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta') ? (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-red-400 hover:text-red-300"
-                            onClick={() => handleDisconnect('meta', brand.id)}
-                            disabled={disconnectingPlatforms[`meta-${brand.id}`]}
-                          >
-                            {disconnectingPlatforms[`meta-${brand.id}`] ? (
-                              <>
-                                <span className="mr-2">Disconnecting</span>
-                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              </>
+                          <div className="flex items-center justify-between p-3 rounded bg-[#2A2A2A]">
+                            <div className="flex items-center gap-3">
+                              <img src="/meta-icon.png" alt="Meta" className="w-6 h-6" />
+                              <span className="text-white">Meta Ads</span>
+                            </div>
+                            {connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta') ? (
+                              <Button 
+                                variant="outline" 
+                                className="border-[#333] text-red-400 hover:text-red-300"
+                                onClick={() => handleDisconnect('meta', brand.id)}
+                                disabled={disconnectingPlatforms[`meta-${brand.id}`]}
+                              >
+                                {disconnectingPlatforms[`meta-${brand.id}`] ? (
+                                  <>
+                                    <span className="mr-2">Disconnecting</span>
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  </>
+                                ) : (
+                                  'Disconnect'
+                                )}
+                              </Button>
                             ) : (
-                              'Disconnect'
+                              <Button 
+                                variant="outline" 
+                                className="border-[#333] text-gray-400 hover:text-white"
+                                onClick={() => handleConnect('meta', brand.id)}
+                              >
+                                Connect
+                              </Button>
                             )}
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="outline" 
-                            className="border-[#333] text-gray-400 hover:text-white"
-                            onClick={() => handleConnect('meta', brand.id)}
-                          >
-                            Connect
-                          </Button>
-                        )}
-                      </div>
+                          </div>
 
-                      {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') && (
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-[#333] text-green-400 hover:text-green-300"
-                            onClick={() => handleSync(connections.find(c => 
-                              c.brand_id === brand.id && 
-                              c.platform_type === 'shopify'
-                            )?.id!)}
-                            disabled={isSyncing}
-                          >
-                            {isSyncing ? 'Syncing Orders...' : 'Sync Orders'}
-                          </Button>
-                          
-                          <CustomerSyncButton 
-                            connectionId={connections.find(c => 
-                              c.brand_id === brand.id && 
-                              c.platform_type === 'shopify'
-                            )?.id!}
-                            className="border-[#333] text-blue-400 hover:text-blue-300"
-                          />
+                          {/* For connected platforms, show the platform settings */}
+                          {connections.find(c => c.brand_id === brand.id && c.platform_type === 'shopify') && (
+                            <PlatformSettings 
+                              platformType="shopify" 
+                              connectionId={connections.find(c => 
+                                c.brand_id === brand.id && 
+                                c.platform_type === 'shopify'
+                              )?.id || ''} 
+                              brandId={brand.id}
+                            />
+                          )}
+
+                          {connections.find(c => c.brand_id === brand.id && c.platform_type === 'meta') && (
+                            <PlatformSettings 
+                              platformType="meta" 
+                              connectionId={connections.find(c => 
+                                c.brand_id === brand.id && 
+                                c.platform_type === 'meta'
+                              )?.id || ''} 
+                              brandId={brand.id}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </CardContent>
+                </Card>
               ))
             ) : (
-              <div className="text-center text-gray-400 py-4">
-                No brands added yet
+              <div className="text-center text-gray-400 py-12 bg-[#1A1A1A] rounded-lg">
+                <Building className="h-16 w-16 mx-auto mb-4 text-gray-500" />
+                <h3 className="text-lg font-medium mb-2">No brands added yet</h3>
+                <p className="text-sm text-gray-500 mb-4">Add your first brand to get started</p>
+                <Button 
+                  onClick={() => setIsAddingBrand(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  Add New Brand
+                </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Add Brand Dialog */}
+      <Dialog open={isAddingBrand} onOpenChange={setIsAddingBrand}>
+        <DialogContent className="bg-[#1A1A1A] border-[#2A2A2A] text-white">
+          <DialogHeader>
+            <DialogTitle>Add New Brand</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleAddBrand();
+          }}>
+            <div className="space-y-4">
+              <div>
+                <Label>Brand Name</Label>
+                <Input 
+                  required
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                  className="bg-[#222] border-[#333] text-white"
+                />
+              </div>
+              <div>
+                <Label>Brand Logo (optional)</Label>
+                <Input 
+                  type="file"
+                  onChange={(e) => setNewBrandImage(e.target.files?.[0] || null)}
+                  className="bg-[#222] border-[#333] text-white"
+                  accept="image/*"
+                />
+              </div>
+              <Button 
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                Add Brand
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Brand Dialog */}
+      <EditBrandDialog
+        open={isEditingBrand}
+        onOpenChange={setIsEditingBrand}
+        brand={editingBrand}
+        onBrandUpdate={refreshBrands}
+      />
     </div>
   )
 }
