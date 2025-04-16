@@ -4233,6 +4233,50 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [dateRange]);
 
+  // Add a budget auto-refresher to sync with the CampaignWidget
+  useEffect(() => {
+    // Function to refresh campaign budgets periodically
+    const refreshCampaignBudgets = async () => {
+      if (!brandId || !campaigns || campaigns.length === 0) return;
+      
+      // Only allow refreshes if enough time has passed
+      if (!throttle('tab-budget-refresh', 120000)) {
+        logger.debug('[MetaTab] Throttled campaign budget refresh');
+        return;
+      }
+      
+      logger.debug('[MetaTab] Auto-refreshing campaign budgets');
+      
+      try {
+        const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          logger.debug(`[MetaTab] Refreshed budgets for ${data.budgets?.length || 0} campaigns`);
+          
+          // Dispatch an event to notify the system of updated budgets
+          window.dispatchEvent(new CustomEvent('meta-budgets-updated', {
+            detail: { count: data.budgets?.length || 0, source: 'auto-refresh' }
+          }));
+        } else {
+          logger.debug('[MetaTab] Failed to refresh campaign budgets');
+        }
+      } catch (error) {
+        logger.debug('[MetaTab] Error auto-refreshing campaign budgets:', error);
+      }
+    };
+    
+    // Set up polling interval for budget refreshes (every 3 minutes)
+    const budgetInterval = setInterval(refreshCampaignBudgets, 180000);
+    
+    // Do an initial fetch after component mounts
+    setTimeout(refreshCampaignBudgets, 15000);
+    
+    return () => {
+      clearInterval(budgetInterval);
+    };
+  }, [brandId, campaigns]);
+
   return (
     <TooltipProvider>
       <div className="space-y-8">

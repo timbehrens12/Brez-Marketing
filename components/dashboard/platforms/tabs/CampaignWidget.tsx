@@ -218,6 +218,55 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
+// Add the enhanced getCampaignBudget function
+const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
+  // Force budget update for expanded campaign if we have ad sets
+  if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
+    const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
+    
+    // Dispatch a budget update event so other components can react
+    window.dispatchEvent(new CustomEvent('campaign-budget-updated', { 
+      detail: { 
+        campaignId: campaign.campaign_id,
+        budget: totalAdSetBudget,
+        budgetType: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        source: 'adsets'
+      }
+    }));
+    
+    return {
+      budget: totalAdSetBudget,
+      formatted_budget: formatCurrency(totalAdSetBudget),
+      budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+      budget_source: 'adsets'
+    };
+  }
+  
+  // If campaign has adset_budget_total, use that
+  if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+    return {
+      budget: campaign.adset_budget_total,
+      formatted_budget: formatCurrency(campaign.adset_budget_total),
+      budget_type: campaign.budget_type || 'unknown',
+      budget_source: 'adsets_total'
+    };
+  }
+  
+  // Otherwise use current budget from API or campaign budget as fallback
+  const currentBudgetData = currentBudgets[campaign.id];
+  const budget = currentBudgetData?.budget || campaign.budget || 0;
+  const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
+  const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
+  const budget_source = currentBudgetData?.budget_source || 'campaign';
+  
+  return {
+    budget,
+    formatted_budget,
+    budget_type,
+    budget_source
+  };
+};
+
 // Define the component as a React FC (Function Component) with JSX return
 const CampaignWidget = ({ 
   brandId, 
@@ -1130,44 +1179,6 @@ const CampaignWidget = ({
     }
   };
   
-  // Calculate campaign budget from ad sets - EXACT COPY from original widget
-  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
-    // If we have ad sets for this campaign, use their combined budget
-    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
-      return {
-        budget: totalAdSetBudget,
-        formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-        budget_source: 'adsets'
-      };
-    }
-    
-    // If campaign has adset_budget_total, use that
-    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      return {
-        budget: campaign.adset_budget_total,
-        formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: campaign.budget_type || 'unknown',
-        budget_source: 'adsets_total'
-      };
-    }
-    
-    // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.id];
-    const budget = currentBudgetData?.budget || campaign.budget || 0;
-    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
-    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
-    const budget_source = currentBudgetData?.budget_source || 'campaign';
-    
-    return {
-      budget,
-      formatted_budget,
-      budget_type,
-      budget_source
-    };
-  };
-  
   // Function to refresh campaign status
   const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
     if (!brandId) return;
@@ -1398,6 +1409,85 @@ const CampaignWidget = ({
       return () => clearTimeout(timeoutId);
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
+
+  // Add a polling mechanism for automatic status updates
+  useEffect(() => {
+    if (!brandId || !isMountedRef.current || campaigns.length === 0) return;
+    
+    // Set up a polling interval to refresh campaign statuses
+    logger.info('[CampaignWidget] Setting up automatic status polling');
+    
+    // Refresh active campaign statuses every 30 seconds
+    const statusPollInterval = setInterval(() => {
+      if (!isMountedRef.current || campaigns.length === 0) return;
+      
+      // Only poll if not already refreshing and throttle properly
+      if (!refreshing && throttle('auto-poll-status', 30000)) {
+        logger.debug('[CampaignWidget] Auto-polling campaign statuses');
+        
+        // Filter only active campaigns to reduce API calls
+        const activeCampaigns = campaigns.filter(c => 
+          c.status.toUpperCase() === 'ACTIVE' || c.status.toUpperCase() === 'REFRESHING'
+        );
+        
+        if (activeCampaigns.length > 0) {
+          // Limit to just a few campaigns per polling cycle
+          const campaignsToCheck = activeCampaigns.slice(0, 2);
+          checkCampaignStatuses(campaignsToCheck, false);
+        }
+      }
+    }, 30000);
+    
+    // Refresh all campaign budgets every 2 minutes
+    const budgetPollInterval = setInterval(() => {
+      if (!isMountedRef.current) return;
+      
+      // Only refresh budgets if not already doing so and throttle properly
+      if (!isLoadingBudgets && throttle('auto-poll-budgets', 120000)) {
+        logger.debug('[CampaignWidget] Auto-refreshing campaign budgets');
+        fetchCurrentBudgets(false);
+      }
+    }, 120000);
+    
+    // Clean up intervals on unmount
+    return () => {
+      clearInterval(statusPollInterval);
+      clearInterval(budgetPollInterval);
+      logger.debug('[CampaignWidget] Cleared automatic polling intervals');
+    };
+  }, [brandId, campaigns, isMountedRef, refreshing, isLoadingBudgets, checkCampaignStatuses, fetchCurrentBudgets]);
+
+  // Enhanced budget monitoring
+  useEffect(() => {
+    // Update campaign budgets whenever campaigns change or on mount
+    if (brandId && campaigns.length > 0 && !isLoadingBudgets) {
+      // Use throttling to prevent excessive calls
+      if (throttle('initial-budget-fetch', 60000)) {
+        logger.debug('[CampaignWidget] Initial campaign budget refresh');
+        fetchCurrentBudgets(false);
+      }
+    }
+  }, [brandId, campaigns.length, isLoadingBudgets, fetchCurrentBudgets]);
+
+  // Add a listener for budget updates from other components
+  useEffect(() => {
+    const handleMetaBudgetsUpdated = (event: CustomEvent) => {
+      if (!brandId || !isMountedRef.current) return;
+      
+      logger.debug('[CampaignWidget] Received meta-budgets-updated event', event.detail);
+      
+      // Refresh our budget data
+      if (throttle('budget-event-refresh', 5000)) {
+        fetchCurrentBudgets(false);
+      }
+    };
+    
+    window.addEventListener('meta-budgets-updated', handleMetaBudgetsUpdated as EventListener);
+    
+    return () => {
+      window.removeEventListener('meta-budgets-updated', handleMetaBudgetsUpdated as EventListener);
+    };
+  }, [brandId, isMountedRef, fetchCurrentBudgets]);
 
   // Return the JSX for the component
   return (
