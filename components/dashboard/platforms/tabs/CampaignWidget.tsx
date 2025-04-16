@@ -987,7 +987,7 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Simplify the toggleCampaignExpand function to prevent twitching
+  // Add timeout protection to the toggleCampaignExpand function
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
     if (expandedCampaign === campaignId) {
       // Collapse if already expanded - simple close with no animation
@@ -1008,7 +1008,20 @@ const CampaignWidget = ({
     // Set loading state for this specific campaign
     setLoadingCampaignId(campaignId);
     
+    // Add safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      if (loadingCampaignId === campaignId) {
+        console.error(`[CampaignWidget] Loading timeout for campaign ${campaignId}`);
+        setLoadingCampaignId(null);
+        setAdSets([]);
+        toast.error("Loading ad sets timed out. Please try again.");
+      }
+    }, 15000); // 15 second timeout
+    
     try {
+      // Debug log
+      console.log(`[DEBUG] Starting ad set fetch for campaign ${campaignId}`);
+      
       // Track fetch start time for minimum display duration
       const startTime = Date.now();
       const minDisplayTime = 1000; // 1 second minimum loading display
@@ -1023,25 +1036,103 @@ const CampaignWidget = ({
         url += `&from=${fromDate}&to=${toDate}`;
       }
       
-      // Make the fetch request
-      const response = await fetch(url);
+      // Debug log
+      console.log(`[DEBUG] Fetching from URL: ${url}`);
+      
+      // Make the fetch request with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second fetch timeout
+      
+      const response = await fetch(url, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId); // Clear the fetch timeout
+      
+      // Debug log
+      console.log(`[DEBUG] Fetch response status: ${response.status}`);
+      
       let adSetData: AdSet[] = [];
       
       if (response.ok) {
-        const data = await response.json();
+        const responseText = await response.text();
         
-        // Use the ad sets data
-        if (Array.isArray(data.adSets)) {
-          adSetData = data.adSets;
+        // Debug log
+        console.log(`[DEBUG] Response text preview: ${responseText.substring(0, 100)}...`);
+        
+        try {
+          const data = JSON.parse(responseText);
+          
+          // Debug log
+          console.log(`[DEBUG] Parsed data, adSets present: ${Boolean(data.adSets)}, length: ${data.adSets?.length || 0}`);
+          
+          // Use the ad sets data
+          if (Array.isArray(data.adSets)) {
+            adSetData = data.adSets;
+          }
+          
+          // Track this campaign as having ad sets
+          if (adSetData.length > 0) {
+            setCampaignsWithAdSets(prev => {
+              const newSet = new Set(prev);
+              newSet.add(campaignId);
+              return newSet;
+            });
+          }
+        } catch (parseError) {
+          console.error(`[DEBUG] Error parsing JSON:`, parseError, responseText.substring(0, 200));
+          throw new Error("Failed to parse response from server");
         }
+      } else {
+        console.error(`[DEBUG] Fetch failed with status: ${response.status}, ${response.statusText}`);
         
-        // Track this campaign as having ad sets
-        if (adSetData.length > 0) {
-          setCampaignsWithAdSets(prev => {
-            const newSet = new Set(prev);
-            newSet.add(campaignId);
-            return newSet;
+        // Try a direct fallback if the main request fails
+        console.log(`[DEBUG] Attempting direct fallback request`);
+        
+        try {
+          // Try the direct fetch endpoint as a fallback
+          const fallbackController = new AbortController();
+          const fallbackTimeoutId = setTimeout(() => fallbackController.abort(), 10000);
+          
+          const fallbackResponse = await fetch(`/api/meta/adsets/direct-fetch`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              brandId,
+              campaignId,
+            }),
+            signal: fallbackController.signal
           });
+          
+          clearTimeout(fallbackTimeoutId);
+          
+          console.log(`[DEBUG] Fallback response status: ${fallbackResponse.status}`);
+          
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            
+            console.log(`[DEBUG] Fallback data received, adSets present: ${Boolean(fallbackData.adSets)}, length: ${fallbackData.adSets?.length || 0}`);
+            
+            if (Array.isArray(fallbackData.adSets)) {
+              adSetData = fallbackData.adSets;
+              
+              // Track this campaign as having ad sets
+              if (adSetData.length > 0) {
+                setCampaignsWithAdSets(prev => {
+                  const newSet = new Set(prev);
+                  newSet.add(campaignId);
+                  return newSet;
+                });
+              }
+            }
+          } else {
+            throw new Error(`Fallback request failed: ${fallbackResponse.status}`);
+          }
+        } catch (fallbackError) {
+          console.error(`[DEBUG] Fallback request failed:`, fallbackError);
+          throw new Error(`Both regular and fallback requests failed`);
         }
       }
       
@@ -1053,6 +1144,9 @@ const CampaignWidget = ({
       
       // Only update state if this is still the expanded campaign
       if (expandedCampaign === campaignId) {
+        // Debug log
+        console.log(`[DEBUG] Setting ad sets data, length: ${adSetData.length}`);
+        
         setAdSets(adSetData);
         
         // Clear the loading state after the data is displayed
@@ -1067,15 +1161,18 @@ const CampaignWidget = ({
       }
     } catch (error) {
       // Handle fetch errors
-      logger.error("[CampaignWidget] Error loading ad sets:", error);
-      toast.error("Failed to load ad sets");
+      console.error("[DEBUG] Error loading ad sets:", error);
+      toast.error(`Failed to load ad sets: ${error instanceof Error ? error.message : "Unknown error"}`);
       
       // Clear loading state on error
       if (expandedCampaign === campaignId) {
         setLoadingCampaignId(null);
       }
+    } finally {
+      // Always clear the safety timeout
+      clearTimeout(safetyTimeout);
     }
-  }, [brandId, expandedCampaign, dateRange]);
+  }, [brandId, expandedCampaign, dateRange, loadingCampaignId]);
   
   // Toggle sort order
   const toggleSortOrder = () => {
@@ -1894,6 +1991,23 @@ const CampaignWidget = ({
                                     <RefreshCw className="h-8 w-8 animate-spin text-white mb-3" />
                                     <h3 className="text-md font-medium mb-1 text-white">Loading Ad Sets</h3>
                                     <p className="text-sm text-gray-400">Please wait...</p>
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="text-gray-400 hover:text-white mt-4"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Force cancel the current loading
+                                        setLoadingCampaignId(null);
+                                        // Add a small delay then try again
+                                        setTimeout(() => {
+                                          setLoadingCampaignId(campaign.campaign_id);
+                                          toggleCampaignExpand(campaign.campaign_id);
+                                        }, 100);
+                                      }}
+                                    >
+                                      Taking too long? Click to retry
+                                    </Button>
                                   </div>
                                 ) : adSets.length > 0 ? (
                                   /* Only render table when data is ready and loading is complete */
@@ -1910,7 +2024,136 @@ const CampaignWidget = ({
                                       </Badge>
                                     </div>
                                     
-                                    {/* Keep the exact same table rendering code here - no changes */}
+                                    <div className="rounded-md overflow-hidden border border-[#333] bg-[#111]">
+                                      <table className="w-full">
+                                        <thead>
+                                          <tr className="border-b border-[#333] bg-zinc-900">
+                                            <th className="text-xs font-medium text-left p-2 pl-3 text-white">Ad Set</th>
+                                            <th className="text-xs font-medium text-left p-2 text-white">Status</th>
+                                            <th className="text-xs font-medium text-right p-2 text-white">Budget</th>
+                                            {visibleMetrics.map(metricId => {
+                                              if (metricId === 'budget') return null;
+                                              
+                                              const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                              if (!metric) return null;
+                                              
+                                              return (
+                                                <th 
+                                                  key={metricId} 
+                                                  className="text-xs font-medium text-right p-2 text-white"
+                                                >
+                                                  {metric.name}
+                                                </th>
+                                              );
+                                            })}
+                                            <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {adSets.map((adSet) => (
+                                            <tr 
+                                              key={adSet.id}
+                                              className="border-b border-[#333] hover:bg-black/10 cursor-pointer relative border-l-2 border-l-[#333]"
+                                            >
+                                              <td className="p-2 pl-3">
+                                                <div className="font-medium text-white">{adSet.adset_name}</div>
+                                                <div className="text-xs text-gray-400">{adSet.adset_id}</div>
+                                              </td>
+                                              <td className="p-2">
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className={`px-2 py-0.5 text-xs flex items-center gap-1 ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' 
+                                                      ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
+                                                      : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
+                                                  }`}
+                                                >
+                                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
+                                                  }`}></div>
+                                                  {adSet.status}
+                                                </Badge>
+                                              </td>
+                                              <td className="p-2 text-right">
+                                                <div className="flex flex-col items-end">
+                                                  <Badge 
+                                                    className="px-2 py-0.5 bg-[#111] border-[#333] text-white"
+                                                    variant="outline"
+                                                  >
+                                                    {formatCurrency(adSet.budget)}
+                                                    {adSet.budget_type === 'daily' && <span className="text-xs text-gray-500 ml-1">/day</span>}
+                                                  </Badge>
+                                                  <span className="text-xs text-gray-500">
+                                                    {adSet.budget_type}
+                                                  </span>
+                                                </div>
+                                              </td>
+                                              
+                                              {/* Metric columns */}
+                                              {visibleMetrics.map(metricId => {
+                                                if (metricId === 'budget') return null;
+                                                
+                                                const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                                if (!metric) return null;
+                                                
+                                                // Map campaign metrics to ad set metrics
+                                                let value: number;
+                                                switch (metricId) {
+                                                  case 'spent':
+                                                    value = adSet.spent || 0;
+                                                    break;
+                                                  case 'impressions':
+                                                    value = adSet.impressions || 0;
+                                                    break;
+                                                  case 'clicks':
+                                                    value = adSet.clicks || 0;
+                                                    break;
+                                                  case 'ctr':
+                                                    value = adSet.ctr || 0;
+                                                    break;
+                                                  case 'cpc':
+                                                    value = adSet.cpc || 0;
+                                                    break;
+                                                  case 'conversions':
+                                                    value = adSet.conversions || 0;
+                                                    break;
+                                                  case 'cost_per_conversion':
+                                                    value = adSet.cost_per_conversion || 0;
+                                                    break;
+                                                  case 'reach':
+                                                    value = adSet.reach || 0;
+                                                    break;
+                                                  default:
+                                                    value = 0;
+                                                }
+                                                
+                                                return (
+                                                  <td key={metricId} className="p-2 text-right">
+                                                    <div className="font-medium text-white">
+                                                      {formatValue(value, metric.format)}
+                                                    </div>
+                                                  </td>
+                                                );
+                                              })}
+
+                                              <td className="p-2 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                    onClick={() => window.open(`https://www.facebook.com/ads/manager/account/campaigns?act=${campaign.account_id.replace('act_', '')}&selected_campaign_ids=${campaign.campaign_id}`, '_blank')}
+                                                    title="View in Meta Ads Manager"
+                                                  >
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
                                   </div>
                                 ) : (
                                   /* Empty state when loading is complete but no data */
