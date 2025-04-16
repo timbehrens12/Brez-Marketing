@@ -264,6 +264,37 @@ function queueCampaignStatusCheck(campaignId: string, brandId: string, callback:
   }
 }
 
+// Add a debug flag to control verbosity
+const DEBUG_LOGGING = false;
+
+// Replace console.log statements with this logger
+const logger = {
+  debug: (...args: any[]) => {
+    if (DEBUG_LOGGING) {
+      console.log(...args);
+    }
+  },
+  info: (...args: any[]) => {
+    console.log(...args);
+  },
+  warn: console.warn,
+  error: console.error
+};
+
+// Add a throttle mechanism at the top of the file
+const throttleMap = new Map<string, number>();
+const throttle = (key: string, minInterval: number = 3000): boolean => {
+  const now = Date.now();
+  const last = throttleMap.get(key) || 0;
+  
+  if (now - last < minInterval) {
+    return false; // Throttled
+  }
+  
+  throttleMap.set(key, now);
+  return true; // Not throttled
+};
+
 export function MetaTab({ 
   dateRange, 
   metrics, 
@@ -534,6 +565,13 @@ export function MetaTab({
   const fetchCampaigns = async (forceRefresh = false) => {
     if (!brandId) return;
     
+    // Apply throttling to prevent too many fetches
+    const fetchKey = `fetch-campaigns-${brandId}`;
+    if (!forceRefresh && !throttle(fetchKey, 10000)) {
+      logger.debug('[MetaTab] Throttled campaign fetch - skipping');
+      return;
+    }
+    
     // Only set loading state if campaigns aren't already loaded
     if (campaigns.length === 0) {
       setIsLoadingCampaigns(true);
@@ -548,15 +586,15 @@ export function MetaTab({
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
         
-        // Add this to debug date range issues
-        console.log(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
+        // Add this to debug date range issues - use debug level
+        logger.debug(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
       } else {
-        console.log('[MetaTab] Fetching campaigns with no date range');
+        logger.debug('[MetaTab] Fetching campaigns with no date range');
       }
       
       if (forceRefresh) {
         url += `&forceRefresh=true`;
-        console.log('[MetaTab] Force refreshing campaigns');
+        logger.debug('[MetaTab] Force refreshing campaigns');
       }
       
       const response = await fetch(url);
@@ -571,7 +609,7 @@ export function MetaTab({
       setCampaigns(data.campaigns || []);
       setCachedCampaigns(data.campaigns || []);
       
-      console.log(`[MetaTab] Loaded ${data.campaigns?.length || 0} campaigns`);
+      logger.debug(`[MetaTab] Loaded ${data.campaigns?.length || 0} campaigns`);
       
       // Dispatch event to notify system that campaigns were loaded
       window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
@@ -580,7 +618,7 @@ export function MetaTab({
       
       return data.campaigns;
     } catch (error) {
-      console.error("Error fetching campaigns:", error);
+      logger.error("Error fetching campaigns:", error);
       toast.error("Failed to load campaigns");
       return [];
     } finally {
@@ -4153,6 +4191,47 @@ Try creating at least one active campaign in Meta Ads Manager.
     // For all other errors, log but don't show toast
     console.error('[MetaTab] Error checking campaign status:', error);
   };
+
+  // Add near the refreshMetaData function
+  useEffect(() => {
+    // Set a flag to prevent constant status check loops
+    window._disableAutoMetaFetch = true;
+    
+    // Set a reasonable limit on API calls for status checks
+    window._metaApiRequests = 0;
+    
+    // Only allow initial data loading to happen once
+    let hasInitiallyLoaded = false;
+    
+    // Function to handle date range transitions
+    const stabilizeData = () => {
+      if (hasInitiallyLoaded) return;
+      
+      // Set flag to prevent multiple loads
+      hasInitiallyLoaded = true;
+      
+      // Only fetch data once with the current date range
+      if (dateRange?.from && dateRange?.to) {
+        logger.debug('[MetaTab] Initial data stabilization with date range', 
+          dateRange.from.toLocaleDateString(), '-', dateRange.to.toLocaleDateString());
+        
+        // Schedule a single refresh of campaigns with the current date range
+        setTimeout(() => {
+          if (typeof fetchCampaigns === 'function') {
+            fetchCampaigns(true);
+          }
+        }, 1000);
+      }
+    };
+    
+    // Run stabilization after component mounts
+    setTimeout(stabilizeData, 1500);
+    
+    return () => {
+      // Clean up
+      hasInitiallyLoaded = true;
+    };
+  }, [dateRange]);
 
   return (
     <TooltipProvider>

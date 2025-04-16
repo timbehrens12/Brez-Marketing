@@ -67,6 +67,37 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { format } from "date-fns"
 
+// Debug flag to control verbosity
+const DEBUG_LOGGING = false;
+
+// Logger for controlled output
+const logger = {
+  debug: (...args: any[]) => {
+    if (DEBUG_LOGGING) {
+      console.log(...args);
+    }
+  },
+  info: (...args: any[]) => {
+    console.log(...args);
+  },
+  warn: console.warn,
+  error: console.error
+};
+
+// Throttle mechanism to prevent too many operations
+const throttleMap = new Map<string, number>();
+const throttle = (key: string, minInterval: number = 3000): boolean => {
+  const now = Date.now();
+  const last = throttleMap.get(key) || 0;
+  
+  if (now - last < minInterval) {
+    return false; // Throttled
+  }
+  
+  throttleMap.set(key, now);
+  return true; // Not throttled
+};
+
 // Define the types needed for the component
 type DailyInsight = {
   date: string
@@ -439,8 +470,15 @@ const CampaignWidget = ({
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
     if (!brandId || !isMountedRef.current || campaignsToCheck.length === 0) return;
     
-    // Log what we're doing
-    console.log(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`);
+    // Apply throttling to prevent multiple status checks
+    const key = `check-statuses-${brandId}`;
+    if (!forceRefresh && !throttle(key, 15000)) {
+      logger.debug(`[CampaignWidget] Throttled status check - skipping`);
+      return;
+    }
+    
+    // Log what we're doing - but only in debug mode
+    logger.debug(`[CampaignWidget] Checking statuses for ${campaignsToCheck.length} campaigns, forceRefresh: ${forceRefresh}`);
     
     // Filter out campaigns with invalid campaign_id values
     const validCampaigns = campaignsToCheck.filter(campaign => 
@@ -448,7 +486,7 @@ const CampaignWidget = ({
     );
     
     if (validCampaigns.length === 0) {
-      console.warn('[CampaignWidget] No valid campaigns to check statuses for');
+      logger.debug('[CampaignWidget] No valid campaigns to check statuses for');
       return;
     }
     
@@ -474,10 +512,10 @@ const CampaignWidget = ({
     });
     
     // Process more campaigns when forceRefresh is true, but limit to avoid rate limits
-    const batchSize = forceRefresh ? Math.min(5, prioritizedCampaigns.length) : Math.min(3, prioritizedCampaigns.length);
+    const batchSize = forceRefresh ? Math.min(5, prioritizedCampaigns.length) : Math.min(2, prioritizedCampaigns.length);
     const campaignsToProcess = prioritizedCampaigns.slice(0, batchSize);
     
-    console.log(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`);
+    logger.debug(`[CampaignWidget] Processing ${campaignsToProcess.length} campaigns for status check`);
     
     let updatedCount = 0;
     let pendingRequests = campaignsToProcess.length;
@@ -490,13 +528,13 @@ const CampaignWidget = ({
         
         // Extra validation before API call
         if (!campaign || !campaign.campaign_id) {
-          console.error('[CampaignWidget] Invalid campaign object or missing campaign_id');
+          logger.debug('[CampaignWidget] Invalid campaign object or missing campaign_id');
           pendingRequests--;
           return;
         }
         
-        // Log the request for debugging
-        console.log(`[CampaignWidget] Checking status for campaign: ${campaign.campaign_id}`);
+        // Only log in debug mode
+        logger.debug(`[CampaignWidget] Checking status for campaign: ${campaign.campaign_id}`);
         
         fetch(`/api/meta/campaign-status-check`, {
           method: 'POST',
@@ -506,7 +544,7 @@ const CampaignWidget = ({
           body: JSON.stringify({
             brandId,
             campaignId: campaign.campaign_id,
-            forceRefresh: forceRefresh // Pass the force refresh flag to the API
+            forceRefresh: forceRefresh
           })
         })
         .then(response => {
@@ -517,20 +555,20 @@ const CampaignWidget = ({
           // Check for different types of errors
           if (response.status === 400) {
             // Bad request - likely invalid parameters
-            console.warn(`[CampaignWidget] Bad request when checking campaign ${campaign.campaign_id} status`);
+            logger.debug(`[CampaignWidget] Bad request when checking campaign ${campaign.campaign_id} status`);
             return { error: 'Invalid campaign parameters', status: campaign.status };
           } else if (response.status === 429) {
             // Rate limiting
-            console.warn(`[CampaignWidget] Rate limited when checking campaign ${campaign.campaign_id} status`);
+            logger.debug(`[CampaignWidget] Rate limited when checking campaign ${campaign.campaign_id} status`);
             return { error: 'Rate limited', status: campaign.status };
           } else if (response.status === 404) {
             // Campaign not found
-            console.warn(`[CampaignWidget] Campaign ${campaign.campaign_id} not found in Meta`);
+            logger.debug(`[CampaignWidget] Campaign ${campaign.campaign_id} not found in Meta`);
             return { error: 'Campaign not found', status: campaign.status };
           }
           
           // For other errors, return a generic error with the current status
-          console.warn(`[CampaignWidget] Error ${response.status} when checking campaign ${campaign.campaign_id} status`);
+          logger.debug(`[CampaignWidget] Error ${response.status} when checking campaign ${campaign.campaign_id} status`);
           return { error: `API error (${response.status})`, status: campaign.status };
         })
         .then(statusData => {
@@ -546,7 +584,7 @@ const CampaignWidget = ({
             const shouldUpdate = forceRefresh || statusData.status.toUpperCase() !== campaign.status.toUpperCase();
             
             if (shouldUpdate) {
-              console.log(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`);
+              logger.debug(`[CampaignWidget] Status update: ${campaign.campaign_id} from ${campaign.status} to ${statusData.status}`);
               updatedCount++;
               
               // Update the local campaigns state
@@ -560,7 +598,7 @@ const CampaignWidget = ({
               
               // If this is the expanded campaign, refresh its ad sets
               if (expandedCampaign === campaign.campaign_id) {
-                console.log(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
+                logger.debug(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
                 fetchAdSets(campaign.campaign_id, true);
               }
             }
@@ -568,7 +606,7 @@ const CampaignWidget = ({
           
           // If this is the last request and any statuses were updated, notify parent
           if (pendingRequests === 0 && updatedCount > 0) {
-            console.log(`[CampaignWidget] ${updatedCount} campaign statuses were updated. Triggering refresh...`);
+            logger.debug(`[CampaignWidget] ${updatedCount} campaign statuses were updated. Triggering refresh...`);
             // Notify parent component to refresh the data
             if (onRefresh) {
               onRefresh();
@@ -577,29 +615,26 @@ const CampaignWidget = ({
         })
         .catch(error => {
           pendingRequests--;
-          // UPDATED: Log the actual error object for more details
-          console.error(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error);
-          // Log the specific error message if available
-          if (error instanceof Error) {
-            console.error(`[CampaignWidget] Error message: ${error.message}`);
-          }
+          // Log the actual error object for more details, but only in debug mode
+          logger.debug(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error);
           
           // If this is the last request and any statuses were updated, notify parent
           if (pendingRequests === 0 && updatedCount > 0 && onRefresh) {
             onRefresh();
           }
         });
-      }, index * (forceRefresh ? 500 : 1000)); // Increase delay between requests to reduce rate limiting
+      }, index * (forceRefresh ? 500 : 2000)); // Increase delay between requests to reduce rate limiting and log spam
     });
     
-    // Also refresh the campaigns list data after all status checks
-    setTimeout(() => {
-      if (isMountedRef.current) {
-        console.log(`[CampaignWidget] Refreshing campaigns data from API after status checks`);
-        mutate(`/api/meta/campaigns?brandId=${brandId}`);
-      }
-    }, (campaignsToProcess.length * (forceRefresh ? 600 : 1200)) + 1000); // Wait for all status checks plus a buffer
-    
+    // Also refresh the campaigns list data after all status checks, but with less frequency
+    if (forceRefresh) {
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          logger.debug(`[CampaignWidget] Refreshing campaigns data from API after status checks`);
+          mutate(`/api/meta/campaigns?brandId=${brandId}`);
+        }
+      }, (campaignsToProcess.length * (forceRefresh ? 600 : 1200)) + 1000); // Wait for all status checks plus a buffer
+    }
   }, [brandId, onRefresh, isMountedRef, expandedCampaign, fetchAdSets]);
   
   // Keep local state in sync with props
@@ -808,26 +843,32 @@ const CampaignWidget = ({
     }
   }, [brandId]);
 
-  // Force a full status check on all campaigns when specific events are received
+  // Find the useEffect that sets up event listeners and update it
   useEffect(() => {
     let isRefreshing = false;
     let lastRefreshTime = 0;
-    const REFRESH_COOLDOWN = 30000; // 30 seconds cooldown between refreshes
+    const REFRESH_COOLDOWN = 60000; // 60 seconds cooldown between refreshes
     
     const handleForceRefresh = (event: any) => {
       if (!brandId || !campaigns.length) return;
       
       const now = Date.now();
       
-      // If we're already refreshing or it's been less than 30 seconds since last refresh, ignore
+      // If we're already refreshing or it's been less than the cooldown period, skip
       if (isRefreshing || (now - lastRefreshTime < REFRESH_COOLDOWN)) {
-        console.log(`[CampaignWidget] Skipping refresh - already refreshing: ${isRefreshing}, last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
+        logger.debug(`[CampaignWidget] Skipping refresh - already refreshing: ${isRefreshing}, last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
+        return;
+      }
+      
+      // Apply throttling to prevent refresh storm
+      if (!throttle('force-refresh-events', 30000)) {
+        logger.debug('[CampaignWidget] Throttled force refresh event');
         return;
       }
       
       const eventDetails = event.detail || {};
       
-      console.log(`[CampaignWidget] 🔄 Received force refresh event: ${event.type}`, eventDetails);
+      logger.debug(`[CampaignWidget] 🔄 Received force refresh event: ${event.type}`, eventDetails);
       
       // Set refreshing indicator
       isRefreshing = true;
@@ -835,7 +876,7 @@ const CampaignWidget = ({
       
       // Only take the first 3 campaigns to avoid too many simultaneous requests
       const limitedCampaigns = campaigns.slice(0, 3);
-      console.log(`[CampaignWidget] Limited refresh to first ${limitedCampaigns.length} campaigns`);
+      logger.debug(`[CampaignWidget] Limited refresh to first ${limitedCampaigns.length} campaigns`);
       
       // Do a full force check of limited campaign statuses
       checkCampaignStatuses(limitedCampaigns, true);
@@ -857,14 +898,20 @@ const CampaignWidget = ({
       const now = Date.now();
       
       // If it's been less than 10 seconds since last refresh, ignore (shorter cooldown for direct refreshes)
-      if (now - lastRefreshTime < 10000) {
-        console.log(`[CampaignWidget] Skipping direct refresh - last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
+      if (now - lastRefreshTime < 30000) {
+        logger.debug(`[CampaignWidget] Skipping direct refresh - last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
+        return;
+      }
+      
+      // Apply throttling to prevent refresh storm
+      if (!throttle('direct-force-refresh', 30000)) {
+        logger.debug('[CampaignWidget] Throttled direct force refresh event');
         return;
       }
       
       const eventDetails = event.detail || {};
       
-      console.log(`[CampaignWidget] 🔥 Received DIRECT force refresh event: ${event.type}`, eventDetails);
+      logger.debug(`[CampaignWidget] 🔥 Received DIRECT force refresh event: ${event.type}`, eventDetails);
       
       // Use the bulk refresh API instead of individual API calls
       bulkRefreshCampaignStatuses().then(() => {
