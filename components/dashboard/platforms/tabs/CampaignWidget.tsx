@@ -1127,7 +1127,7 @@ function CampaignWidget({
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
     // If we have ad sets for this campaign, use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
@@ -1136,7 +1136,7 @@ function CampaignWidget({
       };
     }
     
-    // If campaign has adset_budget_total, use that
+    // If campaign has adset_budget_total from background fetch, use that
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
       return {
         budget: campaign.adset_budget_total,
@@ -1147,7 +1147,9 @@ function CampaignWidget({
     }
     
     // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.id];
+    const currentBudgetData = currentBudgets[campaign.campaign_id];
+    
+    // Make sure to extract valid budget values
     const budget = currentBudgetData?.budget || campaign.budget || 0;
     const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
     const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
@@ -1394,34 +1396,44 @@ function CampaignWidget({
 
   // Add a new function to fetch ad set budgets for all campaigns
   const fetchAllCampaignBudgets = useCallback(async () => {
-    if (!brandId || !isMountedRef.current || localCampaigns.length === 0) return;
+    if (!brandId || !isMountedRef.current) return;
 
-    console.log(`[CampaignWidget] Fetching budget data for all ${localCampaigns.length} campaigns`);
+    console.log(`[CampaignWidget] Fetching budget data for all campaigns`);
     
     try {
       // Call the campaign-budgets endpoint which should fetch all budget data
       const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaign budgets: ${response.status}`);
+        // Log the error response text for debugging
+        const errorText = await response.text();
+        console.error(`[CampaignWidget] Campaign budgets API error: ${response.status}`, errorText);
+        return null;
       }
       
       const data = await response.json();
       
+      if (!data.budgets) {
+        console.error(`[CampaignWidget] Campaign budgets API returned no budgets data:`, data);
+        return null;
+      }
+      
       // Create a map of campaign_id to budget data
       const budgetMap: Record<string, any> = {};
       data.budgets.forEach((budget: any) => {
-        budgetMap[budget.campaign_id] = {
-          budget: budget.budget,
-          budget_type: budget.budget_type,
-          formatted_budget: budget.formatted_budget,
-          budget_source: budget.budget_source
-        };
+        if (budget.campaign_id) {
+          budgetMap[budget.campaign_id] = {
+            budget: budget.budget,
+            budget_type: budget.budget_type,
+            formatted_budget: budget.formatted_budget || formatBudget(budget.budget, budget.budget_type),
+            budget_source: budget.budget_source || 'api'
+          };
+        }
       });
       
       if (isMountedRef.current) {
         setCurrentBudgets(budgetMap);
-        console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+        console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
         
         // Dispatch an event to notify other components about the budget update
         window.dispatchEvent(new CustomEvent('campaign-budgets-updated', {
@@ -1438,7 +1450,7 @@ function CampaignWidget({
       console.error("[CampaignWidget] Error fetching campaign budgets:", error);
       return null;
     }
-  }, [brandId, isMountedRef, localCampaigns.length]);
+  }, [brandId, isMountedRef]);
 
   // Add a function to fetch all ad set data in the background
   const fetchAllCampaignAdSets = useCallback(async () => {
@@ -1460,7 +1472,8 @@ function CampaignWidget({
       console.log(`[CampaignWidget] Background fetching ad sets for campaign ${campaign.campaign_id}`);
       
       try {
-        const url = `/api/meta/adsets/budget-only?brandId=${brandId}&campaignId=${campaign.campaign_id}`;
+        // Use the existing adsets endpoint instead of budget-only
+        const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaign.campaign_id}`;
         
         const response = await fetch(url);
         
@@ -1493,13 +1506,15 @@ function CampaignWidget({
             
             console.log(`[CampaignWidget] Updated budget for campaign ${campaign.campaign_id}: ${totalAdSetBudget}`);
           }
+        } else {
+          console.warn(`[CampaignWidget] Error fetching ad sets for campaign ${campaign.campaign_id}: ${response.status}`);
         }
       } catch (error) {
-        console.error(`[CampaignWidget] Error fetching ad set budget for campaign ${campaign.campaign_id}:`, error);
+        console.error(`[CampaignWidget] Error fetching ad set data for campaign ${campaign.campaign_id}:`, error);
       }
       
       // Add a delay between requests to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
     // After all campaigns are processed, fetch the aggregated budget data
@@ -1564,6 +1579,18 @@ function CampaignWidget({
           </div>
           
           <div className="flex items-center gap-2 ml-auto">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                fetchAllCampaignBudgets();
+                toast.success("Refreshing budget data...");
+              }}
+              className="h-8 text-xs text-white border-[#333] hover:bg-black/20"
+            >
+              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              Refresh Budgets
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 text-xs text-white border-[#333] hover:bg-black/20">
@@ -1882,10 +1909,10 @@ function CampaignWidget({
                                       {adSets.length} Ad Sets
                                     </Badge>
                                     <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
-                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.budget, 0))}
+                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0))}
                                     </Badge>
                                     <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
-                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.spent, 0))}
+                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + (adSet.spent || 0), 0))}
                                     </Badge>
                                   </div>
                                   
