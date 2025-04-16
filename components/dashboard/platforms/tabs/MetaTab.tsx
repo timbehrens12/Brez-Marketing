@@ -1285,10 +1285,17 @@ Created: ${data.connection?.created_at ? new Date(data.connection.created_at).to
           description: 'Your Meta connection has been updated with the required metadata'
         })
         
-        // Refresh the page after a short delay
+        // Instead of reloading the page, refresh the data
+        // setTimeout(() => {
+        //   window.location.reload()
+        // }, 1500)
+        
+        // Wait a moment before refreshing data
         setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+          // Manually trigger data refresh
+          toast.info('Refreshing Meta data with new connection...')
+          manuallyLoadData()
+        }, 1000)
       } else {
         toast.error('Unable to update metadata', {
           id: toastId,
