@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 
 interface MetaConnectButtonProps {
   onConnect: (data: any) => Promise<void>
@@ -14,7 +14,6 @@ interface MetaConnectButtonProps {
 
 export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnect }: MetaConnectButtonProps) {
   const [isConnecting, setIsConnecting] = useState(false)
-  const { toast } = useToast()
 
   const handleConnect = async () => {
     setIsConnecting(true)
@@ -26,20 +25,43 @@ export function MetaConnectButton({ onConnect, isConnected, brandId, onDisconnec
       window.location.href = finalUrl
     } catch (error) {
       console.error("Failed to initiate Meta connection:", error)
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect Meta Ads. Please try again.",
-        variant: "destructive",
+      toast.error("Connection Failed", {
+        description: "Failed to connect Meta Ads. Please try again."
       })
       setIsConnecting(false)
     }
   }
 
   const handleDisconnect = async () => {
-    if (!onDisconnect) return
-    
-    if (confirm('Are you sure you want to disconnect Meta Ads? This will revoke all permissions.')) {
-      await onDisconnect()
+    if (confirm("Are you sure you want to disconnect Meta Ads? This will remove all access.")) {
+      setIsConnecting(true)
+      try {
+        // Make a call to disconnect Meta
+        const response = await fetch(`/api/brands/${brandId}/meta/disconnect`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to disconnect")
+        }
+
+        if (onDisconnect) {
+          onDisconnect()
+        }
+        toast.success("Disconnected", {
+          description: "Successfully disconnected Meta Ads."
+        })
+      } catch (error) {
+        console.error("Failed to disconnect Meta:", error)
+        toast.error("Disconnection Failed", {
+          description: "Failed to disconnect Meta Ads. Please try again."
+        })
+      } finally {
+        setIsConnecting(false)
+      }
     }
   }
 

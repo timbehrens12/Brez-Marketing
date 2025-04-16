@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Loader2 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 type MetaFixButtonProps = {
   brandId: string;
@@ -14,8 +14,7 @@ export default function MetaFixButton({ brandId }: MetaFixButtonProps) {
     if (!brandId || isFixing) return;
     
     setIsFixing(true);
-    toast({
-      title: "Fixing Meta connection...",
+    toast("Fixing Meta connection...", {
       description: "Updating credentials to ensure proper API access."
     });
     
@@ -35,10 +34,8 @@ export default function MetaFixButton({ brandId }: MetaFixButtonProps) {
       
       const data = await response.json();
       
-      toast({
-        title: "Meta connection fixed!",
-        description: data.message || "Connection has been updated successfully.",
-        variant: "default"
+      toast.success("Meta connection fixed!", {
+        description: data.message || "Connection has been updated successfully."
       });
       
       // Give the toast time to show before reloading
@@ -47,10 +44,8 @@ export default function MetaFixButton({ brandId }: MetaFixButtonProps) {
       }, 1500);
     } catch (error) {
       console.error('Error fixing Meta connection:', error);
-      toast({
-        title: "Error fixing connection",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive"
+      toast.error("Error fixing connection", {
+        description: error instanceof Error ? error.message : "An unknown error occurred"
       });
     } finally {
       setIsFixing(false);

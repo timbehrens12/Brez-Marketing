@@ -15,6 +15,14 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
+/**
+ * Utility to create a promise that resolves after a specified delay
+ * Used for implementing delays and retry mechanisms
+ */
+export function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export function prepareRevenueByDayData(
   revenueData: number[],
 ): { day: string; date: string; revenue: number | null }[] {

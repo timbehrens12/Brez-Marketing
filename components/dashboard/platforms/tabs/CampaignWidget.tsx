@@ -1111,11 +1111,20 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     };
   };
   
-  // Function to manually refresh campaign status with a more direct approach
-  const refreshCampaignStatus = async (campaign: Campaign) => {
-    const toastId = toast.loading(`Checking campaign status...`);
+  // Function to refresh campaign status
+  const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
+    if (!brandId) return;
+    
+    // Find the campaign in local state
+    const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
+    if (!campaign) return;
     
     try {
+      // Update local state to show loading
+      setLocalCampaigns(prev => prev.map(c =>
+        c.campaign_id === campaignId ? { ...c, status: 'Refreshing' } : c
+      ));
+      
       const response = await fetch('/api/meta/campaign-status-check', {
         method: 'POST',
         headers: {
@@ -1123,59 +1132,99 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
         },
         body: JSON.stringify({
           brandId,
-          campaignId: campaign.campaign_id,
-          refreshStatus: true,
-          forceRefresh: true
+          campaignId,
+          forceRefresh: force,
         }),
       });
       
+      if (!response.ok) {
+        // Handle error cases
+        if (response.status === 429) {
+          console.warn(`Campaign refresh rate limited for ${campaignId}`);
+          
+          // Restore original status
+          setLocalCampaigns(prev => prev.map(c =>
+            c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
+          ));
+          
+          return;
+        }
+        
+        const errorText = await response.text();
+        console.error(`Error refreshing campaign ${campaignId}:`, errorText);
+        
+        // Only show toast for explicit user-triggered refreshes
+        if (force) {
+          toast.error(`Failed to refresh campaign: ${errorText || response.statusText}`);
+        }
+        
+        // Update local state to show error
+        setLocalCampaigns(prev => prev.map(c =>
+          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
+        ));
+        
+        return;
+      }
+      
       const data = await response.json();
       
-      if (response.ok && data.success) {
-        // Update local campaign status
-        const updatedCampaigns = localCampaigns.map(c => {
-          if (c.campaign_id === campaign.campaign_id) {
-            return { ...c, status: data.status };
-          }
-          return c;
+      if (data.success) {
+        // Update local state with new status
+        setLocalCampaigns(prev => prev.map(c =>
+          c.campaign_id === campaignId ? { ...c, status: data.status, last_refresh_date: new Date().toISOString() } : c
+        ));
+        
+        // Only show success toast for explicit refreshes
+        if (force) {
+          toast.success(`Campaign status updated: ${data.status}`);
+        }
+        
+        // If force refresh was requested, trigger a full refresh of campaigns
+        if (force && onRefresh) {
+          // Call the parent refresh function to update all campaigns
+          setTimeout(() => {
+            onRefresh();
+          }, 500);
+        }
+        
+        // Dispatch an event to notify other components
+        const refreshEvent = new CustomEvent('campaign-status-updated', {
+          detail: { campaignId, status: data.status }
         });
+        window.dispatchEvent(refreshEvent);
         
-        setLocalCampaigns(updatedCampaigns);
-        
-        // Also trigger a refresh to ensure the UI is updated
-        onRefresh();
-        
-        toast.success(`Status updated to ${data.status}`, {
-          id: toastId,
-          description: data.message || "Campaign status refreshed successfully"
-        });
-      } else if (data.source === 'cached_due_to_rate_limit') {
-        toast.warning("Using cached status", {
-          id: toastId,
-          description: "Meta API rate limit reached. Using cached data instead."
-        });
-        
-        // Still update local state with the cached status
-        const updatedCampaigns = localCampaigns.map(c => {
-          if (c.campaign_id === campaign.campaign_id) {
-            return { ...c, status: data.status };
-          }
-          return c;
-        });
-        
-        setLocalCampaigns(updatedCampaigns);
+        // Return success
+        return { success: true, status: data.status };
       } else {
-        toast.error("Failed to refresh status", {
-          id: toastId,
-          description: data.error || "There was an error checking the campaign status"
-        });
+        // Handle API errors
+        console.error(`API error refreshing campaign ${campaignId}:`, data.error);
+        
+        // Restore original status on error
+        setLocalCampaigns(prev => prev.map(c =>
+          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
+        ));
+        
+        // Show error toast only for force refreshes
+        if (force) {
+          toast.error(`Failed to refresh campaign: ${data.error || 'Unknown error'}`);
+        }
+        
+        return { success: false, error: data.error };
       }
     } catch (error) {
-      console.error(`[CampaignWidget] Error checking status for campaign ${campaign.campaign_id}:`, error);
-      toast.error("Error checking status", {
-        id: toastId,
-        description: (error as Error).message || "An unexpected error occurred"
-      });
+      console.error(`Error refreshing campaign ${campaignId}:`, error);
+      
+      // Restore original status on error
+      setLocalCampaigns(prev => prev.map(c =>
+        c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
+      ));
+      
+      // Only show error toast for force refreshes
+      if (force) {
+        toast.error(`Failed to refresh campaign: ${(error as Error).message}`);
+      }
+      
+      return { success: false, error: (error as Error).message };
     }
   };
   
@@ -1534,7 +1583,7 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
                               className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                refreshCampaignStatus(campaign);
+                                refreshCampaignStatus(campaign.campaign_id);
                               }}
                               title="Refresh Campaign Status"
                             >
