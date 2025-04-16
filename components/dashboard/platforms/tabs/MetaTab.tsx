@@ -4238,14 +4238,17 @@ Try creating at least one active campaign in Meta Ads Manager.
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
         {/* Meta Data Overview Heading */}
-        <div className="flex items-center mb-4">
-          <LineChart className="h-5 w-5 text-gray-400 mr-2" />
-          <h2 className="text-lg font-semibold">Meta Data Overview - All Ads Combined</h2>
-          <div className="ml-auto">
-            <Badge variant="outline" className="bg-gray-900/30 text-gray-400 border-gray-800 px-2">
-              Aggregated Metrics
-            </Badge>
-          </div>
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Meta Data Overview - All Ads Combined</h2>
+          
+          {/* Add visible troubleshooting button */}
+          <button
+            onClick={fixConnectionMetadata}
+            className="px-3 py-2 text-sm bg-blue-700 hover:bg-blue-600 text-white rounded-md flex items-center gap-1"
+          >
+            <Wrench className="h-4 w-4" />
+            Fix Meta Connection
+          </button>
         </div>
         
         {/* Direct DB connection widgets with grid layout */}
