@@ -96,86 +96,6 @@ export async function POST(req: NextRequest) {
       status: connection.status
     });
 
-    // Check if ad_account_id is missing in metadata and try to fix it
-    if (connection.access_token && (!connection.metadata || !connection.metadata.ad_account_id)) {
-      console.log(`[campaign-status-check] Ad account ID missing in metadata, attempting to fetch and update`);
-      
-      try {
-        // First check if the campaign exists in our database and get its account_id
-        const { data: campaignData } = await supabase
-          .from('meta_campaigns')
-          .select('account_id')
-          .eq('campaign_id', campaignId)
-          .eq('brand_id', brandId)
-          .single();
-        
-        if (campaignData?.account_id) {
-          console.log(`[campaign-status-check] Found account_id ${campaignData.account_id} for campaign ${campaignId} in database`);
-          
-          // Update the connection metadata with the account_id
-          const metadata = {
-            ...(connection.metadata || {}),
-            ad_account_id: campaignData.account_id
-          };
-          
-          const { error: updateError } = await supabase
-            .from('platform_connections')
-            .update({ metadata })
-            .eq('id', connection.id);
-          
-          if (updateError) {
-            console.error(`[campaign-status-check] Error updating connection metadata:`, updateError);
-          } else {
-            console.log(`[campaign-status-check] Successfully updated connection metadata with ad_account_id ${campaignData.account_id}`);
-            
-            // Update our connection object for this request
-            connection.metadata = metadata;
-          }
-        } else {
-          // If we don't have the account_id in our database, fetch ad accounts from Meta
-          console.log(`[campaign-status-check] No account_id found in database, fetching from Meta API`);
-          
-          const adAccountsResponse = await fetch(
-            `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
-          );
-          
-          if (adAccountsResponse.ok) {
-            const adAccountsData = await adAccountsResponse.json();
-            
-            if (adAccountsData.data && adAccountsData.data.length > 0) {
-              // Use the first ad account
-              const firstAccount = adAccountsData.data[0];
-              const accountId = firstAccount.id.replace('act_', '');
-              
-              console.log(`[campaign-status-check] Found ad account ${accountId} from Meta API`);
-              
-              // Update the connection metadata with the account_id
-              const metadata = {
-                ...(connection.metadata || {}),
-                ad_account_id: accountId
-              };
-              
-              const { error: updateError } = await supabase
-                .from('platform_connections')
-                .update({ metadata })
-                .eq('id', connection.id);
-              
-              if (updateError) {
-                console.error(`[campaign-status-check] Error updating connection metadata:`, updateError);
-              } else {
-                console.log(`[campaign-status-check] Successfully updated connection metadata with ad_account_id ${accountId}`);
-                
-                // Update our connection object for this request
-                connection.metadata = metadata;
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error(`[campaign-status-check] Error attempting to fix missing ad_account_id:`, error);
-      }
-    }
-
     // Skip rate limiting if force refresh is true
     const accountIdForRateLimit = connection.metadata?.account_id;
     if (!forceRefresh && isRateLimited(accountIdForRateLimit)) {
@@ -217,83 +137,20 @@ export async function POST(req: NextRequest) {
 
     // Direct API call to Meta
     const accessToken = connection.access_token;
-    let adAccountId = connection.metadata?.ad_account_id;
+    const adAccountId = connection.metadata?.ad_account_id;
 
-    // If we still don't have an ad_account_id in metadata, try to get it from campaign data
-    if (!adAccountId) {
-      console.log(`[campaign-status-check] Still missing ad_account_id, trying to fetch from campaign data`);
-      
-      try {
-        // Check if this campaign exists in our database
-        const { data: campaignData, error: campaignError } = await supabase
-          .from('meta_campaigns')
-          .select('account_id')
-          .eq('campaign_id', campaignId)
-          .eq('brand_id', brandId)
-          .single();
-        
-        if (!campaignError && campaignData && campaignData.account_id) {
-          console.log(`[campaign-status-check] Using account_id ${campaignData.account_id} from campaign record`);
-          adAccountId = campaignData.account_id;
-        }
-      } catch (error) {
-        console.error(`[campaign-status-check] Error fetching campaign data:`, error);
-      }
-    }
-
-    if (!accessToken) {
-      console.error(`[campaign-status-check] Missing access token for brand ${brandId}`);
+    if (!accessToken || !adAccountId) {
+      // ADDED: Log exactly why we are returning 400 here
+      console.error(`[campaign-status-check] Returning 400 due to missing credentials for brand ${brandId}. AccessToken present: ${!!accessToken}, AdAccountID present in metadata: ${!!adAccountId}`);
       return NextResponse.json(
-        { 
-          error: 'Missing Meta access token', 
-          message: 'Your Meta connection may need to be reauthorized',
-          fix: 'Please reconnect your Meta account in the Settings page'
-        },
-        { status: 401 }
-      );
-    }
-
-    if (!adAccountId) {
-      console.error(`[campaign-status-check] Unable to determine ad account ID for brand ${brandId}, campaign ${campaignId}`);
-      
-      // Return a structured error that can be handled by the UI, but provide some data
-      const { data: cachedCampaign } = await supabase
-        .from('meta_campaigns')
-        .select('status, last_refresh_date')
-        .eq('campaign_id', campaignId)
-        .eq('brand_id', brandId)
-        .single();
-      
-      if (cachedCampaign) {
-        console.log(`[campaign-status-check] Returning cached status (${cachedCampaign.status}) due to missing ad account ID`);
-        return NextResponse.json({
-          success: true,
-          source: 'cached_due_to_missing_ad_account',
-          message: 'Using cached data due to missing ad account ID',
-          campaignId,
-          brandId,
-          status: cachedCampaign.status,
-          lastRefreshDate: cachedCampaign.last_refresh_date,
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      return NextResponse.json(
-        { 
-          error: 'Missing Meta ad account ID',
-          message: 'We could not determine which ad account to use for this campaign',
-          fix: 'Please try refreshing the page, or reconnect your Meta account in the Settings page',
-          needsReconnect: true,
-          type: 'meta_account_missing'
-        },
-        { status: 200 } // Return 200 so front-end can handle this case
+        { error: 'Missing Meta credentials or ad account ID' },
+        { status: 400 }
       );
     }
 
     // Fetch campaign status from Meta
     try {
-      // Use the campaign ID directly rather than requiring an ad account ID
-      // This simpler method of getting campaign status directly from its ID should always work
+      // Use effective_status and configured_status fields for better accuracy
       const apiUrl = `https://graph.facebook.com/v18.0/${campaignId}?fields=effective_status,status,configured_status&access_token=${accessToken}`;
       console.log(`[campaign-status-check] Calling Meta API for campaign ${campaignId}`);
       

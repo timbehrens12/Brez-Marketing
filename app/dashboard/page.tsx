@@ -855,6 +855,12 @@ export default function DashboardPage() {
           detail: { brandId: selectedBrandId, timestamp: Date.now(), forceRefresh: true }
         }));
         
+        console.log(`[Dashboard] Dispatching metaDataRefreshed event for brand: ${selectedBrandId}`);
+        // Also dispatch the legacy event for backward compatibility
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { brandId: selectedBrandId, timestamp: Date.now(), forceRefresh: true }
+        }));
+        
         // Add a new more explicit force-refresh-campaign-status event
         window.dispatchEvent(new CustomEvent('force-refresh-campaign-status', { 
           detail: { 

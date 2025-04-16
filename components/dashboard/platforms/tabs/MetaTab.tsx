@@ -1211,7 +1211,7 @@ Connection Status: ${data.connection?.status || 'Unknown'}\n
 Connection ID: ${data.connection?.id || 'Unknown'}\n
 Created: ${data.connection?.created_at ? new Date(data.connection.created_at).toLocaleString() : 'Unknown'}\n
 \n---- AD ACCOUNTS ----\n`
-    
+
       if (data.accounts?.data?.length > 0) {
         data.accounts.data.forEach((account: any, index: number) => {
           diagnosticInfo += `\nAccount ${index + 1}:\n`
@@ -1253,61 +1253,7 @@ Created: ${data.connection?.created_at ? new Date(data.connection.created_at).to
       toast.success("Diagnostics completed successfully")
     } catch (err) {
       console.error("Error running Meta diagnostics:", err)
-      toast.error("Failed to run Meta diagnostics")
-    }
-  }
-  
-  // Function to fix Meta connection metadata
-  const fixConnectionMetadata = async () => {
-    if (!brandId) return
-    
-    const toastId = toast.loading("Fixing Meta connection metadata...")
-    
-    try {
-      const response = await fetch('/api/meta/update-connection-metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ brandId })
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update connection metadata')
-      }
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        toast.success('Meta connection metadata updated', {
-          id: toastId,
-          description: 'Your Meta connection has been updated with the required metadata'
-        })
-        
-        // Instead of reloading the page, refresh the data
-        // setTimeout(() => {
-        //   window.location.reload()
-        // }, 1500)
-        
-        // Wait a moment before refreshing data
-        setTimeout(() => {
-          // Manually trigger data refresh
-          toast.info('Refreshing Meta data with new connection...')
-          manuallyLoadData()
-        }, 1000)
-      } else {
-        toast.error('Unable to update metadata', {
-          id: toastId,
-          description: data.error || 'No metadata was updated'
-        })
-      }
-    } catch (err) {
-      console.error("Error updating Meta connection metadata:", err)
-      toast.error('Failed to update metadata', {
-        id: toastId,
-        description: err instanceof Error ? err.message : 'Unknown error occurred'
-      })
+      toast.error("Failed to run diagnostics. Please try again.")
     }
   }
 
@@ -4169,13 +4115,6 @@ Try creating at least one active campaign in Meta Ads Manager.
                             Debug Date Range
                           </button>
                           
-                          <button
-                            onClick={fixConnectionMetadata}
-                            className="px-3 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded-md"
-                          >
-                            Fix Meta Connection Metadata
-                          </button>
-                          
                           {debugMode && (
                             <button
                               onClick={() => {
@@ -4245,17 +4184,14 @@ Try creating at least one active campaign in Meta Ads Manager.
                 {/* Meta KPIs - Add failsafe checks to prevent infinite loading */}
       <div className="space-y-4">
         {/* Meta Data Overview Heading */}
-        <div className="mb-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Meta Data Overview - All Ads Combined</h2>
-          
-          {/* Add visible troubleshooting button */}
-          <button
-            onClick={fixConnectionMetadata}
-            className="px-3 py-2 text-sm bg-blue-700 hover:bg-blue-600 text-white rounded-md flex items-center gap-1"
-          >
-            <Wrench className="h-4 w-4" />
-            Fix Meta Connection
-          </button>
+        <div className="flex items-center mb-4">
+          <LineChart className="h-5 w-5 text-gray-400 mr-2" />
+          <h2 className="text-lg font-semibold">Meta Data Overview - All Ads Combined</h2>
+          <div className="ml-auto">
+            <Badge variant="outline" className="bg-gray-900/30 text-gray-400 border-gray-800 px-2">
+              Aggregated Metrics
+            </Badge>
+          </div>
         </div>
         
         {/* Direct DB connection widgets with grid layout */}
