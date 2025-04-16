@@ -799,274 +799,98 @@ const CampaignWidget = ({
     }
   }, [brandId]);
 
-  // Find the useEffect that sets up event listeners and update it
-  useEffect(() => {
-    let isRefreshing = false;
-    let lastRefreshTime = 0;
-    const REFRESH_COOLDOWN = 60000; // 60 seconds cooldown between refreshes
-    
-    const handleForceRefresh = (event: any) => {
-      if (!brandId || !campaigns.length) return;
-      
-      const now = Date.now();
-      
-      // If we're already refreshing or it's been less than the cooldown period, skip
-      if (isRefreshing || (now - lastRefreshTime < REFRESH_COOLDOWN)) {
-        logger.debug(`[CampaignWidget] Skipping refresh - already refreshing: ${isRefreshing}, last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
-        return;
-      }
-      
-      // Apply throttling to prevent refresh storm
-      if (!throttle('force-refresh-events', 30000)) {
-        logger.debug('[CampaignWidget] Throttled force refresh event');
-        return;
-      }
-      
-      const eventDetails = event.detail || {};
-      
-      logger.debug(`[CampaignWidget] 🔄 Received force refresh event: ${event.type}`, eventDetails);
-      
-      // Set refreshing indicator
-      isRefreshing = true;
-      setRefreshing(true);
-      
-      // Only take the first 3 campaigns to avoid too many simultaneous requests
-      const limitedCampaigns = campaigns.slice(0, 3);
-      logger.debug(`[CampaignWidget] Limited refresh to first ${limitedCampaigns.length} campaigns`);
-      
-      // Do a full force check of limited campaign statuses
-      checkCampaignStatuses(limitedCampaigns, true);
-      
-      // Update state for tracking
-      lastRefreshTime = now;
-      
-      // Update loading indicator after a reasonable time
-      setTimeout(() => {
-        isRefreshing = false;
-        setRefreshing(false);
-      }, 5000);
-    };
-    
-    // Handle direct force refresh with higher priority but still with rate limiting
-    const handleDirectForceRefresh = (event: any) => {
-      if (!brandId || !campaigns.length) return;
-      
-      const now = Date.now();
-      
-      // If it's been less than 10 seconds since last refresh, ignore (shorter cooldown for direct refreshes)
-      if (now - lastRefreshTime < 30000) {
-        logger.debug(`[CampaignWidget] Skipping direct refresh - last refresh: ${(now - lastRefreshTime) / 1000}s ago`);
-        return;
-      }
-      
-      // Apply throttling to prevent refresh storm
-      if (!throttle('direct-force-refresh', 30000)) {
-        logger.debug('[CampaignWidget] Throttled direct force refresh event');
-        return;
-      }
-      
-      const eventDetails = event.detail || {};
-      
-      logger.debug(`[CampaignWidget] 🔥 Received DIRECT force refresh event: ${event.type}`, eventDetails);
-      
-      // Use the bulk refresh API instead of individual API calls
-      bulkRefreshCampaignStatuses().then(() => {
-        // Update state for tracking
-        lastRefreshTime = Date.now();
-      });
-    };
-    
-    // Listen for all possible refresh events
-    window.addEventListener('page-refresh', handleForceRefresh);
-    window.addEventListener('metaDataRefreshed', handleForceRefresh);
-    window.addEventListener('meta_platform_refresh', handleForceRefresh);
-    window.addEventListener('meta-data-refreshed', handleForceRefresh);
-    document.addEventListener('meta-refresh-all', handleForceRefresh);
-    
-    // Listen for the direct force refresh events
-    window.addEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
-    document.addEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
-    
-    return () => {
-      window.removeEventListener('page-refresh', handleForceRefresh);
-      window.removeEventListener('metaDataRefreshed', handleForceRefresh);
-      window.removeEventListener('meta_platform_refresh', handleForceRefresh);
-      window.removeEventListener('meta-data-refreshed', handleForceRefresh);
-      document.removeEventListener('meta-refresh-all', handleForceRefresh);
-      
-      window.removeEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
-      document.removeEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
-    };
-  }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
+  // Toggle sort order
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
   
-  // Add event listeners for refresh events
-  useEffect(() => {
-    if (!brandId) return;
-    
-    console.log(`[CampaignWidget] Setting up refresh event listeners`);
-    
-    // Define the event handlers
-    const handleMetaRefresh = (event: Event) => {
-      if (event instanceof CustomEvent && event.detail?.brandId === brandId) {
-        handlePlatformRefresh(event);
-      }
-    };
-    
-    const handlePageRefresh = (event: Event) => {
-      if (event instanceof CustomEvent && event.detail?.brandId === brandId) {
-        handlePlatformRefresh(event);
-      }
-    };
-    
-    // Create a debounced function for handling refresh events
-    let refreshTimeoutId: NodeJS.Timeout;
-    const debouncedRefresh = (event: Event) => {
-      clearTimeout(refreshTimeoutId);
-      refreshTimeoutId = setTimeout(() => {
-        handleMetaRefresh(event);
-      }, 300); // 300ms debounce to prevent multiple rapid refreshes
-    };
-    
-    // Add the event listeners with debouncing
-    window.addEventListener('meta_platform_refresh', debouncedRefresh);
-    window.addEventListener('page-refresh', debouncedRefresh);
-    window.addEventListener('metaDataRefreshed', debouncedRefresh);
-    
-    // Initial refresh on mount (don't do this automatically)
-    // The campaignsWithAdSets set will be empty on initial mount anyway
-    
-    // Cleanup on unmount
-    return () => {
-      clearTimeout(refreshTimeoutId);
-      window.removeEventListener('meta_platform_refresh', debouncedRefresh);
-      window.removeEventListener('page-refresh', debouncedRefresh);
-      window.removeEventListener('metaDataRefreshed', debouncedRefresh);
-    };
-  }, [brandId, handlePlatformRefresh, localCampaigns.length]);
+  // Handle sort click for status
+  const handleStatusSortClick = () => {
+    setSortBy('status');
+    toggleSortOrder();
+  };
+  
+  // Handle sort click for metrics
+  const handleMetricSortClick = (metricId: string) => {
+    setSortBy(metricId);
+    toggleSortOrder();
+  };
 
-  // Add event listeners for date range changes
-  useEffect(() => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) return;
-    
-    // Save the date range values to local storage to persist
-    try {
-      localStorage.setItem('meta-date-range', JSON.stringify({
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString()
-      }));
-    } catch (e) {
-      console.error('Error saving date range:', e);
+  // Handle column header click
+  const handleColumnHeaderClick = (metricId: string) => {
+    if (sortBy === metricId) {
+      toggleSortOrder();
+    } else {
+      setSortBy(metricId);
+      setSortOrder('desc');
     }
-    
-    // When date range changes, refresh all data
-    console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
-    
-    if (expandedCampaign) {
-      // Add a slight delay to prevent multiple fetches
-      const timeoutId = setTimeout(() => {
-        if (isMountedRef.current) {
-          loadAdSetsForCampaign(expandedCampaign, true);
-        }
-      }, 300);
-      return () => clearTimeout(timeoutId);
+  };
+
+  // Toggle metric visibility
+  const toggleMetric = (metricId: string) => {
+    setVisibleMetrics(prev => 
+        prev.includes(metricId) 
+            ? prev.filter(id => id !== metricId)
+            : [...prev, metricId]
+    );
+  };
+
+  // Format values based on type
+  const formatValue = useCallback((value: number | undefined | null, format: string): string => {
+    const numValue = typeof value === 'number' ? value : 0;
+    switch (format) {
+      case 'currency':
+        return formatCurrency(numValue);
+      case 'percentage':
+        return formatPercentage(numValue);
+      case 'roas':
+        return `${numValue.toFixed(2)}x`;
+      default:
+        return formatNumber(numValue);
     }
-  }, [dateRange, brandId, expandedCampaign, loadAdSetsForCampaign]);
+  }, []); // Empty dependency array as formatters are pure
 
-  // Add a polling mechanism for automatic status updates
-  useEffect(() => {
-    if (!brandId || !isMountedRef.current || campaigns.length === 0) return;
-    
-    // Set up a polling interval to refresh campaign statuses
-    logger.info('[CampaignWidget] Setting up automatic status polling');
-    
-    // Refresh active campaign statuses every 30 seconds
-    const statusPollInterval = setInterval(() => {
-      if (!isMountedRef.current || campaigns.length === 0) return;
-      
-      // Only poll if not already refreshing and throttle properly
-      if (!refreshing && throttle('auto-poll-status', 30000)) {
-        logger.debug('[CampaignWidget] Auto-polling campaign statuses');
-        
-        // Filter only active campaigns to reduce API calls
-        const activeCampaigns = campaigns.filter(c => 
-          c.status.toUpperCase() === 'ACTIVE' || c.status.toUpperCase() === 'REFRESHING'
-        );
-        
-        if (activeCampaigns.length > 0) {
-          // Limit to just a few campaigns per polling cycle
-          const campaignsToCheck = activeCampaigns.slice(0, 2);
-          checkCampaignStatuses(campaignsToCheck, false);
-        }
+  // Filter campaigns based on search query and inactive status
+  const filteredCampaigns = useMemo(() => {
+    const campaignsToFilter = Array.isArray(localCampaigns) ? localCampaigns : [];
+    return campaignsToFilter.filter(campaign => {
+      if (!campaign || !campaign.campaign_name || !campaign.account_name || !campaign.status) return false;
+      const searchMatch = !searchQuery || 
+        campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
+      const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
+      return searchMatch && statusMatch;
+    }).sort((a, b) => {
+      if (!a || !b) return 0;
+      if (sortBy === 'status') {
+        const statusA = a.status?.toUpperCase() || '';
+        const statusB = b.status?.toUpperCase() || '';
+        if (statusA === 'ACTIVE' && statusB !== 'ACTIVE') return sortOrder === 'asc' ? 1 : -1;
+        if (statusA !== 'ACTIVE' && statusB === 'ACTIVE') return sortOrder === 'asc' ? -1 : 1;
+        return statusA.localeCompare(statusB) * (sortOrder === 'asc' ? 1 : -1);
       }
-    }, 30000);
-    
-    // Refresh all campaign budgets every 2 minutes
-    const budgetPollInterval = setInterval(() => {
-      if (!isMountedRef.current) return;
-      
-      // Only refresh budgets if not already doing so and throttle properly
-      if (!isLoadingBudgets && throttle('auto-poll-budgets', 120000)) {
-        logger.debug('[CampaignWidget] Auto-refreshing campaign budgets');
-        fetchCurrentBudgets(false);
-      }
-    }, 120000);
-    
-    // Clean up intervals on unmount
-    return () => {
-      clearInterval(statusPollInterval);
-      clearInterval(budgetPollInterval);
-      logger.debug('[CampaignWidget] Cleared automatic polling intervals');
-    };
-  }, [brandId, campaigns, isMountedRef, refreshing, isLoadingBudgets, checkCampaignStatuses, fetchCurrentBudgets]);
+      const aValue = (typeof a[sortBy as keyof Campaign] === 'number' ? a[sortBy as keyof Campaign] : 0) as number;
+      const bValue = (typeof b[sortBy as keyof Campaign] === 'number' ? b[sortBy as keyof Campaign] : 0) as number;
+      return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
+    });
+  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
 
-  // Enhanced budget monitoring
-  useEffect(() => {
-    // Update campaign budgets whenever campaigns change or on mount
-    if (brandId && campaigns.length > 0 && !isLoadingBudgets) {
-      // Use throttling to prevent excessive calls
-      if (throttle('initial-budget-fetch', 60000)) {
-        logger.debug('[CampaignWidget] Initial campaign budget refresh');
-        fetchCurrentBudgets(false);
-      }
-    }
-  }, [brandId, campaigns.length, isLoadingBudgets, fetchCurrentBudgets]);
+  // Toggle ad set expansion
+  const toggleAdSetExpand = useCallback((adSetId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedAdSet(prev => prev === adSetId ? null : adSetId);
+  }, []);
+  
+  // Handle clicks on ad set rows
+  const handleAdSetRowClick = useCallback((adSetId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    toggleAdSetExpand(adSetId);
+  }, [toggleAdSetExpand]);
 
-  // Add a listener for budget updates from other components
-  useEffect(() => {
-    const handleMetaBudgetsUpdated = (event: CustomEvent) => {
-      if (!brandId || !isMountedRef.current) return;
-      
-      logger.debug('[CampaignWidget] Received meta-budgets-updated event', event.detail);
-      
-      // Refresh our budget data
-      if (throttle('budget-event-refresh', 5000)) {
-        fetchCurrentBudgets(false);
-      }
-    };
-    
-    window.addEventListener('meta-budgets-updated', handleMetaBudgetsUpdated as EventListener);
-    
-    return () => {
-      window.removeEventListener('meta-budgets-updated', handleMetaBudgetsUpdated as EventListener);
-    };
-  }, [brandId, isMountedRef, fetchCurrentBudgets]);
-
-  // Add the getCampaignBudget function inside the component
+  // Add getCampaignBudget back inside the component scope
   const getCampaignBudget = useCallback((campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
-    // Force budget update for expanded campaign if we have ad sets
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
-      
-      // Dispatch a budget update event so other components can react
-      window.dispatchEvent(new CustomEvent('campaign-budget-updated', { 
-        detail: { 
-          campaignId: campaign.campaign_id,
-          budget: totalAdSetBudget,
-          budgetType: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-          source: 'adsets'
-        }
-      }));
-      
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
@@ -1074,8 +898,6 @@ const CampaignWidget = ({
         budget_source: 'adsets'
       };
     }
-    
-    // If campaign has adset_budget_total, use that
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
       return {
         budget: campaign.adset_budget_total,
@@ -1084,146 +906,15 @@ const CampaignWidget = ({
         budget_source: 'adsets_total'
       };
     }
-    
-    // Otherwise use current budget from API or campaign budget as fallback
     const currentBudgetData = currentBudgets[campaign.id];
     const budget = currentBudgetData?.budget || campaign.budget || 0;
-    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
-    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
-    const budget_source = currentBudgetData?.budget_source || 'campaign';
-    
     return {
       budget,
-      formatted_budget,
-      budget_type,
-      budget_source
+      formatted_budget: currentBudgetData?.formatted_budget || formatCurrency(budget),
+      budget_type: currentBudgetData?.budget_type || campaign.budget_type || 'unknown',
+      budget_source: currentBudgetData?.budget_source || 'campaign'
     };
   }, [expandedCampaign, currentBudgets]);
-
-  // Create a memoized version of the ad sets table to prevent re-renders
-  const AdSetTable = memo(({ adSets, visibleMetrics, campaign, handleAdSetRowClick, expandedAdSet }: {
-    adSets: AdSet[];
-    visibleMetrics: string[];
-    campaign: Campaign;
-    handleAdSetRowClick: (adSetId: string, e: React.MouseEvent) => void;
-    expandedAdSet: string | null;
-  }) => {
-    return (
-      <div className="rounded-md overflow-hidden border border-[#333] bg-[#111]">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#333] bg-zinc-900">
-              <th className="text-xs font-medium text-left p-2 pl-3 text-white">Ad Set</th>
-              <th className="text-xs font-medium text-left p-2 text-white">Status</th>
-              <th className="text-xs font-medium text-right p-2 text-white">Budget</th>
-              {visibleMetrics.map(metricId => {
-                if (metricId === 'budget') return null;
-                
-                const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
-                if (!metric) return null;
-                
-                return (
-                  <th 
-                    key={metricId} 
-                    className="text-xs font-medium text-right p-2 text-white"
-                  >
-                    {metric.name}
-                  </th>
-                );
-              })}
-              <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {adSets.map((adSet) => {
-              // Special case for loading placeholder
-              if (adSet.adset_id === 'loading') {
-                return (
-                  <tr key="loading" className="border-b border-[#333] bg-black/20">
-                    <td colSpan={visibleMetrics.length + 4} className="p-0">
-                      <div className="p-4 h-12 flex items-center animate-pulse">
-                        <div className="w-1/3 h-4 bg-gray-800 rounded"></div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              }
-              
-              return (
-                <React.Fragment key={adSet.adset_id}>
-                  <tr 
-                    className={`
-                      border-b border-[#333] hover:bg-black/10 
-                      cursor-pointer relative border-l-2 ${
-                        expandedAdSet === adSet.adset_id 
-                          ? 'border-l-gray-600 bg-black/5' 
-                          : 'border-l-[#333]'
-                      }
-                    `}
-                    onClick={(e) => handleAdSetRowClick(adSet.adset_id, e)}
-                  >
-                    <td className="p-2 pl-3 flex items-center gap-2">
-                      <div className="flex items-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAdSetRowClick(adSet.adset_id, e);
-                          }}
-                          className="mr-2 text-white hover:text-gray-400 transition-colors"
-                        >
-                          <ChevronDown className={`h-4 w-4 transition-transform ${
-                            expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
-                          }`} />
-                        </button>
-                        <div>
-                          <div className="font-medium text-white">{adSet.adset_name}</div>
-                          <div className="text-xs text-gray-400">{adSet.adset_id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <Badge 
-                        variant="outline" 
-                        className={`px-2 py-0.5 text-xs flex items-center gap-1 ${
-                          adSet.status.toUpperCase() === 'ACTIVE' 
-                            ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
-                            : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
-                        }`}
-                      >
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          adSet.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
-                        }`}></div>
-                        {adSet.status}
-                      </Badge>
-                    </td>
-                    <td className="p-2 text-right">
-                      <div className="flex flex-col items-end">
-                        <Badge 
-                          className="px-2 py-0.5 bg-[#111] border-[#333] text-white"
-                          variant="outline"
-                        >
-                          {formatCurrency(adSet.budget)}
-                          {adSet.budget_type === 'daily' && <span className="text-xs text-gray-500 ml-1">/day</span>}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {adSet.budget_type}
-                        </span>
-                      </div>
-                    </td>
-                    {/* Metrics columns */}
-                    {/* Remaining columns rendered as before */}
-                  </tr>
-                  {/* Ad set expanded content - rendered as before */}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  });
-
-  AdSetTable.displayName = 'AdSetTable';
 
   // Return the JSX for the component
   return (
