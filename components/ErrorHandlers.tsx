@@ -1,6 +1,6 @@
 'use client'
 
-import { useErrorBoundaryFix, useSupabaseErrorHandler } from '@/lib/utils'
+import { useErrorBoundaryFix, useSupabaseErrorHandler } from '@/lib/client-utils'
 
 export function ErrorHandlers() {
   // Apply the error boundary fixes
