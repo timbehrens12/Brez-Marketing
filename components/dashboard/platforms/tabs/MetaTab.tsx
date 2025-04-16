@@ -4137,6 +4137,34 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, []);
 
+  // Add tracking for date transitions to prevent flickering
+  useEffect(() => {
+    // Log date range changes for debugging
+    if (dateRange?.from && dateRange?.to) {
+      console.log(`[MetaTab] Date range changed to: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
+      
+      // When date range changes, temporarily show loading state
+      setIsLoadingCampaigns(true);
+      
+      // Dispatch an event to notify all components about the date change
+      window.dispatchEvent(new CustomEvent('date-range-change', {
+        detail: {
+          type: 'dateRangeChange',
+          from: dateRange.from,
+          to: dateRange.to,
+          brandId
+        }
+      }));
+      
+      // Create a timeout to ensure we exit loading state even if something goes wrong
+      const timeoutId = setTimeout(() => {
+        setIsLoadingCampaigns(false);
+      }, 15000); // Maximum 15 seconds in loading state
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [dateRange, brandId]);
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4482,7 +4510,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
             brandId={brandId || ''}
             campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-            isLoading={isLoadingCampaigns}
+            isLoading={isLoadingCampaigns || isRefreshingData || isLoading}
             isSyncing={isSyncing}
             dateRange={dateRange}
             onRefresh={() => {

@@ -187,6 +187,35 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
+// Add global type declaration at the top level
+declare global {
+  interface Window {
+    _lastReportedBudget?: number;
+    _lastEventTimestamp?: number;
+    _metaTimeouts?: ReturnType<typeof setTimeout>[];
+    _blockMetaApiCalls?: boolean;
+    _disableAutoMetaFetch?: boolean;
+    _activeFetchIds?: Set<number | string>;
+    _metaFetchLock?: boolean;
+    _lastManualRefresh?: number;
+    _lastMetaRefresh?: number;
+    _initialCampaignsLoaded?: boolean;
+    _previousDateRange?: string;
+    _previousCampaignData?: any[];
+  }
+}
+
+// Add a function to handle date transitions with previous data preservation
+const usePreviousValue = <T,>(value: T): T | undefined => {
+  const ref = useRef<T>();
+  
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  
+  return ref.current;
+};
+
 // Define the component using normal function declaration
 function CampaignWidget({ 
   brandId, 
@@ -1451,10 +1480,11 @@ function CampaignWidget({
         // console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
         
         // Only dispatch global events if the budget has changed to prevent excessive updates
+        const prevBudget = window._lastReportedBudget || 0;
         const shouldDispatchEvents = 
-          Math.abs(window._lastReportedBudget - totalBudget) > 0.01 || 
+          Math.abs(prevBudget - totalBudget) > 0.01 || 
           !window._lastEventTimestamp || 
-          (Date.now() - window._lastEventTimestamp > 30000); // Only send updates max every 30 seconds
+          (Date.now() - (window._lastEventTimestamp || 0) > 30000); // Only send updates max every 30 seconds
           
         if (shouldDispatchEvents) {
           // Update global variables to track last event
@@ -1492,21 +1522,6 @@ function CampaignWidget({
     }
   }, [brandId, isMountedRef, localCampaigns]);
 
-  // Add a type definition for window properties to prevent typescript errors
-  declare global {
-    interface Window {
-      _lastReportedBudget?: number;
-      _lastEventTimestamp?: number;
-      _metaTimeouts?: ReturnType<typeof setTimeout>[];
-      _blockMetaApiCalls?: boolean;
-      _disableAutoMetaFetch?: boolean;
-      _activeFetchIds?: Set<number | string>;
-      _metaFetchLock?: boolean;
-      _lastManualRefresh?: number;
-      _lastMetaRefresh?: number;
-    }
-  }
-
   // Update the existing effect to add debouncing
   useEffect(() => {
     if (brandId && !isLoading) {
@@ -1524,6 +1539,7 @@ function CampaignWidget({
   // Modify campaign effect to prevent excessive refreshes
   useEffect(() => {
     if (campaigns.length > 0 && brandId) {
+      // Always update local campaigns when we get new data
       setLocalCampaigns(campaigns);
       
       // Only add status check on initial load, not on every campaign update
@@ -1541,6 +1557,60 @@ function CampaignWidget({
       }
     }
   }, [campaigns, brandId, checkCampaignStatuses, isMountedRef]);
+
+  // Add a function to detect significant date changes (more than just hours/minutes)
+  const isSignificantDateChange = (prev: DateRange | undefined, current: DateRange | undefined): boolean => {
+    if (!prev || !prev.from || !prev.to || !current || !current.from || !current.to) return true;
+    
+    // Check if dates are different by more than a day (major change)
+    const prevFromDay = prev.from.getDate();
+    const prevToDay = prev.to.getDate();
+    const currentFromDay = current.from.getDate();
+    const currentToDay = current.to.getDate();
+    
+    const prevFromMonth = prev.from.getMonth();
+    const prevToMonth = prev.to.getMonth();
+    const currentFromMonth = current.from.getMonth();
+    const currentToMonth = current.to.getMonth();
+    
+    return (
+      prevFromDay !== currentFromDay ||
+      prevToDay !== currentToDay ||
+      prevFromMonth !== currentFromMonth ||
+      prevToMonth !== currentToMonth
+    );
+  };
+
+  // In the component: add code to handle date changes better
+
+  // Add state to track date transitions
+  const [isDateTransitioning, setIsDateTransitioning] = useState(false);
+  const previousDateRange = usePreviousValue(dateRange);
+
+  // Add effect to handle date changes without flickering
+  useEffect(() => {
+    if (!dateRange) return;
+    
+    // Create a consistent string representation of date range for comparison
+    const dateRangeString = `${dateRange.from?.toISOString()}-${dateRange.to?.toISOString()}`;
+    const prevDateRangeString = `${previousDateRange?.from?.toISOString()}-${previousDateRange?.to?.toISOString()}`;
+    
+    // Only trigger transition state if this is a significant date change
+    if (dateRangeString !== prevDateRangeString && isSignificantDateChange(previousDateRange, dateRange)) {
+      // Save current data
+      window._previousCampaignData = [...localCampaigns];
+      
+      // Enter transition state to prevent flickering
+      setIsDateTransitioning(true);
+      
+      // Add a timeout to exit transition state if data doesn't load
+      const timeoutId = setTimeout(() => {
+        setIsDateTransitioning(false);
+      }, 10000); // Maximum 10 seconds in transition state
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [dateRange, previousDateRange, localCampaigns]);
 
   // Return the JSX for the component
   return (

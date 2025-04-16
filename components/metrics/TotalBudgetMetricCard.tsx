@@ -28,43 +28,82 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     return `${diffHour} hr ago`
   }
 
+  // Add a function to detect when a date change is happening
+  useEffect(() => {
+    // Listen for date change events
+    const handleDateRangeChange = (event: Event) => {
+      if (!event || !(event instanceof CustomEvent)) return;
+      
+      const { detail } = event;
+      
+      // Check if this is a date range change event
+      if (detail?.type === 'dateRangeChange') {
+        // Keep the loading state true until new data arrives
+        setIsLoading(true);
+        
+        // Don't reset the totalBudget to zero during transitions
+        // The existing value will be maintained until new data arrives
+        
+        console.log('[TotalBudgetMetricCard] Date range changing, maintaining current value during transition');
+      }
+    };
+    
+    window.addEventListener('date-range-change', handleDateRangeChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('date-range-change', handleDateRangeChange as EventListener);
+    };
+  }, []);
+
+  // Modify fetchTotalBudget to maintain previous values
   const fetchTotalBudget = useCallback(async () => {
-    if (!brandId) return
+    if (!brandId) return;
+    
+    let startTime = Date.now();
+    console.log(`[TotalBudgetMetricCard] Starting fetch at ${startTime}`);
     
     try {
-      setIsLoading(true)
-      // console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`)
-      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`)
+      // Don't hide current data while loading
+      setIsLoading(true);
+      
+      // Store the current values before we fetch
+      const previousBudget = totalBudget;
+      const previousAdSetCount = adSetCount;
+      
+      // console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`);
+      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true&t=${Date.now()}`);
       
       if (!response.ok) {
-        // If the request fails, maintain the previous values but mark as not loading
-        setIsLoading(false)
-        
-        // Prevent error popup for 404s and 400s as these are common during load
-        if (response.status !== 404 && response.status !== 400) {
-          console.error(`[TotalMetaBudget] Failed to fetch budget: ${response.status}`)
-          toast.error('Failed to fetch total budget')
-        }
-        return
+        // If the request fails, maintain the previous values
+        console.log(`[TotalBudgetMetricCard] Request failed, maintaining previous values: $${previousBudget}`);
+        return;
       }
       
-      const data = await response.json()
-      // console.log(`[TotalMetaBudget] Received data:`, data)
+      const data = await response.json();
+      
+      // Check how long the request took
+      const fetchTime = Date.now() - startTime;
+      console.log(`[TotalBudgetMetricCard] Fetch completed in ${fetchTime}ms with result:`, data);
       
       if (data.success) {
-        setTotalBudget(data.totalBudget)
-        setAdSetCount(data.adSetCount)
+        // Only update if we actually have data and it's not zero (zero often indicates an error)
+        if (data.totalBudget !== undefined && data.totalBudget > 0) {
+          setTotalBudget(data.totalBudget);
+          setAdSetCount(data.adSetCount);
+        } else if (previousBudget > 0) {
+          // If we get zero back but had a previous value, keep the previous value
+          console.log(`[TotalBudgetMetricCard] Received zero budget but keeping previous value: $${previousBudget}`);
+        }
       } else {
-        // On API error, don't reset values to zero
-        console.error(`[TotalMetaBudget] Error in budget data:`, data.error || 'Unknown error')
+        // On API error, maintain previous values
+        console.log(`[TotalBudgetMetricCard] API error, maintaining previous values: $${previousBudget}`);
       }
     } catch (error) {
-      console.error('[TotalMetaBudget] Error fetching total budget:', error)
-      // Don't show error toast as it's annoying for users
+      console.error('[TotalBudgetMetricCard] Error fetching total budget:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [brandId])
+  }, [brandId, totalBudget, adSetCount]);
   
   // Fetch on initial load
   useEffect(() => {
