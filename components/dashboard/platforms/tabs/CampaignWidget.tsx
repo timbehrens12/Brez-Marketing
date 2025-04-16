@@ -218,55 +218,6 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
-// Add the enhanced getCampaignBudget function
-const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
-  // Force budget update for expanded campaign if we have ad sets
-  if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-    const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
-    
-    // Dispatch a budget update event so other components can react
-    window.dispatchEvent(new CustomEvent('campaign-budget-updated', { 
-      detail: { 
-        campaignId: campaign.campaign_id,
-        budget: totalAdSetBudget,
-        budgetType: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-        source: 'adsets'
-      }
-    }));
-    
-    return {
-      budget: totalAdSetBudget,
-      formatted_budget: formatCurrency(totalAdSetBudget),
-      budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-      budget_source: 'adsets'
-    };
-  }
-  
-  // If campaign has adset_budget_total, use that
-  if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-    return {
-      budget: campaign.adset_budget_total,
-      formatted_budget: formatCurrency(campaign.adset_budget_total),
-      budget_type: campaign.budget_type || 'unknown',
-      budget_source: 'adsets_total'
-    };
-  }
-  
-  // Otherwise use current budget from API or campaign budget as fallback
-  const currentBudgetData = currentBudgets[campaign.id];
-  const budget = currentBudgetData?.budget || campaign.budget || 0;
-  const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
-  const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
-  const budget_source = currentBudgetData?.budget_source || 'campaign';
-  
-  return {
-    budget,
-    formatted_budget,
-    budget_type,
-    budget_source
-  };
-};
-
 // Define the component as a React FC (Function Component) with JSX return
 const CampaignWidget = ({ 
   brandId, 
@@ -1488,6 +1439,55 @@ const CampaignWidget = ({
       window.removeEventListener('meta-budgets-updated', handleMetaBudgetsUpdated as EventListener);
     };
   }, [brandId, isMountedRef, fetchCurrentBudgets]);
+
+  // Add the getCampaignBudget function inside the component
+  const getCampaignBudget = useCallback((campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
+    // Force budget update for expanded campaign if we have ad sets
+    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
+      
+      // Dispatch a budget update event so other components can react
+      window.dispatchEvent(new CustomEvent('campaign-budget-updated', { 
+        detail: { 
+          campaignId: campaign.campaign_id,
+          budget: totalAdSetBudget,
+          budgetType: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+          source: 'adsets'
+        }
+      }));
+      
+      return {
+        budget: totalAdSetBudget,
+        formatted_budget: formatCurrency(totalAdSetBudget),
+        budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        budget_source: 'adsets'
+      };
+    }
+    
+    // If campaign has adset_budget_total, use that
+    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+      return {
+        budget: campaign.adset_budget_total,
+        formatted_budget: formatCurrency(campaign.adset_budget_total),
+        budget_type: campaign.budget_type || 'unknown',
+        budget_source: 'adsets_total'
+      };
+    }
+    
+    // Otherwise use current budget from API or campaign budget as fallback
+    const currentBudgetData = currentBudgets[campaign.id];
+    const budget = currentBudgetData?.budget || campaign.budget || 0;
+    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
+    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
+    const budget_source = currentBudgetData?.budget_source || 'campaign';
+    
+    return {
+      budget,
+      formatted_budget,
+      budget_type,
+      budget_source
+    };
+  }, [expandedCampaign, currentBudgets]);
 
   // Return the JSX for the component
   return (
