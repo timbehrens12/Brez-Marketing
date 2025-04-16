@@ -112,6 +112,34 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     }
   }, [brandId, fetchTotalBudget])
   
+  // Add event listener for budget updates from CampaignWidget
+  useEffect(() => {
+    if (!brandId) return;
+    
+    const handleBudgetUpdate = (event: CustomEvent) => {
+      const detail = event.detail;
+      
+      // Ensure the event is for this brand
+      if (detail.brandId !== brandId) return;
+      
+      console.log(`[TotalMetaBudget] Received budget update from ${detail.source}: ${detail.totalBudget}`);
+      
+      // Update the budget and ad set count
+      setTotalBudget(detail.totalBudget || 0);
+      
+      // Mark as no longer loading
+      setIsLoading(false);
+    };
+    
+    // Add event listener for budget updates
+    window.addEventListener('meta-total-budget-updated', handleBudgetUpdate as EventListener);
+    
+    // Remove event listener on cleanup
+    return () => {
+      window.removeEventListener('meta-total-budget-updated', handleBudgetUpdate as EventListener);
+    };
+  }, [brandId]);
+  
   return (
     <MetricCard
       title={
