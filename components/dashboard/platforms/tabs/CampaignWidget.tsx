@@ -265,13 +265,13 @@ const CampaignWidget = ({
   const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Add more robust state tracking for loading state
-  const adSetLoadingLockRef = useRef(false);
-  const stableLoadingRef = useRef(false);
+  const adSetLoadingLockRef = useRef<boolean>(false);
+  const stableLoadingRef = useRef<boolean>(false);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const refreshCountRef = useRef(0);
   
   // Add stronger state locking to prevent loops
-  const dataStabilizationLockRef = useRef(false);
+  const dataStabilizationLockRef = useRef<boolean>(false);
   const lastSuccessfulFetchTimeRef = useRef(0);
   const STABILITY_LOCK_PERIOD = 5000; // 5 seconds where no state changes are allowed after successful data display
   
