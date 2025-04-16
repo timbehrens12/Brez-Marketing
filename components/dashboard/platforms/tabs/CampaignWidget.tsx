@@ -264,6 +264,12 @@ const CampaignWidget = ({
   const isInitialLoadRef = useRef(true);
   const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Add more robust state tracking for loading state
+  const adSetLoadingLockRef = useRef(false);
+  const stableLoadingRef = useRef(false);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshCountRef = useRef(0);
+  
   // Clean up when component unmounts
   useEffect(() => {
     return () => {
@@ -1003,41 +1009,26 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Modify the toggleCampaignExpand function to prevent twitching
-  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
-    if (expandedCampaign === campaignId) {
-      // Use a delay before collapsing to prevent UI jank
-      setTimeout(() => {
-        // Collapse if already expanded
-        setExpandedCampaign(null);
-        // Clear the ad sets data after a delay to prevent flash of content
-        setTimeout(() => {
-          setAdSets([]);
-        }, 50);
-      }, 50);
+  // Create an expanded wrapper that fully protects against race conditions
+  const stableExpandAdSets = useCallback((campaignId: string) => {
+    // If we're currently in a loading operation, ignore additional requests
+    if (adSetLoadingLockRef.current) {
+      logger.debug('[CampaignWidget] Ignoring expand request - loading lock is active');
       return;
     }
     
-    // Validate campaignId before making API call
-    if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-      logger.debug('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
-      toast.error("Cannot expand campaign - invalid campaign ID");
-      return;
-    }
-    
-    if (!brandId) {
-      logger.debug('[CampaignWidget] Missing brand ID for status check');
-      toast.error("Cannot expand campaign - missing brand ID");
-      return;
-    }
-
-    // Show loading state immediately
+    // Create a loading lock
+    adSetLoadingLockRef.current = true;
+    stableLoadingRef.current = true;
     setIsLoadingAdSets(true);
     
-    // Set as expanded immediately to show UI change
+    // Reset refresh counter
+    refreshCountRef.current = 0;
+    
+    // Set expanded immediately
     setExpandedCampaign(campaignId);
     
-    // Create a placeholder loading ad set - but only once to prevent flicker
+    // Show a placeholder
     setAdSets([{ 
       id: 0,
       brand_id: brandId,
@@ -1059,9 +1050,157 @@ const CampaignWidget = ({
       daily_insights: []
     }]);
     
-    logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+    // Allow a brief period for the UI to render the loading state
+    setTimeout(() => {
+      // Start the fetch if still expanded and mounted
+      if (isMountedRef.current && expandedCampaign === campaignId) {
+        // Initiate the fetch with our stable fetch handler
+        stableFetchAdSets(campaignId);
+      } else {
+        // If the expansion state changed, release the lock
+        adSetLoadingLockRef.current = false;
+      }
+    }, 100);
+  }, [brandId, expandedCampaign, isMountedRef]);
+
+  // Create a dedicated stable fetch handler
+  const stableFetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+    if (!brandId || !isMountedRef.current || !campaignId) {
+      adSetLoadingLockRef.current = false;
+      return;
+    }
     
-    // First, check the status to ensure it's current - but don't block the UI
+    // Check if we've tried too many times
+    refreshCountRef.current++;
+    if (refreshCountRef.current > 3) {
+      logger.debug(`[CampaignWidget] Too many fetch attempts (${refreshCountRef.current}), stopping`);
+      adSetLoadingLockRef.current = false;
+      setIsLoadingAdSets(false);
+      return;
+    }
+    
+    // Proceed with the fetch
+    try {
+      // Track what we're doing
+      logger.debug(`[CampaignWidget] Stable fetch starting for campaign ${campaignId}, attempt ${refreshCountRef.current}`);
+      
+      // Create our URL
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
+      
+      // Add date range parameters if available
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${fromDate}&to=${toDate}`;
+      }
+      
+      // Perform the fetch
+      const response = await fetch(url);
+      
+      // Process the response
+      const data = await response.json();
+      const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+      
+      // Only update if we're still showing the same campaign
+      if (isMountedRef.current && expandedCampaign === campaignId) {
+        if (validAdSets.length > 0) {
+          // Update ad sets directly (not loading state yet)
+          setAdSets(validAdSets);
+          
+          // Mark this campaign as having ad sets
+          setCampaignsWithAdSets(prev => {
+            const newSet = new Set(prev);
+            newSet.add(campaignId);
+            return newSet;
+          });
+          
+          // Add a cooldown before allowing loading state to change
+          if (cooldownTimerRef.current) {
+            clearTimeout(cooldownTimerRef.current);
+          }
+          
+          cooldownTimerRef.current = setTimeout(() => {
+            // Update loading state AFTER ensuring data is rendered
+            if (isMountedRef.current && expandedCampaign === campaignId) {
+              logger.debug(`[CampaignWidget] Cooldown complete, setting loading to false`);
+              stableLoadingRef.current = false;
+              setIsLoadingAdSets(false);
+            }
+            
+            // Release the loading lock LAST to prevent race conditions
+            adSetLoadingLockRef.current = false;
+            cooldownTimerRef.current = null;
+          }, 500);
+        } else {
+          // No data, show empty state after a cooldown
+          setTimeout(() => {
+            if (isMountedRef.current && expandedCampaign === campaignId) {
+              setAdSets([]);
+              setIsLoadingAdSets(false);
+            }
+            adSetLoadingLockRef.current = false;
+          }, 300);
+        }
+      } else {
+        // Component unmounted or campaign changed, just release lock
+        adSetLoadingLockRef.current = false;
+      }
+    } catch (error) {
+      logger.error(`[CampaignWidget] Stable fetch error: ${(error as Error).message}`);
+      
+      // Release lock and clear loading state
+      adSetLoadingLockRef.current = false;
+      
+      if (isMountedRef.current) {
+        setIsLoadingAdSets(false);
+        setAdSets([]);
+      }
+    }
+  }, [brandId, dateRange, expandedCampaign, isMountedRef]);
+
+  // Modify the toggleCampaignExpand function to use our stable expand method
+  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
+    // If there's a cooldown timer running, clear it
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+    
+    if (expandedCampaign === campaignId) {
+      // If we have a loading lock, wait briefly before collapsing
+      if (adSetLoadingLockRef.current) {
+        setTimeout(() => {
+          adSetLoadingLockRef.current = false;
+          setExpandedCampaign(null);
+          setAdSets([]);
+          setIsLoadingAdSets(false);
+        }, 100);
+      } else {
+        // Normal collapse
+        setExpandedCampaign(null);
+        setAdSets([]);
+        setIsLoadingAdSets(false);
+      }
+      return;
+    }
+    
+    // Validate campaignId before making API call
+    if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
+      logger.debug('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+      toast.error("Cannot expand campaign - invalid campaign ID");
+      return;
+    }
+    
+    if (!brandId) {
+      logger.debug('[CampaignWidget] Missing brand ID for status check');
+      toast.error("Cannot expand campaign - missing brand ID");
+      return;
+    }
+    
+    // Use our stable expand method
+    stableExpandAdSets(campaignId);
+    
+    // Status check (but don't block UI)
     try {
       const response = await fetch('/api/meta/campaign-status-check', {
         method: 'POST',
@@ -1095,15 +1234,7 @@ const CampaignWidget = ({
       logger.debug(`[CampaignWidget] Error checking campaign status during expand:`, error);
       // Continue with expansion even if status check fails
     }
-    
-    // Wait a tiny bit to ensure UI has updated before starting the fetch
-    setTimeout(() => {
-      // Fetch ad sets for this campaign if we're still expanded and mounted
-      if (isMountedRef.current && expandedCampaign === campaignId) {
-        fetchAdSets(campaignId);
-      }
-    }, 100);
-  }, [brandId, expandedCampaign, fetchAdSets, isMountedRef]);
+  }, [brandId, expandedCampaign, stableExpandAdSets, isMountedRef]);
   
   // Toggle sort order
   const toggleSortOrder = () => {
@@ -2023,9 +2154,12 @@ const CampaignWidget = ({
                                     className="h-7 text-xs text-white border-[#333] hover:bg-black/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setAdSets([]); // Clear current ad sets to show loading
-                                      setIsLoadingAdSets(true); // Explicitly set loading state
-                                      fetchAdSets(campaign.campaign_id);
+                                      // Prevent repeat clicks during loading
+                                      if (adSetLoadingLockRef.current || stableLoadingRef.current) {
+                                        return;
+                                      }
+                                      // Use stable expand to refresh
+                                      stableExpandAdSets(campaign.campaign_id);
                                     }}
                                     disabled={isLoadingAdSets}
                                   >
@@ -2054,13 +2188,215 @@ const CampaignWidget = ({
                                   </div>
                                 </div>
                               ) : adSets.length > 0 ? (
-                                <AdSetTable 
-                                  adSets={adSets}
-                                  visibleMetrics={visibleMetrics}
-                                  campaign={campaign}
-                                  handleAdSetRowClick={handleAdSetRowClick}
-                                  expandedAdSet={expandedAdSet}
-                                />
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      {adSets.length} Ad Sets
+                                    </Badge>
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.budget, 0))}
+                                    </Badge>
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.spent, 0))}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="rounded-md overflow-hidden border border-[#333] bg-[#111]">
+                                    <table className="w-full">
+                                      <thead>
+                                        <tr className="border-b border-[#333] bg-zinc-900">
+                                          <th className="text-xs font-medium text-left p-2 pl-3 text-white">Ad Set</th>
+                                          <th className="text-xs font-medium text-left p-2 text-white">Status</th>
+                                          <th className="text-xs font-medium text-right p-2 text-white">Budget</th>
+                                          {visibleMetrics.map(metricId => {
+                                            if (metricId === 'budget') return null;
+                                            
+                                            const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                            if (!metric) return null;
+                                            
+                                            return (
+                                              <th 
+                                                key={metricId} 
+                                                className="text-xs font-medium text-right p-2 text-white"
+                                              >
+                                                {metric.name}
+                                              </th>
+                                            );
+                                          })}
+                                          <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {adSets.map((adSet) => (
+                                          <React.Fragment key={adSet.adset_id}>
+                                            <tr 
+                                              className={`
+                                                border-b border-[#333] hover:bg-black/10 
+                                                cursor-pointer relative border-l-2 ${
+                                                  expandedAdSet === adSet.adset_id 
+                                                    ? 'border-l-gray-600 bg-black/5' 
+                                                    : 'border-l-[#333]'
+                                                }
+                                              `}
+                                              onClick={(e) => handleAdSetRowClick(adSet.adset_id, e)}
+                                            >
+                                              <td className="p-2 pl-3 flex items-center gap-2">
+                                                <div className="flex items-center">
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleAdSetRowClick(adSet.adset_id, e);
+                                                    }}
+                                                    className="mr-2 text-white hover:text-gray-400 transition-colors"
+                                                  >
+                                                    <ChevronDown className={`h-4 w-4 transition-transform ${
+                                                      expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
+                                                    }`} />
+                                                  </button>
+                                                  <div>
+                                                    <div className="font-medium text-white">{adSet.adset_name}</div>
+                                                    <div className="text-xs text-gray-400">{adSet.adset_id}</div>
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="p-2">
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className={`px-2 py-0.5 text-xs flex items-center gap-1 ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' 
+                                                      ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
+                                                      : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
+                                                  }`}
+                                                >
+                                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
+                                                  }`}></div>
+                                                  {adSet.status}
+                                                </Badge>
+                                              </td>
+                                              <td className="p-2 text-right">
+                                                <div className="flex flex-col items-end">
+                                                  <Badge 
+                                                    className="px-2 py-0.5 bg-[#111] border-[#333] text-white"
+                                                    variant="outline"
+                                                  >
+                                                    {formatCurrency(adSet.budget)}
+                                                    {adSet.budget_type === 'daily' && <span className="text-xs text-gray-500 ml-1">/day</span>}
+                                                  </Badge>
+                                                  <span className="text-xs text-gray-500">
+                                                    {adSet.budget_type}
+                                                  </span>
+                                                </div>
+                                              </td>
+                                              {visibleMetrics.map(metricId => {
+                                                if (metricId === 'budget') return null;
+                                                
+                                                const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                                if (!metric) return null;
+                                                
+                                                // Map campaign metrics to ad set metrics
+                                                let value: number;
+                                                switch (metricId) {
+                                                  case 'spent':
+                                                    value = adSet.spent || 0;
+                                                    break;
+                                                  case 'impressions':
+                                                    value = adSet.impressions || 0;
+                                                    break;
+                                                  case 'clicks':
+                                                    value = adSet.clicks || 0;
+                                                    break;
+                                                  case 'ctr':
+                                                    value = adSet.ctr || 0;
+                                                    break;
+                                                  case 'cpc':
+                                                    value = adSet.cpc || 0;
+                                                    break;
+                                                  case 'conversions':
+                                                    value = adSet.conversions || 0;
+                                                    break;
+                                                  case 'cost_per_conversion':
+                                                    value = adSet.cost_per_conversion || 0;
+                                                    break;
+                                                  case 'reach':
+                                                    value = adSet.reach || 0;
+                                                    break;
+                                                  case 'roas':
+                                                    if (adSet.conversions > 0 && adSet.spent > 0) {
+                                                      const estimatedRevenue = adSet.conversions * 25;
+                                                      value = estimatedRevenue / adSet.spent;
+                                                    } else {
+                                                      value = 0;
+                                                    }
+                                                    break;
+                                                  default:
+                                                    value = 0;
+                                                }
+                                                
+                                                return (
+                                                  <td key={metricId} className="p-2 text-right">
+                                                    <div className="font-medium text-white">
+                                                      {formatValue(value, metric.format)}
+                                                    </div>
+                                                  </td>
+                                                );
+                                              })}
+                                              <td className="p-2 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleAdSetRowClick(adSet.adset_id, e);
+                                                    }}
+                                                    title={expandedAdSet === adSet.adset_id ? "Hide Ads" : "Show Ads"}
+                                                  >
+                                                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${
+                                                      expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
+                                                    }`} />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      window.open(`https://www.facebook.com/ads/manager/account/campaigns?act=${campaign.account_id.replace('act_', '')}&selected_campaign_ids=${campaign.campaign_id}`, '_blank')
+                                                    }}
+                                                    title="View in Meta Ads Manager"
+                                                  >
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                            {/* Ad Set expanded content */}
+                                            {expandedAdSet === adSet.adset_id && (
+                                              <tr className="border-t border-[#333] bg-[#111]">
+                                                <td colSpan={visibleMetrics.length + 4} className="p-0">
+                                                  <div className="p-4 border-l-4 border-[#333] mx-2 rounded-md bg-[#111]">
+                                                    <AdComponent 
+                                                      brandId={brandId}
+                                                      adsetId={adSet.adset_id}
+                                                      dateRange={dateRange}
+                                                      visibleMetrics={visibleMetrics}
+                                                      adSetBudget={{
+                                                        budget: adSet.budget || 0,
+                                                        budget_type: adSet.budget_type || 'daily'
+                                                      }}
+                                                    />
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </React.Fragment>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
                               ) : (
                                 <div className="flex flex-col items-center justify-center py-8 text-center">
                                   <h3 className="text-lg font-medium mb-1 text-white">No ad sets found</h3>
@@ -2072,13 +2408,15 @@ const CampaignWidget = ({
                                     size="sm" 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setAdSets([]); // Clear current ad sets to show loading
-                                      fetchAdSets(campaign.campaign_id);
+                                      if (!adSetLoadingLockRef.current) {
+                                        stableExpandAdSets(campaign.campaign_id);
+                                      }
                                     }}
                                     className="text-white border-[#333] hover:bg-black/20"
+                                    disabled={adSetLoadingLockRef.current || stableLoadingRef.current}
                                   >
                                     <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
-                                    Refresh Ad Sets
+                                    Retry Loading Ad Sets
                                   </Button>
                                 </div>
                               )}
