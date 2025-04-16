@@ -2389,9 +2389,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
-  // Add this state near the other state variables:
-  const [pendingBudgetUpdate, setPendingBudgetUpdate] = useState<number | null>(null);
-  
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -4235,73 +4232,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       hasInitiallyLoaded = true;
     };
   }, [dateRange]);
-
-  // Add listener for total budget updates from campaign widget
-  useEffect(() => {
-    if (!brandId) return;
-    
-    const handleTotalBudgetUpdate = (event: CustomEvent) => {
-      // Check if this is for our brand
-      if (event.detail?.brandId !== brandId) return;
-      
-      const { totalBudget } = event.detail;
-      if (typeof totalBudget === 'number') {
-        logger.debug(`[MetaTab] Received total budget update: ${totalBudget}`);
-        
-        // Update metrics directly if they exist or add to processing queue for when they become available
-        if (metrics) {
-          // Only update if there's a significant change
-          if (Math.abs(metrics.budget - totalBudget) > 0.01) {
-            // Clone and update the metrics data
-            const updatedMetrics = {
-              ...metrics,
-              budget: totalBudget
-            };
-            
-            // Update the UI with the new budget
-            setMetricsData(updatedMetrics);
-          }
-        } else {
-          // Store the budget to apply once metrics are loaded
-          setPendingBudgetUpdate(totalBudget);
-        }
-      }
-    };
-    
-    // Add event listener for budget updates
-    window.addEventListener('meta-total-budget-updated', handleTotalBudgetUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('meta-total-budget-updated', handleTotalBudgetUpdate as EventListener);
-    };
-  }, [brandId, metrics]);
-
-  // Add a mechanism to request budget updates when needed
-  const requestBudgetUpdate = useCallback(() => {
-    if (!brandId) return;
-    
-    // Dispatch event to request budget update from the campaign widget
-    window.dispatchEvent(new CustomEvent('refresh-meta-budgets', {
-      detail: { brandId }
-    }));
-  }, [brandId]);
-
-  // Add effect to apply pending budget update when metrics become available
-  useEffect(() => {
-    if (metrics && pendingBudgetUpdate !== null) {
-      // Apply the pending budget update once metrics are available
-      const updatedMetrics = {
-        ...metrics,
-        budget: pendingBudgetUpdate
-      };
-      
-      // Update the UI with the new budget
-      setMetricsData(updatedMetrics);
-      
-      // Clear the pending update
-      setPendingBudgetUpdate(null);
-    }
-  }, [metrics, pendingBudgetUpdate]);
 
   return (
     <TooltipProvider>

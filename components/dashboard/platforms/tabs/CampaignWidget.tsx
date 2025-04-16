@@ -953,18 +953,18 @@ const CampaignWidget = ({
     } else {
       // Validate campaignId before making API call
       if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-        logger.debug('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+        console.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
         toast.error("Cannot expand campaign - invalid campaign ID");
         return;
       }
       
       if (!brandId) {
-        logger.debug('[CampaignWidget] Missing brand ID for status check');
+        console.error('[CampaignWidget] Missing brand ID for status check');
         toast.error("Cannot expand campaign - missing brand ID");
         return;
       }
       
-      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      console.log(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
       // First, check the status to ensure it's current
       try {
@@ -994,11 +994,11 @@ const CampaignWidget = ({
             );
           }
         } else {
-          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
+          console.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
           // Continue with expansion even if status check fails
         }
       } catch (error) {
-        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
+        console.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
         // Continue with expansion even if status check fails
       }
       
@@ -1006,14 +1006,6 @@ const CampaignWidget = ({
       setExpandedCampaign(campaignId);
       // Fetch ad sets for this campaign
       fetchAdSets(campaignId);
-      
-      // Also trigger a budget refresh (handled separately to avoid circular dependency)
-      setTimeout(() => {
-        // Using setTimeout to break dependency cycle
-        window.dispatchEvent(new CustomEvent('refresh-meta-budgets', {
-          detail: { brandId }
-        }));
-      }, 100);
     }
   }, [brandId, expandedCampaign, fetchAdSets]);
   
@@ -1406,124 +1398,6 @@ const CampaignWidget = ({
       return () => clearTimeout(timeoutId);
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
-
-  // Add a function to periodically update campaign budgets without requiring expansion
-  const autoRefreshCampaignBudgets = useCallback(async () => {
-    if (!brandId || !isMountedRef.current || localCampaigns.length === 0) return;
-    
-    logger.info("[CampaignWidget] Auto-refreshing campaign budgets");
-    
-    try {
-      const response = await fetch(
-        `/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`,
-        { signal: createAbortController().signal }
-      );
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Create a map of campaign_id to budget data
-        const budgetMap: Record<string, any> = {};
-        data.budgets.forEach((budget: any) => {
-          budgetMap[budget.campaign_id] = {
-            budget: budget.budget,
-            budget_type: budget.budget_type,
-            formatted_budget: budget.formatted_budget,
-            budget_source: budget.budget_source
-          };
-        });
-        
-        if (isMountedRef.current) {
-          setCurrentBudgets(budgetMap);
-          logger.debug(`[CampaignWidget] Auto-updated budgets for ${Object.keys(budgetMap).length} campaigns`);
-          
-          // Calculate and update total budget across all campaigns
-          let totalBudget = 0;
-          Object.values(budgetMap).forEach((budgetData: any) => {
-            if (budgetData.budget && typeof budgetData.budget === 'number') {
-              totalBudget += budgetData.budget;
-            }
-          });
-          
-          // Update any UI that needs the total budget
-          window.dispatchEvent(new CustomEvent('meta-total-budget-updated', {
-            detail: { 
-              totalBudget,
-              brandId,
-              timestamp: new Date().toISOString()
-            }
-          }));
-        }
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        logger.error("[CampaignWidget] Error auto-refreshing budgets:", error);
-      }
-    }
-  }, [brandId, createAbortController, isMountedRef, localCampaigns.length]);
-
-  // Add effect for periodic status and budget updates
-  useEffect(() => {
-    if (!brandId || !isMountedRef.current || localCampaigns.length === 0) return;
-    
-    // Immediately check statuses on first load
-    checkCampaignStatuses(localCampaigns, true);
-    
-    // Also refresh budgets immediately
-    autoRefreshCampaignBudgets();
-    
-    // Set up interval for ongoing status updates
-    const statusInterval = setInterval(() => {
-      if (isMountedRef.current && localCampaigns.length > 0) {
-        // Only continue with active campaigns for periodic updates
-        const activeCampaigns = localCampaigns.filter(
-          campaign => campaign.status.toUpperCase() === 'ACTIVE'
-        );
-        
-        if (activeCampaigns.length > 0) {
-          logger.debug(`[CampaignWidget] Running periodic status check for ${activeCampaigns.length} active campaigns`);
-          checkCampaignStatuses(activeCampaigns, false);
-        }
-      }
-    }, 30000); // Check every 30 seconds
-    
-    // Set up interval for budget updates
-    const budgetInterval = setInterval(() => {
-      if (isMountedRef.current && localCampaigns.length > 0) {
-        autoRefreshCampaignBudgets();
-      }
-    }, 60000); // Update budgets every minute
-    
-    return () => {
-      clearInterval(statusInterval);
-      clearInterval(budgetInterval);
-    };
-  }, [brandId, isMountedRef, localCampaigns, checkCampaignStatuses, autoRefreshCampaignBudgets]);
-
-  // Add event listener for budget update requests
-  useEffect(() => {
-    const handleBudgetRefreshRequest = (event: Event) => {
-      if (!brandId || !isMountedRef.current) return;
-      
-      // Check if this event is for our brand
-      if (event instanceof CustomEvent && event.detail?.brandId) {
-        if (event.detail.brandId !== brandId) return;
-      }
-      
-      logger.debug('[CampaignWidget] Budget refresh requested');
-      autoRefreshCampaignBudgets();
-    };
-    
-    window.addEventListener('refresh-meta-budgets', handleBudgetRefreshRequest);
-    document.addEventListener('refresh-meta-budgets', handleBudgetRefreshRequest);
-    
-    return () => {
-      window.removeEventListener('refresh-meta-budgets', handleBudgetRefreshRequest);
-      document.removeEventListener('refresh-meta-budgets', handleBudgetRefreshRequest);
-    };
-  }, [brandId, isMountedRef, autoRefreshCampaignBudgets]);
 
   // Return the JSX for the component
   return (
