@@ -4255,13 +4255,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [dateRange]);
 
-  // Store a stable reference to the refresh function
-  const refreshAllMetricsDirectlyRef = useRef(refreshAllMetricsDirectly);
-
-  // Update the ref when the function changes
-  useEffect(() => {
-    refreshAllMetricsDirectlyRef.current = refreshAllMetricsDirectly;
-  }, [refreshAllMetricsDirectly]);
 
   return (
     <TooltipProvider>
