@@ -1211,7 +1211,7 @@ Connection Status: ${data.connection?.status || 'Unknown'}\n
 Connection ID: ${data.connection?.id || 'Unknown'}\n
 Created: ${data.connection?.created_at ? new Date(data.connection.created_at).toLocaleString() : 'Unknown'}\n
 \n---- AD ACCOUNTS ----\n`
-
+    
       if (data.accounts?.data?.length > 0) {
         data.accounts.data.forEach((account: any, index: number) => {
           diagnosticInfo += `\nAccount ${index + 1}:\n`
@@ -1253,7 +1253,54 @@ Created: ${data.connection?.created_at ? new Date(data.connection.created_at).to
       toast.success("Diagnostics completed successfully")
     } catch (err) {
       console.error("Error running Meta diagnostics:", err)
-      toast.error("Failed to run diagnostics. Please try again.")
+      toast.error("Failed to run Meta diagnostics")
+    }
+  }
+  
+  // Function to fix Meta connection metadata
+  const fixConnectionMetadata = async () => {
+    if (!brandId) return
+    
+    const toastId = toast.loading("Fixing Meta connection metadata...")
+    
+    try {
+      const response = await fetch('/api/meta/update-connection-metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ brandId })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update connection metadata')
+      }
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success('Meta connection metadata updated', {
+          id: toastId,
+          description: 'Your Meta connection has been updated with the required metadata'
+        })
+        
+        // Refresh the page after a short delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } else {
+        toast.error('Unable to update metadata', {
+          id: toastId,
+          description: data.error || 'No metadata was updated'
+        })
+      }
+    } catch (err) {
+      console.error("Error updating Meta connection metadata:", err)
+      toast.error('Failed to update metadata', {
+        id: toastId,
+        description: err instanceof Error ? err.message : 'Unknown error occurred'
+      })
     }
   }
 
@@ -4113,6 +4160,13 @@ Try creating at least one active campaign in Meta Ads Manager.
                             className="px-3 py-1 text-xs bg-orange-700 hover:bg-orange-600 text-white rounded-md"
                           >
                             Debug Date Range
+                          </button>
+                          
+                          <button
+                            onClick={fixConnectionMetadata}
+                            className="px-3 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded-md"
+                          >
+                            Fix Meta Connection Metadata
                           </button>
                           
                           {debugMode && (
