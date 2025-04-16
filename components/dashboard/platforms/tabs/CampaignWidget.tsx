@@ -250,7 +250,8 @@ const CampaignWidget = ({
   const [isLoadingBudgets, setIsLoadingBudgets] = useState(false);
   const [lastBudgetRefresh, setLastBudgetRefresh] = useState<Date | null>(null);
   
-  // Use a ref to track if the component is mounted
+  // Simplified refs
+  const isLoadingInProgress = useRef(false);
   const isMountedRef = useRef(true);
   
   // Track in-flight API requests to cancel them if needed
@@ -259,93 +260,11 @@ const CampaignWidget = ({
   // Add state to track campaigns with fetched ad sets
   const [campaignsWithAdSets, setCampaignsWithAdSets] = useState<Set<string>>(new Set());
   
-  // Add a stable ref to track loading states and prevent refresh loops
-  const lastLoadedCampaignRef = useRef<string | null>(null);
-  const isInitialLoadRef = useRef(true);
-  const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
   // Add more robust state tracking for loading state
-  const adSetLoadingLockRef = useRef<boolean>(false);
-  const stableLoadingRef = useRef<boolean>(false);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const refreshCountRef = useRef(0);
-  
-  // Add stronger state locking to prevent loops
-  const dataStabilizationLockRef = useRef<boolean>(false);
-  const lastSuccessfulFetchTimeRef = useRef(0);
-  const STABILITY_LOCK_PERIOD = 5000; // 5 seconds where no state changes are allowed after successful data display
   
   // Clean up when component unmounts
   useEffect(() => {
-  // Add global listener to disable background refreshes when the component mounts
-useEffect(() => {
-  // Disable auto-fetch when the component mounts to prevent background interference
-  const originalDisableState = window._disableAutoMetaFetch;
-  const originalBlockState = window._blockMetaApiCalls;
-  
-  // This handler will intercept any API calls that might interfere with our data display
-  const handleBeforeFetch = (event: Event) => {
-    if (event.type === 'fetch' && dataStabilizationLockRef.current) {
-      // If we're in a stabilization period, block potential interfering calls
-      if ((event as any).url?.includes('meta') || (event as any).url?.includes('campaign')) {
-        logger.debug('[CampaignWidget] Intercepted potential interfering API call during stabilization');
-        event.stopImmediatePropagation();
-        event.preventDefault();
-      }
-    }
-  };
-  
-  // Add a global fetch interceptor
-  window.addEventListener('fetch', handleBeforeFetch, true);
-  
-  // Return cleanup function
-  return () => {
-    // Restore original states
-    window._disableAutoMetaFetch = originalDisableState;
-    window._blockMetaApiCalls = originalBlockState;
-    
-    // Remove fetch interceptor
-    window.removeEventListener('fetch', handleBeforeFetch, true);
-    
-    // Ensure all locks are released
-    adSetLoadingLockRef.current = false;
-    dataStabilizationLockRef.current = false;
-    stableLoadingRef.current = false;
-    
-    // Clear all timers
-    if (cooldownTimerRef.current) {
-      clearTimeout(cooldownTimerRef.current);
-      cooldownTimerRef.current = null;
-    }
-    if (loadingTimerRef.current) {
-      clearTimeout(loadingTimerRef.current);
-      loadingTimerRef.current = null;
-    }
-  };
-}, []);
-
-// Add an effect to prevent all loops by disabling automatic refreshes
-useEffect(() => {
-  // Mechanism to prevent loop refreshes
-  const preventLoops = () => {
-    if (expandedCampaign && dataStabilizationLockRef.current) {
-      logger.debug(`[CampaignWidget] Ensuring no refresh loops during stabilization`);
-      window._disableAutoMetaFetch = true;
-      window._blockMetaApiCalls = true;
-    }
-  };
-  
-  // Run the prevention mechanism immediately
-  preventLoops();
-  
-  // Add a periodic check to ensure the prevention stays active
-  const intervalId = setInterval(preventLoops, 1000);
-  
-  return () => {
-    clearInterval(intervalId);
-  };
-}, [expandedCampaign]);
-
     return () => {
       isMountedRef.current = false;
       // Cancel any pending requests
@@ -372,239 +291,136 @@ useEffect(() => {
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the fetchAdSets function to prevent twitching and spam refreshing
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
-    if (!brandId || !isMountedRef.current || !campaignId) return;
-    
-    // Prevent duplicate fetches of the same campaign in quick succession
-    if (lastLoadedCampaignRef.current === campaignId && !forceRefresh && !isInitialLoadRef.current) {
-      if (!throttle(`fetch-adsets-${campaignId}`, 3000)) {
-        logger.debug(`[CampaignWidget] Throttled duplicate ad set fetch for campaign ${campaignId}`);
-        return;
-      }
+  // The single, robust function to load ad sets
+  const loadAdSetsForCampaign = useCallback(async (campaignId: string, isRefresh: boolean = false) => {
+    // Prevent concurrent loads
+    if (isLoadingInProgress.current) {
+      logger.debug(`[CW] Load already in progress, skipping request for ${campaignId}.`);
+      return;
     }
+    isLoadingInProgress.current = true;
     
-    // Update refs
-    lastLoadedCampaignRef.current = campaignId;
-    isInitialLoadRef.current = false;
+    logger.debug(`[CW] Starting ad set load for ${campaignId}, isRefresh: ${isRefresh}`);
     
-    // Cancel any existing loading timers
-    if (loadingTimerRef.current) {
-      clearTimeout(loadingTimerRef.current);
-      loadingTimerRef.current = null;
-    }
+    // Set loading state and placeholder immediately
+    setIsLoadingAdSets(true);
+    setAdSets([{ 
+      id: 0,
+      brand_id: brandId,
+      adset_id: 'loading',
+      adset_name: 'Loading...',
+      campaign_id: campaignId,
+      status: 'Loading',
+      budget: 0, budget_type: '', spent: 0, impressions: 0, clicks: 0, 
+      conversions: 0, ctr: 0, cpc: 0, cost_per_conversion: 0, 
+      optimization_goal: null, updated_at: new Date().toISOString(), daily_insights: []
+    }]);
     
-    // If we're already in a loading state, we don't need to clear the ad sets again
-    // This prevents flickering when expanding and ensures continuity from the placeholder
-    if (!isLoadingAdSets) {
-      setIsLoadingAdSets(true);
-    }
+    const minDisplayTime = 600; // Increased minimum display time
+    const startTime = Date.now();
     
-    // Cancel any existing ad set fetch
-    pendingRequestsRef.current.forEach(controller => {
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignore abort errors
-      }
-    });
-    
-    // Only clear existing ad sets if they're not already placeholders
-    if (adSets.length === 0 || (adSets.length === 1 && adSets[0].adset_id !== 'loading')) {
-      setAdSets([{ 
-        id: 0,
-        brand_id: brandId,
-        adset_id: 'loading',
-        adset_name: 'Loading ad sets...',
-        campaign_id: campaignId,
-        status: 'Loading',
-        budget: 0,
-        budget_type: '',
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        ctr: 0,
-        cpc: 0,
-        cost_per_conversion: 0,
-        optimization_goal: null,
-        updated_at: new Date().toISOString(),
-        daily_insights: []
-      }]);
-    }
-    
-    const controller = createAbortController();
-    logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
-    
-    // Try the regular endpoint first
-    let usedDirectFetch = false;
-    let usedCachedData = false;
+    let fetchedAdSets: AdSet[] = [];
     
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
-      
-      // Add date range parameters if available
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-      }
-      
-      logger.debug(`[CampaignWidget] Fetching ad sets from: ${url}`);
-      
-      // Add a minimum loading time to allow visual feedback
-      const fetchStartTime = Date.now();
-      const minLoadingTime = 800; // minimum 800ms of loading to prevent flicker
-      
-      let response = await fetch(url, { signal: controller.signal });
-      
-      // If the regular endpoint fails, try the direct-fetch endpoint
-      if (!response.ok) {
-        logger.debug(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
-        usedDirectFetch = true;
-        
-        response = await fetch(`/api/meta/adsets/direct-fetch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-          }),
-          signal: controller.signal
-        });
-      }
-      
-      if (!isMountedRef.current) return;
-      
-      // Parse the response as JSON (safely)
-      let data;
-      try {
-        const responseText = await response.text();
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        logger.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
-        throw new Error(`Failed to parse response`);
-      }
-      
-      // Ensure minimum loading time for visual feedback
-      const elapsedTime = Date.now() - fetchStartTime;
-      if (elapsedTime < minLoadingTime) {
-        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
-      }
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        // Check if this is a rate limit response with cached data
-        if (data.source === 'cached_due_to_rate_limit') {
-          usedCachedData = true;
-          logger.debug(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
-        }
-        
-        // Ensure we have a valid array of ad sets
-        const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-        logger.debug(`[CampaignWidget] Response OK, adSets: ${validAdSets.length}`);
-        
-        if (isMountedRef.current) {
-          // Add this campaign to the tracking set if ad sets were found
-          if (validAdSets.length > 0) {
-            setCampaignsWithAdSets(prev => {
-              const newSet = new Set(prev);
-              newSet.add(campaignId);
-              return newSet;
-            });
-            
-            // Set the ad sets data in a single update to prevent flicker
-            setAdSets(validAdSets);
-            
-            // Use a timer to ensure we don't toggle loading state too quickly
-            loadingTimerRef.current = setTimeout(() => {
-              if (isMountedRef.current) {
-                setIsLoadingAdSets(false);
-              }
-              loadingTimerRef.current = null;
-            }, 200);
-          } else {
-            // If no ad sets were found, schedule clearing
-            loadingTimerRef.current = setTimeout(() => {
-              if (isMountedRef.current) {
-                // Clear loading placeholder with empty set
-                setAdSets([]);
-                setIsLoadingAdSets(false);
-              }
-              loadingTimerRef.current = null;
-            }, 200);
-          }
-          
-          // Toast notification that ad sets were loaded - but not on every refresh
-          if (validAdSets.length > 0 && forceRefresh) {
-            toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
-          } else if (validAdSets.length === 0) {
-            // Check if this was because of a rate limit
-            if (data.warning === 'Meta API rate limit reached') {
-              toast.warning(`Meta API rate limit reached`, {
-                description: data.message || 'Please try again in a few minutes',
-                duration: 8000
-              });
-            } else if (forceRefresh) {
-              toast.info("No ad sets found for this campaign");
-            }
-          }
-          
-          // Dispatch events for budgets to update regardless of ad set count
-          // But throttle them to prevent excessive events
-          if (throttle('adset-events', 5000)) {
-            logger.debug('[CampaignWidget] Dispatching status changed events');
-            window.dispatchEvent(
-              new CustomEvent('adSetStatusChanged', {
-                detail: {
-                  brandId,
-                  campaignId,
-                  timestamp: new Date().toISOString()
-                }
-              })
+      // Fetch status (non-blocking)
+      fetch(`/api/meta/campaign-status-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandId, campaignId, forceRefresh: true }),
+      }).then(res => res.ok ? res.json() : null)
+        .then(statusData => {
+          if (isMountedRef.current && statusData?.status) {
+            setLocalCampaigns(prev => 
+              prev.map(c => 
+                c.campaign_id === campaignId ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } : c
+              )
             );
           }
-        }
-      } else {
-        // Handle errors...
-        loadingTimerRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            setIsLoadingAdSets(false);
-          }
-          loadingTimerRef.current = null;
-        }, 200);
+        }).catch(err => logger.debug(`[CW] Status check failed during ad set load: ${err.message}`));
+
+      // Fetch ad sets
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${isRefresh}`;
+      if (dateRange?.from && dateRange?.to) {
+        const from = dateRange.from.toISOString().split('T')[0];
+        const to = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${from}&to=${to}`;
       }
+      
+      const response = await fetch(url);
+      if (!isMountedRef.current) {
+        isLoadingInProgress.current = false;
+        return; // Component unmounted
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ad sets: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      fetchedAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+      logger.debug(`[CW] Fetched ${fetchedAdSets.length} ad sets for ${campaignId}`);
+
+      // Update tracking set
+      if (fetchedAdSets.length > 0) {
+        setCampaignsWithAdSets(prev => new Set(prev).add(campaignId));
+      }
+
     } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        logger.debug("[CampaignWidget] Ad set fetch aborted");
-        return;
-      }
-      
-      logger.error("[CampaignWidget] Error fetching ad sets:", error);
-      
-      if (isMountedRef.current) {
-        // Show error if explicitly requested
-        if (forceRefresh) {
-          toast.error(`Error loading ad sets: ${(error as Error).message}`);
-        }
-        
-        // Schedule clearing loading state
-        loadingTimerRef.current = setTimeout(() => {
-          if (isMountedRef.current) {
-            setAdSets([]);
-            setIsLoadingAdSets(false);
-          }
-          loadingTimerRef.current = null;
-        }, 200);
+      fetchedAdSets = []; // Ensure empty on error
+      logger.error(`[CW] Error loading ad sets for ${campaignId}: ${(error as Error).message}`);
+      if (isRefresh) {
+        toast.error(`Failed to refresh ad sets: ${(error as Error).message}`);
       }
     } finally {
-      // Clean up abort controller
-      removeAbortController(controller);
+      // Ensure minimum display time for loading state
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = minDisplayTime - elapsedTime;
+      
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+      
+      // Final state update only if component is still mounted and campaign is still expanded
+      if (isMountedRef.current && expandedCampaign === campaignId) {
+        logger.debug(`[CW] Updating state for ${campaignId} with ${fetchedAdSets.length} sets.`);
+        setAdSets(fetchedAdSets); // Set actual data or empty array
+        setIsLoadingAdSets(false);
+      } else {
+        logger.debug(`[CW] Campaign changed/unmounted for ${campaignId} before state update.`);
+        // If the campaign changed, ensure loading is false for the *current* expanded one if it's not this one
+        if (isLoadingAdSets && expandedCampaign !== campaignId) {
+           setIsLoadingAdSets(false);
+        }
+      }
+      
+      // Release lock *last*
+      isLoadingInProgress.current = false;
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef, isLoadingAdSets, adSets]);
+  }, [brandId, dateRange, expandedCampaign, isMountedRef]); // Minimal dependencies
+
+  // Simplified toggle function
+  const toggleCampaignExpand = useCallback((campaignId: string) => {
+    if (isLoadingInProgress.current) {
+        logger.debug(`[CW] Ignoring toggle - load already in progress.`);
+        return; 
+    }
+    
+    if (expandedCampaign === campaignId) {
+      // Collapse
+      setExpandedCampaign(null);
+      setAdSets([]); 
+      setIsLoadingAdSets(false); 
+      logger.debug(`[CW] Collapsed campaign ${campaignId}`);
+    } else {
+      // Expand
+      if (!brandId || !campaignId) {
+          toast.error("Cannot expand campaign: Missing required IDs.");
+          return;
+      }
+      setExpandedCampaign(campaignId); 
+      loadAdSetsForCampaign(campaignId, false); // Start loading process
+    }
+  }, [brandId, expandedCampaign, loadAdSetsForCampaign]); // Minimal dependencies
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -739,7 +555,7 @@ useEffect(() => {
               // If this is the expanded campaign, refresh its ad sets
               if (expandedCampaign === campaign.campaign_id) {
                 logger.debug(`[CampaignWidget] Refreshing ad sets for expanded campaign after status change`);
-                fetchAdSets(campaign.campaign_id, true);
+                loadAdSetsForCampaign(campaign.campaign_id, true);
               }
             }
           }
@@ -775,7 +591,7 @@ useEffect(() => {
         }
       }, (campaignsToProcess.length * (forceRefresh ? 600 : 1200)) + 1000); // Wait for all status checks plus a buffer
     }
-  }, [brandId, onRefresh, isMountedRef, expandedCampaign, fetchAdSets]);
+  }, [brandId, onRefresh, isMountedRef, expandedCampaign, loadAdSetsForCampaign]);
   
   // Keep local state in sync with props
   useEffect(() => {
@@ -1083,581 +899,6 @@ useEffect(() => {
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Add a hard stabilization cleanup method near the top of the component
-  useEffect(() => {
-    // When unmounting, make sure we clean up all locks and timers
-    return () => {
-      // Clear all timers and locks
-      if (cooldownTimerRef.current) {
-        clearTimeout(cooldownTimerRef.current);
-        cooldownTimerRef.current = null;
-      }
-      if (loadingTimerRef.current) {
-        clearTimeout(loadingTimerRef.current);
-        loadingTimerRef.current = null;
-      }
-      adSetLoadingLockRef.current = false;
-      dataStabilizationLockRef.current = false;
-      stableLoadingRef.current = false;
-    };
-  }, []);
-  
-  // Declare the bulletproof fetch function first
-  const stableFetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
-    // If we're in a data stabilization period, block all fetches
-    const now = Date.now();
-    if (dataStabilizationLockRef.current && now - lastSuccessfulFetchTimeRef.current < STABILITY_LOCK_PERIOD) {
-      logger.debug(`[CampaignWidget] In stabilization period - blocking fetch, time remaining: ${Math.round((STABILITY_LOCK_PERIOD - (now - lastSuccessfulFetchTimeRef.current))/1000)}s`);
-      return;
-    }
-    
-    // Normal safety checks
-    if (!brandId || !isMountedRef.current || !campaignId) {
-      adSetLoadingLockRef.current = false;
-      return;
-    }
-    
-    // Check if we've tried too many times
-    refreshCountRef.current++;
-    if (refreshCountRef.current > 3) {
-      logger.debug(`[CampaignWidget] Too many fetch attempts (${refreshCountRef.current}), stopping`);
-      adSetLoadingLockRef.current = false;
-      stableLoadingRef.current = false;
-      setIsLoadingAdSets(false);
-      return;
-    }
-    
-    // Set hard loading lock
-    adSetLoadingLockRef.current = true;
-    stableLoadingRef.current = true;
-    setIsLoadingAdSets(true);
-    dataStabilizationLockRef.current = false; // Allow changes during fetch
-    
-    logger.debug(`[CampaignWidget] Starting bulletproof fetch for ${campaignId} (attempt ${refreshCountRef.current})`);
-    
-    // Create a placeholder if we don't have one
-    setAdSets(current => {
-      // Only replace if we don't have a loading placeholder
-      if (current.length === 0 || (current.length === 1 && current[0].adset_id !== 'loading')) {
-        return [{ 
-          id: 0,
-          brand_id: brandId,
-          adset_id: 'loading',
-          adset_name: 'Loading ad sets...',
-          campaign_id: campaignId,
-          status: 'Loading',
-          budget: 0,
-          budget_type: '',
-          spent: 0,
-          impressions: 0,
-          clicks: 0,
-          conversions: 0,
-          ctr: 0,
-          cpc: 0,
-          cost_per_conversion: 0,
-          optimization_goal: null,
-          updated_at: new Date().toISOString(),
-          daily_insights: []
-        }];
-      }
-      return current;
-    });
-    
-    // Proceed with the fetch
-    try {
-      // Track what we're doing
-      logger.debug(`[CampaignWidget] Bulletproof fetch starting for campaign ${campaignId}, attempt ${refreshCountRef.current}`);
-      
-      // Create our URL
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
-      
-      // Add date range parameters if available
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-      }
-      
-      // Ensure always showing loading state for at least 1 second
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Bail if component unmounted or campaign changed during the delay
-      if (!isMountedRef.current || expandedCampaign !== campaignId) {
-        logger.debug(`[CampaignWidget] Component unmounted or campaign changed during fetch delay`);
-        adSetLoadingLockRef.current = false;
-        stableLoadingRef.current = false;
-        return;
-      }
-      
-      // Perform the fetch
-      const response = await fetch(url);
-      
-      // Bail if component unmounted or campaign changed during the fetch
-      if (!isMountedRef.current || expandedCampaign !== campaignId) {
-        logger.debug(`[CampaignWidget] Component unmounted or campaign changed during fetch`);
-        adSetLoadingLockRef.current = false;
-        stableLoadingRef.current = false;
-        return;
-      }
-      
-      // Process the response
-      const data = await response.json();
-      const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-      
-      // Only update if we're still showing the same campaign
-      if (isMountedRef.current && expandedCampaign === campaignId) {
-        logger.debug(`[CampaignWidget] Fetch complete - ${validAdSets.length} ad sets found`);
-        
-        // IMPORTANT: Set the stabilization lock BEFORE updating any state
-        dataStabilizationLockRef.current = true;
-        lastSuccessfulFetchTimeRef.current = Date.now();
-        
-        // Clear any existing timers
-        if (cooldownTimerRef.current) {
-          clearTimeout(cooldownTimerRef.current);
-          cooldownTimerRef.current = null;
-        }
-        
-        if (validAdSets.length > 0) {
-          // We have data, update the ad sets
-          setAdSets(validAdSets);
-          
-          // Mark this campaign as having ad sets
-          setCampaignsWithAdSets(prev => {
-            const newSet = new Set(prev);
-            newSet.add(campaignId);
-            return newSet;
-          });
-          
-          // Give the UI time to render the data, then hide loading state
-          setTimeout(() => {
-            if (isMountedRef.current && expandedCampaign === campaignId && dataStabilizationLockRef.current) {
-              logger.debug(`[CampaignWidget] Setting loading state to false after data`);
-              stableLoadingRef.current = false;
-              setIsLoadingAdSets(false);
-            }
-          }, 200);
-          
-          // Cleanup the locks after the stability period
-          setTimeout(() => {
-            adSetLoadingLockRef.current = false;
-            logger.debug(`[CampaignWidget] Stabilization period ended`);
-          }, STABILITY_LOCK_PERIOD);
-        } else {
-          // No data, show empty state
-          setTimeout(() => {
-            if (isMountedRef.current && expandedCampaign === campaignId && dataStabilizationLockRef.current) {
-              logger.debug(`[CampaignWidget] No data found, showing empty state`);
-              setAdSets([]);
-              stableLoadingRef.current = false;
-              setIsLoadingAdSets(false);
-              adSetLoadingLockRef.current = false;
-              dataStabilizationLockRef.current = false;
-            }
-          }, 300);
-        }
-      } else {
-        // Component unmounted or campaign changed, just release lock
-        adSetLoadingLockRef.current = false;
-        stableLoadingRef.current = false;
-        dataStabilizationLockRef.current = false;
-      }
-    } catch (error) {
-      logger.error(`[CampaignWidget] Bulletproof fetch error: ${(error as Error).message}`);
-      
-      // Release all locks and clear loading state
-      adSetLoadingLockRef.current = false;
-      stableLoadingRef.current = false;
-      dataStabilizationLockRef.current = false;
-      
-      if (isMountedRef.current && expandedCampaign === campaignId) {
-        setIsLoadingAdSets(false);
-        setAdSets([]);
-      }
-    }
-  }, [brandId, dateRange, expandedCampaign, isMountedRef]);
-  
-  // Then define the stable expand function that calls it
-  const stableExpandAdSets = useCallback((campaignId: string) => {
-    // Disable ALL background polling and automatic updates while displaying ad sets
-    window._disableAutoMetaFetch = true;
-    
-    // If we're currently in a loading operation or stabilization period, ignore additional requests
-    if (adSetLoadingLockRef.current || dataStabilizationLockRef.current) {
-      logger.debug('[CampaignWidget] Ignoring expand request - loading or stabilization lock active');
-      return;
-    }
-    
-    // Reset refresh counter
-    refreshCountRef.current = 0;
-    
-    // Block all events being processed
-    adSetLoadingLockRef.current = true;
-    
-    // Set expanded immediately 
-    setExpandedCampaign(campaignId);
-    
-    // Start the bulletproof fetch process directly
-    stableFetchAdSets(campaignId);
-  }, [stableFetchAdSets]);
-  
-  // Modify the toggleCampaignExpand function to use our stable expand method
-  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
-    // If there's a cooldown timer running, clear it
-    if (cooldownTimerRef.current) {
-      clearTimeout(cooldownTimerRef.current);
-      cooldownTimerRef.current = null;
-    }
-    
-    if (expandedCampaign === campaignId) {
-      // If we have a loading lock, wait briefly before collapsing
-      if (adSetLoadingLockRef.current) {
-        setTimeout(() => {
-          adSetLoadingLockRef.current = false;
-          setExpandedCampaign(null);
-          setAdSets([]);
-          setIsLoadingAdSets(false);
-        }, 100);
-      } else {
-        // Normal collapse
-        setExpandedCampaign(null);
-        setAdSets([]);
-        setIsLoadingAdSets(false);
-      }
-      return;
-    }
-    
-    // Validate campaignId before making API call
-    if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-      logger.debug('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
-      toast.error("Cannot expand campaign - invalid campaign ID");
-      return;
-    }
-    
-    if (!brandId) {
-      logger.debug('[CampaignWidget] Missing brand ID for status check');
-      toast.error("Cannot expand campaign - missing brand ID");
-      return;
-    }
-    
-    // Use our stable expand method
-    stableExpandAdSets(campaignId);
-    
-    // Status check (but don't block UI)
-    try {
-      const response = await fetch('/api/meta/campaign-status-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          campaignId,
-          forceRefresh: true
-        }),
-      });
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        const statusData = await response.json();
-        
-        // Update the campaign in local state if needed
-        if (statusData.status) {
-          setLocalCampaigns(currentCampaigns => 
-            currentCampaigns.map(c => 
-              c.campaign_id === campaignId 
-                ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                : c
-            )
-          );
-        }
-      }
-    } catch (error) {
-      logger.debug(`[CampaignWidget] Error checking campaign status during expand:`, error);
-      // Continue with expansion even if status check fails
-    }
-  }, [brandId, expandedCampaign, stableExpandAdSets, isMountedRef]);
-  
-  // Toggle sort order
-  const toggleSortOrder = () => {
-    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-  };
-  
-  // Handle sort click for status
-  const handleStatusSortClick = () => {
-    setSortBy('status');
-    toggleSortOrder();
-  };
-  
-  // Handle sort click for metrics
-  const handleMetricSortClick = (metricId: string) => {
-    setSortBy(metricId);
-    toggleSortOrder();
-  };
-  
-  // Handle column header click
-  const handleColumnHeaderClick = (metricId: string) => {
-    if (sortBy === metricId) {
-      toggleSortOrder();
-    } else {
-      setSortBy(metricId);
-      setSortOrder('desc');
-    }
-  };
-  
-  // Create memoized dateRangeKey to detect changes in date range
-  const dateRangeKey = useMemo(() => {
-    if (!dateRange?.from || !dateRange?.to) return 'no-range';
-    return `${dateRange.from.toISOString().split('T')[0]}-${dateRange.to.toISOString().split('T')[0]}`;
-  }, [dateRange]);
-  
-  // Store previous date range key to detect actual changes
-  const prevDateRangeKeyRef = useRef(dateRangeKey);
-  
-  // Add a debounce mechanism for date range changes
-  useEffect(() => {
-    // Only trigger on actual date range changes
-    if (dateRangeKey !== prevDateRangeKeyRef.current && expandedCampaign) {
-      console.log(`[CampaignWidget] Date range changed from ${prevDateRangeKeyRef.current} to ${dateRangeKey}`);
-      prevDateRangeKeyRef.current = dateRangeKey;
-      
-      // Refresh ad sets if a campaign is expanded, but use a debounce to prevent rapid fetches
-      const timeoutId = setTimeout(() => {
-        if (isMountedRef.current) {
-          console.log(`[CampaignWidget] Fetching ad sets after date range change`);
-          fetchAdSets(expandedCampaign);
-        }
-      }, 300); // 300ms debounce
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [dateRangeKey, expandedCampaign, fetchAdSets]);
-  
-  // Toggle ad set expansion with improved event handling
-  const toggleAdSetExpand = useCallback((adSetId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    
-    setExpandedAdSet(prev => prev === adSetId ? null : adSetId);
-  }, []);
-  
-  // Handle clicks on ad set rows
-  const handleAdSetRowClick = useCallback((adSetId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent campaign toggle
-    toggleAdSetExpand(adSetId);
-  }, [toggleAdSetExpand]);
-  
-  // Filter campaigns based on search query and inactive status
-  const filteredCampaigns = useMemo(() => {
-    return localCampaigns.filter(campaign => {
-      // Filter by search query
-      const searchMatch = 
-        !searchQuery || 
-        campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Filter by active status if showInactive is false
-      const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
-      
-      return searchMatch && statusMatch;
-    }).sort((a, b) => {
-      if (sortBy === 'status') {
-        // Put active campaigns first for better UX
-        if (a.status.toUpperCase() === 'ACTIVE' && b.status.toUpperCase() !== 'ACTIVE') return sortOrder === 'asc' ? 1 : -1;
-        if (a.status.toUpperCase() !== 'ACTIVE' && b.status.toUpperCase() === 'ACTIVE') return sortOrder === 'asc' ? -1 : 1;
-        return a.status.localeCompare(b.status) * (sortOrder === 'asc' ? 1 : -1);
-      }
-      
-      const aValue = a[sortBy as keyof Campaign] as number || 0;
-      const bValue = b[sortBy as keyof Campaign] as number || 0;
-      
-      return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
-    });
-  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
-  
-  // Toggle metric visibility
-  const toggleMetric = (metricId: string) => {
-    if (visibleMetrics.includes(metricId)) {
-      setVisibleMetrics(visibleMetrics.filter(id => id !== metricId));
-    } else {
-      setVisibleMetrics([...visibleMetrics, metricId]);
-    }
-  };
-  
-  // Format values based on type
-  const formatValue = (value: number, format: string) => {
-    switch (format) {
-      case 'currency':
-        return formatCurrency(value);
-      case 'percentage':
-        return formatPercentage(value);
-      case 'roas':
-        return `${value.toFixed(2)}x`;
-      default:
-        return formatNumber(value);
-    }
-  };
-  
-  // Function to refresh campaign status
-  const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
-    if (!brandId) return;
-    
-    // Find the campaign in local state
-    const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
-    if (!campaign) return;
-    
-    try {
-      // Update local state to show loading
-      setLocalCampaigns(prev => prev.map(c =>
-        c.campaign_id === campaignId ? { ...c, status: 'Refreshing' } : c
-      ));
-      
-      const response = await fetch('/api/meta/campaign-status-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          campaignId,
-          forceRefresh: force,
-        }),
-      });
-      
-      if (!response.ok) {
-        // Handle error cases
-        if (response.status === 429) {
-          console.warn(`Campaign refresh rate limited for ${campaignId}`);
-          
-          // Restore original status
-          setLocalCampaigns(prev => prev.map(c =>
-            c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-          ));
-          
-          return;
-        }
-        
-        const errorText = await response.text();
-        console.error(`Error refreshing campaign ${campaignId}:`, errorText);
-        
-        // Only show toast for explicit user-triggered refreshes
-        if (force) {
-          toast.error(`Failed to refresh campaign: ${errorText || response.statusText}`);
-        }
-        
-        // Update local state to show error
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-        ));
-        
-        return;
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update local state with new status
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: data.status, last_refresh_date: new Date().toISOString() } : c
-        ));
-        
-        // Only show success toast for explicit refreshes
-        if (force) {
-          toast.success(`Campaign status updated: ${data.status}`);
-        }
-        
-        // If force refresh was requested, trigger a full refresh of campaigns
-        if (force && onRefresh) {
-          // Call the parent refresh function to update all campaigns
-          setTimeout(() => {
-            onRefresh();
-          }, 500);
-        }
-        
-        // Dispatch an event to notify other components
-        const refreshEvent = new CustomEvent('campaign-status-updated', {
-          detail: { campaignId, status: data.status }
-        });
-        window.dispatchEvent(refreshEvent);
-        
-        // Return success
-        return { success: true, status: data.status };
-      } else {
-        // Handle API errors
-        console.error(`API error refreshing campaign ${campaignId}:`, data.error);
-        
-        // Restore original status on error
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-        ));
-        
-        // Show error toast only for force refreshes
-        if (force) {
-          toast.error(`Failed to refresh campaign: ${data.error || 'Unknown error'}`);
-        }
-        
-        return { success: false, error: data.error };
-      }
-    } catch (error) {
-      console.error(`Error refreshing campaign ${campaignId}:`, error);
-      
-      // Restore original status on error
-      setLocalCampaigns(prev => prev.map(c =>
-        c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-      ));
-      
-      // Only show error toast for force refreshes
-      if (force) {
-        toast.error(`Failed to refresh campaign: ${(error as Error).message}`);
-      }
-      
-      return { success: false, error: (error as Error).message };
-    }
-  };
-  
-  // Handle platform refresh event - fetch ad sets for currently loaded campaigns
-  const handlePlatformRefresh = useCallback((event?: Event) => {
-    if (!brandId || !isMountedRef.current) return;
-    
-    // Log the event for debugging
-    if (event) {
-      console.log(`[CampaignWidget] Received platform refresh event:`, 
-        event instanceof CustomEvent ? event.detail : 'Non-custom event');
-    } else {
-      console.log(`[CampaignWidget] Handle platform refresh called directly`);
-    }
-    
-    // Skip if there are no campaigns with ad sets loaded
-    if (campaignsWithAdSets.size === 0) {
-      console.log(`[CampaignWidget] No campaigns with ad sets to refresh`);
-      return;
-    }
-    
-    // Skip refresh if already loading ad sets to prevent spam loading
-    if (isLoadingAdSets) {
-      console.log(`[CampaignWidget] Skipping refresh because ad sets are already loading`);
-      return;
-    }
-    
-    console.log(`[CampaignWidget] Refreshing ad sets for ${campaignsWithAdSets.size} campaigns`);
-    
-    // We'll only refresh the expanded campaign if one is open to avoid spamming
-    if (expandedCampaign && campaignsWithAdSets.has(expandedCampaign)) {
-      console.log(`[CampaignWidget] Prioritizing refresh for expanded campaign: ${expandedCampaign}`);
-      fetchAdSets(expandedCampaign, true);
-      return;
-    }
-    
-    // If no campaign is expanded, refresh all campaigns with ad sets one at a time
-    const campaignIds = Array.from(campaignsWithAdSets);
-    if (campaignIds.length > 0) {
-      console.log(`[CampaignWidget] Auto-refreshing ad sets for first campaign: ${campaignIds[0]}`);
-      fetchAdSets(campaignIds[0], true);
-    }
-  }, [brandId, fetchAdSets, campaignsWithAdSets, isMountedRef, isLoadingAdSets, expandedCampaign]);
-
   // Add event listeners for refresh events
   useEffect(() => {
     if (!brandId) return;
@@ -1724,12 +965,12 @@ useEffect(() => {
       // Add a slight delay to prevent multiple fetches
       const timeoutId = setTimeout(() => {
         if (isMountedRef.current) {
-          fetchAdSets(expandedCampaign, true);
+          loadAdSetsForCampaign(expandedCampaign, true);
         }
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
+  }, [dateRange, brandId, expandedCampaign, loadAdSetsForCampaign]);
 
   // Add a polling mechanism for automatic status updates
   useEffect(() => {
@@ -2252,7 +1493,7 @@ useEffect(() => {
                               className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                refreshCampaignStatus(campaign.campaign_id);
+                                loadAdSetsForCampaign(campaign.campaign_id, true);
                               }}
                               title="Refresh Campaign Status"
                             >
@@ -2298,11 +1539,11 @@ useEffect(() => {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       // Prevent repeat clicks during loading
-                                      if (adSetLoadingLockRef.current || stableLoadingRef.current) {
+                                      if (isLoadingInProgress.current) {
                                         return;
                                       }
                                       // Use stable expand to refresh
-                                      stableExpandAdSets(campaign.campaign_id);
+                                      loadAdSetsForCampaign(campaign.campaign_id);
                                     }}
                                     disabled={isLoadingAdSets}
                                   >
@@ -2551,12 +1792,12 @@ useEffect(() => {
                                     size="sm" 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (!adSetLoadingLockRef.current) {
-                                        stableExpandAdSets(campaign.campaign_id);
+                                      if (!isLoadingInProgress.current) {
+                                        loadAdSetsForCampaign(campaign.campaign_id);
                                       }
                                     }}
                                     className="text-white border-[#333] hover:bg-black/20"
-                                    disabled={adSetLoadingLockRef.current || stableLoadingRef.current}
+                                    disabled={isLoadingInProgress.current}
                                   >
                                     <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
                                     Retry Loading Ad Sets
