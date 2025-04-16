@@ -58,6 +58,41 @@ function isDateRangeObject(value: any): value is DateRange {
   );
 }
 
+// Add a helper function to format values safely
+const formatValueSafely = (value: number | null | undefined, format: string, prefix?: string, suffix?: string) => {
+  // During loading or transitions, show placeholder instead of zero
+  if (value === null || value === undefined) {
+    return '—'; // em dash as placeholder
+  }
+
+  // Use 0.000001 as a proxy for detecting effective zero values (rounding errors, etc)
+  const isEffectivelyZero = Math.abs(value) < 0.000001;
+  
+  // For zero values, return a placeholder instead of 0
+  if (isEffectivelyZero) {
+    return '—'; // em dash as placeholder
+  }
+
+  // Format as requested
+  let formatted = '';
+  switch (format) {
+    case 'currency':
+      formatted = formatCurrency(value);
+      break;
+    case 'percentage':
+      formatted = formatPercentage(value);
+      break;
+    case 'number':
+      formatted = formatNumber(value);
+      break;
+    default:
+      formatted = value.toString();
+  }
+
+  // Add prefix/suffix
+  return `${prefix || ''}${formatted}${suffix || ''}`;
+};
+
 export function MetricCard({
   title = "",
   value = 0,
@@ -318,9 +353,9 @@ export function MetricCard({
             <>
               <div className="text-2xl font-bold text-white">
                 {refreshing ? (
-                  <span className="opacity-50">{formatSafeValue()}</span>
+                  <span className="opacity-50">{formatValueSafely(value, valueFormat, prefix, suffix)}</span>
                 ) : (
-                  <>{formatSafeValue()}</>
+                  <>{formatValueSafely(value, valueFormat, prefix, suffix)}</>
                 )}
               </div>
               
@@ -396,7 +431,7 @@ export function MetricCard({
                         >
                           <div className="space-y-1">
                             <p className="font-medium">{change > 0 ? 'Increase' : change < 0 ? 'Decrease' : 'No change'} from previous period</p>
-                            <p className="text-gray-300">Current: {formatSafeValue()}</p>
+                            <p className="text-gray-300">Current: {formatValueSafely(value, valueFormat, prefix, suffix)}</p>
                             <p className="text-gray-300">Previous: {previousValue ? (
                               previousValueFormat === 'currency' 
                                 ? `${previousValuePrefix}${previousValue.toLocaleString('en-US', {

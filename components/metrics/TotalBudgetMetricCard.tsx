@@ -10,11 +10,52 @@ interface TotalBudgetMetricCardProps {
   isManuallyRefreshing?: boolean
 }
 
-export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }: TotalBudgetMetricCardProps) {
-  const [totalBudget, setTotalBudget] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [adSetCount, setAdSetCount] = useState(0)
+// Add Window interface to add the _budgetCache property
+declare global {
+  interface Window {
+    _budgetCache?: {
+      values: Map<string, number>;
+      getByBrandId: (brandId: string) => number | null;
+    };
+  }
+}
 
+// Add a global cache for budget values that persists even during navigation
+if (typeof window !== 'undefined' && !window._budgetCache) {
+  window._budgetCache = {
+    values: new Map<string, number>(),
+    getByBrandId: (brandId: string) => window._budgetCache?.values.get(brandId) || null
+  };
+}
+
+export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }: TotalBudgetMetricCardProps) {
+  // Never initialize with zero to avoid flickering
+  const [totalBudget, setTotalBudget] = useState(() => {
+    // Try to get from cache first
+    if (typeof window !== 'undefined' && window._budgetCache?.getByBrandId) {
+      const cachedValue = window._budgetCache.getByBrandId(brandId);
+      if (cachedValue && cachedValue > 0) {
+        console.log(`[TotalBudgetMetricCard] Using cached budget: $${cachedValue}`);
+        return cachedValue;
+      }
+    }
+    return 0; // Only use 0 if no cache exists
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [adSetCount, setAdSetCount] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
+  
+  // Store values in global cache when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && totalBudget > 0) {
+      if (!window._budgetCache) {
+        window._budgetCache = { values: new Map(), getByBrandId: () => null };
+      }
+      window._budgetCache.values.set(brandId, totalBudget);
+    }
+  }, [totalBudget, brandId]);
+  
   // Helper function to format time ago for last updated timestamp
   const formatTimeAgo = (date: Date): string => {
     const now = new Date()
@@ -55,7 +96,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     };
   }, []);
 
-  // Modify fetchTotalBudget to maintain previous values
+  // Modify fetchTotalBudget with NEVER-ZERO approach
   const fetchTotalBudget = useCallback(async () => {
     if (!brandId) return;
     
@@ -70,36 +111,55 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
       const previousBudget = totalBudget;
       const previousAdSetCount = adSetCount;
       
-      // console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`);
-      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true&t=${Date.now()}`);
-      
-      if (!response.ok) {
-        // If the request fails, maintain the previous values
-        console.log(`[TotalBudgetMetricCard] Request failed, maintaining previous values: $${previousBudget}`);
-        return;
-      }
-      
-      const data = await response.json();
-      
-      // Check how long the request took
-      const fetchTime = Date.now() - startTime;
-      console.log(`[TotalBudgetMetricCard] Fetch completed in ${fetchTime}ms with result:`, data);
-      
-      if (data.success) {
-        // Only update if we actually have data and it's not zero (zero often indicates an error)
-        if (data.totalBudget !== undefined && data.totalBudget > 0) {
-          setTotalBudget(data.totalBudget);
-          setAdSetCount(data.adSetCount);
-        } else if (previousBudget > 0) {
-          // If we get zero back but had a previous value, keep the previous value
-          console.log(`[TotalBudgetMetricCard] Received zero budget but keeping previous value: $${previousBudget}`);
+      try {
+        // Add timestamp to avoid cache
+        const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true&t=${Date.now()}`);
+        
+        if (!response.ok) {
+          // If the request fails, maintain the previous values
+          console.log(`[TotalBudgetMetricCard] Request failed, maintaining previous values: $${previousBudget}`);
+          return;
         }
-      } else {
-        // On API error, maintain previous values
-        console.log(`[TotalBudgetMetricCard] API error, maintaining previous values: $${previousBudget}`);
+        
+        const data = await response.json();
+        
+        // Log fetch time and results
+        const fetchTime = Date.now() - startTime;
+        console.log(`[TotalBudgetMetricCard] Fetch completed in ${fetchTime}ms with result:`, data);
+        
+        if (data.success) {
+          // CRITICAL: Only update if we actually have real data and it's not zero
+          if (data.totalBudget > 0) {
+            setTotalBudget(data.totalBudget);
+            setAdSetCount(data.adSetCount);
+            setLastFetchTime(new Date());
+            
+            // Update global cache
+            if (typeof window !== 'undefined') {
+              if (!window._budgetCache) {
+                window._budgetCache = { values: new Map(), getByBrandId: () => null };
+              }
+              window._budgetCache.values.set(brandId, data.totalBudget);
+            }
+            
+            console.log(`[TotalBudgetMetricCard] Updated to new budget: $${data.totalBudget}`);
+          } else if (previousBudget > 0) {
+            // CRITICAL: If we get zero back but had a previous value, ALWAYS keep the previous value
+            console.log(`[TotalBudgetMetricCard] Received zero budget but KEEPING previous value: $${previousBudget}`);
+          }
+        } else {
+          // On API error, maintain previous non-zero values
+          if (previousBudget > 0) {
+            console.log(`[TotalBudgetMetricCard] API error, maintaining previous values: $${previousBudget}`);
+          }
+        }
+      } catch (error) {
+        // On fetch error, maintain previous values
+        if (previousBudget > 0) {
+          console.log(`[TotalBudgetMetricCard] Fetch error, maintaining previous values: $${previousBudget}`);
+        }
+        console.error('[TotalBudgetMetricCard] Error:', error);
       }
-    } catch (error) {
-      console.error('[TotalBudgetMetricCard] Error fetching total budget:', error);
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +275,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
           </button>
         </div>
       }
-      value={totalBudget}
+      value={totalBudget === 0 && !isManuallyRefreshing ? null : totalBudget} // Never display zero
       data={[]}
       loading={isLoading || isManuallyRefreshing}
       hideChange={true}

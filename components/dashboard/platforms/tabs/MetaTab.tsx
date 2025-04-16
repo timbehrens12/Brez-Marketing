@@ -112,6 +112,9 @@ declare global {
     _metaFetchLock?: boolean;
     _lastManualRefresh?: number;
     _lastMetaRefresh?: number;
+    _metricsCache?: {
+      [brandId: string]: any;
+    };
   }
 }
 
@@ -4165,6 +4168,50 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [dateRange, brandId]);
 
+  // Add a useEffect to cache widget values during date transitions
+  useEffect(() => {
+    const saveCachedMetrics = () => {
+      // Only save metrics if they exist and are not zero
+      if (metrics && typeof window !== 'undefined') {
+        // Store current metrics in a global cache
+        window._metricsCache = window._metricsCache || {};
+        window._metricsCache[brandId] = metrics;
+        
+        console.log('[MetaTab] Saved current metrics to cache');
+      }
+    };
+    
+    // When date range changes, save current metrics to cache
+    const handleDateRangeChange = () => {
+      saveCachedMetrics();
+    };
+    
+    // When component mounts, add event listener for date range changes
+    window.addEventListener('date-range-change', handleDateRangeChange);
+    
+    return () => {
+      window.removeEventListener('date-range-change', handleDateRangeChange);
+    };
+  }, [metrics, brandId]);
+
+  // Add a check to prevent null/empty metrics from being displayed
+  // Calculate effective metrics - use cached metrics during loading
+  const effectiveMetrics = useMemo(() => {
+    if (metrics && Object.keys(metrics).length > 0) {
+      // If we have metrics, use them
+      if (typeof window !== 'undefined') {
+        window._metricsCache = window._metricsCache || {};
+        window._metricsCache[brandId] = metrics;
+      }
+      return metrics;
+    } else if (typeof window !== 'undefined' && window._metricsCache && window._metricsCache[brandId]) {
+      // If we don't have metrics but have cached metrics, use those during loading
+      console.log('[MetaTab] Using cached metrics during loading');
+      return window._metricsCache[brandId];
+    }
+    return metrics; // Fall back to current metrics (might be empty)
+  }, [metrics, brandId]);
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4496,7 +4543,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           />
           
           <TotalBudgetMetricCard 
-            key={`total-budget-${brandId}`} 
+            key={`total-budget-stable`}
             brandId={brandId || ''} 
             isManuallyRefreshing={isManuallyRefreshing || isLoading} 
           />
