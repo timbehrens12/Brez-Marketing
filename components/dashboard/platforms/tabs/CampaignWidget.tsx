@@ -270,6 +270,11 @@ const CampaignWidget = ({
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const refreshCountRef = useRef(0);
   
+  // Add stronger state locking to prevent loops
+  const dataStabilizationLockRef = useRef(false);
+  const lastSuccessfulFetchTimeRef = useRef(0);
+  const STABILITY_LOCK_PERIOD = 5000; // 5 seconds where no state changes are allowed after successful data display
+  
   // Clean up when component unmounts
   useEffect(() => {
     return () => {
@@ -1009,62 +1014,35 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Create an expanded wrapper that fully protects against race conditions
-  const stableExpandAdSets = useCallback((campaignId: string) => {
-    // If we're currently in a loading operation, ignore additional requests
-    if (adSetLoadingLockRef.current) {
-      logger.debug('[CampaignWidget] Ignoring expand request - loading lock is active');
+  // Add a hard stabilization cleanup method near the top of the component
+  useEffect(() => {
+    // When unmounting, make sure we clean up all locks and timers
+    return () => {
+      // Clear all timers and locks
+      if (cooldownTimerRef.current) {
+        clearTimeout(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+      adSetLoadingLockRef.current = false;
+      dataStabilizationLockRef.current = false;
+      stableLoadingRef.current = false;
+    };
+  }, []);
+  
+  // Declare the bulletproof fetch function first
+  const stableFetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+    // If we're in a data stabilization period, block all fetches
+    const now = Date.now();
+    if (dataStabilizationLockRef.current && now - lastSuccessfulFetchTimeRef.current < STABILITY_LOCK_PERIOD) {
+      logger.debug(`[CampaignWidget] In stabilization period - blocking fetch, time remaining: ${Math.round((STABILITY_LOCK_PERIOD - (now - lastSuccessfulFetchTimeRef.current))/1000)}s`);
       return;
     }
     
-    // Create a loading lock
-    adSetLoadingLockRef.current = true;
-    stableLoadingRef.current = true;
-    setIsLoadingAdSets(true);
-    
-    // Reset refresh counter
-    refreshCountRef.current = 0;
-    
-    // Set expanded immediately
-    setExpandedCampaign(campaignId);
-    
-    // Show a placeholder
-    setAdSets([{ 
-      id: 0,
-      brand_id: brandId,
-      adset_id: 'loading',
-      adset_name: 'Loading ad sets...',
-      campaign_id: campaignId,
-      status: 'Loading',
-      budget: 0,
-      budget_type: '',
-      spent: 0,
-      impressions: 0,
-      clicks: 0,
-      conversions: 0,
-      ctr: 0,
-      cpc: 0,
-      cost_per_conversion: 0,
-      optimization_goal: null,
-      updated_at: new Date().toISOString(),
-      daily_insights: []
-    }]);
-    
-    // Allow a brief period for the UI to render the loading state
-    setTimeout(() => {
-      // Start the fetch if still expanded and mounted
-      if (isMountedRef.current && expandedCampaign === campaignId) {
-        // Initiate the fetch with our stable fetch handler
-        stableFetchAdSets(campaignId);
-      } else {
-        // If the expansion state changed, release the lock
-        adSetLoadingLockRef.current = false;
-      }
-    }, 100);
-  }, [brandId, expandedCampaign, isMountedRef]);
-
-  // Create a dedicated stable fetch handler
-  const stableFetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+    // Normal safety checks
     if (!brandId || !isMountedRef.current || !campaignId) {
       adSetLoadingLockRef.current = false;
       return;
@@ -1075,14 +1053,51 @@ const CampaignWidget = ({
     if (refreshCountRef.current > 3) {
       logger.debug(`[CampaignWidget] Too many fetch attempts (${refreshCountRef.current}), stopping`);
       adSetLoadingLockRef.current = false;
+      stableLoadingRef.current = false;
       setIsLoadingAdSets(false);
       return;
     }
     
+    // Set hard loading lock
+    adSetLoadingLockRef.current = true;
+    stableLoadingRef.current = true;
+    setIsLoadingAdSets(true);
+    dataStabilizationLockRef.current = false; // Allow changes during fetch
+    
+    logger.debug(`[CampaignWidget] Starting bulletproof fetch for ${campaignId} (attempt ${refreshCountRef.current})`);
+    
+    // Create a placeholder if we don't have one
+    setAdSets(current => {
+      // Only replace if we don't have a loading placeholder
+      if (current.length === 0 || (current.length === 1 && current[0].adset_id !== 'loading')) {
+        return [{ 
+          id: 0,
+          brand_id: brandId,
+          adset_id: 'loading',
+          adset_name: 'Loading ad sets...',
+          campaign_id: campaignId,
+          status: 'Loading',
+          budget: 0,
+          budget_type: '',
+          spent: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0,
+          ctr: 0,
+          cpc: 0,
+          cost_per_conversion: 0,
+          optimization_goal: null,
+          updated_at: new Date().toISOString(),
+          daily_insights: []
+        }];
+      }
+      return current;
+    });
+    
     // Proceed with the fetch
     try {
       // Track what we're doing
-      logger.debug(`[CampaignWidget] Stable fetch starting for campaign ${campaignId}, attempt ${refreshCountRef.current}`);
+      logger.debug(`[CampaignWidget] Bulletproof fetch starting for campaign ${campaignId}, attempt ${refreshCountRef.current}`);
       
       // Create our URL
       let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
@@ -1094,8 +1109,27 @@ const CampaignWidget = ({
         url += `&from=${fromDate}&to=${toDate}`;
       }
       
+      // Ensure always showing loading state for at least 1 second
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Bail if component unmounted or campaign changed during the delay
+      if (!isMountedRef.current || expandedCampaign !== campaignId) {
+        logger.debug(`[CampaignWidget] Component unmounted or campaign changed during fetch delay`);
+        adSetLoadingLockRef.current = false;
+        stableLoadingRef.current = false;
+        return;
+      }
+      
       // Perform the fetch
       const response = await fetch(url);
+      
+      // Bail if component unmounted or campaign changed during the fetch
+      if (!isMountedRef.current || expandedCampaign !== campaignId) {
+        logger.debug(`[CampaignWidget] Component unmounted or campaign changed during fetch`);
+        adSetLoadingLockRef.current = false;
+        stableLoadingRef.current = false;
+        return;
+      }
       
       // Process the response
       const data = await response.json();
@@ -1103,8 +1137,20 @@ const CampaignWidget = ({
       
       // Only update if we're still showing the same campaign
       if (isMountedRef.current && expandedCampaign === campaignId) {
+        logger.debug(`[CampaignWidget] Fetch complete - ${validAdSets.length} ad sets found`);
+        
+        // IMPORTANT: Set the stabilization lock BEFORE updating any state
+        dataStabilizationLockRef.current = true;
+        lastSuccessfulFetchTimeRef.current = Date.now();
+        
+        // Clear any existing timers
+        if (cooldownTimerRef.current) {
+          clearTimeout(cooldownTimerRef.current);
+          cooldownTimerRef.current = null;
+        }
+        
         if (validAdSets.length > 0) {
-          // Update ad sets directly (not loading state yet)
+          // We have data, update the ad sets
           setAdSets(validAdSets);
           
           // Mark this campaign as having ad sets
@@ -1114,50 +1160,78 @@ const CampaignWidget = ({
             return newSet;
           });
           
-          // Add a cooldown before allowing loading state to change
-          if (cooldownTimerRef.current) {
-            clearTimeout(cooldownTimerRef.current);
-          }
-          
-          cooldownTimerRef.current = setTimeout(() => {
-            // Update loading state AFTER ensuring data is rendered
-            if (isMountedRef.current && expandedCampaign === campaignId) {
-              logger.debug(`[CampaignWidget] Cooldown complete, setting loading to false`);
+          // Give the UI time to render the data, then hide loading state
+          setTimeout(() => {
+            if (isMountedRef.current && expandedCampaign === campaignId && dataStabilizationLockRef.current) {
+              logger.debug(`[CampaignWidget] Setting loading state to false after data`);
               stableLoadingRef.current = false;
               setIsLoadingAdSets(false);
             }
-            
-            // Release the loading lock LAST to prevent race conditions
-            adSetLoadingLockRef.current = false;
-            cooldownTimerRef.current = null;
-          }, 500);
-        } else {
-          // No data, show empty state after a cooldown
+          }, 200);
+          
+          // Cleanup the locks after the stability period
           setTimeout(() => {
-            if (isMountedRef.current && expandedCampaign === campaignId) {
-              setAdSets([]);
-              setIsLoadingAdSets(false);
-            }
             adSetLoadingLockRef.current = false;
+            logger.debug(`[CampaignWidget] Stabilization period ended`);
+          }, STABILITY_LOCK_PERIOD);
+        } else {
+          // No data, show empty state
+          setTimeout(() => {
+            if (isMountedRef.current && expandedCampaign === campaignId && dataStabilizationLockRef.current) {
+              logger.debug(`[CampaignWidget] No data found, showing empty state`);
+              setAdSets([]);
+              stableLoadingRef.current = false;
+              setIsLoadingAdSets(false);
+              adSetLoadingLockRef.current = false;
+              dataStabilizationLockRef.current = false;
+            }
           }, 300);
         }
       } else {
         // Component unmounted or campaign changed, just release lock
         adSetLoadingLockRef.current = false;
+        stableLoadingRef.current = false;
+        dataStabilizationLockRef.current = false;
       }
     } catch (error) {
-      logger.error(`[CampaignWidget] Stable fetch error: ${(error as Error).message}`);
+      logger.error(`[CampaignWidget] Bulletproof fetch error: ${(error as Error).message}`);
       
-      // Release lock and clear loading state
+      // Release all locks and clear loading state
       adSetLoadingLockRef.current = false;
+      stableLoadingRef.current = false;
+      dataStabilizationLockRef.current = false;
       
-      if (isMountedRef.current) {
+      if (isMountedRef.current && expandedCampaign === campaignId) {
         setIsLoadingAdSets(false);
         setAdSets([]);
       }
     }
   }, [brandId, dateRange, expandedCampaign, isMountedRef]);
-
+  
+  // Then define the stable expand function that calls it
+  const stableExpandAdSets = useCallback((campaignId: string) => {
+    // Disable ALL background polling and automatic updates while displaying ad sets
+    window._disableAutoMetaFetch = true;
+    
+    // If we're currently in a loading operation or stabilization period, ignore additional requests
+    if (adSetLoadingLockRef.current || dataStabilizationLockRef.current) {
+      logger.debug('[CampaignWidget] Ignoring expand request - loading or stabilization lock active');
+      return;
+    }
+    
+    // Reset refresh counter
+    refreshCountRef.current = 0;
+    
+    // Block all events being processed
+    adSetLoadingLockRef.current = true;
+    
+    // Set expanded immediately 
+    setExpandedCampaign(campaignId);
+    
+    // Start the bulletproof fetch process directly
+    stableFetchAdSets(campaignId);
+  }, [stableFetchAdSets]);
+  
   // Modify the toggleCampaignExpand function to use our stable expand method
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
     // If there's a cooldown timer running, clear it
@@ -2438,3 +2512,72 @@ const CampaignWidget = ({
 
 // Export the component
 export { CampaignWidget };
+
+// Add global listener to disable background refreshes when the component mounts
+useEffect(() => {
+  // Disable auto-fetch when the component mounts to prevent background interference
+  const originalDisableState = window._disableAutoMetaFetch;
+  const originalBlockState = window._blockMetaApiCalls;
+  
+  // This handler will intercept any API calls that might interfere with our data display
+  const handleBeforeFetch = (event: Event) => {
+    if (event.type === 'fetch' && dataStabilizationLockRef.current) {
+      // If we're in a stabilization period, block potential interfering calls
+      if ((event as any).url?.includes('meta') || (event as any).url?.includes('campaign')) {
+        logger.debug('[CampaignWidget] Intercepted potential interfering API call during stabilization');
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+    }
+  };
+  
+  // Add a global fetch interceptor
+  window.addEventListener('fetch', handleBeforeFetch, true);
+  
+  // Return cleanup function
+  return () => {
+    // Restore original states
+    window._disableAutoMetaFetch = originalDisableState;
+    window._blockMetaApiCalls = originalBlockState;
+    
+    // Remove fetch interceptor
+    window.removeEventListener('fetch', handleBeforeFetch, true);
+    
+    // Ensure all locks are released
+    adSetLoadingLockRef.current = false;
+    dataStabilizationLockRef.current = false;
+    stableLoadingRef.current = false;
+    
+    // Clear all timers
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+  };
+}, []);
+
+// Add an effect to prevent all loops by disabling automatic refreshes
+useEffect(() => {
+  // Mechanism to prevent loop refreshes
+  const preventLoops = () => {
+    if (expandedCampaign && dataStabilizationLockRef.current) {
+      logger.debug(`[CampaignWidget] Ensuring no refresh loops during stabilization`);
+      window._disableAutoMetaFetch = true;
+      window._blockMetaApiCalls = true;
+    }
+  };
+  
+  // Run the prevention mechanism immediately
+  preventLoops();
+  
+  // Add a periodic check to ensure the prevention stays active
+  const intervalId = setInterval(preventLoops, 1000);
+  
+  return () => {
+    clearInterval(intervalId);
+  };
+}, [expandedCampaign]);
