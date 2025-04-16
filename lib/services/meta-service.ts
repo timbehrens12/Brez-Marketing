@@ -10,6 +10,51 @@ import { createClient } from '@supabase/supabase-js'
  * Previously, data was being aggregated into a single date for the entire period,
  * which made it impossible to show proper date range metrics.
  */
+
+// Helper function to delay execution (for rate limiting)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper function to perform API call with retries and exponential backoff
+async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initialBackoff = 5000) {
+  let retries = 0;
+  let backoff = initialBackoff;
+  
+  while (retries <= maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      
+      // Check if we hit rate limiting
+      if (data.error && (data.error.code === 80004 || data.error.message?.includes('too many calls'))) {
+        if (retries >= maxRetries) {
+          console.log(`[Meta] Rate limit exceeded after ${retries} retries. Returning rate limit error.`);
+          return data;
+        }
+        
+        retries++;
+        console.log(`[Meta] Rate limit hit, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
+        await delay(backoff);
+        backoff *= 2; // Exponential backoff
+        continue;
+      }
+      
+      return data;
+    } catch (error) {
+      if (retries >= maxRetries) {
+        console.log(`[Meta] API call failed after ${retries} retries.`);
+        throw error;
+      }
+      
+      retries++;
+      console.log(`[Meta] API call failed, retrying in ${backoff/1000}s (retry ${retries}/${maxRetries})`);
+      await delay(backoff);
+      backoff *= 2; // Exponential backoff
+    }
+  }
+  
+  throw new Error(`Failed after ${maxRetries} retries`);
+}
+
 export async function fetchMetaAdInsights(
   brandId: string, 
   startDate: Date, 
@@ -41,15 +86,37 @@ export async function fetchMetaAdInsights(
       }
     }
 
-    // Fetch ad accounts
-    const accountsResponse = await fetch(
+    // Fetch ad accounts with retry mechanism
+    const accountsData = await fetchWithRetry(
       `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
-    )
-    
-    const accountsData = await accountsResponse.json()
+    );
     
     if (accountsData.error) {
       console.error(`[Meta] Error fetching ad accounts:`, accountsData.error)
+      
+      // Check if this is a rate limiting error
+      if (accountsData.error.code === 80004 || accountsData.error.message?.includes('too many calls')) {
+        console.log(`[Meta] Rate limit hit, attempting to use cached data`);
+        
+        // Try to return cached data instead
+        const { data: cachedInsights } = await supabase
+          .from('meta_ad_insights')
+          .select('*')
+          .eq('brand_id', brandId)
+          .gte('date', startDate.toISOString().split('T')[0])
+          .lte('date', endDate.toISOString().split('T')[0]);
+          
+        if (cachedInsights && cachedInsights.length > 0) {
+          console.log(`[Meta] Using ${cachedInsights.length} cached insights due to rate limiting`);
+          return { 
+            success: true, 
+            message: 'Using cached insights due to Meta API rate limit',
+            count: cachedInsights.length,
+            rateLimited: true
+          }
+        }
+      }
+      
       return { 
         success: false, 
         error: 'Failed to fetch Meta ad accounts',
@@ -74,17 +141,23 @@ export async function fetchMetaAdInsights(
     let allInsights = []
     let campaignBudgets = new Map()
     
-    // For each ad account, fetch insights
+    // For each ad account, fetch insights - with rate limit handling
     for (const account of accountsData.data) {
       console.log(`[Meta] Fetching insights for account ${account.name} (${account.id})`)
       
       try {
-        // First fetch campaign information to get budgets
-        const campaignsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
-        )
+        // Add delay between requests to avoid rate limiting
+        await delay(1000);
         
-        const campaignsData = await campaignsResponse.json()
+        // First fetch campaign information to get budgets - with retry
+        const campaignsData = await fetchWithRetry(
+          `https://graph.facebook.com/v18.0/${account.id}/campaigns?fields=id,name,daily_budget,lifetime_budget,effective_status&access_token=${connection.access_token}`
+        );
+        
+        if (campaignsData.error) {
+          console.error(`[Meta] Error fetching campaigns for account ${account.id}:`, campaignsData.error);
+          continue;
+        }
         
         if (campaignsData.data && campaignsData.data.length > 0) {
           for (const campaign of campaignsData.data) {
@@ -109,12 +182,13 @@ export async function fetchMetaAdInsights(
           console.log(`[Meta] Fetched budget info for ${campaignsData.data.length} campaigns`)
         }
         
-        // Now fetch the insights data
-        const insightsResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
-        )
+        // Add another delay before the insights request
+        await delay(1000);
         
-        const insightsData = await insightsResponse.json()
+        // Now fetch the insights data - with retry
+        const insightsData = await fetchWithRetry(
+          `https://graph.facebook.com/v18.0/${account.id}/insights?fields=account_id,account_name,campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values,reach,inline_link_clicks&time_range={"since":"${startDateStr}","until":"${endDateStr}"}&level=ad&time_increment=1&access_token=${connection.access_token}`
+        );
         
         if (insightsData.error) {
           console.error(`[Meta] Error fetching insights for account ${account.id}:`, insightsData.error)

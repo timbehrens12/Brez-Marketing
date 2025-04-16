@@ -9,7 +9,9 @@
     "lint": "next lint",
     "backfill-regions": "ts-node scripts/backfill-sales-by-region.ts",
     "create-region-table": "ts-node scripts/create-sales-by-region-table.ts",
-    "backfill-regions-from-orders": "ts-node scripts/backfill-regions-from-orders.ts"
+    "backfill-regions-from-orders": "ts-node scripts/backfill-regions-from-orders.ts",
+    "migrate": "node migrations/apply_migrations.js",
+    "migrate:meta-sync": "node migrations/apply_migrations.js meta_sync_history.sql"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.9",

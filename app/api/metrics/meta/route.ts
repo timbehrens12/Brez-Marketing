@@ -267,141 +267,249 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Query meta_ad_insights for this time period
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
-      .select('*')
-      .eq('connection_id', connection.id)
-      .gte('date', fromDate)
-      .lte('date', toDate)
-      .order('date', { ascending: true })
-    
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta insights', details: error }, { status: 500 })
-    }
-    
-    // Additional validation for yesterday preset to ensure we only have yesterday's data
-    let filteredInsights = insights || [];
-    
-    if (isYesterdayPreset) {
-      console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+    // If a query for the current date range fails due to rate limiting,
+    // try to find the most recent data for this brand and use that
+    const tryGetCachedDataOnError = async (error: any, brandId: string, connectionId: string) => {
+      console.log(`[Meta Metrics] Error fetching data, checking for cached data:`, error);
       
-      // For yesterday preset, strictly filter to only include data from yesterday
-      filteredInsights = filteredInsights.filter(item => {
-        // Normalize the date format for comparison
-        const dateStart = new Date(item.date).toISOString().split('T')[0];
-        const exactMatch = dateStart === fromDate;
+      // Check if this is a rate limiting error
+      const isRateLimited = typeof error === 'string' && error.includes('rate limit') || 
+        (error && error.code === 80004) ||
+        (error && error.message && error.message.includes('too many calls'));
         
-        if (!exactMatch) {
-          console.log(`Filtering out non-yesterday data point: ${dateStart} (expected ${fromDate})`);
-        }
-        
-        return exactMatch;
-      });
-      
-      console.log(`YESTERDAY VALIDATION: After filtering, kept ${filteredInsights.length} records out of ${insights?.length || 0}`);
-      
-      // If this is a refresh request, be extra strict about validation
-      if (refresh) {
-        console.log(`REFRESH REQUEST: Extra validation for yesterday data`);
-        
-        // Double-check that we're only returning yesterday's data
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
-          console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
-          
-          // Force the date range to be yesterday only
-          fromDate = yesterdayStr;
-          toDate = yesterdayStr;
-          
-          // Re-filter to ensure only yesterday's data
-          filteredInsights = filteredInsights.filter(item => {
-            const itemDate = new Date(item.date).toISOString().split('T')[0];
-            return itemDate === yesterdayStr;
-          });
-          
-          console.log(`REFRESH CORRECTION: Re-filtered to ${filteredInsights.length} records with date ${yesterdayStr}`);
-        }
+      if (!isRateLimited) {
+        console.log(`[Meta Metrics] Not a rate limiting error, returning empty data`);
+        return null;
       }
-    }
-    // Special handling for single day queries (that aren't yesterday)
-    else if (fromDate === toDate) {
-      console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       
-      // For single day queries, strictly filter to only include data from that day
-      filteredInsights = filteredInsights.filter(item => {
-        const dateStart = new Date(item.date).toISOString().split('T')[0];
-        return dateStart === fromDate;
-      });
+      console.log(`[Meta Metrics] Rate limit detected, trying to use cached data`);
       
-      console.log(`SINGLE DAY VALIDATION: After filtering, kept ${filteredInsights.length} records out of ${insights?.length || 0}`);
-    }
-    
-    // If no insights found, return empty data
-    if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No Meta insights found for the date range ${fromDate} to ${toDate}`)
-      return NextResponse.json({
-        adSpend: 0,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        ctr: 0,
-        cpc: 0,
-        costPerResult: 0,
-        dailyData: [],
-        _dateRange: {
-          from: fromDate,
-          to: toDate
+      try {
+        // Try to get the most recent meta_ad_insights data for this brand
+        const { data: cachedData } = await supabase
+          .from('meta_ad_insights')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('connection_id', connectionId)
+          .order('date', { ascending: false })
+          .limit(30); // Get last 30 days of data
+        
+        if (cachedData && cachedData.length > 0) {
+          console.log(`[Meta Metrics] Found ${cachedData.length} cached records to use`);
+          return {
+            success: true,
+            cached: true,
+            rateLimited: true,
+            data: cachedData
+          };
         }
-      })
-    }
-    
-    console.log(`Found ${filteredInsights.length} Meta data records for period ${fromDate} to ${toDate}`)
-    
-    // Process the Meta data
-    const processedData = processMetaData(filteredInsights)
-    
-    // Log a sample of what we're actually returning
-    if (dateDebug || debug) {
-      console.log(`Returning Meta data for period ${fromDate} to ${toDate} with ${filteredInsights.length} records`)
+      } catch (cacheError) {
+        console.error(`[Meta Metrics] Error fetching cached data:`, cacheError);
+      }
       
-      // Log the daily data dates to verify
-      if (processedData.dailyData && processedData.dailyData.length > 0) {
-        const dates = processedData.dailyData.map((day: any) => day.date).sort();
-        console.log(`Daily data dates: ${dates.join(', ')}`);
-      }
-    }
-    
-    // Add date range info to help client validate
-    const response = {
-      ...processedData,
-      _dateRange: {
-        from: fromDate,
-        to: toDate,
-        requested: { 
-          from: requestedFromDate || fromDate, 
-          to: requestedToDate || toDate 
-        },
-        isYesterdayPreset: isYesterdayPreset,
-        isSingleDay: fromDate === toDate,
-        actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || []
-      }
+      return null;
     };
     
-    // Add to cache 
-    if (!bypassCache) {
-      apiCache.set(cacheKey, {
-        timestamp: Date.now(),
-        data: response
-      });
+    // Query for insights from the meta_ad_insights table
+    try {
+      // Query meta_ad_insights for this time period
+      const { data: insights, error } = await supabase
+        .from('meta_ad_insights')
+        .select('*')
+        .eq('connection_id', connection.id)
+        .gte('date', fromDate)
+        .lte('date', toDate)
+        .order('date', { ascending: true })
+      
+      if (error) {
+        console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
+        
+        // Try to use cached data if this is a rate limiting error
+        const cachedData = await tryGetCachedDataOnError(error, brandId, connection.id);
+        if (cachedData) {
+          console.log(`Using cached data due to rate limiting`);
+          
+          // Process the cached data
+          const processedData = processMetaData(cachedData.data);
+          
+          // Add rate limiting info to the response
+          const response = {
+            ...processedData,
+            _meta: {
+              cached: true,
+              rateLimited: true,
+              message: 'Using cached data due to Meta API rate limit'
+            },
+            _dateRange: {
+              from: fromDate,
+              to: toDate,
+              requested: { 
+                from: requestedFromDate || fromDate, 
+                to: requestedToDate || toDate 
+              },
+              usingCachedData: true
+            }
+          };
+          
+          return NextResponse.json(response);
+        }
+        
+        return NextResponse.json({ error: 'Error retrieving Meta insights', details: error }, { status: 500 })
+      }
+      
+      // Additional validation for yesterday preset to ensure we only have yesterday's data
+      let filteredInsights = insights || [];
+      
+      if (isYesterdayPreset) {
+        console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+        
+        // For yesterday preset, strictly filter to only include data from yesterday
+        filteredInsights = filteredInsights.filter(item => {
+          // Normalize the date format for comparison
+          const dateStart = new Date(item.date).toISOString().split('T')[0];
+          const exactMatch = dateStart === fromDate;
+          
+          if (!exactMatch) {
+            console.log(`Filtering out non-yesterday data point: ${dateStart} (expected ${fromDate})`);
+          }
+          
+          return exactMatch;
+        });
+        
+        console.log(`YESTERDAY VALIDATION: After filtering, kept ${filteredInsights.length} records out of ${insights?.length || 0}`);
+        
+        // If this is a refresh request, be extra strict about validation
+        if (refresh) {
+          console.log(`REFRESH REQUEST: Extra validation for yesterday data`);
+          
+          // Double-check that we're only returning yesterday's data
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          
+          if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
+            console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
+            
+            // Force the date range to be yesterday only
+            fromDate = yesterdayStr;
+            toDate = yesterdayStr;
+            
+            // Re-filter to ensure only yesterday's data
+            filteredInsights = filteredInsights.filter(item => {
+              const itemDate = new Date(item.date).toISOString().split('T')[0];
+              return itemDate === yesterdayStr;
+            });
+            
+            console.log(`REFRESH CORRECTION: Re-filtered to ${filteredInsights.length} records with date ${yesterdayStr}`);
+          }
+        }
+      }
+      // Special handling for single day queries (that aren't yesterday)
+      else if (fromDate === toDate) {
+        console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+        
+        // For single day queries, strictly filter to only include data from that day
+        filteredInsights = filteredInsights.filter(item => {
+          const dateStart = new Date(item.date).toISOString().split('T')[0];
+          return dateStart === fromDate;
+        });
+        
+        console.log(`SINGLE DAY VALIDATION: After filtering, kept ${filteredInsights.length} records out of ${insights?.length || 0}`);
+      }
+      
+      // If no insights found, return empty data
+      if (!filteredInsights || filteredInsights.length === 0) {
+        console.log(`No Meta insights found for the date range ${fromDate} to ${toDate}`)
+        return NextResponse.json({
+          adSpend: 0,
+          impressions: 0,
+          clicks: 0,
+          conversions: 0,
+          ctr: 0,
+          cpc: 0,
+          costPerResult: 0,
+          dailyData: [],
+          _dateRange: {
+            from: fromDate,
+            to: toDate
+          }
+        })
+      }
+      
+      console.log(`Found ${filteredInsights.length} Meta data records for period ${fromDate} to ${toDate}`)
+      
+      // Process the Meta data
+      const processedData = processMetaData(filteredInsights)
+      
+      // Log a sample of what we're actually returning
+      if (dateDebug || debug) {
+        console.log(`Returning Meta data for period ${fromDate} to ${toDate} with ${filteredInsights.length} records`)
+        
+        // Log the daily data dates to verify
+        if (processedData.dailyData && processedData.dailyData.length > 0) {
+          const dates = processedData.dailyData.map((day: any) => day.date).sort();
+          console.log(`Daily data dates: ${dates.join(', ')}`);
+        }
+      }
+      
+      // Add date range info to help client validate
+      const response = {
+        ...processedData,
+        _dateRange: {
+          from: fromDate,
+          to: toDate,
+          requested: { 
+            from: requestedFromDate || fromDate, 
+            to: requestedToDate || toDate 
+          },
+          isYesterdayPreset: isYesterdayPreset,
+          isSingleDay: fromDate === toDate,
+          actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || []
+        }
+      };
+      
+      // Add to cache 
+      if (!bypassCache) {
+        apiCache.set(cacheKey, {
+          timestamp: Date.now(),
+          data: response
+        });
+      }
+      
+      // Return response
+      return NextResponse.json(response)
+    } catch (error) {
+      console.error('Error in Meta metrics endpoint:', error)
+      
+      // Try to use cached data if this is a rate limiting error
+      const cachedData = await tryGetCachedDataOnError(error, brandId, connection.id);
+      if (cachedData) {
+        console.log(`Using cached data due to rate limiting at outer level`);
+        
+        // Process the cached data
+        const processedData = processMetaData(cachedData.data);
+        
+        // Add rate limiting info to the response
+        const response = {
+          ...processedData,
+          _meta: {
+            cached: true,
+            rateLimited: true,
+            message: 'Using cached data due to Meta API rate limit'
+          }
+        };
+        
+        return NextResponse.json(response);
+      }
+      
+      return NextResponse.json({ 
+        error: 'Server error', 
+        details: typeof error === 'object' && error !== null && 'message' in error 
+          ? (error.message as string) 
+          : 'Unknown error',
+        _dateRange: { error: 'server_error' }
+      }, { status: 500 })
     }
-    
-    // Return response
-    return NextResponse.json(response)
   } catch (error) {
     console.error('Error in Meta metrics endpoint:', error)
     return NextResponse.json({ 
