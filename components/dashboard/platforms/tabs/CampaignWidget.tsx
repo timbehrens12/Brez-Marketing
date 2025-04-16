@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useCallback, useRef, FC } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { 
   BarChart, LineChart, PieChart, AreaChart, Gauge, ArrowUpRight, ArrowDownRight, 
   Calendar, Filter, MoreHorizontal, Download, ChevronDown, Settings, Table, RefreshCw,
@@ -187,8 +187,8 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
-// Define the component as a React FC (Function Component) with JSX return
-const CampaignWidget: FC<CampaignWidgetProps> = ({ 
+// Define the component using normal function declaration
+function CampaignWidget({ 
   brandId, 
   campaigns, 
   isLoading, 
@@ -196,7 +196,7 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
   dateRange, 
   onRefresh, 
   onSync 
-}) => {
+}: CampaignWidgetProps) {
   type SortOrderType = 'asc' | 'desc';
   
   // Use states from the original widget
@@ -1392,6 +1392,154 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 
+  // Add a new function to fetch ad set budgets for all campaigns
+  const fetchAllCampaignBudgets = useCallback(async () => {
+    if (!brandId || !isMountedRef.current || localCampaigns.length === 0) return;
+
+    console.log(`[CampaignWidget] Fetching budget data for all ${localCampaigns.length} campaigns`);
+    
+    try {
+      // Call the campaign-budgets endpoint which should fetch all budget data
+      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaign budgets: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Create a map of campaign_id to budget data
+      const budgetMap: Record<string, any> = {};
+      data.budgets.forEach((budget: any) => {
+        budgetMap[budget.campaign_id] = {
+          budget: budget.budget,
+          budget_type: budget.budget_type,
+          formatted_budget: budget.formatted_budget,
+          budget_source: budget.budget_source
+        };
+      });
+      
+      if (isMountedRef.current) {
+        setCurrentBudgets(budgetMap);
+        console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+        
+        // Dispatch an event to notify other components about the budget update
+        window.dispatchEvent(new CustomEvent('campaign-budgets-updated', {
+          detail: {
+            brandId,
+            budgets: budgetMap,
+            timestamp: new Date().toISOString()
+          }
+        }));
+      }
+      
+      return budgetMap;
+    } catch (error) {
+      console.error("[CampaignWidget] Error fetching campaign budgets:", error);
+      return null;
+    }
+  }, [brandId, isMountedRef, localCampaigns.length]);
+
+  // Add a function to fetch all ad set data in the background
+  const fetchAllCampaignAdSets = useCallback(async () => {
+    if (!brandId || !isMountedRef.current || localCampaigns.length === 0) return;
+    
+    console.log(`[CampaignWidget] Fetching ad set data for all campaigns in background`);
+    
+    // Get the first 5 campaigns for initial data
+    const prioritizedCampaigns = [...localCampaigns]
+      .filter(c => c.status.toUpperCase() === 'ACTIVE')
+      .slice(0, 5);
+    
+    if (prioritizedCampaigns.length === 0) return;
+    
+    // Process one campaign at a time to avoid rate limits
+    for (const campaign of prioritizedCampaigns) {
+      if (!isMountedRef.current) break;
+      
+      console.log(`[CampaignWidget] Background fetching ad sets for campaign ${campaign.campaign_id}`);
+      
+      try {
+        const url = `/api/meta/adsets/budget-only?brandId=${brandId}&campaignId=${campaign.campaign_id}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.adSets && data.adSets.length > 0) {
+            // Update the campaign with aggregated ad set budget
+            const totalAdSetBudget = data.adSets.reduce((sum: number, adSet: any) => sum + (adSet.budget || 0), 0);
+            
+            // Update local state with this budget data
+            setLocalCampaigns(prevCampaigns => {
+              return prevCampaigns.map(c => {
+                if (c.campaign_id === campaign.campaign_id) {
+                  return {
+                    ...c,
+                    adset_budget_total: totalAdSetBudget
+                  };
+                }
+                return c;
+              });
+            });
+            
+            // Also update the campaign with adsets data in our tracking
+            setCampaignsWithAdSets(prev => {
+              const newSet = new Set(prev);
+              newSet.add(campaign.campaign_id);
+              return newSet;
+            });
+            
+            console.log(`[CampaignWidget] Updated budget for campaign ${campaign.campaign_id}: ${totalAdSetBudget}`);
+          }
+        }
+      } catch (error) {
+        console.error(`[CampaignWidget] Error fetching ad set budget for campaign ${campaign.campaign_id}:`, error);
+      }
+      
+      // Add a delay between requests to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // After all campaigns are processed, fetch the aggregated budget data
+    fetchAllCampaignBudgets();
+    
+  }, [brandId, isMountedRef, localCampaigns, fetchAllCampaignBudgets]);
+
+  // Call the new functions when campaigns are loaded
+  useEffect(() => {
+    if (campaigns.length > 0 && brandId) {
+      setLocalCampaigns(campaigns);
+      
+      // Fetch budgets immediately
+      fetchAllCampaignBudgets();
+      
+      // After a short delay, start fetching ad set data for all campaigns
+      const timeoutId = setTimeout(() => {
+        fetchAllCampaignAdSets();
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [campaigns, brandId, fetchAllCampaignBudgets, fetchAllCampaignAdSets]);
+
+  // Also refresh budget data when the component receives a refresh event
+  useEffect(() => {
+    const handleRefreshEvent = () => {
+      if (isMountedRef.current && brandId) {
+        console.log('[CampaignWidget] Received refresh event, updating budgets');
+        fetchAllCampaignBudgets();
+      }
+    };
+    
+    window.addEventListener('refresh-meta-budgets', handleRefreshEvent);
+    
+    return () => {
+      window.removeEventListener('refresh-meta-budgets', handleRefreshEvent);
+    };
+  }, [brandId, isMountedRef, fetchAllCampaignBudgets]);
+
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
@@ -1972,7 +2120,7 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
       </CardContent>
     </Card>
   )
-};
+}
 
-// Export the component
+// Export the component with a named export
 export { CampaignWidget };
