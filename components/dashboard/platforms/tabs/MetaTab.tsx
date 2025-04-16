@@ -4467,7 +4467,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
-          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
+          <TotalBudgetMetricCard 
+            key={`total-budget-${brandId}`} 
+            brandId={brandId || ''} 
+            isManuallyRefreshing={isManuallyRefreshing || isLoading} 
+          />
         </div>
       </div>
       

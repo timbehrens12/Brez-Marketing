@@ -1400,11 +1400,12 @@ function CampaignWidget({
   const fetchAllCampaignBudgets = useCallback(async () => {
     if (!brandId || !isMountedRef.current) return;
 
-    console.log(`[CampaignWidget] Fetching budget data for all campaigns`);
+    // Don't log every time to reduce console spam
+    // console.log(`[CampaignWidget] Fetching budget data for all campaigns`);
     
     try {
       // Call the campaign-budgets endpoint which should fetch all budget data
-      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
+      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}`);
       
       if (!response.ok) {
         // Log the error response text for debugging
@@ -1425,6 +1426,7 @@ function CampaignWidget({
       
       // Calculate total budget for the global widget
       let totalBudget = 0;
+      let activeCampaignCount = 0;
       
       data.budgets.forEach((budget: any) => {
         if (budget.campaign_id) {
@@ -1439,44 +1441,48 @@ function CampaignWidget({
           const campaign = localCampaigns.find(c => c.campaign_id === budget.campaign_id);
           if (campaign && campaign.status?.toUpperCase() === 'ACTIVE' && budget.budget) {
             totalBudget += budget.budget;
+            activeCampaignCount++;
           }
         }
       });
       
       if (isMountedRef.current) {
         setCurrentBudgets(budgetMap);
-        console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
+        // console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
         
-        // Dispatch an event to notify other components about the budget update
-        window.dispatchEvent(new CustomEvent('campaign-budgets-updated', {
-          detail: {
-            brandId,
-            budgets: budgetMap,
-            timestamp: new Date().toISOString()
-          }
-        }));
-        
-        // Dispatch a global event for the Meta budget widget to update
-        console.log(`[CampaignWidget] Dispatching meta-total-budget-updated event with total: ${totalBudget}`);
-        window.dispatchEvent(new CustomEvent('meta-total-budget-updated', {
-          detail: {
-            brandId,
-            totalBudget: totalBudget,
-            formattedBudget: formatCurrency(totalBudget),
-            timestamp: new Date().toISOString(),
-            source: 'campaign-widget'
-          }
-        }));
-        
-        // Also dispatch a general platform refresh event
-        window.dispatchEvent(new CustomEvent('meta_platform_refresh', {
-          detail: { brandId }
-        }));
-        
-        // Force refresh the main Meta dashboard metrics
-        window.dispatchEvent(new CustomEvent('refresh-meta-metrics', {
-          detail: { brandId }
-        }));
+        // Only dispatch global events if the budget has changed to prevent excessive updates
+        const shouldDispatchEvents = 
+          Math.abs(window._lastReportedBudget - totalBudget) > 0.01 || 
+          !window._lastEventTimestamp || 
+          (Date.now() - window._lastEventTimestamp > 30000); // Only send updates max every 30 seconds
+          
+        if (shouldDispatchEvents) {
+          // Update global variables to track last event
+          window._lastReportedBudget = totalBudget;
+          window._lastEventTimestamp = Date.now();
+          
+          // Dispatch an event to notify other components about the budget update
+          window.dispatchEvent(new CustomEvent('campaign-budgets-updated', {
+            detail: {
+              brandId,
+              budgets: budgetMap,
+              timestamp: new Date().toISOString()
+            }
+          }));
+          
+          // Dispatch a global event for the Meta budget widget to update
+          // console.log(`[CampaignWidget] Dispatching meta-total-budget-updated event with total: ${totalBudget}`);
+          window.dispatchEvent(new CustomEvent('meta-total-budget-updated', {
+            detail: {
+              brandId,
+              totalBudget: totalBudget,
+              formattedBudget: formatCurrency(totalBudget),
+              adSetCount: activeCampaignCount,
+              timestamp: new Date().toISOString(),
+              source: 'campaign-widget'
+            }
+          }));
+        }
       }
       
       return budgetMap;
@@ -1486,34 +1492,55 @@ function CampaignWidget({
     }
   }, [brandId, isMountedRef, localCampaigns]);
 
-  // Add a new effect to ensure budget data is loaded and total widget updated on first render
+  // Add a type definition for window properties to prevent typescript errors
+  declare global {
+    interface Window {
+      _lastReportedBudget?: number;
+      _lastEventTimestamp?: number;
+      _metaTimeouts?: ReturnType<typeof setTimeout>[];
+      _blockMetaApiCalls?: boolean;
+      _disableAutoMetaFetch?: boolean;
+      _activeFetchIds?: Set<number | string>;
+      _metaFetchLock?: boolean;
+      _lastManualRefresh?: number;
+      _lastMetaRefresh?: number;
+    }
+  }
+
+  // Update the existing effect to add debouncing
   useEffect(() => {
     if (brandId && !isLoading) {
-      console.log('[CampaignWidget] Initial budget fetch for total Meta budget widget');
+      // Delay initial budget fetch to allow component to fully mount
+      const initialBudgetTimeout = setTimeout(() => {
+        if (isMountedRef.current) {
+          fetchAllCampaignBudgets();
+        }
+      }, 1000); // Longer delay for initial load
       
-      // First load this component's budget data
-      fetchAllCampaignBudgets();
+      return () => clearTimeout(initialBudgetTimeout);
     }
-  }, [brandId, isLoading, fetchAllCampaignBudgets]);
+  }, [brandId, isLoading, fetchAllCampaignBudgets, isMountedRef]);
 
-  // Modify the existing campaigns effect to include budget updates
+  // Modify campaign effect to prevent excessive refreshes
   useEffect(() => {
     if (campaigns.length > 0 && brandId) {
       setLocalCampaigns(campaigns);
       
-      // Fetch budgets to update the global budget widget
-      fetchAllCampaignBudgets();
-      
-      // When campaigns are loaded or updated, check statuses of active campaigns
-      // This ensures statuses are always up-to-date without requiring user interaction
-      if (campaigns.length > 0) {
-        // Slight delay to allow the UI to render first
+      // Only add status check on initial load, not on every campaign update
+      if (!window._initialCampaignsLoaded) {
+        window._initialCampaignsLoaded = true;
+        
+        // Delay status checks to prevent UI jank during initial render
         setTimeout(() => {
-          checkCampaignStatuses(campaigns);
-        }, 500);
+          if (isMountedRef.current) {
+            // Only check first 3 campaigns to reduce API load
+            const limitedCampaigns = campaigns.slice(0, 3);
+            checkCampaignStatuses(limitedCampaigns, false);
+          }
+        }, 2000);
       }
     }
-  }, [campaigns, brandId, checkCampaignStatuses, fetchAllCampaignBudgets]);
+  }, [campaigns, brandId, checkCampaignStatuses, isMountedRef]);
 
   // Return the JSX for the component
   return (

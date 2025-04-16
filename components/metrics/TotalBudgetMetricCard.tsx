@@ -33,25 +33,34 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     
     try {
       setIsLoading(true)
-      console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`)
+      // console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`)
       const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch total budget')
+        // If the request fails, maintain the previous values but mark as not loading
+        setIsLoading(false)
+        
+        // Prevent error popup for 404s and 400s as these are common during load
+        if (response.status !== 404 && response.status !== 400) {
+          console.error(`[TotalMetaBudget] Failed to fetch budget: ${response.status}`)
+          toast.error('Failed to fetch total budget')
+        }
+        return
       }
       
       const data = await response.json()
-      console.log(`[TotalMetaBudget] Received data:`, data)
+      // console.log(`[TotalMetaBudget] Received data:`, data)
       
       if (data.success) {
         setTotalBudget(data.totalBudget)
         setAdSetCount(data.adSetCount)
       } else {
-        throw new Error(data.error || 'Unknown error')
+        // On API error, don't reset values to zero
+        console.error(`[TotalMetaBudget] Error in budget data:`, data.error || 'Unknown error')
       }
     } catch (error) {
-      console.error('Error fetching total budget:', error)
-      toast.error('Failed to fetch total budget')
+      console.error('[TotalMetaBudget] Error fetching total budget:', error)
+      // Don't show error toast as it's annoying for users
     } finally {
       setIsLoading(false)
     }
@@ -112,7 +121,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     }
   }, [brandId, fetchTotalBudget])
   
-  // Add event listener for budget updates from CampaignWidget
+  // Modify the event handling to prevent too many updates
   useEffect(() => {
     if (!brandId) return;
     
@@ -122,13 +131,21 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
       // Ensure the event is for this brand
       if (detail.brandId !== brandId) return;
       
-      console.log(`[TotalMetaBudget] Received budget update from ${detail.source}: ${detail.totalBudget}`);
+      // console.log(`[TotalMetaBudget] Received budget update from ${detail.source}: ${detail.totalBudget}`);
       
-      // Update the budget and ad set count
-      setTotalBudget(detail.totalBudget || 0);
-      
-      // Mark as no longer loading
-      setIsLoading(false);
+      // Only update if the budget has actually changed
+      if (Math.abs(totalBudget - (detail.totalBudget || 0)) > 0.01) {
+        // Update the budget
+        setTotalBudget(detail.totalBudget || 0);
+        
+        // Update ad set count if provided
+        if (detail.adSetCount !== undefined) {
+          setAdSetCount(detail.adSetCount);
+        }
+        
+        // Mark as no longer loading
+        setIsLoading(false);
+      }
     };
     
     // Add event listener for budget updates
@@ -138,7 +155,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
     return () => {
       window.removeEventListener('meta-total-budget-updated', handleBudgetUpdate as EventListener);
     };
-  }, [brandId]);
+  }, [brandId, totalBudget]);
   
   return (
     <MetricCard
