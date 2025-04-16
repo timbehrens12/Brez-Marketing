@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef, FC } from 'react'
 import { 
   BarChart, LineChart, PieChart, AreaChart, Gauge, ArrowUpRight, ArrowDownRight, 
   Calendar, Filter, MoreHorizontal, Download, ChevronDown, Settings, Table, RefreshCw,
@@ -187,7 +187,16 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
-export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateRange, onRefresh, onSync }: CampaignWidgetProps) {
+// Define the component as a React FC (Function Component) with JSX return
+const CampaignWidget: FC<CampaignWidgetProps> = ({ 
+  brandId, 
+  campaigns, 
+  isLoading, 
+  isSyncing, 
+  dateRange, 
+  onRefresh, 
+  onSync 
+}) => {
   type SortOrderType = 'asc' | 'desc';
   
   // Use states from the original widget
@@ -201,8 +210,9 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
   const [adSets, setAdSets] = useState<AdSet[]>([]);
   const [isLoadingAdSets, setIsLoadingAdSets] = useState(false);
   const [currentBudgets, setCurrentBudgets] = useState<Record<string, any>>({});
+  const [refreshing, setRefreshing] = useState(false);
   
-  // Need state to update component
+  // Need state to track campaign status changes
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
   
   // Add state to track loading status
@@ -1228,8 +1238,6 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     }
   };
   
-  const [refreshing, setRefreshing] = useState(false);
-
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
     if (!brandId || !isMountedRef.current) return;
@@ -1316,6 +1324,35 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
     };
   }, [brandId, handlePlatformRefresh, localCampaigns.length]);
 
+  // Add event listeners for date range changes
+  useEffect(() => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) return;
+    
+    // Save the date range values to local storage to persist
+    try {
+      localStorage.setItem('meta-date-range', JSON.stringify({
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString()
+      }));
+    } catch (e) {
+      console.error('Error saving date range:', e);
+    }
+    
+    // When date range changes, refresh all data
+    console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
+    
+    if (expandedCampaign) {
+      // Add a slight delay to prevent multiple fetches
+      const timeoutId = setTimeout(() => {
+        if (isMountedRef.current) {
+          fetchAdSets(expandedCampaign, true);
+        }
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
+
+  // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
       <CardHeader className="pb-3 border-b border-[#333]">
@@ -1894,4 +1931,7 @@ export function CampaignWidget({ brandId, campaigns, isLoading, isSyncing, dateR
       </CardContent>
     </Card>
   )
-}
+};
+
+// Export the component
+export { CampaignWidget };
