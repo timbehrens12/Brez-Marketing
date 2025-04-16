@@ -112,6 +112,8 @@ declare global {
     _metaFetchLock?: boolean;
     _lastManualRefresh?: number;
     _lastMetaRefresh?: number;
+    _metaApiRequests?: number;
+    _canMakeMetaApiRequest?: boolean;
   }
 }
 
@@ -4136,6 +4138,21 @@ Try creating at least one active campaign in Meta Ads Manager.
       window.removeEventListener('load', blockAutomaticDateChanges);
     };
   }, []);
+
+  // Add error handling to campaign status checking to suppress unnecessary errors
+  // Find the function that calls the campaign status check API and modify it:
+
+  // Add this function near the other helper functions
+  const handleCampaignStatusCheckError = (error: any) => {
+    // Don't show toast for common errors that aren't actionable
+    if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+      console.log('[MetaTab] Session expired or unauthorized, will retry after user interaction');
+      return; // Just silently ignore it for now
+    }
+    
+    // For all other errors, log but don't show toast
+    console.error('[MetaTab] Error checking campaign status:', error);
+  };
 
   return (
     <TooltipProvider>

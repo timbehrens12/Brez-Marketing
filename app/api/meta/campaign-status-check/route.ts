@@ -154,6 +154,9 @@ const campaignCache = new Map<string, {
   source: string;
 }>();
 
+// Add a mechanism to detect repeated failures and increase cooling period
+const failureCounters = new Map<string, { count: number, until: number }>();
+
 // Helper function to clean up old cache entries periodically
 function cleanupCacheEntries() {
   const now = Date.now();
@@ -174,9 +177,49 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
 
     if (!session?.user) {
+      // Check if we're getting too many failed requests
+      const ip = req.headers.get('x-forwarded-for') || 'unknown';
+      const failKey = `${ip}:auth-failure`;
+      
+      const failureRecord = failureCounters.get(failKey);
+      const now = Date.now();
+      
+      // If we have a record and it's still in cooling period, return early with a longer timeout
+      if (failureRecord && now < failureRecord.until) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Too many requests with expired session',
+            status: 'RATE_LIMITED',
+            source: 'repeated_auth_failure',
+            retryAfter: Math.ceil((failureRecord.until - now) / 1000),
+            message: 'Please refresh the page to continue'
+          },
+          { status: 200 }
+        );
+      }
+      
+      // Otherwise increment the failure counter and set a cooling period
+      const count = (failureRecord?.count || 0) + 1;
+      const cooldown = Math.min(30000 * Math.pow(2, count - 1), 3600000); // Exponential backoff, max 1 hour
+      
+      failureCounters.set(failKey, {
+        count,
+        until: now + cooldown
+      });
+      
+      console.log(`Auth failure #${count} from ${ip}, cooling period: ${cooldown}ms`);
+      
+      // Return a friendly response that won't create console errors
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { 
+          success: false, 
+          error: 'Session expired',
+          status: 'NOT_ACTIVE',
+          source: 'session_expired',
+          message: 'Please refresh the page to continue'
+        },
+        { status: 200 }
       );
     }
 
@@ -423,12 +466,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error in campaign status check:', error);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'An unexpected error occurred' 
+        error: error.message || 'An unexpected error occurred',
+        status: 'ERROR',
+        source: 'api_error'
       }, 
-      { status: 500 }
+      { status: 200 }
     );
   }
 } 

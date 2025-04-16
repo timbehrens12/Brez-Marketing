@@ -188,7 +188,7 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
 };
 
 // Define the component as a React FC (Function Component) with JSX return
-const CampaignWidget: FC<CampaignWidgetProps> = ({ 
+const CampaignWidget = ({ 
   brandId, 
   campaigns, 
   isLoading, 
@@ -196,7 +196,7 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
   dateRange, 
   onRefresh, 
   onSync 
-}) => {
+}: CampaignWidgetProps): JSX.Element => {
   type SortOrderType = 'asc' | 'desc';
   
   // Use states from the original widget
@@ -897,7 +897,7 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
   // Toggle campaign expand - UPDATED to check campaign status
-  const toggleCampaignExpand = async (campaignId: string) => {
+  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
     if (expandedCampaign === campaignId) {
       // Collapse if already expanded
       setExpandedCampaign(null);
@@ -960,7 +960,7 @@ const CampaignWidget: FC<CampaignWidgetProps> = ({
       // Fetch ad sets for this campaign
       fetchAdSets(campaignId);
     }
-  };
+  }, [brandId, expandedCampaign, fetchAdSets]);
   
   // Toggle sort order
   const toggleSortOrder = () => {
