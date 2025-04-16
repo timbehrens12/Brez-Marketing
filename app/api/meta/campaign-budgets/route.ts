@@ -1,11 +1,3 @@
-/**
- * Campaign Budgets API
- * 
- * This endpoint returns budget information for all campaigns belonging to a brand.
- * It aggregates budget data from both campaign settings and ad sets to provide
- * the most accurate total budget information for each campaign.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { createClient } from '@supabase/supabase-js'
@@ -37,7 +29,7 @@ export async function GET(request: NextRequest) {
     console.log(`[API] Fetching campaign budgets for brand ${brandId}, force refresh: ${forceRefresh}`)
     
     // Get real-time budget data from Meta API
-    const result = await fetchMetaCampaignBudgets(brandId, forceRefresh)
+    const result = await fetchMetaCampaignBudgets(brandId, true)
     
     if (!result.success) {
       console.error(`[API] Error fetching campaign budgets:`, result.error)
@@ -52,7 +44,7 @@ export async function GET(request: NextRequest) {
       message: 'Campaign budgets fetched successfully',
       budgets: result.budgets,
       timestamp: new Date().toISOString(),
-      refreshMethod: forceRefresh ? 'force-refresh' : 'standard'
+      refreshMethod: 'meta-api'
     })
     
   } catch (error) {

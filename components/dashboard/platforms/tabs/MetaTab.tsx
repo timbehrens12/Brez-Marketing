@@ -112,9 +112,6 @@ declare global {
     _metaFetchLock?: boolean;
     _lastManualRefresh?: number;
     _lastMetaRefresh?: number;
-    _metricsCache?: {
-      [brandId: string]: any;
-    };
   }
 }
 
@@ -4140,78 +4137,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, []);
 
-  // Add tracking for date transitions to prevent flickering
-  useEffect(() => {
-    // Log date range changes for debugging
-    if (dateRange?.from && dateRange?.to) {
-      console.log(`[MetaTab] Date range changed to: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
-      
-      // When date range changes, temporarily show loading state
-      setIsLoadingCampaigns(true);
-      
-      // Dispatch an event to notify all components about the date change
-      window.dispatchEvent(new CustomEvent('date-range-change', {
-        detail: {
-          type: 'dateRangeChange',
-          from: dateRange.from,
-          to: dateRange.to,
-          brandId
-        }
-      }));
-      
-      // Create a timeout to ensure we exit loading state even if something goes wrong
-      const timeoutId = setTimeout(() => {
-        setIsLoadingCampaigns(false);
-      }, 15000); // Maximum 15 seconds in loading state
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [dateRange, brandId]);
-
-  // Add a useEffect to cache widget values during date transitions
-  useEffect(() => {
-    const saveCachedMetrics = () => {
-      // Only save metrics if they exist and are not zero
-      if (metrics && typeof window !== 'undefined') {
-        // Store current metrics in a global cache
-        window._metricsCache = window._metricsCache || {};
-        window._metricsCache[brandId] = metrics;
-        
-        console.log('[MetaTab] Saved current metrics to cache');
-      }
-    };
-    
-    // When date range changes, save current metrics to cache
-    const handleDateRangeChange = () => {
-      saveCachedMetrics();
-    };
-    
-    // When component mounts, add event listener for date range changes
-    window.addEventListener('date-range-change', handleDateRangeChange);
-    
-    return () => {
-      window.removeEventListener('date-range-change', handleDateRangeChange);
-    };
-  }, [metrics, brandId]);
-
-  // Add a check to prevent null/empty metrics from being displayed
-  // Calculate effective metrics - use cached metrics during loading
-  const effectiveMetrics = useMemo(() => {
-    if (metrics && Object.keys(metrics).length > 0) {
-      // If we have metrics, use them
-      if (typeof window !== 'undefined') {
-        window._metricsCache = window._metricsCache || {};
-        window._metricsCache[brandId] = metrics;
-      }
-      return metrics;
-    } else if (typeof window !== 'undefined' && window._metricsCache && window._metricsCache[brandId]) {
-      // If we don't have metrics but have cached metrics, use those during loading
-      console.log('[MetaTab] Using cached metrics during loading');
-      return window._metricsCache[brandId];
-    }
-    return metrics; // Fall back to current metrics (might be empty)
-  }, [metrics, brandId]);
-
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4542,11 +4467,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
-          <TotalBudgetMetricCard 
-            key={`total-budget-stable`}
-            brandId={brandId || ''} 
-            isManuallyRefreshing={isManuallyRefreshing || isLoading} 
-          />
+          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
         </div>
       </div>
       
@@ -4557,7 +4478,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
             brandId={brandId || ''}
             campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-            isLoading={isLoadingCampaigns || isRefreshingData || isLoading}
+            isLoading={isLoadingCampaigns}
             isSyncing={isSyncing}
             dateRange={dateRange}
             onRefresh={() => {

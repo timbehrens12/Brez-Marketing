@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef, FC } from 'react'
 import { 
   BarChart, LineChart, PieChart, AreaChart, Gauge, ArrowUpRight, ArrowDownRight, 
   Calendar, Filter, MoreHorizontal, Download, ChevronDown, Settings, Table, RefreshCw,
@@ -187,37 +187,8 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
-// Add global type declaration at the top level
-declare global {
-  interface Window {
-    _lastReportedBudget?: number;
-    _lastEventTimestamp?: number;
-    _metaTimeouts?: ReturnType<typeof setTimeout>[];
-    _blockMetaApiCalls?: boolean;
-    _disableAutoMetaFetch?: boolean;
-    _activeFetchIds?: Set<number | string>;
-    _metaFetchLock?: boolean;
-    _lastManualRefresh?: number;
-    _lastMetaRefresh?: number;
-    _initialCampaignsLoaded?: boolean;
-    _previousDateRange?: string;
-    _previousCampaignData?: any[];
-  }
-}
-
-// Add a function to handle date transitions with previous data preservation
-const usePreviousValue = <T,>(value: T): T | undefined => {
-  const ref = useRef<T>();
-  
-  useEffect(() => {
-    ref.current = value;
-  }, [value]);
-  
-  return ref.current;
-};
-
-// Define the component using normal function declaration
-function CampaignWidget({ 
+// Define the component as a React FC (Function Component) with JSX return
+const CampaignWidget: FC<CampaignWidgetProps> = ({ 
   brandId, 
   campaigns, 
   isLoading, 
@@ -225,7 +196,7 @@ function CampaignWidget({
   dateRange, 
   onRefresh, 
   onSync 
-}: CampaignWidgetProps) {
+}) => {
   type SortOrderType = 'asc' | 'desc';
   
   // Use states from the original widget
@@ -285,7 +256,7 @@ function CampaignWidget({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the fetchAdSets function
+  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
@@ -298,14 +269,8 @@ function CampaignWidget({
       }
     });
     
-    // Keep loading state active (we already set this when the campaign was expanded)
-    // Don't clear existing ad sets immediately to avoid UI flicker
-    // Only clear adSets if this is a forced refresh
-    if (forceRefresh) {
-      setAdSets([]);
-    }
-    
-    // Ensure we're in loading state
+    // Clear any existing ad sets to show fresh loading state
+    setAdSets([]);
     setIsLoadingAdSets(true);
     
     const controller = createAbortController();
@@ -374,6 +339,7 @@ function CampaignWidget({
         if (isMountedRef.current) {
           // Ensure we have a valid array of ad sets
           const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+          setAdSets(validAdSets);
           
           // Add this campaign to the tracking set if ad sets were found
           if (validAdSets.length > 0) {
@@ -382,16 +348,10 @@ function CampaignWidget({
               newSet.add(campaignId);
               return newSet;
             });
-            
-            // Update ad sets with a slight delay to allow for animations
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                setAdSets(validAdSets);
-                setIsLoadingAdSets(false);
-              }
-            }, 300);
-            
-            // Toast notification that ad sets were loaded
+          }
+          
+          // Toast notification that ad sets were loaded
+          if (validAdSets.length > 0) {
             toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
           } else {
             // Check if this was because of a rate limit
@@ -404,14 +364,6 @@ function CampaignWidget({
               toast.info("No ad sets found for this campaign");
               console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
             }
-            
-            // Still need to update the UI state after a delay
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                setAdSets([]);
-                setIsLoadingAdSets(false);
-              }
-            }, 300);
           }
           
           // Dispatch events for budgets to update regardless of ad set count
@@ -447,28 +399,14 @@ function CampaignWidget({
               description: data.message || 'Please try again in a few minutes',
               duration: 8000
             });
-            
-            // Still need to update the UI state after a delay
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                setAdSets([]);
-                setIsLoadingAdSets(false);
-              }
-            }, 300);
+            setAdSets([]);
           }
         } else {
           console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
           
           if (isMountedRef.current) {
             toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
-            
-            // Still need to update the UI state after a delay
-            setTimeout(() => {
-              if (isMountedRef.current) {
-                setAdSets([]);
-                setIsLoadingAdSets(false);
-              }
-            }, 300);
+            setAdSets([]);
           }
         }
       }
@@ -482,21 +420,18 @@ function CampaignWidget({
       
       if (isMountedRef.current) {
         toast.error(`Error loading ad sets: ${(error as Error).message}`);
-        
-        // Still need to update the UI state after a delay
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            setAdSets([]);
-            setIsLoadingAdSets(false);
-          }
-        }, 300);
+        setAdSets([]);
       }
     } finally {
+      if (isMountedRef.current) {
+        // Add a slight delay to avoid flickering
+        setTimeout(() => {
+          setIsLoadingAdSets(false);
+        }, 300);
+      }
+      
       // Clean up abort controller
       removeAbortController(controller);
-      
-      // Don't set loading state to false here
-      // We'll do it after a delay in the appropriate places above
     }
   }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
   
@@ -984,12 +919,6 @@ function CampaignWidget({
       
       console.log(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
-      // Set loading state immediately when expanding
-      setIsLoadingAdSets(true);
-      
-      // Set as expanded first so UI updates immediately 
-      setExpandedCampaign(campaignId);
-      
       // First, check the status to ensure it's current
       try {
         const response = await fetch('/api/meta/campaign-status-check', {
@@ -1026,6 +955,8 @@ function CampaignWidget({
         // Continue with expansion even if status check fails
       }
       
+      // Set as expanded
+      setExpandedCampaign(campaignId);
       // Fetch ad sets for this campaign
       fetchAdSets(campaignId);
     }
@@ -1156,7 +1087,7 @@ function CampaignWidget({
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
     // If we have ad sets for this campaign, use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
@@ -1165,7 +1096,7 @@ function CampaignWidget({
       };
     }
     
-    // If campaign has adset_budget_total from background fetch, use that
+    // If campaign has adset_budget_total, use that
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
       return {
         budget: campaign.adset_budget_total,
@@ -1176,9 +1107,7 @@ function CampaignWidget({
     }
     
     // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.campaign_id];
-    
-    // Make sure to extract valid budget values
+    const currentBudgetData = currentBudgets[campaign.id];
     const budget = currentBudgetData?.budget || campaign.budget || 0;
     const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
     const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
@@ -1423,195 +1352,6 @@ function CampaignWidget({
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 
-  // Add a global event dispatch for updating the Meta budget widget
-
-  // Modify the fetchAllCampaignBudgets function to dispatch additional events for the total budget widget
-  const fetchAllCampaignBudgets = useCallback(async () => {
-    if (!brandId || !isMountedRef.current) return;
-
-    // Don't log every time to reduce console spam
-    // console.log(`[CampaignWidget] Fetching budget data for all campaigns`);
-    
-    try {
-      // Call the campaign-budgets endpoint which should fetch all budget data
-      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}`);
-      
-      if (!response.ok) {
-        // Log the error response text for debugging
-        const errorText = await response.text();
-        console.error(`[CampaignWidget] Campaign budgets API error: ${response.status}`, errorText);
-        return null;
-      }
-      
-      const data = await response.json();
-      
-      if (!data.budgets) {
-        console.error(`[CampaignWidget] Campaign budgets API returned no budgets data:`, data);
-        return null;
-      }
-      
-      // Create a map of campaign_id to budget data
-      const budgetMap: Record<string, any> = {};
-      
-      // Calculate total budget for the global widget
-      let totalBudget = 0;
-      let activeCampaignCount = 0;
-      
-      data.budgets.forEach((budget: any) => {
-        if (budget.campaign_id) {
-          budgetMap[budget.campaign_id] = {
-            budget: budget.budget,
-            budget_type: budget.budget_type,
-            formatted_budget: budget.formatted_budget || formatBudget(budget.budget, budget.budget_type),
-            budget_source: budget.budget_source || 'api'
-          };
-          
-          // Only add to total if campaign is active and has budget
-          const campaign = localCampaigns.find(c => c.campaign_id === budget.campaign_id);
-          if (campaign && campaign.status?.toUpperCase() === 'ACTIVE' && budget.budget) {
-            totalBudget += budget.budget;
-            activeCampaignCount++;
-          }
-        }
-      });
-      
-      if (isMountedRef.current) {
-        setCurrentBudgets(budgetMap);
-        // console.log(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
-        
-        // Only dispatch global events if the budget has changed to prevent excessive updates
-        const prevBudget = window._lastReportedBudget || 0;
-        const shouldDispatchEvents = 
-          Math.abs(prevBudget - totalBudget) > 0.01 || 
-          !window._lastEventTimestamp || 
-          (Date.now() - (window._lastEventTimestamp || 0) > 30000); // Only send updates max every 30 seconds
-          
-        if (shouldDispatchEvents) {
-          // Update global variables to track last event
-          window._lastReportedBudget = totalBudget;
-          window._lastEventTimestamp = Date.now();
-          
-          // Dispatch an event to notify other components about the budget update
-          window.dispatchEvent(new CustomEvent('campaign-budgets-updated', {
-            detail: {
-              brandId,
-              budgets: budgetMap,
-              timestamp: new Date().toISOString()
-            }
-          }));
-          
-          // Dispatch a global event for the Meta budget widget to update
-          // console.log(`[CampaignWidget] Dispatching meta-total-budget-updated event with total: ${totalBudget}`);
-          window.dispatchEvent(new CustomEvent('meta-total-budget-updated', {
-            detail: {
-              brandId,
-              totalBudget: totalBudget,
-              formattedBudget: formatCurrency(totalBudget),
-              adSetCount: activeCampaignCount,
-              timestamp: new Date().toISOString(),
-              source: 'campaign-widget'
-            }
-          }));
-        }
-      }
-      
-      return budgetMap;
-    } catch (error) {
-      console.error("[CampaignWidget] Error fetching campaign budgets:", error);
-      return null;
-    }
-  }, [brandId, isMountedRef, localCampaigns]);
-
-  // Update the existing effect to add debouncing
-  useEffect(() => {
-    if (brandId && !isLoading) {
-      // Delay initial budget fetch to allow component to fully mount
-      const initialBudgetTimeout = setTimeout(() => {
-        if (isMountedRef.current) {
-          fetchAllCampaignBudgets();
-        }
-      }, 1000); // Longer delay for initial load
-      
-      return () => clearTimeout(initialBudgetTimeout);
-    }
-  }, [brandId, isLoading, fetchAllCampaignBudgets, isMountedRef]);
-
-  // Modify campaign effect to prevent excessive refreshes
-  useEffect(() => {
-    if (campaigns.length > 0 && brandId) {
-      // Always update local campaigns when we get new data
-      setLocalCampaigns(campaigns);
-      
-      // Only add status check on initial load, not on every campaign update
-      if (!window._initialCampaignsLoaded) {
-        window._initialCampaignsLoaded = true;
-        
-        // Delay status checks to prevent UI jank during initial render
-        setTimeout(() => {
-          if (isMountedRef.current) {
-            // Only check first 3 campaigns to reduce API load
-            const limitedCampaigns = campaigns.slice(0, 3);
-            checkCampaignStatuses(limitedCampaigns, false);
-          }
-        }, 2000);
-      }
-    }
-  }, [campaigns, brandId, checkCampaignStatuses, isMountedRef]);
-
-  // Add a function to detect significant date changes (more than just hours/minutes)
-  const isSignificantDateChange = (prev: DateRange | undefined, current: DateRange | undefined): boolean => {
-    if (!prev || !prev.from || !prev.to || !current || !current.from || !current.to) return true;
-    
-    // Check if dates are different by more than a day (major change)
-    const prevFromDay = prev.from.getDate();
-    const prevToDay = prev.to.getDate();
-    const currentFromDay = current.from.getDate();
-    const currentToDay = current.to.getDate();
-    
-    const prevFromMonth = prev.from.getMonth();
-    const prevToMonth = prev.to.getMonth();
-    const currentFromMonth = current.from.getMonth();
-    const currentToMonth = current.to.getMonth();
-    
-    return (
-      prevFromDay !== currentFromDay ||
-      prevToDay !== currentToDay ||
-      prevFromMonth !== currentFromMonth ||
-      prevToMonth !== currentToMonth
-    );
-  };
-
-  // In the component: add code to handle date changes better
-
-  // Add state to track date transitions
-  const [isDateTransitioning, setIsDateTransitioning] = useState(false);
-  const previousDateRange = usePreviousValue(dateRange);
-
-  // Add effect to handle date changes without flickering
-  useEffect(() => {
-    if (!dateRange) return;
-    
-    // Create a consistent string representation of date range for comparison
-    const dateRangeString = `${dateRange.from?.toISOString()}-${dateRange.to?.toISOString()}`;
-    const prevDateRangeString = `${previousDateRange?.from?.toISOString()}-${previousDateRange?.to?.toISOString()}`;
-    
-    // Only trigger transition state if this is a significant date change
-    if (dateRangeString !== prevDateRangeString && isSignificantDateChange(previousDateRange, dateRange)) {
-      // Save current data
-      window._previousCampaignData = [...localCampaigns];
-      
-      // Enter transition state to prevent flickering
-      setIsDateTransitioning(true);
-      
-      // Add a timeout to exit transition state if data doesn't load
-      const timeoutId = setTimeout(() => {
-        setIsDateTransitioning(false);
-      }, 10000); // Maximum 10 seconds in transition state
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [dateRange, previousDateRange, localCampaigns]);
-
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
@@ -1636,18 +1376,6 @@ function CampaignWidget({
           </div>
           
           <div className="flex items-center gap-2 ml-auto">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => {
-                fetchAllCampaignBudgets();
-                toast.success("Refreshing budget data...");
-              }}
-              className="h-8 text-xs text-white border-[#333] hover:bg-black/20"
-            >
-              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-              Refresh Budgets
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 text-xs text-white border-[#333] hover:bg-black/20">
@@ -1938,7 +1666,6 @@ function CampaignWidget({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setAdSets([]); // Clear current ad sets to show loading
-                                      setIsLoadingAdSets(true);
                                       fetchAdSets(campaign.campaign_id);
                                     }}
                                     disabled={isLoadingAdSets}
@@ -1966,10 +1693,10 @@ function CampaignWidget({
                                       {adSets.length} Ad Sets
                                     </Badge>
                                     <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
-                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0))}
+                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.budget, 0))}
                                     </Badge>
                                     <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
-                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + (adSet.spent || 0), 0))}
+                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.spent, 0))}
                                     </Badge>
                                   </div>
                                   
@@ -2180,12 +1907,12 @@ function CampaignWidget({
                                     size="sm" 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setIsLoadingAdSets(true);
+                                      setAdSets([]); // Clear current ad sets to show loading
                                       fetchAdSets(campaign.campaign_id);
                                     }}
                                     className="text-white border-[#333] hover:bg-black/20"
                                   >
-                                    <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                                    <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
                                     Refresh Ad Sets
                                   </Button>
                                 </div>
@@ -2204,7 +1931,7 @@ function CampaignWidget({
       </CardContent>
     </Card>
   )
-}
+};
 
-// Export the component with a named export
+// Export the component
 export { CampaignWidget };
