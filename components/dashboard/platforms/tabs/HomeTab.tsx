@@ -76,9 +76,6 @@ export function HomeTab({
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       options: {
-        auth: {
-          persistSession: true
-        },
         global: {
           headers: {
             'Cache-Control': 'no-cache'
@@ -142,7 +139,16 @@ export function HomeTab({
         .eq('period', period)
         .single()
       
-      if (!serverReportError && serverReport) {
+      // Check for errors *other than* the expected "no rows" error
+      if (serverReportError && serverReportError.code !== 'PGRST116') { 
+        console.error("Error fetching server report:", serverReportError)
+        // Display a generic error, the 406 might be logged above
+        toast.error("Failed to load report data. Please try refreshing.")
+        // Set report content to indicate failure
+        setReportContent("Error loading report. Please try again.") 
+      }
+      
+      if (serverReport) {
         console.log(`Found server-generated ${period} report for brand ${brandId}`)
         
         // Set the report content and date range from the server
