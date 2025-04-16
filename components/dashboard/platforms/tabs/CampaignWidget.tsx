@@ -953,13 +953,13 @@ const CampaignWidget = ({
     } else {
       // Validate campaignId before making API call
       if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-        console.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+        logger.debug('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
         toast.error("Cannot expand campaign - invalid campaign ID");
         return;
       }
       
       if (!brandId) {
-        console.error('[CampaignWidget] Missing brand ID for status check');
+        logger.debug('[CampaignWidget] Missing brand ID for status check');
         toast.error("Cannot expand campaign - missing brand ID");
         return;
       }
@@ -994,11 +994,11 @@ const CampaignWidget = ({
             );
           }
         } else {
-          console.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
+          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
           // Continue with expansion even if status check fails
         }
       } catch (error) {
-        console.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
+        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
         // Continue with expansion even if status check fails
       }
       
@@ -1007,10 +1007,15 @@ const CampaignWidget = ({
       // Fetch ad sets for this campaign
       fetchAdSets(campaignId);
       
-      // Also refresh campaign budgets to ensure all data is current
-      autoRefreshCampaignBudgets();
+      // Also trigger a budget refresh (handled separately to avoid circular dependency)
+      setTimeout(() => {
+        // Using setTimeout to break dependency cycle
+        window.dispatchEvent(new CustomEvent('refresh-meta-budgets', {
+          detail: { brandId }
+        }));
+      }, 100);
     }
-  }, [brandId, expandedCampaign, fetchAdSets, autoRefreshCampaignBudgets]);
+  }, [brandId, expandedCampaign, fetchAdSets]);
   
   // Toggle sort order
   const toggleSortOrder = () => {
