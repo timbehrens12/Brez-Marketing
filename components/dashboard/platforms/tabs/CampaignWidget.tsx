@@ -287,9 +287,15 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
+  // Modify the fetchAdSets function to ensure loading state is properly maintained
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
+    
+    // If we're already in a loading state, we don't need to clear the ad sets again
+    // This prevents flickering when expanding and ensures continuity from the placeholder
+    if (!isLoadingAdSets) {
+      setIsLoadingAdSets(true);
+    }
     
     // Cancel any existing ad set fetch
     pendingRequestsRef.current.forEach(controller => {
@@ -300,12 +306,32 @@ const CampaignWidget = ({
       }
     });
     
-    // Clear any existing ad sets to show fresh loading state
-    setAdSets([]);
-    setIsLoadingAdSets(true);
+    // Only clear existing ad sets if they're not already placeholders
+    if (adSets.length === 0 || (adSets.length === 1 && adSets[0].adset_id !== 'loading')) {
+      setAdSets([{ 
+        id: 0,
+        brand_id: brandId,
+        adset_id: 'loading',
+        adset_name: 'Loading ad sets...',
+        campaign_id: campaignId,
+        status: 'Loading',
+        budget: 0,
+        budget_type: '',
+        spent: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        ctr: 0,
+        cpc: 0,
+        cost_per_conversion: 0,
+        optimization_goal: null,
+        updated_at: new Date().toISOString(),
+        daily_insights: []
+      }]);
+    }
     
     const controller = createAbortController();
-    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
+    logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
     
     // Try the regular endpoint first
     let usedDirectFetch = false;
@@ -321,13 +347,17 @@ const CampaignWidget = ({
         url += `&from=${fromDate}&to=${toDate}`;
       }
       
-      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      logger.debug(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      
+      // Add a minimum loading time to allow visual feedback
+      const fetchStartTime = Date.now();
+      const minLoadingTime = 800; // minimum 800ms of loading to prevent flicker
       
       let response = await fetch(url, { signal: controller.signal });
       
       // If the regular endpoint fails, try the direct-fetch endpoint
       if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
+        logger.debug(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
         usedDirectFetch = true;
         
         response = await fetch(`/api/meta/adsets/direct-fetch`, {
@@ -347,30 +377,35 @@ const CampaignWidget = ({
       
       // Log the raw response for debugging
       const responseText = await response.text();
-      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
+      logger.debug(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
       
       // Parse the response as JSON (safely)
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
+        logger.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
         throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
+      }
+      
+      // Ensure minimum loading time for visual feedback
+      const elapsedTime = Date.now() - fetchStartTime;
+      if (elapsedTime < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
       }
       
       if (response.ok) {
         // Check if this is a rate limit response with cached data
         if (data.source === 'cached_due_to_rate_limit') {
           usedCachedData = true;
-          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
+          logger.debug(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
         }
         
-        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
+        logger.debug(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
         
         if (isMountedRef.current) {
           // Ensure we have a valid array of ad sets
           const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-          setAdSets(validAdSets);
           
           // Add this campaign to the tracking set if ad sets were found
           if (validAdSets.length > 0) {
@@ -379,6 +414,12 @@ const CampaignWidget = ({
               newSet.add(campaignId);
               return newSet;
             });
+            
+            // Set the ad sets data with a slight delay to ensure smooth transition
+            setAdSets(validAdSets);
+          } else {
+            // If no ad sets were found, clear loading placeholder
+            setAdSets([]);
           }
           
           // Toast notification that ad sets were loaded
@@ -393,12 +434,12 @@ const CampaignWidget = ({
               });
             } else {
               toast.info("No ad sets found for this campaign");
-              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+              logger.debug(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
             }
           }
           
           // Dispatch events for budgets to update regardless of ad set count
-          console.log('[CampaignWidget] Dispatching status changed events');
+          logger.debug('[CampaignWidget] Dispatching status changed events');
           window.dispatchEvent(
             new CustomEvent('adSetStatusChanged', {
               detail: {
@@ -423,7 +464,7 @@ const CampaignWidget = ({
       } else {
         // Check if this is a rate limit error response
         if (data.warning === 'Meta API rate limit reached') {
-          console.log(`[CampaignWidget] Meta API rate limit reached`);
+          logger.debug(`[CampaignWidget] Meta API rate limit reached`);
           
           if (isMountedRef.current) {
             toast.warning(`Meta API rate limit reached`, {
@@ -433,7 +474,7 @@ const CampaignWidget = ({
             setAdSets([]);
           }
         } else {
-          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
+          logger.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
           
           if (isMountedRef.current) {
             toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
@@ -443,11 +484,11 @@ const CampaignWidget = ({
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
+        logger.debug("[CampaignWidget] Ad set fetch aborted");
         return;
       }
       
-      console.error("[CampaignWidget] Error fetching ad sets:", error);
+      logger.error("[CampaignWidget] Error fetching ad sets:", error);
       
       if (isMountedRef.current) {
         toast.error(`Error loading ad sets: ${(error as Error).message}`);
@@ -464,7 +505,7 @@ const CampaignWidget = ({
       // Clean up abort controller
       removeAbortController(controller);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef, isLoadingAdSets, adSets]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -943,7 +984,7 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Toggle campaign expand - UPDATED to check campaign status
+  // Modify the toggleCampaignExpand function to show loading state immediately
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
     if (expandedCampaign === campaignId) {
       // Collapse if already expanded
@@ -963,8 +1004,36 @@ const CampaignWidget = ({
         toast.error("Cannot expand campaign - missing brand ID");
         return;
       }
+
+      // Show loading state immediately
+      setIsLoadingAdSets(true);
       
-      console.log(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      // Set as expanded immediately to show UI change
+      setExpandedCampaign(campaignId);
+      
+      // Create a placeholder loading ad set
+      setAdSets([{ 
+        id: 0,
+        brand_id: brandId,
+        adset_id: 'loading',
+        adset_name: 'Loading ad sets...',
+        campaign_id: campaignId,
+        status: 'Loading',
+        budget: 0,
+        budget_type: '',
+        spent: 0,
+        impressions: 0,
+        clicks: 0,
+        conversions: 0,
+        ctr: 0,
+        cpc: 0,
+        cost_per_conversion: 0,
+        optimization_goal: null,
+        updated_at: new Date().toISOString(),
+        daily_insights: []
+      }]);
+      
+      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
       // First, check the status to ensure it's current
       try {
@@ -1002,8 +1071,6 @@ const CampaignWidget = ({
         // Continue with expansion even if status check fails
       }
       
-      // Set as expanded
-      setExpandedCampaign(campaignId);
       // Fetch ad sets for this campaign
       fetchAdSets(campaignId);
     }
@@ -1803,6 +1870,7 @@ const CampaignWidget = ({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setAdSets([]); // Clear current ad sets to show loading
+                                      setIsLoadingAdSets(true); // Explicitly set loading state
                                       fetchAdSets(campaign.campaign_id);
                                     }}
                                     disabled={isLoadingAdSets}
@@ -1812,16 +1880,24 @@ const CampaignWidget = ({
                                     ) : (
                                       <RefreshCw className="h-3.5 w-3.5 mr-1" />
                                     )}
-                                    Refresh Ad Sets
+                                    {isLoadingAdSets ? "Loading..." : "Refresh Ad Sets"}
                                   </Button>
                                 </div>
                               </div>
                               
                               {isLoadingAdSets ? (
                                 <div className="flex flex-col items-center justify-center py-6 text-center">
-                                  <RefreshCw className="h-8 w-8 animate-spin text-white mb-3" />
+                                  <div className="relative">
+                                    <RefreshCw className="h-8 w-8 animate-spin text-white mb-3" />
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#111] rounded-full w-4 h-4 flex items-center justify-center">
+                                      <span className="text-xs text-white">•</span>
+                                    </div>
+                                  </div>
                                   <h3 className="text-md font-medium mb-1 text-white">Loading Ad Sets</h3>
-                                  <p className="text-sm text-gray-400">Please wait while we fetch the latest ad set data...</p>
+                                  <p className="text-sm text-gray-400">Fetching latest ad set data from Meta...</p>
+                                  <div className="w-64 mt-4">
+                                    <Progress value={45} className="h-1 bg-gray-800" />
+                                  </div>
                                 </div>
                               ) : adSets.length > 0 ? (
                                 <div className="space-y-4">
