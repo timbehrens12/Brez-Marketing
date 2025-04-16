@@ -55,6 +55,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
 import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
+import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -4187,10 +4188,11 @@ Try creating at least one active campaign in Meta Ads Manager.
         <div className="flex items-center mb-4">
           <LineChart className="h-5 w-5 text-gray-400 mr-2" />
           <h2 className="text-lg font-semibold">Meta Data Overview - All Ads Combined</h2>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center">
             <Badge variant="outline" className="bg-gray-900/30 text-gray-400 border-gray-800 px-2">
               Aggregated Metrics
             </Badge>
+            <MetaFixButton brandId={brandId} />
           </div>
         </div>
         

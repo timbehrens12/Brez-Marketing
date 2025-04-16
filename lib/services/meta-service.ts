@@ -55,6 +55,65 @@ async function fetchWithRetry(url: string, options = {}, maxRetries = 3, initial
   throw new Error(`Failed after ${maxRetries} retries`);
 }
 
+// Helper function to ensure ad_account_id is in the metadata
+async function ensureAdAccountId(connection: any, brandId: string, supabase: any) {
+  // If connection already has ad_account_id, we're good
+  if (connection.metadata && connection.metadata.ad_account_id) {
+    return connection.metadata.ad_account_id;
+  }
+  
+  console.log(`[Meta] No ad_account_id found in metadata for brand ${brandId}, attempting to fetch it`);
+  
+  try {
+    // Fetch ad accounts from Meta
+    const accountsData = await fetchWithRetry(
+      `https://graph.facebook.com/v18.0/me/adaccounts?fields=name,account_id&access_token=${connection.access_token}`
+    );
+    
+    if (accountsData.error) {
+      console.error(`[Meta] Error fetching ad accounts:`, accountsData.error);
+      return null;
+    }
+    
+    if (!accountsData.data || accountsData.data.length === 0) {
+      console.log(`[Meta] No ad accounts found for brand ${brandId}`);
+      return null;
+    }
+    
+    // Use the first ad account
+    const firstAccount = accountsData.data[0];
+    const accountId = firstAccount.account_id || firstAccount.id.replace('act_', '');
+    const adAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+    
+    console.log(`[Meta] Found ad account id: ${adAccountId}, updating connection metadata`);
+    
+    // Update the connection with the ad_account_id
+    const updatedMetadata = {
+      ...(connection.metadata || {}),
+      ad_account_id: adAccountId
+    };
+    
+    // Update the platform_connections table
+    const { error: updateError } = await supabase
+      .from('platform_connections')
+      .update({ metadata: updatedMetadata })
+      .eq('id', connection.id);
+    
+    if (updateError) {
+      console.error(`[Meta] Error updating connection metadata:`, updateError);
+    } else {
+      console.log(`[Meta] Updated connection ${connection.id} with ad_account_id: ${adAccountId}`);
+      // Update the local connection object as well
+      connection.metadata = updatedMetadata;
+    }
+    
+    return adAccountId;
+  } catch (error) {
+    console.error(`[Meta] Error ensuring ad_account_id:`, error);
+    return null;
+  }
+}
+
 export async function fetchMetaAdInsights(
   brandId: string, 
   startDate: Date, 
@@ -85,6 +144,9 @@ export async function fetchMetaAdInsights(
         error: 'No active Meta connection found' 
       }
     }
+
+    // Ensure we have an ad account ID in the metadata
+    await ensureAdAccountId(connection, brandId, supabase);
 
     // Fetch ad accounts with retry mechanism
     const accountsData = await fetchWithRetry(

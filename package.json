@@ -11,7 +11,8 @@
     "create-region-table": "ts-node scripts/create-sales-by-region-table.ts",
     "backfill-regions-from-orders": "ts-node scripts/backfill-regions-from-orders.ts",
     "migrate": "node migrations/apply_migrations.js",
-    "migrate:meta-sync": "node migrations/apply_migrations.js meta_sync_history.sql"
+    "migrate:meta-sync": "node migrations/apply_migrations.js meta_sync_history.sql",
+    "update-meta-connections": "node scripts/update_meta_connections.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.9",
