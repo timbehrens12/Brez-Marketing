@@ -943,7 +943,7 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Toggle campaign expand - UPDATED to check campaign status
+  // Fix toggleCampaignExpand implementation
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
     if (expandedCampaign === campaignId) {
       // Collapse if already expanded
@@ -953,18 +953,18 @@ const CampaignWidget = ({
     } else {
       // Validate campaignId before making API call
       if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-        console.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+        logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
         toast.error("Cannot expand campaign - invalid campaign ID");
         return;
       }
       
       if (!brandId) {
-        console.error('[CampaignWidget] Missing brand ID for status check');
+        logger.error('[CampaignWidget] Missing brand ID for status check');
         toast.error("Cannot expand campaign - missing brand ID");
         return;
       }
       
-      console.log(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
       // First, check the status to ensure it's current
       try {
@@ -994,11 +994,11 @@ const CampaignWidget = ({
             );
           }
         } else {
-          console.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
+          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
           // Continue with expansion even if status check fails
         }
       } catch (error) {
-        console.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
+        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
         // Continue with expansion even if status check fails
       }
       
@@ -1009,32 +1009,32 @@ const CampaignWidget = ({
     }
   }, [brandId, expandedCampaign, fetchAdSets]);
   
-  // Toggle sort order
-  const toggleSortOrder = () => {
+  // Toggle sort order function
+  const toggleSortOrder = useCallback(() => {
     setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-  };
+  }, [sortOrder]);
   
   // Handle sort click for status
-  const handleStatusSortClick = () => {
+  const handleStatusSortClick = useCallback(() => {
     setSortBy('status');
     toggleSortOrder();
-  };
+  }, [setSortBy, toggleSortOrder]);
   
   // Handle sort click for metrics
-  const handleMetricSortClick = (metricId: string) => {
+  const handleMetricSortClick = useCallback((metricId: string) => {
     setSortBy(metricId);
     toggleSortOrder();
-  };
+  }, [setSortBy, toggleSortOrder]);
   
   // Handle column header click
-  const handleColumnHeaderClick = (metricId: string) => {
+  const handleColumnHeaderClick = useCallback((metricId: string) => {
     if (sortBy === metricId) {
       toggleSortOrder();
     } else {
       setSortBy(metricId);
       setSortOrder('desc');
     }
-  };
+  }, [sortBy, setSortBy, setSortOrder, toggleSortOrder]);
   
   // Create memoized dateRangeKey to detect changes in date range
   const dateRangeKey = useMemo(() => {
@@ -1108,27 +1108,34 @@ const CampaignWidget = ({
   }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
   
   // Toggle metric visibility
-  const toggleMetric = (metricId: string) => {
-    if (visibleMetrics.includes(metricId)) {
-      setVisibleMetrics(visibleMetrics.filter(id => id !== metricId));
-    } else {
-      setVisibleMetrics([...visibleMetrics, metricId]);
-    }
-  };
+  const toggleMetric = useCallback((metricId: string) => {
+    setVisibleMetrics(prev => {
+      if (prev.includes(metricId)) {
+        return prev.filter(id => id !== metricId);
+      } else {
+        return [...prev, metricId];
+      }
+    });
+  }, []);
   
-  // Format values based on type
-  const formatValue = (value: number, format: string) => {
+  // Format values based on type with protection for invalid values
+  const formatValue = useCallback((value: number | null | undefined, format: string) => {
+    // Handle null/undefined/NaN values
+    if (value === null || value === undefined || isNaN(value)) {
+      return format === 'currency' ? '$0.00' : format === 'percentage' ? '0%' : '0';
+    }
+    
     switch (format) {
       case 'currency':
         return formatCurrency(value);
       case 'percentage':
         return formatPercentage(value);
       case 'roas':
-        return `${value.toFixed(2)}x`;
+        return value <= 0 ? '0.00x' : `${value.toFixed(2)}x`;
       default:
         return formatNumber(value);
     }
-  };
+  }, []);
   
   // Calculate campaign budget from ad sets - EXACT COPY from original widget
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
@@ -1399,6 +1406,53 @@ const CampaignWidget = ({
     }
   }, [dateRange, brandId, expandedCampaign, fetchAdSets]);
 
+  // Add this function to update campaign statuses regularly
+  useEffect(() => {
+    if (!campaigns.length || !brandId) return;
+    
+    // Check statuses on initial load
+    checkCampaignStatuses(campaigns);
+    
+    // Check for recent status updates every 1-2 minutes to keep them fresh
+    const intervalId = setInterval(() => {
+      // Don't refresh if the user has manually refreshed recently
+      if (refreshing) {
+        logger.debug("[CampaignWidget] Skipping auto refresh because manual refresh is in progress");
+        return;
+      }
+      
+      // Check if we should refresh (apply throttling)
+      if (!throttle('auto-refresh-campaign-statuses', 120000)) {
+        logger.debug("[CampaignWidget] Throttled auto-refresh of campaign statuses");
+        return;
+      }
+      
+      logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
+      // Only check active campaigns to minimize API calls
+      const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
+      if (activeCampaigns.length > 0) {
+        checkCampaignStatuses(activeCampaigns.slice(0, 2));
+      }
+    }, 120000); // 2 minutes interval
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [campaigns, brandId, checkCampaignStatuses, refreshing]);
+
+  // Add helper function for budget display
+  const formatBudgetWithType = useCallback((budget: number, budgetType: string | null | undefined) => {
+    if (!budget || budget <= 0) return '$0.00';
+    
+    const formattedAmount = formatCurrency(budget);
+    
+    if (budgetType?.toLowerCase() === 'daily') {
+      return `${formattedAmount}/day`;
+    }
+    
+    return formattedAmount;
+  }, []);
+
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
@@ -1608,14 +1662,12 @@ const CampaignWidget = ({
                         </td>
                         <td className="p-3">
                           <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
-                            campaign.status.toUpperCase() === 'ACTIVE' 
-                              ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
-                              : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
-                          }`}>
+                            formatCampaignStatus(campaign.status).bgColor} ${
+                            formatCampaignStatus(campaign.status).textColor} border ${
+                            formatCampaignStatus(campaign.status).borderColor}`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${
-                              campaign.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
-                            }`}></div>
-                            {campaign.status}
+                              formatCampaignStatus(campaign.status).dotColor}`}></div>
+                            {formatCampaignStatus(campaign.status).displayText}
                           </Badge>
                           {!campaign.has_data_in_range && (
                             <Badge className="text-xs px-1.5 py-0 h-5 bg-[#111] text-gray-500 border border-[#333] ml-1">
@@ -1625,10 +1677,10 @@ const CampaignWidget = ({
                         </td>
                         <td className="p-3 text-right text-white">
                           <div className="font-medium">
-                            {getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).formatted_budget}
-                            {(campaign.budget_type === 'daily') && 
-                              <span className="text-xs text-gray-400 ml-1">/day</span>
-                            }
+                            {formatBudgetWithType(
+                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget,
+                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget_type
+                            )}
                           </div>
                         </td>
                         {visibleMetrics.map(metricId => {
@@ -1982,3 +2034,50 @@ const CampaignWidget = ({
 
 // Export the component
 export { CampaignWidget };
+
+// Add a status formatter function
+const formatCampaignStatus = (status: string) => {
+  const normalizedStatus = status.toUpperCase();
+  
+  if (normalizedStatus === 'ACTIVE') {
+    return {
+      displayText: 'Active',
+      bgColor: 'bg-green-950/30',
+      textColor: 'text-green-500',
+      borderColor: 'border-green-800/50',
+      dotColor: 'bg-green-500'
+    };
+  } else if (normalizedStatus === 'PAUSED') {
+    return {
+      displayText: 'Paused',
+      bgColor: 'bg-yellow-950/30',
+      textColor: 'text-yellow-500',
+      borderColor: 'border-yellow-800/50',
+      dotColor: 'bg-yellow-500'
+    };
+  } else if (normalizedStatus === 'DELETED' || normalizedStatus === 'ARCHIVED') {
+    return {
+      displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+      bgColor: 'bg-red-950/30',
+      textColor: 'text-red-500',
+      borderColor: 'border-red-800/50',
+      dotColor: 'bg-red-500'
+    };
+  } else if (normalizedStatus === 'REFRESHING') {
+    return {
+      displayText: 'Refreshing',
+      bgColor: 'bg-blue-950/30',
+      textColor: 'text-blue-500',
+      borderColor: 'border-blue-800/50',
+      dotColor: 'bg-blue-500 animate-pulse'
+    };
+  } else {
+    return {
+      displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+      bgColor: 'bg-gray-950/30',
+      textColor: 'text-gray-500',
+      borderColor: 'border-gray-800/50',
+      dotColor: 'bg-gray-500'
+    };
+  }
+};
