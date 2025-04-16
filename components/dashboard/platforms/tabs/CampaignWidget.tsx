@@ -291,7 +291,7 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // The single, robust function to load ad sets
+  // Refine the loadAdSetsForCampaign function for better final state handling
   const loadAdSetsForCampaign = useCallback(async (campaignId: string, isRefresh: boolean = false) => {
     // Prevent concurrent loads
     if (isLoadingInProgress.current) {
@@ -305,27 +305,23 @@ const CampaignWidget = ({
     // Set loading state and placeholder immediately
     setIsLoadingAdSets(true);
     setAdSets([{ 
-      id: 0,
-      brand_id: brandId,
-      adset_id: 'loading',
-      adset_name: 'Loading...',
-      campaign_id: campaignId,
-      status: 'Loading',
-      budget: 0, budget_type: '', spent: 0, impressions: 0, clicks: 0, 
-      conversions: 0, ctr: 0, cpc: 0, cost_per_conversion: 0, 
-      optimization_goal: null, updated_at: new Date().toISOString(), daily_insights: []
+      id: 0, brand_id: brandId, adset_id: 'loading', adset_name: 'Loading...', 
+      campaign_id: campaignId, status: 'Loading', budget: 0, budget_type: '', 
+      spent: 0, impressions: 0, clicks: 0, conversions: 0, ctr: 0, cpc: 0, 
+      cost_per_conversion: 0, optimization_goal: null, 
+      updated_at: new Date().toISOString(), daily_insights: []
     }]);
     
-    const minDisplayTime = 600; // Increased minimum display time
+    const minDisplayTime = 600;
     const startTime = Date.now();
     
     let fetchedAdSets: AdSet[] = [];
+    let fetchError: Error | null = null;
     
     try {
-      // Fetch status (non-blocking)
+      // Fetch status (non-blocking) - Keep this as is
       fetch(`/api/meta/campaign-status-check`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandId, campaignId, forceRefresh: true }),
       }).then(res => res.ok ? res.json() : null)
         .then(statusData => {
@@ -336,7 +332,7 @@ const CampaignWidget = ({
               )
             );
           }
-        }).catch(err => logger.debug(`[CW] Status check failed during ad set load: ${err.message}`));
+        }).catch(err => logger.debug(`[CW] Status check failed: ${err.message}`));
 
       // Fetch ad sets
       let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${isRefresh}`;
@@ -346,13 +342,18 @@ const CampaignWidget = ({
         url += `&from=${from}&to=${to}`;
       }
       
+      logger.debug(`[CW] Fetching URL: ${url}`);
       const response = await fetch(url);
+      
       if (!isMountedRef.current) {
+        logger.debug('[CW] Unmounted during fetch.');
         isLoadingInProgress.current = false;
-        return; // Component unmounted
+        return;
       }
       
       if (!response.ok) {
+         const errorText = await response.text().catch(() => `Status ${response.status}`);
+        logger.error(`[CW] Fetch failed: ${response.status}, Body: ${errorText.substring(0, 100)}`);
         throw new Error(`Failed to fetch ad sets: ${response.status}`);
       }
       
@@ -360,43 +361,49 @@ const CampaignWidget = ({
       fetchedAdSets = Array.isArray(data.adSets) ? data.adSets : [];
       logger.debug(`[CW] Fetched ${fetchedAdSets.length} ad sets for ${campaignId}`);
 
-      // Update tracking set
       if (fetchedAdSets.length > 0) {
         setCampaignsWithAdSets(prev => new Set(prev).add(campaignId));
       }
 
     } catch (error) {
-      fetchedAdSets = []; // Ensure empty on error
-      logger.error(`[CW] Error loading ad sets for ${campaignId}: ${(error as Error).message}`);
+      fetchError = error as Error;
+      fetchedAdSets = []; 
+      logger.error(`[CW] Error loading ad sets for ${campaignId}: ${fetchError.message}`);
       if (isRefresh) {
-        toast.error(`Failed to refresh ad sets: ${(error as Error).message}`);
+        toast.error(`Failed to refresh ad sets: ${fetchError.message}`);
       }
     } finally {
-      // Ensure minimum display time for loading state
       const elapsedTime = Date.now() - startTime;
       const remainingTime = minDisplayTime - elapsedTime;
       
       if (remainingTime > 0) {
+         logger.debug(`[CW] Waiting ${remainingTime}ms for min display time.`);
         await new Promise(resolve => setTimeout(resolve, remainingTime));
       }
       
-      // Final state update only if component is still mounted and campaign is still expanded
-      if (isMountedRef.current && expandedCampaign === campaignId) {
-        logger.debug(`[CW] Updating state for ${campaignId} with ${fetchedAdSets.length} sets.`);
-        setAdSets(fetchedAdSets); // Set actual data or empty array
-        setIsLoadingAdSets(false);
+      // GUARANTEED FINAL STATE UPDATE
+      if (isMountedRef.current) {
+          // Only update if the *currently* expanded campaign is the one we fetched for
+          if (expandedCampaign === campaignId) {
+              logger.debug(`[CW] Final update for ${campaignId}: Setting ${fetchedAdSets.length} ad sets, loading: false`);
+              setAdSets(fetchedAdSets); 
+              setIsLoadingAdSets(false);
+          } else {
+              logger.debug(`[CW] Final update check: Expanded campaign changed (${expandedCampaign} != ${campaignId}), not setting ad sets, ensuring loading is false.`);
+              // If the expanded campaign changed, make sure loading is false anyway
+              if (isLoadingAdSets) {
+                  setIsLoadingAdSets(false);
+              }
+          }
       } else {
-        logger.debug(`[CW] Campaign changed/unmounted for ${campaignId} before state update.`);
-        // If the campaign changed, ensure loading is false for the *current* expanded one if it's not this one
-        if (isLoadingAdSets && expandedCampaign !== campaignId) {
-           setIsLoadingAdSets(false);
-        }
+          logger.debug(`[CW] Final update check: Component unmounted for ${campaignId}.`);
       }
       
-      // Release lock *last*
+      // Release lock *unconditionally* in finally
+      logger.debug(`[CW] Releasing lock for ${campaignId}`);
       isLoadingInProgress.current = false;
     }
-  }, [brandId, dateRange, expandedCampaign, isMountedRef]); // Minimal dependencies
+  }, [brandId, dateRange, expandedCampaign, isMountedRef]); // Keep minimal dependencies
 
   // Simplified toggle function
   const toggleCampaignExpand = useCallback((campaignId: string) => {
