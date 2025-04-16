@@ -277,75 +277,6 @@ const CampaignWidget = ({
   
   // Clean up when component unmounts
   useEffect(() => {
-  // Add global listener to disable background refreshes when the component mounts
-useEffect(() => {
-  // Disable auto-fetch when the component mounts to prevent background interference
-  const originalDisableState = window._disableAutoMetaFetch;
-  const originalBlockState = window._blockMetaApiCalls;
-  
-  // This handler will intercept any API calls that might interfere with our data display
-  const handleBeforeFetch = (event: Event) => {
-    if (event.type === 'fetch' && dataStabilizationLockRef.current) {
-      // If we're in a stabilization period, block potential interfering calls
-      if ((event as any).url?.includes('meta') || (event as any).url?.includes('campaign')) {
-        logger.debug('[CampaignWidget] Intercepted potential interfering API call during stabilization');
-        event.stopImmediatePropagation();
-        event.preventDefault();
-      }
-    }
-  };
-  
-  // Add a global fetch interceptor
-  window.addEventListener('fetch', handleBeforeFetch, true);
-  
-  // Return cleanup function
-  return () => {
-    // Restore original states
-    window._disableAutoMetaFetch = originalDisableState;
-    window._blockMetaApiCalls = originalBlockState;
-    
-    // Remove fetch interceptor
-    window.removeEventListener('fetch', handleBeforeFetch, true);
-    
-    // Ensure all locks are released
-    adSetLoadingLockRef.current = false;
-    dataStabilizationLockRef.current = false;
-    stableLoadingRef.current = false;
-    
-    // Clear all timers
-    if (cooldownTimerRef.current) {
-      clearTimeout(cooldownTimerRef.current);
-      cooldownTimerRef.current = null;
-    }
-    if (loadingTimerRef.current) {
-      clearTimeout(loadingTimerRef.current);
-      loadingTimerRef.current = null;
-    }
-  };
-}, []);
-
-// Add an effect to prevent all loops by disabling automatic refreshes
-useEffect(() => {
-  // Mechanism to prevent loop refreshes
-  const preventLoops = () => {
-    if (expandedCampaign && dataStabilizationLockRef.current) {
-      logger.debug(`[CampaignWidget] Ensuring no refresh loops during stabilization`);
-      window._disableAutoMetaFetch = true;
-      window._blockMetaApiCalls = true;
-    }
-  };
-  
-  // Run the prevention mechanism immediately
-  preventLoops();
-  
-  // Add a periodic check to ensure the prevention stays active
-  const intervalId = setInterval(preventLoops, 1000);
-  
-  return () => {
-    clearInterval(intervalId);
-  };
-}, [expandedCampaign]);
-
     return () => {
       isMountedRef.current = false;
       // Cancel any pending requests
@@ -2581,3 +2512,72 @@ useEffect(() => {
 
 // Export the component
 export { CampaignWidget };
+
+// Add global listener to disable background refreshes when the component mounts
+useEffect(() => {
+  // Disable auto-fetch when the component mounts to prevent background interference
+  const originalDisableState = window._disableAutoMetaFetch;
+  const originalBlockState = window._blockMetaApiCalls;
+  
+  // This handler will intercept any API calls that might interfere with our data display
+  const handleBeforeFetch = (event: Event) => {
+    if (event.type === 'fetch' && dataStabilizationLockRef.current) {
+      // If we're in a stabilization period, block potential interfering calls
+      if ((event as any).url?.includes('meta') || (event as any).url?.includes('campaign')) {
+        logger.debug('[CampaignWidget] Intercepted potential interfering API call during stabilization');
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+    }
+  };
+  
+  // Add a global fetch interceptor
+  window.addEventListener('fetch', handleBeforeFetch, true);
+  
+  // Return cleanup function
+  return () => {
+    // Restore original states
+    window._disableAutoMetaFetch = originalDisableState;
+    window._blockMetaApiCalls = originalBlockState;
+    
+    // Remove fetch interceptor
+    window.removeEventListener('fetch', handleBeforeFetch, true);
+    
+    // Ensure all locks are released
+    adSetLoadingLockRef.current = false;
+    dataStabilizationLockRef.current = false;
+    stableLoadingRef.current = false;
+    
+    // Clear all timers
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
+  };
+}, []);
+
+// Add an effect to prevent all loops by disabling automatic refreshes
+useEffect(() => {
+  // Mechanism to prevent loop refreshes
+  const preventLoops = () => {
+    if (expandedCampaign && dataStabilizationLockRef.current) {
+      logger.debug(`[CampaignWidget] Ensuring no refresh loops during stabilization`);
+      window._disableAutoMetaFetch = true;
+      window._blockMetaApiCalls = true;
+    }
+  };
+  
+  // Run the prevention mechanism immediately
+  preventLoops();
+  
+  // Add a periodic check to ensure the prevention stays active
+  const intervalId = setInterval(preventLoops, 1000);
+  
+  return () => {
+    clearInterval(intervalId);
+  };
+}, [expandedCampaign]);
