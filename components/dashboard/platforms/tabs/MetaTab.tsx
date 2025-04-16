@@ -2389,6 +2389,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
+  // Add this state near the other state variables:
+  const [pendingBudgetUpdate, setPendingBudgetUpdate] = useState<number | null>(null);
+  
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -4233,49 +4236,72 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [dateRange]);
 
-  // Add a budget auto-refresher to sync with the CampaignWidget
+  // Add listener for total budget updates from campaign widget
   useEffect(() => {
-    // Function to refresh campaign budgets periodically
-    const refreshCampaignBudgets = async () => {
-      if (!brandId || !campaigns || campaigns.length === 0) return;
+    if (!brandId) return;
+    
+    const handleTotalBudgetUpdate = (event: CustomEvent) => {
+      // Check if this is for our brand
+      if (event.detail?.brandId !== brandId) return;
       
-      // Only allow refreshes if enough time has passed
-      if (!throttle('tab-budget-refresh', 120000)) {
-        logger.debug('[MetaTab] Throttled campaign budget refresh');
-        return;
-      }
-      
-      logger.debug('[MetaTab] Auto-refreshing campaign budgets');
-      
-      try {
-        const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}`);
+      const { totalBudget } = event.detail;
+      if (typeof totalBudget === 'number') {
+        logger.debug(`[MetaTab] Received total budget update: ${totalBudget}`);
         
-        if (response.ok) {
-          const data = await response.json();
-          logger.debug(`[MetaTab] Refreshed budgets for ${data.budgets?.length || 0} campaigns`);
-          
-          // Dispatch an event to notify the system of updated budgets
-          window.dispatchEvent(new CustomEvent('meta-budgets-updated', {
-            detail: { count: data.budgets?.length || 0, source: 'auto-refresh' }
-          }));
+        // Update metrics directly if they exist or add to processing queue for when they become available
+        if (metrics) {
+          // Only update if there's a significant change
+          if (Math.abs(metrics.budget - totalBudget) > 0.01) {
+            // Clone and update the metrics data
+            const updatedMetrics = {
+              ...metrics,
+              budget: totalBudget
+            };
+            
+            // Update the UI with the new budget
+            setMetricsData(updatedMetrics);
+          }
         } else {
-          logger.debug('[MetaTab] Failed to refresh campaign budgets');
+          // Store the budget to apply once metrics are loaded
+          setPendingBudgetUpdate(totalBudget);
         }
-      } catch (error) {
-        logger.debug('[MetaTab] Error auto-refreshing campaign budgets:', error);
       }
     };
     
-    // Set up polling interval for budget refreshes (every 3 minutes)
-    const budgetInterval = setInterval(refreshCampaignBudgets, 180000);
-    
-    // Do an initial fetch after component mounts
-    setTimeout(refreshCampaignBudgets, 15000);
+    // Add event listener for budget updates
+    window.addEventListener('meta-total-budget-updated', handleTotalBudgetUpdate as EventListener);
     
     return () => {
-      clearInterval(budgetInterval);
+      window.removeEventListener('meta-total-budget-updated', handleTotalBudgetUpdate as EventListener);
     };
-  }, [brandId, campaigns]);
+  }, [brandId, metrics]);
+
+  // Add a mechanism to request budget updates when needed
+  const requestBudgetUpdate = useCallback(() => {
+    if (!brandId) return;
+    
+    // Dispatch event to request budget update from the campaign widget
+    window.dispatchEvent(new CustomEvent('refresh-meta-budgets', {
+      detail: { brandId }
+    }));
+  }, [brandId]);
+
+  // Add effect to apply pending budget update when metrics become available
+  useEffect(() => {
+    if (metrics && pendingBudgetUpdate !== null) {
+      // Apply the pending budget update once metrics are available
+      const updatedMetrics = {
+        ...metrics,
+        budget: pendingBudgetUpdate
+      };
+      
+      // Update the UI with the new budget
+      setMetricsData(updatedMetrics);
+      
+      // Clear the pending update
+      setPendingBudgetUpdate(null);
+    }
+  }, [metrics, pendingBudgetUpdate]);
 
   return (
     <TooltipProvider>
