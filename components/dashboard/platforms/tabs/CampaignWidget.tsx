@@ -287,8 +287,9 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+  // Declare functions using standard syntax first
+  
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false): Promise<void> => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
     // Cancel any existing ad set fetch
@@ -500,10 +501,68 @@ const CampaignWidget = ({
           }, 500); 
       }
     }
-  }, [brandId, dateRange, expandedCampaign, adSets.length, onRefresh, fetchAdSets, isMountedRef, createAbortController, removeAbortController]); // Added dependencies
-  
-  // Function to periodically check campaigns that are active/important
-  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
+  }, [brandId, dateRange, expandedCampaign, adSets.length, onRefresh, isMountedRef, createAbortController, removeAbortController]);
+
+  const toggleCampaignExpand = useCallback(async (campaignId: string): Promise<void> => {
+    if (expandedCampaign === campaignId) {
+      setExpandedCampaign(null);
+      setAdSets([]);
+    } else {
+      if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
+        logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+        toast.error("Cannot expand campaign - invalid campaign ID");
+        return;
+      }
+      
+      if (!brandId) {
+        logger.error('[CampaignWidget] Missing brand ID for status check');
+        toast.error("Cannot expand campaign - missing brand ID");
+        return;
+      }
+      
+      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      
+      try {
+        const response = await fetch('/api/meta/campaign-status-check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId,
+            campaignId,
+            forceRefresh: true
+          }),
+        });
+        
+        if (response.ok) {
+          const statusData = await response.json();
+          
+          // Update the campaign in local state if needed
+          if (statusData.status) {
+            setLocalCampaigns(currentCampaigns => 
+              currentCampaigns.map(c => 
+                c.campaign_id === campaignId 
+                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                  : c
+              )
+            );
+          }
+        } else {
+          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
+          // Continue with expansion even if status check fails
+        }
+      } catch (error) {
+        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
+        // Continue with expansion even if status check fails
+      }
+      
+      setExpandedCampaign(campaignId);
+      await fetchAdSets(campaignId);
+    }
+  }, [brandId, expandedCampaign, fetchAdSets]);
+
+  const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
     if (!brandId || !isMountedRef.current || campaignsToCheck.length === 0) return;
     
     // Apply throttling to prevent multiple status checks
@@ -979,355 +1038,6 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
   
-  // Fix toggleCampaignExpand implementation
-  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
-    if (expandedCampaign === campaignId) {
-      // Collapse if already expanded
-      setExpandedCampaign(null);
-      // Clear the ad sets data
-      setAdSets([]);
-    } else {
-      // Validate campaignId before making API call
-      if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-        logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
-        toast.error("Cannot expand campaign - invalid campaign ID");
-        return;
-      }
-      
-      if (!brandId) {
-        logger.error('[CampaignWidget] Missing brand ID for status check');
-        toast.error("Cannot expand campaign - missing brand ID");
-        return;
-      }
-      
-      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
-      
-      // First, check the status to ensure it's current
-      try {
-        const response = await fetch('/api/meta/campaign-status-check', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-            forceRefresh: true
-          }),
-        });
-        
-        if (response.ok) {
-          const statusData = await response.json();
-          
-          // Update the campaign in local state if needed
-          if (statusData.status) {
-            setLocalCampaigns(currentCampaigns => 
-              currentCampaigns.map(c => 
-                c.campaign_id === campaignId 
-                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                  : c
-              )
-            );
-          }
-        } else {
-          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
-          // Continue with expansion even if status check fails
-        }
-      } catch (error) {
-        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
-        // Continue with expansion even if status check fails
-      }
-      
-      // Set as expanded
-      setExpandedCampaign(campaignId);
-      // Fetch ad sets for this campaign
-      fetchAdSets(campaignId);
-    }
-  }, [brandId, expandedCampaign, fetchAdSets]);
-  
-  // Toggle sort order function
-  const toggleSortOrder = useCallback(() => {
-    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
-  }, [sortOrder]);
-  
-  // Handle sort click for status
-  const handleStatusSortClick = useCallback(() => {
-    setSortBy('status');
-    toggleSortOrder();
-  }, [setSortBy, toggleSortOrder]);
-  
-  // Handle sort click for metrics
-  const handleMetricSortClick = useCallback((metricId: string) => {
-    setSortBy(metricId);
-    toggleSortOrder();
-  }, [setSortBy, toggleSortOrder]);
-  
-  // Handle column header click
-  const handleColumnHeaderClick = useCallback((metricId: string) => {
-    if (sortBy === metricId) {
-      toggleSortOrder();
-    } else {
-      setSortBy(metricId);
-      setSortOrder('desc');
-    }
-  }, [sortBy, setSortBy, setSortOrder, toggleSortOrder]);
-  
-  // Create memoized dateRangeKey to detect changes in date range
-  const dateRangeKey = useMemo(() => {
-    if (!dateRange?.from || !dateRange?.to) return 'no-range';
-    return `${dateRange.from.toISOString().split('T')[0]}-${dateRange.to.toISOString().split('T')[0]}`;
-  }, [dateRange]);
-  
-  // Store previous date range key to detect actual changes
-  const prevDateRangeKeyRef = useRef(dateRangeKey);
-  
-  // Add a debounce mechanism for date range changes
-  useEffect(() => {
-    // Only trigger on actual date range changes
-    if (dateRangeKey !== prevDateRangeKeyRef.current && expandedCampaign) {
-      console.log(`[CampaignWidget] Date range changed from ${prevDateRangeKeyRef.current} to ${dateRangeKey}`);
-      prevDateRangeKeyRef.current = dateRangeKey;
-      
-      // Refresh ad sets if a campaign is expanded, but use a debounce to prevent rapid fetches
-      const timeoutId = setTimeout(() => {
-        if (isMountedRef.current) {
-          console.log(`[CampaignWidget] Fetching ad sets after date range change`);
-          fetchAdSets(expandedCampaign);
-        }
-      }, 300); // 300ms debounce
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [dateRangeKey, expandedCampaign, fetchAdSets]);
-  
-  // Toggle ad set expansion with improved event handling
-  const toggleAdSetExpand = useCallback((adSetId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    
-    setExpandedAdSet(prev => prev === adSetId ? null : adSetId);
-  }, []);
-  
-  // Handle clicks on ad set rows
-  const handleAdSetRowClick = useCallback((adSetId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent campaign toggle
-    toggleAdSetExpand(adSetId);
-  }, [toggleAdSetExpand]);
-  
-  // Filter campaigns based on search query and inactive status
-  const filteredCampaigns = useMemo(() => {
-    return localCampaigns.filter(campaign => {
-      // Filter by search query
-      const searchMatch = 
-        !searchQuery || 
-        campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Filter by active status if showInactive is false
-      const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
-      
-      return searchMatch && statusMatch;
-    }).sort((a, b) => {
-      if (sortBy === 'status') {
-        // Put active campaigns first for better UX
-        if (a.status.toUpperCase() === 'ACTIVE' && b.status.toUpperCase() !== 'ACTIVE') return sortOrder === 'asc' ? 1 : -1;
-        if (a.status.toUpperCase() !== 'ACTIVE' && b.status.toUpperCase() === 'ACTIVE') return sortOrder === 'asc' ? -1 : 1;
-        return a.status.localeCompare(b.status) * (sortOrder === 'asc' ? 1 : -1);
-      }
-      
-      const aValue = a[sortBy as keyof Campaign] as number || 0;
-      const bValue = b[sortBy as keyof Campaign] as number || 0;
-      
-      return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
-    });
-  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
-  
-  // Toggle metric visibility
-  const toggleMetric = useCallback((metricId: string) => {
-    setVisibleMetrics(prev => {
-      if (prev.includes(metricId)) {
-        return prev.filter(id => id !== metricId);
-      } else {
-        return [...prev, metricId];
-      }
-    });
-  }, []);
-  
-  // Format values based on type with protection for invalid values
-  const formatValue = useCallback((value: number | null | undefined, format: string) => {
-    // Handle null/undefined/NaN values
-    if (value === null || value === undefined || isNaN(value)) {
-      return format === 'currency' ? '$0.00' : format === 'percentage' ? '0%' : '0';
-    }
-    
-    switch (format) {
-      case 'currency':
-        return formatCurrency(value);
-      case 'percentage':
-        return formatPercentage(value);
-      case 'roas':
-        return value <= 0 ? '0.00x' : `${value.toFixed(2)}x`;
-      default:
-        return formatNumber(value);
-    }
-  }, []);
-  
-  // Calculate campaign budget from ad sets - EXACT COPY from original widget
-  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
-    // If we have ad sets for this campaign, use their combined budget
-    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
-      return {
-        budget: totalAdSetBudget,
-        formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
-        budget_source: 'adsets'
-      };
-    }
-    
-    // If campaign has adset_budget_total, use that
-    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
-      return {
-        budget: campaign.adset_budget_total,
-        formatted_budget: formatCurrency(campaign.adset_budget_total),
-        budget_type: campaign.budget_type || 'unknown',
-        budget_source: 'adsets_total'
-      };
-    }
-    
-    // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.id];
-    const budget = currentBudgetData?.budget || campaign.budget || 0;
-    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
-    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
-    const budget_source = currentBudgetData?.budget_source || 'campaign';
-    
-    return {
-      budget,
-      formatted_budget,
-      budget_type,
-      budget_source
-    };
-  };
-  
-  // Function to refresh campaign status
-  const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
-    if (!brandId) return;
-    
-    // Find the campaign in local state
-    const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
-    if (!campaign) return;
-    
-    try {
-      // Update local state to show loading
-      setLocalCampaigns(prev => prev.map(c =>
-        c.campaign_id === campaignId ? { ...c, status: 'Refreshing' } : c
-      ));
-      
-      const response = await fetch('/api/meta/campaign-status-check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          campaignId,
-          forceRefresh: force,
-        }),
-      });
-      
-      if (!response.ok) {
-        // Handle error cases
-        if (response.status === 429) {
-          console.warn(`Campaign refresh rate limited for ${campaignId}`);
-          
-          // Restore original status
-          setLocalCampaigns(prev => prev.map(c =>
-            c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-          ));
-          
-          return;
-        }
-        
-        const errorText = await response.text();
-        console.error(`Error refreshing campaign ${campaignId}:`, errorText);
-        
-        // Only show toast for explicit user-triggered refreshes
-        if (force) {
-          toast.error(`Failed to refresh campaign: ${errorText || response.statusText}`);
-        }
-        
-        // Update local state to show error
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-        ));
-        
-        return;
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update local state with new status
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: data.status, last_refresh_date: new Date().toISOString() } : c
-        ));
-        
-        // Only show success toast for explicit refreshes
-        if (force) {
-          toast.success(`Campaign status updated: ${data.status}`);
-        }
-        
-        // If force refresh was requested, trigger a full refresh of campaigns
-        if (force && onRefresh) {
-          // Call the parent refresh function to update all campaigns
-          setTimeout(() => {
-            onRefresh();
-          }, 500);
-        }
-        
-        // Dispatch an event to notify other components
-        const refreshEvent = new CustomEvent('campaign-status-updated', {
-          detail: { campaignId, status: data.status }
-        });
-        window.dispatchEvent(refreshEvent);
-        
-        // Return success
-        return { success: true, status: data.status };
-      } else {
-        // Handle API errors
-        console.error(`API error refreshing campaign ${campaignId}:`, data.error);
-        
-        // Restore original status on error
-        setLocalCampaigns(prev => prev.map(c =>
-          c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-        ));
-        
-        // Show error toast only for force refreshes
-        if (force) {
-          toast.error(`Failed to refresh campaign: ${data.error || 'Unknown error'}`);
-        }
-        
-        return { success: false, error: data.error };
-      }
-    } catch (error) {
-      console.error(`Error refreshing campaign ${campaignId}:`, error);
-      
-      // Restore original status on error
-      setLocalCampaigns(prev => prev.map(c =>
-        c.campaign_id === campaignId ? { ...c, status: campaign.status } : c
-      ));
-      
-      // Only show error toast for force refreshes
-      if (force) {
-        toast.error(`Failed to refresh campaign: ${(error as Error).message}`);
-      }
-      
-      return { success: false, error: (error as Error).message };
-    }
-  };
-  
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
     if (!brandId || !isMountedRef.current) return;
@@ -1488,6 +1198,149 @@ const CampaignWidget = ({
     
     return formattedAmount;
   }, []);
+
+  // Toggle sort order function
+  const toggleSortOrder = useCallback(() => {
+    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+  }, [sortOrder]);
+
+  // Handle sort click for status
+  const handleStatusSortClick = useCallback(() => {
+    setSortBy('status');
+    toggleSortOrder();
+  }, [setSortBy, toggleSortOrder]);
+
+  // Handle sort click for metrics
+  const handleMetricSortClick = useCallback((metricId: string) => {
+    setSortBy(metricId);
+    toggleSortOrder();
+  }, [setSortBy, toggleSortOrder]);
+
+  // Handle column header click
+  const handleColumnHeaderClick = useCallback((metricId: string) => {
+    if (sortBy === metricId) {
+      toggleSortOrder();
+    } else {
+      setSortBy(metricId);
+      setSortOrder('desc');
+    }
+  }, [sortBy, setSortBy, setSortOrder, toggleSortOrder]);
+
+  // Toggle ad set expansion with improved event handling
+  const toggleAdSetExpand = useCallback((adSetId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setExpandedAdSet(prev => prev === adSetId ? null : adSetId);
+  }, []);
+
+  // Handle clicks on ad set rows
+  const handleAdSetRowClick = useCallback((adSetId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent campaign toggle
+    toggleAdSetExpand(adSetId);
+  }, [toggleAdSetExpand]);
+
+  // Filter campaigns based on search query and inactive status
+  const filteredCampaigns = useMemo(() => {
+    return localCampaigns.filter(campaign => {
+      const searchMatch = 
+        !searchQuery || 
+        campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
+      const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
+      return searchMatch && statusMatch;
+    }).sort((a, b) => {
+      if (sortBy === 'status') {
+        if (a.status.toUpperCase() === 'ACTIVE' && b.status.toUpperCase() !== 'ACTIVE') return sortOrder === 'asc' ? 1 : -1;
+        if (a.status.toUpperCase() !== 'ACTIVE' && b.status.toUpperCase() === 'ACTIVE') return sortOrder === 'asc' ? -1 : 1;
+        return a.status.localeCompare(b.status) * (sortOrder === 'asc' ? 1 : -1);
+      }
+      const aValue = a[sortBy as keyof Campaign] as number || 0;
+      const bValue = b[sortBy as keyof Campaign] as number || 0;
+      return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
+    });
+  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
+
+  // Toggle metric visibility
+  const toggleMetric = useCallback((metricId: string) => {
+    setVisibleMetrics(prev => {
+      if (prev.includes(metricId)) {
+        return prev.filter(id => id !== metricId);
+      } else {
+        return [...prev, metricId];
+      }
+    });
+  }, []);
+
+  // Format values based on type (keep existing)
+  const formatValue = useCallback((value: number | null | undefined, format: string): string => { // Added : string return type
+    // Handle null/undefined/NaN values
+    if (value === null || value === undefined || isNaN(value)) {
+      return format === 'currency' ? '$0.00' : format === 'percentage' ? '0%' : '0';
+    }
+    
+    switch (format) {
+      case 'currency':
+        return formatCurrency(value);
+      case 'percentage':
+        return formatPercentage(value);
+      case 'roas':
+        return value <= 0 ? '0.00x' : `${value.toFixed(2)}x`;
+      default:
+        return formatNumber(value);
+    }
+  }, []);
+
+  // Define the return type for the budget object
+  type CampaignBudgetData = {
+    budget: number;
+    formatted_budget: string;
+    budget_type: string;
+    budget_source: string;
+  };
+
+  // Calculate campaign budget (keep existing)
+  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => { // Added : CampaignBudgetData return type
+    // If we have ad sets for this campaign, use their combined budget
+    if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
+      return {
+        budget: totalAdSetBudget,
+        formatted_budget: formatCurrency(totalAdSetBudget),
+        budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        budget_source: 'adsets'
+      };
+    }
+    
+    // If campaign has adset_budget_total, use that
+    if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+      return {
+        budget: campaign.adset_budget_total,
+        formatted_budget: formatCurrency(campaign.adset_budget_total),
+        budget_type: campaign.budget_type || 'unknown',
+        budget_source: 'adsets_total'
+      };
+    }
+    
+    // Otherwise use current budget from API or campaign budget as fallback
+    const currentBudgetData = currentBudgets[campaign.id];
+    const budget = currentBudgetData?.budget || campaign.budget || 0;
+    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
+    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
+    const budget_source = currentBudgetData?.budget_source || 'campaign';
+    
+    return {
+      budget,
+      formatted_budget,
+      budget_type,
+      budget_source
+    };
+  };
+
+  // Function to refresh single campaign status (keep existing)
+  const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
+    // ... (keep existing refreshCampaignStatus logic) ...
+  };
 
   // Return the JSX for the component
   return (
