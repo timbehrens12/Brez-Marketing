@@ -750,12 +750,13 @@ const CampaignWidget = ({
     console.log("[CW DEBUG] Syncing localCampaigns with props");
     setLocalCampaigns(campaigns);
     
-    if (campaigns.length > 0 && brandId) {
-      console.log("[CW DEBUG] Props updated, checking campaign statuses (throttled)");
-      setTimeout(() => {
-        checkCampaignStatuses(campaigns);
-      }, 500);
-    }
+    // Temporarily disable status check on prop update for debugging
+    // if (campaigns.length > 0 && brandId) {
+    //   console.log("[CW DEBUG] Props updated, checking campaign statuses (throttled)");
+    //   setTimeout(() => {
+    //     checkCampaignStatuses(campaigns);
+    //   }, 500);
+    // }
   }, [campaigns, brandId]); // Removed checkCampaignStatuses dependency to simplify
 
   // Load saved preferences from localStorage
@@ -1168,8 +1169,8 @@ const CampaignWidget = ({
   useEffect(() => {
     if (!campaigns.length || !brandId) return;
     
-    // Check statuses on initial load
-    checkCampaignStatuses(campaigns);
+    // Temporarily disable status check on initial load for debugging
+    // checkCampaignStatuses(campaigns);
     
     // Check for recent status updates every 1-2 minutes to keep them fresh
     const intervalId = setInterval(() => {
@@ -1185,12 +1186,13 @@ const CampaignWidget = ({
         return;
       }
       
-      logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
-      // Only check active campaigns to minimize API calls
-      const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
-      if (activeCampaigns.length > 0) {
-        checkCampaignStatuses(activeCampaigns.slice(0, 2));
-      }
+      // Temporarily disable periodic status check for debugging
+      // logger.debug("[CampaignWidget] Auto-refreshing campaign statuses");
+      // // Only check active campaigns to minimize API calls
+      // const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
+      // if (activeCampaigns.length > 0) {
+      //   checkCampaignStatuses(activeCampaigns.slice(0, 2));
+      // }
     }, 120000); // 2 minutes interval
     
     return () => {
