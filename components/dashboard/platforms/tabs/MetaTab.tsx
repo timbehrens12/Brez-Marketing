@@ -598,7 +598,14 @@ export function MetaTab({
     
     try {
       logger.debug(`[MetaTab] Fetching URL: ${url}`);
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store', // Prevent browser caching
+        headers: {
+          'Cache-Control': 'no-cache', // Tell server/proxy not to cache
+          'Pragma': 'no-cache', // For older HTTP/1.0 compatibility
+          'Expires': '0', // Expire immediately
+        }
+      });
       
       if (!response.ok) {
         // Handle specific errors like 429 (Rate Limit) potentially

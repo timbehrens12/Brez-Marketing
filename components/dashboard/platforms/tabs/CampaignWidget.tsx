@@ -305,29 +305,55 @@ const CampaignWidget = ({
     setIsLoadingAdSets(true);
     
     const controller = createAbortController();
-    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
+    logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
     
-    // Try the regular endpoint first
+    // Add throttling specific to ad set fetching for a campaign
+    const adSetFetchKey = `fetch-adsets-${brandId}-${campaignId}`;
+    if (!forceRefresh && !throttle(adSetFetchKey, 5000)) { // Throttle non-forced ad set fetches
+        logger.debug(`[CampaignWidget] Throttled ad set fetch for campaign ${campaignId}`);
+        // If throttled but we have existing ad sets, don't clear them or show loading
+        if (adSets.length > 0) {
+            setIsLoadingAdSets(false); // Ensure loading state is off
+            return; 
+        }
+        // If no ad sets exist, allow fetch but maybe log a warning
+        logger.warn(`[CampaignWidget] Allowing potentially throttled ad set fetch as none exist for ${campaignId}`);
+    }
+
+    setIsLoadingAdSets(true);
+    // Clear existing ad sets ONLY if forcing refresh or none exist, to avoid flicker
+    if (forceRefresh || adSets.length === 0) {
+      setAdSets([]);
+    }
+    
     let usedDirectFetch = false;
     let usedCachedData = false;
+    let success = false; // Track if fetch was successful
     
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
-      
-      // Add date range parameters if available
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
+      let dateQuery = '';
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
+        dateQuery = `&from=${fromDate}&to=${toDate}`;
+        url += dateQuery;
+      }
+      if (forceRefresh) {
+          url += `&forceRefresh=true`;
       }
       
-      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      logger.debug(`[CampaignWidget] Fetching ad sets from: ${url}`);
       
-      let response = await fetch(url, { signal: controller.signal });
+      let response = await fetch(url, { 
+          signal: controller.signal,
+          cache: 'no-store', // Add cache busting here too
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
       
       // If the regular endpoint fails, try the direct-fetch endpoint
       if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
+        logger.debug(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
         usedDirectFetch = true;
         
         response = await fetch(`/api/meta/adsets/direct-fetch`, {
@@ -347,14 +373,14 @@ const CampaignWidget = ({
       
       // Log the raw response for debugging
       const responseText = await response.text();
-      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
+      logger.debug(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
       
       // Parse the response as JSON (safely)
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
+        logger.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
         throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
       }
       
@@ -362,15 +388,16 @@ const CampaignWidget = ({
         // Check if this is a rate limit response with cached data
         if (data.source === 'cached_due_to_rate_limit') {
           usedCachedData = true;
-          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
+          logger.debug(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
         }
         
-        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
+        logger.debug(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
         
         if (isMountedRef.current) {
           // Ensure we have a valid array of ad sets
           const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
           setAdSets(validAdSets);
+          success = true; // Mark as successful
           
           // Add this campaign to the tracking set if ad sets were found
           if (validAdSets.length > 0) {
@@ -393,12 +420,12 @@ const CampaignWidget = ({
               });
             } else {
               toast.info("No ad sets found for this campaign");
-              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+              logger.debug(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
             }
           }
           
           // Dispatch events for budgets to update regardless of ad set count
-          console.log('[CampaignWidget] Dispatching status changed events');
+          logger.debug('[CampaignWidget] Dispatching status changed events');
           window.dispatchEvent(
             new CustomEvent('adSetStatusChanged', {
               detail: {
@@ -423,7 +450,7 @@ const CampaignWidget = ({
       } else {
         // Check if this is a rate limit error response
         if (data.warning === 'Meta API rate limit reached') {
-          console.log(`[CampaignWidget] Meta API rate limit reached`);
+          logger.debug(`[CampaignWidget] Meta API rate limit reached`);
           
           if (isMountedRef.current) {
             toast.warning(`Meta API rate limit reached`, {
@@ -433,7 +460,7 @@ const CampaignWidget = ({
             setAdSets([]);
           }
         } else {
-          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
+          logger.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
           
           if (isMountedRef.current) {
             toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
@@ -443,11 +470,11 @@ const CampaignWidget = ({
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
+        logger.debug("[CampaignWidget] Ad set fetch aborted");
         return;
       }
       
-      console.error("[CampaignWidget] Error fetching ad sets:", error);
+      logger.error("[CampaignWidget] Error fetching ad sets:", error);
       
       if (isMountedRef.current) {
         toast.error(`Error loading ad sets: ${(error as Error).message}`);
@@ -463,8 +490,17 @@ const CampaignWidget = ({
       
       // Clean up abort controller
       removeAbortController(controller);
+
+      // *** NEW: If ad sets were successfully fetched, trigger parent refresh ***
+      if (success && onRefresh) {
+          logger.info(`[CampaignWidget] Ad sets loaded for ${campaignId}, triggering parent campaign refresh.`);
+          // Add a small delay to allow state to settle before triggering parent refresh
+          setTimeout(() => {
+              onRefresh(); 
+          }, 500); 
+      }
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, dateRange, expandedCampaign, adSets.length, onRefresh, fetchAdSets, isMountedRef, createAbortController, removeAbortController]); // Added dependencies
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -698,7 +734,7 @@ const CampaignWidget = ({
       };
       
       saveUserPreferences(currentPrefs);
-      console.log("[CampaignWidget] Saved user preferences to localStorage");
+      logger.debug("[CampaignWidget] Saved user preferences to localStorage");
     }, 500); // 500ms debounce to prevent too many writes
     
     return () => clearTimeout(timeoutId);
@@ -709,7 +745,7 @@ const CampaignWidget = ({
     if (!brandId || !isMountedRef.current) return;
     
     setIsLoadingBudgets(true);
-    console.log("[CampaignWidget] Fetching current budget data, force refresh:", forceRefresh);
+    logger.debug("[CampaignWidget] Fetching current budget data, force refresh:", forceRefresh);
     
     const controller = createAbortController();
     
@@ -737,7 +773,7 @@ const CampaignWidget = ({
         
         if (isMountedRef.current) {
           setCurrentBudgets(budgetMap);
-          console.log(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+          logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
@@ -745,7 +781,7 @@ const CampaignWidget = ({
           toast.success(`Updated budget data for ${Object.keys(budgetMap).length} campaigns`);
         }
       } else {
-        console.error("[CampaignWidget] Failed to fetch current budgets");
+        logger.error("[CampaignWidget] Failed to fetch current budgets");
         
         // Show error toast
         if (forceRefresh && isMountedRef.current) {
@@ -754,11 +790,11 @@ const CampaignWidget = ({
       }
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Budget fetch aborted");
+        logger.debug("[CampaignWidget] Budget fetch aborted");
         return;
       }
       
-      console.error("[CampaignWidget] Error fetching current budgets:", error);
+      logger.error("[CampaignWidget] Error fetching current budgets:", error);
       
       // Show error toast
       if (forceRefresh && isMountedRef.current) {
