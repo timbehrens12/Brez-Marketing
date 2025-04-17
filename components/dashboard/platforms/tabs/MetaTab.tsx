@@ -54,6 +54,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
+import { WorkingCampaignWidget } from "./WorkingCampaignWidget" // Import the new Working Campaign Widget
 import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 
@@ -4570,18 +4571,34 @@ Try creating at least one active campaign in Meta Ads Manager.
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
         {campaigns.length > 0 || isLoadingCampaigns ? (
-          <CampaignWidget 
-            key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
-            brandId={brandId || ''}
-            campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-            isLoading={isLoadingCampaigns}
-            isSyncing={isSyncing}
-            dateRange={dateRange}
-            onRefresh={() => {
-              fetchCampaigns(true);
-            }}
-            onSync={syncMetaInsights}
-          />
+          <>
+            <CampaignWidget 
+              key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
+              brandId={brandId || ''}
+              campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
+              isLoading={isLoadingCampaigns}
+              isSyncing={isSyncing}
+              dateRange={dateRange}
+              onRefresh={() => {
+                fetchCampaigns(true);
+              }}
+              onSync={syncMetaInsights}
+            />
+            
+            {/* New Working Campaign Widget that properly loads and displays data */}
+            <WorkingCampaignWidget
+              key={`working-campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
+              brandId={brandId || ''}
+              campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
+              isLoading={isLoadingCampaigns}
+              isSyncing={isSyncing}
+              dateRange={dateRange}
+              onRefresh={() => {
+                fetchCampaigns(true);
+              }}
+              onSync={syncMetaInsights}
+            />
+          </>
         ) : null}
       </div>
               </>
