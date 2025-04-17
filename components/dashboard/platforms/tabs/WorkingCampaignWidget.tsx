@@ -323,7 +323,13 @@ export function WorkingCampaignWidget({
       setAdSets(processedAdSets);
       
       // Calculate totals from ad sets to update campaign metrics
-      const adSetTotals = processedAdSets.reduce((acc, adSet) => {
+      const adSetTotals = processedAdSets.reduce((acc: {
+        spent: number;
+        impressions: number;
+        clicks: number;
+        conversions: number;
+        reach: number;
+      }, adSet: AdSet) => {
         acc.spent += Number(adSet.spent || 0);
         acc.impressions += Number(adSet.impressions || 0);
         acc.clicks += Number(adSet.clicks || 0);
@@ -385,19 +391,105 @@ export function WorkingCampaignWidget({
     }
   }, [brandId, dateRange]);
   
-  // Initial data load on mount
+  // Remove the setTimeout based preload approach since we now load everything immediately
+  const loadAllCampaignData = useCallback(async () => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      logger.warn('[WorkingCampaignWidget] Missing date range or brandId for data load');
+      return [];
+    }
+    
+    try {
+      // Format dates for API
+      const from = dateRange.from.toISOString().split('T')[0];
+      const to = dateRange.to.toISOString().split('T')[0];
+      
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      
+      // Full URL with all required parameters
+      const url = `/api/meta/campaigns/bulk-data?brandId=${brandId}&from=${from}&to=${to}&t=${timestamp}`;
+      
+      logger.info(`[WorkingCampaignWidget] Fetching bulk campaign data from: ${from} to ${to}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaign data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+        logger.info(`[WorkingCampaignWidget] Loaded ${data.campaigns.length} campaigns from bulk API`);
+        
+        // Process campaigns to ensure metrics are properly calculated
+        const processedCampaigns = data.campaigns.map((campaign: Campaign) => {
+          return {
+            ...campaign,
+            // Make sure all values are proper numbers
+            spent: Number(campaign.spent || 0),
+            impressions: Number(campaign.impressions || 0),
+            clicks: Number(campaign.clicks || 0),
+            reach: Number(campaign.reach || 0),
+            ctr: Number(campaign.ctr || 0),
+            cpc: Number(campaign.cpc || 0),
+            conversions: Number(campaign.conversions || 0),
+            cost_per_conversion: Number(campaign.cost_per_conversion || 0),
+            roas: Number(campaign.roas || 0),
+            budget: Number(campaign.budget || 0),
+            // Mark if the campaign has data
+            has_data_in_range: (
+              Number(campaign.spent) > 0 || 
+              Number(campaign.impressions) > 0 || 
+              Number(campaign.clicks) > 0
+            )
+          };
+        });
+        
+        setLocalCampaigns(processedCampaigns);
+        dataLoadedRef.current = true;
+        
+        // Return the loaded campaigns
+        return processedCampaigns;
+      } else {
+        logger.warn('[WorkingCampaignWidget] Bulk API returned no data');
+        setLocalCampaigns([]);
+        return [];
+      }
+    } catch (error) {
+      logger.error('[WorkingCampaignWidget] Error during initial data load:', error);
+      toast.error("Failed to load campaign data", {
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
+      return [];
+    }
+  }, [brandId, dateRange]);
+  
+  // Simplify the preloadAllCampaignAdSetData function since we're now doing parallel loading
+  const preloadAllCampaignAdSetData = useCallback(() => {
+    // This is now handled directly in the useEffect
+    logger.debug("[WorkingCampaignWidget] Using parallel ad set loading approach instead");
+  }, []);
+
+  // Initial data load on mount - this has to come AFTER the function declarations
   useEffect(() => {
     if (!dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
       // Set the loading state immediately
       setRefreshing(true);
       
       // Load campaigns first, then immediately load all ad set data in parallel
-      loadAllCampaignData().then(() => {
+      loadAllCampaignData().then((loadedCampaigns) => {
         // After campaigns load, immediately load all ad set data in parallel
-        if (localCampaigns.length > 0) {
+        if (loadedCampaigns && loadedCampaigns.length > 0) {
           // Use parallel fetch for all campaigns
-          const fetchPromises = localCampaigns.map(campaign => {
-            if (!campaign.campaign_id) return Promise.resolve();
+          const fetchPromises = loadedCampaigns.map(campaign => {
+            if (!campaign.campaign_id) return Promise.resolve(null);
             
             // Format date params safely
             const fromDate = dateRange?.from?.toISOString().split('T')[0] || '';
@@ -540,94 +632,8 @@ export function WorkingCampaignWidget({
         setRefreshing(false);
       });
     }
-  }, [brandId, dateRange, loadAllCampaignData]);
+  }, [brandId, dateRange, loadAllCampaignData, expandedCampaign]);
   
-  // Remove the setTimeout based preload approach since we now load everything immediately
-  const loadAllCampaignData = useCallback(async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      logger.warn('[WorkingCampaignWidget] Missing date range or brandId for data load');
-      return;
-    }
-    
-    try {
-      // Format dates for API
-      const from = dateRange.from.toISOString().split('T')[0];
-      const to = dateRange.to.toISOString().split('T')[0];
-      
-      // Add timestamp to prevent caching
-      const timestamp = Date.now();
-      
-      // Full URL with all required parameters
-      const url = `/api/meta/campaigns/bulk-data?brandId=${brandId}&from=${from}&to=${to}&t=${timestamp}`;
-      
-      logger.info(`[WorkingCampaignWidget] Fetching bulk campaign data from: ${from} to ${to}`);
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch campaign data: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
-        logger.info(`[WorkingCampaignWidget] Loaded ${data.campaigns.length} campaigns from bulk API`);
-        
-        // Process campaigns to ensure metrics are properly calculated
-        const processedCampaigns = data.campaigns.map((campaign: Campaign) => {
-          return {
-            ...campaign,
-            // Make sure all values are proper numbers
-            spent: Number(campaign.spent || 0),
-            impressions: Number(campaign.impressions || 0),
-            clicks: Number(campaign.clicks || 0),
-            reach: Number(campaign.reach || 0),
-            ctr: Number(campaign.ctr || 0),
-            cpc: Number(campaign.cpc || 0),
-            conversions: Number(campaign.conversions || 0),
-            cost_per_conversion: Number(campaign.cost_per_conversion || 0),
-            roas: Number(campaign.roas || 0),
-            budget: Number(campaign.budget || 0),
-            // Mark if the campaign has data
-            has_data_in_range: (
-              Number(campaign.spent) > 0 || 
-              Number(campaign.impressions) > 0 || 
-              Number(campaign.clicks) > 0
-            )
-          };
-        });
-        
-        setLocalCampaigns(processedCampaigns);
-        dataLoadedRef.current = true;
-        
-        // Return the loaded campaigns
-        return processedCampaigns;
-      } else {
-        logger.warn('[WorkingCampaignWidget] Bulk API returned no data');
-        setLocalCampaigns([]);
-        return [];
-      }
-    } catch (error) {
-      logger.error('[WorkingCampaignWidget] Error during initial data load:', error);
-      toast.error("Failed to load campaign data", {
-        description: error instanceof Error ? error.message : "Unknown error"
-      });
-      return [];
-    }
-  }, [brandId, dateRange]);
-  
-  // Simplify the preloadAllCampaignAdSetData function since we're now doing parallel loading
-  const preloadAllCampaignAdSetData = useCallback((campaigns: Campaign[]) => {
-    // This is now handled directly in the useEffect
-    logger.debug("[WorkingCampaignWidget] Using parallel ad set loading approach instead");
-  }, []);
-
   // Reload data when date range changes - needs to force complete reload
   useEffect(() => {
     if (dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
@@ -638,12 +644,12 @@ export function WorkingCampaignWidget({
       dataLoadedRef.current = false;
       
       // This will trigger the other useEffect to do a complete reload
-      loadAllCampaignData().then(() => {
+      loadAllCampaignData().then((loadedCampaigns) => {
         // After reloading campaigns, we need to reload all ad set data as well
-        if (localCampaigns.length > 0) {
+        if (loadedCampaigns && loadedCampaigns.length > 0) {
           // Use parallel fetch for all campaigns
-          const fetchPromises = localCampaigns.map(campaign => {
-            if (!campaign.campaign_id) return Promise.resolve();
+          const fetchPromises = loadedCampaigns.map(campaign => {
+            if (!campaign.campaign_id) return Promise.resolve(null);
             
             // Format date params safely
             const fromDate = dateRange?.from?.toISOString().split('T')[0] || '';
