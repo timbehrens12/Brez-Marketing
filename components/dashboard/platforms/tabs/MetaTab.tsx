@@ -614,6 +614,16 @@ export function MetaTab({
       
       const data = await response.json();
       
+      // *** DETAILED API RESPONSE LOGGING ***
+      console.log("[MetaTab DEBUG] Raw API Response Data:", JSON.stringify(data, null, 2)); 
+      if (data && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+          console.log("[MetaTab DEBUG] First Campaign OBJECT from API:", JSON.stringify(data.campaigns[0], null, 2));
+          console.log(`[MetaTab DEBUG] First Campaign METRICS from API: spend=${data.campaigns[0]?.spent}, impressions=${data.campaigns[0]?.impressions}, clicks=${data.campaigns[0]?.clicks}`);
+      } else {
+          console.log("[MetaTab DEBUG] API response did not contain a valid campaigns array.");
+      }
+      // *** END DETAILED LOGGING ***
+
       if (!data || !Array.isArray(data.campaigns)) {
         logger.warn('[MetaTab] Invalid campaign data received from API');
         setCampaigns([]);
@@ -621,13 +631,12 @@ export function MetaTab({
         return [];
       }
       
-      // Cache campaigns in component state - IMPORTANT: API should return date-ranged data
+      // Cache campaigns in component state
       setCampaigns(data.campaigns);
-      setCachedCampaigns(data.campaigns); // Update cache as well
+      setCachedCampaigns(data.campaigns);
       
       logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
       
-      // Dispatch event to notify system that campaigns were loaded
       window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
         detail: { count: data.campaigns.length }
       }));
