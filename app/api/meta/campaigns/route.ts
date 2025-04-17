@@ -136,8 +136,9 @@ export async function GET(request: NextRequest) {
       const normalizedFromDate = normalizeDate(fromDate);
       const normalizedToDate = normalizeDate(toDate);
       
-      // Get daily stats for all campaigns in the date range
-      const { data: dailyStats, error: statsError } = await supabase
+      // Get daily ad stats for all campaigns in the date range from the correct table
+      console.log(`[Meta Campaigns] Fetching daily ad insights from ${normalizedFromDate} to ${normalizedToDate}`)
+      const { data: dailyAdStats, error: statsError } = await supabase
         .from('meta_ad_insights')
         .select('campaign_id, date, spend, impressions, clicks, reach, actions, action_values')
         .eq('brand_id', brandId)
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest) {
         .lte('date', normalizedToDate);
       
       if (statsError) {
-        console.error('Error fetching daily campaign stats:', statsError)
+        console.error('Error fetching daily ad insights:', statsError)
         return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
       }
       
@@ -155,8 +156,8 @@ export async function GET(request: NextRequest) {
       // Group stats by campaign
       const statsByCampaign: Record<string, any[]> = {};
       
-      if (dailyStats) {
-        dailyStats.forEach(stat => {
+      if (dailyAdStats) {
+        dailyAdStats.forEach(stat => {
           if (!stat.campaign_id) return;
           
           // Track which campaigns have data
@@ -170,7 +171,7 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      console.log(`[Meta Campaigns] Found ${campaignIdsWithData.size} campaigns with data in date range`);
+      console.log(`[Meta Campaigns] Found ${campaignIdsWithData.size} campaigns with data in date range from ${dailyAdStats?.length || 0} daily ad insight records`);
       
       // Filter campaigns based on status if provided
       let relevantCampaigns = campaignDetails;
@@ -189,52 +190,91 @@ export async function GET(request: NextRequest) {
       const campaigns = relevantCampaigns.map(campaign => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
-        // Aggregate metrics from daily stats
+        // Aggregate metrics from daily ad stats
         let spend = 0;
         let impressions = 0;
         let clicks = 0;
         let reach = 0;
         let conversions = 0;
-        let ctr = 0;
-        let cpc = 0;
-        let cost_per_conversion = 0;
-        let roas = 0;
+        let purchaseValue = 0;
+        
+        // Collect daily insights specific to this campaign for the response
+        const campaignDailyAggregatedInsights: any[] = [];
         
         if (campaignStats.length > 0) {
-          // Sum up all metrics
+          // Aggregate daily stats for the campaign
+          const dailyAggregation: Record<string, any> = {};
+          
           campaignStats.forEach(stat => {
-            spend += Number(stat.spend) || 0;
-            impressions += Number(stat.impressions) || 0;
-            clicks += Number(stat.clicks) || 0;
-            reach += Number(stat.reach) || 0;
-            // Aggregate conversions from actions array
-            if (stat.actions && Array.isArray(stat.actions)) {
+            const date = stat.date;
+            if (!dailyAggregation[date]) {
+              dailyAggregation[date] = {
+                date: date,
+                campaign_id: campaign.campaign_id,
+                spent: 0,
+                impressions: 0,
+                clicks: 0,
+                reach: 0,
+                conversions: 0,
+                purchaseValue: 0 // Track purchase value per day
+              };
+            }
+            
+            const dailySpend = Number(stat.spend) || 0;
+            const dailyImpressions = Number(stat.impressions) || 0;
+            const dailyClicks = Number(stat.clicks) || 0;
+            const dailyReach = Number(stat.reach) || 0;
+            let dailyConversions = 0;
+            let dailyPurchaseValue = 0;
+            
+            // Calculate conversions and purchase value from actions/action_values
+            if (Array.isArray(stat.actions)) {
               stat.actions.forEach((action: any) => {
-                // Common purchase/conversion action types
-                if (['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(action.action_type)) {
-                  conversions += parseInt(action.value || '0', 10);
+                if (action.action_type?.includes('purchase') || action.action_type?.includes('conversion')) {
+                  dailyConversions += parseInt(action.value || '0');
                 }
               });
             }
+            if (Array.isArray(stat.action_values)) {
+              stat.action_values.forEach((actionValue: any) => {
+                if (actionValue.action_type?.includes('purchase') || actionValue.action_type?.includes('conversion')) {
+                  dailyPurchaseValue += parseFloat(actionValue.value || '0');
+                }
+              });
+            }
+            
+            // Aggregate for the specific day
+            dailyAggregation[date].spent += dailySpend;
+            dailyAggregation[date].impressions += dailyImpressions;
+            dailyAggregation[date].clicks += dailyClicks;
+            dailyAggregation[date].reach += dailyReach;
+            dailyAggregation[date].conversions += dailyConversions;
+            dailyAggregation[date].purchaseValue += dailyPurchaseValue;
+            
+            // Aggregate for the total period
+            spend += dailySpend;
+            impressions += dailyImpressions;
+            clicks += dailyClicks;
+            reach += dailyReach;
+            conversions += dailyConversions;
+            purchaseValue += dailyPurchaseValue;
           });
           
-          // Calculate derived metrics
-          ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-          cpc = clicks > 0 ? (spend / clicks) : 0;
-          cost_per_conversion = conversions > 0 ? (spend / conversions) : 0;
-          
-          // Calculate ROAS (requires purchase value which isn't directly in insights, may need separate logic or approximation)
-          // For now, let's calculate based on total action value if available
-          let totalPurchaseValue = 0;
-          if (campaignStats.length > 0 && Array.isArray(campaignStats[0].action_values)) {
-             campaignStats[0].action_values.forEach((av: any) => {
-               if (['purchase', 'offsite_conversion.fb_pixel_purchase'].includes(av.action_type)) {
-                 totalPurchaseValue += parseFloat(av.value || '0');
-               }
-             });
-          }
-          roas = spend > 0 ? (totalPurchaseValue / spend) : 0;
+          // Add derived metrics to daily aggregated insights
+          Object.values(dailyAggregation).forEach(dailyStat => {
+            dailyStat.ctr = dailyStat.impressions > 0 ? (dailyStat.clicks / dailyStat.impressions) : 0;
+            dailyStat.cpc = dailyStat.clicks > 0 ? (dailyStat.spent / dailyStat.clicks) : 0;
+            dailyStat.cost_per_conversion = dailyStat.conversions > 0 ? (dailyStat.spent / dailyStat.conversions) : 0;
+            dailyStat.roas = dailyStat.spent > 0 ? (dailyStat.purchaseValue / dailyStat.spent) : 0;
+            campaignDailyAggregatedInsights.push(dailyStat);
+          });
         }
+        
+        // Calculate overall derived metrics for the campaign over the period
+        const ctr = impressions > 0 ? (clicks / impressions) : 0;
+        const cpc = clicks > 0 ? (spend / clicks) : 0;
+        const cost_per_conversion = conversions > 0 ? (spend / conversions) : 0;
+        const roas = spend > 0 ? (purchaseValue / spend) : 0;
         
         // Return campaign with aggregated performance metrics for the date range
         return {
@@ -252,25 +292,7 @@ export async function GET(request: NextRequest) {
           roas,
           // Flag indicating if this campaign had data in the date range
           has_data_in_range: campaignIdsWithData.has(campaign.campaign_id),
-          daily_insights: campaignStats.map(stat => ({
-            date: stat.date,
-            campaign_id: stat.campaign_id,
-            spend: Number(stat.spend) || 0,
-            impressions: Number(stat.impressions) || 0,
-            clicks: Number(stat.clicks) || 0,
-            reach: Number(stat.reach) || 0,
-            // Extract conversions from actions for daily insights as well
-            conversions: stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || 0,
-            // Calculate daily CTR, CPC, Cost/Conversion, ROAS if needed (similar logic as above)
-            ctr: (Number(stat.impressions) || 0) > 0 ? (Number(stat.clicks) || 0) / (Number(stat.impressions) || 0) * 100 : 0,
-            cpc: (Number(stat.clicks) || 0) > 0 ? (Number(stat.spend) || 0) / (Number(stat.clicks) || 0) : 0,
-            cost_per_conversion: (parseInt(stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || '0', 10)) > 0 
-                ? (Number(stat.spend) || 0) / (parseInt(stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || '0', 10))
-                : 0,
-            roas: (Number(stat.spend) || 0) > 0 
-                ? (parseFloat(stat.action_values?.find((av: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase'].includes(av.action_type))?.value || '0')) / (Number(stat.spend) || 0)
-                : 0
-          })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          daily_insights: campaignDailyAggregatedInsights.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         };
       });
       
