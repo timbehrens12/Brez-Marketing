@@ -1619,106 +1619,179 @@ const CampaignWidget = ({
     }
   }, [brandId, dateRange]);
 
-  // Add a function to refresh all campaign data
+  // Update the refreshAllCampaignData function to be more aggressive
   const refreshAllCampaignData = useCallback(async (forceRefresh = false) => {
-    if (!brandId || !dateRange?.from || !dateRange?.to || !localCampaigns.length) return;
+    if (!brandId || !dateRange?.from || !dateRange?.to) return;
     
-    // Apply throttling to prevent excessive API calls
-    if (!forceRefresh && !throttle('refresh-all-campaigns', 10000)) {
+    // Never throttle initial loads to ensure data is always correct
+    if (!forceRefresh && localCampaigns.length > 0 && !throttle('refresh-all-campaigns', 10000)) {
       logger.debug('[CampaignWidget] Throttled campaign refresh');
       return;
     }
     
-    logger.debug('[CampaignWidget] Refreshing all campaign data with current date range');
+    logger.info('[CampaignWidget] Refreshing all campaign data with current date range');
     
-    // Start by updating the date-filtered campaign data without API calls
-    const fromDate = dateRange.from.toISOString().split('T')[0];
-    const toDate = dateRange.to.toISOString().split('T')[0];
+    // Show a loading indicator for the user
+    setRefreshing(true);
     
-    // First, use the local filtering mechanism to update campaign data based on date range
-    const updatedCampaigns = JSON.parse(JSON.stringify(campaigns));
-    
-    // Apply date filtering to each campaign's data
-    updatedCampaigns.forEach((campaign: Campaign) => {
-      if (campaign.daily_insights?.length) {
-        // Filter insights within date range
-        const insightsInRange = campaign.daily_insights.filter((insight: DailyInsight) => {
-          const insightDate = insight.date;
-          return insightDate >= fromDate && insightDate <= toDate;
+    try {
+      // Start by updating the date-filtered campaign data without API calls
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
+      
+      // Use API calls to refresh ALL campaign data for maximum accuracy
+      const refreshPromises = campaigns.map(campaign => {
+        return fetchCampaignData(campaign.campaign_id, forceRefresh)
+          .catch(err => {
+            logger.error(`Error refreshing campaign ${campaign.campaign_id}:`, err);
+            return null;
+          });
+      });
+      
+      // Wait for all refresh calls to complete
+      await Promise.all(refreshPromises);
+      
+      // If no API call worked, fall back to local filtering
+      if (!localCampaigns.some(c => c.has_data_in_range)) {
+        logger.debug('[CampaignWidget] API refresh failed, using local data filtering');
+        
+        const updatedCampaigns = JSON.parse(JSON.stringify(campaigns));
+        
+        // Apply date filtering to each campaign's data
+        updatedCampaigns.forEach((campaign: Campaign) => {
+          if (campaign.daily_insights?.length) {
+            // Filter insights within date range
+            const insightsInRange = campaign.daily_insights.filter((insight: DailyInsight) => {
+              const insightDate = insight.date;
+              return insightDate >= fromDate && insightDate <= toDate;
+            });
+            
+            campaign.has_data_in_range = insightsInRange.length > 0;
+            
+            if (insightsInRange.length > 0) {
+              // Sum up metrics for the filtered date range
+              const metrics = insightsInRange.reduce((acc: any, insight: DailyInsight) => {
+                acc.spent += (insight.spent || 0);
+                acc.impressions += (insight.impressions || 0);
+                acc.clicks += (insight.clicks || 0);
+                acc.conversions += (insight.conversions || 0);
+                return acc;
+              }, { spent: 0, impressions: 0, clicks: 0, conversions: 0 });
+              
+              // Update campaign metrics
+              campaign.spent = metrics.spent;
+              campaign.impressions = metrics.impressions;
+              campaign.clicks = metrics.clicks;
+              campaign.conversions = metrics.conversions;
+              
+              // Calculate derived metrics
+              campaign.ctr = metrics.impressions > 0 ? (metrics.clicks / metrics.impressions) * 100 : 0;
+              campaign.cpc = metrics.clicks > 0 ? metrics.spent / metrics.clicks : 0;
+              campaign.cost_per_conversion = metrics.conversions > 0 ? metrics.spent / metrics.conversions : 0;
+              
+              // Calculate ROAS (assuming $25 per conversion)
+              const conversionValue = metrics.conversions * 25;
+              campaign.roas = metrics.spent > 0 ? conversionValue / metrics.spent : 0;
+            } else {
+              // Zero out metrics for no data in range
+              campaign.spent = 0;
+              campaign.impressions = 0;
+              campaign.clicks = 0;
+              campaign.conversions = 0;
+              campaign.ctr = 0;
+              campaign.cpc = 0;
+              campaign.cost_per_conversion = 0;
+              campaign.roas = 0;
+            }
+          }
         });
         
-        campaign.has_data_in_range = insightsInRange.length > 0;
-        
-        if (insightsInRange.length > 0) {
-          // Sum up metrics for the filtered date range
-          const metrics = insightsInRange.reduce((acc: any, insight: DailyInsight) => {
-            acc.spent += (insight.spent || 0);
-            acc.impressions += (insight.impressions || 0);
-            acc.clicks += (insight.clicks || 0);
-            acc.conversions += (insight.conversions || 0);
-            return acc;
-          }, { spent: 0, impressions: 0, clicks: 0, conversions: 0 });
-          
-          // Update campaign metrics
-          campaign.spent = metrics.spent;
-          campaign.impressions = metrics.impressions;
-          campaign.clicks = metrics.clicks;
-          campaign.conversions = metrics.conversions;
-          
-          // Calculate derived metrics
-          campaign.ctr = metrics.impressions > 0 ? (metrics.clicks / metrics.impressions) * 100 : 0;
-          campaign.cpc = metrics.clicks > 0 ? metrics.spent / metrics.clicks : 0;
-          campaign.cost_per_conversion = metrics.conversions > 0 ? metrics.spent / metrics.conversions : 0;
-          
-          // Calculate ROAS (assuming $25 per conversion)
-          const conversionValue = metrics.conversions * 25;
-          campaign.roas = metrics.spent > 0 ? conversionValue / metrics.spent : 0;
-        } else {
-          // Zero out metrics for no data in range
-          campaign.spent = 0;
-          campaign.impressions = 0;
-          campaign.clicks = 0;
-          campaign.conversions = 0;
-          campaign.ctr = 0;
-          campaign.cpc = 0;
-          campaign.cost_per_conversion = 0;
-          campaign.roas = 0;
-        }
+        setLocalCampaigns(updatedCampaigns);
       }
-    });
-    
-    setLocalCampaigns(updatedCampaigns);
-    
-    // Then for campaigns with adsets already loaded, update their data from adsets
-    Array.from(campaignsWithAdSets).forEach(campaignId => {
-      // Refresh campaign data from API for the most accurate info
+      
+      // Show toast confirmation to indicate data is fresh
       if (forceRefresh) {
-        fetchCampaignData(campaignId, true);
-      } else {
-        // For campaigns with adsets but no API refresh, calculate locally
-        const campaignAdSets = adSets.filter(adSet => 
-          adSet.campaign_id === campaignId
+        toast.success("Campaign data refreshed", { 
+          description: "Data has been updated for the current date range."
+        });
+      }
+    } catch (error) {
+      logger.error('[CampaignWidget] Error refreshing campaign data:', error);
+      toast.error("Failed to refresh campaign data");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [brandId, dateRange, campaigns, localCampaigns, fetchCampaignData]);
+
+  // Make a direct server call on component mount to get accurate data
+  useEffect(() => {
+    // This will run when the component first mounts
+    const initializeData = async () => {
+      if (!campaigns.length || !brandId || !dateRange?.from || !dateRange?.to) return;
+      
+      logger.info('[CampaignWidget] Initial data load starting...');
+      
+      // Show a subtle loading indicator
+      setRefreshing(true);
+      
+      try {
+        // Get date parameters
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        
+        // Make a direct request to the Meta API endpoint
+        const response = await fetch(
+          `/api/meta/campaigns/bulk-data?brandId=${brandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`,
+          {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          }
         );
         
-        if (campaignAdSets.length > 0) {
-          updateCampaignTotalsFromAdSets(campaignId);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch campaign data: ${response.status}`);
         }
+        
+        const data = await response.json();
+        
+        if (data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+          logger.info(`[CampaignWidget] Loaded ${data.campaigns.length} campaigns from bulk API`);
+          setLocalCampaigns(data.campaigns);
+        } else {
+          // If bulk API fails, fall back to refreshing all
+          logger.warn('[CampaignWidget] Bulk API returned no data, falling back to individual refresh');
+          refreshAllCampaignData(true);
+        }
+      } catch (error) {
+        logger.error('[CampaignWidget] Error during initial data load:', error);
+        // Fall back to refresh method
+        refreshAllCampaignData(true);
+      } finally {
+        setRefreshing(false);
       }
-    });
+    };
     
-    // For expanded campaign, always refresh from API
-    if (expandedCampaign) {
-      fetchCampaignData(expandedCampaign, forceRefresh);
-    }
-  }, [brandId, dateRange, campaigns, localCampaigns, campaignsWithAdSets, expandedCampaign, fetchCampaignData, updateCampaignTotalsFromAdSets, adSets]);
-
-  // Run the data refresh when component mounts and when date range changes
-  useEffect(() => {
-    // Make sure campaign data is always correct for the date range on initial load
-    if (campaigns.length > 0 && dateRange?.from && dateRange?.to) {
+    // Run immediately
+    initializeData();
+    
+    // Also set up a timer to refresh data every 60 seconds
+    const intervalId = setInterval(() => {
       refreshAllCampaignData(false);
+    }, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, [brandId, campaigns.length, dateRange?.from, dateRange?.to]);
+
+  // Create a useEffect with the right dependencies that will re-render when the date range changes
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      // When date range changes, immediately refresh data
+      refreshAllCampaignData(true);
     }
-  }, [campaigns, dateRange, refreshAllCampaignData]);
+  }, [dateRange?.from?.toISOString(), dateRange?.to?.toISOString()]);
 
   // Update the toggle function to ensure campaign data is accurate
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
