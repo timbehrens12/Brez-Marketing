@@ -1605,19 +1605,88 @@ const CampaignWidget = ({
         return null;
       }
       
+      // Process the campaign data to ensure all metrics are properly formatted
+      const processedCampaign = {
+        ...data.campaign,
+        // Ensure numeric values
+        spent: Number(data.campaign.spent || 0),
+        impressions: Number(data.campaign.impressions || 0),
+        clicks: Number(data.campaign.clicks || 0),
+        conversions: Number(data.campaign.conversions || 0),
+        reach: Number(data.campaign.reach || 0),
+        // Recalculate derived metrics to ensure consistency
+        ctr: data.campaign.impressions > 0 
+          ? (Number(data.campaign.clicks || 0) / Number(data.campaign.impressions)) * 100 
+          : 0,
+        cpc: data.campaign.clicks > 0 
+          ? Number(data.campaign.spent || 0) / Number(data.campaign.clicks) 
+          : 0,
+        cost_per_conversion: data.campaign.conversions > 0 
+          ? Number(data.campaign.spent || 0) / Number(data.campaign.conversions) 
+          : 0,
+        // Mark as having data if any of these metrics are non-zero
+        has_data_in_range: (
+          Number(data.campaign.spent || 0) > 0 || 
+          Number(data.campaign.impressions || 0) > 0 || 
+          Number(data.campaign.clicks || 0) > 0
+        )
+      };
+      
       // Update the local campaigns with this updated data
       setLocalCampaigns(prev => 
         prev.map(campaign => 
-          campaign.campaign_id === campaignId ? data.campaign : campaign
+          campaign.campaign_id === campaignId ? processedCampaign : campaign
         )
       );
       
-      return data.campaign;
+      // Also check if we need to update metrics from ad sets for even more accuracy
+      if (expandedCampaign === campaignId && adSets.length > 0) {
+        // Calculate totals from ad sets for the most accurate data
+        const adSetTotals = adSets.reduce((acc, adSet) => {
+          acc.spent += Number(adSet.spent || 0);
+          acc.impressions += Number(adSet.impressions || 0);
+          acc.clicks += Number(adSet.clicks || 0);
+          acc.conversions += Number(adSet.conversions || 0);
+          acc.reach += Number(adSet.reach || 0);
+          return acc;
+        }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+        
+        // Update the campaign metrics with ad set data if it has any
+        if (adSetTotals.spent > 0 || adSetTotals.impressions > 0 || adSetTotals.clicks > 0) {
+          setLocalCampaigns(prev => 
+            prev.map(campaign => {
+              if (campaign.campaign_id === campaignId) {
+                return {
+                  ...campaign,
+                  spent: adSetTotals.spent,
+                  impressions: adSetTotals.impressions,
+                  clicks: adSetTotals.clicks,
+                  conversions: adSetTotals.conversions,
+                  reach: adSetTotals.reach,
+                  ctr: adSetTotals.impressions > 0 
+                    ? (adSetTotals.clicks / adSetTotals.impressions) * 100 
+                    : 0,
+                  cpc: adSetTotals.clicks > 0 
+                    ? adSetTotals.spent / adSetTotals.clicks 
+                    : 0,
+                  cost_per_conversion: adSetTotals.conversions > 0 
+                    ? adSetTotals.spent / adSetTotals.conversions 
+                    : 0,
+                  has_data_in_range: true
+                };
+              }
+              return campaign;
+            })
+          );
+        }
+      }
+      
+      return processedCampaign;
     } catch (error) {
       logger.error(`[CampaignWidget] Error fetching campaign data:`, error);
       return null;
     }
-  }, [brandId, dateRange]);
+  }, [brandId, dateRange, expandedCampaign, adSets]);
 
   // Update the refreshAllCampaignData function to be more aggressive
   const refreshAllCampaignData = useCallback(async (forceRefresh = false) => {
@@ -1727,26 +1796,38 @@ const CampaignWidget = ({
   useEffect(() => {
     // This will run when the component first mounts
     const initializeData = async () => {
-      if (!campaigns.length || !brandId || !dateRange?.from || !dateRange?.to) return;
+      // If no date range or brand ID, exit early
+      if (!dateRange?.from || !dateRange?.to || !brandId) {
+        logger.warn('[CampaignWidget] Missing date range or brandId for data load');
+        return;
+      }
       
-      logger.info('[CampaignWidget] Initial data load starting...');
-      
-      // Show a subtle loading indicator
       setRefreshing(true);
       
       try {
-        // Get date parameters
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
+        // Make sure to get the latest api url format
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const endpoint = `${baseUrl}/api/meta/campaigns/bulk-data`;
         
-        // Make a direct request to the Meta API endpoint
+        // Format dates for API
+        const from = dateRange.from.toISOString().split('T')[0];
+        const to = dateRange.to.toISOString().split('T')[0];
+        
+        // Add timestamp to prevent caching
+        const timestamp = Date.now();
+        
+        // Full URL with all required parameters
+        const url = `${endpoint}?brandId=${brandId}&from=${from}&to=${to}&t=${timestamp}`;
+        
+        logger.info(`[CampaignWidget] Fetching bulk campaign data from: ${from} to ${to}`);
+        
         const response = await fetch(
-          `/api/meta/campaigns/bulk-data?brandId=${brandId}&from=${fromDate}&to=${toDate}&t=${Date.now()}`,
+          url,
           {
-            cache: 'no-store',
+            method: 'GET',
             headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate'
             }
           }
         );
@@ -1759,7 +1840,29 @@ const CampaignWidget = ({
         
         if (data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
           logger.info(`[CampaignWidget] Loaded ${data.campaigns.length} campaigns from bulk API`);
-          setLocalCampaigns(data.campaigns);
+          // Process campaigns to ensure metrics are properly calculated and set
+          const processedCampaigns = data.campaigns.map((campaign: Campaign) => {
+            // Ensure campaign has metrics even if not directly provided
+            return {
+              ...campaign,
+              // Make sure these are numeric values to avoid display issues
+              spent: Number(campaign.spent || 0),
+              impressions: Number(campaign.impressions || 0),
+              clicks: Number(campaign.clicks || 0),
+              reach: Number(campaign.reach || 0),
+              ctr: Number(campaign.ctr || 0),
+              cpc: Number(campaign.cpc || 0),
+              conversions: Number(campaign.conversions || 0),
+              cost_per_conversion: Number(campaign.cost_per_conversion || 0),
+              // Force update has_data_in_range flag
+              has_data_in_range: (
+                Number(campaign.spent) > 0 || 
+                Number(campaign.impressions) > 0 || 
+                Number(campaign.clicks) > 0
+              )
+            };
+          });
+          setLocalCampaigns(processedCampaigns);
         } else {
           // If bulk API fails, fall back to refreshing all
           logger.warn('[CampaignWidget] Bulk API returned no data, falling back to individual refresh');
@@ -1816,15 +1919,62 @@ const CampaignWidget = ({
       
       logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
-      // Refresh campaign data immediately to ensure it's accurate
+      // Force refresh campaign data immediately to ensure it's accurate
       await fetchCampaignData(campaignId, true);
       
       // Set as expanded
       setExpandedCampaign(campaignId);
+      
       // Fetch ad sets for this campaign
-      fetchAdSets(campaignId);
+      await fetchAdSets(campaignId);
+      
+      // After fetching ad sets, update campaign metrics based on ad set totals
+      // This ensures the parent campaign row shows consistent data with its ad sets
+      const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
+      if (campaign && adSets.length > 0) {
+        const updatedCampaigns = localCampaigns.map(c => {
+          if (c.campaign_id === campaignId) {
+            // Calculate totals from ad sets for more accurate data
+            const adSetTotals = adSets.reduce((acc, adSet) => {
+              acc.spent += Number(adSet.spent || 0);
+              acc.impressions += Number(adSet.impressions || 0);
+              acc.clicks += Number(adSet.clicks || 0);
+              acc.conversions += Number(adSet.conversions || 0);
+              acc.reach += Number(adSet.reach || 0);
+              return acc;
+            }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+            
+            // Calculate derived metrics
+            const ctr = adSetTotals.impressions > 0 
+              ? (adSetTotals.clicks / adSetTotals.impressions) * 100 
+              : 0;
+            const cpc = adSetTotals.clicks > 0 
+              ? adSetTotals.spent / adSetTotals.clicks 
+              : 0;
+            const costPerConversion = adSetTotals.conversions > 0 
+              ? adSetTotals.spent / adSetTotals.conversions 
+              : 0;
+            
+            return {
+              ...c,
+              spent: adSetTotals.spent,
+              impressions: adSetTotals.impressions,
+              clicks: adSetTotals.clicks,
+              conversions: adSetTotals.conversions,
+              reach: adSetTotals.reach,
+              ctr: ctr,
+              cpc: cpc,
+              cost_per_conversion: costPerConversion,
+              has_data_in_range: true
+            };
+          }
+          return c;
+        });
+        
+        setLocalCampaigns(updatedCampaigns);
+      }
     }
-  }, [brandId, expandedCampaign, fetchAdSets, fetchCampaignData]);
+  }, [brandId, expandedCampaign, fetchAdSets, fetchCampaignData, localCampaigns, adSets]);
 
   // Add this effect to initialize localCampaigns from campaigns prop
   useEffect(() => {
@@ -1833,6 +1983,37 @@ const CampaignWidget = ({
       setLocalCampaigns(campaigns);
     }
   }, [campaigns]);
+
+  // Add a useEffect to sync metrics whenever ad sets change
+  useEffect(() => {
+    // When ad sets change, sync the parent campaign metrics
+    if (expandedCampaign && adSets.length > 0) {
+      const updatedCampaigns = localCampaigns.map(campaign => {
+        if (campaign.campaign_id === expandedCampaign) {
+          // Calculate totals from ad sets
+          const adSetTotals = adSets.reduce((acc, adSet) => {
+            acc.spent += Number(adSet.spent || 0);
+            acc.impressions += Number(adSet.impressions || 0);
+            acc.clicks += Number(adSet.clicks || 0);
+            acc.conversions += Number(adSet.conversions || 0);
+            return acc;
+          }, { spent: 0, impressions: 0, clicks: 0, conversions: 0 });
+          
+          return {
+            ...campaign,
+            spent: adSetTotals.spent,
+            impressions: adSetTotals.impressions,
+            clicks: adSetTotals.clicks,
+            conversions: adSetTotals.conversions,
+            has_data_in_range: true
+          };
+        }
+        return campaign;
+      });
+      
+      setLocalCampaigns(updatedCampaigns);
+    }
+  }, [adSets, expandedCampaign, localCampaigns]);
 
   // Return the JSX for the component
   return (
