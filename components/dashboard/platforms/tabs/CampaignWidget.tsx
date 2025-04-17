@@ -736,23 +736,72 @@ const CampaignWidget = ({
     }
   }, [brandId, fetchCurrentBudgets]);
   
-  // Add a function to bulk refresh all campaign statuses
-  const bulkRefreshCampaignStatuses = useCallback(async () => {
-    if (!brandId) return;
+  // Fix the remaining React errors
+  // Move the fetchAllCampaignBudgets declaration before it's used
+  const fetchAllCampaignBudgets = useCallback(async () => {
+    if (!brandId || !isMountedRef.current) return;
     
-    console.log(`[CampaignWidget] Starting bulk refresh of all campaign statuses for brand ${brandId}`);
+    if (!throttle('fetch-all-budgets', 30000)) {
+      logger.debug('[CampaignWidget] Throttled budget fetch');
+      return;
+    }
     
-    const toastId = toast.loading("Refreshing campaign statuses...");
-    setRefreshing(true);
+    logger.debug('[CampaignWidget] Fetching budgets for all campaigns');
+    setIsLoadingBudgets(true);
     
     try {
-      // Call the new bulk refresh API
-      const response = await fetch('/api/meta/refresh-campaign-statuses', {
+      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
+      
+      if (!isMountedRef.current) return;
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Create a map of campaign_id to budget data
+        const budgetMap: Record<string, any> = {};
+        data.budgets.forEach((budget: any) => {
+          budgetMap[budget.campaign_id] = {
+            budget: budget.budget,
+            budget_type: budget.budget_type,
+            formatted_budget: budget.formatted_budget,
+            budget_source: budget.budget_source
+          };
+        });
+        
+        if (isMountedRef.current) {
+          setCurrentBudgets(budgetMap);
+          logger.debug(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
+        }
+      } else {
+        logger.debug('[CampaignWidget] Failed to fetch campaign budgets');
+      }
+    } catch (error) {
+      logger.debug('[CampaignWidget] Error fetching campaign budgets:', error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoadingBudgets(false);
+        setLastBudgetRefresh(new Date());
+      }
+    }
+  }, [brandId, isMountedRef]);
+
+  // Fix the bulkRefreshCampaignStatuses function to not depend on fetchAllCampaignBudgets
+  const bulkRefreshCampaignStatuses = useCallback(async () => {
+    if (!brandId || !localCampaigns.length) return;
+    
+    setRefreshing(true);
+    logger.debug(`[CampaignWidget] Bulk refreshing campaign statuses`);
+    
+    try {
+      const response = await fetch(`/api/meta/campaigns/refresh-statuses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ brandId })
+        body: JSON.stringify({
+          brandId,
+          campaignIds: localCampaigns.map(c => c.campaign_id)
+        }),
       });
       
       if (!response.ok) {
@@ -761,44 +810,48 @@ const CampaignWidget = ({
       
       const data = await response.json();
       
-      console.log(`[CampaignWidget] Bulk refresh completed: ${data.message}`);
-      
-      // Force refresh the campaigns data
-      mutate(`/api/meta/campaigns?brandId=${brandId}`);
-      
-      toast.success(`Updated ${data.refreshedCount} campaign statuses`, { id: toastId });
-      
-      // Update our local campaigns with the new statuses
-      if (data.details && data.details.length > 0) {
-        const updatedMap = new Map();
+      if (data.success) {
+        logger.debug(`[CampaignWidget] Successfully refreshed ${data.updated || 0} campaign statuses`);
         
-        data.details.forEach((result: any) => {
-          if (result.success && result.campaignId && result.status) {
-            updatedMap.set(result.campaignId, result.status);
+        // If onRefresh callback provided, call it
+        if (onRefresh) {
+          onRefresh();
+        } else {
+          // Otherwise try to update budgets
+          try {
+            const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
+            if (budgetResponse.ok) {
+              const budgetData = await budgetResponse.json();
+              // Create a map of campaign_id to budget data
+              const budgetMap: Record<string, any> = {};
+              budgetData.budgets.forEach((budget: any) => {
+                budgetMap[budget.campaign_id] = {
+                  budget: budget.budget,
+                  budget_type: budget.budget_type,
+                  formatted_budget: budget.formatted_budget,
+                  budget_source: budget.budget_source
+                };
+              });
+              setCurrentBudgets(budgetMap);
+            }
+          } catch (err) {
+            // Silently fail for budget updates
+            logger.debug("[CampaignWidget] Error updating budgets after status refresh:", err);
           }
-        });
-        
-        if (updatedMap.size > 0) {
-          setLocalCampaigns(currentCampaigns => 
-            currentCampaigns.map(c => {
-              const newStatus = updatedMap.get(c.campaign_id);
-              return newStatus 
-                ? { ...c, status: newStatus, last_refresh_date: new Date().toISOString() } 
-                : c;
-            })
-          );
         }
+        
+        toast.success(`Campaign statuses refreshed`);
+      } else {
+        logger.error(`[CampaignWidget] Error refreshing campaign statuses: ${data.error}`);
+        toast.error(`Failed to refresh campaign statuses: ${data.error || 'Unknown error'}`);
       }
-      
-      return true;
     } catch (error) {
-      console.error('[CampaignWidget] Error during bulk refresh:', error);
-      toast.error("Failed to refresh campaign statuses", { id: toastId });
-      return false;
+      logger.error(`[CampaignWidget] Error in bulk refresh:`, error);
+      toast.error(`Error refreshing campaigns: ${(error as Error).message}`);
     } finally {
       setRefreshing(false);
     }
-  }, [brandId]);
+  }, [brandId, localCampaigns, onRefresh]);
 
   // Find the useEffect that sets up event listeners and update it
   useEffect(() => {
@@ -1043,7 +1096,7 @@ const CampaignWidget = ({
       const searchMatch = 
         !searchQuery || 
         campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
+        campaign.account_name?.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Filter by active status if showInactive is false
       const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
@@ -1057,8 +1110,8 @@ const CampaignWidget = ({
         return a.status.localeCompare(b.status) * (sortOrder === 'asc' ? 1 : -1);
       }
       
-      const aValue = a[sortBy as keyof Campaign] as number || 0;
-      const bValue = b[sortBy as keyof Campaign] as number || 0;
+      const aValue = getColumnValue(a, sortBy);
+      const bValue = getColumnValue(b, sortBy);
       
       return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
     });
@@ -1371,7 +1424,7 @@ const CampaignWidget = ({
     checkCampaignStatuses(campaigns);
     
     // Check for recent status updates every 1-2 minutes to keep them fresh
-    const intervalId = setInterval(() => {
+    const refreshIntervalId = setInterval(() => {
       // Don't refresh if the user has manually refreshed recently
       if (refreshing) {
         logger.debug("[CampaignWidget] Skipping auto refresh because manual refresh is in progress");
@@ -1393,7 +1446,7 @@ const CampaignWidget = ({
     }, 120000); // 2 minutes interval
     
     return () => {
-      clearInterval(intervalId);
+      clearInterval(refreshIntervalId);
     };
   }, [campaigns, brandId, checkCampaignStatuses, refreshing]);
 
@@ -1409,54 +1462,6 @@ const CampaignWidget = ({
     
     return formattedAmount;
   }, []);
-
-  // Add a function to automatically fetch budgets for all campaigns
-  const fetchAllCampaignBudgets = useCallback(async () => {
-    if (!brandId || !isMountedRef.current) return;
-    
-    if (!throttle('fetch-all-budgets', 30000)) {
-      logger.debug('[CampaignWidget] Throttled budget fetch');
-      return;
-    }
-    
-    logger.debug('[CampaignWidget] Fetching budgets for all campaigns');
-    setIsLoadingBudgets(true);
-    
-    try {
-      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Create a map of campaign_id to budget data
-        const budgetMap: Record<string, any> = {};
-        data.budgets.forEach((budget: any) => {
-          budgetMap[budget.campaign_id] = {
-            budget: budget.budget,
-            budget_type: budget.budget_type,
-            formatted_budget: budget.formatted_budget,
-            budget_source: budget.budget_source
-          };
-        });
-        
-        if (isMountedRef.current) {
-          setCurrentBudgets(budgetMap);
-          logger.debug(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
-        }
-      } else {
-        logger.debug('[CampaignWidget] Failed to fetch campaign budgets');
-      }
-    } catch (error) {
-      logger.debug('[CampaignWidget] Error fetching campaign budgets:', error);
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoadingBudgets(false);
-        setLastBudgetRefresh(new Date());
-      }
-    }
-  }, [brandId, isMountedRef]);
 
   // Use an effect to fetch budgets on mount and periodically
   useEffect(() => {
