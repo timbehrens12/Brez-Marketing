@@ -4090,159 +4090,59 @@ Try creating at least one active campaign in Meta Ads Manager.
   };
 
   // Store previous date range for comparison
-  const prevDateRangeRef = useRef<{from?: Date, to?: Date}>({});
+  const prevDateRangeRef = useRef<{ from?: Date; to?: Date } | undefined>(undefined);
 
-  // Add a useEffect to log date range changes
+  // Update the useEffect hook that handles date range changes
   useEffect(() => {
-    if (!dateRange?.from || !dateRange?.to) return;
+    const currentFrom = dateRange?.from?.toISOString();
+    const currentTo = dateRange?.to?.toISOString();
+    const previousFrom = prevDateRangeRef.current?.from?.toISOString();
+    const previousTo = prevDateRangeRef.current?.to?.toISOString();
 
-    // Compare with previous date range to avoid unnecessary refreshes
-    const fromChanged = !areDatesEqual(prevDateRangeRef.current.from, dateRange.from);
-    const toChanged = !areDatesEqual(prevDateRangeRef.current.to, dateRange.to);
-    
-    // Only refresh if dates actually changed
-    if (!fromChanged && !toChanged) {
-      return;
-    }
-    
-    console.log("[MetaTab] Date range changed, refreshing data");
-    
-    // Update the reference for next comparison
-    prevDateRangeRef.current = {
-      from: dateRange.from,
-      to: dateRange.to
-    };
-    
-    const fromDateStr = dateRange.from.toISOString().split('T')[0]; 
-    const toDateStr = dateRange.to.toISOString().split('T')[0];
-    
-    // If the date is today, log specifically that we're looking at today's data
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    
-    if (fromDateStr === todayStr && toDateStr === todayStr) {
-      console.log(`[MetaTab] Today's date detected: ${todayStr}`);
-    }
-    
-    // Use a debounce to avoid multiple rapid fetches
-    const fetchId = Date.now();
-    console.log(`[MetaTab] 🔐 Acquired fetch lock for fetchId: ${fetchId}`);
-    
-    if (acquireMetaFetchLock(fetchId)) {
-      // First show loading state
-      setIsLoadingCampaigns(true);
-      
-      // Fetch campaigns data with the new date range
-      fetchCampaigns()
-        .then(() => {
-          console.log('[MetaTab] Campaigns refreshed after date range change');
-          
-          // Also refresh metric data
-          if (typeof refreshMetricsDirectly === 'function') {
-            return refreshMetricsDirectly();
-          }
-        })
-        .then(() => {
-          console.log('[MetaTab] Metrics refreshed after date range change');
-        })
-        .finally(() => {
-          releaseMetaFetchLock(fetchId);
-          console.log(`[MetaTab] 🔓 Released fetch lock (fetchId: ${fetchId})`);
-        });
-    } else {
-      console.log(`[MetaTab] ⛔ Failed to acquire fetch lock, skipping fetch (fetchId: ${fetchId})`);
-    }
-  }, [dateRange]);
+    // Check if the dates have actually changed
+    const datesChanged = currentFrom !== previousFrom || currentTo !== previousTo;
 
-  // Persist date range to prevent resetting to "all time"
-  useEffect(() => {
-    if (!dateRange?.from || !dateRange?.to) return;
-    
-    // Store the currently selected date range to prevent it from resetting
-    try {
-      localStorage.setItem('meta-tab-date-range', JSON.stringify({
-        from: dateRange.from.toISOString(),
-        to: dateRange.to.toISOString()
-      }));
-      console.log(`[MetaTab] Date range saved: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
-    } catch (e) {
-      console.error('Error saving date range:', e);
-    }
-  }, [dateRange]);
+    if (datesChanged) {
+      logger.debug('[MetaTab] Date range actually changed:', 
+        `(${previousFrom?.split('T')[0]} - ${previousTo?.split('T')[0]})`, '->',
+        `(${currentFrom?.split('T')[0]} - ${currentTo?.split('T')[0]})`);
 
-  // Add protection to prevent automatic resetting of date range
-  useEffect(() => {
-    // Block automatic date changes after initial load
-    const blockAutomaticDateChanges = () => {
-      // After the page loads, block automatic date resets
-      window._disableAutoMetaFetch = true;
-      console.log('[MetaTab] Auto fetch disabled to prevent date range reset');
-    };
-    
-    window.addEventListener('load', blockAutomaticDateChanges);
-    // Also run it now in case the component mounts after page load
-    blockAutomaticDateChanges();
-    
-    return () => {
-      window.removeEventListener('load', blockAutomaticDateChanges);
-    };
-  }, []);
+      // Store the new date range as the previous one for the next render
+      // Make sure to store a plain object or the relevant date parts if DateRange is complex
+      prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
 
-  // Add error handling to campaign status checking to suppress unnecessary errors
-  // Find the function that calls the campaign status check API and modify it:
-
-  // Add this function near the other helper functions
-  const handleCampaignStatusCheckError = (error: any) => {
-    // Don't show toast for common errors that aren't actionable
-    if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-      console.log('[MetaTab] Session expired or unauthorized, will retry after user interaction');
-      return; // Just silently ignore it for now
-    }
-    
-    // For all other errors, log but don't show toast
-    console.error('[MetaTab] Error checking campaign status:', error);
-  };
-
-  // Add near the refreshMetaData function
-  useEffect(() => {
-    // Set a flag to prevent constant status check loops
-    window._disableAutoMetaFetch = true;
-    
-    // Set a reasonable limit on API calls for status checks
-    window._metaApiRequests = 0;
-    
-    // Only allow initial data loading to happen once
-    let hasInitiallyLoaded = false;
-    
-    // Function to handle date range transitions
-    const stabilizeData = () => {
-      if (hasInitiallyLoaded) return;
-      
-      // Set flag to prevent multiple loads
-      hasInitiallyLoaded = true;
-      
-      // Only fetch data once with the current date range
-      if (dateRange?.from && dateRange?.to) {
-        logger.debug('[MetaTab] Initial data stabilization with date range', 
-          dateRange.from.toLocaleDateString(), '-', dateRange.to.toLocaleDateString());
-        
-        // Schedule a single refresh of campaigns with the current date range
-        setTimeout(() => {
-          if (typeof fetchCampaigns === 'function') {
-            fetchCampaigns(true);
-          }
-        }, 1000);
+      // Fetch campaigns with the new date range (force refresh to get new data)
+      if (throttle('date-range-change-fetch', 2000)) {
+          fetchCampaigns(true);
+      } else {
+          logger.debug('[MetaTab] Throttled fetch due to rapid date change.')
       }
-    };
-    
-    // Run stabilization after component mounts
-    setTimeout(stabilizeData, 1500);
-    
-    return () => {
-      // Clean up
-      hasInitiallyLoaded = true;
-    };
+
+    } else {
+      // Check if the dateRange object itself is undefined now when it wasn't before (or vice-versa)
+      const rangePresenceChanged = (!!dateRange !== !!prevDateRangeRef.current);
+      if (rangePresenceChanged) {
+        logger.debug('[MetaTab] Date range presence changed.');
+        prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
+        if (throttle('date-range-presence-change-fetch', 2000)) {
+           fetchCampaigns(true); // Fetch if range added/removed
+        } else {
+          logger.debug('[MetaTab] Throttled fetch due to rapid date presence change.')
+        }
+      } else {
+        logger.debug('[MetaTab] Date range object updated, but dates are the same. Skipping fetch.');
+      }
+    }
+
+  }, [dateRange, brandId, fetchCampaigns]);
+
+  // Remove or comment out the previous useEffect hook handling date range persistence/stabilization
+  // as this new hook handles the core logic of fetching on change.
+  /*
+  useEffect(() => {
+    // ... previous stabilization logic ...
   }, [dateRange]);
+  */
 
   return (
     <TooltipProvider>
