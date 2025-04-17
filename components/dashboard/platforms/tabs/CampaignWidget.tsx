@@ -287,9 +287,20 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
+  // First define fetchAdSets
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
+    
+    // Don't start a new fetch if one is already in progress unless forced
+    if (isLoadingAdSets && !forceRefresh) {
+      logger.debug('[CampaignWidget] Skipping ad sets fetch - already loading');
+      return;
+    }
+    
+    // We're already showing loading state from toggleCampaignExpand, so no need to set it again
+    if (!isLoadingAdSets) {
+      setIsLoadingAdSets(true);
+    }
     
     // Cancel any existing ad set fetch
     pendingRequestsRef.current.forEach(controller => {
@@ -300,8 +311,9 @@ const CampaignWidget = ({
       }
     });
     
-    // Keep showing loading state but don't clear existing ad sets to prevent flash
-    setIsLoadingAdSets(true);
+    // Create a "minimum loading time" to avoid flickering
+    const loadingStartTime = Date.now();
+    const minimumLoadingTime = 750; // 750ms minimum loading time
     
     const controller = createAbortController();
     logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
@@ -370,7 +382,19 @@ const CampaignWidget = ({
           // Ensure we have a valid array of ad sets
           const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
           
-          // Only set ad sets if we actually got some to avoid flash of "no ad sets"
+          // Wait for minimum loading time to avoid flicker
+          const loadingElapsed = Date.now() - loadingStartTime;
+          const remainingLoadingTime = Math.max(0, minimumLoadingTime - loadingElapsed);
+          
+          if (remainingLoadingTime > 0) {
+            logger.debug(`[CampaignWidget] Waiting ${remainingLoadingTime}ms before updating ad sets to avoid flicker`);
+            await new Promise(resolve => setTimeout(resolve, remainingLoadingTime));
+            
+            // Check if still mounted after the timeout
+            if (!isMountedRef.current) return;
+          }
+          
+          // Handle the valid ad sets after waiting
           if (validAdSets.length > 0) {
             setAdSets(validAdSets);
             
@@ -383,8 +407,8 @@ const CampaignWidget = ({
             
             // Toast notification that ad sets were loaded
             toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
-          } else if (data.adSets !== undefined) {
-            // Only show the empty state if we got a valid response with no ad sets
+          } else {
+            // If we got a successful response but no ad sets, we can show the empty state
             setAdSets([]);
             
             // Check if this was because of a rate limit
@@ -428,6 +452,16 @@ const CampaignWidget = ({
           logger.debug(`[CampaignWidget] Meta API rate limit reached`);
           
           if (isMountedRef.current) {
+            // Wait for minimum loading time to avoid flicker
+            const loadingElapsed = Date.now() - loadingStartTime;
+            const remainingLoadingTime = Math.max(0, minimumLoadingTime - loadingElapsed);
+            
+            if (remainingLoadingTime > 0) {
+              await new Promise(resolve => setTimeout(resolve, remainingLoadingTime));
+              if (!isMountedRef.current) return;
+            }
+            
+            // Show the warning toast
             toast.warning(`Meta API rate limit reached`, {
               description: data.message || 'Please try again in a few minutes',
               duration: 8000
@@ -437,6 +471,16 @@ const CampaignWidget = ({
           logger.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
           
           if (isMountedRef.current) {
+            // Wait for minimum loading time to avoid flicker
+            const loadingElapsed = Date.now() - loadingStartTime;
+            const remainingLoadingTime = Math.max(0, minimumLoadingTime - loadingElapsed);
+            
+            if (remainingLoadingTime > 0) {
+              await new Promise(resolve => setTimeout(resolve, remainingLoadingTime));
+              if (!isMountedRef.current) return;
+            }
+            
+            // Show the error toast
             toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
           }
         }
@@ -450,6 +494,16 @@ const CampaignWidget = ({
       logger.error("[CampaignWidget] Error fetching ad sets:", error);
       
       if (isMountedRef.current) {
+        // Wait for minimum loading time to avoid flicker
+        const loadingElapsed = Date.now() - loadingStartTime;
+        const remainingLoadingTime = Math.max(0, minimumLoadingTime - loadingElapsed);
+        
+        if (remainingLoadingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingLoadingTime));
+          if (!isMountedRef.current) return;
+        }
+        
+        // Show the error toast
         toast.error(`Error loading ad sets: ${(error as Error).message}`);
       }
     } finally {
@@ -457,13 +511,83 @@ const CampaignWidget = ({
         // Add a slight delay to avoid flickering
         setTimeout(() => {
           setIsLoadingAdSets(false);
-        }, 300);
+        }, 200);
       }
       
       // Clean up abort controller
       removeAbortController(controller);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef, isLoadingAdSets]);
+  
+  // Then define toggleCampaignExpand which uses fetchAdSets
+  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
+    if (expandedCampaign === campaignId) {
+      // Collapse if already expanded
+      setExpandedCampaign(null);
+      // Clear the ad sets data
+      setAdSets([]);
+    } else {
+      // Validate campaignId before making API call
+      if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
+        logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
+        toast.error("Cannot expand campaign - invalid campaign ID");
+        return;
+      }
+      
+      if (!brandId) {
+        logger.error('[CampaignWidget] Missing brand ID for status check');
+        toast.error("Cannot expand campaign - missing brand ID");
+        return;
+      }
+      
+      // Set loading state BEFORE expanding to prevent "No ad sets found" from showing
+      setIsLoadingAdSets(true);
+      
+      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      
+      // First, check the status to ensure it's current
+      try {
+        const response = await fetch('/api/meta/campaign-status-check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId,
+            campaignId,
+            forceRefresh: true
+          }),
+        });
+        
+        if (response.ok) {
+          const statusData = await response.json();
+          
+          // Update the campaign in local state if needed
+          if (statusData.status) {
+            setLocalCampaigns(currentCampaigns => 
+              currentCampaigns.map(c => 
+                c.campaign_id === campaignId 
+                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                  : c
+              )
+            );
+          }
+        } else {
+          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
+          // Continue with expansion even if status check fails
+        }
+      } catch (error) {
+        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
+        // Continue with expansion even if status check fails
+      }
+      
+      // Set as expanded - this will trigger the expanded view with a loading indicator
+      setExpandedCampaign(campaignId);
+      
+      // Fetch ad sets for this campaign - the view will already show loading
+      fetchAdSets(campaignId);
+    }
+  }, [brandId, expandedCampaign, fetchAdSets]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -941,72 +1065,6 @@ const CampaignWidget = ({
       document.removeEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
     };
   }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
-  
-  // Fix toggleCampaignExpand implementation
-  const toggleCampaignExpand = useCallback(async (campaignId: string) => {
-    if (expandedCampaign === campaignId) {
-      // Collapse if already expanded
-      setExpandedCampaign(null);
-      // Clear the ad sets data
-      setAdSets([]);
-    } else {
-      // Validate campaignId before making API call
-      if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
-        logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
-        toast.error("Cannot expand campaign - invalid campaign ID");
-        return;
-      }
-      
-      if (!brandId) {
-        logger.error('[CampaignWidget] Missing brand ID for status check');
-        toast.error("Cannot expand campaign - missing brand ID");
-        return;
-      }
-      
-      logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
-      
-      // First, check the status to ensure it's current
-      try {
-        const response = await fetch('/api/meta/campaign-status-check', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-            forceRefresh: true
-          }),
-        });
-        
-        if (response.ok) {
-          const statusData = await response.json();
-          
-          // Update the campaign in local state if needed
-          if (statusData.status) {
-            setLocalCampaigns(currentCampaigns => 
-              currentCampaigns.map(c => 
-                c.campaign_id === campaignId 
-                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                  : c
-              )
-            );
-          }
-        } else {
-          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
-          // Continue with expansion even if status check fails
-        }
-      } catch (error) {
-        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
-        // Continue with expansion even if status check fails
-      }
-      
-      // Set as expanded
-      setExpandedCampaign(campaignId);
-      // Fetch ad sets for this campaign
-      fetchAdSets(campaignId);
-    }
-  }, [brandId, expandedCampaign, fetchAdSets]);
   
   // Toggle sort order function
   const toggleSortOrder = useCallback(() => {
