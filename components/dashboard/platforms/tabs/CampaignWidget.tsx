@@ -2049,7 +2049,7 @@ const formatCampaignStatus = (status: string) => {
     };
   } else if (normalizedStatus === 'PAUSED') {
     return {
-      displayText: 'Paused',
+      displayText: 'Inactive',
       bgColor: 'bg-yellow-950/30',
       textColor: 'text-yellow-500',
       borderColor: 'border-yellow-800/50',
