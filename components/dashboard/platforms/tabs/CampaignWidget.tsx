@@ -300,6 +300,12 @@ const CampaignWidget = ({
       return;
     }
     
+    // If we already have adsets for this campaign and aren't forcing a refresh, don't reload
+    if (adSets.length > 0 && expandedCampaign === campaignId && !forceRefresh) {
+      logger.debug('[CampaignWidget] Skipping ad sets fetch - adsets already loaded');
+      return;
+    }
+    
     // We're already showing loading state from toggleCampaignExpand, so no need to set it again
     if (!isLoadingAdSets) {
       setIsLoadingAdSets(true);
@@ -327,6 +333,9 @@ const CampaignWidget = ({
     // Try the regular endpoint first
     let usedDirectFetch = false;
     let usedCachedData = false;
+    
+    // Keep track of the current campaign ID to avoid race conditions
+    const currentCampaignId = campaignId;
     
     try {
       let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
@@ -402,9 +411,11 @@ const CampaignWidget = ({
           
           // Only update the UI if we're still showing the same campaign
           // This prevents race conditions when quickly toggling between campaigns
-          if (expandedCampaign !== campaignId) {
-            logger.debug(`[CampaignWidget] Campaign changed during fetch, discarding results for ${campaignId}`);
-            setIsLoadingAdSets(false);
+          if (expandedCampaign !== currentCampaignId) {
+            logger.debug(`[CampaignWidget] Campaign changed during fetch, discarding results for ${currentCampaignId}`);
+            if (isMountedRef.current) {
+              setIsLoadingAdSets(false);
+            }
             return;
           }
           
@@ -437,28 +448,40 @@ const CampaignWidget = ({
             }
           }
           
-          // Dispatch events for budgets to update regardless of ad set count
-          logger.debug('[CampaignWidget] Dispatching status changed events');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          setTimeout(() => {
+          // Fix issue with multiple status checks by tracking the last refresh time per campaign
+          const campaignRefreshKey = `campaign-${campaignId}-last-refresh`;
+          const lastRefreshTime = parseInt(localStorage.getItem(campaignRefreshKey) || '0', 10);
+          const now = Date.now();
+          const MIN_REFRESH_INTERVAL = 10000; // 10 seconds
+
+          // Don't dispatch events too frequently
+          if (now - lastRefreshTime > MIN_REFRESH_INTERVAL) {
+            // Store the refresh time
+            localStorage.setItem(campaignRefreshKey, now.toString());
+            
+            // Dispatch events for budgets to update regardless of ad set count
+            logger.debug('[CampaignWidget] Dispatching status changed events');
             window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
+              new CustomEvent('adSetStatusChanged', {
                 detail: {
                   brandId,
+                  campaignId,
                   timestamp: new Date().toISOString()
                 }
               })
             );
-          }, 100);
+            
+            setTimeout(() => {
+              window.dispatchEvent(
+                new CustomEvent('campaignStatusChanged', {
+                  detail: {
+                    brandId,
+                    timestamp: new Date().toISOString()
+                  }
+                })
+              );
+            }, 100);
+          }
         }
       } else {
         // Check if this is a rate limit error response
@@ -522,16 +545,23 @@ const CampaignWidget = ({
       }
     } finally {
       if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
+        // Only update loading state if we're still on the same campaign
+        if (expandedCampaign === currentCampaignId) {
+          // Add a slight delay to avoid flickering
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              setIsLoadingAdSets(false);
+            }
+          }, 200);
+        } else {
           setIsLoadingAdSets(false);
-        }, 200);
+        }
       }
       
       // Clean up abort controller
       removeAbortController(controller);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef, isLoadingAdSets]);
+  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef, isLoadingAdSets, expandedCampaign, adSets.length]);
   
   // Then define toggleCampaignExpand which uses fetchAdSets
   const toggleCampaignExpand = useCallback(async (campaignId: string) => {
@@ -1018,12 +1048,17 @@ const CampaignWidget = ({
       isRefreshing = true;
       setRefreshing(true);
       
-      // Only take the first 3 campaigns to avoid too many simultaneous requests
-      const limitedCampaigns = campaigns.slice(0, 3);
-      logger.debug(`[CampaignWidget] Limited refresh to first ${limitedCampaigns.length} campaigns`);
-      
-      // Do a full force check of limited campaign statuses
-      checkCampaignStatuses(limitedCampaigns, true);
+      // Only refresh if we actually have an expanded campaign with adsets
+      if (expandedCampaign && adSets.length > 0) {
+        fetchAdSets(expandedCampaign, true);
+      } else {
+        // Only take the first 3 campaigns to avoid too many simultaneous requests
+        const limitedCampaigns = campaigns.slice(0, 3);
+        logger.debug(`[CampaignWidget] Limited refresh to first ${limitedCampaigns.length} campaigns`);
+        
+        // Do a full force check of limited campaign statuses
+        checkCampaignStatuses(limitedCampaigns, true);
+      }
       
       // Update state for tracking
       lastRefreshTime = now;
@@ -1085,7 +1120,7 @@ const CampaignWidget = ({
       window.removeEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
       document.removeEventListener('force-refresh-campaign-status', handleDirectForceRefresh);
     };
-  }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses]);
+  }, [brandId, campaigns, checkCampaignStatuses, bulkRefreshCampaignStatuses, expandedCampaign, adSets.length, fetchAdSets]);
   
   // Toggle sort order function
   const toggleSortOrder = useCallback(() => {
@@ -1629,9 +1664,20 @@ const CampaignWidget = ({
 
   // Add useEffect to auto-fetch ad sets for the expanded campaign on load
   useEffect(() => {
-    if (expandedCampaign && !isLoadingAdSets && adSets.length === 0 && adSetsFetchAttempted[expandedCampaign] !== true) {
+    // Track which campaigns we've tried to fetch adsets for to avoid repeated attempts
+    const fetchedCampaigns = useRef(new Set<string>());
+    
+    if (expandedCampaign && 
+        !isLoadingAdSets && 
+        adSets.length === 0 && 
+        adSetsFetchAttempted[expandedCampaign] !== true && 
+        !fetchedCampaigns.current.has(expandedCampaign)) {
+      
       logger.debug(`[CampaignWidget] Auto-fetching ad sets for expanded campaign: ${expandedCampaign}`);
       setIsLoadingAdSets(true);
+      
+      // Mark this campaign as attempted
+      fetchedCampaigns.current.add(expandedCampaign);
       
       // Small delay to ensure UI updates properly
       setTimeout(() => {
@@ -1640,6 +1686,11 @@ const CampaignWidget = ({
         }
       }, 100);
     }
+    
+    // Clean up function to clear fetchedCampaigns when component unmounts
+    return () => {
+      fetchedCampaigns.current.clear();
+    };
   }, [expandedCampaign, isLoadingAdSets, adSets.length, adSetsFetchAttempted, fetchAdSets, isMountedRef]);
 
   // Return the JSX for the component
