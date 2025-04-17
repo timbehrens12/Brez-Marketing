@@ -243,6 +243,9 @@ const CampaignWidget = ({
   const [currentBudgets, setCurrentBudgets] = useState<Record<string, any>>({});
   const [refreshing, setRefreshing] = useState(false);
   
+  // Add a flag to track if fetch completed successfully for the current expanded campaign
+  const [adSetsFetchAttempted, setAdSetsFetchAttempted] = useState<Record<string, boolean>>({});
+  
   // Need state to track campaign status changes
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
   
@@ -302,6 +305,9 @@ const CampaignWidget = ({
       setIsLoadingAdSets(true);
     }
     
+    // Mark this campaign as having a fetch attempt
+    setAdSetsFetchAttempted(prev => ({...prev, [campaignId]: true}));
+    
     // Cancel any existing ad set fetch
     pendingRequestsRef.current.forEach(controller => {
       try {
@@ -313,7 +319,7 @@ const CampaignWidget = ({
     
     // Create a "minimum loading time" to avoid flickering
     const loadingStartTime = Date.now();
-    const minimumLoadingTime = 1000; // Increased to 1000ms minimum loading time to prevent flickering
+    const minimumLoadingTime = 1500; // Increased to 1500ms minimum loading time to prevent flickering
     
     const controller = createAbortController();
     logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
@@ -392,6 +398,14 @@ const CampaignWidget = ({
             
             // Check if still mounted after the timeout
             if (!isMountedRef.current) return;
+          }
+          
+          // Only update the UI if we're still showing the same campaign
+          // This prevents race conditions when quickly toggling between campaigns
+          if (expandedCampaign !== campaignId) {
+            logger.debug(`[CampaignWidget] Campaign changed during fetch, discarding results for ${campaignId}`);
+            setIsLoadingAdSets(false);
+            return;
           }
           
           // Handle the valid ad sets after waiting
@@ -584,10 +598,17 @@ const CampaignWidget = ({
         // Continue with expansion even if status check fails
       }
       
+      // Trigger fetch of adsets - mark this campaign as not yet fetched
+      setAdSetsFetchAttempted(prev => ({...prev, [campaignId]: false}));
+      
       // Fetch ad sets for this campaign - the view will already show loading
-      fetchAdSets(campaignId);
+      setTimeout(() => {
+        if (isMountedRef.current && expandedCampaign === campaignId) {
+          fetchAdSets(campaignId);
+        }
+      }, 100);
     }
-  }, [brandId, expandedCampaign, fetchAdSets]);
+  }, [brandId, expandedCampaign, fetchAdSets, isMountedRef]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -1606,6 +1627,21 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns.length, fetchAllCampaignBudgets, isMountedRef]);
 
+  // Add useEffect to auto-fetch ad sets for the expanded campaign on load
+  useEffect(() => {
+    if (expandedCampaign && !isLoadingAdSets && adSets.length === 0 && adSetsFetchAttempted[expandedCampaign] !== true) {
+      logger.debug(`[CampaignWidget] Auto-fetching ad sets for expanded campaign: ${expandedCampaign}`);
+      setIsLoadingAdSets(true);
+      
+      // Small delay to ensure UI updates properly
+      setTimeout(() => {
+        if (isMountedRef.current && expandedCampaign) {
+          fetchAdSets(expandedCampaign);
+        }
+      }, 100);
+    }
+  }, [expandedCampaign, isLoadingAdSets, adSets.length, adSetsFetchAttempted, fetchAdSets, isMountedRef]);
+
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
@@ -2162,7 +2198,7 @@ const CampaignWidget = ({
                                     </table>
                                   </div>
                                 </div>
-                              ) : (
+                              ) : adSetsFetchAttempted[campaign.campaign_id] ? (
                                 <div className="flex flex-col items-center justify-center py-8 text-center">
                                   <h3 className="text-lg font-medium mb-1 text-white">No ad sets found</h3>
                                   <p className="text-sm text-gray-400 max-w-sm mb-4">
@@ -2181,6 +2217,27 @@ const CampaignWidget = ({
                                   >
                                     <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
                                     Refresh Ad Sets
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                  <h3 className="text-lg font-medium mb-1 text-white">Loading ad sets...</h3>
+                                  <p className="text-sm text-gray-400 max-w-sm mb-4">
+                                    Ad sets are loading for the first time...
+                                  </p>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Force a refresh
+                                      setIsLoadingAdSets(true);
+                                      fetchAdSets(campaign.campaign_id, true);
+                                    }}
+                                    className="text-white border-[#333] hover:bg-black/20"
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
+                                    Load Ad Sets Now
                                   </Button>
                                 </div>
                               )}
