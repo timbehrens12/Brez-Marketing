@@ -313,7 +313,7 @@ const CampaignWidget = ({
     
     // Create a "minimum loading time" to avoid flickering
     const loadingStartTime = Date.now();
-    const minimumLoadingTime = 750; // 750ms minimum loading time
+    const minimumLoadingTime = 1000; // Increased to 1000ms minimum loading time to prevent flickering
     
     const controller = createAbortController();
     logger.debug(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
@@ -543,6 +543,9 @@ const CampaignWidget = ({
       // Set loading state BEFORE expanding to prevent "No ad sets found" from showing
       setIsLoadingAdSets(true);
       
+      // First set expanded campaign to show loading indicator
+      setExpandedCampaign(campaignId);
+      
       logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
       // First, check the status to ensure it's current
@@ -580,9 +583,6 @@ const CampaignWidget = ({
         logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
         // Continue with expansion even if status check fails
       }
-      
-      // Set as expanded - this will trigger the expanded view with a loading indicator
-      setExpandedCampaign(campaignId);
       
       // Fetch ad sets for this campaign - the view will already show loading
       fetchAdSets(campaignId);
@@ -1917,8 +1917,9 @@ const CampaignWidget = ({
                                     className="h-7 text-xs text-white border-[#333] hover:bg-black/20"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setAdSets([]); // Clear current ad sets to show loading
-                                      fetchAdSets(campaign.campaign_id);
+                                      // Don't clear adsets, just set loading state
+                                      setIsLoadingAdSets(true);
+                                      fetchAdSets(campaign.campaign_id, true);
                                     }}
                                     disabled={isLoadingAdSets}
                                   >
@@ -2172,8 +2173,9 @@ const CampaignWidget = ({
                                     size="sm" 
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setAdSets([]); // Clear current ad sets to show loading
-                                      fetchAdSets(campaign.campaign_id);
+                                      // Don't clear adsets, just set loading state
+                                      setIsLoadingAdSets(true);
+                                      fetchAdSets(campaign.campaign_id, true);
                                     }}
                                     className="text-white border-[#333] hover:bg-black/20"
                                   >
