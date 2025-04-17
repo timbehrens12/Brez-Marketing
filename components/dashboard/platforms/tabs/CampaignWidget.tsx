@@ -351,7 +351,7 @@ const CampaignWidget = ({
     }));
   }, []);
   
-  // Update the fetchAdSets function to call updateCampaignWithAdSetsData after successful ad sets fetch
+  // Update the fetchAdSets function to fix the API endpoint and data structure
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
     if (!brandId || !campaignId || !isMountedRef.current) return;
   
@@ -367,6 +367,8 @@ const CampaignWidget = ({
       return;
     }
   
+    // Clear current ad sets to show loading state
+    setAdSets([]);
     setIsLoadingAdSets(true);
     
     // Mark this campaign as having ad sets loaded
@@ -377,45 +379,155 @@ const CampaignWidget = ({
       let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
       
       if (dateRange?.from && dateRange?.to) {
-        url += `&from=${dateRange.from.toISOString().split('T')[0]}&to=${dateRange.to.toISOString().split('T')[0]}`;
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${fromDate}&to=${toDate}`;
+        logger.debug(`[CampaignWidget] Fetching adsets with date range: ${fromDate} to ${toDate}`);
       }
       
       if (forceRefresh) {
         url += `&forceRefresh=true`;
       }
       
+      logger.debug(`[CampaignWidget] Fetching adsets from: ${url}`);
+      
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch ad sets: ${response.status}`);
+        // Try alternate endpoint if the main one fails
+        logger.debug(`[CampaignWidget] Regular adsets endpoint failed, trying direct-fetch...`);
+        const directResponse = await fetch(`/api/meta/adsets/direct-fetch`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId, 
+            campaignId,
+            from: dateRange?.from?.toISOString().split('T')[0],
+            to: dateRange?.to?.toISOString().split('T')[0],
+            forceRefresh
+          })
+        });
+        
+        if (!directResponse.ok) {
+          throw new Error(`Failed to fetch ad sets: ${directResponse.status}`);
+        }
+        
+        const directData = await directResponse.json();
+        
+        if (!isMountedRef.current) return;
+        
+        // Structure for direct endpoint
+        const validAdSets = directData.adSets || [];
+        setAdSets(validAdSets);
+        
+        // After fetching ad sets, update the campaign with the aggregated data
+        updateCampaignWithAdSetsData(campaignId, validAdSets);
+        
+        logger.debug(`[CampaignWidget] Loaded ${validAdSets.length} ad sets from direct-fetch for campaign ${campaignId}`);
+        
+        return validAdSets;
       }
       
-      const data = await response.json();
+      // Handle successful response from primary endpoint
+      const responseText = await response.text();
       
-      if (!isMountedRef.current) {
-        return; // Component unmounted during fetch
+      try {
+        // First try to parse as JSON
+        const data = JSON.parse(responseText);
+        
+        if (!isMountedRef.current) return;
+        
+        // Check different data structures - could be either adsets or adSets in the response
+        const adSetsArray = data.adsets || data.adSets || [];
+        const validAdSets = adSetsArray.filter((adSet: any) => adSet && adSet.adset_id);
+        
+        // Set the ad sets
+        setAdSets(validAdSets);
+        
+        // After fetching ad sets, update the campaign with the aggregated data
+        if (validAdSets.length > 0) {
+          updateCampaignWithAdSetsData(campaignId, validAdSets);
+        }
+        
+        logger.debug(`[CampaignWidget] Loaded ${validAdSets.length} ad sets for campaign ${campaignId}`);
+        
+        // If no ad sets found but we expect there to be some, try the direct endpoint
+        if (validAdSets.length === 0 && forceRefresh) {
+          logger.debug(`[CampaignWidget] No ad sets found with regular endpoint, trying direct-fetch...`);
+          return fetchAdSetsDirectly(campaignId);
+        }
+        
+        return validAdSets;
+      } catch (parseError) {
+        logger.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
+        logger.debug(`[CampaignWidget] Response text: ${responseText.substring(0, 200)}...`);
+        
+        // Try direct fetch as a fallback
+        return fetchAdSetsDirectly(campaignId);
       }
-      
-      // Filter out any ad sets with null/undefined IDs
-      const validAdSets = (data.adsets || []).filter((adSet: any) => adSet && adSet.adset_id);
-      
-      // Set the ad sets
-      setAdSets(validAdSets);
-      
-      // After fetching ad sets, update the campaign with the aggregated data
-      updateCampaignWithAdSetsData(campaignId, validAdSets);
-      
-      logger.debug(`[CampaignWidget] Loaded ${validAdSets.length} ad sets for campaign ${campaignId}`);
-      
-      return validAdSets;
     } catch (error) {
       logger.error(`[CampaignWidget] Error fetching ad sets:`, error);
-      toast.error("Failed to load ad sets");
+      
+      // Only show toast for user-initiated refreshes
+      if (forceRefresh) {
+        toast.error("Failed to load ad sets");
+      }
+      
       return [];
     } finally {
       if (isMountedRef.current) {
         setIsLoadingAdSets(false);
       }
+    }
+  }, [brandId, dateRange, isMountedRef, updateCampaignWithAdSetsData]);
+  
+  // Add a direct fetch function for ad sets as fallback
+  const fetchAdSetsDirectly = useCallback(async (campaignId: string) => {
+    if (!brandId || !campaignId) return [];
+    
+    try {
+      logger.debug(`[CampaignWidget] Attempting direct fetch for ad sets of campaign ${campaignId}`);
+      
+      const response = await fetch(`/api/meta/adsets/direct-fetch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          campaignId,
+          from: dateRange?.from?.toISOString().split('T')[0],
+          to: dateRange?.to?.toISOString().split('T')[0],
+          forceRefresh: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Direct fetch failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!isMountedRef.current) return [];
+      
+      // Check for ad sets in various possible properties
+      const adSetsArray = data.adSets || data.adsets || [];
+      const validAdSets = adSetsArray.filter((adSet: any) => adSet && adSet.adset_id);
+      
+      setAdSets(validAdSets);
+      
+      if (validAdSets.length > 0) {
+        updateCampaignWithAdSetsData(campaignId, validAdSets);
+      }
+      
+      logger.debug(`[CampaignWidget] Direct fetch loaded ${validAdSets.length} ad sets`);
+      
+      return validAdSets;
+    } catch (error) {
+      logger.error(`[CampaignWidget] Direct fetch error:`, error);
+      return [];
     }
   }, [brandId, dateRange, isMountedRef, updateCampaignWithAdSetsData]);
   
@@ -903,6 +1015,12 @@ const CampaignWidget = ({
       setExpandedCampaign(null);
       // Clear the ad sets data
       setAdSets([]);
+      // Remove from localStorage
+      try {
+        localStorage.removeItem('expanded-campaign');
+      } catch (e) {
+        // Ignore localStorage errors
+      }
     } else {
       // Validate campaignId before making API call
       if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
@@ -918,6 +1036,13 @@ const CampaignWidget = ({
       }
       
       logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('expanded-campaign', campaignId);
+      } catch (e) {
+        // Ignore localStorage errors
+      }
       
       // First, check the status to ensure it's current
       try {
@@ -957,8 +1082,10 @@ const CampaignWidget = ({
       
       // Set as expanded
       setExpandedCampaign(campaignId);
+      // Clear current ad sets to trigger loading
+      setAdSets([]);
       // Fetch ad sets for this campaign
-      fetchAdSets(campaignId);
+      fetchAdSets(campaignId, true);
     }
   }, [brandId, expandedCampaign, fetchAdSets]);
   
@@ -1486,6 +1613,34 @@ const CampaignWidget = ({
     
     logger.debug(`[CampaignWidget] Initialized ${campaigns.length} campaigns`);
   }, [campaigns]);
+
+  // Update the component initialization to load ad sets when a campaign is expanded
+  useEffect(() => {
+    if (!campaigns || campaigns.length === 0) return;
+    
+    // Use the campaigns data as the initial local campaigns state
+    setLocalCampaigns(campaigns);
+    
+    // Check if we have a previously expanded campaign in localStorage
+    try {
+      const storedExpanded = localStorage.getItem('expanded-campaign');
+      if (storedExpanded && campaigns.some(c => c.campaign_id === storedExpanded)) {
+        logger.debug(`[CampaignWidget] Auto-expanding previously expanded campaign: ${storedExpanded}`);
+        
+        // Set expanded campaign and fetch its ad sets
+        setExpandedCampaign(storedExpanded);
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            fetchAdSets(storedExpanded, true);
+          }
+        }, 500);
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+    
+    logger.debug(`[CampaignWidget] Initialized ${campaigns.length} campaigns`);
+  }, [campaigns, fetchAdSets, isMountedRef]);
 
   // Return the JSX for the component
   return (
@@ -2131,3 +2286,16 @@ const formatCampaignStatus = (status: string) => {
     };
   }
 };
+
+// Add a debugging log to help diagnose issues with ad sets
+useEffect(() => {
+  if (expandedCampaign && adSets.length === 0 && !isLoadingAdSets) {
+    logger.debug(`[CampaignWidget] Campaign ${expandedCampaign} is expanded but no ad sets are loaded and not in loading state`);
+    // Try to fetch ad sets again if this happens
+    fetchAdSets(expandedCampaign, true);
+  }
+  
+  if (adSets.length > 0) {
+    logger.debug(`[CampaignWidget] Loaded ${adSets.length} ad sets for campaign ${expandedCampaign}`);
+  }
+}, [expandedCampaign, adSets, isLoadingAdSets, fetchAdSets]);
