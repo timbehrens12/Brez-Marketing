@@ -287,184 +287,165 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
-    if (!brandId || !isMountedRef.current || !campaignId) return;
+  // Add a function to sync campaign data with ad sets when expanded
+  const syncCampaignWithAdSets = useCallback((campaignId: string, adSetsData: AdSet[]) => {
+    if (!campaignId || !adSetsData || adSetsData.length === 0) return;
     
-    // Cancel any existing ad set fetch
-    pendingRequestsRef.current.forEach(controller => {
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignore abort errors
+    logger.debug(`[CampaignWidget] Syncing campaign ${campaignId} with ${adSetsData.length} ad sets`);
+    
+    // Calculate totals from ad sets
+    const adSetsTotals = {
+      spent: adSetsData.reduce((sum, adSet) => sum + (adSet.spent || 0), 0),
+      impressions: adSetsData.reduce((sum, adSet) => sum + (adSet.impressions || 0), 0),
+      clicks: adSetsData.reduce((sum, adSet) => sum + (adSet.clicks || 0), 0),
+      conversions: adSetsData.reduce((sum, adSet) => sum + (adSet.conversions || 0), 0),
+      ctr: 0, // Calculated below
+      cpc: 0, // Calculated below
+      cost_per_conversion: 0, // Calculated below
+      reach: adSetsData.reduce((sum, adSet) => sum + (adSet.reach || 0), 0),
+      budget: adSetsData.reduce((sum, adSet) => sum + (adSet.budget || 0), 0)
+    };
+    
+    // Calculate derived metrics
+    adSetsTotals.ctr = adSetsTotals.impressions > 0 
+      ? (adSetsTotals.clicks / adSetsTotals.impressions) * 100 
+      : 0;
+      
+    adSetsTotals.cpc = adSetsTotals.clicks > 0 
+      ? adSetsTotals.spent / adSetsTotals.clicks 
+      : 0;
+      
+    adSetsTotals.cost_per_conversion = adSetsTotals.conversions > 0 
+      ? adSetsTotals.spent / adSetsTotals.conversions 
+      : 0;
+    
+    // Update the campaign in local state with the aggregated ad set data
+    setLocalCampaigns(currentCampaigns => 
+      currentCampaigns.map(c => 
+        c.campaign_id === campaignId 
+          ? { 
+              ...c, 
+              spent: adSetsTotals.spent,
+              impressions: adSetsTotals.impressions,
+              clicks: adSetsTotals.clicks,
+              conversions: adSetsTotals.conversions,
+              ctr: adSetsTotals.ctr,
+              cpc: adSetsTotals.cpc,
+              cost_per_conversion: adSetsTotals.cost_per_conversion,
+              reach: adSetsTotals.reach,
+              adset_budget_total: adSetsTotals.budget,
+              last_refresh_date: new Date().toISOString()
+            } 
+          : c
+      )
+    );
+    
+    // Dispatch an event to notify other components that campaign data was updated
+    window.dispatchEvent(new CustomEvent('campaign-data-updated', {
+      detail: { 
+        campaignId,
+        totals: adSetsTotals
       }
-    });
+    }));
+  }, []);
+  
+  // Update the fetchAdSets function to sync campaign data after fetching ad sets
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
+    if (!brandId || !campaignId) {
+      logger.debug('[CampaignWidget] Cannot fetch ad sets: missing brandId or campaignId');
+      return;
+    }
     
-    // Clear any existing ad sets to show fresh loading state
-    setAdSets([]);
+    // Apply throttling to prevent excessive requests
+    if (!forceRefresh && !throttle(`fetch-adsets-${campaignId}`, 15000)) {
+      logger.debug(`[CampaignWidget] Throttled ad sets fetch for campaign ${campaignId}`);
+      return;
+    }
+    
+    // Skip if already loading this campaign's ad sets
+    if (isLoadingAdSets && expandedCampaign === campaignId) {
+      logger.debug(`[CampaignWidget] Already loading ad sets for campaign ${campaignId}`);
+      return;
+    }
+    
+    logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId}`);
     setIsLoadingAdSets(true);
     
-    const controller = createAbortController();
-    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
-    
-    // Try the regular endpoint first
-    let usedDirectFetch = false;
-    let usedCachedData = false;
+    // Create an abort controller to be able to cancel this request if needed
+    const abortController = new AbortController();
+    pendingRequestsRef.current.push(abortController);
     
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
+      // Build URL with date range if available
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
       
-      // Add date range parameters if available
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
+        logger.debug(`[CampaignWidget] Including date range: ${fromDate} to ${toDate}`);
       }
       
-      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
-      
-      let response = await fetch(url, { signal: controller.signal });
-      
-      // If the regular endpoint fails, try the direct-fetch endpoint
-      if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
-        usedDirectFetch = true;
-        
-        response = await fetch(`/api/meta/adsets/direct-fetch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-          }),
-          signal: controller.signal
-        });
+      if (forceRefresh) {
+        url += '&forceRefresh=true';
       }
       
-      if (!isMountedRef.current) return;
+      const response = await fetch(url, {
+        signal: abortController.signal
+      });
       
-      // Log the raw response for debugging
-      const responseText = await response.text();
-      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
+      // Remove this controller from the pending list
+      pendingRequestsRef.current = pendingRequestsRef.current.filter(
+        controller => controller !== abortController
+      );
       
-      // Parse the response as JSON (safely)
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
-        throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
-      }
-      
-      if (response.ok) {
-        // Check if this is a rate limit response with cached data
-        if (data.source === 'cached_due_to_rate_limit') {
-          usedCachedData = true;
-          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
-        }
-        
-        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
-        
-        if (isMountedRef.current) {
-          // Ensure we have a valid array of ad sets
-          const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-          setAdSets(validAdSets);
-          
-          // Add this campaign to the tracking set if ad sets were found
-          if (validAdSets.length > 0) {
-            setCampaignsWithAdSets(prev => {
-              const newSet = new Set(prev);
-              newSet.add(campaignId);
-              return newSet;
-            });
-          }
-          
-          // Toast notification that ad sets were loaded
-          if (validAdSets.length > 0) {
-            toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
-          } else {
-            // Check if this was because of a rate limit
-            if (data.warning === 'Meta API rate limit reached') {
-              toast.warning(`Meta API rate limit reached`, {
-                description: data.message || 'Please try again in a few minutes',
-                duration: 8000
-              });
-            } else {
-              toast.info("No ad sets found for this campaign");
-              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
-            }
-          }
-          
-          // Dispatch events for budgets to update regardless of ad set count
-          console.log('[CampaignWidget] Dispatching status changed events');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          setTimeout(() => {
-            window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
-                detail: {
-                  brandId,
-                  timestamp: new Date().toISOString()
-                }
-              })
-            );
-          }, 100);
-        }
-      } else {
-        // Check if this is a rate limit error response
-        if (data.warning === 'Meta API rate limit reached') {
-          console.log(`[CampaignWidget] Meta API rate limit reached`);
-          
-          if (isMountedRef.current) {
-            toast.warning(`Meta API rate limit reached`, {
-              description: data.message || 'Please try again in a few minutes',
-              duration: 8000
-            });
-            setAdSets([]);
-          }
-        } else {
-          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
-          
-          if (isMountedRef.current) {
-            toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
-            setAdSets([]);
-          }
-        }
-      }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
+      if (!isMountedRef.current) {
+        logger.debug('[CampaignWidget] Component unmounted during ad sets fetch');
         return;
       }
       
-      console.error("[CampaignWidget] Error fetching ad sets:", error);
-      
-      if (isMountedRef.current) {
-        toast.error(`Error loading ad sets: ${(error as Error).message}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        logger.debug(`[CampaignWidget] Loaded ${data.adsets?.length || 0} ad sets for campaign ${campaignId}`);
+        
+        // Update ad sets state
+        setAdSets(data.adsets || []);
+        
+        // Track that we've fetched ad sets for this campaign
+        setCampaignsWithAdSets(prev => {
+          const newSet = new Set(prev);
+          newSet.add(campaignId);
+          return newSet;
+        });
+        
+        // IMPORTANT NEW STEP: Sync campaign data with ad sets data
+        if (data.adsets && data.adsets.length > 0) {
+          syncCampaignWithAdSets(campaignId, data.adsets);
+        }
+      } else {
+        logger.warn(`[CampaignWidget] Failed to fetch ad sets: ${response.status}`);
+        
+        // If there was an error, reset ad sets to empty array
         setAdSets([]);
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        logger.debug('[CampaignWidget] Ad sets fetch was aborted');
+      } else {
+        logger.error('[CampaignWidget] Error fetching ad sets:', error);
+        
+        // If there was an error, reset ad sets to empty array
+        if (isMountedRef.current) {
+          setAdSets([]);
+        }
       }
     } finally {
       if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
-          setIsLoadingAdSets(false);
-        }, 300);
+        setIsLoadingAdSets(false);
       }
-      
-      // Clean up abort controller
-      removeAbortController(controller);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, dateRange, isMountedRef, expandedCampaign, syncCampaignWithAdSets]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -1058,7 +1039,7 @@ const CampaignWidget = ({
           console.log(`[CampaignWidget] Fetching ad sets after date range change`);
           fetchAdSets(expandedCampaign);
         }
-      }, 300);
+      }, 300); // 300ms debounce
       
       return () => clearTimeout(timeoutId);
     }
@@ -1520,66 +1501,791 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns.length, fetchAllCampaignBudgets, isMountedRef]);
 
-  // Add a status formatter function INSIDE the component
-  const formatCampaignStatus = (status: string) => {
-    const normalizedStatus = status.toUpperCase();
+  // Add a function to sync all campaign data
+  const syncAllCampaignsData = useCallback(async () => {
+    if (!brandId || !campaigns || campaigns.length === 0) return;
     
-    if (normalizedStatus === 'ACTIVE') {
-      return {
-        displayText: 'Active',
-        bgColor: 'bg-green-950/30',
-        textColor: 'text-green-500',
-        borderColor: 'border-green-800/50',
-        dotColor: 'bg-green-500'
-      };
-    } else if (normalizedStatus === 'PAUSED') {
-      return {
-        displayText: 'Paused',
-        bgColor: 'bg-yellow-950/30',
-        textColor: 'text-yellow-500',
-        borderColor: 'border-yellow-800/50',
-        dotColor: 'bg-yellow-500'
-      };
-    } else if (normalizedStatus === 'DELETED' || normalizedStatus === 'ARCHIVED') {
-      return {
-        displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
-        bgColor: 'bg-red-950/30',
-        textColor: 'text-red-500',
-        borderColor: 'border-red-800/50',
-        dotColor: 'bg-red-500'
-      };
-    } else if (normalizedStatus === 'REFRESHING') {
-      return {
-        displayText: 'Refreshing',
-        bgColor: 'bg-blue-950/30',
-        textColor: 'text-blue-500',
-        borderColor: 'border-blue-800/50',
-        dotColor: 'bg-blue-500 animate-pulse'
-      };
-    } else {
-      return {
-        displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
-        bgColor: 'bg-gray-950/30',
-        textColor: 'text-gray-500',
-        borderColor: 'border-gray-800/50',
-        dotColor: 'bg-gray-500'
-      };
+    if (!throttle('sync-all-campaigns', 60000)) {
+      logger.debug('[CampaignWidget] Throttled sync all campaigns operation');
+      return;
     }
-  };
-  
+    
+    logger.debug('[CampaignWidget] Syncing all campaign data with latest totals');
+    
+    try {
+      const response = await fetch(`/api/meta/campaigns/sync-totals?brandId=${brandId}`);
+      
+      if (!isMountedRef.current) return;
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.campaigns) {
+          // Update local campaigns with the latest data
+          setLocalCampaigns(currentCampaigns => {
+            return currentCampaigns.map(currentCampaign => {
+              // Find the updated campaign data
+              const updatedCampaign = data.campaigns.find(
+                (c: any) => c.campaign_id === currentCampaign.campaign_id
+              );
+              
+              // If we found updated data, merge it
+              if (updatedCampaign) {
+                return {
+                  ...currentCampaign,
+                  spent: updatedCampaign.spent || currentCampaign.spent,
+                  impressions: updatedCampaign.impressions || currentCampaign.impressions,
+                  clicks: updatedCampaign.clicks || currentCampaign.clicks,
+                  conversions: updatedCampaign.conversions || currentCampaign.conversions,
+                  ctr: updatedCampaign.ctr || currentCampaign.ctr,
+                  cpc: updatedCampaign.cpc || currentCampaign.cpc,
+                  cost_per_conversion: updatedCampaign.cost_per_conversion || currentCampaign.cost_per_conversion,
+                  reach: updatedCampaign.reach || currentCampaign.reach,
+                  last_refresh_date: new Date().toISOString()
+                };
+              }
+              
+              // Otherwise return the current campaign unchanged
+              return currentCampaign;
+            });
+          });
+          
+          logger.debug(`[CampaignWidget] Updated ${data.campaigns.length} campaigns with latest totals`);
+        } else {
+          logger.warn('[CampaignWidget] Failed to sync campaign totals:', data.error || 'Unknown error');
+        }
+      } else {
+        logger.warn(`[CampaignWidget] Failed to sync campaign totals: ${response.status}`);
+      }
+    } catch (error) {
+      logger.error('[CampaignWidget] Error syncing campaign totals:', error);
+    }
+  }, [brandId, campaigns, isMountedRef]);
+
+  // Add an effect to periodically sync all campaign data
+  useEffect(() => {
+    if (!brandId || !campaigns.length) return;
+    
+    // Do an initial sync after component mounts
+    syncAllCampaignsData();
+    
+    // Set up periodic sync
+    const intervalId = setInterval(() => {
+      if (isMountedRef.current) {
+        syncAllCampaignsData();
+      }
+    }, 180000); // Every 3 minutes
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [brandId, campaigns.length, syncAllCampaignsData, isMountedRef]);
+
+  // Add an effect to initialize the localCampaigns state
+  useEffect(() => {
+    // When campaigns prop changes, update localCampaigns
+    if (campaigns && campaigns.length > 0) {
+      logger.debug(`[CampaignWidget] Initializing ${campaigns.length} campaigns`);
+      setLocalCampaigns(campaigns);
+      
+      // Try to create a fast sync with the latest API data
+      setTimeout(() => {
+        syncAllCampaignsData();
+      }, 1000);
+    }
+  }, [campaigns, syncAllCampaignsData]);
+
+  // Add proper button handler for refreshing campaign statuses
+  const handleRefreshStatus = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!brandId) {
+      logger.debug('[CampaignWidget] Cannot refresh statuses: missing brandId');
+      return;
+    }
+    
+    if (!throttle('manual-refresh-all-statuses', 5000)) {
+      toast.info("Please wait a moment before refreshing again");
+      return;
+    }
+    
+    logger.debug('[CampaignWidget] Manual refresh of all campaign statuses triggered');
+    setRefreshing(true);
+    
+    // Show user feedback
+    toast.promise(
+      new Promise<void>((resolve) => {
+        // First, sync all campaign data to ensure we have the latest totals
+        syncAllCampaignsData()
+          .then(() => {
+            // Then check statuses for all campaigns
+            if (localCampaigns.length > 0) {
+              checkCampaignStatuses(localCampaigns, true);
+            }
+            
+            // Call the parent refresh function if provided
+            if (onRefresh) {
+              onRefresh();
+            }
+            
+            // Reset refreshing state after a reasonable delay
+            setTimeout(() => {
+              setRefreshing(false);
+              resolve();
+            }, 2000);
+          })
+          .catch(() => {
+            setRefreshing(false);
+            resolve();
+          });
+      }),
+      {
+        loading: 'Refreshing campaign statuses...',
+        success: 'Campaign statuses updated',
+        error: 'Failed to update campaign statuses'
+      }
+    );
+  }, [brandId, checkCampaignStatuses, localCampaigns, onRefresh, syncAllCampaignsData]);
+
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
       <CardHeader className="pb-3 border-b border-[#333]">
-        {/* ... Header Content ... */}
+        <div className="flex items-center mb-4">
+          <BarChart className="h-5 w-5 text-white" />
+          <CardTitle className="text-lg font-medium text-white ml-2">Campaign Performance</CardTitle>
+          <Badge className="ml-2 bg-zinc-800 text-white border-[#333]">
+            {filteredCampaigns.length} Campaign{filteredCampaigns.length !== 1 ? 's' : ''}
+          </Badge>
+          <div className="flex items-center gap-2 mx-2">
+            {dateRange?.from && dateRange?.to && (
+              <div className="flex items-center gap-1.5">
+                <Badge variant="outline" className="flex items-center gap-1.5 bg-zinc-800 text-white border-[#333]">
+                  <CalendarRange className="h-3.5 w-3.5" />
+                  <span className="text-xs">
+                    {dateRange.from.toLocaleDateString()} - {dateRange.to.toLocaleDateString()}
+                  </span>
+                </Badge>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs text-white border-[#333] hover:bg-black/20">
+                  <Settings className="h-3.5 w-3.5 mr-1.5" />
+                  Customize
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 border border-[#333] bg-[#111]">
+                <DropdownMenuLabel className="text-white">Visible Metrics</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-[#333]" />
+                {AVAILABLE_METRICS.map(metric => (
+                  <DropdownMenuItem 
+                    key={metric.id}
+                    onClick={() => toggleMetric(metric.id)}
+                    className="cursor-pointer text-white hover:bg-black/20"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2">
+                        {metric.icon}
+                        <span>{metric.name}</span>
+                      </div>
+                      <div className="flex items-center h-4">
+                        {visibleMetrics.includes(metric.id) && <Zap className="h-3.5 w-3.5 text-white" />}
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator className="bg-[#333]" />
+                <DropdownMenuItem 
+                  onClick={() => setShowInactive(!showInactive)}
+                  className="cursor-pointer text-white hover:bg-black/20"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>Show Inactive Campaigns</span>
+                    <Switch checked={showInactive} />
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3 mt-3">
+          <Input
+            className="max-w-xs h-8 text-sm text-white border-[#333]"
+            placeholder="Search campaigns..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshStatus}
+            disabled={refreshing}
+            className="h-8 text-sm flex items-center gap-1.5 text-white border-[#333] hover:bg-black/20"
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Refreshing...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Refresh Statuses</span>
+              </>
+            )}
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-8 text-sm flex items-center gap-1.5 text-white border-[#333] hover:bg-black/20">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Sort by: {AVAILABLE_METRICS.find(m => m.id === sortBy)?.name || 'Status'}
+                {sortOrder === 'desc' ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48 border border-[#333] bg-[#111]">
+              <DropdownMenuItem 
+                onClick={handleStatusSortClick}
+                className="cursor-pointer text-white hover:bg-black/20"
+              >
+                <CircleIcon className="h-3.5 w-3.5 mr-2" />
+                <span>Status</span>
+              </DropdownMenuItem>
+              {AVAILABLE_METRICS.map(metric => (
+                <DropdownMenuItem 
+                  key={metric.id}
+                  onClick={() => handleMetricSortClick(metric.id)}
+                  className="cursor-pointer text-white hover:bg-black/20"
+                >
+                  <div className="mr-2">{metric.icon}</div>
+                  <span>{metric.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
       
       <CardContent className="px-0 pb-0">
-        {/* ... Content with Table ... */}
+        {isLoading ? (
+          <div className="flex justify-center items-center p-12">
+            <RefreshCw className="h-8 w-8 animate-spin text-white" />
+          </div>
+        ) : filteredCampaigns.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center">
+            <BarChart className="h-10 w-10 mb-3 text-white" />
+            <h3 className="text-lg font-medium mb-1 text-white">No campaigns found</h3>
+            <p className="text-sm text-gray-400 max-w-sm mb-4">
+              {searchQuery ? 'Try adjusting your search query or filters' : 'Create a campaign in Meta Ads Manager to get started'}
+            </p>
+            <Button variant="outline" size="sm" onClick={onSync} disabled={isSyncing} className="text-white border-[#333] hover:bg-black/20">
+              <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sync Campaigns
+            </Button>
+          </div>
+        ) : (
+          <div className="p-4">
+            <div className="pb-3 mb-3 border-b border-[#333] flex items-center">
+              <h3 className="text-sm font-medium text-white">Campaign Performance Data</h3>
+              <span className="text-xs text-gray-400 ml-2">
+                {dateRange?.from && dateRange?.to ? 
+                  `${dateRange.from.toLocaleDateString()} - ${dateRange.to.toLocaleDateString()}` : 
+                  'All time'}
+              </span>
+            </div>
+            <div className="border border-[#333] rounded-md overflow-hidden bg-[#111]">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#333] bg-zinc-900">
+                    <th className="text-xs font-medium text-left p-3 text-white">Campaign</th>
+                    <th className="text-xs font-medium text-left p-3 text-white">Status</th>
+                    <th className="text-xs font-medium text-right p-3 text-white">Budget</th>
+                    {visibleMetrics.map(metricId => {
+                      const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                      if (!metric) return null;
+                      
+                      return (
+                        <th 
+                          key={metricId} 
+                          className="text-xs font-medium text-right p-3 cursor-pointer hover:text-gray-100 transition-colors text-white"
+                          onClick={() => {
+                            handleColumnHeaderClick(metricId);
+                          }}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            {metric.name}
+                            {sortBy === metricId && (
+                              sortOrder === 'desc' ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
+                    <th className="text-xs font-medium text-center p-3 w-10 text-white"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCampaigns.map(campaign => (
+                    <React.Fragment key={campaign.id}>
+                      <tr 
+                        className={`border-b border-[#333] hover:bg-black/10 transition-colors cursor-pointer border-l-4 ${
+                          expandedCampaign === campaign.campaign_id 
+                            ? 'border-l-gray-600 bg-black/10' 
+                            : 'border-l-[#333]'
+                        }`}
+                        onClick={() => toggleCampaignExpand(campaign.campaign_id)}
+                      >
+                        <td className="p-3">
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-xs text-white" title={campaign.campaign_name}>
+                              {campaign.campaign_name}
+                            </span>
+                            <span className="text-xs text-gray-400 truncate max-w-xs" title={campaign.account_name}>
+                              {campaign.account_name}
+                            </span>
+                            {currentBudgets[campaign.id]?.budget_source === 'api' && (
+                              <Badge variant="outline" className="mt-1 text-xs text-white border-[#333]">Live Budget</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
+                            formatCampaignStatus(campaign.status).bgColor} ${
+                            formatCampaignStatus(campaign.status).textColor} border ${
+                            formatCampaignStatus(campaign.status).borderColor}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${
+                              formatCampaignStatus(campaign.status).dotColor}`}></div>
+                            {formatCampaignStatus(campaign.status).displayText}
+                          </Badge>
+                          {!campaign.has_data_in_range && (
+                            <Badge className="text-xs px-1.5 py-0 h-5 bg-[#111] text-gray-500 border border-[#333] ml-1">
+                              No data in range
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="p-3 text-right text-white">
+                          <div className="font-medium">
+                            {formatBudgetWithType(
+                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget,
+                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget_type
+                            )}
+                          </div>
+                        </td>
+                        {visibleMetrics.map(metricId => {
+                          const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                          if (!metric) return null;
+                          
+                          const value = campaign[metricId as keyof Campaign] as number;
+                          
+                          return (
+                            <td key={metricId} className="p-3 text-right text-white">
+                              <div className="font-medium">
+                                {formatValue(value, metric.format)}
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCampaignExpand(campaign.campaign_id);
+                              }}
+                              title={expandedCampaign === campaign.campaign_id ? "Hide Ad Sets" : "Show Ad Sets"}
+                            >
+                              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${
+                                expandedCampaign === campaign.campaign_id ? 'rotate-180' : ''
+                              }`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                refreshCampaignStatus(campaign.campaign_id);
+                              }}
+                              title="Refresh Campaign Status"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`https://www.facebook.com/ads/manager/account/campaigns?act=${campaign.account_id.replace('act_', '')}&selected_campaign_ids=${campaign.campaign_id}`, '_blank')
+                              }}
+                              title="View in Meta Ads Manager"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                      
+                      {/* Expanded Row Content */}
+                      {expandedCampaign === campaign.campaign_id && (
+                        <tr className="bg-[#111] border-b border-[#333]">
+                          <td colSpan={visibleMetrics.length + 4} className="p-0">
+                            <div className="p-4 border-t border-[#333]">
+                              <div className="flex flex-col mb-4">
+                                <div className="flex justify-between items-center mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="border-l-4 border-[#333] pl-2">
+                                      <h5 className="text-sm font-semibold text-white">
+                                        Ad Sets for Campaign: <span className="text-gray-300">{campaign.campaign_name}</span>
+                                      </h5>
+                                      <p className="text-xs text-gray-400">
+                                        Campaign ID: {campaign.campaign_id} • {campaign.status} • {campaign.objective}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs text-white border-[#333] hover:bg-black/20"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAdSets([]); // Clear current ad sets to show loading
+                                      fetchAdSets(campaign.campaign_id);
+                                    }}
+                                    disabled={isLoadingAdSets}
+                                  >
+                                    {isLoadingAdSets ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                                    ) : (
+                                      <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                                    )}
+                                    Refresh Ad Sets
+                                  </Button>
+                                </div>
+                              </div>
+                              
+                              {isLoadingAdSets ? (
+                                <div className="flex flex-col items-center justify-center py-6 text-center">
+                                  <div className="w-full max-w-md">
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                                        <span className="text-gray-300 text-sm">Loading ad sets...</span>
+                                      </div>
+                                      <Progress 
+                                        value={45} 
+                                        max={100} 
+                                        className="h-1 bg-gray-800"
+                                      />
+                                      <p className="text-sm text-gray-400">
+                                        Please wait while we fetch the latest ad set data...
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : adSets.length > 0 ? (
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      {adSets.length} Ad Sets
+                                    </Badge>
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      Total Budget: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.budget, 0))}
+                                    </Badge>
+                                    <Badge variant="outline" className="bg-[#111] text-white border-[#333]">
+                                      Total Spent: {formatCurrency(adSets.reduce((sum, adSet) => sum + adSet.spent, 0))}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="rounded-md overflow-hidden border border-[#333] bg-[#111]">
+                                    <table className="w-full">
+                                      <thead>
+                                        <tr className="border-b border-[#333] bg-zinc-900">
+                                          <th className="text-xs font-medium text-left p-2 pl-3 text-white">Ad Set</th>
+                                          <th className="text-xs font-medium text-left p-2 text-white">Status</th>
+                                          <th className="text-xs font-medium text-right p-2 text-white">Budget</th>
+                                          {visibleMetrics.map(metricId => {
+                                            if (metricId === 'budget') return null;
+                                            
+                                            const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                            if (!metric) return null;
+                                            
+                                            return (
+                                              <th 
+                                                key={metricId} 
+                                                className="text-xs font-medium text-right p-2 text-white"
+                                              >
+                                                {metric.name}
+                                              </th>
+                                            );
+                                          })}
+                                          <th className="text-xs font-medium text-center p-2 w-16 text-white">Actions</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {adSets.map((adSet, index) => (
+                                          <React.Fragment key={adSet.id}>
+                                            <tr 
+                                              className={`
+                                                border-b border-[#333] hover:bg-black/10 
+                                                cursor-pointer relative border-l-2 ${
+                                                  expandedAdSet === adSet.adset_id 
+                                                    ? 'border-l-gray-600 bg-black/5' 
+                                                    : 'border-l-[#333]'
+                                                }
+                                              `}
+                                              onClick={(e) => handleAdSetRowClick(adSet.adset_id, e)}
+                                            >
+                                              <td className="p-2 pl-3 flex items-center gap-2">
+                                                <div className="flex items-center">
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleAdSetRowClick(adSet.adset_id, e);
+                                                    }}
+                                                    className="mr-2 text-white hover:text-gray-400 transition-colors"
+                                                  >
+                                                    <ChevronDown className={`h-4 w-4 transition-transform ${
+                                                      expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
+                                                    }`} />
+                                                  </button>
+                                                  <div>
+                                                    <div className="font-medium text-white">{adSet.adset_name}</div>
+                                                    <div className="text-xs text-gray-400">{adSet.adset_id}</div>
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="p-2">
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className={`px-2 py-0.5 text-xs flex items-center gap-1 ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' 
+                                                      ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
+                                                      : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
+                                                  }`}
+                                                >
+                                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                                    adSet.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
+                                                  }`}></div>
+                                                  {adSet.status}
+                                                </Badge>
+                                              </td>
+                                              <td className="p-2 text-right">
+                                                <div className="flex flex-col items-end">
+                                                  <Badge 
+                                                    className="px-2 py-0.5 bg-[#111] border-[#333] text-white"
+                                                    variant="outline"
+                                                  >
+                                                    {formatCurrency(adSet.budget)}
+                                                    {adSet.budget_type === 'daily' && <span className="text-xs text-gray-500 ml-1">/day</span>}
+                                                  </Badge>
+                                                  <span className="text-xs text-gray-500">
+                                                    {adSet.budget_type}
+                                                  </span>
+                                                </div>
+                                              </td>
+                                              {visibleMetrics.map(metricId => {
+                                                if (metricId === 'budget') return null;
+                                                
+                                                const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                                                if (!metric) return null;
+                                                
+                                                // Map campaign metrics to ad set metrics
+                                                let value: number;
+                                                switch (metricId) {
+                                                  case 'spent':
+                                                    value = adSet.spent || 0;
+                                                    break;
+                                                  case 'impressions':
+                                                    value = adSet.impressions || 0;
+                                                    break;
+                                                  case 'clicks':
+                                                    value = adSet.clicks || 0;
+                                                    break;
+                                                  case 'ctr':
+                                                    value = adSet.ctr || 0;
+                                                    break;
+                                                  case 'cpc':
+                                                    value = adSet.cpc || 0;
+                                                    break;
+                                                  case 'conversions':
+                                                    value = adSet.conversions || 0;
+                                                    break;
+                                                  case 'cost_per_conversion':
+                                                    value = adSet.cost_per_conversion || 0;
+                                                    break;
+                                                  case 'reach':
+                                                    value = adSet.reach || 0;
+                                                    break;
+                                                  case 'roas':
+                                                    if (adSet.conversions > 0 && adSet.spent > 0) {
+                                                      const estimatedRevenue = adSet.conversions * 25;
+                                                      value = estimatedRevenue / adSet.spent;
+                                                    } else {
+                                                      value = 0;
+                                                    }
+                                                    break;
+                                                  default:
+                                                    value = 0;
+                                                }
+                                                
+                                                return (
+                                                  <td key={metricId} className="p-2 text-right">
+                                                    <div className="font-medium text-white">
+                                                      {formatValue(value, metric.format)}
+                                                    </div>
+                                                  </td>
+                                                );
+                                              })}
+                                              <td className="p-2 text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleAdSetRowClick(adSet.adset_id, e);
+                                                    }}
+                                                    title={expandedAdSet === adSet.adset_id ? "Hide Ads" : "Show Ads"}
+                                                  >
+                                                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${
+                                                      expandedAdSet === adSet.adset_id ? 'rotate-180' : ''
+                                                    }`} />
+                                                  </Button>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-7 w-7 rounded-full text-white hover:bg-black/20 border border-[#333]"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      window.open(`https://www.facebook.com/ads/manager/account/campaigns?act=${campaign.account_id.replace('act_', '')}&selected_campaign_ids=${campaign.campaign_id}`, '_blank')
+                                                    }}
+                                                    title="View in Meta Ads Manager"
+                                                  >
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                            {/* Ad Set expanded content */}
+                                            {expandedAdSet === adSet.adset_id && (
+                                              <tr className="border-t border-[#333] bg-[#111]">
+                                                <td colSpan={visibleMetrics.length + 4} className="p-0">
+                                                  <div className="p-4 border-l-4 border-[#333] mx-2 rounded-md bg-[#111]">
+                                                    <AdComponent 
+                                                      brandId={brandId}
+                                                      adsetId={adSet.adset_id}
+                                                      dateRange={dateRange}
+                                                      visibleMetrics={visibleMetrics}
+                                                      adSetBudget={{
+                                                        budget: adSet.budget || 0,
+                                                        budget_type: adSet.budget_type || 'daily'
+                                                      }}
+                                                    />
+                                                  </div>
+                                                </td>
+                                              </tr>
+                                            )}
+                                          </React.Fragment>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                  <h3 className="text-lg font-medium mb-1 text-white">No ad sets found</h3>
+                                  <p className="text-sm text-gray-400 max-w-sm mb-4">
+                                    This campaign doesn't have any ad sets or they couldn't be loaded.
+                                  </p>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAdSets([]); // Clear current ad sets to show loading
+                                      fetchAdSets(campaign.campaign_id);
+                                    }}
+                                    className="text-white border-[#333] hover:bg-black/20"
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 mr-2 ${isLoadingAdSets ? 'animate-spin' : ''}`} />
+                                    Refresh Ad Sets
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
-  );
+  )
 };
 
 // Export the component
 export { CampaignWidget };
+
+// Add a status formatter function
+const formatCampaignStatus = (status: string) => {
+  const normalizedStatus = status.toUpperCase();
+  
+  if (normalizedStatus === 'ACTIVE') {
+    return {
+      displayText: 'Active',
+      bgColor: 'bg-green-950/30',
+      textColor: 'text-green-500',
+      borderColor: 'border-green-800/50',
+      dotColor: 'bg-green-500'
+    };
+  } else if (normalizedStatus === 'PAUSED') {
+    return {
+      displayText: 'Paused',
+      bgColor: 'bg-yellow-950/30',
+      textColor: 'text-yellow-500',
+      borderColor: 'border-yellow-800/50',
+      dotColor: 'bg-yellow-500'
+    };
+  } else if (normalizedStatus === 'DELETED' || normalizedStatus === 'ARCHIVED') {
+    return {
+      displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+      bgColor: 'bg-red-950/30',
+      textColor: 'text-red-500',
+      borderColor: 'border-red-800/50',
+      dotColor: 'bg-red-500'
+    };
+  } else if (normalizedStatus === 'REFRESHING') {
+    return {
+      displayText: 'Refreshing',
+      bgColor: 'bg-blue-950/30',
+      textColor: 'text-blue-500',
+      borderColor: 'border-blue-800/50',
+      dotColor: 'bg-blue-500 animate-pulse'
+    };
+  } else {
+    return {
+      displayText: normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase(),
+      bgColor: 'bg-gray-950/30',
+      textColor: 'text-gray-500',
+      borderColor: 'border-gray-800/50',
+      dotColor: 'bg-gray-500'
+    };
+  }
+};
