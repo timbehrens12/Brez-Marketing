@@ -1858,18 +1858,13 @@ const CampaignWidget = ({
                                                 </div>
                                               </td>
                                               <td className="p-2">
-                                                <Badge 
-                                                  variant="outline" 
-                                                  className={`px-2 py-0.5 text-xs flex items-center gap-1 ${
-                                                    adSet.status.toUpperCase() === 'ACTIVE' 
-                                                      ? 'bg-green-950/30 text-green-500 border border-green-800/50' 
-                                                      : 'bg-gray-950/30 text-gray-500 border border-gray-800/50'
-                                                  }`}
-                                                >
+                                                <Badge className={`text-xs px-1.5 py-0 h-5 flex items-center gap-1 ${
+                                                  formatAdSetStatus(adSet.status).bgColor} ${
+                                                  formatAdSetStatus(adSet.status).textColor} border ${
+                                                  formatAdSetStatus(adSet.status).borderColor}`}>
                                                   <div className={`w-1.5 h-1.5 rounded-full ${
-                                                    adSet.status.toUpperCase() === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-500'
-                                                  }`}></div>
-                                                  {adSet.status}
+                                                    formatAdSetStatus(adSet.status).dotColor}`}></div>
+                                                  {formatAdSetStatus(adSet.status).displayText}
                                                 </Badge>
                                               </td>
                                               <td className="p-2 text-right">
@@ -1878,8 +1873,7 @@ const CampaignWidget = ({
                                                     className="px-2 py-0.5 bg-[#111] border-[#333] text-white"
                                                     variant="outline"
                                                   >
-                                                    {formatCurrency(adSet.budget)}
-                                                    {adSet.budget_type === 'daily' && <span className="text-xs text-gray-500 ml-1">/day</span>}
+                                                    {formatBudgetWithType(adSet.budget, adSet.budget_type)}
                                                   </Badge>
                                                   <span className="text-xs text-gray-500">
                                                     {adSet.budget_type}
@@ -2050,10 +2044,10 @@ const formatCampaignStatus = (status: string) => {
   } else if (normalizedStatus === 'PAUSED') {
     return {
       displayText: 'Inactive',
-      bgColor: 'bg-yellow-950/30',
-      textColor: 'text-yellow-500',
-      borderColor: 'border-yellow-800/50',
-      dotColor: 'bg-yellow-500'
+      bgColor: 'bg-slate-800/50',
+      textColor: 'text-slate-400',
+      borderColor: 'border-slate-700/50',
+      dotColor: 'bg-slate-400'
     };
   } else if (normalizedStatus === 'DELETED' || normalizedStatus === 'ARCHIVED') {
     return {
@@ -2080,4 +2074,9 @@ const formatCampaignStatus = (status: string) => {
       dotColor: 'bg-gray-500'
     };
   }
+};
+
+// Also create a formatter for adset statuses to ensure consistency
+const formatAdSetStatus = (status: string) => {
+  return formatCampaignStatus(status); // Reuse the same formatter for consistency
 };
