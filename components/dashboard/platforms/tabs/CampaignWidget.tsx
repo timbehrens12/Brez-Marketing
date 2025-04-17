@@ -185,25 +185,24 @@ interface CampaignWidgetProps {
 // Same available metrics as the original widget
 const AVAILABLE_METRICS = [
   { id: 'spent', name: 'Spend', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'impressions', name: 'Impressions', icon: <Eye className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'reach', name: 'Reach', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'impressions', name: 'Impressions', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'clicks', name: 'Clicks', icon: <MousePointerClick className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'ctr', name: 'CTR', icon: <Target className="h-3.5 w-3.5" />, format: 'percentage' },
-  { id: 'cpc', name: 'CPC', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'conversions', name: 'Conversions', icon: <Zap className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'cpc', name: 'CPC', icon: <Wallet className="h-3.5 w-3.5" />, format: 'currency' },
+  { id: 'conversions', name: 'Conversions', icon: <BarChart2 className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'cost_per_conversion', name: 'Cost/Conv.', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'roas', name: 'ROAS', icon: <BarChart2 className="h-3.5 w-3.5" />, format: 'roas' },
-]
+  { id: 'roas', name: 'ROAS', icon: <Wallet className="h-3.5 w-3.5" />, format: 'roas' },
+  { id: 'reach', name: 'Reach', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'budget', name: 'Budget', icon: <Wallet className="h-3.5 w-3.5" />, format: 'currency' }
+];
 
 // Default preferences
 const DEFAULT_PREFERENCES = {
-  view: 'table',
-  visibleMetrics: ['spent', 'impressions', 'clicks', 'ctr', 'roas'],
+  visibleMetrics: ['spent', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions'],
   sortBy: 'spent',
   sortOrder: 'desc',
-  showInactive: true,
-  chartMetric: 'spent'
-}
+  showInactive: true
+};
 
 // Helper function to format budget with currency
 const formatBudget = (amount: number | null, budgetType: string | null) => {
@@ -216,6 +215,69 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   }
   
   return formattedAmount;
+};
+
+// Add it right after the formatBudgetWithType function
+const calculateCampaignTotalsFromAdSets = (campaign: Campaign, campaignAdSets: AdSet[]) => {
+  if (!campaignAdSets || campaignAdSets.length === 0) {
+    return campaign; // Return original if no ad sets
+  }
+
+  // Calculate totals from ad sets
+  const totals = {
+    spent: 0,
+    impressions: 0,
+    clicks: 0,
+    conversions: 0,
+    reach: 0
+  };
+
+  // Sum up metrics from all ad sets
+  campaignAdSets.forEach(adSet => {
+    totals.spent += adSet.spent || 0;
+    totals.impressions += adSet.impressions || 0;
+    totals.clicks += adSet.clicks || 0;
+    totals.conversions += adSet.conversions || 0;
+    totals.reach += adSet.reach || 0;
+  });
+
+  // Calculate derivative metrics
+  let ctr = 0;
+  let cpc = 0;
+  let cost_per_conversion = 0;
+  let roas = 0;
+
+  if (totals.impressions > 0 && totals.clicks > 0) {
+    ctr = (totals.clicks / totals.impressions) * 100;
+  }
+
+  if (totals.clicks > 0 && totals.spent > 0) {
+    cpc = totals.spent / totals.clicks;
+  }
+
+  if (totals.conversions > 0 && totals.spent > 0) {
+    cost_per_conversion = totals.spent / totals.conversions;
+  }
+
+  if (totals.conversions > 0 && totals.spent > 0) {
+    // Assuming $25 per conversion for ROAS calculation
+    const estimatedRevenue = totals.conversions * 25;
+    roas = estimatedRevenue / totals.spent;
+  }
+
+  // Create updated campaign object with recalculated values
+  return {
+    ...campaign,
+    spent: totals.spent,
+    impressions: totals.impressions,
+    clicks: totals.clicks,
+    conversions: totals.conversions,
+    reach: totals.reach,
+    ctr: ctr,
+    cpc: cpc,
+    cost_per_conversion: cost_per_conversion,
+    roas: roas
+  };
 };
 
 // Define the component as a React FC (Function Component) with JSX return
@@ -259,6 +321,9 @@ const CampaignWidget = ({
   // Add state to track campaigns with fetched ad sets
   const [campaignsWithAdSets, setCampaignsWithAdSets] = useState<Set<string>>(new Set());
   
+  // Add the missing state
+  const [expandedCampaignTimestamp, setExpandedCampaignTimestamp] = useState<number>(0);
+  
   // Clean up when component unmounts
   useEffect(() => {
     return () => {
@@ -288,183 +353,109 @@ const CampaignWidget = ({
   }, []);
   
   // Modify the existing fetchAdSets implementation to track campaigns with ad sets
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
-    if (!brandId || !isMountedRef.current || !campaignId) return;
-    
-    // Cancel any existing ad set fetch
-    pendingRequestsRef.current.forEach(controller => {
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignore abort errors
-      }
-    });
-    
-    // Clear any existing ad sets to show fresh loading state
-    setAdSets([]);
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
+    if (!brandId || !campaignId) {
+      logger.error('[CampaignWidget] Missing brandId or campaignId for fetchAdSets');
+      return;
+    }
+
     setIsLoadingAdSets(true);
     
-    const controller = createAbortController();
-    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
+    // Keep track of campaigns that have had their ad sets fetched
+    setCampaignsWithAdSets(prev => {
+      const newSet = new Set(prev);
+      newSet.add(campaignId);
+      return newSet;
+    });
     
-    // Try the regular endpoint first
-    let usedDirectFetch = false;
-    let usedCachedData = false;
+    // Record which campaign is being expanded
+    const expandedTime = Date.now();
+    setExpandedCampaignTimestamp(expandedTime);
+    
+    // Create a request controller to be able to abort if component unmounts
+    const controller = new AbortController();
+    pendingRequestsRef.current.push(controller);
     
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
       
-      // Add date range parameters if available
+      // Add date range if available
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
       }
       
-      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      if (forceRefresh) {
+        url += '&forceRefresh=true';
+      }
       
-      let response = await fetch(url, { signal: controller.signal });
+      logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId}`);
       
-      // If the regular endpoint fails, try the direct-fetch endpoint
+      const response = await fetch(url, {
+        signal: controller.signal
+      });
+      
       if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
-        usedDirectFetch = true;
-        
-        response = await fetch(`/api/meta/adsets/direct-fetch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-          }),
-          signal: controller.signal
-        });
+        throw new Error(`Error fetching ad sets: ${response.status} ${response.statusText}`);
       }
       
-      if (!isMountedRef.current) return;
+      const data = await response.json();
       
-      // Log the raw response for debugging
-      const responseText = await response.text();
-      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
-      
-      // Parse the response as JSON (safely)
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
-        throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
-      }
-      
-      if (response.ok) {
-        // Check if this is a rate limit response with cached data
-        if (data.source === 'cached_due_to_rate_limit') {
-          usedCachedData = true;
-          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
-        }
-        
-        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
-        
-        if (isMountedRef.current) {
-          // Ensure we have a valid array of ad sets
-          const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-          setAdSets(validAdSets);
-          
-          // Add this campaign to the tracking set if ad sets were found
-          if (validAdSets.length > 0) {
-            setCampaignsWithAdSets(prev => {
-              const newSet = new Set(prev);
-              newSet.add(campaignId);
-              return newSet;
-            });
-          }
-          
-          // Toast notification that ad sets were loaded
-          if (validAdSets.length > 0) {
-            toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
-          } else {
-            // Check if this was because of a rate limit
-            if (data.warning === 'Meta API rate limit reached') {
-              toast.warning(`Meta API rate limit reached`, {
-                description: data.message || 'Please try again in a few minutes',
-                duration: 8000
-              });
-            } else {
-              toast.info("No ad sets found for this campaign");
-              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
-            }
-          }
-          
-          // Dispatch events for budgets to update regardless of ad set count
-          console.log('[CampaignWidget] Dispatching status changed events');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
-          );
-          
-          setTimeout(() => {
-            window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
-                detail: {
-                  brandId,
-                  timestamp: new Date().toISOString()
-                }
-              })
-            );
-          }, 100);
-        }
-      } else {
-        // Check if this is a rate limit error response
-        if (data.warning === 'Meta API rate limit reached') {
-          console.log(`[CampaignWidget] Meta API rate limit reached`);
-          
-          if (isMountedRef.current) {
-            toast.warning(`Meta API rate limit reached`, {
-              description: data.message || 'Please try again in a few minutes',
-              duration: 8000
-            });
-            setAdSets([]);
-          }
-        } else {
-          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
-          
-          if (isMountedRef.current) {
-            toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
-            setAdSets([]);
-          }
-        }
-      }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
+      if (!data.adsets || !Array.isArray(data.adsets)) {
+        logger.warn(`[CampaignWidget] No ad sets returned for campaign ${campaignId}`);
+        setAdSets([]);
         return;
       }
       
-      console.error("[CampaignWidget] Error fetching ad sets:", error);
+      logger.debug(`[CampaignWidget] Loaded ${data.adsets.length} ad sets for campaign ${campaignId}`);
       
-      if (isMountedRef.current) {
-        toast.error(`Error loading ad sets: ${(error as Error).message}`);
-        setAdSets([]);
+      // Set the ad sets
+      setAdSets(data.adsets);
+      
+      // Find the campaign in our local state
+      const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
+      
+      if (campaign) {
+        // First update with ad set data
+        const updatedCampaign = calculateCampaignTotalsFromAdSets(campaign, data.adsets);
+        
+        // Then update the local campaigns state
+        setLocalCampaigns(currentCampaigns => 
+          currentCampaigns.map(c => 
+            c.campaign_id === campaignId ? updatedCampaign : c
+          )
+        );
+        
+        // Also update the total spend for display
+        const totalSpent = data.adsets.reduce((sum: number, adSet: AdSet) => sum + (adSet.spent || 0), 0);
+        if (totalSpent > 0) {
+          // If we have a total, update the campaign budget to match
+          logger.debug(`[CampaignWidget] Updated campaign ${campaignId} total spent: $${totalSpent.toFixed(2)}`);
+        }
+      }
+      
+      // Also request ads for each ad set
+      data.adsets.forEach((adSet: AdSet) => {
+        // Fetch ads for this ad set (handled by AdComponent)
+        window.dispatchEvent(new CustomEvent('adset-expanded', {
+          detail: { adsetId: adSet.adset_id, brandId, campaignId }
+        }));
+      });
+      
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        logger.debug(`[CampaignWidget] Aborted fetch of ad sets for campaign ${campaignId}`);
+      } else {
+        logger.error(`[CampaignWidget] Error fetching ad sets for campaign ${campaignId}:`, error);
+        toast.error('Failed to load ad sets');
       }
     } finally {
-      if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
-          setIsLoadingAdSets(false);
-        }, 300);
-      }
-      
-      // Clean up abort controller
-      removeAbortController(controller);
+      // Remove the controller from pending requests
+      pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
+      setIsLoadingAdSets(false);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, dateRange, calculateCampaignTotalsFromAdSets, localCampaigns]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -1452,6 +1443,37 @@ const CampaignWidget = ({
     
     return formattedAmount;
   }, []);
+
+  // Add useEffect to update campaign totals when ad sets are fetched
+  useEffect(() => {
+    if (expandedCampaign && adSets.length > 0) {
+      // Find the campaign that matches the expanded campaign
+      const campaignToUpdate = localCampaigns.find(c => c.campaign_id === expandedCampaign);
+      
+      if (campaignToUpdate) {
+        // Calculate new totals
+        const updatedCampaign = calculateCampaignTotalsFromAdSets(campaignToUpdate, adSets);
+        
+        // Update local campaign data
+        setLocalCampaigns(currentCampaigns => 
+          currentCampaigns.map(c => 
+            c.campaign_id === expandedCampaign ? updatedCampaign : c
+          )
+        );
+        
+        logger.debug(`[CampaignWidget] Updated campaign metrics from ${adSets.length} ad sets`);
+      }
+    }
+  }, [adSets, expandedCampaign, calculateCampaignTotalsFromAdSets, localCampaigns]);
+
+  // Add this useEffect to initialize and update the localCampaigns state with the latest campaigns data
+  useEffect(() => {
+    if (campaigns && campaigns.length > 0) {
+      // Only update localCampaigns when the campaigns prop actually changes
+      // Create a copy to avoid direct reference
+      setLocalCampaigns([...campaigns]);
+    }
+  }, [campaigns]);
 
   // Return the JSX for the component
   return (
