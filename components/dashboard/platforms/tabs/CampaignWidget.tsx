@@ -1138,7 +1138,7 @@ const CampaignWidget = ({
   }, []);
   
   // Calculate campaign budget from ad sets - EXACT COPY from original widget
-  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
+  const getCampaignBudget = useCallback((campaign: Campaign, campaignAdSets: AdSet[] | null = null) => {
     // If we have ad sets for this campaign, use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
       const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
@@ -1173,7 +1173,7 @@ const CampaignWidget = ({
       budget_type,
       budget_source
     };
-  };
+  }, [expandedCampaign, currentBudgets]);
   
   // Function to refresh campaign status
   const refreshCampaignStatus = async (campaignId: string, force: boolean = false) => {
@@ -1452,6 +1452,73 @@ const CampaignWidget = ({
     
     return formattedAmount;
   }, []);
+
+  // Add a function to automatically fetch budgets for all campaigns
+  const fetchAllCampaignBudgets = useCallback(async () => {
+    if (!brandId || !isMountedRef.current) return;
+    
+    if (!throttle('fetch-all-budgets', 30000)) {
+      logger.debug('[CampaignWidget] Throttled budget fetch');
+      return;
+    }
+    
+    logger.debug('[CampaignWidget] Fetching budgets for all campaigns');
+    setIsLoadingBudgets(true);
+    
+    try {
+      const response = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`);
+      
+      if (!isMountedRef.current) return;
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Create a map of campaign_id to budget data
+        const budgetMap: Record<string, any> = {};
+        data.budgets.forEach((budget: any) => {
+          budgetMap[budget.campaign_id] = {
+            budget: budget.budget,
+            budget_type: budget.budget_type,
+            formatted_budget: budget.formatted_budget,
+            budget_source: budget.budget_source
+          };
+        });
+        
+        if (isMountedRef.current) {
+          setCurrentBudgets(budgetMap);
+          logger.debug(`[CampaignWidget] Updated budgets for ${Object.keys(budgetMap).length} campaigns`);
+        }
+      } else {
+        logger.debug('[CampaignWidget] Failed to fetch campaign budgets');
+      }
+    } catch (error) {
+      logger.debug('[CampaignWidget] Error fetching campaign budgets:', error);
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoadingBudgets(false);
+        setLastBudgetRefresh(new Date());
+      }
+    }
+  }, [brandId, isMountedRef]);
+
+  // Use an effect to fetch budgets on mount and periodically
+  useEffect(() => {
+    if (!brandId || !campaigns.length) return;
+    
+    // Fetch budgets on mount
+    fetchAllCampaignBudgets();
+    
+    // Also refresh budgets periodically
+    const intervalId = setInterval(() => {
+      if (isMountedRef.current) {
+        fetchAllCampaignBudgets();
+      }
+    }, 300000); // Every 5 minutes
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [brandId, campaigns.length, fetchAllCampaignBudgets, isMountedRef]);
 
   // Return the JSX for the component
   return (
@@ -1781,9 +1848,22 @@ const CampaignWidget = ({
                               
                               {isLoadingAdSets ? (
                                 <div className="flex flex-col items-center justify-center py-6 text-center">
-                                  <RefreshCw className="h-8 w-8 animate-spin text-white mb-3" />
-                                  <h3 className="text-md font-medium mb-1 text-white">Loading Ad Sets</h3>
-                                  <p className="text-sm text-gray-400">Please wait while we fetch the latest ad set data...</p>
+                                  <div className="w-full max-w-md">
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-3 mb-2">
+                                        <Loader2 className="h-6 w-6 text-gray-400 animate-spin" />
+                                        <span className="text-gray-300 text-sm">Loading ad sets...</span>
+                                      </div>
+                                      <Progress 
+                                        value={45} 
+                                        max={100} 
+                                        className="h-1 bg-gray-800"
+                                      />
+                                      <p className="text-sm text-gray-400">
+                                        Please wait while we fetch the latest ad set data...
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               ) : adSets.length > 0 ? (
                                 <div className="space-y-4">
