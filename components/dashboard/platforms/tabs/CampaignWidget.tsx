@@ -526,15 +526,17 @@ const CampaignWidget = ({
       removeAbortController(controller);
 
       // *** NEW: If ad sets were successfully fetched, trigger parent refresh ***
-      if (success && onRefresh) {
+      if (success && adSets.length > 0 && onRefresh) {
           logger.info(`[CampaignWidget] Ad sets loaded for ${campaignId}, triggering parent campaign refresh.`);
           // Add a small delay to allow state to settle before triggering parent refresh
           setTimeout(() => {
-              onRefresh(); 
+              if (isMountedRef.current) { // Add check if component still mounted
+                onRefresh(); 
+              }
           }, 500); 
       }
     }
-  }, [brandId, dateRange, expandedCampaign, adSets.length, onRefresh, isMountedRef, createAbortController, removeAbortController]);
+  }, [brandId, dateRange, expandedCampaign, onRefresh, isMountedRef, createAbortController, removeAbortController]);
 
   const toggleCampaignExpand = useCallback(async (campaignId: string): Promise<void> => {
     if (expandedCampaign === campaignId) {
