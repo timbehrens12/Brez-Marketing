@@ -310,6 +310,18 @@ const CampaignWidget = ({
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false): Promise<void> => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
+    // Only abort requests if forcing a refresh, otherwise let existing fetches for other campaigns complete.
+    if (forceRefresh) {
+        pendingRequestsRef.current.forEach(controller => {
+          try {
+            controller.abort();
+          } catch (e) {
+            // Ignore abort errors
+          }
+        });
+        // Clear specific controller if exists? Might be complex.
+    }
+    
     // Cancel any existing ad set fetch
     pendingRequestsRef.current.forEach(controller => {
       try {
@@ -319,7 +331,7 @@ const CampaignWidget = ({
       }
     });
     
-    // Clear any existing ad sets to show fresh loading state
+    // Clear existing ad sets to show fresh loading state
     setAdSets([]);
     setIsLoadingAdSets(true);
     
@@ -524,7 +536,8 @@ const CampaignWidget = ({
   const toggleCampaignExpand = useCallback(async (campaignId: string): Promise<void> => {
     if (expandedCampaign === campaignId) {
       setExpandedCampaign(null);
-      setAdSets([]);
+      // Optional: Clear ad sets when collapsing if desired, or keep them cached.
+      // setAdSets([]); 
     } else {
       if (!campaignId || typeof campaignId !== 'string' || campaignId.trim() === '') {
         logger.error('[CampaignWidget] Invalid campaign ID for status check:', campaignId);
@@ -540,6 +553,22 @@ const CampaignWidget = ({
       
       logger.debug(`[CampaignWidget] Expanding campaign ${campaignId} with brand ${brandId}`);
       
+      // --- Expansion Logic --- 
+      // 1. Set expanded state immediately
+      setExpandedCampaign(campaignId);
+      
+      // 2. Fetch ad sets only if not already fetched for this campaign
+      if (!campaignsWithAdSets.has(campaignId)) {
+        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} not cached, fetching...`);
+        // Don't await here, let it run in the background
+        fetchAdSets(campaignId, false); 
+      } else {
+        logger.debug(`[CampaignWidget] Ad sets for ${campaignId} already fetched, using cached data (or refetching if necessary within fetchAdSets)`);
+        // If ad sets are cached but empty, trigger fetch again?
+        // Or rely on fetchAdSets internal logic/throttling? For now, assume fetchAdSets handles it.
+      }
+      
+      // 3. Check campaign status (can run in parallel)
       try {
         const response = await fetch('/api/meta/campaign-status-check', {
           method: 'POST',
@@ -575,10 +604,9 @@ const CampaignWidget = ({
         // Continue with expansion even if status check fails
       }
       
-      setExpandedCampaign(campaignId);
-      await fetchAdSets(campaignId);
+      // --- End Expansion Logic ---
     }
-  }, [brandId, expandedCampaign, fetchAdSets]);
+  }, [brandId, expandedCampaign, fetchAdSets, campaignsWithAdSets]);
 
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false): void => {
     if (!brandId || !isMountedRef.current || campaignsToCheck.length === 0) return;
