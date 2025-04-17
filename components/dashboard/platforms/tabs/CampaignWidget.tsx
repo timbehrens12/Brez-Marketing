@@ -415,6 +415,9 @@ const CampaignWidget = ({
         throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
       }
       
+      // *** Add logging for the actual ad set data received ***
+      logger.debug(`[CampaignWidget] Parsed ad sets data for campaign ${campaignId}:`, data.adSets);
+      
       if (response.ok) {
         // Check if this is a rate limit response with cached data
         if (data.source === 'cached_due_to_rate_limit') {
@@ -566,43 +569,6 @@ const CampaignWidget = ({
         logger.debug(`[CampaignWidget] Ad sets for ${campaignId} already fetched, using cached data (or refetching if necessary within fetchAdSets)`);
         // If ad sets are cached but empty, trigger fetch again?
         // Or rely on fetchAdSets internal logic/throttling? For now, assume fetchAdSets handles it.
-      }
-      
-      // 3. Check campaign status (can run in parallel)
-      try {
-        // Run status check without await to prevent blocking UI updates
-        fetch('/api/meta/campaign-status-check', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-            forceRefresh: false // Don't force refresh on every expand
-          }),
-        }).then(async response => {
-          // Process response asynchronously
-          if (response.ok) {
-            const statusData = await response.json();
-            if (statusData.status && isMountedRef.current) {
-              setLocalCampaigns(currentCampaigns => 
-                currentCampaigns.map(c => 
-                  c.campaign_id === campaignId 
-                    ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                    : c
-                )
-              );
-            }
-          } else {
-            logger.warn(`[CampaignWidget] Background status check during expand failed: ${response.status}`);
-          }
-        }).catch(error => {
-          logger.error(`[CampaignWidget] Background status check during expand failed:`, error);
-        });
-      } catch (error) {
-        logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
-        // Continue with expansion even if status check fails
       }
       
       // --- End Expansion Logic ---
