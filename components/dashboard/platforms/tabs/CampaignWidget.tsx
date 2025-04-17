@@ -185,24 +185,25 @@ interface CampaignWidgetProps {
 // Same available metrics as the original widget
 const AVAILABLE_METRICS = [
   { id: 'spent', name: 'Spend', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'impressions', name: 'Impressions', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'impressions', name: 'Impressions', icon: <Eye className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'reach', name: 'Reach', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'clicks', name: 'Clicks', icon: <MousePointerClick className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'ctr', name: 'CTR', icon: <Target className="h-3.5 w-3.5" />, format: 'percentage' },
-  { id: 'cpc', name: 'CPC', icon: <Wallet className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'conversions', name: 'Conversions', icon: <BarChart2 className="h-3.5 w-3.5" />, format: 'number' },
+  { id: 'cpc', name: 'CPC', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
+  { id: 'conversions', name: 'Conversions', icon: <Zap className="h-3.5 w-3.5" />, format: 'number' },
   { id: 'cost_per_conversion', name: 'Cost/Conv.', icon: <DollarSign className="h-3.5 w-3.5" />, format: 'currency' },
-  { id: 'roas', name: 'ROAS', icon: <Wallet className="h-3.5 w-3.5" />, format: 'roas' },
-  { id: 'reach', name: 'Reach', icon: <Users className="h-3.5 w-3.5" />, format: 'number' },
-  { id: 'budget', name: 'Budget', icon: <Wallet className="h-3.5 w-3.5" />, format: 'currency' }
-];
+  { id: 'roas', name: 'ROAS', icon: <BarChart2 className="h-3.5 w-3.5" />, format: 'roas' },
+]
 
 // Default preferences
 const DEFAULT_PREFERENCES = {
-  visibleMetrics: ['spent', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions'],
+  view: 'table',
+  visibleMetrics: ['spent', 'impressions', 'clicks', 'ctr', 'roas'],
   sortBy: 'spent',
   sortOrder: 'desc',
-  showInactive: true
-};
+  showInactive: true,
+  chartMetric: 'spent'
+}
 
 // Helper function to format budget with currency
 const formatBudget = (amount: number | null, budgetType: string | null) => {
@@ -215,69 +216,6 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   }
   
   return formattedAmount;
-};
-
-// Add it right after the formatBudgetWithType function
-const calculateCampaignTotalsFromAdSets = (campaign: Campaign, campaignAdSets: AdSet[]) => {
-  if (!campaignAdSets || campaignAdSets.length === 0) {
-    return campaign; // Return original if no ad sets
-  }
-
-  // Calculate totals from ad sets
-  const totals = {
-    spent: 0,
-    impressions: 0,
-    clicks: 0,
-    conversions: 0,
-    reach: 0
-  };
-
-  // Sum up metrics from all ad sets
-  campaignAdSets.forEach(adSet => {
-    totals.spent += adSet.spent || 0;
-    totals.impressions += adSet.impressions || 0;
-    totals.clicks += adSet.clicks || 0;
-    totals.conversions += adSet.conversions || 0;
-    totals.reach += adSet.reach || 0;
-  });
-
-  // Calculate derivative metrics
-  let ctr = 0;
-  let cpc = 0;
-  let cost_per_conversion = 0;
-  let roas = 0;
-
-  if (totals.impressions > 0 && totals.clicks > 0) {
-    ctr = (totals.clicks / totals.impressions) * 100;
-  }
-
-  if (totals.clicks > 0 && totals.spent > 0) {
-    cpc = totals.spent / totals.clicks;
-  }
-
-  if (totals.conversions > 0 && totals.spent > 0) {
-    cost_per_conversion = totals.spent / totals.conversions;
-  }
-
-  if (totals.conversions > 0 && totals.spent > 0) {
-    // Assuming $25 per conversion for ROAS calculation
-    const estimatedRevenue = totals.conversions * 25;
-    roas = estimatedRevenue / totals.spent;
-  }
-
-  // Create updated campaign object with recalculated values
-  return {
-    ...campaign,
-    spent: totals.spent,
-    impressions: totals.impressions,
-    clicks: totals.clicks,
-    conversions: totals.conversions,
-    reach: totals.reach,
-    ctr: ctr,
-    cpc: cpc,
-    cost_per_conversion: cost_per_conversion,
-    roas: roas
-  };
 };
 
 // Define the component as a React FC (Function Component) with JSX return
@@ -321,9 +259,6 @@ const CampaignWidget = ({
   // Add state to track campaigns with fetched ad sets
   const [campaignsWithAdSets, setCampaignsWithAdSets] = useState<Set<string>>(new Set());
   
-  // Add the missing state
-  const [expandedCampaignTimestamp, setExpandedCampaignTimestamp] = useState<number>(0);
-  
   // Clean up when component unmounts
   useEffect(() => {
     return () => {
@@ -352,110 +287,366 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
+  // Update the useEffect to ensure campaign data is calculated from adsets correctly
+  useEffect(() => {
+    // Initialize campaigns with data from props
+    if (campaigns?.length) {
+      // Deep clone to avoid reference issues
+      const updatedCampaigns = JSON.parse(JSON.stringify(campaigns));
+      
+      // Apply date range filtering to campaign data
+      updatedCampaigns.forEach((campaign: Campaign) => {
+        // Set has_data_in_range based on daily insights within date range
+        if (dateRange?.from && dateRange?.to && campaign.daily_insights?.length) {
+          const fromDate = dateRange.from.toISOString().split('T')[0];
+          const toDate = dateRange.to.toISOString().split('T')[0];
+          
+          // Filter insights within date range
+          const insightsInRange = campaign.daily_insights.filter((insight: DailyInsight) => {
+            const insightDate = insight.date;
+            return insightDate >= fromDate && insightDate <= toDate;
+          });
+          
+          // Set flag if no data in range
+          campaign.has_data_in_range = insightsInRange.length > 0;
+          
+          // Recalculate metrics based on filtered insights
+          if (insightsInRange.length > 0) {
+            // Sum up metrics for the date range
+            const metrics = insightsInRange.reduce((acc: { spent: number; impressions: number; clicks: number; conversions: number }, insight: DailyInsight) => {
+              acc.spent += (insight.spent || 0);
+              acc.impressions += (insight.impressions || 0);
+              acc.clicks += (insight.clicks || 0);
+              acc.conversions += (insight.conversions || 0);
+              return acc;
+            }, { spent: 0, impressions: 0, clicks: 0, conversions: 0 });
+            
+            // Recalculate derived metrics
+            campaign.spent = metrics.spent;
+            campaign.impressions = metrics.impressions;
+            campaign.clicks = metrics.clicks;
+            campaign.conversions = metrics.conversions;
+            
+            // Only calculate CTR if we have impressions
+            if (metrics.impressions > 0) {
+              campaign.ctr = (metrics.clicks / metrics.impressions) * 100;
+            } else {
+              campaign.ctr = 0;
+            }
+            
+            // Only calculate CPC if we have clicks
+            if (metrics.clicks > 0) {
+              campaign.cpc = metrics.spent / metrics.clicks;
+            } else {
+              campaign.cpc = 0;
+            }
+            
+            // Only calculate cost per conversion if we have conversions
+            if (metrics.conversions > 0) {
+              campaign.cost_per_conversion = metrics.spent / metrics.conversions;
+            } else {
+              campaign.cost_per_conversion = 0;
+            }
+            
+            // Calculate ROAS using a standard conversion value estimate
+            const conversionValue = metrics.conversions * 25; // Assuming $25 avg value
+            if (metrics.spent > 0) {
+              campaign.roas = conversionValue / metrics.spent;
+            } else {
+              campaign.roas = 0;
+            }
+          } else {
+            // No data in range, zero out metrics
+            campaign.spent = 0;
+            campaign.impressions = 0;
+            campaign.clicks = 0;
+            campaign.conversions = 0;
+            campaign.ctr = 0;
+            campaign.cpc = 0;
+            campaign.cost_per_conversion = 0;
+            campaign.roas = 0;
+          }
+        }
+      });
+      
+      setLocalCampaigns(updatedCampaigns);
+    }
+  }, [campaigns, dateRange]);
+  
+  // Ensure adsets are loaded correctly for the given campaign and date range
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
-    if (!brandId || !campaignId) {
-      logger.error('[CampaignWidget] Missing brandId or campaignId for fetchAdSets');
+    if (!brandId || !campaignId || !dateRange?.from || !dateRange?.to) {
+      logger.debug(`[CampaignWidget] Missing required data for ad sets fetch`);
       return;
     }
-
+    
+    // Update loading state
     setIsLoadingAdSets(true);
     
-    // Keep track of campaigns that have had their ad sets fetched
-    setCampaignsWithAdSets(prev => {
-      const newSet = new Set(prev);
-      newSet.add(campaignId);
-      return newSet;
-    });
-    
-    // Record which campaign is being expanded
-    const expandedTime = Date.now();
-    setExpandedCampaignTimestamp(expandedTime);
-    
-    // Create a request controller to be able to abort if component unmounts
-    const controller = new AbortController();
-    pendingRequestsRef.current.push(controller);
+    // Create an abort controller for this request
+    const abortController = new AbortController();
+    pendingRequestsRef.current.push(abortController);
     
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
+      // Add campaign to the list of campaigns with ad sets
+      setCampaignsWithAdSets(prev => new Set(prev).add(campaignId));
       
-      // Add date range if available
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-      }
+      // Format date range params
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
       
-      if (forceRefresh) {
-        url += '&forceRefresh=true';
-      }
+      logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId} with date range ${fromDate} to ${toDate}`);
       
-      logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId}`);
+      // Add a unique timestamp to avoid caching issues
+      const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&from=${fromDate}&to=${toDate}&t=${Date.now()}${forceRefresh ? '&forceRefresh=true' : ''}`;
       
       const response = await fetch(url, {
-        signal: controller.signal
+        signal: abortController.signal,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       
       if (!response.ok) {
-        throw new Error(`Error fetching ad sets: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch ad sets: ${response.status}`);
       }
       
       const data = await response.json();
       
-      if (!data.adsets || !Array.isArray(data.adsets)) {
-        logger.warn(`[CampaignWidget] No ad sets returned for campaign ${campaignId}`);
+      if (!data.adSets || !Array.isArray(data.adSets)) {
+        logger.warn(`[CampaignWidget] No ad sets returned for campaign: ${campaignId}`);
         setAdSets([]);
         return;
       }
       
-      logger.debug(`[CampaignWidget] Loaded ${data.adsets.length} ad sets for campaign ${campaignId}`);
-      
-      // Set the ad sets
-      setAdSets(data.adsets);
-      
-      // Find the campaign in our local state
-      const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
-      
-      if (campaign) {
-        // First update with ad set data
-        const updatedCampaign = calculateCampaignTotalsFromAdSets(campaign, data.adsets);
-        
-        // Then update the local campaigns state
-        setLocalCampaigns(currentCampaigns => 
-          currentCampaigns.map(c => 
-            c.campaign_id === campaignId ? updatedCampaign : c
-          )
-        );
-        
-        // Also update the total spend for display
-        const totalSpent = data.adsets.reduce((sum: number, adSet: AdSet) => sum + (adSet.spent || 0), 0);
-        if (totalSpent > 0) {
-          // If we have a total, update the campaign budget to match
-          logger.debug(`[CampaignWidget] Updated campaign ${campaignId} total spent: $${totalSpent.toFixed(2)}`);
+      // Process ad sets data with date filtering
+      const processedAdSets = data.adSets.map((adSet: AdSet) => {
+        // Filter daily insights by date range
+        if (adSet.daily_insights?.length) {
+          const filteredInsights = adSet.daily_insights.filter(insight => {
+            const insightDate = typeof insight.date === 'string' ? insight.date : '';
+            return insightDate >= fromDate && insightDate <= toDate;
+          });
+          
+          // Recalculate metrics for the adset based on filtered insights
+          if (filteredInsights.length > 0) {
+            const metrics = filteredInsights.reduce((acc: { spent: number; impressions: number; clicks: number; conversions: number; reach: number }, insight: any) => {
+              acc.spent += (insight.spent || 0);
+              acc.impressions += (insight.impressions || 0);
+              acc.clicks += (insight.clicks || 0);
+              acc.conversions += (insight.conversions || 0);
+              acc.reach += (insight.reach || 0);
+              return acc;
+            }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+            
+            adSet.spent = metrics.spent;
+            adSet.impressions = metrics.impressions;
+            adSet.clicks = metrics.clicks;
+            adSet.conversions = metrics.conversions;
+            adSet.reach = metrics.reach;
+            
+            // Calculate derived metrics
+            if (metrics.impressions > 0) {
+              adSet.ctr = (metrics.clicks / metrics.impressions) * 100;
+            } else {
+              adSet.ctr = 0;
+            }
+            
+            if (metrics.clicks > 0) {
+              adSet.cpc = metrics.spent / metrics.clicks;
+            } else {
+              adSet.cpc = 0;
+            }
+            
+            if (metrics.conversions > 0) {
+              adSet.cost_per_conversion = metrics.spent / metrics.conversions;
+            } else {
+              adSet.cost_per_conversion = 0;
+            }
+          } else {
+            // No data in the date range, zero out metrics
+            adSet.spent = 0;
+            adSet.impressions = 0;
+            adSet.clicks = 0;
+            adSet.conversions = 0;
+            adSet.reach = 0;
+            adSet.ctr = 0;
+            adSet.cpc = 0;
+            adSet.cost_per_conversion = 0;
+          }
+          
+          // Update the daily insights to the filtered set
+          adSet.daily_insights = filteredInsights;
         }
-      }
-      
-      // Also request ads for each ad set
-      data.adsets.forEach((adSet: AdSet) => {
-        // Fetch ads for this ad set (handled by AdComponent)
-        window.dispatchEvent(new CustomEvent('adset-expanded', {
-          detail: { adsetId: adSet.adset_id, brandId, campaignId }
-        }));
+        
+        return adSet;
       });
       
+      // Update adset state with the processed data
+      setAdSets(processedAdSets);
+      
+      // After loading ad sets, compute and update campaign metrics from adsets
+      // This ensures the campaign row shows the correct sum of adset data
+      const adSetTotals = processedAdSets.reduce((acc: { spent: number; impressions: number; clicks: number; conversions: number; reach: number }, adSet: AdSet) => {
+        acc.spent += (adSet.spent || 0);
+        acc.impressions += (adSet.impressions || 0);
+        acc.clicks += (adSet.clicks || 0);
+        acc.conversions += (adSet.conversions || 0);
+        acc.reach += (adSet.reach || 0);
+        return acc;
+      }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+      
+      // Update the corresponding campaign with adset data
+      setLocalCampaigns(prevCampaigns => 
+        prevCampaigns.map(campaign => {
+          if (campaign.campaign_id === campaignId) {
+            // Calculate updated derived metrics
+            const updatedCampaign = { ...campaign };
+            
+            // Update metrics from ad sets
+            updatedCampaign.spent = adSetTotals.spent;
+            updatedCampaign.impressions = adSetTotals.impressions;
+            updatedCampaign.clicks = adSetTotals.clicks;
+            updatedCampaign.conversions = adSetTotals.conversions;
+            updatedCampaign.reach = adSetTotals.reach;
+            
+            // Recalculate derived metrics
+            if (adSetTotals.impressions > 0) {
+              updatedCampaign.ctr = (adSetTotals.clicks / adSetTotals.impressions) * 100;
+            } else {
+              updatedCampaign.ctr = 0;
+            }
+            
+            if (adSetTotals.clicks > 0) {
+              updatedCampaign.cpc = adSetTotals.spent / adSetTotals.clicks;
+            } else {
+              updatedCampaign.cpc = 0;
+            }
+            
+            if (adSetTotals.conversions > 0) {
+              updatedCampaign.cost_per_conversion = adSetTotals.spent / adSetTotals.conversions;
+            } else {
+              updatedCampaign.cost_per_conversion = 0;
+            }
+            
+            // Calculate ROAS
+            const conversionValue = adSetTotals.conversions * 25; // Assuming $25 avg value
+            if (adSetTotals.spent > 0) {
+              updatedCampaign.roas = conversionValue / adSetTotals.spent;
+            } else {
+              updatedCampaign.roas = 0;
+            }
+            
+            return updatedCampaign;
+          }
+          return campaign;
+        })
+      );
+      
+      // Dispatch an event to notify that ad sets were loaded
+      const adSetsLoadedEvent = new CustomEvent('adSetsLoaded', {
+        detail: {
+          campaignId,
+          count: processedAdSets.length,
+          from: fromDate,
+          to: toDate
+        }
+      });
+      window.dispatchEvent(adSetsLoadedEvent);
+      
+      logger.debug(`[CampaignWidget] Loaded ${processedAdSets.length} ad sets for campaign ${campaignId}`);
     } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        logger.debug(`[CampaignWidget] Aborted fetch of ad sets for campaign ${campaignId}`);
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.debug(`[CampaignWidget] Ad sets fetch aborted for campaign ${campaignId}`);
       } else {
         logger.error(`[CampaignWidget] Error fetching ad sets for campaign ${campaignId}:`, error);
-        toast.error('Failed to load ad sets');
+        toast.error(`Failed to load ad sets: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+      
+      // Clear adsets in case of error
+      setAdSets([]);
     } finally {
-      // Remove the controller from pending requests
-      pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
       setIsLoadingAdSets(false);
+      
+      // Remove this abort controller from the pending list
+      pendingRequestsRef.current = pendingRequestsRef.current.filter(
+        controller => controller !== abortController
+      );
     }
-  }, [brandId, dateRange, calculateCampaignTotalsFromAdSets, localCampaigns]);
+  }, [brandId, dateRange]);
+  
+  // Add this function to update campaign totals based on all adsets
+  const updateCampaignTotalsFromAdSets = useCallback((campaignId: string) => {
+    if (!campaignId || !adSets.length) return;
+    
+    // Calculate totals from all adsets
+    const adSetTotals = adSets.reduce((acc: { spent: number; impressions: number; clicks: number; conversions: number; reach: number }, adSet: AdSet) => {
+      acc.spent += (adSet.spent || 0);
+      acc.impressions += (adSet.impressions || 0);
+      acc.clicks += (adSet.clicks || 0);
+      acc.conversions += (adSet.conversions || 0);
+      acc.reach += (adSet.reach || 0);
+      return acc;
+    }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+    
+    // Update the campaign with these totals
+    setLocalCampaigns(prevCampaigns => 
+      prevCampaigns.map(campaign => {
+        if (campaign.campaign_id === campaignId) {
+          // Calculate updated derived metrics
+          const updatedCampaign = { ...campaign };
+          
+          // Update metrics from ad sets
+          updatedCampaign.spent = adSetTotals.spent;
+          updatedCampaign.impressions = adSetTotals.impressions;
+          updatedCampaign.clicks = adSetTotals.clicks;
+          updatedCampaign.conversions = adSetTotals.conversions;
+          updatedCampaign.reach = adSetTotals.reach;
+          
+          // Recalculate derived metrics
+          if (adSetTotals.impressions > 0) {
+            updatedCampaign.ctr = (adSetTotals.clicks / adSetTotals.impressions) * 100;
+          } else {
+            updatedCampaign.ctr = 0;
+          }
+          
+          if (adSetTotals.clicks > 0) {
+            updatedCampaign.cpc = adSetTotals.spent / adSetTotals.clicks;
+          } else {
+            updatedCampaign.cpc = 0;
+          }
+          
+          if (adSetTotals.conversions > 0) {
+            updatedCampaign.cost_per_conversion = adSetTotals.spent / adSetTotals.conversions;
+          } else {
+            updatedCampaign.cost_per_conversion = 0;
+          }
+          
+          // Calculate ROAS
+          const conversionValue = adSetTotals.conversions * 25; // Assuming $25 avg value
+          if (adSetTotals.spent > 0) {
+            updatedCampaign.roas = conversionValue / adSetTotals.spent;
+          } else {
+            updatedCampaign.roas = 0;
+          }
+          
+          updatedCampaign.has_data_in_range = adSetTotals.spent > 0 || adSetTotals.impressions > 0;
+          
+          return updatedCampaign;
+        }
+        return campaign;
+      })
+    );
+  }, [adSets]);
+  
+  // Add an effect to update campaign totals whenever adsets change
+  useEffect(() => {
+    if (expandedCampaign && adSets.length > 0) {
+      updateCampaignTotalsFromAdSets(expandedCampaign);
+    }
+  }, [expandedCampaign, adSets, updateCampaignTotalsFromAdSets]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -1443,37 +1634,6 @@ const CampaignWidget = ({
     
     return formattedAmount;
   }, []);
-
-  // Add useEffect to update campaign totals when ad sets are fetched
-  useEffect(() => {
-    if (expandedCampaign && adSets.length > 0) {
-      // Find the campaign that matches the expanded campaign
-      const campaignToUpdate = localCampaigns.find(c => c.campaign_id === expandedCampaign);
-      
-      if (campaignToUpdate) {
-        // Calculate new totals
-        const updatedCampaign = calculateCampaignTotalsFromAdSets(campaignToUpdate, adSets);
-        
-        // Update local campaign data
-        setLocalCampaigns(currentCampaigns => 
-          currentCampaigns.map(c => 
-            c.campaign_id === expandedCampaign ? updatedCampaign : c
-          )
-        );
-        
-        logger.debug(`[CampaignWidget] Updated campaign metrics from ${adSets.length} ad sets`);
-      }
-    }
-  }, [adSets, expandedCampaign, calculateCampaignTotalsFromAdSets, localCampaigns]);
-
-  // Add this useEffect to initialize and update the localCampaigns state with the latest campaigns data
-  useEffect(() => {
-    if (campaigns && campaigns.length > 0) {
-      // Only update localCampaigns when the campaigns prop actually changes
-      // Create a copy to avoid direct reference
-      setLocalCampaigns([...campaigns]);
-    }
-  }, [campaigns]);
 
   // Return the JSX for the component
   return (
