@@ -2015,6 +2015,201 @@ const CampaignWidget = ({
     }
   }, [adSets, expandedCampaign, localCampaigns]);
 
+  // Add a function to force-load ad set data for a specific campaign without UI updates
+  const preloadAdSetData = useCallback(async (campaignId: string) => {
+    if (!brandId || !campaignId || !dateRange?.from || !dateRange?.to) {
+      return;
+    }
+
+    try {
+      // Format date range params
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
+      
+      // Add a unique timestamp to avoid caching issues
+      const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&from=${fromDate}&to=${toDate}&t=${Date.now()}&forceRefresh=true`;
+      
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ad sets: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.adSets || !Array.isArray(data.adSets)) {
+        return;
+      }
+      
+      // Calculate ad set totals directly from the response
+      const adSetTotals = data.adSets.reduce((acc: any, adSet: any) => {
+        acc.spent += Number(adSet.spent || 0);
+        acc.impressions += Number(adSet.impressions || 0);
+        acc.clicks += Number(adSet.clicks || 0);
+        acc.conversions += Number(adSet.conversions || 0);
+        acc.reach += Number(adSet.reach || 0);
+        return acc;
+      }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+      
+      // Only update the campaign if we actually have data
+      if (adSetTotals.spent > 0 || adSetTotals.impressions > 0 || adSetTotals.clicks > 0) {
+        // Update the corresponding campaign with adset data
+        setLocalCampaigns(prevCampaigns => 
+          prevCampaigns.map(campaign => {
+            if (campaign.campaign_id === campaignId) {
+              // Calculate derived metrics
+              const ctr = adSetTotals.impressions > 0 
+                ? (adSetTotals.clicks / adSetTotals.impressions) * 100 
+                : 0;
+              const cpc = adSetTotals.clicks > 0 
+                ? adSetTotals.spent / adSetTotals.clicks 
+                : 0;
+              const costPerConversion = adSetTotals.conversions > 0 
+                ? adSetTotals.spent / adSetTotals.conversions 
+                : 0;
+              
+              // Calculate ROAS
+              const conversionValue = adSetTotals.conversions * 25; // Assuming $25 avg value
+              const roas = adSetTotals.spent > 0 ? conversionValue / adSetTotals.spent : 0;
+              
+              return {
+                ...campaign,
+                spent: adSetTotals.spent,
+                impressions: adSetTotals.impressions,
+                clicks: adSetTotals.clicks,
+                conversions: adSetTotals.conversions,
+                reach: adSetTotals.reach,
+                ctr: ctr,
+                cpc: cpc,
+                cost_per_conversion: costPerConversion,
+                roas: roas,
+                has_data_in_range: true,
+                // Mark this campaign as having ad set synchronized data
+                budget_source: 'api'
+              };
+            }
+            return campaign;
+          })
+        );
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      logger.error(`[CampaignWidget] Error preloading ad sets for campaign ${campaignId}:`, error);
+      return false;
+    }
+  }, [brandId, dateRange]);
+
+  // Modify the initializeData function to preload ad set data for all campaigns immediately after fetching bulk data
+  const initializeData = async () => {
+    // If no date range or brand ID, exit early
+    if (!dateRange?.from || !dateRange?.to || !brandId) {
+      logger.warn('[CampaignWidget] Missing date range or brandId for data load');
+      return;
+    }
+    
+    setRefreshing(true);
+    
+    try {
+      // Make sure to get the latest api url format
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const endpoint = `${baseUrl}/api/meta/campaigns/bulk-data`;
+      
+      // Format dates for API
+      const from = dateRange.from.toISOString().split('T')[0];
+      const to = dateRange.to.toISOString().split('T')[0];
+      
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      
+      // Full URL with all required parameters
+      const url = `${endpoint}?brandId=${brandId}&from=${from}&to=${to}&t=${timestamp}`;
+      
+      logger.info(`[CampaignWidget] Fetching bulk campaign data from: ${from} to ${to}`);
+      
+      const response = await fetch(
+        url,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          }
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaign data: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.campaigns && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+        logger.info(`[CampaignWidget] Loaded ${data.campaigns.length} campaigns from bulk API`);
+        // Process campaigns to ensure metrics are properly calculated and set
+        const processedCampaigns = data.campaigns.map((campaign: Campaign) => {
+          // Ensure campaign has metrics even if not directly provided
+          return {
+            ...campaign,
+            // Make sure these are numeric values to avoid display issues
+            spent: Number(campaign.spent || 0),
+            impressions: Number(campaign.impressions || 0),
+            clicks: Number(campaign.clicks || 0),
+            reach: Number(campaign.reach || 0),
+            ctr: Number(campaign.ctr || 0),
+            cpc: Number(campaign.cpc || 0),
+            conversions: Number(campaign.conversions || 0),
+            cost_per_conversion: Number(campaign.cost_per_conversion || 0),
+            // Force update has_data_in_range flag
+            has_data_in_range: (
+              Number(campaign.spent) > 0 || 
+              Number(campaign.impressions) > 0 || 
+              Number(campaign.clicks) > 0
+            )
+          };
+        });
+        
+        // Set initial campaigns from bulk API
+        setLocalCampaigns(processedCampaigns);
+        
+        // CRITICAL FIX: Preload ad set data for all campaigns to ensure metrics are correct
+        // Only get data for the first 5 campaigns to avoid performance issues
+        const campaignsToPreload = processedCampaigns.slice(0, 5);
+        logger.info(`[CampaignWidget] Preloading ad set data for ${campaignsToPreload.length} campaigns`);
+        
+        // Use Promise.all to load ad set data for multiple campaigns in parallel
+        await Promise.all(
+          campaignsToPreload.map(async (campaign: Campaign) => {
+            if (campaign.campaign_id) {
+              const result = await preloadAdSetData(campaign.campaign_id);
+              logger.debug(`[CampaignWidget] Preloaded ad set data for campaign ${campaign.campaign_id}: ${result ? 'Success' : 'No data'}`);
+            }
+          })
+        );
+        
+        logger.info('[CampaignWidget] Initial data load complete with ad set data preloading');
+      } else {
+        // If bulk API fails, fall back to refreshing all
+        logger.warn('[CampaignWidget] Bulk API returned no data, falling back to individual refresh');
+        refreshAllCampaignData(true);
+      }
+    } catch (error) {
+      logger.error('[CampaignWidget] Error during initial data load:', error);
+      // Fall back to refresh method
+      refreshAllCampaignData(true);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
