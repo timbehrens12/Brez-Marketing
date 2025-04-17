@@ -287,165 +287,184 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Add a function to sync campaign data with ad sets when expanded
-  const syncCampaignWithAdSets = useCallback((campaignId: string, adSetsData: AdSet[]) => {
-    if (!campaignId || !adSetsData || adSetsData.length === 0) return;
+  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
+    if (!brandId || !isMountedRef.current || !campaignId) return;
     
-    logger.debug(`[CampaignWidget] Syncing campaign ${campaignId} with ${adSetsData.length} ad sets`);
-    
-    // Calculate totals from ad sets
-    const adSetsTotals = {
-      spent: adSetsData.reduce((sum, adSet) => sum + (adSet.spent || 0), 0),
-      impressions: adSetsData.reduce((sum, adSet) => sum + (adSet.impressions || 0), 0),
-      clicks: adSetsData.reduce((sum, adSet) => sum + (adSet.clicks || 0), 0),
-      conversions: adSetsData.reduce((sum, adSet) => sum + (adSet.conversions || 0), 0),
-      ctr: 0, // Calculated below
-      cpc: 0, // Calculated below
-      cost_per_conversion: 0, // Calculated below
-      reach: adSetsData.reduce((sum, adSet) => sum + (adSet.reach || 0), 0),
-      budget: adSetsData.reduce((sum, adSet) => sum + (adSet.budget || 0), 0)
-    };
-    
-    // Calculate derived metrics
-    adSetsTotals.ctr = adSetsTotals.impressions > 0 
-      ? (adSetsTotals.clicks / adSetsTotals.impressions) * 100 
-      : 0;
-      
-    adSetsTotals.cpc = adSetsTotals.clicks > 0 
-      ? adSetsTotals.spent / adSetsTotals.clicks 
-      : 0;
-      
-    adSetsTotals.cost_per_conversion = adSetsTotals.conversions > 0 
-      ? adSetsTotals.spent / adSetsTotals.conversions 
-      : 0;
-    
-    // Update the campaign in local state with the aggregated ad set data
-    setLocalCampaigns(currentCampaigns => 
-      currentCampaigns.map(c => 
-        c.campaign_id === campaignId 
-          ? { 
-              ...c, 
-              spent: adSetsTotals.spent,
-              impressions: adSetsTotals.impressions,
-              clicks: adSetsTotals.clicks,
-              conversions: adSetsTotals.conversions,
-              ctr: adSetsTotals.ctr,
-              cpc: adSetsTotals.cpc,
-              cost_per_conversion: adSetsTotals.cost_per_conversion,
-              reach: adSetsTotals.reach,
-              adset_budget_total: adSetsTotals.budget,
-              last_refresh_date: new Date().toISOString()
-            } 
-          : c
-      )
-    );
-    
-    // Dispatch an event to notify other components that campaign data was updated
-    window.dispatchEvent(new CustomEvent('campaign-data-updated', {
-      detail: { 
-        campaignId,
-        totals: adSetsTotals
+    // Cancel any existing ad set fetch
+    pendingRequestsRef.current.forEach(controller => {
+      try {
+        controller.abort();
+      } catch (e) {
+        // Ignore abort errors
       }
-    }));
-  }, []);
-  
-  // Update the fetchAdSets function to sync campaign data after fetching ad sets
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
-    if (!brandId || !campaignId) {
-      logger.debug('[CampaignWidget] Cannot fetch ad sets: missing brandId or campaignId');
-      return;
-    }
+    });
     
-    // Apply throttling to prevent excessive requests
-    if (!forceRefresh && !throttle(`fetch-adsets-${campaignId}`, 15000)) {
-      logger.debug(`[CampaignWidget] Throttled ad sets fetch for campaign ${campaignId}`);
-      return;
-    }
-    
-    // Skip if already loading this campaign's ad sets
-    if (isLoadingAdSets && expandedCampaign === campaignId) {
-      logger.debug(`[CampaignWidget] Already loading ad sets for campaign ${campaignId}`);
-      return;
-    }
-    
-    logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId}`);
+    // Clear any existing ad sets to show fresh loading state
+    setAdSets([]);
     setIsLoadingAdSets(true);
     
-    // Create an abort controller to be able to cancel this request if needed
-    const abortController = new AbortController();
-    pendingRequestsRef.current.push(abortController);
+    const controller = createAbortController();
+    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
+    
+    // Try the regular endpoint first
+    let usedDirectFetch = false;
+    let usedCachedData = false;
     
     try {
-      // Build URL with date range if available
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
       
+      // Add date range parameters if available
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
-        logger.debug(`[CampaignWidget] Including date range: ${fromDate} to ${toDate}`);
       }
       
-      if (forceRefresh) {
-        url += '&forceRefresh=true';
+      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      
+      let response = await fetch(url, { signal: controller.signal });
+      
+      // If the regular endpoint fails, try the direct-fetch endpoint
+      if (!response.ok) {
+        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
+        usedDirectFetch = true;
+        
+        response = await fetch(`/api/meta/adsets/direct-fetch`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brandId,
+            campaignId,
+          }),
+          signal: controller.signal
+        });
       }
       
-      const response = await fetch(url, {
-        signal: abortController.signal
-      });
+      if (!isMountedRef.current) return;
       
-      // Remove this controller from the pending list
-      pendingRequestsRef.current = pendingRequestsRef.current.filter(
-        controller => controller !== abortController
-      );
+      // Log the raw response for debugging
+      const responseText = await response.text();
+      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
       
-      if (!isMountedRef.current) {
-        logger.debug('[CampaignWidget] Component unmounted during ad sets fetch');
-        return;
+      // Parse the response as JSON (safely)
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
+        throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
       }
       
       if (response.ok) {
-        const data = await response.json();
+        // Check if this is a rate limit response with cached data
+        if (data.source === 'cached_due_to_rate_limit') {
+          usedCachedData = true;
+          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
+        }
         
-        logger.debug(`[CampaignWidget] Loaded ${data.adsets?.length || 0} ad sets for campaign ${campaignId}`);
+        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
         
-        // Update ad sets state
-        setAdSets(data.adsets || []);
-        
-        // Track that we've fetched ad sets for this campaign
-        setCampaignsWithAdSets(prev => {
-          const newSet = new Set(prev);
-          newSet.add(campaignId);
-          return newSet;
-        });
-        
-        // IMPORTANT NEW STEP: Sync campaign data with ad sets data
-        if (data.adsets && data.adsets.length > 0) {
-          syncCampaignWithAdSets(campaignId, data.adsets);
+        if (isMountedRef.current) {
+          // Ensure we have a valid array of ad sets
+          const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+          setAdSets(validAdSets);
+          
+          // Add this campaign to the tracking set if ad sets were found
+          if (validAdSets.length > 0) {
+            setCampaignsWithAdSets(prev => {
+              const newSet = new Set(prev);
+              newSet.add(campaignId);
+              return newSet;
+            });
+          }
+          
+          // Toast notification that ad sets were loaded
+          if (validAdSets.length > 0) {
+            toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
+          } else {
+            // Check if this was because of a rate limit
+            if (data.warning === 'Meta API rate limit reached') {
+              toast.warning(`Meta API rate limit reached`, {
+                description: data.message || 'Please try again in a few minutes',
+                duration: 8000
+              });
+            } else {
+              toast.info("No ad sets found for this campaign");
+              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
+            }
+          }
+          
+          // Dispatch events for budgets to update regardless of ad set count
+          console.log('[CampaignWidget] Dispatching status changed events');
+          window.dispatchEvent(
+            new CustomEvent('adSetStatusChanged', {
+              detail: {
+                brandId,
+                campaignId,
+                timestamp: new Date().toISOString()
+              }
+            })
+          );
+          
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent('campaignStatusChanged', {
+                detail: {
+                  brandId,
+                  timestamp: new Date().toISOString()
+                }
+              })
+            );
+          }, 100);
         }
       } else {
-        logger.warn(`[CampaignWidget] Failed to fetch ad sets: ${response.status}`);
-        
-        // If there was an error, reset ad sets to empty array
-        setAdSets([]);
+        // Check if this is a rate limit error response
+        if (data.warning === 'Meta API rate limit reached') {
+          console.log(`[CampaignWidget] Meta API rate limit reached`);
+          
+          if (isMountedRef.current) {
+            toast.warning(`Meta API rate limit reached`, {
+              description: data.message || 'Please try again in a few minutes',
+              duration: 8000
+            });
+            setAdSets([]);
+          }
+        } else {
+          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
+          
+          if (isMountedRef.current) {
+            toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
+            setAdSets([]);
+          }
+        }
       }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        logger.debug('[CampaignWidget] Ad sets fetch was aborted');
-      } else {
-        logger.error('[CampaignWidget] Error fetching ad sets:', error);
-        
-        // If there was an error, reset ad sets to empty array
-        if (isMountedRef.current) {
-          setAdSets([]);
-        }
+      if ((error as Error).name === 'AbortError') {
+        console.log("[CampaignWidget] Ad set fetch aborted");
+        return;
+      }
+      
+      console.error("[CampaignWidget] Error fetching ad sets:", error);
+      
+      if (isMountedRef.current) {
+        toast.error(`Error loading ad sets: ${(error as Error).message}`);
+        setAdSets([]);
       }
     } finally {
       if (isMountedRef.current) {
-        setIsLoadingAdSets(false);
+        // Add a slight delay to avoid flickering
+        setTimeout(() => {
+          setIsLoadingAdSets(false);
+        }, 300);
       }
+      
+      // Clean up abort controller
+      removeAbortController(controller);
     }
-  }, [brandId, dateRange, isMountedRef, expandedCampaign, syncCampaignWithAdSets]);
+  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -1501,153 +1520,6 @@ const CampaignWidget = ({
     };
   }, [brandId, campaigns.length, fetchAllCampaignBudgets, isMountedRef]);
 
-  // Add a function to sync all campaign data
-  const syncAllCampaignsData = useCallback(async () => {
-    if (!brandId || !campaigns || campaigns.length === 0) return;
-    
-    if (!throttle('sync-all-campaigns', 60000)) {
-      logger.debug('[CampaignWidget] Throttled sync all campaigns operation');
-      return;
-    }
-    
-    logger.debug('[CampaignWidget] Syncing all campaign data with latest totals');
-    
-    try {
-      const response = await fetch(`/api/meta/campaigns/sync-totals?brandId=${brandId}`);
-      
-      if (!isMountedRef.current) return;
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        if (data.success && data.campaigns) {
-          // Update local campaigns with the latest data
-          setLocalCampaigns(currentCampaigns => {
-            return currentCampaigns.map(currentCampaign => {
-              // Find the updated campaign data
-              const updatedCampaign = data.campaigns.find(
-                (c: any) => c.campaign_id === currentCampaign.campaign_id
-              );
-              
-              // If we found updated data, merge it
-              if (updatedCampaign) {
-                return {
-                  ...currentCampaign,
-                  spent: updatedCampaign.spent || currentCampaign.spent,
-                  impressions: updatedCampaign.impressions || currentCampaign.impressions,
-                  clicks: updatedCampaign.clicks || currentCampaign.clicks,
-                  conversions: updatedCampaign.conversions || currentCampaign.conversions,
-                  ctr: updatedCampaign.ctr || currentCampaign.ctr,
-                  cpc: updatedCampaign.cpc || currentCampaign.cpc,
-                  cost_per_conversion: updatedCampaign.cost_per_conversion || currentCampaign.cost_per_conversion,
-                  reach: updatedCampaign.reach || currentCampaign.reach,
-                  last_refresh_date: new Date().toISOString()
-                };
-              }
-              
-              // Otherwise return the current campaign unchanged
-              return currentCampaign;
-            });
-          });
-          
-          logger.debug(`[CampaignWidget] Updated ${data.campaigns.length} campaigns with latest totals`);
-        } else {
-          logger.warn('[CampaignWidget] Failed to sync campaign totals:', data.error || 'Unknown error');
-        }
-      } else {
-        logger.warn(`[CampaignWidget] Failed to sync campaign totals: ${response.status}`);
-      }
-    } catch (error) {
-      logger.error('[CampaignWidget] Error syncing campaign totals:', error);
-    }
-  }, [brandId, campaigns, isMountedRef]);
-
-  // Add an effect to periodically sync all campaign data
-  useEffect(() => {
-    if (!brandId || !campaigns.length) return;
-    
-    // Do an initial sync after component mounts
-    syncAllCampaignsData();
-    
-    // Set up periodic sync
-    const intervalId = setInterval(() => {
-      if (isMountedRef.current) {
-        syncAllCampaignsData();
-      }
-    }, 180000); // Every 3 minutes
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [brandId, campaigns.length, syncAllCampaignsData, isMountedRef]);
-
-  // Add an effect to initialize the localCampaigns state
-  useEffect(() => {
-    // When campaigns prop changes, update localCampaigns
-    if (campaigns && campaigns.length > 0) {
-      logger.debug(`[CampaignWidget] Initializing ${campaigns.length} campaigns`);
-      setLocalCampaigns(campaigns);
-      
-      // Try to create a fast sync with the latest API data
-      setTimeout(() => {
-        syncAllCampaignsData();
-      }, 1000);
-    }
-  }, [campaigns, syncAllCampaignsData]);
-
-  // Add proper button handler for refreshing campaign statuses
-  const handleRefreshStatus = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!brandId) {
-      logger.debug('[CampaignWidget] Cannot refresh statuses: missing brandId');
-      return;
-    }
-    
-    if (!throttle('manual-refresh-all-statuses', 5000)) {
-      toast.info("Please wait a moment before refreshing again");
-      return;
-    }
-    
-    logger.debug('[CampaignWidget] Manual refresh of all campaign statuses triggered');
-    setRefreshing(true);
-    
-    // Show user feedback
-    toast.promise(
-      new Promise<void>((resolve) => {
-        // First, sync all campaign data to ensure we have the latest totals
-        syncAllCampaignsData()
-          .then(() => {
-            // Then check statuses for all campaigns
-            if (localCampaigns.length > 0) {
-              checkCampaignStatuses(localCampaigns, true);
-            }
-            
-            // Call the parent refresh function if provided
-            if (onRefresh) {
-              onRefresh();
-            }
-            
-            // Reset refreshing state after a reasonable delay
-            setTimeout(() => {
-              setRefreshing(false);
-              resolve();
-            }, 2000);
-          })
-          .catch(() => {
-            setRefreshing(false);
-            resolve();
-          });
-      }),
-      {
-        loading: 'Refreshing campaign statuses...',
-        success: 'Campaign statuses updated',
-        error: 'Failed to update campaign statuses'
-      }
-    );
-  }, [brandId, checkCampaignStatuses, localCampaigns, onRefresh, syncAllCampaignsData]);
-
   // Return the JSX for the component
   return (
     <Card className="mb-6 border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444] bg-[#111]">
@@ -1725,7 +1597,7 @@ const CampaignWidget = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRefreshStatus}
+            onClick={bulkRefreshCampaignStatuses}
             disabled={refreshing}
             className="h-8 text-sm flex items-center gap-1.5 text-white border-[#333] hover:bg-black/20"
           >
