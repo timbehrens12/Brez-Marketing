@@ -430,14 +430,14 @@ const CampaignWidget = ({
           setAdSets(validAdSets);
           success = true; // Mark as successful
           
-          // Add this campaign to the tracking set if ad sets were found
-          if (validAdSets.length > 0) {
-            setCampaignsWithAdSets(prev => {
-              const newSet = new Set(prev);
-              newSet.add(campaignId);
-              return newSet;
-            });
-          }
+          // Add this campaign ID to the set regardless of whether ad sets were found,
+          // indicating that a fetch attempt was completed.
+          setCampaignsWithAdSets(prev => {
+            const newSet = new Set(prev);
+            newSet.add(campaignId);
+            logger.debug(`[CampaignWidget] Added ${campaignId} to campaignsWithAdSets set.`);
+            return newSet;
+          });
           
           // Toast notification that ad sets were loaded
           if (validAdSets.length > 0) {
@@ -570,7 +570,8 @@ const CampaignWidget = ({
       
       // 3. Check campaign status (can run in parallel)
       try {
-        const response = await fetch('/api/meta/campaign-status-check', {
+        // Run status check without await to prevent blocking UI updates
+        fetch('/api/meta/campaign-status-check', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -578,27 +579,27 @@ const CampaignWidget = ({
           body: JSON.stringify({
             brandId,
             campaignId,
-            forceRefresh: true
+            forceRefresh: false // Don't force refresh on every expand
           }),
-        });
-        
-        if (response.ok) {
-          const statusData = await response.json();
-          
-          // Update the campaign in local state if needed
-          if (statusData.status) {
-            setLocalCampaigns(currentCampaigns => 
-              currentCampaigns.map(c => 
-                c.campaign_id === campaignId 
-                  ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
-                  : c
-              )
-            );
+        }).then(async response => {
+          // Process response asynchronously
+          if (response.ok) {
+            const statusData = await response.json();
+            if (statusData.status && isMountedRef.current) {
+              setLocalCampaigns(currentCampaigns => 
+                currentCampaigns.map(c => 
+                  c.campaign_id === campaignId 
+                    ? { ...c, status: statusData.status, last_refresh_date: statusData.timestamp } 
+                    : c
+                )
+              );
+            }
+          } else {
+            logger.warn(`[CampaignWidget] Background status check during expand failed: ${response.status}`);
           }
-        } else {
-          logger.warn(`[CampaignWidget] Failed to check campaign status during expand: ${response.status}`);
-          // Continue with expansion even if status check fails
-        }
+        }).catch(error => {
+          logger.error(`[CampaignWidget] Background status check during expand failed:`, error);
+        });
       } catch (error) {
         logger.error(`[CampaignWidget] Error checking campaign status during expand:`, error);
         // Continue with expansion even if status check fails
@@ -1720,8 +1721,8 @@ const CampaignWidget = ({
                                       className="h-7 text-xs text-white border-[#333] hover:bg-black/20"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setAdSets([]); // Clear current ad sets to show loading
-                                        fetchAdSets(campaign.campaign_id);
+                                        // No need to clear here, fetchAdSets will handle showing loading state
+                                        fetchAdSets(campaign.campaign_id); // Use default (non-forced) refresh
                                       }}
                                       disabled={isLoadingAdSets}
                                     >
@@ -1956,8 +1957,8 @@ const CampaignWidget = ({
                                       size="sm" 
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setAdSets([]); // Clear current ad sets to show loading
-                                        fetchAdSets(campaign.campaign_id);
+                                        // No need to clear here, fetchAdSets will handle showing loading state
+                                        fetchAdSets(campaign.campaign_id); // Use default (non-forced) refresh
                                       }}
                                       className="text-white border-[#333] hover:bg-black/20"
                                     >
