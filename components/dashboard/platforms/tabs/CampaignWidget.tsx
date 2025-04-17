@@ -131,6 +131,7 @@ type AdSet = {
   optimization_goal: string | null
   updated_at: string
   reach?: number
+  conversion_value?: number // Add this property
   daily_insights?: Array<{
     date: string
     spent: number
@@ -141,6 +142,7 @@ type AdSet = {
     cpc: number
     cost_per_conversion: number
     reach?: number
+    conversion_value?: number // Add here too
   }>
 }
 
@@ -218,6 +220,56 @@ const formatBudget = (amount: number | null, budgetType: string | null) => {
   return formattedAmount;
 };
 
+// Add a function to aggregate adSet data for campaigns
+const getAggregatedCampaignData = useCallback((campaign: Campaign, adSets: AdSet[]) => {
+  // If no ad sets or empty array, return the campaign's original data
+  if (!adSets || adSets.length === 0) {
+    return campaign;
+  }
+
+  // Calculate total values from all ad sets
+  const totalSpent = adSets.reduce((sum, adSet) => sum + (adSet.spent || 0), 0);
+  const totalImpressions = adSets.reduce((sum, adSet) => sum + (adSet.impressions || 0), 0);
+  const totalClicks = adSets.reduce((sum, adSet) => sum + (adSet.clicks || 0), 0);
+  const totalConversions = adSets.reduce((sum, adSet) => sum + (adSet.conversions || 0), 0);
+  const totalReach = adSets.reduce((sum, adSet) => sum + (adSet.reach || 0), 0);
+
+  // Calculate derived metrics
+  const ctr = totalClicks > 0 && totalImpressions > 0 
+    ? (totalClicks / totalImpressions) * 100 
+    : 0;
+  
+  const cpc = totalClicks > 0 && totalSpent > 0 
+    ? totalSpent / totalClicks 
+    : 0;
+  
+  const costPerConversion = totalConversions > 0 && totalSpent > 0 
+    ? totalSpent / totalConversions 
+    : 0;
+
+  // Calculate ROAS if we have conversion value data
+  const conversionValue = adSets.reduce((sum, adSet) => sum + (adSet.conversion_value || 0), 0);
+  const roas = totalSpent > 0 && conversionValue > 0 
+    ? conversionValue / totalSpent 
+    : 0;
+
+  // Return updated campaign data
+  return {
+    ...campaign,
+    spent: totalSpent,
+    impressions: totalImpressions,
+    clicks: totalClicks,
+    conversions: totalConversions,
+    reach: totalReach,
+    ctr: ctr,
+    cpc: cpc,
+    cost_per_conversion: costPerConversion,
+    roas: roas,
+    // Mark that this data has been updated from ad sets
+    aggregated_from_adsets: true
+  };
+}, []);
+
 // Define the component as a React FC (Function Component) with JSX return
 const CampaignWidget = ({ 
   brandId, 
@@ -287,184 +339,77 @@ const CampaignWidget = ({
     pendingRequestsRef.current = pendingRequestsRef.current.filter(c => c !== controller);
   }, []);
   
-  // Modify the existing fetchAdSets implementation to track campaigns with ad sets
-  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false) => {
-    if (!brandId || !isMountedRef.current || !campaignId) return;
+  // Update the fetchAdSets function to sync campaign data with ad sets
+  const fetchAdSets = useCallback(async (campaignId: string, forceRefresh = false) => {
+    if (!brandId || !campaignId || isLoadingAdSets) return;
     
-    // Cancel any existing ad set fetch
-    pendingRequestsRef.current.forEach(controller => {
-      try {
-        controller.abort();
-      } catch (e) {
-        // Ignore abort errors
-      }
-    });
+    // Add in throttling to prevent too many fetches
+    if (!forceRefresh && !throttle(`fetch-adsets-${campaignId}`, 5000)) {
+      logger.debug(`[CampaignWidget] Throttled ad set fetch for campaign ${campaignId}`);
+      return;
+    }
     
-    // Clear any existing ad sets to show fresh loading state
-    setAdSets([]);
     setIsLoadingAdSets(true);
     
-    const controller = createAbortController();
-    console.log(`[CampaignWidget] Starting ad sets fetch for campaign ${campaignId}`);
-    
-    // Try the regular endpoint first
-    let usedDirectFetch = false;
-    let usedCachedData = false;
-    
     try {
-      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}&forceRefresh=${forceRefresh}`;
+      // Build URL with date range if available
+      let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
       
-      // Add date range parameters if available
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
       }
       
-      console.log(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      if (forceRefresh) {
+        url += '&forceRefresh=true';
+      }
       
-      let response = await fetch(url, { signal: controller.signal });
+      logger.debug(`[CampaignWidget] Fetching ad sets for campaign ${campaignId}`);
       
-      // If the regular endpoint fails, try the direct-fetch endpoint
+      const response = await fetch(url);
+      
       if (!response.ok) {
-        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
-        usedDirectFetch = true;
-        
-        response = await fetch(`/api/meta/adsets/direct-fetch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-          }),
-          signal: controller.signal
-        });
+        throw new Error(`Failed to fetch ad sets: ${response.status}`);
       }
       
-      if (!isMountedRef.current) return;
+      const data = await response.json();
       
-      // Log the raw response for debugging
-      const responseText = await response.text();
-      console.log(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
+      // Track that we've fetched ad sets for this campaign
+      setCampaignsWithAdSets(prev => {
+        const updated = new Set(prev);
+        updated.add(campaignId);
+        return updated;
+      });
       
-      // Parse the response as JSON (safely)
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error(`[CampaignWidget] Error parsing ad sets response: ${parseError}`);
-        throw new Error(`Failed to parse response: ${responseText.substring(0, 100)}`);
-      }
-      
-      if (response.ok) {
-        // Check if this is a rate limit response with cached data
-        if (data.source === 'cached_due_to_rate_limit') {
-          usedCachedData = true;
-          console.log(`[CampaignWidget] Using cached ad sets due to Meta API rate limits`);
-        }
+      // Set ad sets data
+      if (data.adsets) {
+        setAdSets(data.adsets);
         
-        console.log(`[CampaignWidget] Response OK, adSets:`, data.adSets ? data.adSets.length : 0);
-        
-        if (isMountedRef.current) {
-          // Ensure we have a valid array of ad sets
-          const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
-          setAdSets(validAdSets);
+        // Find the campaign we're updating
+        const campaign = localCampaigns.find(c => c.campaign_id === campaignId);
+        if (campaign) {
+          // Update campaign data based on ad sets
+          const updatedCampaign = getAggregatedCampaignData(campaign, data.adsets);
           
-          // Add this campaign to the tracking set if ad sets were found
-          if (validAdSets.length > 0) {
-            setCampaignsWithAdSets(prev => {
-              const newSet = new Set(prev);
-              newSet.add(campaignId);
-              return newSet;
-            });
-          }
-          
-          // Toast notification that ad sets were loaded
-          if (validAdSets.length > 0) {
-            toast.success(`Loaded ${validAdSets.length} ad sets${usedCachedData ? ' (cached data)' : usedDirectFetch ? ' (basic data)' : ''}`);
-          } else {
-            // Check if this was because of a rate limit
-            if (data.warning === 'Meta API rate limit reached') {
-              toast.warning(`Meta API rate limit reached`, {
-                description: data.message || 'Please try again in a few minutes',
-                duration: 8000
-              });
-            } else {
-              toast.info("No ad sets found for this campaign");
-              console.log(`[CampaignWidget] No ad sets found for campaign ${campaignId}`);
-            }
-          }
-          
-          // Dispatch events for budgets to update regardless of ad set count
-          console.log('[CampaignWidget] Dispatching status changed events');
-          window.dispatchEvent(
-            new CustomEvent('adSetStatusChanged', {
-              detail: {
-                brandId,
-                campaignId,
-                timestamp: new Date().toISOString()
-              }
-            })
+          // Update the campaign in local state
+          setLocalCampaigns(prev => 
+            prev.map(c => c.campaign_id === campaignId ? updatedCampaign : c)
           );
           
-          setTimeout(() => {
-            window.dispatchEvent(
-              new CustomEvent('campaignStatusChanged', {
-                detail: {
-                  brandId,
-                  timestamp: new Date().toISOString()
-                }
-              })
-            );
-          }, 100);
+          logger.debug(`[CampaignWidget] Updated campaign ${campaignId} with aggregated ad set data`);
         }
       } else {
-        // Check if this is a rate limit error response
-        if (data.warning === 'Meta API rate limit reached') {
-          console.log(`[CampaignWidget] Meta API rate limit reached`);
-          
-          if (isMountedRef.current) {
-            toast.warning(`Meta API rate limit reached`, {
-              description: data.message || 'Please try again in a few minutes',
-              duration: 8000
-            });
-            setAdSets([]);
-          }
-        } else {
-          console.error(`[CampaignWidget] Failed to fetch ad sets: ${response.status} ${response.statusText}`, data);
-          
-          if (isMountedRef.current) {
-            toast.error(`Failed to load ad sets: ${data?.error || response.statusText}`);
-            setAdSets([]);
-          }
-        }
-      }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        console.log("[CampaignWidget] Ad set fetch aborted");
-        return;
-      }
-      
-      console.error("[CampaignWidget] Error fetching ad sets:", error);
-      
-      if (isMountedRef.current) {
-        toast.error(`Error loading ad sets: ${(error as Error).message}`);
         setAdSets([]);
       }
+    } catch (error) {
+      logger.error(`[CampaignWidget] Error fetching ad sets for campaign ${campaignId}:`, error);
+      toast.error("Failed to load ad sets");
+      setAdSets([]);
     } finally {
-      if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
-          setIsLoadingAdSets(false);
-        }, 300);
-      }
-      
-      // Clean up abort controller
-      removeAbortController(controller);
+      setIsLoadingAdSets(false);
     }
-  }, [brandId, createAbortController, dateRange, removeAbortController, isMountedRef]);
+  }, [brandId, dateRange, isLoadingAdSets, localCampaigns, getAggregatedCampaignData]);
   
   // Function to periodically check campaigns that are active/important
   const checkCampaignStatuses = useCallback((campaignsToCheck: Campaign[], forceRefresh = false) => {
@@ -637,19 +582,31 @@ const CampaignWidget = ({
     }
   }, [brandId, onRefresh, isMountedRef, expandedCampaign, fetchAdSets]);
   
-  // Keep local state in sync with props
+  // Add an effect to initialize local campaigns and sync with parent campaigns
   useEffect(() => {
+    if (!campaigns || campaigns.length === 0) return;
+    
+    logger.debug(`[CampaignWidget] Setting up ${campaigns.length} campaigns from props`);
+    
+    // Set the local campaigns from props
     setLocalCampaigns(campaigns);
     
-    // When campaigns are loaded or updated, check statuses of active campaigns
-    // This ensures statuses are always up-to-date without requiring user interaction
-    if (campaigns.length > 0 && brandId) {
-      // Slight delay to allow the UI to render first
-      setTimeout(() => {
-        checkCampaignStatuses(campaigns);
-      }, 500);
+    // For campaigns that we already have ad sets for, immediately fetch them
+    // to ensure the campaign values are updated with ad set data
+    if (expandedCampaign && campaigns.some(c => c.campaign_id === expandedCampaign)) {
+      logger.debug(`[CampaignWidget] Re-fetching ad sets for expanded campaign: ${expandedCampaign}`);
+      fetchAdSets(expandedCampaign, true);
     }
-  }, [campaigns, brandId, checkCampaignStatuses]);
+    
+    // If there are active campaigns, fetch ad sets for the first one to update its values
+    const activeCampaigns = campaigns.filter(c => c.status.toUpperCase() === 'ACTIVE');
+    if (activeCampaigns.length > 0 && !expandedCampaign) {
+      logger.debug(`[CampaignWidget] Fetching ad sets for first active campaign: ${activeCampaigns[0].campaign_id}`);
+      setTimeout(() => {
+        fetchAdSets(activeCampaigns[0].campaign_id, false);
+      }, 1000);
+    }
+  }, [campaigns, expandedCampaign, fetchAdSets]);
   
   // Load saved preferences from localStorage
   const loadUserPreferences = useCallback(() => {
@@ -1744,17 +1701,14 @@ const CampaignWidget = ({
                         </td>
                         <td className="p-3 text-right text-white">
                           <div className="font-medium">
-                            {formatBudgetWithType(
-                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget,
-                              getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget_type
-                            )}
+                            {formatCurrency(campaign.spent || 0)}
                           </div>
                         </td>
                         {visibleMetrics.map(metricId => {
                           const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
                           if (!metric) return null;
                           
-                          const value = campaign[metricId as keyof Campaign] as number;
+                          const value = getColumnValue(campaign, metricId);
                           
                           return (
                             <td key={metricId} className="p-3 text-right text-white">
@@ -2159,5 +2113,31 @@ const formatCampaignStatus = (status: string) => {
       borderColor: 'border-gray-800/50',
       dotColor: 'bg-gray-500'
     };
+  }
+};
+
+// Update column mapping to match expected properties
+const getColumnValue = (campaign: Campaign, column: string): number => {
+  switch(column) {
+    case 'spent':
+      return campaign.spent || 0;
+    case 'impressions':
+      return campaign.impressions || 0;
+    case 'clicks':
+      return campaign.clicks || 0;
+    case 'ctr':
+      return campaign.ctr || 0;
+    case 'roas':
+      return campaign.roas || 0;
+    case 'cpc':
+      return campaign.cpc || 0;
+    case 'conversions':
+      return campaign.conversions || 0;
+    case 'cost_per_conversion':
+      return campaign.cost_per_conversion || 0;
+    case 'reach':
+      return campaign.reach || 0;
+    default:
+      return 0;
   }
 };
