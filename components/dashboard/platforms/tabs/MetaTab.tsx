@@ -54,7 +54,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget component
-import { WorkingCampaignWidget } from "./WorkingCampaignWidget" // Import the new Working Campaign Widget
 import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 
@@ -566,64 +565,75 @@ export function MetaTab({
   const fetchCampaigns = async (forceRefresh = false) => {
     if (!brandId) return;
     
-    // Apply throttling to prevent too many fetches
-    const fetchKey = `fetch-campaigns-${brandId}`;
-    if (!forceRefresh && !throttle(fetchKey, 10000)) {
-      logger.debug('[MetaTab] Throttled campaign fetch - skipping');
+    // Construct the API URL
+    let url = `/api/meta/campaigns?brandId=${brandId}`;
+    let dateRangeQuery = '';
+    
+    if (dateRange?.from && dateRange?.to) {
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
+      dateRangeQuery = `&from=${fromDate}&to=${toDate}`;
+      url += dateRangeQuery;
+      logger.debug(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
+    } else {
+      logger.debug('[MetaTab] Fetching campaigns with no specific date range (likely lifetime)');
+    }
+    
+    if (forceRefresh) {
+      url += `&forceRefresh=true`;
+      logger.debug('[MetaTab] Force refreshing campaigns');
+    }
+    
+    // Apply throttling to prevent too many fetches, especially non-forced ones
+    const fetchKey = `fetch-campaigns-${brandId}-${dateRangeQuery}`;
+    if (!forceRefresh && !throttle(fetchKey, 15000)) { // Throttle non-forced refreshes for the same range
+      logger.debug(`[MetaTab] Throttled campaign fetch for range ${dateRangeQuery} - skipping`);
       return;
     }
     
-    // Only set loading state if campaigns aren't already loaded
-    if (campaigns.length === 0) {
+    // Only set loading state if campaigns aren't already loaded or if forcing refresh
+    if (campaigns.length === 0 || forceRefresh) {
       setIsLoadingCampaigns(true);
     }
     
     try {
-      // Add date range parameters if available
-      let url = `/api/meta/campaigns?brandId=${brandId}`;
-      
-      if (dateRange?.from && dateRange?.to) {
-        const fromDate = dateRange.from.toISOString().split('T')[0];
-        const toDate = dateRange.to.toISOString().split('T')[0];
-        url += `&from=${fromDate}&to=${toDate}`;
-        
-        // Add this to debug date range issues - use debug level
-        logger.debug(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
-      } else {
-        logger.debug('[MetaTab] Fetching campaigns with no date range');
-      }
-      
-      if (forceRefresh) {
-        url += `&forceRefresh=true`;
-        logger.debug('[MetaTab] Force refreshing campaigns');
-      }
-      
+      logger.debug(`[MetaTab] Fetching URL: ${url}`);
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaigns: ${response.status}`);
+        // Handle specific errors like 429 (Rate Limit) potentially
+        throw new Error(`Failed to fetch campaigns: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
       
-      // Cache campaigns in component state
-      setCampaigns(data.campaigns || []);
-      setCachedCampaigns(data.campaigns || []);
+      if (!data || !Array.isArray(data.campaigns)) {
+        logger.warn('[MetaTab] Invalid campaign data received from API');
+        setCampaigns([]);
+        setCachedCampaigns([]);
+        return [];
+      }
       
-      logger.debug(`[MetaTab] Loaded ${data.campaigns?.length || 0} campaigns`);
+      // Cache campaigns in component state - IMPORTANT: API should return date-ranged data
+      setCampaigns(data.campaigns);
+      setCachedCampaigns(data.campaigns); // Update cache as well
+      
+      logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
       
       // Dispatch event to notify system that campaigns were loaded
       window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
-        detail: { count: data.campaigns?.length || 0 }
+        detail: { count: data.campaigns.length }
       }));
       
       return data.campaigns;
     } catch (error) {
       logger.error("Error fetching campaigns:", error);
-      toast.error("Failed to load campaigns");
-      return [];
+      toast.error("Failed to load campaigns", { description: (error as Error).message });
+      // Don't clear campaigns on error, keep potentially stale data
+      return campaigns; // Return existing campaigns on error
     } finally {
-      setIsLoadingCampaigns(false);
+      // Add a small delay before removing loading state for smoother UX
+      setTimeout(() => setIsLoadingCampaigns(false), 300);
     }
   };
 
@@ -4571,34 +4581,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       {/* NEW CAMPAIGN PERFORMANCE SECTION - REPLACES ALL CARDS BELOW THE MAIN METRICS */}
       <div className="space-y-6 mt-6">
         {campaigns.length > 0 || isLoadingCampaigns ? (
-          <>
-            <CampaignWidget 
-              key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
-              brandId={brandId || ''}
-              campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-              isLoading={isLoadingCampaigns}
-              isSyncing={isSyncing}
-              dateRange={dateRange}
-              onRefresh={() => {
-                fetchCampaigns(true);
-              }}
-              onSync={syncMetaInsights}
-            />
-            
-            {/* New Working Campaign Widget that properly loads and displays data */}
-            <WorkingCampaignWidget
-              key={`working-campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
-              brandId={brandId || ''}
-              campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-              isLoading={isLoadingCampaigns}
-              isSyncing={isSyncing}
-              dateRange={dateRange}
-              onRefresh={() => {
-                fetchCampaigns(true);
-              }}
-              onSync={syncMetaInsights}
-            />
-          </>
+          <CampaignWidget 
+            key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
+            brandId={brandId || ''}
+            campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
+            isLoading={isLoadingCampaigns}
+            isSyncing={isSyncing}
+            dateRange={dateRange}
+            onRefresh={() => {
+              fetchCampaigns(true);
+            }}
+            onSync={syncMetaInsights}
+          />
         ) : null}
       </div>
               </>
