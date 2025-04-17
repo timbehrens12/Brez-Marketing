@@ -138,8 +138,8 @@ export async function GET(request: NextRequest) {
       
       // Get daily stats for all campaigns in the date range
       const { data: dailyStats, error: statsError } = await supabase
-        .from('meta_campaign_daily_stats')
-        .select('*')
+        .from('meta_ad_insights')
+        .select('campaign_id, date, spend, impressions, clicks, reach, actions, action_values')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
         .lte('date', normalizedToDate);
@@ -207,14 +207,33 @@ export async function GET(request: NextRequest) {
             impressions += Number(stat.impressions) || 0;
             clicks += Number(stat.clicks) || 0;
             reach += Number(stat.reach) || 0;
-            conversions += Number(stat.conversions) || 0;
+            // Aggregate conversions from actions array
+            if (stat.actions && Array.isArray(stat.actions)) {
+              stat.actions.forEach((action: any) => {
+                // Common purchase/conversion action types
+                if (['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(action.action_type)) {
+                  conversions += parseInt(action.value || '0', 10);
+                }
+              });
+            }
           });
           
           // Calculate derived metrics
-          ctr = impressions > 0 ? (clicks / impressions) : 0;
+          ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
           cpc = clicks > 0 ? (spend / clicks) : 0;
           cost_per_conversion = conversions > 0 ? (spend / conversions) : 0;
-          roas = spend > 0 ? ((conversions * (campaign.purchase_value || 0)) / spend) : 0;
+          
+          // Calculate ROAS (requires purchase value which isn't directly in insights, may need separate logic or approximation)
+          // For now, let's calculate based on total action value if available
+          let totalPurchaseValue = 0;
+          if (campaignStats.length > 0 && Array.isArray(campaignStats[0].action_values)) {
+             campaignStats[0].action_values.forEach((av: any) => {
+               if (['purchase', 'offsite_conversion.fb_pixel_purchase'].includes(av.action_type)) {
+                 totalPurchaseValue += parseFloat(av.value || '0');
+               }
+             });
+          }
+          roas = spend > 0 ? (totalPurchaseValue / spend) : 0;
         }
         
         // Return campaign with aggregated performance metrics for the date range
@@ -236,15 +255,21 @@ export async function GET(request: NextRequest) {
           daily_insights: campaignStats.map(stat => ({
             date: stat.date,
             campaign_id: stat.campaign_id,
-            spent: Number(stat.spend) || 0,
+            spend: Number(stat.spend) || 0,
             impressions: Number(stat.impressions) || 0,
             clicks: Number(stat.clicks) || 0,
             reach: Number(stat.reach) || 0,
-            conversions: Number(stat.conversions) || 0,
-            ctr: Number(stat.ctr) || 0,
-            cpc: Number(stat.cpc) || 0,
-            cost_per_conversion: Number(stat.cost_per_conversion) || 0,
-            roas: Number(stat.roas) || 0
+            // Extract conversions from actions for daily insights as well
+            conversions: stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || 0,
+            // Calculate daily CTR, CPC, Cost/Conversion, ROAS if needed (similar logic as above)
+            ctr: (Number(stat.impressions) || 0) > 0 ? (Number(stat.clicks) || 0) / (Number(stat.impressions) || 0) * 100 : 0,
+            cpc: (Number(stat.clicks) || 0) > 0 ? (Number(stat.spend) || 0) / (Number(stat.clicks) || 0) : 0,
+            cost_per_conversion: (parseInt(stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || '0', 10)) > 0 
+                ? (Number(stat.spend) || 0) / (parseInt(stat.actions?.find((a: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase', 'complete_registration', 'lead'].includes(a.action_type))?.value || '0', 10))
+                : 0,
+            roas: (Number(stat.spend) || 0) > 0 
+                ? (parseFloat(stat.action_values?.find((av: any) => ['purchase', 'offsite_conversion.fb_pixel_purchase'].includes(av.action_type))?.value || '0')) / (Number(stat.spend) || 0)
+                : 0
           })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         };
       });
