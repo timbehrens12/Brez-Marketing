@@ -385,14 +385,169 @@ export function WorkingCampaignWidget({
     }
   }, [brandId, dateRange]);
   
-  // Load all campaign data with metrics based on the date range
+  // Initial data load on mount
+  useEffect(() => {
+    if (!dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
+      // Set the loading state immediately
+      setRefreshing(true);
+      
+      // Load campaigns first, then immediately load all ad set data in parallel
+      loadAllCampaignData().then(() => {
+        // After campaigns load, immediately load all ad set data in parallel
+        if (localCampaigns.length > 0) {
+          // Use parallel fetch for all campaigns
+          const fetchPromises = localCampaigns.map(campaign => {
+            if (!campaign.campaign_id) return Promise.resolve();
+            
+            // Format date params safely
+            const fromDate = dateRange?.from?.toISOString().split('T')[0] || '';
+            const toDate = dateRange?.to?.toISOString().split('T')[0] || '';
+            
+            // Build the request URL
+            const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaign.campaign_id}&from=${fromDate}&to=${toDate}&t=${Date.now()}&forceRefresh=true`;
+            
+            return fetch(url, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              }
+            })
+            .then(response => {
+              if (!response.ok) throw new Error(`Failed to fetch ad sets: ${response.status}`);
+              return response.json();
+            })
+            .then(data => {
+              if (!data.adSets || !Array.isArray(data.adSets) || !data.adSets.length) {
+                return null;
+              }
+              
+              // Process the ad sets to ensure all metrics are proper numbers
+              const processedAdSets = data.adSets.map((adSet: AdSet) => ({
+                ...adSet,
+                budget: Number(adSet.budget || 0),
+                spent: Number(adSet.spent || 0),
+                impressions: Number(adSet.impressions || 0),
+                clicks: Number(adSet.clicks || 0),
+                conversions: Number(adSet.conversions || 0),
+                ctr: Number(adSet.ctr || 0),
+                cpc: Number(adSet.cpc || 0),
+                cost_per_conversion: Number(adSet.cost_per_conversion || 0),
+                reach: Number(adSet.reach || 0),
+              }));
+              
+              // Calculate totals from ad sets
+              const adSetTotals = processedAdSets.reduce((acc: {
+                spent: number;
+                impressions: number;
+                clicks: number;
+                conversions: number;
+                reach: number;
+              }, adSet: AdSet) => {
+                acc.spent += Number(adSet.spent || 0);
+                acc.impressions += Number(adSet.impressions || 0);
+                acc.clicks += Number(adSet.clicks || 0);
+                acc.conversions += Number(adSet.conversions || 0);
+                acc.reach += Number(adSet.reach || 0);
+                return acc;
+              }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+              
+              if (adSetTotals.spent > 0 || adSetTotals.impressions > 0) {
+                return {
+                  campaignId: campaign.campaign_id,
+                  adSets: processedAdSets,
+                  totals: adSetTotals
+                };
+              }
+              
+              return null;
+            })
+            .catch(err => {
+              console.error(`Error loading ad sets for campaign ${campaign.campaign_id}:`, err);
+              return null;
+            });
+          });
+          
+          // Process all fetch results in parallel
+          Promise.all(fetchPromises).then(results => {
+            // Filter out null results
+            const validResults = results.filter(result => result !== null);
+            
+            if (validResults.length > 0) {
+              // Update all campaigns with the ad set data
+              setLocalCampaigns(prev => {
+                return prev.map(campaign => {
+                  // Find matching result for this campaign
+                  const result = validResults.find(r => r && r.campaignId === campaign.campaign_id);
+                  
+                  if (result && result.totals) {
+                    // Calculate derived metrics
+                    const ctr = result.totals.impressions > 0 
+                      ? (result.totals.clicks / result.totals.impressions) * 100 
+                      : 0;
+                    const cpc = result.totals.clicks > 0 
+                      ? result.totals.spent / result.totals.clicks 
+                      : 0;
+                    const costPerConversion = result.totals.conversions > 0 
+                      ? result.totals.spent / result.totals.conversions 
+                      : 0;
+                    
+                    // Calculate ROAS
+                    const conversionValue = result.totals.conversions * 25; // Assuming $25 avg value
+                    const roas = result.totals.spent > 0 ? conversionValue / result.totals.spent : 0;
+                    
+                    // Store the ad sets for this campaign
+                    if (campaign.campaign_id === result.campaignId) {
+                      // Store ad sets so they're already available when dropdown is opened
+                      if (result.adSets.length > 0) {
+                        setAdSets(prev => {
+                          if (expandedCampaign === campaign.campaign_id) {
+                            return result.adSets;
+                          }
+                          return prev;
+                        });
+                      }
+                      
+                      // Return updated campaign with real metrics
+                      return {
+                        ...campaign,
+                        spent: result.totals.spent,
+                        impressions: result.totals.impressions,
+                        clicks: result.totals.clicks,
+                        conversions: result.totals.conversions,
+                        reach: result.totals.reach,
+                        ctr: ctr,
+                        cpc: cpc,
+                        cost_per_conversion: costPerConversion,
+                        roas: roas,
+                        has_data_in_range: true,
+                        budget_source: 'adsets'
+                      };
+                    }
+                  }
+                  return campaign;
+                });
+              });
+            }
+            
+            // We've finished loading all data
+            setRefreshing(false);
+          });
+        } else {
+          setRefreshing(false);
+        }
+      }).catch(() => {
+        setRefreshing(false);
+      });
+    }
+  }, [brandId, dateRange, loadAllCampaignData]);
+  
+  // Remove the setTimeout based preload approach since we now load everything immediately
   const loadAllCampaignData = useCallback(async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
       logger.warn('[WorkingCampaignWidget] Missing date range or brandId for data load');
       return;
     }
-    
-    setRefreshing(true);
     
     try {
       // Format dates for API
@@ -451,102 +606,150 @@ export function WorkingCampaignWidget({
         setLocalCampaigns(processedCampaigns);
         dataLoadedRef.current = true;
         
-        // Now we immediately preload ALL ad set data
-        // This is done after updating the UI to prevent freezing
-        setTimeout(() => {
-          preloadAllCampaignAdSetData(processedCampaigns);
-        }, 100);
+        // Return the loaded campaigns
+        return processedCampaigns;
       } else {
         logger.warn('[WorkingCampaignWidget] Bulk API returned no data');
         setLocalCampaigns([]);
+        return [];
       }
     } catch (error) {
       logger.error('[WorkingCampaignWidget] Error during initial data load:', error);
       toast.error("Failed to load campaign data", {
         description: error instanceof Error ? error.message : "Unknown error"
       });
-    } finally {
-      setRefreshing(false);
+      return [];
     }
   }, [brandId, dateRange]);
   
-  // Preload ad set data for all campaigns to ensure accurate metrics
+  // Simplify the preloadAllCampaignAdSetData function since we're now doing parallel loading
   const preloadAllCampaignAdSetData = useCallback((campaigns: Campaign[]) => {
-    if (!brandId || !dateRange?.from || !dateRange?.to || !campaigns.length) {
-      return;
-    }
-    
-    logger.info(`[WorkingCampaignWidget] Starting to preload ad set data for all campaigns`);
-    
-    // Process campaigns sequentially to avoid overwhelming the API
-    // But wrap in self-executing async function
-    (async () => {
-      try {
-        for (const campaign of campaigns) {
-          if (!campaign.campaign_id) continue;
-          
-          // Format date params
-          const fromDate = dateRange.from.toISOString().split('T')[0];
-          const toDate = dateRange.to.toISOString().split('T')[0];
-          
-          // Build the request URL
-          const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaign.campaign_id}&from=${fromDate}&to=${toDate}&t=${Date.now()}&forceRefresh=true`;
-          
-          try {
-            const response = await fetch(url, {
+    // This is now handled directly in the useEffect
+    logger.debug("[WorkingCampaignWidget] Using parallel ad set loading approach instead");
+  }, []);
+
+  // Reload data when date range changes - needs to force complete reload
+  useEffect(() => {
+    if (dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
+      // Set loading state
+      setRefreshing(true);
+      
+      // Reset the dataLoaded flag to force a complete reload
+      dataLoadedRef.current = false;
+      
+      // This will trigger the other useEffect to do a complete reload
+      loadAllCampaignData().then(() => {
+        // After reloading campaigns, we need to reload all ad set data as well
+        if (localCampaigns.length > 0) {
+          // Use parallel fetch for all campaigns
+          const fetchPromises = localCampaigns.map(campaign => {
+            if (!campaign.campaign_id) return Promise.resolve();
+            
+            // Format date params safely
+            const fromDate = dateRange?.from?.toISOString().split('T')[0] || '';
+            const toDate = dateRange?.to?.toISOString().split('T')[0] || '';
+            
+            // Build the request URL
+            const url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaign.campaign_id}&from=${fromDate}&to=${toDate}&t=${Date.now()}&forceRefresh=true`;
+            
+            return fetch(url, {
               cache: 'no-store',
               headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache'
               }
+            })
+            .then(response => {
+              if (!response.ok) throw new Error(`Failed to fetch ad sets: ${response.status}`);
+              return response.json();
+            })
+            .then(data => {
+              if (!data.adSets || !Array.isArray(data.adSets) || !data.adSets.length) {
+                return null;
+              }
+              
+              // Process the ad sets to ensure all metrics are proper numbers
+              const processedAdSets = data.adSets.map((adSet: AdSet) => ({
+                ...adSet,
+                budget: Number(adSet.budget || 0),
+                spent: Number(adSet.spent || 0),
+                impressions: Number(adSet.impressions || 0),
+                clicks: Number(adSet.clicks || 0),
+                conversions: Number(adSet.conversions || 0),
+                ctr: Number(adSet.ctr || 0),
+                cpc: Number(adSet.cpc || 0),
+                cost_per_conversion: Number(adSet.cost_per_conversion || 0),
+                reach: Number(adSet.reach || 0),
+              }));
+              
+              // Calculate totals from ad sets
+              const adSetTotals = processedAdSets.reduce((acc: {
+                spent: number;
+                impressions: number;
+                clicks: number;
+                conversions: number;
+                reach: number;
+              }, adSet: AdSet) => {
+                acc.spent += Number(adSet.spent || 0);
+                acc.impressions += Number(adSet.impressions || 0);
+                acc.clicks += Number(adSet.clicks || 0);
+                acc.conversions += Number(adSet.conversions || 0);
+                acc.reach += Number(adSet.reach || 0);
+                return acc;
+              }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
+              
+              if (adSetTotals.spent > 0 || adSetTotals.impressions > 0) {
+                return {
+                  campaignId: campaign.campaign_id,
+                  adSets: processedAdSets,
+                  totals: adSetTotals
+                };
+              }
+              
+              return null;
+            })
+            .catch(err => {
+              console.error(`Error loading ad sets for campaign ${campaign.campaign_id}:`, err);
+              return null;
             });
+          });
+          
+          // Process all fetch results in parallel
+          Promise.all(fetchPromises).then(results => {
+            // Filter out null results
+            const validResults = results.filter(result => result !== null);
             
-            if (!response.ok) continue;
-            
-            const data = await response.json();
-            
-            if (!data.adSets || !Array.isArray(data.adSets) || !data.adSets.length) {
-              continue;
-            }
-            
-            // Calculate totals from ad sets
-            const adSetTotals = data.adSets.reduce((acc: any, adSet: any) => {
-              acc.spent += Number(adSet.spent || 0);
-              acc.impressions += Number(adSet.impressions || 0);
-              acc.clicks += Number(adSet.clicks || 0);
-              acc.conversions += Number(adSet.conversions || 0);
-              acc.reach += Number(adSet.reach || 0);
-              return acc;
-            }, { spent: 0, impressions: 0, clicks: 0, conversions: 0, reach: 0 });
-            
-            // Only update if we have non-zero metrics
-            if (adSetTotals.spent > 0 || adSetTotals.impressions > 0) {
-              // Calculate derived metrics
-              const ctr = adSetTotals.impressions > 0 
-                ? (adSetTotals.clicks / adSetTotals.impressions) * 100 
-                : 0;
-              const cpc = adSetTotals.clicks > 0 
-                ? adSetTotals.spent / adSetTotals.clicks 
-                : 0;
-              const costPerConversion = adSetTotals.conversions > 0 
-                ? adSetTotals.spent / adSetTotals.conversions 
-                : 0;
-              
-              // Calculate ROAS
-              const conversionValue = adSetTotals.conversions * 25; // Assuming $25 avg value
-              const roas = adSetTotals.spent > 0 ? conversionValue / adSetTotals.spent : 0;
-              
-              // Update the campaign metrics
-              if (isMountedRef.current) {
-                setLocalCampaigns(prev => prev.map(c => {
-                  if (c.campaign_id === campaign.campaign_id) {
+            if (validResults.length > 0) {
+              // Update all campaigns with the ad set data
+              setLocalCampaigns(prev => {
+                return prev.map(campaign => {
+                  // Find matching result for this campaign
+                  const result = validResults.find(r => r && r.campaignId === campaign.campaign_id);
+                  
+                  if (result && result.totals) {
+                    // Calculate derived metrics
+                    const ctr = result.totals.impressions > 0 
+                      ? (result.totals.clicks / result.totals.impressions) * 100 
+                      : 0;
+                    const cpc = result.totals.clicks > 0 
+                      ? result.totals.spent / result.totals.clicks 
+                      : 0;
+                    const costPerConversion = result.totals.conversions > 0 
+                      ? result.totals.spent / result.totals.conversions 
+                      : 0;
+                    
+                    // Calculate ROAS
+                    const conversionValue = result.totals.conversions * 25; // Assuming $25 avg value
+                    const roas = result.totals.spent > 0 ? conversionValue / result.totals.spent : 0;
+                    
+                    // Return updated campaign with real metrics
                     return {
-                      ...c,
-                      spent: adSetTotals.spent,
-                      impressions: adSetTotals.impressions,
-                      clicks: adSetTotals.clicks,
-                      conversions: adSetTotals.conversions,
-                      reach: adSetTotals.reach,
+                      ...campaign,
+                      spent: result.totals.spent,
+                      impressions: result.totals.impressions,
+                      clicks: result.totals.clicks,
+                      conversions: result.totals.conversions,
+                      reach: result.totals.reach,
                       ctr: ctr,
                       cpc: cpc,
                       cost_per_conversion: costPerConversion,
@@ -555,25 +758,28 @@ export function WorkingCampaignWidget({
                       budget_source: 'adsets'
                     };
                   }
-                  return c;
-                }));
-              }
-              
-              logger.debug(`[WorkingCampaignWidget] Updated campaign ${campaign.campaign_id} with ad set metrics`);
+                  return campaign;
+                });
+              });
             }
-          } catch (error) {
-            logger.error(`[WorkingCampaignWidget] Error preloading ad set data for campaign ${campaign.campaign_id}:`, error);
-            // Continue with next campaign even if this one fails
-            continue;
-          }
+            
+            // We've finished loading all data
+            setRefreshing(false);
+            // Mark data as loaded for future reference
+            dataLoadedRef.current = true;
+          });
+        } else {
+          setRefreshing(false);
+          // Mark data as loaded for future reference
+          dataLoadedRef.current = true;
         }
-        
-        logger.info('[WorkingCampaignWidget] Finished preloading ad set data for all campaigns');
-      } catch (error) {
-        logger.error('[WorkingCampaignWidget] Error in preloading process:', error);
-      }
-    })();
-  }, [brandId, dateRange]);
+      }).catch(() => {
+        setRefreshing(false);
+        // Even on error, mark as loaded to prevent infinite loops
+        dataLoadedRef.current = true;
+      });
+    }
+  }, [dateRange?.from?.toISOString(), dateRange?.to?.toISOString(), brandId, loadAllCampaignData]);
   
   // Toggle campaign expansion and load ad sets
   const toggleCampaignExpand = useCallback((campaignId: string) => {
@@ -662,20 +868,6 @@ export function WorkingCampaignWidget({
       return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
     });
   }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
-  
-  // Initial data load on mount
-  useEffect(() => {
-    if (!dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
-      loadAllCampaignData();
-    }
-  }, [brandId, dateRange, loadAllCampaignData]);
-  
-  // Reload data when date range changes
-  useEffect(() => {
-    if (dataLoadedRef.current && brandId && dateRange?.from && dateRange?.to) {
-      loadAllCampaignData();
-    }
-  }, [dateRange?.from?.toISOString(), dateRange?.to?.toISOString(), brandId, loadAllCampaignData]);
   
   // Format campaign status for display
   const formatCampaignStatus = (status: string) => {
