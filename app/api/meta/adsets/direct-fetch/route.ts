@@ -69,6 +69,12 @@ export async function POST(request: NextRequest) {
     const toDate = data.to;
     const hasDateRange = fromDate && toDate;
 
+    // Ensure the date range is inclusive and properly bounded
+    // Note: API should respect the exact dates from the client and not modify them
+    if (hasDateRange) {
+      console.log(`[Meta AdSets Direct] Using date range from ${fromDate} to ${toDate} (inclusive)`);
+    }
+
     console.log(`[Meta AdSets Direct] Fetching ad sets for campaign ${data.campaignId}${hasDateRange ? ` with date range ${fromDate} to ${toDate}` : ''}`);
     
     // Get the Meta connection

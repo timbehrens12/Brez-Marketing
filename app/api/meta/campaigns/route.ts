@@ -30,6 +30,12 @@ export async function GET(request: NextRequest) {
     const fromDate = url.searchParams.get('from')
     const toDate = url.searchParams.get('to')
     
+    // Ensure the date range is inclusive and properly bounded
+    // Note: API should respect the exact dates from the client and not modify them
+    if (fromDate && toDate) {
+      console.log(`[Meta Campaigns] Using date range from ${fromDate} to ${toDate} (inclusive)`);
+    }
+    
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
     }

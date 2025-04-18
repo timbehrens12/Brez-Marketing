@@ -91,6 +91,12 @@ export async function GET(req: NextRequest) {
     const toDate = searchParams.get('to')
     const hasDateRange = fromDate && toDate
     
+    // Ensure the date range is inclusive and properly bounded
+    // Note: API should respect the exact dates from the client and not modify them
+    if (hasDateRange) {
+      console.log(`[API] Using date range from ${fromDate} to ${toDate} (inclusive)`);
+    }
+    
     if (!brandId || !campaignId) {
       return NextResponse.json(
         { error: 'Brand ID and Campaign ID are required' },

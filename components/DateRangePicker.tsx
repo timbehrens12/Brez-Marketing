@@ -131,10 +131,23 @@ const presets = [
   {
     name: 'Last month',
     value: 'lastMonth',
-    getDate: () => ({
-      from: startOfDay(startOfMonth(subMonths(new Date(), 1))),
-      to: endOfDay(endOfMonth(subMonths(new Date(), 1)))
-    })
+    getDate: () => {
+      // Get the last day of previous month instead of using subMonths(new Date(), 1)
+      // This ensures we're always getting exactly the last month without overlap
+      const today = new Date();
+      // Create date for first day of current month
+      const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      // Subtract 1 day to get last day of previous month
+      const lastDayOfPreviousMonth = new Date(firstDayOfCurrentMonth);
+      lastDayOfPreviousMonth.setDate(lastDayOfPreviousMonth.getDate() - 1);
+      // First day of previous month
+      const firstDayOfPreviousMonth = new Date(lastDayOfPreviousMonth.getFullYear(), lastDayOfPreviousMonth.getMonth(), 1);
+      
+      return {
+        from: startOfDay(firstDayOfPreviousMonth),
+        to: endOfDay(lastDayOfPreviousMonth)
+      };
+    }
   },
   {
     name: 'This year',
