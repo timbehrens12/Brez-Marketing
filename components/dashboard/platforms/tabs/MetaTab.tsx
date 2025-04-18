@@ -635,6 +635,14 @@ export function MetaTab({
       setCampaigns(data.campaigns);
       setCachedCampaigns(data.campaigns);
       
+      // *** LOG REACH FROM API RESPONSE ***
+      if (data.campaigns && data.campaigns.length > 0) {
+        console.log(`>>> [MetaTab] Campaign data received. First campaign reach: ${data.campaigns[0]?.reach}`);
+        // Log reach for all campaigns if needed for more detail
+        // data.campaigns.forEach((c: any) => console.log(`>>> Campaign ${c.campaign_id} reach: ${c.reach}`));
+      }
+      // *** END LOG ***
+      
       logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
       
       window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
