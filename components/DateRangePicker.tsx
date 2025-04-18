@@ -72,18 +72,16 @@ const presets = [
     name: 'Last 7 days',
     value: 'last7',
     getDate: () => {
-      // Get current date
       const today = new Date();
-      // Get yesterday (end date)
-      const yesterdayEnd = endOfDay(subDays(today, 1));
-      // Get 7 days ago (start date)
+      // Use startOfDay for the end date (yesterday) to avoid timezone rollover
+      const yesterdayStart = startOfDay(subDays(today, 1));
       const sevenDaysAgoStart = startOfDay(subDays(today, 7));
       
-      console.log(`Setting last 7 days: ${format(sevenDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayEnd, 'yyyy-MM-dd')}`);
+      console.log(`Setting last 7 days: ${format(sevenDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayStart, 'yyyy-MM-dd')}`);
       
       return {
         from: sevenDaysAgoStart,
-        to: yesterdayEnd  // Yesterday EOD, NOT today
+        to: yesterdayStart // Use start of yesterday
       };
     }
   },
@@ -91,18 +89,16 @@ const presets = [
     name: 'Last 30 days',
     value: 'last30',
     getDate: () => {
-      // Get current date
       const today = new Date();
-      // Get yesterday (end date)
-      const yesterdayEnd = endOfDay(subDays(today, 1));
-      // Get 30 days ago (start date)
+      // Use startOfDay for the end date (yesterday) to avoid timezone rollover
+      const yesterdayStart = startOfDay(subDays(today, 1));
       const thirtyDaysAgoStart = startOfDay(subDays(today, 30));
       
-      console.log(`Setting last 30 days: ${format(thirtyDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayEnd, 'yyyy-MM-dd')}`);
+      console.log(`Setting last 30 days: ${format(thirtyDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayStart, 'yyyy-MM-dd')}`);
       
       return {
         from: thirtyDaysAgoStart,
-        to: yesterdayEnd  // Yesterday EOD, NOT today
+        to: yesterdayStart // Use start of yesterday
       };
     }
   },
@@ -154,23 +150,18 @@ const presets = [
     name: 'Last month',
     value: 'lastMonth',
     getDate: () => {
-      // Get the first day of current month
       const today = new Date();
       const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      
-      // Get the last day of previous month (subtract 1 day from first day of current month)
       const lastDayOfPreviousMonth = new Date(firstDayOfCurrentMonth);
       lastDayOfPreviousMonth.setDate(lastDayOfPreviousMonth.getDate() - 1);
-      
-      // Get the first day of the previous month
       const firstDayOfPreviousMonth = new Date(lastDayOfPreviousMonth.getFullYear(), lastDayOfPreviousMonth.getMonth(), 1);
       
-      // Log exact dates for debugging
       console.log(`Setting last month: ${format(firstDayOfPreviousMonth, 'yyyy-MM-dd')} to ${format(lastDayOfPreviousMonth, 'yyyy-MM-dd')}`);
       
       return {
         from: startOfDay(firstDayOfPreviousMonth),
-        to: endOfDay(lastDayOfPreviousMonth)
+        // Use startOfDay for the end date to avoid timezone rollover
+        to: startOfDay(lastDayOfPreviousMonth) 
       };
     }
   },
@@ -189,19 +180,16 @@ const presets = [
     name: 'Last year',
     value: 'lastYear',
     getDate: () => {
-      // Get the previous year
       const lastYear = new Date().getFullYear() - 1;
+      const firstDayOfLastYear = new Date(lastYear, 0, 1);
+      const lastDayOfLastYear = new Date(lastYear, 11, 31);
       
-      // Create dates for first and last day of the previous year
-      const firstDayOfLastYear = new Date(lastYear, 0, 1); // Jan 1
-      const lastDayOfLastYear = new Date(lastYear, 11, 31); // Dec 31
-      
-      // Log exact dates for debugging
       console.log(`Setting last year: ${format(firstDayOfLastYear, 'yyyy-MM-dd')} to ${format(lastDayOfLastYear, 'yyyy-MM-dd')}`);
       
       return {
         from: startOfDay(firstDayOfLastYear),
-        to: endOfDay(lastDayOfLastYear)
+        // Use startOfDay for the end date to avoid timezone rollover
+        to: startOfDay(lastDayOfLastYear)
       };
     }
   }

@@ -354,12 +354,17 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Modify the loadMetrics function to include timeout
+  // Load metrics when brand or date range changes
   useEffect(() => {
-    if (!selectedBrandId || !dateRange) {
+    if (!selectedBrandId || !dateRange?.from || !dateRange?.to) {
       setMetrics(defaultMetrics)
       return
     }
+    
+    // Format dates immediately to avoid timezone issues later
+    const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
+    const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
+    console.log(`[Dashboard Date Range Effect] Triggered with formatted dates: ${fromDateStr} to ${toDateStr}`);
 
     const loadMetrics = async () => {
       if (!selectedBrandId) return;
@@ -382,16 +387,11 @@ export default function DashboardPage() {
       
       try {
         const params = new URLSearchParams({
-          brandId: selectedBrandId
+          brandId: selectedBrandId,
+          // Use the formatted date strings
+          from: fromDateStr,
+          to: toDateStr
         });
-        
-        if (dateRange?.from) {
-          params.append('from', dateRange.from.toISOString());
-        }
-        
-        if (dateRange?.to) {
-          params.append('to', dateRange.to.toISOString());
-        }
         
         const response = await fetch(`/api/metrics?${params.toString()}`);
         
@@ -506,7 +506,7 @@ export default function DashboardPage() {
     loadMetrics();
   }, [selectedBrandId, dateRange]);
 
-  // Modify the fetchMetaMetrics function to ensure it includes all parameters
+  // Fetch Meta metrics separately (consider consolidating)
   const fetchMetaMetrics = async (initialLoad: boolean = false, forceRefresh: boolean = false) => {
     console.log(`fetchMetaMetrics called - initialLoad: ${initialLoad}, forceRefresh: ${forceRefresh}`);
     
@@ -523,30 +523,26 @@ export default function DashboardPage() {
     if (!selectedBrandId) return;
     
     try {
-      // Use date range from picker if available, otherwise use last 30 days
-      let startDate, endDate;
-      
+      let startDateStr, endDateStr;
       if (dateRange?.from && dateRange?.to) {
-        startDate = formatDate(dateRange.from);
-        endDate = formatDate(dateRange.to);
+        // Use format() here as well
+        startDateStr = format(dateRange.from, 'yyyy-MM-dd');
+        endDateStr = format(dateRange.to, 'yyyy-MM-dd');
       } else {
-        // Use current date to ensure we always have data
+        // Default date calculation remains the same
         const now = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        // Format dates properly
-        startDate = formatDate(thirtyDaysAgo);
-        endDate = formatDate(now);
+        const thirtyDaysAgo = subDays(now, 30); // Use subDays for consistency
+        startDateStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
+        endDateStr = format(now, 'yyyy-MM-dd');
       }
         
-      console.log(`Fetching Meta metrics with date range: ${startDate} to ${endDate}, forceRefresh: ${forceRefresh}`);
+      console.log(`Fetching Meta metrics with date range: ${startDateStr} to ${endDateStr}, forceRefresh: ${forceRefresh}`);
       
-      // Add a cache-busting parameter to ensure we get fresh data when forcing refresh
       const cacheBuster = forceRefresh ? `&t=${new Date().getTime()}` : '';
       
       const metaResponse = await fetch(
-        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDate}&to=${endDate}&initial_load=${initialLoad}&force_refresh=${forceRefresh}${cacheBuster}`
+        // Use the formatted date strings
+        `/api/metrics/meta?brandId=${selectedBrandId.toString()}&from=${startDateStr}&to=${endDateStr}&initial_load=${initialLoad}&force_refresh=${forceRefresh}${cacheBuster}`
       );
       
       if (!metaResponse.ok) {
@@ -598,7 +594,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Modify the fetchAllData function to use isRefreshingData instead of isLoading
+  // Update fetchAllData to use formatted dates
   const fetchAllData = async (forceFullMetaResync = false) => {
     if (!selectedBrandId) return
     
@@ -614,6 +610,11 @@ export default function DashboardPage() {
     }
 
     try {
+      // ** Use format() for dates to avoid timezone issues **
+      const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
+      const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
+      console.log(`[fetchAllData] Using formatted dates: ${fromDateStr} to ${toDateStr}`); 
+
       // Fetch Shopify data
       if (activePlatforms.shopify && shopifyConnection) {
         // First, sync Shopify orders to ensure we have the latest data
@@ -648,11 +649,7 @@ export default function DashboardPage() {
         // Now fetch the metrics with the updated data
         // Add a cache-busting parameter to ensure we get fresh data
         const cacheBuster = `&t=${new Date().getTime()}`
-        // ** Use format() for dates to avoid timezone issues **
-        const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
-        const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
-        console.log(`[fetchAllData] Fetching Shopify metrics from ${fromDateStr} to ${toDateStr}`); // Log the dates used
-        
+        console.log(`[fetchAllData] Fetching Shopify metrics from ${fromDateStr} to ${toDateStr}`);
         const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${fromDateStr}&to=${toDateStr}${cacheBuster}`)
         
         if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
