@@ -194,7 +194,6 @@ export async function GET(request: NextRequest) {
         let spend = 0;
         let impressions = 0;
         let clicks = 0;
-        let reach = 0;
         let conversions = 0;
         let purchaseValue = 0;
         
@@ -223,7 +222,6 @@ export async function GET(request: NextRequest) {
             const dailySpend = Number(stat.spend) || 0;
             const dailyImpressions = Number(stat.impressions) || 0;
             const dailyClicks = Number(stat.clicks) || 0;
-            const dailyReach = Number(stat.reach) || 0;
             let dailyConversions = 0;
             let dailyPurchaseValue = 0;
             
@@ -247,7 +245,6 @@ export async function GET(request: NextRequest) {
             dailyAggregation[date].spent += dailySpend;
             dailyAggregation[date].impressions += dailyImpressions;
             dailyAggregation[date].clicks += dailyClicks;
-            dailyAggregation[date].reach += dailyReach;
             dailyAggregation[date].conversions += dailyConversions;
             dailyAggregation[date].purchaseValue += dailyPurchaseValue;
             
@@ -255,7 +252,6 @@ export async function GET(request: NextRequest) {
             spend += dailySpend;
             impressions += dailyImpressions;
             clicks += dailyClicks;
-            reach += dailyReach;
             conversions += dailyConversions;
             purchaseValue += dailyPurchaseValue;
           });
@@ -284,7 +280,7 @@ export async function GET(request: NextRequest) {
           spent: spend,
           impressions,
           clicks,
-          reach,
+          reach: campaign.reach || 0,
           conversions,
           ctr,
           cpc,
