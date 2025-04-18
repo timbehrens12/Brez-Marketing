@@ -76,50 +76,32 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Get average CPC from stored values
-    let totalCPC = 0
-    let validRecords = 0
+    // ** ALWAYS calculate CPC based on total spend and total clicks for the period **
+    let totalSpend = 0
+    let totalClicks = 0
     
     insights.forEach(insight => {
-      if (insight.cost_per_click != null && insight.cost_per_click > 0) {
-        totalCPC += parseFloat(insight.cost_per_click.toString())
-        validRecords++
-      }
+      totalSpend += parseFloat(insight.spend) || 0
+      totalClicks += parseInt(insight.clicks) || 0
     })
     
-    // Calculate average CPC
-    let avgCPC = 0
-    if (validRecords > 0) {
-      avgCPC = totalCPC / validRecords
-    } else {
-      // Fallback calculation if no stored CPC values found
-      // This handles the case where data exists but was imported before we added the trigger
-      let totalSpend = 0
-      let totalClicks = 0
-      
-      insights.forEach(insight => {
-        totalSpend += parseFloat(insight.spend) || 0
-        totalClicks += parseInt(insight.clicks) || 0
-      })
-      
-      if (totalClicks > 0) {
-        avgCPC = totalSpend / totalClicks
-      }
-    }
+    const calculatedCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
     
     // Return the result
     const result = {
-      value: parseFloat(avgCPC.toFixed(2)),
+      value: parseFloat(calculatedCPC.toFixed(2)),
       _meta: {
         from,
         to,
         records: insights.length,
-        source: validRecords > 0 ? 'database' : 'calculated',
+        source: 'calculated', // Always calculated now
+        totalSpend: totalSpend.toFixed(2), // Add debug info
+        totalClicks: totalClicks, // Add debug info
         dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`COST PER CLICK API: Returning CPC = ${result.value}, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
+    console.log(`COST PER CLICK API: Returning CPC = ${result.value}, based on ${insights.length} records (source: ${result._meta.source})`)
     
     return NextResponse.json(result)
   } catch (error) {
