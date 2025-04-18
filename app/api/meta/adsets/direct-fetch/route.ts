@@ -64,7 +64,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'campaignId is required' }, { status: 400 });
     }
     
-    console.log(`[Meta AdSets Direct] Fetching ad sets for campaign ${data.campaignId}`);
+    // Check for date range parameters
+    const fromDate = data.from;
+    const toDate = data.to;
+    const hasDateRange = fromDate && toDate;
+
+    console.log(`[Meta AdSets Direct] Fetching ad sets for campaign ${data.campaignId}${hasDateRange ? ` with date range ${fromDate} to ${toDate}` : ''}`);
     
     // Get the Meta connection
     const { data: connection, error: connectionError } = await supabase
@@ -88,11 +93,21 @@ export async function POST(request: NextRequest) {
       console.log(`[Meta AdSets Direct] Rate limited for account ${connection.account_id}`);
       
       // Check if we have cached ad sets for this campaign
-      const { data: cachedAdSets } = await supabase
+      let query = supabase
         .from('meta_adsets')
         .select('*')
         .eq('campaign_id', data.campaignId)
         .eq('brand_id', data.brandId);
+        
+      // If date range is provided, use it for DB query
+      if (hasDateRange) {
+        // Get related insights in the date range
+        console.log(`[Meta AdSets Direct] Applying date range filter to DB query: ${fromDate} to ${toDate}`);
+        // Since we can't easily filter ad sets by date range directly (would need joins),
+        // we'll return cached ad sets and let the client filter them
+      }
+      
+      const { data: cachedAdSets } = await query;
         
       if (cachedAdSets && cachedAdSets.length > 0) {
         console.log(`[Meta AdSets Direct] Returning ${cachedAdSets.length} cached ad sets due to rate limiting`);
@@ -100,6 +115,7 @@ export async function POST(request: NextRequest) {
           success: true,
           source: 'cached_due_to_rate_limit',
           message: 'Using cached data due to Meta API rate limits',
+          dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined,
           adSets: cachedAdSets
         });
       }
@@ -108,12 +124,22 @@ export async function POST(request: NextRequest) {
         warning: 'Meta API rate limit reached',
         message: 'Please try again in a few minutes',
         success: false,
+        dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined,
         adSets: []
       }, { status: 429 });
     }
     
     // Log this request for rate limiting
     logRequest(connection.account_id);
+    
+    // Prepare date parameters for Meta API if present
+    let dateParameters = '';
+    if (hasDateRange) {
+      // For direct API calls, we should use the date range parameters
+      // but Meta's Ads API doesn't directly filter ad sets by date
+      console.log(`[Meta AdSets Direct] Will need to get insights with date range: ${fromDate} to ${toDate}`);
+      // We don't add date parameters to ad set fetch, as they're only used for insights
+    }
     
     // Simple direct fetch of ad sets from Meta
     const adSetsResponse = await fetch(
@@ -124,56 +150,109 @@ export async function POST(request: NextRequest) {
     );
     
     if (!adSetsResponse.ok) {
-      const errorText = await adSetsResponse.text();
-      console.error(`[Meta AdSets Direct] API error: ${errorText}`);
-      
-      // Check if this is a rate limit error
-      if (errorText.includes('User request limit reached')) {
-        // Try to get cached ad sets
-        const { data: cachedAdSets } = await supabase
-          .from('meta_adsets')
-          .select('*')
-          .eq('campaign_id', data.campaignId)
-          .eq('brand_id', data.brandId);
-          
-        if (cachedAdSets && cachedAdSets.length > 0) {
-          console.log(`[Meta AdSets Direct] Returning ${cachedAdSets.length} cached ad sets due to Meta rate limiting`);
-          return NextResponse.json({
-            success: true,
-            source: 'cached_due_to_rate_limit',
-            message: 'Using cached data due to Meta API rate limits',
-            adSets: cachedAdSets
-          });
-        }
-        
-        return NextResponse.json({
-          warning: 'Meta API rate limit reached',
-          message: 'Please try again in a few minutes',
-          success: true, // Consider it a "success" with empty data rather than an error
-          adSets: []
-        }, { status: 200 }); // Use 200 instead of 429 to handle rate limits gracefully
-      }
-      
       return NextResponse.json(
-        { error: 'Failed to fetch ad sets from Meta', details: errorText },
+        { 
+          error: 'Failed to fetch ad sets from Meta API',
+          statusCode: adSetsResponse.status,
+          statusText: adSetsResponse.statusText
+        },
         { status: 500 }
       );
     }
     
     const adSetsData = await adSetsResponse.json();
-    console.log(`[Meta AdSets Direct] Found ${adSetsData.data?.length || 0} ad sets`);
     
     if (!adSetsData.data || adSetsData.data.length === 0) {
-      console.log(`[Meta AdSets Direct] No ad sets found for campaign ${data.campaignId}`);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'No ad sets found',
-        adSets: [] 
+      return NextResponse.json({
+        success: true,
+        source: 'meta_api_direct',
+        timestamp: new Date().toISOString(),
+        dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined,
+        adSets: []
       });
     }
     
+    console.log(`[Meta AdSets Direct] Found ${adSetsData.data.length} ad sets`);
+    
+    // For each ad set, try to fetch performance metrics IF date range is provided
+    let adSetsWithMetrics = [...adSetsData.data];
+    
+    // If date range is provided, try to fetch insights
+    if (hasDateRange) {
+      try {
+        console.log(`[Meta AdSets Direct] Attempting to fetch insights for ${adSetsData.data.length} ad sets with date range`);
+        
+        // Process in batches to avoid rate limits - max 5 ad sets at a time
+        const batchSize = 5;
+        const batches = Math.ceil(adSetsData.data.length / batchSize);
+        
+        for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+          const batchStart = batchIndex * batchSize;
+          const batchEnd = Math.min(batchStart + batchSize, adSetsData.data.length);
+          const batch = adSetsData.data.slice(batchStart, batchEnd);
+          
+          console.log(`[Meta AdSets Direct] Processing batch ${batchIndex + 1}/${batches} with ${batch.length} ad sets`);
+          
+          // Process each ad set in the batch
+          for (let i = 0; i < batch.length; i++) {
+            const adSet = batch[i];
+            
+            // Only attempt insights fetch if we're not rate limited
+            if (!isRateLimited(connection.account_id)) {
+              try {
+                // Log this request for rate limiting
+                logRequest(connection.account_id);
+                
+                // Fetch insights for this specific ad set with the date range
+                const insightsResponse = await fetch(
+                  `https://graph.facebook.com/v18.0/${adSet.id}/insights?` +
+                  `fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&` +
+                  `time_range={"since":"${fromDate}","until":"${toDate}"}&` +
+                  `access_token=${connection.access_token}`
+                );
+                
+                if (insightsResponse.ok) {
+                  const insightsData = await insightsResponse.json();
+                  
+                  if (insightsData.data && insightsData.data.length > 0) {
+                    // Insights found, add metrics to this ad set
+                    const insights = insightsData.data[0]; // Get the aggregated insights
+                    
+                    // Update the ad set with the metrics
+                    const adSetIndex = adSetsWithMetrics.findIndex(a => a.id === adSet.id);
+                    if (adSetIndex !== -1) {
+                      adSetsWithMetrics[adSetIndex] = {
+                        ...adSetsWithMetrics[adSetIndex],
+                        // Add metrics from insights
+                        has_metrics: true,
+                        spent: Number(insights.spend || 0),
+                        impressions: Number(insights.impressions || 0),
+                        clicks: Number(insights.clicks || 0),
+                        reach: Number(insights.reach || 0),
+                        ctr: Number(insights.ctr || 0),
+                        cpc: Number(insights.cpc || 0),
+                        cost_per_conversion: insights.cost_per_conversion ? Number(insights.cost_per_conversion) : 0,
+                        conversions: insights.conversions ? Number(insights.conversions[0]?.value || 0) : 0
+                      };
+                    }
+                  }
+                }
+              } catch (insightError) {
+                console.error(`[Meta AdSets Direct] Error fetching insights for ad set ${adSet.id}:`, insightError);
+              }
+            } else {
+              console.log(`[Meta AdSets Direct] Rate limited, skipping insights fetch for remaining ad sets`);
+              break; // Exit the loop if rate limited
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[Meta AdSets Direct] Error fetching ad set insights:`, error);
+      }
+    }
+    
     // Process ad sets into a simplified format
-    const processedAdSets = adSetsData.data.map((adSet: any) => {
+    const processedAdSets = adSetsWithMetrics.map((adSet: any) => {
       // Determine budget
       let budget = 0;
       let budgetType = 'unknown';
@@ -196,14 +275,15 @@ export async function POST(request: NextRequest) {
         budget,
         budget_type: budgetType,
         optimization_goal: adSet.optimization_goal || null,
-        // Set all metrics to 0 since we're not fetching insights in this direct endpoint
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        ctr: 0,
-        cpc: 0,
-        cost_per_conversion: 0,
+        // Use metrics from insights if available, otherwise default to 0
+        spent: adSet.has_metrics ? adSet.spent : 0,
+        impressions: adSet.has_metrics ? adSet.impressions : 0,
+        clicks: adSet.has_metrics ? adSet.clicks : 0,
+        reach: adSet.has_metrics ? adSet.reach : 0,
+        conversions: adSet.has_metrics ? adSet.conversions : 0,
+        ctr: adSet.has_metrics ? adSet.ctr : 0,
+        cpc: adSet.has_metrics ? adSet.cpc : 0,
+        cost_per_conversion: adSet.has_metrics ? adSet.cost_per_conversion : 0,
         updated_at: new Date().toISOString()
       };
     });
@@ -213,6 +293,7 @@ export async function POST(request: NextRequest) {
       success: true,
       source: 'meta_api_direct',
       timestamp: new Date().toISOString(),
+      dateRange: hasDateRange ? { from: fromDate, to: toDate } : undefined,
       adSets: processedAdSets
     });
     

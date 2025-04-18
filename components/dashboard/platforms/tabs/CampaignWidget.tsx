@@ -312,6 +312,12 @@ const CampaignWidget = ({
   const fetchAdSets = useCallback(async (campaignId: string, forceRefresh: boolean = false): Promise<void> => {
     if (!brandId || !isMountedRef.current || !campaignId) return;
     
+    // Log detailed debugging info about the date range
+    console.log(`[CampaignWidget] [DEBUG] fetchAdSets called with dateRange:`, dateRange);
+    if (!dateRange || !dateRange.from || !dateRange.to) {
+      console.warn(`[CampaignWidget] [WARNING] Date range is missing or incomplete when fetching ad sets for campaign ${campaignId}`);
+    }
+    
     // Only abort requests if forcing a refresh, otherwise let existing fetches for other campaigns complete.
     if (forceRefresh) {
         pendingRequestsRef.current.forEach(controller => {
@@ -369,17 +375,23 @@ const CampaignWidget = ({
     try {
       let url = `/api/meta/adsets?brandId=${brandId}&campaignId=${campaignId}`;
       let dateQuery = '';
+      
+      // Ensure date range is valid and format it properly
       if (dateRange?.from && dateRange?.to) {
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         dateQuery = `&from=${fromDate}&to=${toDate}`;
+        console.log(`[CampaignWidget] [DEBUG] Adding date query params: ${dateQuery}`);
         url += dateQuery;
+      } else {
+        console.warn(`[CampaignWidget] [WARNING] No date range available for ad sets fetch`);
       }
+      
       if (forceRefresh) {
           url += `&forceRefresh=true`;
       }
       
-      logger.debug(`[CampaignWidget] Fetching ad sets from: ${url}`);
+      console.log(`[CampaignWidget] [DEBUG] Fetching ad sets from: ${url}`);
       
       let response = await fetch(url, { 
           signal: controller.signal,
@@ -389,18 +401,32 @@ const CampaignWidget = ({
       
       // If the regular endpoint fails, try the direct-fetch endpoint
       if (!response.ok) {
-        logger.debug(`[CampaignWidget] Regular endpoint failed with status ${response.status}, trying direct-fetch endpoint...`);
+        console.log(`[CampaignWidget] Regular endpoint failed with status ${response.status}, response:`, await response.text());
+        console.log(`[CampaignWidget] Trying direct-fetch endpoint with date range...`);
         usedDirectFetch = true;
+        
+        // Make sure we still include date range in the direct fetch
+        const directFetchBody = {
+          brandId,
+          campaignId
+        };
+        
+        // Add date range to direct fetch request if available
+        if (dateRange?.from && dateRange?.to) {
+          Object.assign(directFetchBody, {
+            from: dateRange.from.toISOString().split('T')[0],
+            to: dateRange.to.toISOString().split('T')[0]
+          });
+        }
+        
+        console.log(`[CampaignWidget] [DEBUG] Direct fetch body:`, directFetchBody);
         
         response = await fetch(`/api/meta/adsets/direct-fetch`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            brandId,
-            campaignId,
-          }),
+          body: JSON.stringify(directFetchBody),
           signal: controller.signal
         });
       }
@@ -409,7 +435,7 @@ const CampaignWidget = ({
       
       // Log the raw response for debugging
       const responseText = await response.text();
-      logger.debug(`[CampaignWidget] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 200)}...`);
+      console.log(`[CampaignWidget] [DEBUG] Raw ad sets response (from ${usedDirectFetch ? 'direct' : 'regular'} endpoint): ${responseText.substring(0, 500)}...`);
       
       // Parse the response as JSON (safely)
       let data;
@@ -421,7 +447,19 @@ const CampaignWidget = ({
       }
       
       // *** Add logging for the actual ad set data received ***
-      logger.debug(`[CampaignWidget] Parsed ad sets data for campaign ${campaignId}:`, data.adSets);
+      console.log(`[CampaignWidget] [DEBUG] Parsed ad sets data for campaign ${campaignId}:`, 
+        data.adSets ? {
+          count: data.adSets.length,
+          source: data.source || 'unknown',
+          timestamp: data.timestamp || 'unknown',
+          dateRange: data.dateRange || 'not specified',
+          firstAdSetMetrics: data.adSets[0] ? {
+            spent: data.adSets[0].spent,
+            impressions: data.adSets[0].impressions,
+            clicks: data.adSets[0].clicks,
+            reach: data.adSets[0].reach
+          } : 'no ad sets'
+        } : 'no ad sets data');
       
       if (response.ok) {
         // Check if this is a rate limit response with cached data
@@ -435,6 +473,18 @@ const CampaignWidget = ({
         if (isMountedRef.current) {
           // Ensure we have a valid array of ad sets
           const validAdSets = Array.isArray(data.adSets) ? data.adSets : [];
+          
+          // Verify date range was respected in the response data
+          if (dateRange?.from && dateRange?.to && validAdSets.length > 0) {
+            const requestedDateFrom = dateRange.from.toISOString().split('T')[0];
+            const requestedDateTo = dateRange.to.toISOString().split('T')[0];
+            
+            // Check if the response has date range info
+            if (data.dateRange && (data.dateRange.from !== requestedDateFrom || data.dateRange.to !== requestedDateTo)) {
+              console.warn(`[CampaignWidget] [WARNING] Response date range (${data.dateRange.from} to ${data.dateRange.to}) does not match requested date range (${requestedDateFrom} to ${requestedDateTo})`);
+            }
+          }
+          
           setAdSets(validAdSets);
           success = true; // Mark as successful
           
