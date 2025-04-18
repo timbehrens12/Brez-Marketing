@@ -467,8 +467,6 @@ export default function DashboardPage() {
             impressionGrowth: data.impressionGrowth ?? prevMetrics.impressionGrowth,
             adSpend: data.adSpend ?? prevMetrics.adSpend,
             adSpendGrowth: data.adSpendGrowth ?? prevMetrics.adSpendGrowth,
-            roas: data.roas ?? prevMetrics.roas,
-            roasGrowth: data.roasGrowth ?? prevMetrics.roasGrowth,
             conversions: data.conversions ?? prevMetrics.conversions,
             costPerResult: data.costPerResult ?? prevMetrics.costPerResult,
             cprGrowth: data.cprGrowth ?? prevMetrics.cprGrowth,
@@ -551,6 +549,10 @@ export default function DashboardPage() {
       
       const metaData = await metaResponse.json();
       
+      // Log the raw CPC received from the API
+      console.log('>>> [fetchMetaMetrics] Received Meta metrics raw data:', metaData);
+      console.log(`>>> [fetchMetaMetrics] CPC from API: ${metaData?.cpc}`); 
+      
       console.log('Received Meta metrics:', {
         adSpend: metaData.adSpend,
         roas: metaData.roas,
@@ -580,6 +582,8 @@ export default function DashboardPage() {
           cprGrowth: metaData.cprGrowth ?? prev.cprGrowth ?? 0,
           dailyData: metaData.dailyData ?? prev.dailyData ?? []
         }));
+        // Log the CPC value being set in state
+        console.log(`>>> [fetchMetaMetrics] Setting metrics state with CPC: ${metaData?.cpc ?? 0}`); 
       }
       
       // Dispatch a custom event to notify MetaTab components about the refresh
