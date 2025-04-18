@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
     // Get Meta connection
     const { data: connection, error: connectionError } = await supabase
       .from('platform_connections')
-      // Select account_id and access_token needed for API call
-      .select('id, account_id, access_token') 
+      .select('id')
       .eq('brand_id', brandId)
       .eq('platform_type', 'meta')
       .eq('status', 'active')
@@ -77,58 +76,42 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate total reach by summing daily reach from DB
+    // Calculate total reach
     let totalReach = 0
     let recordsWithReach = 0
     
-    insights.forEach((insight, index) => {
-      let dailyReach = 0;
-      // Robust check: Ensure insight.reach exists and is potentially parseable
-      if (insight && insight.reach !== null && insight.reach !== undefined) {
-        const reachValue = insight.reach;
-        // Try parsing only if it looks like a number or a string that can be parsed
-        if (typeof reachValue === 'number' || (typeof reachValue === 'string' && reachValue.trim() !== '')) {
-          // Explicitly convert to string before parsing
-          dailyReach = parseInt(String(reachValue)); 
-        }
-      }
-      
-      // Add to total only if parsing resulted in a valid positive number
-      if (!isNaN(dailyReach) && dailyReach > 0) {
-        totalReach += dailyReach
+    insights.forEach(insight => {
+      if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
+        totalReach += parseInt(insight.reach)
         recordsWithReach++
-      } else if (insight && insight.reach !== null && insight.reach !== undefined && (isNaN(dailyReach) || dailyReach <= 0)){
-        // Log problematic values for debugging
-        // console.log(`[Reach API DEBUG] Skipping record index ${index}: Invalid or non-positive reach value: '${insight.reach}'`);
       }
     })
     
-    // Log if no records had reach data
+    // If no reach data is found, add debugging log
     if (recordsWithReach === 0) {
-       console.log(`REACH API WARNING: No valid reach data found in ${insights.length} records for the period.`)
+      console.log(`REACH API WARNING: No reach data found in any of the ${insights.length} records. This may indicate that:
+      1. The Meta API is not returning reach data
+      2. The meta_ad_insights table hasn't been updated with the latest data that includes reach
+      3. You may need to resync Meta data`)
     }
     
-    // Return the result (summed daily reach)
+    // Return the result
     const result = {
       value: totalReach,
       _meta: {
         from,
         to,
         records: insights.length,
-        source: 'database_summed' // Indicate source
+        recordsWithReach,
+        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value} (source: ${result._meta.source}, summed from ${recordsWithReach} records)`)
+    console.log(`REACH API: Returning reach = ${result.value}, based on ${insights.length} records (reach data found in ${insights.filter(i => i.reach > 0).length} records)`)
     
     return NextResponse.json(result)
   } catch (error) {
-    // Add more details to the error log
-    console.error('Error in Reach metric endpoint:', error instanceof Error ? error.message : error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Error in Reach metric endpoint:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

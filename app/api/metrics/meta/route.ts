@@ -438,56 +438,8 @@ export async function GET(request: NextRequest) {
       
       console.log(`Found ${filteredInsights.length} Meta data records for period ${fromDate} to ${toDate}`)
       
-      // Fetch daily insights from Supabase
-      let query = supabase
-        .from('meta_ad_insights')
-        .select('*')
-        .eq('connection_id', connection.id)
-      
-      // Apply date filtering
-      query = query.gte('date', fromDate)
-      query = query.lte('date', toDate)
-      
-      const { data: dailyInsights, error: dbError } = await query
-
-      // Process the data using the helper function
-      const processedData = processMetaData(insights || []);
-
-      // Cache the processed data before returning
-      apiCache.set(cacheKey, { timestamp: Date.now(), data: processedData });
-
-      if (dbError) {
-        console.error('Error in Meta metrics endpoint:', dbError)
-        
-        // Try to use cached data if this is a rate limiting error
-        const cachedData = await tryGetCachedDataOnError(dbError, brandId, connection.id);
-        if (cachedData) {
-          console.log(`Using cached data due to rate limiting at outer level`);
-          
-          // Process the cached data
-          const processedData = processMetaData(cachedData.data);
-          
-          // Add rate limiting info to the response
-          const response = {
-            ...processedData,
-            _meta: {
-              cached: true,
-              rateLimited: true,
-              message: 'Using cached data due to Meta API rate limit'
-            }
-          };
-          
-          return NextResponse.json(response);
-        }
-        
-        return NextResponse.json({ 
-          error: 'Server error', 
-          details: typeof dbError === 'object' && dbError !== null && 'message' in dbError 
-            ? (dbError.message as string) 
-            : 'Unknown error',
-          _dateRange: { error: 'server_error' }
-        }, { status: 500 })
-      }
+      // Process the Meta data
+      const processedData = processMetaData(filteredInsights)
       
       // Log a sample of what we're actually returning
       if (dateDebug || debug) {
@@ -515,6 +467,14 @@ export async function GET(request: NextRequest) {
           actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || []
         }
       };
+      
+      // Add to cache 
+      if (!bypassCache) {
+        apiCache.set(cacheKey, {
+          timestamp: Date.now(),
+          data: response
+        });
+      }
       
       // Return response
       return NextResponse.json(response)
@@ -606,7 +566,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
   let totalImpressions = 0
   let totalClicks = 0
   let totalConversions = 0
-  let calculatedTotalReach = 0
+  let totalReach = 0
   
   // Process daily data
   const dailyData: DailyDataItem[] = []
@@ -682,7 +642,7 @@ function processMetaData(data: any[]): ProcessedMetaData {
     totalImpressions += dayImpressions
     totalClicks += dayClicks
     totalConversions += dayConversions
-    calculatedTotalReach += dayReach
+    totalReach += dayReach
   })
   
   console.log(`Aggregated ${dailyData.length} unique days of data, total spend: ${totalSpend}`)
@@ -704,11 +664,12 @@ function processMetaData(data: any[]): ProcessedMetaData {
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0
   const cpcLink = totalClicks > 0 ? totalSpend / totalClicks : 0
   const costPerResult = totalConversions > 0 ? totalSpend / totalConversions : 0
+  const roas = totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0 // Assuming $50 per conversion if not available
   const cprGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'cpr') : 0
-  const frequency = calculatedTotalReach > 0 ? totalImpressions / calculatedTotalReach : 1
+  const frequency = totalReach > 0 ? totalImpressions / totalReach : 1
   
   // Add debug info
-  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, reach=${calculatedTotalReach} (Summed from DB)`)
+  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, reach=${totalReach}`)
   
   return {
     adSpend: totalSpend,
@@ -725,11 +686,11 @@ function processMetaData(data: any[]): ProcessedMetaData {
     cpcLink,
     costPerResult,
     cprGrowth,
-    roas: totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0, // Assuming $50 per conversion if not available
+    roas,
     roasGrowth,
     frequency,
     budget: totalSpend > 0 ? totalSpend / dailyData.length : 0, // Average daily budget
-    reach: calculatedTotalReach,
+    reach: totalReach,
     dailyData
   }
 }
