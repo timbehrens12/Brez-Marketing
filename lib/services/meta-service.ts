@@ -632,7 +632,13 @@ export async function fetchMetaCampaignBudgets(brandId: string, forceSave: boole
  * Fetches ad sets for a specific campaign from Meta API
  * This function retrieves ad sets with their budgets and performance metrics
  */
-export async function fetchMetaAdSets(brandId: string, campaignId: string, forceSave = true) {
+export async function fetchMetaAdSets(
+  brandId: string, 
+  campaignId: string, 
+  forceSave = true,
+  startDate?: Date,
+  endDate?: Date
+) {
   try {
     console.log(`[Meta Service] Fetching ad sets for campaign ${campaignId}...`);
     
@@ -689,12 +695,22 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
     }
     
     // Build date ranges for insights (last 30 days)
-    const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    let since: string;
+    let until: string;
     
-    const since = thirtyDaysAgo.toISOString().split('T')[0];
-    const until = now.toISOString().split('T')[0];
+    if (startDate && endDate) {
+      since = startDate.toISOString().split('T')[0];
+      until = endDate.toISOString().split('T')[0];
+      console.log(`[Meta Service] Using provided date range for Ad Set fetch: ${since} to ${until}`);
+    } else {
+      // Default to last 30 days if no dates provided
+      const now = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      since = thirtyDaysAgo.toISOString().split('T')[0];
+      until = now.toISOString().split('T')[0];
+      console.log(`[Meta Service] No date range provided, defaulting to last 30 days: ${since} to ${until}`);
+    }
     
     // Process each ad set with its insights
     const processedAdSets = [];
