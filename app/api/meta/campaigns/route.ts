@@ -202,7 +202,6 @@ export async function GET(request: NextRequest) {
         let clicks = 0;
         let conversions = 0;
         let purchaseValue = 0;
-        let reach = 0;
         
         // Collect daily insights specific to this campaign for the response
         const campaignDailyAggregatedInsights: any[] = [];
@@ -263,7 +262,6 @@ export async function GET(request: NextRequest) {
             clicks += dailyClicks;
             conversions += dailyConversions;
             purchaseValue += dailyPurchaseValue;
-            reach += dailyReach;
           });
           
           // Add derived metrics to daily aggregated insights
@@ -290,7 +288,7 @@ export async function GET(request: NextRequest) {
           spent: spend,
           impressions,
           clicks,
-          reach: reach,
+          reach: campaign.reach,
           conversions,
           ctr,
           cpc,
