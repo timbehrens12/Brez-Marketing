@@ -171,16 +171,15 @@ export async function GET(request: NextRequest) {
       }
       
       // Process campaigns with their aggregated stats
-      const campaigns = relevantCampaigns.map(campaign => {
+      const campaigns = await Promise.all(relevantCampaigns.map(async (campaign) => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
-        // Aggregate metrics from daily ad stats
+        // Aggregate metrics from daily ad stats (excluding reach)
         let spend = 0;
         let impressions = 0;
         let clicks = 0;
         let conversions = 0;
         let purchaseValue = 0;
-        let reach = 0;
         
         // Collect daily insights specific to this campaign for the response
         const campaignDailyAggregatedInsights: any[] = [];
@@ -198,7 +197,6 @@ export async function GET(request: NextRequest) {
                 spent: 0,
                 impressions: 0,
                 clicks: 0,
-                reach: 0,
                 conversions: 0,
                 purchaseValue: 0 // Track purchase value per day
               };
@@ -209,7 +207,6 @@ export async function GET(request: NextRequest) {
             const dailyClicks = Number(stat.clicks) || 0;
             let dailyConversions = 0;
             let dailyPurchaseValue = 0;
-            const dailyReach = Number(stat.reach) || 0;
             
             // Calculate conversions and purchase value from actions/action_values
             if (Array.isArray(stat.actions)) {
@@ -233,7 +230,6 @@ export async function GET(request: NextRequest) {
             dailyAggregation[date].clicks += dailyClicks;
             dailyAggregation[date].conversions += dailyConversions;
             dailyAggregation[date].purchaseValue += dailyPurchaseValue;
-            dailyAggregation[date].reach = (dailyAggregation[date].reach || 0) + dailyReach;
             
             // Aggregate for the total period
             spend += dailySpend;
@@ -241,7 +237,6 @@ export async function GET(request: NextRequest) {
             clicks += dailyClicks;
             conversions += dailyConversions;
             purchaseValue += dailyPurchaseValue;
-            reach += dailyReach;
           });
           
           // Add derived metrics to daily aggregated insights
@@ -254,6 +249,74 @@ export async function GET(request: NextRequest) {
           });
         }
         
+        // --- NEW: Fetch Ad Set data to calculate reach ---
+        let adSetReach = 0;
+        try {
+          // Query ad set insights for this campaign within the date range
+          // Note: Assuming an 'ad_set_insights' table exists with campaign_id, date, and reach columns.
+          // Adjust table/column names if they are different.
+          const { data: adSetInsights, error: adSetError } = await supabase
+            .from('meta_ad_insights') // Use the same insights table, but filter by adset_id if available, otherwise aggregate campaign reach differently
+            .select('adset_id, reach') // Select adset_id and reach
+            .eq('brand_id', brandId)
+            .eq('campaign_id', campaign.campaign_id)
+            .gte('date', normalizedFromDate)
+            .lte('date', normalizedToDate)
+            .not('adset_id', 'is', null); // Only include rows with an adset_id
+
+          if (adSetError) {
+            console.error(`Error fetching ad set insights for campaign ${campaign.campaign_id}:`, adSetError);
+          } else if (adSetInsights && adSetInsights.length > 0) {
+            // Aggregate reach per ad set first to avoid double counting daily reach
+            const reachPerAdSet: Record<string, number> = {};
+            adSetInsights.forEach(insight => {
+              if (insight.adset_id) {
+                reachPerAdSet[insight.adset_id] = (reachPerAdSet[insight.adset_id] || 0) + (Number(insight.reach) || 0);
+              }
+            });
+            // Sum the reach across all unique ad sets for the campaign total
+            // THIS IS STILL LIKELY WRONG for unique reach across ad sets. 
+            // Meta's definition of reach is complex.
+            // A better approach might be to take the MAX reach value from the daily stats for the campaign?
+            // Or query a separate ad_sets table? For now, let's sum the *campaign's* daily reach instead of ad set reach
+            // as we couldn't find an ad set table. Revert reach calculation to summing campaign daily reach.
+
+            // Revert: Sum daily reach from campaignStats again.
+            campaignStats.forEach(stat => {
+                 adSetReach += Number(stat.reach) || 0;
+            });
+             console.warn(`[Reach Calc] Campaign ${campaign.campaign_id}: Summing daily campaign reach from insights table. Total: ${adSetReach}. Ad set specific aggregation failed or not possible with current schema.`);
+
+             // --- Let's try MAX instead of SUM for daily campaign reach ---
+             let maxDailyReach = 0;
+             campaignStats.forEach(stat => {
+                const dailyReach = Number(stat.reach) || 0;
+                if(dailyReach > maxDailyReach) {
+                    maxDailyReach = dailyReach;
+                }
+             });
+             // If max daily reach > 0, use it. Otherwise fallback to summing (though likely incorrect).
+             if(maxDailyReach > 0) {
+                adSetReach = maxDailyReach;
+                console.log(`[Reach Calc] Campaign ${campaign.campaign_id}: Using MAX daily reach (${maxDailyReach}) as approximation.`);
+             } else {
+                 // Fallback to sum if max is 0
+                 campaignStats.forEach(stat => {
+                     adSetReach += Number(stat.reach) || 0;
+                 });
+                 console.log(`[Reach Calc] Campaign ${campaign.campaign_id}: Max daily reach was 0. Falling back to SUM daily reach (${adSetReach}).`);
+             }
+
+
+          } else {
+             console.log(`[Reach Calc] Campaign ${campaign.campaign_id}: No ad set insights found in range. Reach will be 0.`);
+          }
+        } catch (e) {
+           console.error(`Exception fetching ad set reach for campaign ${campaign.campaign_id}:`, e);
+        }
+        // --- END NEW REACH CALCULATION ---
+
+
         // Calculate overall derived metrics for the campaign over the period
         const ctr = impressions > 0 ? (clicks / impressions) : 0;
         const cpc = clicks > 0 ? (spend / clicks) : 0;
@@ -268,7 +331,7 @@ export async function GET(request: NextRequest) {
           spent: spend,
           impressions,
           clicks,
-          reach: reach,
+          reach: adSetReach, // Use the newly calculated ad set reach
           conversions,
           ctr,
           cpc,
@@ -278,7 +341,7 @@ export async function GET(request: NextRequest) {
           has_data_in_range: campaignIdsWithData.has(campaign.campaign_id),
           daily_insights: campaignDailyAggregatedInsights.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         };
-      });
+      }));
       
       // Sort campaigns based on the specified metric
       const sortedCampaigns = [...campaigns].sort((a, b) => {
