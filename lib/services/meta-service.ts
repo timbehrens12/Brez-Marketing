@@ -721,6 +721,7 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
           );
           if (totalReachResponse.ok) {
             const totalReachData = await totalReachResponse.json();
+            console.log(`[Meta Service DEBUG] Raw Total Reach Data for AdSet ${adSet.id}:`, JSON.stringify(totalReachData));
             if (totalReachData.data && totalReachData.data.length > 0 && totalReachData.data[0].reach) {
               totalReachForPeriod = parseInt(totalReachData.data[0].reach, 10);
               console.log(`[Meta Service] Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
@@ -833,6 +834,7 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
         // Save the ad sets
         for (const adSet of processedAdSets) {
           // Save the ad set main record
+          console.log(`[Meta Service DEBUG] Upserting AdSet ${adSet.adset_id} with Reach: ${adSet.reach}`);
           const { error: upsertError } = await supabase
             .from('meta_adsets')
             .upsert({
