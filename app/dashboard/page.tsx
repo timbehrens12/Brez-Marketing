@@ -578,6 +578,7 @@ export default function DashboardPage() {
           conversions: metaData.conversions ?? prev.conversions ?? 0,
           conversionGrowth: metaData.conversionGrowth ?? prev.conversionGrowth ?? 0,
           cpc: metaData.cpc ?? prev.cpc ?? 0,
+          reach: metaData.reach ?? prev.reach ?? 0,
           costPerResult: metaData.costPerResult ?? prev.costPerResult ?? 0,
           cprGrowth: metaData.cprGrowth ?? prev.cprGrowth ?? 0,
           dailyData: metaData.dailyData ?? prev.dailyData ?? []
