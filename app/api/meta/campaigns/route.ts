@@ -196,6 +196,7 @@ export async function GET(request: NextRequest) {
         let clicks = 0;
         let conversions = 0;
         let purchaseValue = 0;
+        let reach = 0;
         
         // Collect daily insights specific to this campaign for the response
         const campaignDailyAggregatedInsights: any[] = [];
@@ -224,6 +225,7 @@ export async function GET(request: NextRequest) {
             const dailyClicks = Number(stat.clicks) || 0;
             let dailyConversions = 0;
             let dailyPurchaseValue = 0;
+            const dailyReach = Number(stat.reach) || 0;
             
             // Calculate conversions and purchase value from actions/action_values
             if (Array.isArray(stat.actions)) {
@@ -247,6 +249,7 @@ export async function GET(request: NextRequest) {
             dailyAggregation[date].clicks += dailyClicks;
             dailyAggregation[date].conversions += dailyConversions;
             dailyAggregation[date].purchaseValue += dailyPurchaseValue;
+            dailyAggregation[date].reach = (dailyAggregation[date].reach || 0) + dailyReach;
             
             // Aggregate for the total period
             spend += dailySpend;
@@ -254,6 +257,7 @@ export async function GET(request: NextRequest) {
             clicks += dailyClicks;
             conversions += dailyConversions;
             purchaseValue += dailyPurchaseValue;
+            reach += dailyReach;
           });
           
           // Add derived metrics to daily aggregated insights
@@ -280,7 +284,7 @@ export async function GET(request: NextRequest) {
           spent: spend,
           impressions,
           clicks,
-          reach: campaign.reach || 0,
+          reach: reach,
           conversions,
           ctr,
           cpc,
