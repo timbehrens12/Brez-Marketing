@@ -81,12 +81,25 @@ export async function GET(request: NextRequest) {
     let totalReach = 0
     let recordsWithReach = 0
     
-    insights.forEach(insight => {
-      // Ensure reach is a valid number before adding
-      const dailyReach = parseInt(insight.reach);
+    insights.forEach((insight, index) => {
+      let dailyReach = 0;
+      // Robust check: Ensure insight.reach exists and is potentially parseable
+      if (insight && insight.reach !== null && insight.reach !== undefined) {
+        const reachValue = insight.reach;
+        // Try parsing only if it looks like a number or a string that can be parsed
+        if (typeof reachValue === 'number' || (typeof reachValue === 'string' && reachValue.trim() !== '')) {
+          // Explicitly convert to string before parsing
+          dailyReach = parseInt(String(reachValue)); 
+        }
+      }
+      
+      // Add to total only if parsing resulted in a valid positive number
       if (!isNaN(dailyReach) && dailyReach > 0) {
         totalReach += dailyReach
         recordsWithReach++
+      } else if (insight && insight.reach !== null && insight.reach !== undefined && (isNaN(dailyReach) || dailyReach <= 0)){
+        // Log problematic values for debugging
+        // console.log(`[Reach API DEBUG] Skipping record index ${index}: Invalid or non-positive reach value: '${insight.reach}'`);
       }
     })
     
@@ -110,7 +123,12 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Reach metric endpoint:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Add more details to the error log
+    console.error('Error in Reach metric endpoint:', error instanceof Error ? error.message : error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 } 
