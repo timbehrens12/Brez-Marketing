@@ -5,7 +5,7 @@ import {
   BarChart, LineChart, PieChart, AreaChart, Gauge, ArrowUpRight, ArrowDownRight, 
   Calendar, Filter, MoreHorizontal, Download, ChevronDown, Settings, Table, RefreshCw,
   Eye, EyeOff, Zap, DollarSign, Users, MousePointerClick, Target, Wallet, BarChart2, ChevronRight,
-  CalendarRange, Loader2, RefreshCcw, SlidersHorizontal, CircleIcon, Search
+  CalendarRange, Loader2, RefreshCcw, SlidersHorizontal, CircleIcon, Search, ChevronUp
 } from 'lucide-react'
 import { AdComponent } from './AdComponent'
 import {
@@ -66,6 +66,8 @@ import { mutate } from 'swr'
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { format } from "date-fns"
+import { fetchMetaAdSets } from '@/lib/services/meta-service'; // Ensure correct import if needed, might be fetched via API though
+import { DateRange as DateRangePicker } from 'react-day-picker'; // Make sure DateRange type is imported
 
 // Debug flag to control verbosity
 const DEBUG_LOGGING = false;
