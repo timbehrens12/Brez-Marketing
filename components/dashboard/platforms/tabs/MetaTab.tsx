@@ -2324,98 +2324,24 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, []);
 
-  // Update the state types to include previous period data
-  const [adSpendData, setAdSpendData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  const [roasData, setRoasData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  const [impressionsData, setImpressionsData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  const [clicksData, setClicksData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for the new Purchase Conversion Value widget
-  const [purchaseValueData, setPurchaseValueData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for the new Results widget
-  const [resultsData, setResultsData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for Cost Per Result widget
-  const [costPerResultData, setCostPerResultData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for Cost Per Click widget
-  const [costPerClickData, setCostPerClickData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for CTR (Click-Through Rate) widget
-  const [ctrData, setCtrData] = useState({
-    value: 0,
-    previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
-  
-  // Add state for reach data
-  const [reachData, setReachData] = useState<MetricDataState>({
-    value: 0,
-    previousValue: 0,
-    isLoading: false,
-    lastUpdated: null
-  })
-  
-  const [linkClicksData, setLinkClicksData] = useState<MetricDataState>({
-    value: 0,
-    previousValue: 0,
-    isLoading: false,
-    lastUpdated: null
-  })
-  
-  // Add budgetData state after linkClicksData
-  const [budgetData, setBudgetData] = useState<MetricDataState>({
-    value: 0,
-    previousValue: 0,
-    isLoading: false,
-    lastUpdated: null
-  })
-  
+  // Initial states for individual metric cards
+  const [adSpendData, setAdSpendData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [roasData, setRoasData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [impressionsData, setImpressionsData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [reachData, setReachData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [clicksData, setClicksData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [purchaseValueData, setPurchaseValueData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [resultsData, setResultsData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [costPerResultData, setCostPerResultData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  // Remove dedicated CPC state
+  // const [costPerClickData, setCostPerClickData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [ctrData, setCtrData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [linkClicksData, setLinkClicksData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+  const [totalBudgetData, setTotalBudgetData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null })
+
+  // Remove fetchCostPerClickDirectly function
+  // const fetchCostPerClickDirectly = async () => { ... };
+
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -3151,67 +3077,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // Fetch Cost Per Click data directly from the database
-  const fetchCostPerClickDirectly = async () => {
-    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch Cost Per Click: Missing date range or brand ID")
-      return
-    }
-    
-    setCostPerClickData(prev => ({ ...prev, isLoading: true }))
-    
-    try {
-      // Construct URL params for current period
-      const params = new URLSearchParams()
-      params.append('brandId', brandId)
-      params.append('metric', 'costPerClick')
-      
-      // Set date parameters - simple approach
-      const fromDate = dateRange.from
-      const toDate = dateRange.to
-      
-      params.append('from', fromDate.toISOString().split('T')[0])
-      params.append('to', toDate.toISOString().split('T')[0])
-      
-      // Log what we're doing
-      console.log(`Fetching Cost Per Click for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
-      
-      // Calculate previous period date range using our simplified helper function
-      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-      
-      // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/cost-per-click?${params.toString()}`)
-      
-      // Fetch data for previous period
-      const prevParams = new URLSearchParams()
-      prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'costPerClick')
-      prevParams.append('from', prevFrom)
-      prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/cost-per-click?${prevParams.toString()}`)
-      
-      // Process responses
-      const data = await response.json()
-      const prevData = await prevResponse.json()
-      
-      if (!data.error && !prevData.error) {
-        setCostPerClickData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
-        console.log(`Cost Per Click data fetched directly: ${data.value}, Previous: ${prevData.value}`)
-      } else {
-        console.error("Error fetching Cost Per Click data:", data.error || prevData.error)
-        setCostPerClickData(prev => ({ ...prev, isLoading: false }))
-      }
-    } catch (error) {
-      console.error("Error in Cost Per Click fetch:", error)
-      setCostPerClickData(prev => ({ ...prev, isLoading: false }))
-    }
-  }
-  
   // Add function to fetch CTR (Click-Through Rate) data
   const fetchCtrDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
@@ -3402,7 +3267,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       return
     }
     
-    setBudgetData(prev => ({ ...prev, isLoading: true }))
+    setTotalBudgetData(prev => ({ ...prev, isLoading: true }))
     
     try {
       // Construct URL params for current period
@@ -3439,7 +3304,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        setBudgetData({
+        setTotalBudgetData({
           value: data.value || 0,
           previousValue: prevData.value || 0,
           isLoading: false,
@@ -3448,11 +3313,11 @@ Try creating at least one active campaign in Meta Ads Manager.
         console.log(`Budget data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Budget data:", data.error || prevData.error)
-        setBudgetData(prev => ({ ...prev, isLoading: false }))
+        setTotalBudgetData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error("Error in Budget fetch:", error)
-      setBudgetData(prev => ({ ...prev, isLoading: false }))
+      setTotalBudgetData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3466,7 +3331,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchPurchaseValueDirectly(),
       fetchResultsDirectly(),
       fetchCostPerResultDirectly(),
-      fetchCostPerClickDirectly(),
       fetchCtrDirectly(),
       fetchReachDirectly(),
       fetchLinkClicksDirectly()
@@ -3514,11 +3378,10 @@ Try creating at least one active campaign in Meta Ads Manager.
     setPurchaseValueData(prev => ({ ...prev, isLoading: true }))
     setResultsData(prev => ({ ...prev, isLoading: true }))
     setCostPerResultData(prev => ({ ...prev, isLoading: true }))
-    setCostPerClickData(prev => ({ ...prev, isLoading: true }))
     setCtrData(prev => ({ ...prev, isLoading: true }))
     setReachData(prev => ({ ...prev, isLoading: true }))
     setLinkClicksData(prev => ({ ...prev, isLoading: true }))
-    setBudgetData(prev => ({ ...prev, isLoading: true }))
+    setTotalBudgetData(prev => ({ ...prev, isLoading: true }))
     
     // Set global refreshing state for UI feedback
     setIsManuallyRefreshing(true)
@@ -3533,7 +3396,6 @@ Try creating at least one active campaign in Meta Ads Manager.
         fetchPurchaseValueDirectly(),
         fetchResultsDirectly(),
         fetchCostPerResultDirectly(),
-        fetchCostPerClickDirectly(),
         fetchCtrDirectly(),
         fetchReachDirectly(),
         fetchLinkClicksDirectly()
@@ -3550,7 +3412,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, [dateRange, brandId, 
      fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
      fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
-     fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
+     fetchCostPerResultDirectly, fetchCtrDirectly,
      fetchReachDirectly, fetchLinkClicksDirectly]);
   
   // Setup auto-refresh on a 5-minute interval
@@ -4425,27 +4287,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             prefix="$"
             hideGraph={true}
             previousValue={costPerResultData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-          />
-          
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-teal-400" />
-                <span className="ml-0.5">Cost Per Click</span>
-              </div>
-            }
-            value={costPerClickData.value}
-            data={[]}
-            loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={costPerClickData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
