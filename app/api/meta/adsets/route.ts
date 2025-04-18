@@ -244,8 +244,30 @@ export async function GET(req: NextRequest) {
     
     // If we reach here, either forceRefresh is true or no data was found in the database
     // Fetch fresh data from Meta API
-    console.log('Fetching ad sets from Meta API...')
-    const result = await fetchMetaAdSets(brandId, campaignId, true)
+    console.log('[API] Fetching ad sets from Meta API...')
+    
+    // Parse dates if they exist
+    let startDate: Date | undefined = undefined;
+    let endDate: Date | undefined = undefined;
+    if (hasDateRange) {
+      try {
+        startDate = new Date(fromDate!)
+        endDate = new Date(toDate!)
+        console.log(`[API] Parsed date range for Meta API call: ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      } catch (dateError) {
+        console.error("[API] Error parsing date range parameters:", dateError);
+        // Optionally return an error or proceed without dates
+        return NextResponse.json({ error: 'Invalid date format provided' }, { status: 400 });
+      }
+    }
+    
+    const result = await fetchMetaAdSets(
+      brandId, 
+      campaignId, 
+      true, 
+      startDate, // Pass optional startDate
+      endDate // Pass optional endDate
+    )
     
     if (result.success && result.adSets) {
       let filteredAdSets = result.adSets as AdSetFromMeta[]
