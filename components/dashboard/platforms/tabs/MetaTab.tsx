@@ -2416,6 +2416,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastUpdated: null
   })
   
+  // Add missing state for CPC
+  const [cpcData, setCpcData] = useState<MetricDataState>({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+  
   // Improved helper function to calculate the previous period date range
   const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
     // Normalize dates to avoid timezone issues - work with dates at the day level only
@@ -3275,64 +3278,33 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Fetch reach data directly from the database
   const fetchReachDirectly = async () => {
-    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch reach: Missing date range or brand ID")
-      return
-    }
+    // Removed check for tabVisibility.meta as it's not needed here
+    if (!brandId || !dateRange?.from || !dateRange?.to) return; 
     
-    setReachData(prev => ({ ...prev, isLoading: true }))
+    const fromStr = toLocalISODateString(dateRange.from);
+    const toStr = toLocalISODateString(dateRange.to);
+    const url = `/api/metrics/meta/single/reach?brandId=${brandId}&from=${fromStr}&to=${toStr}`;
     
     try {
-      // Construct URL params for current period
-      const params = new URLSearchParams()
-      params.append('brandId', brandId)
-      params.append('metric', 'reach')
+      setReachData(prev => ({ ...prev, isLoading: true }));
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      const data = await response.json();
       
-      // Set date parameters
-      const fromDate = dateRange.from
-      const toDate = dateRange.to
+      // Use current value as previous if it exists, otherwise 0
+      const previousValue = reachData.value ?? 0;
       
-      params.append('from', fromDate.toISOString().split('T')[0])
-      params.append('to', toDate.toISOString().split('T')[0])
-      
-      // Log what we're doing
-      console.log(`Fetching Reach for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
-      
-      // Calculate previous period date range
-      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-      
-      // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single/reach?${params.toString()}`)
-      
-      // Fetch data for previous period
-      const prevParams = new URLSearchParams()
-      prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'reach')
-      prevParams.append('from', prevFrom)
-      prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single/reach?${prevParams.toString()}`)
-      
-      // Process responses
-      const data = await response.json()
-      const prevData = await prevResponse.json()
-      
-      if (!data.error && !prevData.error) {
-        setReachData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
-        console.log(`Reach data fetched directly: ${data.value}, Previous: ${prevData.value}`)
-      } else {
-        console.error("Error fetching Reach data:", data.error || prevData.error)
-        setReachData(prev => ({ ...prev, isLoading: false }))
-      }
+      setReachData({
+        value: data.value || 0,
+        previousValue: previousValue, 
+        isLoading: false,
+        lastUpdated: new Date()
+      });
     } catch (error) {
-      console.error("Error in Reach fetch:", error)
-      setReachData(prev => ({ ...prev, isLoading: false }))
+      console.error('Error fetching Reach directly:', error);
+      setReachData(prev => ({ ...prev, isLoading: false }));
     }
-  }
+  };
   
   // Fetch link clicks data directly from the database
   const fetchLinkClicksDirectly = async () => {
@@ -4159,6 +4131,48 @@ Try creating at least one active campaign in Meta Ads Manager.
     // ... previous stabilization logic ...
   }, [dateRange]);
   */
+
+  // Effect to fetch all individual metrics when date range or brandId changes
+  useEffect(() => {
+    const fetchAllMetrics = async () => {
+      console.log("[MetaTab] Fetching all individual metrics due to change in brandId or dateRange");
+      setAdSpendData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setRoasData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setImpressionsData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setClicksData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setPurchaseValueData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setResultsData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setCostPerResultData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setCpcData((prev: MetricDataState) => ({ ...prev, isLoading: true })); // Corrected: setCpcData
+      setCtrData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setReachData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setLinkClicksData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      setBudgetData((prev: MetricDataState) => ({ ...prev, isLoading: true }));
+      
+      // ... (rest of the Promise.allSettled call) ...
+      await Promise.allSettled([
+        fetchAdSpendDirectly(),
+        fetchRoasDirectly(),
+        fetchImpressionsDirectly(),
+        fetchClicksDirectly(),
+        fetchPurchaseValueDirectly(),
+        fetchResultsDirectly(),
+        fetchCostPerResultDirectly(),
+        fetchCostPerClickDirectly(),
+        fetchCtrDirectly(),
+        fetchReachDirectly(),
+        fetchLinkClicksDirectly(),
+        fetchBudgetDirectly(),
+      ]);
+      
+      console.log("[MetaTab] Finished fetching all individual metrics.");
+    };
+
+    if (brandId && dateRange?.from && dateRange?.to) {
+      fetchAllMetrics();
+    }
+    
+  }, [brandId, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()]);
 
   return (
     <TooltipProvider>
