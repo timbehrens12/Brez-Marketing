@@ -331,8 +331,11 @@ const CampaignWidget = ({
       }
     });
     
-    // Clear existing ad sets to show fresh loading state
-    setAdSets([]);
+    // Clear ad sets ONLY if forcing refresh OR if the current ad sets belong to a different campaign
+    if (forceRefresh || (adSets.length > 0 && adSets[0].campaign_id !== campaignId)) {
+        setAdSets([]);
+    }
+    
     setIsLoadingAdSets(true);
     
     const controller = createAbortController();
@@ -516,10 +519,8 @@ const CampaignWidget = ({
       }
     } finally {
       if (isMountedRef.current) {
-        // Add a slight delay to avoid flickering
-        setTimeout(() => {
-          setIsLoadingAdSets(false);
-        }, 300);
+        // Set loading false immediately
+        setIsLoadingAdSets(false);
       }
       
       // Clean up abort controller
