@@ -713,6 +713,28 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
           budgetType = 'lifetime';
         }
         
+        // --- Fetch Total Reach for the period --- 
+        let totalReachForPeriod = 0;
+        try {
+          const totalReachResponse = await fetch(
+            `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=reach&time_range={"since":"${since}","until":"${until}"}&access_token=${metaConnection.access_token}`
+          );
+          if (totalReachResponse.ok) {
+            const totalReachData = await totalReachResponse.json();
+            if (totalReachData.data && totalReachData.data.length > 0 && totalReachData.data[0].reach) {
+              totalReachForPeriod = parseInt(totalReachData.data[0].reach, 10);
+              console.log(`[Meta Service] Fetched Total Reach for AdSet ${adSet.id}: ${totalReachForPeriod}`);
+            } else {
+               console.log(`[Meta Service] No total reach data found for AdSet ${adSet.id}`);
+            }
+          } else {
+            console.warn(`[Meta Service] Failed to fetch total reach for AdSet ${adSet.id}:`, await totalReachResponse.text());
+          }
+        } catch (reachError) {
+          console.error(`[Meta Service] Error fetching total reach for AdSet ${adSet.id}:`, reachError);
+        }
+        // --- End Fetch Total Reach ---
+        
         // Fetch insights for this ad set
         const insightsResponse = await fetch(
           `https://graph.facebook.com/v18.0/${adSet.id}/insights?fields=spend,impressions,clicks,conversions,ctr,cpc,cost_per_conversion,reach&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${metaConnection.access_token}`
@@ -722,7 +744,6 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
         let totalImpressions = 0;
         let totalClicks = 0;
         let totalConversions = 0;
-        let totalReach = 0;
         let dailyInsights = [];
         
         if (insightsResponse.ok) {
@@ -735,14 +756,12 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
               const dayImpressions = parseInt(day.impressions || 0, 10);
               const dayClicks = parseInt(day.clicks || 0, 10);
               const dayConversions = day.conversions?.length ? parseInt(day.conversions[0].value || 0, 10) : 0;
-              const dayReach = parseInt(day.reach || 0, 10);
               
               // Update totals
               totalSpent += daySpent;
               totalImpressions += dayImpressions;
               totalClicks += dayClicks;
               totalConversions += dayConversions;
-              totalReach += dayReach;
               
               // Calculate metrics
               const dayCtr = dayImpressions > 0 ? dayClicks / dayImpressions : 0;
@@ -756,7 +775,7 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
                 impressions: dayImpressions,
                 clicks: dayClicks,
                 conversions: dayConversions,
-                reach: dayReach,
+                reach: totalReachForPeriod,
                 ctr: dayCtr,
                 cpc: dayCpc,
                 cost_per_conversion: dayCostPerConversion
@@ -789,7 +808,7 @@ export async function fetchMetaAdSets(brandId: string, campaignId: string, force
           spent: totalSpent,
           impressions: totalImpressions,
           clicks: totalClicks,
-          reach: totalReach,
+          reach: totalReachForPeriod,
           ctr,
           cpc,
           conversions: totalConversions,
