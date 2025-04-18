@@ -1613,6 +1613,37 @@ const CampaignWidget = ({
                 </thead>
                 <tbody>
                   {filteredCampaigns.map(campaign => {
+                    // Calculate aggregate metrics if this is the expanded campaign and ad sets are loaded
+                    let aggregateMetrics: Partial<Campaign> | null = null;
+                    if (expandedCampaign === campaign.campaign_id && adSets.length > 0) {
+                        const totalSpent = adSets.reduce((sum, adSet) => sum + (Number(adSet.spent) || 0), 0);
+                        const totalClicks = adSets.reduce((sum, adSet) => sum + (Number(adSet.clicks) || 0), 0);
+                        const totalImpressions = adSets.reduce((sum, adSet) => sum + (Number(adSet.impressions) || 0), 0);
+                        const totalReach = adSets.reduce((sum, adSet) => sum + (Number(adSet.reach) || 0), 0); // Assuming reach can be summed (might need clarification on this metric)
+                        const totalConversions = adSets.reduce((sum, adSet) => sum + (Number(adSet.conversions) || 0), 0);
+                        
+                        // Recalculate derived metrics based on aggregates
+                        const aggregateCpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
+                        const aggregateCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0; // Multiply by 100 for percentage
+                        const aggregateCostPerConversion = totalConversions > 0 ? totalSpent / totalConversions : 0;
+                        // ROAS calculation might need more info (e.g., conversion value) - using 0 for now if not available directly
+                        const aggregateRoas = 0; // Placeholder - Adjust if conversion value data is available
+
+                        aggregateMetrics = {
+                            spent: totalSpent,
+                            clicks: totalClicks,
+                            impressions: totalImpressions,
+                            reach: totalReach,
+                            conversions: totalConversions,
+                            cpc: aggregateCpc,
+                            ctr: aggregateCtr,
+                            cost_per_conversion: aggregateCostPerConversion,
+                            roas: aggregateRoas,
+                            // Keep other campaign properties as they are not directly aggregated
+                        };
+                        console.log(`[CW DEBUG] Calculated Aggregate Metrics for ${campaign.campaign_id}:`, aggregateMetrics);
+                    }
+
                     // *** DEBUG LOGGING for rendered row ***
                     console.log(`[CW DEBUG] Rendering Campaign Row: ${campaign.campaign_name} (${campaign.campaign_id})`, {
                         spend: campaign.spent,
@@ -1672,8 +1703,12 @@ const CampaignWidget = ({
                             const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
                             if (!metric) return null;
                             
-                            const value = campaign[metricId as keyof Campaign] as number;
+                            // Use aggregate metric if available for the expanded campaign, otherwise use campaign data
+                            const value = aggregateMetrics ? (aggregateMetrics[metricId as keyof Campaign] as number ?? 0) : (campaign[metricId as keyof Campaign] as number);
                             
+                            // Debug log the value being used
+                            // console.log(`[CW DEBUG] Metric: ${metricId}, Using value: ${value}, aggregate available: ${!!aggregateMetrics}`);
+
                             return (
                               <td key={metricId} className="p-3 text-right text-white">
                                 <div className="font-medium">
