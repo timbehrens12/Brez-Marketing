@@ -71,18 +71,40 @@ const presets = [
   {
     name: 'Last 7 days',
     value: 'last7',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 7)),
-      to: endOfDay(subDays(new Date(), 1))
-    })
+    getDate: () => {
+      // Get current date
+      const today = new Date();
+      // Get yesterday (end date)
+      const yesterdayEnd = endOfDay(subDays(today, 1));
+      // Get 7 days ago (start date)
+      const sevenDaysAgoStart = startOfDay(subDays(today, 7));
+      
+      console.log(`Setting last 7 days: ${format(sevenDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayEnd, 'yyyy-MM-dd')}`);
+      
+      return {
+        from: sevenDaysAgoStart,
+        to: yesterdayEnd  // Yesterday EOD, NOT today
+      };
+    }
   },
   {
     name: 'Last 30 days',
     value: 'last30',
-    getDate: () => ({
-      from: startOfDay(subDays(new Date(), 30)),
-      to: endOfDay(subDays(new Date(), 1))
-    })
+    getDate: () => {
+      // Get current date
+      const today = new Date();
+      // Get yesterday (end date)
+      const yesterdayEnd = endOfDay(subDays(today, 1));
+      // Get 30 days ago (start date)
+      const thirtyDaysAgoStart = startOfDay(subDays(today, 30));
+      
+      console.log(`Setting last 30 days: ${format(thirtyDaysAgoStart, 'yyyy-MM-dd')} to ${format(yesterdayEnd, 'yyyy-MM-dd')}`);
+      
+      return {
+        from: thirtyDaysAgoStart,
+        to: yesterdayEnd  // Yesterday EOD, NOT today
+      };
+    }
   },
   {
     name: 'This week',
@@ -132,16 +154,19 @@ const presets = [
     name: 'Last month',
     value: 'lastMonth',
     getDate: () => {
-      // Get the last day of previous month instead of using subMonths(new Date(), 1)
-      // This ensures we're always getting exactly the last month without overlap
+      // Get the first day of current month
       const today = new Date();
-      // Create date for first day of current month
       const firstDayOfCurrentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      // Subtract 1 day to get last day of previous month
+      
+      // Get the last day of previous month (subtract 1 day from first day of current month)
       const lastDayOfPreviousMonth = new Date(firstDayOfCurrentMonth);
       lastDayOfPreviousMonth.setDate(lastDayOfPreviousMonth.getDate() - 1);
-      // First day of previous month
+      
+      // Get the first day of the previous month
       const firstDayOfPreviousMonth = new Date(lastDayOfPreviousMonth.getFullYear(), lastDayOfPreviousMonth.getMonth(), 1);
+      
+      // Log exact dates for debugging
+      console.log(`Setting last month: ${format(firstDayOfPreviousMonth, 'yyyy-MM-dd')} to ${format(lastDayOfPreviousMonth, 'yyyy-MM-dd')}`);
       
       return {
         from: startOfDay(firstDayOfPreviousMonth),
@@ -164,10 +189,19 @@ const presets = [
     name: 'Last year',
     value: 'lastYear',
     getDate: () => {
+      // Get the previous year
       const lastYear = new Date().getFullYear() - 1;
+      
+      // Create dates for first and last day of the previous year
+      const firstDayOfLastYear = new Date(lastYear, 0, 1); // Jan 1
+      const lastDayOfLastYear = new Date(lastYear, 11, 31); // Dec 31
+      
+      // Log exact dates for debugging
+      console.log(`Setting last year: ${format(firstDayOfLastYear, 'yyyy-MM-dd')} to ${format(lastDayOfLastYear, 'yyyy-MM-dd')}`);
+      
       return {
-        from: startOfDay(new Date(lastYear, 0, 1)),
-        to: endOfDay(new Date(lastYear, 11, 31))
+        from: startOfDay(firstDayOfLastYear),
+        to: endOfDay(lastDayOfLastYear)
       };
     }
   }
