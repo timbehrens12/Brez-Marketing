@@ -1159,6 +1159,11 @@ const CampaignWidget = ({
     // When date range changes, refresh all data
     console.log(`[CampaignWidget] Date range changed: ${dateRange.from.toISOString()} - ${dateRange.to.toISOString()}`);
     
+    // Clear cached ad sets data for all campaigns when date range changes
+    console.log(`[CampaignWidget] Date range changed - clearing cached ad sets data for all campaigns`);
+    setAdSets([]); // Clear all ad sets data
+    setCampaignsWithAdSets(new Set()); // Reset the cache of fetched campaigns
+    
     if (expandedCampaign) {
       // Add a slight delay to prevent multiple fetches
       const timeoutId = setTimeout(() => {
