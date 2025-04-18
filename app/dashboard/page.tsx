@@ -648,7 +648,12 @@ export default function DashboardPage() {
         // Now fetch the metrics with the updated data
         // Add a cache-busting parameter to ensure we get fresh data
         const cacheBuster = `&t=${new Date().getTime()}`
-        const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${dateRange.from.toISOString()}&to=${dateRange.to.toISOString()}${cacheBuster}`)
+        // ** Use format() for dates to avoid timezone issues **
+        const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
+        const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
+        console.log(`[fetchAllData] Fetching Shopify metrics from ${fromDateStr} to ${toDateStr}`); // Log the dates used
+        
+        const response = await fetch(`/api/metrics?brandId=${selectedBrandId.toString()}&from=${fromDateStr}&to=${toDateStr}${cacheBuster}`)
         
         if (!response.ok) throw new Error('Failed to fetch Shopify metrics')
         const data = await response.json()
