@@ -51,59 +51,37 @@ export async function GET(request: NextRequest) {
     if (fromDate && toDate) {
       console.log(`[Meta Campaigns] Date range parameters detected: ${fromDate} to ${toDate}`)
       
-      // Try using the get_campaign_insights_by_date_range function first
+      // Comment out the entire try-catch block that calls the DB function
+      /*
       try {
-        const { data: campaignInsights, error: insightsError } = await supabase.rpc(
-          'get_campaign_insights_by_date_range',
+        // Try calling the database function first
+        const { data: stats, error: functionError } = await supabase.rpc(
+          'get_meta_campaign_stats_for_range',
           {
-            brand_uuid: brandId,
+            p_brand_id: brandId,
             p_from_date: fromDate,
-            p_to_date: toDate
+            p_to_date: toDate,
+            p_status: status || null
           }
         )
-        
-        if (!insightsError && campaignInsights && campaignInsights.length > 0) {
-          console.log(`[Meta Campaigns] Successfully retrieved ${campaignInsights.length} campaigns using date range function`)
-          
-          // Filter by status if provided
-          let filteredCampaigns = campaignInsights;
-          if (status) {
-            const upperStatus = status.toUpperCase();
-            filteredCampaigns = campaignInsights.filter((campaign: any) => {
-              const campaignStatus = (campaign.status || '').toUpperCase();
-              return campaignStatus === upperStatus;
-            });
-          }
-          
-          // Sort campaigns
-          const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
-            const valueA = a[sortBy] || 0;
-            const valueB = b[sortBy] || 0;
-            
-            if (sortOrder.toLowerCase() === 'asc') {
-              return valueA - valueB;
-            } else {
-              return valueB - valueA;
-            }
-          });
-          
-          // Apply limit
-          const limitedCampaigns = limit > 0 ? sortedCampaigns.slice(0, limit) : sortedCampaigns;
-          
+
+        if (!functionError && stats) {
+          // Successfully fetched from function, format and return
+          console.log(`[Meta Campaigns] Fetched ${stats.length} campaigns from DB function`);
           return NextResponse.json({
-            campaigns: limitedCampaigns,
-            dateRange: {
-              from: fromDate,
-              to: toDate
-            },
-            source: 'db_function',
+            campaigns: stats, 
+            _meta: { source: 'db_function', from: fromDate, to: toDate },
             lastRefresh: new Date().toISOString()
           });
         }
       } catch (functionError) {
         console.error('Error fetching campaigns by date range:', functionError)
       }
+      */
       
+      // Always use the fallback logic below
+      console.log("[Meta Campaigns] Bypassing DB function, using manual aggregation.");
+
       // Fallback to original approach if the function fails
       // First, get ALL campaign details from meta_campaigns table regardless of status
       // This ensures we have current budget information
