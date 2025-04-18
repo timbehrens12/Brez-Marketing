@@ -1710,7 +1710,7 @@ const CampaignWidget = ({
                                 {/* Ad Set Display Logic */}
                                 {isLoadingAdSets || !campaignsWithAdSets.has(campaign.campaign_id) && adSets.length === 0 ? (
                                   <div className="flex flex-col items-center justify-center py-6 text-center">
-                                    <RefreshCw className="h-8 w-8 animate-spin text-white mb-3" />
+                                    <Loader2 className="h-8 w-8 animate-spin text-white mb-3" />
                                     <h3 className="text-md font-medium mb-1 text-white">Loading Ad Sets</h3>
                                     <p className="text-sm text-gray-400">Please wait while we fetch the latest ad set data...</p>
                                   </div>
