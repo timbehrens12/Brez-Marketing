@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
           console.log(`Using cached data due to rate limiting`);
           
           // Process the cached data
-          const processedData = processMetaData(cachedData.data, 0);
+          const processedData = processMetaData(cachedData.data);
           
           // Add rate limiting info to the response
           const response = {
@@ -450,34 +450,11 @@ export async function GET(request: NextRequest) {
       
       const { data: dailyInsights, error: dbError } = await query
 
-      // --- Fetch Total Reach Separately from Meta API ---
-      let apiTotalReach = 0;
-      try {
-        // Ensure we have the ad account ID (remove 'act_' prefix if present for the API call)
-        const adAccountId = connection.account_id?.replace('act_', '');
-        if (adAccountId) {
-          const reachUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=reach&time_range={'since':'${fromDate}','until':'${toDate}'}&level=account&access_token=${connection.access_token}`;
-          console.log(`[Meta Metrics API] Fetching total reach from URL: ${reachUrl.substring(0, 150)}...`); // Log URL safely
-          
-          const reachResponse = await fetch(reachUrl);
-          if (reachResponse.ok) {
-            const reachData = await reachResponse.json();
-            if (reachData.data && reachData.data.length > 0 && reachData.data[0].reach) {
-              apiTotalReach = parseInt(reachData.data[0].reach, 10);
-              console.log(`[Meta Metrics API] Fetched total reach from API: ${apiTotalReach}`);
-            } else {
-              console.log('[Meta Metrics API] No reach data found in API response.', reachData);
-            }
-          } else {
-            console.error(`[Meta Metrics API] Failed to fetch total reach: ${reachResponse.status} ${reachResponse.statusText}`, await reachResponse.text());
-          }
-        } else {
-          console.warn('[Meta Metrics API] Cannot fetch total reach: Missing ad_account_id in connection.');
-        }
-      } catch (reachError) {
-        console.error('[Meta Metrics API] Error fetching total reach:', reachError);
-      }
-      // --- End Fetch Total Reach ---
+      // Process the data using the helper function
+      const processedData = processMetaData(insights || []);
+
+      // Cache the processed data before returning
+      apiCache.set(cacheKey, { timestamp: Date.now(), data: processedData });
 
       if (dbError) {
         console.error('Error in Meta metrics endpoint:', dbError)
@@ -488,7 +465,7 @@ export async function GET(request: NextRequest) {
           console.log(`Using cached data due to rate limiting at outer level`);
           
           // Process the cached data
-          const processedData = processMetaData(cachedData.data, 0);
+          const processedData = processMetaData(cachedData.data);
           
           // Add rate limiting info to the response
           const response = {
@@ -511,9 +488,6 @@ export async function GET(request: NextRequest) {
           _dateRange: { error: 'server_error' }
         }, { status: 500 })
       }
-      
-      // Process the data using the helper function, passing the fetched API reach
-      const processedData = processMetaData(filteredInsights, apiTotalReach);
       
       // Log a sample of what we're actually returning
       if (dateDebug || debug) {
@@ -542,14 +516,6 @@ export async function GET(request: NextRequest) {
         }
       };
       
-      // Add to cache 
-      if (!bypassCache) {
-        apiCache.set(cacheKey, {
-          timestamp: Date.now(),
-          data: response
-        });
-      }
-      
       // Return response
       return NextResponse.json(response)
     } catch (error) {
@@ -561,7 +527,7 @@ export async function GET(request: NextRequest) {
         console.log(`Using cached data due to rate limiting at outer level`);
         
         // Process the cached data
-        const processedData = processMetaData(cachedData.data, 0);
+        const processedData = processMetaData(cachedData.data);
         
         // Add rate limiting info to the response
         const response = {
@@ -623,7 +589,7 @@ function createEmptyDataStructure(): ProcessedMetaData {
 }
 
 // Process real Meta data into the format expected by the frontend
-function processMetaData(data: any[], apiTotalReach: number): ProcessedMetaData {
+function processMetaData(data: any[]): ProcessedMetaData {
   const result = createEmptyDataStructure()
   
   if (!data || data.length === 0) {
@@ -738,15 +704,11 @@ function processMetaData(data: any[], apiTotalReach: number): ProcessedMetaData 
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0
   const cpcLink = totalClicks > 0 ? totalSpend / totalClicks : 0
   const costPerResult = totalConversions > 0 ? totalSpend / totalConversions : 0
-  const roas = totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0 // Assuming $50 per conversion if not available
   const cprGrowth = useHalfPeriodComparison ? calculateGrowth(dailyData, 'cpr') : 0
   const frequency = calculatedTotalReach > 0 ? totalImpressions / calculatedTotalReach : 1
   
-  // Use apiTotalReach if available and > 0, otherwise fallback to summed reach (less accurate)
-  const finalReach = apiTotalReach > 0 ? apiTotalReach : calculatedTotalReach;
-
   // Add debug info
-  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, reach=${finalReach} (API: ${apiTotalReach}, Summed: ${calculatedTotalReach})`)
+  console.log(`Meta metrics calculated: adSpend=${totalSpend}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%, reach=${calculatedTotalReach} (Summed from DB)`)
   
   return {
     adSpend: totalSpend,
@@ -763,11 +725,11 @@ function processMetaData(data: any[], apiTotalReach: number): ProcessedMetaData 
     cpcLink,
     costPerResult,
     cprGrowth,
-    roas,
+    roas: totalSpend > 0 ? (totalConversions * 50) / totalSpend : 0, // Assuming $50 per conversion if not available
     roasGrowth,
     frequency,
     budget: totalSpend > 0 ? totalSpend / dailyData.length : 0, // Average daily budget
-    reach: finalReach,
+    reach: calculatedTotalReach,
     dailyData
   }
 }

@@ -51,47 +51,62 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // --- Fetch Total Reach Directly from Meta API ---
-    let apiTotalReach = 0;
-    try {
-      // Ensure we have the ad account ID (remove 'act_' prefix if present for the API call)
-      const adAccountId = connection.account_id?.replace('act_', '');
-      if (adAccountId && connection.access_token) {
-        const reachUrl = `https://graph.facebook.com/v18.0/${adAccountId}/insights?fields=reach&time_range={'since':'${from}','until':'${to}'}&level=account&access_token=${connection.access_token}`;
-        console.log(`[Reach API] Fetching total reach from Meta URL: ${reachUrl.substring(0, 150)}...`);
-        
-        const reachResponse = await fetch(reachUrl);
-        if (reachResponse.ok) {
-          const reachData = await reachResponse.json();
-          if (reachData.data && reachData.data.length > 0 && reachData.data[0].reach) {
-            apiTotalReach = parseInt(reachData.data[0].reach, 10);
-            console.log(`[Reach API] Fetched total reach from Meta API: ${apiTotalReach}`);
-          } else {
-            console.log('[Reach API] No reach data found in Meta API response.', reachData);
-          }
-        } else {
-          console.error(`[Reach API] Failed to fetch total reach from Meta: ${reachResponse.status} ${reachResponse.statusText}`, await reachResponse.text());
-        }
-      } else {
-        console.warn('[Reach API] Cannot fetch total reach: Missing ad_account_id or access_token in connection.');
-      }
-    } catch (reachError) {
-      console.error('[Reach API] Error fetching total reach from Meta:', reachError);
-    }
-    // --- End Fetch Total Reach ---
+    // Query meta_ad_insights for reach data
+    const { data: insights, error } = await supabase
+      .from('meta_ad_insights')
+      .select('date, reach')
+      .eq('connection_id', connection.id)
+      .gte('date', from)
+      .lte('date', to)
     
-    // Return the result fetched directly from the API
-    // We no longer need to query or sum from the database for this specific widget
+    if (error) {
+      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
+      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
+    }
+    
+    // If no data, return zeros
+    if (!insights || insights.length === 0) {
+      console.log(`No data found for period ${from} to ${to}`)
+      return NextResponse.json({ 
+        value: 0,
+        _meta: {
+          from,
+          to,
+          records: 0
+        }
+      })
+    }
+    
+    // Calculate total reach by summing daily reach from DB
+    let totalReach = 0
+    let recordsWithReach = 0
+    
+    insights.forEach(insight => {
+      // Ensure reach is a valid number before adding
+      const dailyReach = parseInt(insight.reach);
+      if (!isNaN(dailyReach) && dailyReach > 0) {
+        totalReach += dailyReach
+        recordsWithReach++
+      }
+    })
+    
+    // Log if no records had reach data
+    if (recordsWithReach === 0) {
+       console.log(`REACH API WARNING: No valid reach data found in ${insights.length} records for the period.`)
+    }
+    
+    // Return the result (summed daily reach)
     const result = {
-      value: apiTotalReach, // Use the value directly from the API
+      value: totalReach,
       _meta: {
         from,
         to,
-        source: 'meta_api' // Indicate the source
+        records: insights.length,
+        source: 'database_summed' // Indicate source
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value} (source: ${result._meta.source})`)
+    console.log(`REACH API: Returning reach = ${result.value} (source: ${result._meta.source}, summed from ${recordsWithReach} records)`)
     
     return NextResponse.json(result)
   } catch (error) {
