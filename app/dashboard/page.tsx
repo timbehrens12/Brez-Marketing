@@ -1219,52 +1219,54 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          
+          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-[#333]">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={refresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Refresh
+                      </>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                  <p>Manually refresh dashboard data</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <span className="text-xs text-gray-500">
+              Last updated: {lastRefreshed?.toLocaleTimeString()}
+            </span>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-gray-500 hover:text-gray-300 transition-colors">
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>Dashboard data refreshes automatically every 5 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-gray-500">
-            Last updated: {lastRefreshed?.toLocaleTimeString()}
-          </span>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button 
-                  onClick={refresh}
-                  disabled={isRefreshing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
-                >
-                  {isRefreshing ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Refreshing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" />
-                      Refresh
-                    </>
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-                <p>Manually refresh dashboard data</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button className="text-gray-500 hover:text-gray-300 transition-colors">
-                  <Info className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                <p>Dashboard data refreshes automatically every 5 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
           <DateRangePicker 
             dateRange={dateRange}
             setDateRange={setDateRange}
