@@ -1534,14 +1534,26 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Convert input to string for checking
       const url = input.toString();
       
-      // Check if the request is for the Meta API
-      if (url.includes('/api/metrics/meta') && !url.includes('force_load=true')) {
-        console.log('Blocking Meta API call:', url);
+      // Only block Meta API calls with a specific flag check
+      if (url.includes('/api/metrics/meta') && window._blockMetaApiCalls === true) {
+        console.log('Temporarily blocking Meta API call during navigation:', url);
         // Return a resolved promise with an empty response
-        return Promise.resolve(new Response(JSON.stringify({}), {
+        return Promise.resolve(new Response(JSON.stringify({
+          adSpend: 0, 
+          impressions: 0, 
+          clicks: 0,
+          conversions: 0,
+          roas: 0,
+          blockReason: "navigation_transition"
+        }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
         }));
+      }
+      
+      // Don't block other API calls even when the flag is set
+      if (window._blockMetaApiCalls === true && !url.includes('/api/metrics/meta')) {
+        console.log('Allowing non-Meta API call despite blocking flag:', url);
       }
       
       // For all other requests, pass through to the original fetch
@@ -1551,31 +1563,19 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Return a function to restore the original fetch
     return () => {
       window.fetch = originalFetch;
+      console.log('Original fetch function restored');
     };
   };
 
   // Add a cleanup function to cancel any pending requests and prevent memory leaks
   useEffect(() => {
     // This will run on component mount
-    console.log("Meta tab mounting - initializing and refreshing data");
-    
     // Set a ref to track component mount status
     const isMounted = { current: true };
     
-    // Clear the block flag when component mounts
+    // Clear the block flag when component mounts to allow API calls
     window._blockMetaApiCalls = false;
-    
-    // Force a data refresh when the component mounts
-    if (brandId && dateRange?.from && dateRange?.to) {
-      // Wait a short moment to ensure everything is ready
-      setTimeout(() => {
-        if (isMounted.current) {
-          console.log("Meta tab mounted - refreshing data");
-          fetchCampaigns(true);
-          fetchMetaData();
-        }
-      }, 100);
-    }
+    console.log('Meta tab mounted, allowing API calls');
     
     // Store the function to restore the original fetch
     let restoreFetch: (() => void) | null = null;
@@ -1586,26 +1586,28 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Cancel any pending fetch operations
       isFetching.current = false;
       
-      // Set a global flag to block all Meta API calls while navigating away
+      // Set a temporary flag to block Meta API calls while navigating away
+      // This prevents unnecessary API calls during page transition
       window._blockMetaApiCalls = true;
       
-      // Patch the fetch function to block Meta API calls
+      // Patch the fetch function to block Meta API calls during navigation
       restoreFetch = patchFetch();
       
-      // Ensure we restore the fetch after some time (in case user navigates back)
+      // Restore normal fetch functionality after a short delay
       setTimeout(() => {
         if (restoreFetch) {
           restoreFetch();
-          console.log('Restored original fetch function');
+          console.log('Original fetch function restored');
           
-          // Very important: also clear the block flag after a short delay
-          // This ensures future visits to this tab will be able to fetch data
+          // Use an even shorter delay for clearing the blocking flag
+          // This ensures future visits to this tab will be able to fetch data immediately
           setTimeout(() => {
+            // IMPORTANT: Set to false, not true, so future visits can fetch data
             window._blockMetaApiCalls = false;
-            console.log('Meta tab unmounting, cleared API blocking flags');
-          }, 500); // Reduced from 1000ms to 500ms
+            console.log('Meta tab unmounting cleanup complete, cleared API blocking flags');
+          }, 300); // Very short timeout for faster recovery
         }
-      }, 1000); // Reduced from 2000ms to 1000ms
+      }, 500); // Short timeout for faster recovery
       
       // Clear any timeouts that might be pending
       if (window._metaTimeouts && Array.isArray(window._metaTimeouts)) {
@@ -1613,34 +1615,9 @@ Try creating at least one active campaign in Meta Ads Manager.
         window._metaTimeouts = [];
       }
       
-      console.log("Meta tab unmounting, blocking API calls temporarily");
+      console.log("Meta tab unmounting, temporarily blocking API calls");
     };
-  }, [brandId, dateRange]); // Add dependencies to refetch when these change
-
-  // Add an event listener for the meta-tab-activated event
-  useEffect(() => {
-    const handleMetaTabActivation = (event: Event) => {
-      console.log("[MetaTab] Detected meta-tab-activated event, refreshing data");
-      
-      // Clear any Meta API blocking flags
-      window._blockMetaApiCalls = false;
-      
-      // Force data refresh when tab is activated
-      if (brandId && dateRange?.from && dateRange?.to) {
-        console.log("[MetaTab] Tab activated - forcing data refresh");
-        fetchCampaigns(true);
-        fetchMetaData();
-      }
-    };
-    
-    // Add event listener
-    window.addEventListener('meta-tab-activated', handleMetaTabActivation);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('meta-tab-activated', handleMetaTabActivation);
-    };
-  }, [brandId, dateRange]);
+  }, []);
   
   // Helper function to safely set timeouts that clean up on unmount
   const safeSetTimeout = (callback: () => void, delay: number): ReturnType<typeof setTimeout> => {
@@ -3667,27 +3644,50 @@ Try creating at least one active campaign in Meta Ads Manager.
     const handleMetaDataRefreshed = (event: CustomEvent) => {
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
-        console.log("Received metaDataRefreshed event", event.detail);
+        console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
         
         // If forceRefresh is set to true in the event, force a full refresh
         if (event.detail?.forceRefresh) {
-          console.log("Force refresh requested, fetching latest campaigns data");
+          console.log("[MetaTab] Force refresh requested, fetching latest campaigns data");
           
           // Force a fetch from the API to get the most up-to-date data
-          fetchCampaigns();
+          fetchCampaigns(true);
         }
         
         // Always refresh the metrics display
-        refreshAllMetricsDirectlyRef.current();
+        fetchAllMetricsDirectly();
       }
     };
 
     // Add the event listener
     window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+    
+    // Also listen for 'meta-data-refreshed' event (alternate format used elsewhere)
+    window.addEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
+    
+    // Store a reference to the refresh function on window for external access
+    if (typeof window !== 'undefined') {
+      // @ts-ignore
+      window._refreshMetaData = () => {
+        if (brandId) {
+          fetchAllMetricsDirectly();
+          fetchCampaigns(true);
+          return true;
+        }
+        return false;
+      };
+    }
 
     // Cleanup on component unmount
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+      window.removeEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
+      
+      // Clean up window reference
+      if (typeof window !== 'undefined') {
+        // @ts-ignore
+        delete window._refreshMetaData;
+      }
     };
   }, [brandId]);
 
@@ -4269,6 +4269,78 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Return void to satisfy linter
     return undefined;
   }, [campaigns]);
+  
+  // Add a specific effect to refresh data when the component is mounted/visited
+  useEffect(() => {
+    // This effect runs when the component mounts - perfect for refreshing on navigation
+    console.log("[MetaTab] Component mounted/visited - refreshing data");
+    
+    // Clear any API blocking flags that might be set to ensure we can fetch data
+    if (window._blockMetaApiCalls !== undefined) {
+      window._blockMetaApiCalls = false;
+      console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
+    }
+    
+    // Clear any auto-fetch blocking flags
+    if (window._disableAutoMetaFetch !== undefined) {
+      window._disableAutoMetaFetch = false;
+      console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
+    }
+    
+    // Fetch campaigns and metrics when component is mounted/visited
+    const refreshOnMount = async () => {
+      try {
+        // Force a refresh of campaign data
+        if (brandId) {
+          console.log("[MetaTab] Forcing campaign refresh on mount");
+          await fetchCampaigns(true);
+          
+          // Also refresh all metrics directly
+          console.log("[MetaTab] Refreshing all metrics on mount");
+          await fetchAllMetricsDirectly();
+          
+          console.log("[MetaTab] Mount refresh completed successfully");
+        }
+      } catch (error) {
+        console.error("[MetaTab] Error during mount refresh:", error);
+      }
+    };
+    
+    // Execute the refresh
+    refreshOnMount();
+    
+    // No dependencies to ensure this only runs on mount/navigation
+  }, []);
+  
+  // Add a listener for the metaDataRefreshed event from the dashboard
+  useEffect(() => {
+    // Define the event handler
+    const handleMetaDataRefreshed = (event: CustomEvent) => {
+      // Check if this event is for our brand
+      if (event.detail?.brandId === brandId) {
+        console.log("Received metaDataRefreshed event", event.detail);
+        
+        // If forceRefresh is set to true in the event, force a full refresh
+        if (event.detail?.forceRefresh) {
+          console.log("Force refresh requested, fetching latest campaigns data");
+          
+          // Force a fetch from the API to get the most up-to-date data
+          fetchCampaigns();
+        }
+        
+        // Always refresh the metrics display
+        fetchAllMetricsDirectly();
+      }
+    };
+
+    // Add the event listener
+    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+
+    // Cleanup on component unmount
+    return () => {
+      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+    };
+  }, [brandId]);
   
   return (
     <TooltipProvider>

@@ -290,68 +290,28 @@ export function HomeTab({
   // Add an effect specifically for refreshing data when the component mounts
   useEffect(() => {
     // This will run whenever the HomeTab is mounted/navigated to
-    console.log("[HomeTab] Component mounting - preparing to refresh all data");
-    
-    // Clear any Meta API blocking flags that might be set
-    if (window._blockMetaApiCalls !== undefined) {
-      window._blockMetaApiCalls = false;
-      console.log("[HomeTab] Cleared Meta API blocking flags");
-    }
-    
     const refreshAllData = async () => {
       console.log("[HomeTab] Component mounted - refreshing all data");
       
       if (metaConnection) {
-        console.log("[HomeTab] Fetching Meta data on mount");
         await fetchMetaData();
       }
       
       if (shopifyConnection) {
-        console.log("[HomeTab] Fetching Shopify data on mount");
         await fetchShopifyData();
       }
     };
     
-    // Use a small timeout to ensure the component is fully mounted
-    // This helps prevent race conditions with other components
-    const timeoutId = setTimeout(() => {
-      refreshAllData();
-    }, 100);
+    // Clear any Meta API blocking flags that might be set
+    if (window._blockMetaApiCalls !== undefined) {
+      window._blockMetaApiCalls = false;
+    }
     
-    // Clean up timeout if component unmounts quickly
-    return () => {
-      clearTimeout(timeoutId);
-    };
+    // Refresh data on mount
+    refreshAllData();
     
-  }, [brandId, metaConnection, shopifyConnection]);
-
-  // Add an event listener for the site-tab-activated event
-  useEffect(() => {
-    const handleSiteTabActivation = (event: Event) => {
-      console.log("[HomeTab] Detected site-tab-activated event, refreshing data");
-      
-      // Clear any Meta API blocking flags that might be set
-      if (window._blockMetaApiCalls !== undefined) {
-        window._blockMetaApiCalls = false;
-      }
-      
-      // Refresh data when tab is activated
-      if (metaConnection) {
-        fetchMetaData();
-      }
-      
-      if (shopifyConnection) {
-        fetchShopifyData();
-      }
-    };
-    
-    // Add event listener
-    window.addEventListener('site-tab-activated', handleSiteTabActivation);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('site-tab-activated', handleSiteTabActivation);
-    };
+    // No dependency on dateRange to avoid duplicate fetches,
+    // this is specifically for mount/navigation
   }, [brandId, metaConnection, shopifyConnection]);
 
   // Load Meta data when component mounts or date range changes
@@ -363,17 +323,20 @@ export function HomeTab({
 
   // Listen for meta data refresh events from parent components
   useEffect(() => {
-    const handleMetaDataRefresh = () => {
+    const handleMetaDataRefresh = (event: Event) => {
       if (validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
-        console.log("[HomeTab] Detected metaDataRefreshed event, refreshing Meta data");
+        console.log("[HomeTab] Detected meta data refresh event, refreshing Meta data");
         fetchMetaData();
       }
     };
 
+    // Listen for both event naming styles to ensure we catch all events
     window.addEventListener('metaDataRefreshed', handleMetaDataRefresh);
+    window.addEventListener('meta-data-refreshed', handleMetaDataRefresh);
     
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefresh);
+      window.removeEventListener('meta-data-refreshed', handleMetaDataRefresh);
     };
   }, [metaConnection, validWidgets]);
 

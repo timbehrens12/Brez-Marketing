@@ -184,6 +184,29 @@ export function PlatformTabs({
   const handleValueChange = (value: string) => {
     setActiveTab(value);
     
+    // If we're leaving the Meta tab, set the global block flag to stop API calls temporarily
+    if (activeTab === "meta" && value !== "meta") {
+      console.log("[PlatformTabs] Leaving Meta tab, enabling temporary blocking during transition");
+      
+      if (window._blockMetaApiCalls !== undefined) {
+        // Only temporarily block Meta API calls
+        window._blockMetaApiCalls = true;
+        
+        // Automatically clear the block flag after a brief delay
+        // This ensures that when we navigate back, we can fetch immediately
+        setTimeout(() => {
+          window._blockMetaApiCalls = false;
+          console.log("[PlatformTabs] Navigation transition complete, cleared API blocking flag");
+        }, 1000);
+      }
+    }
+    
+    // If we're navigating TO the Meta tab, clear the block flag immediately
+    if (value === "meta" && window._blockMetaApiCalls) {
+      console.log("[PlatformTabs] Navigating to Meta tab, clearing API blocking flag");
+      window._blockMetaApiCalls = false;
+    }
+    
     // Update visibility state for all tabs
     setTabVisibility({
       site: value === "site",
@@ -192,22 +215,6 @@ export function PlatformTabs({
       tiktok: value === "tiktok",
       googleads: value === "googleads"
     });
-    
-    // If we're switching TO the site tab (Home) or Meta tab, clear any blocking flags
-    if (value === "site" || value === "meta") {
-      if (window._blockMetaApiCalls !== undefined) {
-        console.log(`[PlatformTabs] Switching to ${value} tab, clearing Meta API blocking flags`);
-        window._blockMetaApiCalls = false;
-        
-        // Dispatch an event to notify that we're switching to this tab
-        window.dispatchEvent(new CustomEvent(`${value}-tab-activated`, {
-          detail: {
-            dateRange,
-            timestamp: Date.now()
-          }
-        }));
-      }
-    }
     
     // If switching to Shopify tab with Last 30 days preset, dispatch refresh
     if (value === "shopify" && dateRange && dateRange.from && dateRange.to) {
@@ -234,6 +241,7 @@ export function PlatformTabs({
       }
     }
     
+    // Notify parent of tab change
     if (onTabChange) {
       onTabChange(value);
     }
