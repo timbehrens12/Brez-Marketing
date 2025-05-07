@@ -715,21 +715,29 @@ export function HomeTab({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-white">
-          Dashboard
+          {/* Remove "Dashboard" text completely */}
         </h2>
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline"
-            size="sm"
-            className={cn(
-              "border-[#333] bg-transparent text-gray-400 hover:text-white hover:bg-[#222] hover:border-[#444]",
-              isEditMode && "bg-[#222] text-white border-[#444]"
-            )}
-            onClick={() => setIsEditMode(!isEditMode)}
-          >
-            <Pencil className="h-4 w-4 mr-1" />
-            {isEditMode ? "Done" : "Customize"}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "text-white hover:bg-white/10",
+                    isEditMode && "bg-white/10 text-white"
+                  )}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                >
+                  <LayoutGrid className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
+                <p>{isEditMode ? "Done Customizing" : "Customize Dashboard"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -769,18 +777,7 @@ export function HomeTab({
             "https://i.imgur.com/6hyyRrs.png"
           )}
           
-          {/* Add an "Add New Widget" button when in edit mode */}
-          {isEditMode && validWidgets.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-dashed border-[#333] bg-transparent text-gray-400 hover:text-white hover:bg-[#222] mt-4"
-              onClick={() => setIsWidgetSelectorOpen(true)}
-            >
-              <PlusCircle className="h-4 w-4 mr-1" />
-              Add New Widget
-            </Button>
-          )}
+          {/* Remove the "Add New Widget" button */}
         </>
       )}
 
