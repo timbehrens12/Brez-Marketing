@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Building2 } from "lucide-react"
+import { Check, ChevronDown, Building2, Store, Briefcase } from "lucide-react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useUser } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
@@ -59,7 +59,7 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
             </>
           ) : (
             <>
-              <Building2 className="w-4 h-4 text-gray-400" />
+              <Briefcase className="w-4 h-4 text-gray-400" />
               <span className="text-gray-400">Select a brand</span>
             </>
           )}

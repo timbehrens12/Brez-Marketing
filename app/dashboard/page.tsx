@@ -40,7 +40,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
-import { NotificationBell } from "@/components/NotificationBell"
 import { useNotifications } from "@/contexts/NotificationContext"
 import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { BrandSelectionTrigger } from '@/components/dashboard/BrandSelectionTrigger'
@@ -1220,6 +1219,12 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-gray-500">
+            Last updated: {lastRefreshed?.toLocaleTimeString()}
+          </span>
+          
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1260,12 +1265,6 @@ export default function DashboardPage() {
             </Tooltip>
           </TooltipProvider>
           
-          <span className="text-xs text-gray-500">
-            Last updated: {lastRefreshed?.toLocaleTimeString()}
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <NotificationBell className="mr-1" />
           <DateRangePicker 
             dateRange={dateRange}
             setDateRange={setDateRange}
