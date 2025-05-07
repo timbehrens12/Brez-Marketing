@@ -1220,19 +1220,13 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-          <BrandSelector 
-            onSelect={(brandId) => setSelectedBrandId(brandId || null)}
-            selectedBrandId={selectedBrandId}
-            className="w-48"
-          />
-          
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button 
                   onClick={refresh}
                   disabled={isRefreshing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors ml-2"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
                 >
                   {isRefreshing ? (
                     <>
