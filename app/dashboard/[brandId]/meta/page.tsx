@@ -1,13 +1,10 @@
-import React from 'react'
-import { Metadata } from 'next'
-import { auth } from '@clerk/nextjs'
-import { redirect } from 'next/navigation'
-import MetaTab from '@/components/dashboard/MetaTab'
+"use client"
 
-export const metadata: Metadata = {
-  title: 'Meta Ads Dashboard',
-  description: 'View your Meta Ads performance metrics and insights',
-}
+import React, { useEffect } from 'react'
+import { useAuth } from '@clerk/nextjs'
+import { redirect } from 'next/navigation'
+import { MetaTab } from '@/components/dashboard/platforms/tabs/MetaTab'
+import { useRouter } from 'next/navigation'
 
 interface MetaDashboardPageProps {
   params: {
@@ -16,9 +13,34 @@ interface MetaDashboardPageProps {
 }
 
 export default function MetaDashboardPage({ params }: MetaDashboardPageProps) {
-  const { userId } = auth()
+  const { userId, isLoaded } = useAuth()
+  const router = useRouter()
   
-  if (!userId) {
+  useEffect(() => {
+    // Dispatch custom event when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Meta dashboard page became visible, refreshing data');
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
+          detail: { brandId: params.brandId }
+        }));
+      }
+    };
+    
+    // Register visibility change listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Initial load - trigger immediate refresh 
+    window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
+      detail: { brandId: params.brandId }
+    }));
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [params.brandId]);
+  
+  if (!userId && isLoaded) {
     redirect('/sign-in')
   }
   

@@ -1,10 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useEffect } from 'react'
 import { formatCurrency, formatNumber, formatPercentage } from '@/lib/utils/formatters'
 import { fetchMetaMetrics } from '@/lib/services/meta-service'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePageDataRefresh } from '@/lib/hooks/usePageDataRefresh'
 
 interface MetaBaselineMetricsProps {
   brandId: string
@@ -27,97 +28,53 @@ interface MetaMetricsData {
   [key: string]: any;
 }
 
+// Default metrics with 0 values to prevent null reference errors
+const defaultMetaMetrics: MetaMetricsData = {
+  budget: 0,
+  adSpend: 0,
+  adSpendGrowth: 0,
+  roas: 0,
+  roasGrowth: 0,
+  conversions: 0,
+  conversionGrowth: 0,
+  costPerResult: 0,
+  cprGrowth: 0,
+  cpcLink: 0,
+  ctr: 0,
+  ctrGrowth: 0,
+  frequency: 0
+};
+
 const MetaBaselineMetrics: React.FC<MetaBaselineMetricsProps> = ({ brandId }) => {
-  const [metrics, setMetrics] = useState<MetaMetricsData | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  const lastRefreshRef = useRef<number>(Date.now())
-
-  // Function to refresh metrics with the latest data from the API
-  const refreshAllMetricsDirectly = useCallback(async (forceRefresh = false) => {
-    if (!brandId) return
-    
-    try {
-      setLoading(true)
-      setError(null)
-      
-      // Only refresh if it's been at least 3 seconds since the last refresh
-      // to prevent excessive API calls, unless force refresh is requested
-      const now = Date.now()
-      if (!forceRefresh && now - lastRefreshRef.current < 3000) {
-        console.log('Skipping refresh - too soon since last refresh')
-        setLoading(false)
-        return
-      }
-      
-      lastRefreshRef.current = now
-      console.log('Refreshing Meta metrics directly')
-      
-      const data = await fetchMetaMetrics(brandId)
-      
-      // Initialize with default values for any missing properties
-      setMetrics({
-        budget: data?.budget || 0,
-        adSpend: data?.adSpend || 0,
-        adSpendGrowth: data?.adSpendGrowth || 0,
-        roas: data?.roas || 0,
-        roasGrowth: data?.roasGrowth || 0,
-        conversions: data?.conversions || 0,
-        conversionGrowth: data?.conversionGrowth || 0,
-        costPerResult: data?.costPerResult || 0,
-        cprGrowth: data?.cprGrowth || 0,
-        cpcLink: data?.cpcLink || 0,
-        ctr: data?.ctr || 0,
-        ctrGrowth: data?.ctrGrowth || 0,
-        frequency: data?.frequency || 0
-      })
-    } catch (err) {
-      console.error('Error refreshing Meta metrics:', err)
-      setError('Failed to refresh Meta metrics')
-      
-      // Set empty metrics to prevent null reference errors
-      setMetrics({
-        budget: 0,
-        adSpend: 0,
-        adSpendGrowth: 0,
-        roas: 0,
-        roasGrowth: 0,
-        conversions: 0,
-        conversionGrowth: 0,
-        costPerResult: 0,
-        cprGrowth: 0,
-        cpcLink: 0,
-        ctr: 0,
-        ctrGrowth: 0,
-        frequency: 0
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [brandId])
-
-  // Initial metrics load
-  useEffect(() => {
-    refreshAllMetricsDirectly(true)
-  }, [brandId, refreshAllMetricsDirectly])
+  // Use our custom page refresh hook for consistent behavior
+  const { 
+    data: metrics, 
+    loading, 
+    error, 
+    refresh 
+  } = usePageDataRefresh<MetaMetricsData>(
+    () => fetchMetaMetrics(brandId),
+    defaultMetaMetrics,
+    3000 // Minimum 3 seconds between refreshes
+  );
   
   // Listen for custom refresh events
   useEffect(() => {
     const handleMetaDataRefreshed = (event: CustomEvent) => {
       if (event.detail?.brandId === brandId) {
-        console.log('Received metaDataRefreshed event')
-        refreshAllMetricsDirectly(true)
+        console.log('Received metaDataRefreshed event');
+        refresh(true); // Force refresh when event received
       }
     }
     
     // Add event listener for the custom event
-    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
+    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     
     // Cleanup
     return () => {
-      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener)
+      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     }
-  }, [brandId, refreshAllMetricsDirectly])
+  }, [brandId, refresh]);
 
   // Helper function to render growth indicators
   const renderGrowth = (value: number = 0) => {
