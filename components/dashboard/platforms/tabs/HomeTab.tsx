@@ -522,7 +522,10 @@ export function HomeTab({
       ),
       loading: (widget.type === 'meta' ? isLoadingMetaData : isLoading) || isRefreshingData,
       brandId: brandId,
-      className: "mb-0",
+      className: cn(
+        "mb-0", 
+        isEditMode && "border-2 border-dashed border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.1)]"
+      ),
       platform: widget.type,
       dateRange: dateRange
     };
@@ -692,8 +695,9 @@ export function HomeTab({
                 {isEditMode && (
                   <Card 
                     className={cn(
-                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                      "hover:bg-[#191919] transition-colors duration-200"
+                      "bg-[#111] border-dashed flex flex-col items-center justify-center cursor-pointer",
+                      "hover:bg-[#191919] transition-colors duration-200",
+                      "border-2 border-blue-500/30 hover:border-blue-500/50"
                     )}
                     onClick={() => {
                       setActiveWidgetTab(platformType as 'shopify' | 'meta');
@@ -701,8 +705,8 @@ export function HomeTab({
                     }}
                   >
                     <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
-                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
+                      <PlusCircle className="h-8 w-8 text-blue-500/70 mb-2" />
+                      <p className="text-blue-400 text-sm">Add {sectionTitle} Widget</p>
                     </CardContent>
                   </Card>
                 )}
@@ -721,19 +725,24 @@ export function HomeTab({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant="ghost"
+                variant={isEditMode ? "default" : "ghost"}
                 size="icon"
                 className={cn(
-                  "text-white hover:bg-white/10",
-                  isEditMode && "bg-white/10 text-white"
+                  "text-white hover:bg-white/10 relative",
+                  isEditMode && "bg-blue-600 hover:bg-blue-700 text-white border border-blue-400"
                 )}
                 onClick={() => setIsEditMode(!isEditMode)}
               >
                 <LayoutGrid className="h-5 w-5" />
+                {isEditMode && (
+                  <span className="absolute -top-1 -right-1 bg-white text-blue-600 rounded-full text-[10px] font-bold h-4 w-4 flex items-center justify-center">
+                    ✓
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
-              <p>{isEditMode ? "Done Customizing" : "Customize Dashboard"}</p>
+              <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
