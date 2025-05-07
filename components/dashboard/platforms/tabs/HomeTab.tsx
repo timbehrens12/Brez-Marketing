@@ -191,6 +191,10 @@ export function HomeTab({
     (widget.type === 'meta' && metaConnection)
   );
 
+  // Group widgets by platform
+  const shopifyWidgets = validWidgets.filter(widget => widget.type === 'shopify');
+  const metaWidgets = validWidgets.filter(widget => widget.type === 'meta');
+
   // Fetch Meta data directly from API
   const fetchMetaData = async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to || !metaConnection) {
@@ -426,15 +430,51 @@ export function HomeTab({
     toast.success('Widget removed from dashboard');
   };
 
-  // Handle drag and drop reordering
+  // Modify the handleDragEnd function to work with our new sectioned layout
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
     
-    const items = Array.from(widgets);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    // Get droppable ID to determine which section is being dragged within
+    const sourceDroppableId = result.source.droppableId;
+    const destinationDroppableId = result.destination.droppableId;
     
-    saveWidgets(items);
+    // Copy the current widgets array
+    const newWidgets = [...widgets];
+    
+    // Find widget indices that match the platform type of the droppable area
+    const platformType = sourceDroppableId.split('-')[1]; // 'widgets-shopify' -> 'shopify'
+    const platformWidgets = newWidgets.filter(w => w.type === platformType);
+    
+    // If dragging between sections, handle that special case
+    if (sourceDroppableId !== destinationDroppableId) {
+      // This shouldn't happen with our current setup, but we handle it anyway
+      toast("Can't move between sections. Widgets must stay in their platform section.");
+      return;
+    }
+    
+    // Get the correct widgets for this section
+    const sectionWidgets = newWidgets.filter(w => w.type === platformType);
+    
+    // Get the widget that was dragged
+    const [removed] = sectionWidgets.splice(result.source.index, 1);
+    
+    // Insert the widget at the new position
+    sectionWidgets.splice(result.destination.index, 0, removed);
+    
+    // Map the dragged widgets back to their original indices in the full widgets array
+    const updatedWidgets = [...newWidgets];
+    let sectionIndex = 0;
+    
+    for (let i = 0; i < updatedWidgets.length; i++) {
+      if (updatedWidgets[i].type === platformType) {
+        updatedWidgets[i] = sectionWidgets[sectionIndex];
+        sectionIndex++;
+      }
+    }
+    
+    // Update the state and save to database
+    setWidgets(updatedWidgets);
+    saveWidgets(updatedWidgets);
   };
 
   // Filter available widgets by platform and remove already added ones
@@ -619,38 +659,83 @@ export function HomeTab({
     );
   };
 
+  const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
+    if (sectionWidgets.length === 0) return null;
+    
+    return (
+      <div className="mb-8">
+        <div className="flex items-center mb-4">
+          <Image 
+            src={iconUrl}
+            alt={sectionTitle}
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
+        </div>
+        
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId={`widgets-${platformType}`} direction="horizontal">
+            {(provided: DroppableProvided) => (
+              <div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
+                {provided.placeholder}
+                
+                {isEditMode && (
+                  <Card 
+                    className={cn(
+                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
+                      "hover:bg-[#191919] transition-colors duration-200"
+                    )}
+                    onClick={() => {
+                      setActiveWidgetTab(platformType as 'shopify' | 'meta');
+                      setIsWidgetSelectorOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-6 flex flex-col items-center justify-center h-full">
+                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
+                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      {/* Dashboard header with edit button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-white flex items-center">
-          <span className="mr-2 text-2xl">📌</span> Pinned
+        <h2 className="text-xl font-bold text-white">
+          Dashboard
         </h2>
-        <div className="flex space-x-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-                  onClick={() => setIsWidgetSelectorOpen(true)}
-                  className="text-white hover:bg-white/10"
-                >
-                  <LayoutGrid className="h-5 w-5" />
-            </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
-                <p>Customize Dashboard</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            size="sm"
+            className={cn(
+              "border-[#333] bg-transparent text-gray-400 hover:text-white hover:bg-[#222] hover:border-[#444]",
+              isEditMode && "bg-[#222] text-white border-[#444]"
+            )}
+            onClick={() => setIsEditMode(!isEditMode)}
+          >
+            <Pencil className="h-4 w-4 mr-1" />
+            {isEditMode ? "Done" : "Customize"}
+          </Button>
         </div>
       </div>
 
-      {/* Main dashboard area */}
       {validWidgets.length === 0 ? (
-        <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden min-h-[200px] flex items-center justify-center">
-          <CardContent className="p-8 text-center">
+        <Card className="bg-[#111] border-[#333] text-center py-10">
+          <CardContent className="flex flex-col items-center">
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
@@ -666,52 +751,51 @@ export function HomeTab({
             </Button>
           </CardContent>
         </Card>
-                  ) : (
-                    <>
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="widgets" direction="vertical">
-              {(provided: DroppableProvided) => (
-                <div 
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                >
-                  {validWidgets.map((widget, index) => renderWidget(widget, index))}
-                  {provided.placeholder}
-                  
-                  {isEditMode && (
-                    <Card 
-                      className={cn(
-                        "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                        "hover:bg-[#191919] transition-colors duration-200"
-                      )}
-                      onClick={() => setIsWidgetSelectorOpen(true)}
-                    >
-                      <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                        <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
-                        <p className="text-gray-400 text-sm">Add Widget</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+      ) : (
+        <>
+          {/* Shopify Section */}
+          {renderWidgetSection(
+            shopifyWidgets, 
+            "Shopify", 
+            "shopify", 
+            "https://i.imgur.com/cnCcupx.png"
+          )}
+          
+          {/* Meta Section */}
+          {renderWidgetSection(
+            metaWidgets, 
+            "Meta Ads", 
+            "meta", 
+            "https://i.imgur.com/6hyyRrs.png"
+          )}
+          
+          {/* Add an "Add New Widget" button when in edit mode */}
+          {isEditMode && validWidgets.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-dashed border-[#333] bg-transparent text-gray-400 hover:text-white hover:bg-[#222] mt-4"
+              onClick={() => setIsWidgetSelectorOpen(true)}
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Add New Widget
+            </Button>
+          )}
         </>
       )}
 
-      {/* Widget selector dialog */}
+      {/* Widget Selector Dialog */}
       <Dialog open={isWidgetSelectorOpen} onOpenChange={setIsWidgetSelectorOpen}>
         <DialogContent className="sm:max-w-lg bg-[#111] border-[#333]">
           <DialogHeader>
             <DialogTitle className="text-white">Add Widgets</DialogTitle>
             <DialogDescription className="text-gray-400">
-              Choose widgets to add to your Pinned dashboard.
+              Choose widgets to add to your dashboard. They will be placed in the appropriate section based on platform.
             </DialogDescription>
           </DialogHeader>
           
           <Tabs 
-            defaultValue="shopify" 
+            defaultValue={activeWidgetTab} 
             value={activeWidgetTab} 
             onValueChange={(value) => setActiveWidgetTab(value as 'shopify' | 'meta')}
             className="mt-4"
@@ -741,7 +825,7 @@ export function HomeTab({
                 )}
               >
                 <Image 
-                  src="https://i.imgur.com/6hyyRrs.png"
+                  src="https://i.imgur.com/6hyyRrs.png" 
                   alt="Meta" 
                   width={16} 
                   height={16} 
@@ -750,13 +834,13 @@ export function HomeTab({
                 Meta
               </TabsTrigger>
             </TabsList>
-            
-            <div className="max-h-[400px] overflow-y-auto pt-2 pr-2">
-              {/* Added widgets section */}
+           
+           <div className="px-1 py-2">
+              {/* Selected widgets section */}
               {getAddedWidgets().length > 0 && (
                 <>
-                  <h3 className="text-white text-sm font-medium mb-2">Current Widgets</h3>
-                  <div className="grid grid-cols-1 gap-3 mb-6">
+                  <h3 className="text-white text-sm font-medium mb-2">Selected Widgets</h3>
+                  <div className="grid grid-cols-1 gap-3 mb-4">
                     {getAddedWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
@@ -771,12 +855,12 @@ export function HomeTab({
                               height={24} 
                               className="object-contain"
                             />
-              </div>
+                          </div>
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
                             <p className="text-sm text-gray-400">{widget.description}</p>
-                </div>
-              </div>
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -831,7 +915,7 @@ export function HomeTab({
                   <p>No {activeWidgetTab} widgets available.</p>
                 </div>
               )}
-              </div>
+            </div>
           </Tabs>
         </DialogContent>
       </Dialog>
