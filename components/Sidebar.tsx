@@ -80,21 +80,27 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="border-t border-[#2A2A2A] mb-6"></div>
       <div className="px-6 flex-1">
         <nav className="space-y-0.5">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                pathname === item.href 
-                  ? "bg-[#2A2A2A] text-white" 
-                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
-              )}
-            >
-              <item.icon className="mr-3 h-4 w-4" />
-              {item.name}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  isActive
+                    ? "bg-[#2A2A2A] text-white" 
+                    : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+                )}
+              >
+                {isActive && (
+                  <div className="absolute left-0 inset-y-2 w-0.5 bg-white rounded-full"></div>
+                )}
+                <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
+              </Link>
+            )
+          })}
         </nav>
       </div>
       
