@@ -642,8 +642,11 @@ export function HomeTab({
                   <X className="h-3 w-3" />
                 </Button>
               </div>
-              <div className="absolute top-2 left-2 z-10 opacity-50 cursor-move" {...provided.dragHandleProps}>
-                <GripVertical className="h-4 w-4 text-gray-500" />
+              <div 
+                className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" 
+                {...provided.dragHandleProps}
+              >
+                <GripVertical className="h-4 w-4 text-gray-300" />
               </div>
               <MetricCard {...widgetProps} />
             </div>
@@ -663,8 +666,8 @@ export function HomeTab({
     if (sectionWidgets.length === 0) return null;
     
     return (
-      <div className="mb-8">
-        <div className="flex items-center mb-4">
+      <div className="mb-5">
+        <div className="flex items-center mb-2">
           <Image 
             src={iconUrl}
             alt={sectionTitle}
@@ -712,33 +715,28 @@ export function HomeTab({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-white">
-          {/* Remove "Dashboard" text completely */}
-        </h2>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "text-white hover:bg-white/10",
-                    isEditMode && "bg-white/10 text-white"
-                  )}
-                  onClick={() => setIsEditMode(!isEditMode)}
-                >
-                  <LayoutGrid className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
-                <p>{isEditMode ? "Done Customizing" : "Customize Dashboard"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+    <div className="space-y-2">
+      <div className="flex justify-end items-center mb-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "text-white hover:bg-white/10",
+                  isEditMode && "bg-white/10 text-white"
+                )}
+                onClick={() => setIsEditMode(!isEditMode)}
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
+              <p>{isEditMode ? "Done Customizing" : "Customize Dashboard"}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {validWidgets.length === 0 ? (
