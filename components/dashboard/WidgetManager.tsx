@@ -34,6 +34,7 @@ interface WidgetManagerProps {
   existingConnections: PlatformConnection[];
   children?: React.ReactNode;
   brands?: Array<{ id: string, name: string }>;
+  isEditMode?: boolean;
 }
 
 export function WidgetManager({ 
@@ -46,7 +47,8 @@ export function WidgetManager({
   platformStatus,
   existingConnections,
   children,
-  brands = []
+  brands = [],
+  isEditMode = false
 }: WidgetManagerProps) {
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
   const [activeTab, setActiveTab] = useState<string>("site")
@@ -112,6 +114,7 @@ export function WidgetManager({
         connections={connections}
         onTabChange={handleTabChange}
         brands={brands}
+        isEditMode={isEditMode}
       />
       
       {/* Only show Meta widgets when Meta tab is active */}

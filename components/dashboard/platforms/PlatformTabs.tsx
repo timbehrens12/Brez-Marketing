@@ -61,6 +61,7 @@ interface PlatformTabsProps {
   children?: React.ReactNode
   onTabChange?: (value: string) => void
   brands?: Array<{ id: string, name: string }>
+  isEditMode?: boolean
 }
 
 // Add type for Supabase order
@@ -85,7 +86,8 @@ export function PlatformTabs({
   connections, 
   children,
   onTabChange,
-  brands = []
+  brands = [],
+  isEditMode
 }: PlatformTabsProps) {
   const [activeTab, setActiveTab] = useState<string>("site")
   const [shopifyOrders, setShopifyOrders] = useState<ShopifyOrder[]>([])
@@ -201,8 +203,8 @@ export function PlatformTabs({
         setTimeout(() => {
           window._blockMetaApiCalls = false;
           console.log("[PlatformTabs] Navigation transition complete, cleared API blocking flag");
-        }, 1000);
-      }
+            }, 1000);
+          }
     }
     
     // If we're navigating TO the Meta tab, clear the block flag immediately
@@ -236,21 +238,21 @@ export function PlatformTabs({
           
           // Add a small delay to ensure we don't fire events too quickly
           setTimeout(() => {
-            // When using Last 30 days preset, ensure we're using the real last 30 days
-            const today = new Date();
-            const thirtyDaysAgo = subDays(today, 30);
-            const exactDateRange = {
-              from: startOfDay(thirtyDaysAgo),
-              to: endOfDay(today)
-            };
-            
-            // Dispatch shopify-tab-activated event with the exact date range
-            window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
-              detail: {
+        // When using Last 30 days preset, ensure we're using the real last 30 days
+        const today = new Date();
+        const thirtyDaysAgo = subDays(today, 30);
+        const exactDateRange = {
+          from: startOfDay(thirtyDaysAgo),
+          to: endOfDay(today)
+        };
+        
+        // Dispatch shopify-tab-activated event with the exact date range
+        window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
+          detail: {
                 dateRange: exactDateRange,
                 timestamp: now // Add timestamp to help track this specific event
-              }
-            }));
+          }
+        }));
           }, 100);
         } else {
           console.log('[PlatformTabs] Skipped duplicate Shopify refresh (debounced)');
@@ -506,6 +508,7 @@ export function PlatformTabs({
           platformStatus={platforms}
           connections={connections}
           brands={brands}
+          isEditMode={isEditMode}
         />
       </TabsContent>
 

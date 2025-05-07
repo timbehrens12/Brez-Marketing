@@ -35,7 +35,7 @@ import { addDays, startOfDay, endOfDay, format, isAfter, isBefore, parseISO, sub
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
 import { useSupabase } from '@/lib/hooks/useSupabase'
-import { RefreshCw, Info } from "lucide-react"
+import { RefreshCw, Info, LayoutGrid } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
@@ -60,6 +60,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Brand } from "@/types/brand"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import useSWR from 'swr'
+import { cn } from "@/lib/utils"
 
 interface WidgetData {
   shopify?: any;
@@ -145,6 +146,7 @@ export default function DashboardPage() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("shopify")
+  const [isEditMode, setIsEditMode] = useState(false)
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
 
   const { selectedBrandId: brandStoreSelectedBrandId } = useBrandStore()
@@ -1267,6 +1269,29 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "text-white hover:bg-white/10 border border-transparent",
+                    isEditMode && "bg-blue-600/30 text-blue-300 border-blue-800/70 shadow-md shadow-blue-900/20"
+                  )}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                >
+                  <LayoutGrid className={cn(
+                    "h-5 w-5",
+                    isEditMode && "animate-pulse"
+                  )} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <DateRangePicker 
             dateRange={dateRange}
             setDateRange={setDateRange}
@@ -1292,8 +1317,9 @@ export default function DashboardPage() {
             platformStatus={activePlatforms}
             existingConnections={connections}
             brands={brands}
+            isEditMode={isEditMode}
           >
-            <div className="space-y-6 mt-6">
+            <div className="mt-3">
               {/* Removed widgets will be managed by the HomeTab component */}
             </div>
           </WidgetManager>

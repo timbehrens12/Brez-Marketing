@@ -138,6 +138,7 @@ interface HomeTabProps {
   }
   connections: PlatformConnection[]
   brands?: Array<{ id: string, name: string }>
+  isEditMode?: boolean
 }
 
 export function HomeTab({
@@ -149,11 +150,11 @@ export function HomeTab({
   isRefreshingData = false,
   platformStatus,
   connections,
-  brands = []
+  brands = [],
+  isEditMode = false
 }: HomeTabProps) {
   // State for user's selected widgets
   const [widgets, setWidgets] = useState<Widget[]>([]);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [isWidgetSelectorOpen, setIsWidgetSelectorOpen] = useState(false);
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
   const supabase = createClientComponentClient();
@@ -522,10 +523,7 @@ export function HomeTab({
       ),
       loading: (widget.type === 'meta' ? isLoadingMetaData : isLoading) || isRefreshingData,
       brandId: brandId,
-      className: cn(
-        "mb-0", 
-        isEditMode && "border-2 border-dashed border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.1)]"
-      ),
+      className: "mb-0",
       platform: widget.type,
       dateRange: dateRange
     };
@@ -695,9 +693,8 @@ export function HomeTab({
                 {isEditMode && (
                   <Card 
                     className={cn(
-                      "bg-[#111] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                      "hover:bg-[#191919] transition-colors duration-200",
-                      "border-2 border-blue-500/30 hover:border-blue-500/50"
+                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
+                      "hover:bg-[#191919] transition-colors duration-200"
                     )}
                     onClick={() => {
                       setActiveWidgetTab(platformType as 'shopify' | 'meta');
@@ -705,8 +702,8 @@ export function HomeTab({
                     }}
                   >
                     <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                      <PlusCircle className="h-8 w-8 text-blue-500/70 mb-2" />
-                      <p className="text-blue-400 text-sm">Add {sectionTitle} Widget</p>
+                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
+                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
                     </CardContent>
                   </Card>
                 )}
@@ -720,34 +717,6 @@ export function HomeTab({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end items-center mb-1">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant={isEditMode ? "default" : "ghost"}
-                size="icon"
-                className={cn(
-                  "text-white hover:bg-white/10 relative",
-                  isEditMode && "bg-blue-600 hover:bg-blue-700 text-white border border-blue-400"
-                )}
-                onClick={() => setIsEditMode(!isEditMode)}
-              >
-                <LayoutGrid className="h-5 w-5" />
-                {isEditMode && (
-                  <span className="absolute -top-1 -right-1 bg-white text-blue-600 rounded-full text-[10px] font-bold h-4 w-4 flex items-center justify-center">
-                    ✓
-                  </span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-black border border-gray-800 text-white text-xs">
-              <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
       {validWidgets.length === 0 ? (
         <Card className="bg-[#111] border-[#333] text-center py-10">
           <CardContent className="flex flex-col items-center">
@@ -783,8 +752,6 @@ export function HomeTab({
             "meta", 
             "https://i.imgur.com/6hyyRrs.png"
           )}
-          
-          {/* Remove the "Add New Widget" button */}
         </>
       )}
 
