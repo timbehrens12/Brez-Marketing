@@ -182,45 +182,6 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Add consistent refresh behavior based on page visibility
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      // Only refresh when page becomes visible
-      if (document.visibilityState === 'visible') {
-        console.log('Dashboard page became visible, refreshing data');
-        
-        // When the page becomes visible, we want to do a full data refresh
-        // but we don't want to show the full-screen loading indicator
-        setIsRefreshingData(true);
-        
-        // Use setTimeout to allow React to render the refresh indicator first
-        setTimeout(() => {
-          fetchAllData(false).then(() => {
-            setIsRefreshingData(false);
-            setLastRefreshed(new Date());
-            
-            // Also trigger platform-specific refresh events
-            window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-              detail: { brandId: selectedBrandId, timestamp: Date.now(), dateRange }
-            }));
-            
-            window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
-              detail: { brandId: selectedBrandId }
-            }));
-          });
-        }, 0);
-      }
-    };
-    
-    // Add event listener for visibility changes
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Clear event listener on unmount
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [selectedBrandId, dateRange]);
-
   // Load initial connections when component mounts
   useEffect(() => {
     async function loadConnections() {
