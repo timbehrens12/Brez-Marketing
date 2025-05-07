@@ -12,12 +12,13 @@ import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshC
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { addDays, differenceInDays, subDays, startOfDay, endOfDay } from "date-fns"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { format } from "date-fns"
+import { Button } from "@/components/ui/button"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -193,88 +194,73 @@ export function ShopifyTab({
     })
   }
 
-  // Add a useEffect to detect date range changes and tab switching
-  useEffect(() => {
-    // Check if this is a 30-day preset by looking at the date range
-    const daysDiff = differenceInDays(dateRange.to, dateRange.from);
-    const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
-    
-    if (isLast30Days) {
-      console.log('[ShopifyTab] Detected Last 30 days preset');
-      
-      // This will help with re-fetching data when switching tabs or on initial render
-      const refreshTimeout = setTimeout(() => {
-        console.log('[ShopifyTab] Dispatching force-shopify-refresh event for Last 30 days preset');
-        // We can dispatch a global event to force data refresh
-        window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            dateRange,
-            forceFetch: true
-          }
-        }));
-        
-        // Also trigger a general metrics refresh
-        window.dispatchEvent(new Event('refresh-metrics'));
-      }, 500);
-      
-      return () => clearTimeout(refreshTimeout);
-    }
-  }, [brandId, dateRange]);
+  // Add a ref to track the last refresh timestamp to prevent multiple refreshes
+  const lastRefreshTimestamp = useRef<number>(0);
+  const REFRESH_THROTTLE = 1000; // Minimum time between refreshes in milliseconds
 
-  // Add another useEffect to handle tab activation/visibility
+  // Function to trigger a refresh with throttling
+  const triggerShopifyRefresh = useCallback(() => {
+    const now = Date.now();
+    
+    // Check if we've refreshed recently to prevent duplicate refreshes
+    if (now - lastRefreshTimestamp.current < REFRESH_THROTTLE) {
+      console.log('[ShopifyTab] Skipping duplicate refresh - previous refresh too recent');
+      return;
+    }
+    
+    // Update the last refresh timestamp
+    lastRefreshTimestamp.current = now;
+    
+    // Format dates as yyyy-MM-dd for consistency
+    const fromDate = dateRange.from;
+    const toDate = dateRange.to;
+    const formattedFromDate = format(fromDate, 'yyyy-MM-dd');
+    const formattedToDate = format(toDate, 'yyyy-MM-dd');
+    
+    console.log(`[ShopifyTab] Triggering single refresh with dates: ${formattedFromDate} to ${formattedToDate}`);
+    
+    // Dispatch a single event with all the necessary information
+    window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+      detail: { 
+        brandId, 
+        timestamp: now,
+        dateRange: {
+          from: formattedFromDate,
+          to: formattedToDate
+        },
+        forceFetch: true,
+        bypassCache: true
+      }
+    }));
+  }, [dateRange, brandId]);
+
+  // Single consolidated useEffect for handling tab activation and visibility
   useEffect(() => {
+    console.log('[ShopifyTab] Component mounted or date range changed');
+    
     // This function will be called when this tab becomes visible
     const handleTabVisibility = (event?: Event) => {
-      console.log('[ShopifyTab] Tab became visible');
-      
-      // Check if event has a detail property with dateRange (for customEvent)
-      const customEvent = event as CustomEvent;
-      let exactDateRange = dateRange;
-      
-      if (customEvent?.detail?.dateRange) {
-        exactDateRange = customEvent.detail.dateRange;
-        console.log('[ShopifyTab] Received exact date range from event:', 
-          format(new Date(exactDateRange.from), 'yyyy-MM-dd'), 'to', format(new Date(exactDateRange.to), 'yyyy-MM-dd'));
-      }
-      
-      // Always use the exact date range from props - don't override with Last 30 Days
-      // Just format the dates properly to ensure consistency
-      const fromDate = new Date(exactDateRange.from);
-      const toDate = new Date(exactDateRange.to);
-      
-      console.log('[ShopifyTab] Using exact date range from props:', 
-        format(fromDate, 'yyyy-MM-dd'), 'to', format(toDate, 'yyyy-MM-dd'));
-      
-      // Dispatch the refresh event with exact date range
-      window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-        detail: { 
-          brandId, 
-          timestamp: Date.now(),
-          dateRange: {
-            from: format(fromDate, 'yyyy-MM-dd'),
-            to: format(toDate, 'yyyy-MM-dd')
-          },
-          forceFetch: true,
-          bypassCache: true
-        }
-      }));
-      
-      // Also trigger a general metrics refresh
-      window.dispatchEvent(new Event('refresh-metrics'));
+      console.log('[ShopifyTab] Tab activation event received');
+      triggerShopifyRefresh();
     };
     
-    // Call it once on mount
-    handleTabVisibility();
-    
-    // Listen for tab activation events from parent components
-    window.addEventListener('shopify-tab-activated', handleTabVisibility);
-    
-    return () => {
-      window.removeEventListener('shopify-tab-activated', handleTabVisibility);
-    };
-  }, [brandId, dateRange]);
+    // Only trigger refresh on mount if we have valid data
+    if (connection && dateRange?.from && dateRange?.to) {
+      // Add a short delay to avoid race conditions with other components
+      const initialTimeout = setTimeout(() => {
+        triggerShopifyRefresh();
+      }, 300);
+      
+      // Listen for tab activation events
+      window.addEventListener('shopify-tab-activated', handleTabVisibility);
+      
+      // Clean up
+      return () => {
+        clearTimeout(initialTimeout);
+        window.removeEventListener('shopify-tab-activated', handleTabVisibility);
+      };
+    }
+  }, [connection, dateRange, triggerShopifyRefresh]);
 
   // Add check for empty metrics and force refresh if needed
   useEffect(() => {
@@ -378,102 +364,6 @@ export function ShopifyTab({
         });
     }
   }, [metrics, connection, isLoading, isRefreshingData, dateRange, brandId]);
-
-  // Add a new effect for date range changes to force refresh data
-  useEffect(() => {
-    // When date range changes, force refresh the data
-    if (connection && dateRange?.from && dateRange?.to) {
-      console.log('[ShopifyTab] Date range changed, forcing refresh');
-      
-      // Format dates as yyyy-MM-dd
-      const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-      
-      // Wait a moment to let other effects settle
-      setTimeout(() => {
-        // Dispatch force refresh event with formatted dates
-        window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            dateRange: {
-              from: formattedFromDate,
-              to: formattedToDate
-            },
-            forceFetch: true,
-            bypassCache: true
-          }
-        }));
-      }, 300);
-    }
-  }, [dateRange, connection, brandId]);
-
-  useEffect(() => {
-    // This effect runs once on mount, after the component has rendered
-    // Check if metrics are empty after rendering
-    setTimeout(() => {
-      const metricsCards = document.querySelectorAll('.metric-card');
-      
-      // If metrics cards are present but values are $0.00 or 0, try to fix them
-      let needsFallbackFix = false;
-      
-      metricsCards.forEach(card => {
-        const valueElem = card.querySelector('.value');
-        if (valueElem && (valueElem.textContent === '$0.00' || valueElem.textContent === '0')) {
-          needsFallbackFix = true;
-        }
-      });
-      
-      if (needsFallbackFix) {
-        console.log('[ShopifyTab] Detected empty metric cards after render, applying emergency fix');
-        
-        // Try to get data from SalesByProduct
-        window.dispatchEvent(new CustomEvent('requestSalesByProductData'));
-        
-        // Always use the exact date range from props - don't override with Last 30 Days
-        const fromDate = dateRange.from;
-        const toDate = dateRange.to;
-        
-        // Format dates as yyyy-MM-dd
-        const formattedFromDate = format(fromDate, 'yyyy-MM-dd');
-        const formattedToDate = format(toDate, 'yyyy-MM-dd');
-        
-        const fetchUrl = `/api/metrics?brandId=${brandId}&from=${formattedFromDate}&to=${formattedToDate}&platform=shopify&force=true&nocache=true&bypass_cache=true&t=${Date.now()}`;
-        
-        fetch(fetchUrl)
-          .then(res => res.json())
-          .then(data => {
-            if (data && !data.error && data.totalSales > 0) {
-              // Update the DOM directly
-              const salesCards = document.querySelectorAll('.metric-card');
-              salesCards.forEach(card => {
-                const title = card.querySelector('.metric-title');
-                const valueElem = card.querySelector('.value');
-                
-                if (title && valueElem) {
-                  const titleText = title.textContent || '';
-                  
-                  if (titleText.includes('Total Sales') && data.totalSales) {
-                    valueElem.textContent = `$${data.totalSales.toFixed(2)}`;
-                  } else if (titleText.includes('Orders') && data.ordersPlaced) {
-                    valueElem.textContent = data.ordersPlaced.toString();
-                  } else if (titleText.includes('Average Order') && data.averageOrderValue) {
-                    valueElem.textContent = `$${data.averageOrderValue.toFixed(2)}`;
-                  } else if (titleText.includes('Units Sold') && data.unitsSold) {
-                    valueElem.textContent = data.unitsSold.toString();
-                  }
-                }
-              });
-              
-              console.log('[ShopifyTab] Emergency fix applied successfully');
-            }
-          })
-          .catch(err => {
-            console.error('[ShopifyTab] Emergency fix API call failed:', err);
-          });
-      }
-    }, 1000); // Give the component time to render first
-  }, [brandId, dateRange]);
 
   return (
     <div className="space-y-8">
@@ -622,6 +512,18 @@ export function ShopifyTab({
           isRefreshingData={isRefreshingData}
         />
       </div>
+
+      {/* Add a simple refresh button for testing */}
+      {process.env.NODE_ENV === 'development' && (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => triggerShopifyRefresh()}
+          className="my-2"
+        >
+          Manual Refresh
+        </Button>
+      )}
     </div>
   )
 } 
