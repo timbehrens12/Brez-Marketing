@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Building2, Store, Briefcase } from "lucide-react"
+import { Check, ChevronDown, Building2, Store, Briefcase, Tag } from "lucide-react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useUser } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
@@ -59,7 +59,9 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
             </>
           ) : (
             <>
-              <Briefcase className="w-4 h-4 text-gray-400" />
+              <div className="transform rotate-[-15deg]">
+                <Tag className="w-4 h-4 text-gray-400" />
+              </div>
               <span className="text-gray-400">Select a brand</span>
             </>
           )}
