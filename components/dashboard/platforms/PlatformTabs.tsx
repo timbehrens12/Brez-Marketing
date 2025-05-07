@@ -106,6 +106,10 @@ export function PlatformTabs({
     googleads: false
   });
 
+  // Add this before the handleValueChange function
+  // Track when we last dispatched a shopify refresh to prevent duplicates
+  const lastShopifyRefreshRef = useRef<number>(0);
+
   // Don't render anything during initial data load
   if (initialDataLoad) {
     return null;
@@ -184,9 +188,6 @@ export function PlatformTabs({
   const handleValueChange = (value: string) => {
     setActiveTab(value);
     
-    // Track tab changes in console for debugging
-    console.log(`[PlatformTabs] Switching to ${value} tab with ${dateRange.from.toLocaleDateString()} to ${dateRange.to.toLocaleDateString()} preset`);
-    
     // If we're leaving the Meta tab, set the global block flag to stop API calls temporarily
     if (activeTab === "meta" && value !== "meta") {
       console.log("[PlatformTabs] Leaving Meta tab, enabling temporary blocking during transition");
@@ -204,35 +205,10 @@ export function PlatformTabs({
       }
     }
     
-    // If we're navigating TO the Meta tab, clear the block flag immediately and trigger refresh
+    // If we're navigating TO the Meta tab, clear the block flag immediately
     if (value === "meta" && window._blockMetaApiCalls) {
       console.log("[PlatformTabs] Navigating to Meta tab, clearing API blocking flag");
       window._blockMetaApiCalls = false;
-      
-      // Dispatch event to trigger Meta tab refresh when navigating to it
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('meta-tab-activated', {
-          detail: {
-            brandId,
-            dateRange,
-            timestamp: Date.now()
-          }
-        }));
-      }, 100);
-    }
-    
-    // If we're navigating TO the Shopify tab, trigger its activation event
-    if (value === "shopify") {
-      // Dispatch event to trigger Shopify tab refresh
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
-          detail: {
-            brandId,
-            dateRange,
-            timestamp: Date.now()
-          }
-        }));
-      }, 100);
     }
     
     // Update visibility state for all tabs
@@ -243,6 +219,44 @@ export function PlatformTabs({
       tiktok: value === "tiktok",
       googleads: value === "googleads"
     });
+    
+    // If switching to Shopify tab with Last 30 days preset, dispatch refresh
+    // but only if we haven't done so recently (debounce)
+    if (value === "shopify" && dateRange && dateRange.from && dateRange.to) {
+      const daysDiff = differenceInDays(dateRange.to, dateRange.from);
+      const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
+      
+      if (isLast30Days) {
+        console.log('[PlatformTabs] Switching to Shopify tab with Last 30 days preset');
+        
+        // Prevent multiple refreshes within 2 seconds
+        const now = Date.now();
+        if (now - lastShopifyRefreshRef.current > 2000) {
+          lastShopifyRefreshRef.current = now;
+          
+          // Add a small delay to ensure we don't fire events too quickly
+          setTimeout(() => {
+            // When using Last 30 days preset, ensure we're using the real last 30 days
+            const today = new Date();
+            const thirtyDaysAgo = subDays(today, 30);
+            const exactDateRange = {
+              from: startOfDay(thirtyDaysAgo),
+              to: endOfDay(today)
+            };
+            
+            // Dispatch shopify-tab-activated event with the exact date range
+            window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
+              detail: {
+                dateRange: exactDateRange,
+                timestamp: now // Add timestamp to help track this specific event
+              }
+            }));
+          }, 100);
+        } else {
+          console.log('[PlatformTabs] Skipped duplicate Shopify refresh (debounced)');
+        }
+      }
+    }
     
     // Notify parent of tab change
     if (onTabChange) {

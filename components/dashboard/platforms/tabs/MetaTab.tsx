@@ -4306,23 +4306,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
     
-    // Function to handle tab activation event
-    const handleTabActivated = (event: CustomEvent) => {
-      console.log("[MetaTab] Received meta-tab-activated event, triggering refresh");
-      refreshOnMount();
-    };
-    
-    // Add event listener for tab activation
-    window.addEventListener('meta-tab-activated', handleTabActivated as EventListener);
-    
-    // Execute the refresh on mount
+    // Execute the refresh
     refreshOnMount();
     
-    // Clean up event listener
-    return () => {
-      window.removeEventListener('meta-tab-activated', handleTabActivated as EventListener);
-    };
-  }, [brandId]);
+    // No dependencies to ensure this only runs on mount/navigation
+  }, []);
   
   // Add a listener for the metaDataRefreshed event from the dashboard
   useEffect(() => {
@@ -4330,14 +4318,14 @@ Try creating at least one active campaign in Meta Ads Manager.
     const handleMetaDataRefreshed = (event: CustomEvent) => {
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
-        console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
+        console.log("Received metaDataRefreshed event", event.detail);
         
         // If forceRefresh is set to true in the event, force a full refresh
         if (event.detail?.forceRefresh) {
-          console.log("[MetaTab] Force refresh requested, fetching latest campaigns data");
+          console.log("Force refresh requested, fetching latest campaigns data");
           
           // Force a fetch from the API to get the most up-to-date data
-          fetchCampaigns(true);
+          fetchCampaigns();
         }
         
         // Always refresh the metrics display
@@ -4347,19 +4335,13 @@ Try creating at least one active campaign in Meta Ads Manager.
 
     // Add the event listener
     window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-    
-    // Also listen for 'meta-data-refreshed' event (alternate format used elsewhere)
-    window.addEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
 
     // Cleanup on component unmount
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-      window.removeEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
     };
   }, [brandId]);
   
-  // Rest of the component remains the same...
-
   return (
     <TooltipProvider>
       <div className="space-y-8">

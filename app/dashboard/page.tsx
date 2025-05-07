@@ -1111,25 +1111,11 @@ export default function DashboardPage() {
 
   // Add a listener for the force-shopify-refresh event
   useEffect(() => {
-    // Add a ref to track the last refresh time and prevent duplicate refreshes
-    const lastRefreshTimestampRef = useRef<number>(0);
-    const REFRESH_THROTTLE = 1000; // Minimum time between refreshes in milliseconds
-    
     const handleShopifyRefresh = (event: any) => {
       console.log('[Dashboard] Received force-shopify-refresh event, refreshing Shopify data');
       
       // Only proceed if we have a selected brand
       if (!selectedBrandId) return;
-      
-      // Throttle refreshes to prevent multiple API calls in quick succession
-      const now = Date.now();
-      if (now - lastRefreshTimestampRef.current < REFRESH_THROTTLE) {
-        console.log('[Dashboard] Throttling Shopify refresh - too soon after previous refresh');
-        return;
-      }
-      
-      // Update the last refresh timestamp
-      lastRefreshTimestampRef.current = now;
       
       // Set loading state just for Shopify data
       setIsRefreshingData(true);
