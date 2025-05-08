@@ -7,7 +7,7 @@ import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid } from "lucide-react"
+import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, TrendingUp, Eye, MousePointer, Target, DollarSign, Percent, BarChart2, Users, RefreshCcw, Package, MousePointerClick, PiggyBank, CircleDollarSign, UsersIcon, LineChart, ShoppingCart as ShoppingCartIcon } from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -17,11 +17,6 @@ import { DragDropContext, Droppable, Draggable, DroppableProvided } from 'react-
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
-import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
-import { InventorySummary } from "@/components/dashboard/InventorySummary"
-import { CampaignWidget } from "./CampaignWidget"
-import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
-import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -29,16 +24,32 @@ interface DailyDataItem {
   spend: number;
   impressions: number;
   clicks: number;
-  conversions: number;
+  conversions: number; // General conversions
+  results?: number; // Specific results metric
   ctr: number;
   roas: number;
-  value?: number;
+  reach?: number;
+  avgPurchaseValue?: number;
+  linkClicks?: number;
+  cpc?: number;
+  costPerResult?: number;
+  budget?: number;
+  value?: number; // for chart data
   [key: string]: string | number | undefined;
 }
 
 // Extend Metrics type to add our custom properties
 interface ExtendedMetrics extends Metrics {
   dailyMetaData?: DailyDataItem[];
+  // Shopify specific previous values for consistency
+  previousTotalSales?: number;
+  previousAverageOrderValue?: number;
+  previousOrdersPlaced?: number;
+  previousUnitsSold?: number;
+  previousConversionRate?: number;
+  previousCustomerRetentionRate?: number;
+  conversionData?: DailyDataItem[]; // Added for Shopify Conversion Rate chart
+  retentionData?: DailyDataItem[]; // Added for Shopify Retention Rate chart
 }
 
 // Define the widget types we can add to the home page
@@ -48,7 +59,8 @@ interface Widget {
   name: string;
   component: string;
   description?: string;
-  icon?: string;
+  icon?: string; // URL to icon
+  lucideIcon?: React.ElementType; // Lucide icon component
 }
 
 // Available widgets users can add
@@ -60,7 +72,8 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Total Sales', 
     component: 'MetricCard',
     description: 'Total revenue from Shopify orders',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: DollarSign
   },
   { 
     id: 'shopify-orders', 
@@ -68,7 +81,8 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Orders', 
     component: 'MetricCard',
     description: 'Number of orders from Shopify',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: ShoppingCartIcon
   },
   { 
     id: 'shopify-aov', 
@@ -76,7 +90,8 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Average Order Value', 
     component: 'MetricCard',
     description: 'Shopify Average Order Value (AOV)',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: TrendingUp
   },
   { 
     id: 'shopify-units', 
@@ -84,23 +99,26 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Units Sold', 
     component: 'MetricCard',
     description: 'Total units sold on Shopify',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: Package
   },
   {
-    id: 'shopify-sales-by-product',
+    id: 'shopify-conversion-rate',
     type: 'shopify',
-    name: 'Sales By Product',
-    component: 'SalesByProduct',
-    description: 'Sales performance by product',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    name: 'Conversion Rate',
+    component: 'MetricCard',
+    description: 'Shopify store conversion rate',
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: Percent
   },
   {
-    id: 'shopify-inventory-summary',
+    id: 'shopify-retention-rate',
     type: 'shopify',
-    name: 'Inventory Summary',
-    component: 'InventorySummary',
-    description: 'Summary of inventory levels',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+    name: 'Customer Retention',
+    component: 'MetricCard',
+    description: 'Shopify customer retention rate',
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    lucideIcon: UsersIcon
   },
   
   // Meta widgets
@@ -110,7 +128,8 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Meta Ad Spend', 
     component: 'MetricCard',
     description: 'Total ad spend on Meta platforms',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: DollarSign
   },
   { 
     id: 'meta-impressions', 
@@ -118,7 +137,8 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Meta Impressions', 
     component: 'MetricCard',
     description: 'Total impressions from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: Eye
   },
   { 
     id: 'meta-clicks', 
@@ -126,15 +146,17 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Meta Clicks', 
     component: 'MetricCard',
     description: 'Total clicks on Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: MousePointerClick
   },
   { 
-    id: 'meta-conversions', // This can represent "Results" or "Purchase Conversion Value"
+    id: 'meta-conversions', // General conversions
     type: 'meta', 
     name: 'Meta Conversions', 
     component: 'MetricCard',
-    description: 'Total conversions (results or purchases) from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    description: 'Total general conversions from Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: Target
   },
   { 
     id: 'meta-roas', 
@@ -142,63 +164,80 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Meta ROAS', 
     component: 'MetricCard',
     description: 'Meta Return On Ad Spend (ROAS)',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: TrendingUp
   },
-  {
-    id: 'meta-cost-per-result',
-    type: 'meta',
-    name: 'Meta Cost Per Result',
+  { 
+    id: 'meta-reach', 
+    type: 'meta', 
+    name: 'Meta Reach', 
     component: 'MetricCard',
-    description: 'Average cost for each result from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    description: 'Total reach of Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: Users
   },
-  {
-    id: 'meta-cost-per-click',
-    type: 'meta',
-    name: 'Meta Cost Per Click (All)',
-    component: 'MetricCard',
-    description: 'Average cost for each click on Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  {
-    id: 'meta-ctr',
-    type: 'meta',
-    name: 'Meta CTR',
+  { 
+    id: 'meta-ctr', 
+    type: 'meta', 
+    name: 'Meta CTR', 
     component: 'MetricCard',
     description: 'Meta Click-Through Rate',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: Percent
   },
-  {
-    id: 'meta-reach',
-    type: 'meta',
-    name: 'Meta Reach',
-    component: 'MetricCard', // Or TotalAdSetReachCard if it's different
-    description: 'Number of unique people who saw your Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  {
-    id: 'meta-link-clicks',
-    type: 'meta',
-    name: 'Meta Link Clicks',
+  { 
+    id: 'meta-cpc', 
+    type: 'meta', 
+    name: 'Meta Cost Per Click', 
     component: 'MetricCard',
-    description: 'Number of clicks on links within Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+    description: 'Meta average Cost Per Click',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: CircleDollarSign
   },
-  {
-    id: 'meta-budget',
-    type: 'meta',
-    name: 'Meta Budget',
-    component: 'TotalBudgetMetricCard', // Using the specific component
-    description: 'Total budget set for Meta campaigns',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+  { 
+    id: 'meta-cpr', // Cost Per Result
+    type: 'meta', 
+    name: 'Meta Cost Per Result', 
+    component: 'MetricCard',
+    description: 'Meta average Cost Per Result',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: CircleDollarSign
   },
-  {
-    id: 'meta-campaigns-table',
-    type: 'meta',
-    name: 'Meta Campaigns Table',
-    component: 'CampaignWidget', // Using the specific component
-    description: 'Table displaying data for individual Meta campaigns',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
+  { 
+    id: 'meta-budget', 
+    type: 'meta', 
+    name: 'Meta Budget', 
+    component: 'MetricCard',
+    description: 'Total budget for Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: PiggyBank
+  },
+  { 
+    id: 'meta-avg-purchase-value', 
+    type: 'meta', 
+    name: 'Meta Avg Purchase Value', 
+    component: 'MetricCard',
+    description: 'Meta average purchase conversion value',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: ShoppingCartIcon
+  },
+  { 
+    id: 'meta-results', // Specific "Results" metric
+    type: 'meta', 
+    name: 'Meta Results', 
+    component: 'MetricCard',
+    description: 'Total results from Meta ads (e.g., leads, purchases)',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: LineChart
+  },
+  { 
+    id: 'meta-link-clicks', 
+    type: 'meta', 
+    name: 'Meta Link Clicks', 
+    component: 'MetricCard',
+    description: 'Total link clicks from Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    lucideIcon: MousePointer
   }
 ];
 
@@ -206,7 +245,7 @@ interface HomeTabProps {
   brandId: string
   brandName: string
   dateRange: DateRange
-  metrics: Metrics
+  metrics: ExtendedMetrics // Use ExtendedMetrics
   isLoading: boolean
   isRefreshingData?: boolean
   platformStatus: {
@@ -241,42 +280,49 @@ export function HomeTab({
   const [isLoadingMetaData, setIsLoadingMetaData] = useState(false);
   const hasFetchedMetaData = useRef(false);
   
-  // State for direct Meta metrics - extended
+  // State for direct Meta metrics
   const [metaMetrics, setMetaMetrics] = useState({
     adSpend: 0,
     impressions: 0,
     clicks: 0,
-    conversions: 0, // Represents "Results" or "Purchase Conversion Value"
+    conversions: 0, // General conversions
     roas: 0,
-    costPerResult: 0,
-    costPerClick: 0,
-    ctr: 0,
     reach: 0,
-    linkClicks: 0,
+    ctr: 0,
+    cpc: 0,
+    costPerResult: 0, // Cost Per Result
     budget: 0,
+    avgPurchaseValue: 0,
+    results: 0, // Specific results metric
+    linkClicks: 0,
+
     adSpendGrowth: 0,
     impressionGrowth: 0,
     clickGrowth: 0,
     conversionGrowth: 0,
     roasGrowth: 0,
-    costPerResultGrowth: 0,
-    costPerClickGrowth: 0,
-    ctrGrowth: 0,
     reachGrowth: 0,
+    ctrGrowth: 0,
+    cpcGrowth: 0,
+    costPerResultGrowth: 0,
+    budgetGrowth: 0,
+    avgPurchaseValueGrowth: 0,
+    resultsGrowth: 0,
     linkClicksGrowth: 0,
-    budgetGrowth: 0, // Assuming budget can have a growth comparison
+
     previousAdSpend: 0,
     previousImpressions: 0,
     previousClicks: 0, 
     previousConversions: 0,
     previousRoas: 0,
-    previousCostPerResult: 0,
-    previousCostPerClick: 0,
-    previousCtr: 0,
     previousReach: 0,
-    previousLinkClicks: 0,
+    previousCtr: 0,
+    previousCpc: 0,
+    previousCostPerResult: 0,
     previousBudget: 0,
-    campaigns: [] as any[] // For CampaignWidget
+    previousAvgPurchaseValue: 0,
+    previousResults: 0,
+    previousLinkClicks: 0
   });
 
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
@@ -498,11 +544,14 @@ export function HomeTab({
       setIsLoadingMetaData(true);
 
       // Current period params
-      const params = new URLSearchParams({ brandId: brandId });
+      const params = new URLSearchParams({
+        brandId: brandId
+      });
+      
       params.append('from', dateRange.from.toISOString().split('T')[0]);
       params.append('to', dateRange.to.toISOString().split('T')[0]);
       params.append('bypass_cache', 'true');
-      params.append('force_load', 'true'); // Ensure all data is fetched
+      params.append('force_load', 'true');
       
       console.log(`[HomeTab] Fetching Meta data for current period: ${params.toString()}`);
       
@@ -511,21 +560,20 @@ export function HomeTab({
       const prevParams = new URLSearchParams({ brandId: brandId });
       prevParams.append('from', prevFrom);
       prevParams.append('to', prevTo);
-      prevParams.append('bypass_cache', 'true');
-      // prevParams.append('force_load', 'true'); // Not needed for previous, just totals
+      prevParams.append('bypass_cache', 'true'); // Ensure previous data is also fresh if current is forced
       
       console.log(`[HomeTab] Fetching Meta data for previous period: ${prevParams.toString()}`);
       
-      const [response, prevResponse] = await Promise.all([
+      const [currentResponse, previousResponse] = await Promise.all([
         fetch(`/api/metrics/meta?${params.toString()}`, { cache: 'no-cache', headers: { 'Cache-Control': 'no-cache' } }),
         fetch(`/api/metrics/meta?${prevParams.toString()}`, { cache: 'no-cache', headers: { 'Cache-Control': 'no-cache' } })
       ]);
       
-      if (!response.ok) throw new Error(`Failed to fetch current period Meta data: ${response.status}`);
-      if (!prevResponse.ok) throw new Error(`Failed to fetch previous period Meta data: ${prevResponse.status}`);
+      if (!currentResponse.ok) throw new Error(`Failed to fetch current period Meta data: ${currentResponse.status}`);
+      if (!previousResponse.ok) throw new Error(`Failed to fetch previous period Meta data: ${previousResponse.status}`);
       
-      const currentData = await response.json();
-      const previousData = await prevResponse.json();
+      const currentData = await currentResponse.json();
+      const previousData = await previousResponse.json();
       
       console.log("[HomeTab] Fetched Meta data for current period:", currentData);
       console.log("[HomeTab] Fetched Meta data for previous period:", previousData);
@@ -534,61 +582,59 @@ export function HomeTab({
         setMetaDaily(currentData.dailyData);
       }
       
-      // Calculate percentage changes
-      const adSpendGrowth = calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0);
-      const impressionGrowth = calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0);
-      const clickGrowth = calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0);
-      // Assuming 'conversions' from API maps to 'results' or 'purchase_conversion_value'
-      const conversionGrowth = calculatePercentChange(currentData.conversions || currentData.results || 0, previousData.conversions || previousData.results || 0);
-      const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
-      const costPerResultGrowth = calculatePercentChange(currentData.cost_per_result || 0, previousData.cost_per_result || 0);
-      const costPerClickGrowth = calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0);
-      const ctrGrowth = calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0);
-      const reachGrowth = calculatePercentChange(currentData.reach || 0, previousData.reach || 0);
-      const linkClicksGrowth = calculatePercentChange(currentData.link_clicks || 0, previousData.link_clicks || 0);
-      const budgetGrowth = calculatePercentChange(currentData.budget || 0, previousData.budget || 0);
-
       setMetaMetrics({
         adSpend: currentData.adSpend || 0,
         impressions: currentData.impressions || 0,
         clicks: currentData.clicks || 0,
-        conversions: currentData.conversions || currentData.results || 0, // Use API field
+        conversions: currentData.conversions || 0, // General conversions from API
         roas: currentData.roas || 0,
-        costPerResult: currentData.cost_per_result || 0,
-        costPerClick: currentData.cpc || 0, // API uses 'cpc'
-        ctr: currentData.ctr || 0,
         reach: currentData.reach || 0,
-        linkClicks: currentData.link_clicks || 0, // API uses 'link_clicks'
-        budget: currentData.budget || 0, // API uses 'budget'
-        adSpendGrowth,
-        impressionGrowth,
-        clickGrowth,
-        conversionGrowth,
-        roasGrowth,
-        costPerResultGrowth,
-        costPerClickGrowth,
-        ctrGrowth,
-        reachGrowth,
-        linkClicksGrowth,
-        budgetGrowth,
+        ctr: currentData.ctr || 0,
+        cpc: currentData.cpc || 0,
+        costPerResult: currentData.costPerResult || 0,
+        budget: currentData.budget || 0,
+        avgPurchaseValue: currentData.avgPurchaseValue || currentData.averagePurchaseValue || 0, // Check for different possible names
+        results: currentData.results || 0, // Specific results metric
+        linkClicks: currentData.linkClicks || currentData.inline_link_clicks || 0,
+
         previousAdSpend: previousData.adSpend || 0,
         previousImpressions: previousData.impressions || 0,
         previousClicks: previousData.clicks || 0,
-        previousConversions: previousData.conversions || previousData.results || 0,
+        previousConversions: previousData.conversions || 0,
         previousRoas: previousData.roas || 0,
-        previousCostPerResult: previousData.cost_per_result || 0,
-        previousCostPerClick: previousData.cpc || 0,
-        previousCtr: previousData.ctr || 0,
         previousReach: previousData.reach || 0,
-        previousLinkClicks: previousData.link_clicks || 0,
+        previousCtr: previousData.ctr || 0,
+        previousCpc: previousData.cpc || 0,
+        previousCostPerResult: previousData.costPerResult || 0,
         previousBudget: previousData.budget || 0,
-        campaigns: currentData.campaigns || [] // Store campaigns data
+        previousAvgPurchaseValue: previousData.avgPurchaseValue || previousData.averagePurchaseValue || 0,
+        previousResults: previousData.results || 0,
+        previousLinkClicks: previousData.linkClicks || previousData.inline_link_clicks || 0,
+
+        adSpendGrowth: calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0),
+        impressionGrowth: calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0),
+        clickGrowth: calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0),
+        conversionGrowth: calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0),
+        roasGrowth: calculatePercentChange(currentData.roas || 0, previousData.roas || 0),
+        reachGrowth: calculatePercentChange(currentData.reach || 0, previousData.reach || 0),
+        ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
+        cpcGrowth: calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0),
+        costPerResultGrowth: calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0),
+        budgetGrowth: calculatePercentChange(currentData.budget || 0, previousData.budget || 0),
+        avgPurchaseValueGrowth: calculatePercentChange(currentData.avgPurchaseValue || currentData.averagePurchaseValue || 0, previousData.avgPurchaseValue || previousData.averagePurchaseValue || 0),
+        resultsGrowth: calculatePercentChange(currentData.results || 0, previousData.results || 0),
+        linkClicksGrowth: calculatePercentChange(currentData.linkClicks || currentData.inline_link_clicks || 0, previousData.linkClicks || previousData.inline_link_clicks || 0),
       });
       
       hasFetchedMetaData.current = true;
     } catch (error) {
       console.error("[HomeTab] Error fetching Meta data:", error);
-      toast.error("Error fetching Meta data. Some widgets might not display correctly.");
+      // Reset to default on error to avoid stale data display issues
+        setMetaMetrics({
+            adSpend: 0, impressions: 0, clicks: 0, conversions: 0, roas: 0, reach: 0, ctr: 0, cpc: 0, costPerResult: 0, budget: 0, avgPurchaseValue: 0, results: 0, linkClicks: 0,
+            adSpendGrowth: 0, impressionGrowth: 0, clickGrowth: 0, conversionGrowth: 0, roasGrowth: 0, reachGrowth: 0, ctrGrowth: 0, cpcGrowth: 0, costPerResultGrowth: 0, budgetGrowth: 0, avgPurchaseValueGrowth: 0, resultsGrowth: 0, linkClicksGrowth: 0,
+            previousAdSpend: 0, previousImpressions: 0, previousClicks: 0, previousConversions: 0, previousRoas: 0, previousReach: 0, previousCtr: 0, previousCpc: 0, previousCostPerResult: 0, previousBudget: 0, previousAvgPurchaseValue: 0, previousResults: 0, previousLinkClicks: 0
+        });
     } finally {
       setIsLoadingMetaData(false);
     }
@@ -820,52 +866,59 @@ export function HomeTab({
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
-    // Create empty datasets for metrics that don't exist in the Metrics type
-    const emptyDataset = Array.from({ length: 7 }).map((_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - 6 + i);
-      return {
-        date: date.toISOString(),
-        value: 0
-      };
-    });
+    // Helper to get previous period label (defined before use in widgetProps)
+    const getPreviousPeriodLabel = (): string => {
+        if (!dateRange || !dateRange.from || !dateRange.to) {
+          return "Previous period";
+        }
+        const fromDate = new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate());
+        const toDate = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate());
+        const daysInRange = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    // For demo, we'll use MetricCard for all widgets with different properties
-    // In a real implementation, you'd render different components based on widget.component
+        if (isSameDay(fromDate, toDate)) {
+            const prevDay = new Date(fromDate);
+            prevDay.setDate(prevDay.getDate() - 1);
+            return `Previous day (${format(prevDay, "MMM d")})`;
+        }
+        // Simplified label for brevity, full logic for date calculation is in getPreviousPeriodDates
+        return `Previous ${daysInRange} days`; 
+    };
     
     let widgetProps: any = {
       title: (
         <div className="flex items-center gap-2">
           <div className="relative w-4 h-4">
-            <Image 
-              src={widget.icon || ''}
-              alt={`${widget.type} logo`} 
-              width={16} 
-              height={16} 
-              className="object-contain"
-            />
+            {widget.lucideIcon ? 
+              React.createElement(widget.lucideIcon, { className: "h-4 w-4" }) : 
+              <Image 
+                src={widget.icon || ''}
+                alt={`${widget.type} logo`} 
+                width={16} 
+                height={16} 
+                className="object-contain"
+              />
+            }
           </div>
           <span>{widget.name}</span>
         </div>
       ),
       loading: (widget.type === 'meta' ? isLoadingMetaData : isLoading) || isRefreshingData,
       brandId: brandId,
-      className: "mb-0", // Ensure no extra margin for MetricCard
+      className: "mb-0",
       platform: widget.type,
       dateRange: dateRange,
-      // Pass all metaMetrics to Meta cards for consistency
-      ...(widget.type === 'meta' && { metaMetricsFromHome: metaMetrics })
+      showPreviousPeriod: true, 
+      previousPeriodLabel: getPreviousPeriodLabel() // Moved definition before this call
     };
-
+    
     // Widget-specific props based on ID
     switch (widget.id) {
-      // Shopify Widgets
       case 'shopify-sales':
         widgetProps = {
           ...widgetProps,
           value: metrics.totalSales || 0,
-          change: metrics.salesGrowth || 0,
-          previousValue: 0, // Simplified: Shopify metrics don't have previous period values here yet
+          previousValue: metrics.previousTotalSales || 0,
+          change: calculatePercentChange(metrics.totalSales || 0, metrics.previousTotalSales || 0),
           prefix: "$",
           valueFormat: "currency",
           data: metrics.salesData || [],
@@ -876,8 +929,8 @@ export function HomeTab({
         widgetProps = {
           ...widgetProps,
           value: metrics.ordersPlaced || 0,
-          change: metrics.ordersGrowth || 0,
-          previousValue: 0, // Simplified
+          previousValue: metrics.previousOrdersPlaced || 0,
+          change: calculatePercentChange(metrics.ordersPlaced || 0, metrics.previousOrdersPlaced || 0),
           data: metrics.ordersData || [],
           infoTooltip: "Total number of orders placed in the selected period"
         };
@@ -886,8 +939,8 @@ export function HomeTab({
         widgetProps = {
           ...widgetProps,
           value: metrics.averageOrderValue || 0,
-          change: metrics.aovGrowth || 0,
-          previousValue: 0, // Simplified
+          previousValue: metrics.previousAverageOrderValue || 0,
+          change: calculatePercentChange(metrics.averageOrderValue || 0, metrics.previousAverageOrderValue || 0),
           prefix: "$",
           valueFormat: "currency",
           data: metrics.aovData || [],
@@ -898,48 +951,40 @@ export function HomeTab({
         widgetProps = {
           ...widgetProps,
           value: metrics.unitsSold || 0,
-          change: metrics.unitsGrowth || 0,
-          previousValue: 0, // Simplified
+          previousValue: metrics.previousUnitsSold || 0,
+          change: calculatePercentChange(metrics.unitsSold || 0, metrics.previousUnitsSold || 0),
           data: metrics.unitsSoldData || [],
           infoTooltip: "Total number of units sold in the selected period"
         };
         break;
-      case 'shopify-sales-by-product':
-        if (!dateRange?.from || !dateRange?.to) return null; // Ensure dateRange is valid
-        return (
-          <div key={widget.id} className="w-full md:col-span-2 lg:col-span-4"> 
-            <Card className="bg-[#111] border-[#333] h-full">
-              <CardHeader>
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <Image src={widget.icon || ''} alt={`${widget.type} logo`} width={16} height={16} className="object-contain"/>
-                  {widget.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SalesByProduct brandId={brandId} dateRange={{from: dateRange.from, to: dateRange.to}} isRefreshing={isRefreshingData} />
-              </CardContent>
-            </Card>
-          </div>
-        );
-      case 'shopify-inventory-summary':
-         if (!dateRange?.from || !dateRange?.to) return null; // Keep dateRange check for safety?
-         return (
-          <div key={widget.id} className="w-full md:col-span-2 lg:col-span-4"> 
-            <Card className="bg-[#111] border-[#333] h-full">
-              <CardHeader>
-                <CardTitle className="text-white text-base flex items-center gap-2">
-                  <Image src={widget.icon || ''} alt={`${widget.type} logo`} width={16} height={16} className="object-contain"/>
-                  {widget.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <InventorySummary brandId={brandId} isLoading={isLoading} isRefreshingData={isRefreshingData} />
-              </CardContent>
-            </Card>
-          </div>
-        );
+      case 'shopify-conversion-rate':
+        widgetProps = {
+          ...widgetProps,
+          value: metrics.conversionRate || 0,
+          previousValue: metrics.previousConversionRate || 0,
+          change: calculatePercentChange(metrics.conversionRate || 0, metrics.previousConversionRate || 0),
+          valueFormat: "percentage",
+          suffix: "%",
+          decimals: 2,
+          data: metrics.conversionData || [], // Ensure conversionData is in ExtendedMetrics
+          infoTooltip: "Shopify store conversion rate"
+        };
+        break;
+      case 'shopify-retention-rate':
+        widgetProps = {
+          ...widgetProps,
+          value: metrics.customerRetentionRate || 0,
+          previousValue: metrics.previousCustomerRetentionRate || 0,
+          change: calculatePercentChange(metrics.customerRetentionRate || 0, metrics.previousCustomerRetentionRate || 0),
+          valueFormat: "percentage",
+          suffix: "%",
+          decimals: 1,
+          data: metrics.retentionData || [], // Ensure retentionData is in ExtendedMetrics
+          infoTooltip: "Shopify customer retention rate"
+        };
+        break;
 
-      // Meta Widgets
+      // Meta Widgets (ensure metaMetrics state and fetchMetaData are updated for these)
       case 'meta-adspend':
         widgetProps = {
           ...widgetProps,
@@ -962,24 +1007,24 @@ export function HomeTab({
           infoTooltip: "Total number of times your ads were viewed"
         };
         break;
-      case 'meta-clicks':
+      case 'meta-clicks': 
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.clicks,
           change: metaMetrics.clickGrowth,
           previousValue: metaMetrics.previousClicks,
           hideGraph: true,
-          infoTooltip: "Total number of clicks on your ads"
+          infoTooltip: "Total number of clicks on your ads (all clicks)"
         };
         break;
-      case 'meta-conversions': // Represents "Results" or "Purchase Conversion Value"
+      case 'meta-conversions': 
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.conversions,
           change: metaMetrics.conversionGrowth,
           previousValue: metaMetrics.previousConversions,
           hideGraph: true,
-          infoTooltip: "Total conversions (results or purchases) from Meta ads"
+          infoTooltip: "Total general conversions from Meta ads"
         };
         break;
       case 'meta-roas':
@@ -995,28 +1040,14 @@ export function HomeTab({
           infoTooltip: "Return on ad spend (revenue / ad spend)"
         };
         break;
-      case 'meta-cost-per-result':
+      case 'meta-reach':
         widgetProps = {
           ...widgetProps,
-          value: metaMetrics.costPerResult,
-          change: metaMetrics.costPerResultGrowth,
-          previousValue: metaMetrics.previousCostPerResult,
-          prefix: "$",
-          valueFormat: "currency",
+          value: metaMetrics.reach,
+          change: metaMetrics.reachGrowth,
+          previousValue: metaMetrics.previousReach,
           hideGraph: true,
-          infoTooltip: "Average cost for each result from Meta ads"
-        };
-        break;
-      case 'meta-cost-per-click':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.costPerClick,
-          change: metaMetrics.costPerClickGrowth,
-          previousValue: metaMetrics.previousCostPerClick,
-          prefix: "$",
-          valueFormat: "currency",
-          hideGraph: true,
-          infoTooltip: "Average cost for each click on Meta ads"
+          infoTooltip: "Total reach of Meta ads"
         };
         break;
       case 'meta-ctr':
@@ -1025,25 +1056,73 @@ export function HomeTab({
           value: metaMetrics.ctr,
           change: metaMetrics.ctrGrowth,
           previousValue: metaMetrics.previousCtr,
-          suffix: "%",
           valueFormat: "percentage",
-          decimals: 2,
+          decimals: 2, 
           hideGraph: true,
           infoTooltip: "Meta Click-Through Rate"
         };
         break;
-      case 'meta-reach':
-        // Using MetricCard for consistency, can be swapped to TotalAdSetReachCard if different display is needed
+      case 'meta-cpc':
         widgetProps = {
           ...widgetProps,
-          value: metaMetrics.reach,
-          change: metaMetrics.reachGrowth,
-          previousValue: metaMetrics.previousReach,
+          value: metaMetrics.cpc,
+          change: metaMetrics.cpcGrowth,
+          previousValue: metaMetrics.previousCpc,
+          prefix: "$",
+          valueFormat: "currency",
+          decimals: 2,
           hideGraph: true,
-          infoTooltip: "Number of unique people who saw your Meta ads"
+          infoTooltip: "Meta average Cost Per Click"
         };
-        // If TotalAdSetReachCard is preferred:
-        // return <TotalAdSetReachCard key={widget.id} brandId={brandId} dateRange={dateRange} />;
+        break;
+      case 'meta-cpr':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.costPerResult,
+          change: metaMetrics.costPerResultGrowth,
+          previousValue: metaMetrics.previousCostPerResult,
+          prefix: "$",
+          valueFormat: "currency",
+          decimals: 2,
+          hideGraph: true,
+          infoTooltip: "Meta average Cost Per Result"
+        };
+        break;
+      case 'meta-budget':
+         widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.budget,
+          change: metaMetrics.budgetGrowth,
+          previousValue: metaMetrics.previousBudget,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Total budget for Meta ads"
+        };
+        break;
+      case 'meta-avg-purchase-value':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.avgPurchaseValue,
+          change: metaMetrics.avgPurchaseValueGrowth,
+          previousValue: metaMetrics.previousAvgPurchaseValue,
+          prefix: "$",
+          valueFormat: "currency",
+          decimals: 2,
+          hideGraph: true,
+          infoTooltip: "Meta average purchase conversion value"
+        };
+        break;
+      case 'meta-results':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.results,
+          change: metaMetrics.resultsGrowth,
+          previousValue: metaMetrics.previousResults,
+          valueFormat: "number",
+          hideGraph: true,
+          infoTooltip: "Total results from Meta ads (e.g., leads, purchases)"
+        };
         break;
       case 'meta-link-clicks':
         widgetProps = {
@@ -1051,92 +1130,51 @@ export function HomeTab({
           value: metaMetrics.linkClicks,
           change: metaMetrics.linkClicksGrowth,
           previousValue: metaMetrics.previousLinkClicks,
+          valueFormat: "number",
           hideGraph: true,
-          infoTooltip: "Number of clicks on links within Meta ads"
+          infoTooltip: "Total link clicks from Meta ads"
         };
         break;
-      case 'meta-budget':
-        if (!dateRange?.from || !dateRange?.to) return null;
-        return (
-          <div key={widget.id} className="w-full">
-            <TotalBudgetMetricCard
-              brandId={brandId}
-              isManuallyRefreshing={isRefreshingData} 
-            />
-          </div>
-        );
-      case 'meta-campaigns-table':
-        if (!dateRange?.from || !dateRange?.to) return null;
-        return (
-          <div key={widget.id} className="w-full md:col-span-2 lg:col-span-4"> 
-            <CampaignWidget
-              brandId={brandId}
-              dateRange={{from: dateRange.from, to: dateRange.to}}
-              campaigns={metaMetrics.campaigns} 
-              isLoading={isLoadingMetaData || isRefreshingData}
-              isSyncing={false} // Placeholder
-              onRefresh={() => fetchMetaData()} // Placeholder
-              onSync={async () => { console.log("Sync triggered from HomeTab"); }} // Placeholder
-              // title={widget.name} 
-            />
-          </div>
-        );
       default:
-        // Return null or a placeholder for unhandled widget IDs
-        console.warn("Unhandled widget ID in renderWidget:", widget.id);
-        return null; 
+        return <div key={widget.id} className="text-white">Unknown widget: {widget.name}</div>;
     }
 
-    // Default rendering for MetricCard based widgets
-    if (widget.component === 'MetricCard') {
-      if (isEditMode) {
-        return (
-          <Draggable key={widget.id} draggableId={widget.id} index={index}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                className="relative group"
-              >
-                <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="h-6 w-6 rounded-full"
-                    onClick={() => removeWidget(widget.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-                <div 
-                  className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" 
-                  {...provided.dragHandleProps}
-                >
-                  <GripVertical className="h-4 w-4 text-gray-300" />
-                </div>
-                <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                <MetricCard {...widgetProps} />
-              </div>
-            )}
-          </Draggable>
-        );
-      }
-
+    if (isEditMode) {
       return (
-        <div key={widget.id} className="w-full">
-          <MetricCard {...widgetProps} />
-        </div>
+        <Draggable key={widget.id} draggableId={widget.id} index={index}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              className="relative group"
+            >
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              <div 
+                className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" 
+                {...provided.dragHandleProps}
+              >
+                <GripVertical className="h-4 w-4 text-gray-300" />
+              </div>
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <MetricCard {...widgetProps} />
+            </div>
+          )}
+        </Draggable>
       );
     }
-    
-    // Fallback for other component types if not handled explicitly above
-    console.warn("Unhandled widget component type in renderWidget:", widget.component, widget.id);
+
     return (
       <div key={widget.id} className="w-full">
-        <Card className="bg-[#111] border-[#333] h-full">
-          <CardHeader><CardTitle className="text-white">{widget.name}</CardTitle></CardHeader>
-          <CardContent><p className="text-gray-400">Widget component '{widget.component}' not yet implemented for HomeTab.</p></CardContent>
-        </Card>
+        <MetricCard {...widgetProps} />
       </div>
     );
   };
