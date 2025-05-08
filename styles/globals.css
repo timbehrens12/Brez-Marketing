@@ -85,10 +85,20 @@ body {
 }
 
 @layer base {
-  /* * { */
-  /*   @apply border-border; */
-  /* } */
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Fix for calendar popover borders */
+  .rdp, 
+  .rdp-months,
+  .rdp-month,
+  .rdp-table,
+  [data-radix-popper-content-wrapper] {
+    @apply border-[#333] !important;
+  }
+  
+  [data-radix-popper-content-wrapper] {
+    @apply !border-[#333] bg-[#2A2A2A];
   }
 }

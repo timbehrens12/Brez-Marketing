@@ -23,6 +23,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
         <PopoverTrigger asChild>
           <Button
             id="date"
+            variant="outline"
             className={cn(
               "w-[300px] justify-start text-left font-normal bg-[#2A2A2A] border-[#333] hover:bg-[#333]",
             )}
