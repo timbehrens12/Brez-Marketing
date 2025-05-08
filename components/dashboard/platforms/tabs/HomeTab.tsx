@@ -175,7 +175,7 @@ export function HomeTab({
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [isWidgetSelectorOpen, setIsWidgetSelectorOpen] = useState(false);
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
-  const [localEditMode, setLocalEditMode] = useState(isEditMode); // Local state to control edit mode
+  const [editMode, setEditMode] = useState(isEditMode);
   const supabase = createClientComponentClient();
   
   // State to store Meta daily data
@@ -201,11 +201,6 @@ export function HomeTab({
     previousConversions: 0,
     previousRoas: 0
   });
-
-  // Update localEditMode when isEditMode prop changes
-  useEffect(() => {
-    setLocalEditMode(isEditMode);
-  }, [isEditMode]);
 
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
@@ -761,6 +756,11 @@ export function HomeTab({
     return widgets.filter(widget => widget.type === activeWidgetTab);
   };
 
+  // Determine if a widget should render as a full-width widget
+  const isFullWidthWidget = (component: string) => {
+    return ['SalesByProduct', 'InventorySummary'].includes(component);
+  };
+
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
     // Create empty datasets for metrics that don't exist in the Metrics type
@@ -801,7 +801,7 @@ export function HomeTab({
     if (widget.component === 'SalesByProduct') {
       if (!dateRange || !dateRange.from || !dateRange.to) { // Check if dates are defined
         return (
-          <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center">
+          <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center">
             <p className="text-gray-400">Date range not fully selected.</p>
           </div>
         ); // Or some other placeholder
@@ -809,14 +809,14 @@ export function HomeTab({
       // Now TypeScript knows dateRange.from and dateRange.to are Dates
       const salesByProductDateRange = { from: dateRange.from, to: dateRange.to };
 
-      if (localEditMode) {
+      if (editMode) {
         return (
           <Draggable key={widget.id} draggableId={widget.id} index={index}>
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full h-full col-span-full" // Added col-span-full to make it full width
+                className="relative group w-full col-span-full" // Make it span the full width
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -834,21 +834,21 @@ export function HomeTab({
         );
       }
       return (
-        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full"> {/* Added col-span-full */}
+        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg"> {/* Make it span the full width */}
            <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
         </div>
       );
     }
 
     if (widget.component === 'InventorySummary') {
-       if (localEditMode) {
+       if (editMode) {
         return (
           <Draggable key={widget.id} draggableId={widget.id} index={index}>
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full h-full col-span-full" // Added col-span-full
+                className="relative group w-full col-span-full" // Make it span the full width
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -866,7 +866,7 @@ export function HomeTab({
         );
       }
       return (
-        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full"> {/* Added col-span-full */}
+        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg"> {/* Make it span the full width */}
           <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
         </div>
       );
@@ -973,7 +973,7 @@ export function HomeTab({
         break;
     }
 
-    if (localEditMode) {
+    if (editMode) {
       return (
         <Draggable key={widget.id} draggableId={widget.id} index={index}>
           {(provided) => (
@@ -1007,7 +1007,7 @@ export function HomeTab({
     }
 
     return (
-      <div key={widget.id} className="w-full">
+      <div key={widget.id} className={`w-full ${isFullWidthWidget(widget.component) ? 'col-span-full' : ''}`}>
         <MetricCard {...widgetProps} />
       </div>
     );
@@ -1033,30 +1033,12 @@ export function HomeTab({
           <Droppable droppableId={`widgets-${platformType}`} direction="horizontal">
             {(provided: DroppableProvided) => (
               <div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 [&>*.col-span-full]:col-span-4 [&>*.col-span-full]:lg:min-h-[300px]" /* Added utilities to handle col-span-full properly */
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
                 {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
                 {provided.placeholder}
-                
-                {localEditMode && (
-                  <Card 
-                    className={cn(
-                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                      "hover:bg-[#191919] transition-colors duration-200"
-                    )}
-                    onClick={() => {
-                      setActiveWidgetTab(platformType as 'shopify' | 'meta');
-                      setIsWidgetSelectorOpen(true);
-                    }}
-                  >
-                    <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
-                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             )}
           </Droppable>
@@ -1065,66 +1047,80 @@ export function HomeTab({
     );
   };
 
+  const toggleEditMode = () => {
+    if (editMode) {
+      // Save changes when exiting edit mode
+      setEditMode(false);
+    } else {
+      // Enter edit mode
+      setEditMode(true);
+    }
+  };
+
+  const openWidgetSelector = () => {
+    setIsWidgetSelectorOpen(true);
+  };
+
   return (
     <div className="space-y-2">
+      {/* Dashboard header with edit buttons */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold text-white">Dashboard</h2>
+        <div className="flex gap-2">
+          {editMode ? (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={openWidgetSelector}
+                className="flex items-center"
+              >
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Add/Remove Widgets
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={toggleEditMode}
+                className="flex items-center"
+              >
+                Done
+              </Button>
+            </>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={toggleEditMode}
+              className="flex items-center"
+            >
+              <Pencil className="h-4 w-4 mr-1" />
+              Edit Layout
+            </Button>
+          )}
+        </div>
+      </div>
+
       {validWidgets.length === 0 ? (
         <Card className="bg-[#111] border-[#333] text-center py-10">
           <CardContent className="flex flex-col items-center">
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Click the grid icon above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
+              Click the Edit Layout button above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
             </p>
             <Button
               size="lg"
-              onClick={() => setIsWidgetSelectorOpen(true)}
+              onClick={toggleEditMode}
               className="bg-primary hover:bg-primary/90"
             >
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Add Your First Widget
+              <Pencil className="mr-2 h-5 w-5" />
+              Edit Layout
             </Button>
           </CardContent>
         </Card>
       ) : (
         <>
-          {/* Display different controls based on edit mode */}
-          {localEditMode ? (
-            <div className="flex justify-between items-center mb-4 bg-[#1A1A1A] p-3 rounded-lg border border-[#333]">
-              <div className="flex items-center">
-                <LayoutGrid className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-white font-medium">Edit Dashboard Layout</span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="bg-[#222] border-[#444] text-white hover:bg-[#333]"
-                  onClick={() => setIsWidgetSelectorOpen(true)}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add/Remove Widgets
-                </Button>
-                <Button
-                  variant="outline"
-                  className="bg-green-900/50 border-green-700/50 text-white hover:bg-green-800/50"
-                  onClick={() => setLocalEditMode(false)}
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-end mb-4">
-              <Button
-                variant="outline"
-                className="bg-[#1A1A1A] border-[#333] text-gray-300 hover:bg-[#222] hover:text-white"
-                onClick={() => setLocalEditMode(true)}
-              >
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Edit Layout
-              </Button>
-            </div>
-          )}
-          
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
@@ -1194,7 +1190,7 @@ export function HomeTab({
               </TabsTrigger>
             </TabsList>
             
-           <div className="px-1 py-2">
+            <div className="px-1 py-2">
               {/* Selected widgets section */}
               {getAddedWidgets().length > 0 && (
                 <>
@@ -1214,12 +1210,15 @@ export function HomeTab({
                               height={24} 
                               className="object-contain"
                             />
-              </div>
+                          </div>
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
                             <p className="text-sm text-gray-400">{widget.description}</p>
-                </div>
-              </div>
+                            {isFullWidthWidget(widget.component) && 
+                              <span className="text-xs bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded mt-1 inline-block">Full Width</span>
+                            }
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1260,6 +1259,9 @@ export function HomeTab({
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
                             <p className="text-sm text-gray-400">{widget.description}</p>
+                            {isFullWidthWidget(widget.component) && 
+                              <span className="text-xs bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded mt-1 inline-block">Full Width</span>
+                            }
                           </div>
                         </div>
                         <PlusCircle className="h-5 w-5 text-gray-400 hover:text-white" />
@@ -1274,10 +1276,10 @@ export function HomeTab({
                   <p>No {activeWidgetTab} widgets available.</p>
                 </div>
               )}
-              </div>
+            </div>
           </Tabs>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 } 
