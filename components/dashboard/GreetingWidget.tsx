@@ -376,39 +376,6 @@ export function GreetingWidget({
     }
   }, [])
 
-  // Add getPreviousPeriodDates function to determine appropriate previous period just like Meta tab
-  const getPreviousPeriodDates = (period: ReportPeriod): { from: Date, to: Date } => {
-    const now = new Date();
-    
-    if (period === 'daily') {
-      // If looking at today, compare with yesterday
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      return {
-        from: yesterday,
-        to: yesterday
-      };
-    } else if (period === 'monthly') {
-      // If looking at this month, compare with last month
-      const lastMonthStart = startOfMonth(subMonths(now, 1));
-      const lastMonthEnd = endOfMonth(subMonths(now, 1));
-      return {
-        from: lastMonthStart,
-        to: lastMonthEnd
-      };
-    } else {
-      // Default fallback for weekly or other periods
-      const oneWeekAgo = new Date(now);
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      return {
-        from: oneWeekAgo,
-        to: now
-      };
-    }
-  };
-
-  // Original getPeriodDates function slightly modified to take into account the new logic
   const getPeriodDates = (period: ReportPeriod, isPrevious: boolean = false) => {
     const now = new Date()
     let from: Date
@@ -427,63 +394,148 @@ export function GreetingWidget({
         from = yesterday
         to = yesterdayEnd
       } else {
-        // Today
-        from = new Date(now)
-        from.setHours(0, 0, 0, 0)
-        to = new Date(now)
-        to.setHours(23, 59, 59, 999)
+      // Today
+      from = new Date(now)
+      from.setHours(0, 0, 0, 0)
+      to = new Date(now)
+      to.setHours(23, 59, 59, 999)
       }
     } else {
       if (isPrevious) {
-        // Previous month compared to what we're currently viewing
-        // When viewing the current month, compare with last month
-        // When viewing last month, compare with two months ago
-        // This matches the MetaTab behavior
-        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
+        // Two months ago (month before the previous month)
+        const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+        
+        from = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth(), 1)
         from.setHours(0, 0, 0, 0)
         
-        to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
-      } else {
-        // Previous complete month (not current month)
-        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-        from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
-        from.setHours(0, 0, 0, 0)
-        
-        to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
-        to.setHours(23, 59, 59, 999)
+        to = new Date(twoMonthsAgo.getFullYear(), twoMonthsAgo.getMonth() + 1, 0)
+      to.setHours(23, 59, 59, 999)
+    } else {
+      // Previous complete month (not current month)
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      from = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1)
+      from.setHours(0, 0, 0, 0)
+      
+      to = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0)
+      to.setHours(23, 59, 59, 999)
       }
     }
 
     return { from, to }
   }
 
-  // Modify the fetchPeriodData function to use the new getPreviousPeriodDates function
   const fetchPeriodData = async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setIsLoading(true);
-      
-      // Get current dates for each period
-      const dailyDates = getPeriodDates('daily');
-      const monthlyDates = getPeriodDates('monthly');
-      
-      // Get previous dates for comparison
-      const previousDailyDates = getPreviousPeriodDates('daily');
-      const previousMonthlyDates = getPreviousPeriodDates('monthly');
-      
-      // Fetch data for all periods
-      const [dailyResult, monthlyResult, previousDailyResult, previousMonthlyResult] = await Promise.all([
-        fetchPeriodMetrics(brandId, dailyDates.from, dailyDates.to, true),
-        fetchPeriodMetrics(brandId, monthlyDates.from, monthlyDates.to),
-        fetchPeriodMetrics(brandId, previousDailyDates.from, previousDailyDates.to),
-        fetchPeriodMetrics(brandId, previousMonthlyDates.from, previousMonthlyDates.to)
-      ]);
-      
-      // Rest of the existing code
-      setDailyReport(dailyResult);
-      setMonthlyReport(monthlyResult);
-      setIsLoading(false);
+      console.log('Fetching period data...');
+
+      const shopifyConnection = connections.find(c => c.platform_type === 'shopify' && c.status === 'active');
+      const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
+
+      if (shopifyConnection) {
+        console.log('Fetching daily data...');
+        const { from: dailyFrom, to: dailyTo } = getPeriodDates('daily');
+        
+        // Fetch data with previous days for 7-day performance chart
+        const dailyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          dailyFrom,
+          dailyTo,
+          true // Fetch previous 7 days data
+        );
+        
+        let currentDailyMetrics: PeriodMetrics;
+        let dailyMetricsArray: PeriodMetrics[] = [];
+        
+        if ('dailyMetrics' in dailyResult && 'currentMetrics' in dailyResult) {
+          // If the result includes dailyMetrics and currentMetrics
+          dailyMetricsArray = dailyResult.dailyMetrics || [];
+          currentDailyMetrics = dailyResult.currentMetrics;
+        } else {
+          // If the result is just a single PeriodMetrics object
+          currentDailyMetrics = dailyResult as PeriodMetrics;
+        }
+
+        // Fetch previous period data for comparison
+        console.log('Fetching previous daily data...');
+        const { from: previousDailyFrom, to: previousDailyTo } = getPeriodDates('daily', true);
+        
+        const previousDailyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          previousDailyFrom,
+          previousDailyTo
+        );
+        
+        let previousDailyMetrics: PeriodMetrics;
+        
+        if ('currentMetrics' in previousDailyResult) {
+          previousDailyMetrics = previousDailyResult.currentMetrics;
+        } else {
+          previousDailyMetrics = previousDailyResult as PeriodMetrics;
+        }
+
+        // Generate daily report
+        const dailyReport = await generateEnhancedReport(
+          'daily',
+          currentDailyMetrics,
+          previousDailyMetrics,
+          dailyMetricsArray // Pass the daily metrics array
+        );
+
+        // Similar updates for monthly data
+        console.log('Fetching monthly data...');
+        const { from: monthlyFrom, to: monthlyTo } = getPeriodDates('monthly');
+        
+        const monthlyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          monthlyFrom,
+          monthlyTo
+        );
+        
+        let currentMonthlyMetrics: PeriodMetrics;
+        
+        if ('currentMetrics' in monthlyResult) {
+          currentMonthlyMetrics = monthlyResult.currentMetrics;
+        } else {
+          currentMonthlyMetrics = monthlyResult as PeriodMetrics;
+        }
+
+        console.log('Fetching previous monthly data...');
+        const { from: previousMonthlyFrom, to: previousMonthlyTo } = getPeriodDates('monthly', true);
+        
+        const previousMonthlyResult = await fetchPeriodMetrics(
+          shopifyConnection.id,
+          previousMonthlyFrom,
+          previousMonthlyTo
+        );
+        
+        let previousMonthlyMetrics: PeriodMetrics;
+        
+        if ('currentMetrics' in previousMonthlyResult) {
+          previousMonthlyMetrics = previousMonthlyResult.currentMetrics;
+      } else {
+          previousMonthlyMetrics = previousMonthlyResult as PeriodMetrics;
+        }
+
+        // Generate monthly report with previous comparison
+        const monthlyReport = await generateEnhancedReport(
+          'monthly',
+          currentMonthlyMetrics,
+          previousMonthlyMetrics
+        );
+
+        // Rest of the existing code
+        setDailyReport(dailyReport);
+        setMonthlyReport(monthlyReport);
+        setIsLoading(false);
+      } else {
+        // Rest of the existing code
+        console.log('No Shopify connection found.');
+        setIsLoading(false);
+        setError('No Shopify connection found. Please connect your Shopify store to see sales data.');
+      }
     } catch (error) {
       // Rest of the existing code
       console.error('Error fetching period data:', error);
@@ -522,7 +574,6 @@ export function GreetingWidget({
       }
       
       // Calculate growth rates (safely handle division by zero)
-      // Using the previous period for appropriate comparison just like in Meta tab
       const salesGrowth = previousMetrics.totalSales > 0 
         ? ((currentMetrics.totalSales - previousMetrics.totalSales) / previousMetrics.totalSales) * 100 
         : (currentMetrics.totalSales > 0 ? 100 : 0) // Use 100% growth if we now have sales but didn't before

@@ -175,7 +175,12 @@ export function HomeTab({
     impressionGrowth: 0,
     clickGrowth: 0,
     conversionGrowth: 0,
-    roasGrowth: 0
+    roasGrowth: 0,
+    adSpendPreviousPeriod: 0,
+    impressionsPreviousPeriod: 0,
+    clicksPreviousPeriod: 0,
+    conversionsPreviousPeriod: 0,
+    roasPreviousPeriod: 0
   });
 
   // Treat metrics as ExtendedMetrics to ensure TypeScript compatibility
@@ -212,6 +217,9 @@ export function HomeTab({
       // Add date range
       params.append('from', dateRange.from.toISOString().split('T')[0]);
       params.append('to', dateRange.to.toISOString().split('T')[0]);
+      
+      // Add previousPeriod parameter to fetch previous period data
+      params.append('previousPeriod', 'true');
       
       // Force metrics fetch
       params.append('bypass_cache', 'true');
@@ -252,11 +260,28 @@ export function HomeTab({
         clicks: data.clicks || 0,
         conversions: data.conversions || 0,
         roas: data.roas || 0,
-        adSpendGrowth: data.adSpendGrowth || 0,
-        impressionGrowth: data.impressionGrowth || 0,
-        clickGrowth: data.clickGrowth || 0,
-        conversionGrowth: data.conversionGrowth || 0,
-        roasGrowth: data.roasGrowth || 0
+        // Calculate growth rates properly using previous period data
+        adSpendGrowth: data.adSpendPreviousPeriod && data.adSpendPreviousPeriod !== 0 
+          ? ((data.adSpend - data.adSpendPreviousPeriod) / data.adSpendPreviousPeriod) * 100 
+          : data.adSpendGrowth || 0,
+        impressionGrowth: data.impressionsPreviousPeriod && data.impressionsPreviousPeriod !== 0 
+          ? ((data.impressions - data.impressionsPreviousPeriod) / data.impressionsPreviousPeriod) * 100 
+          : data.impressionGrowth || 0,
+        clickGrowth: data.clicksPreviousPeriod && data.clicksPreviousPeriod !== 0 
+          ? ((data.clicks - data.clicksPreviousPeriod) / data.clicksPreviousPeriod) * 100 
+          : data.clickGrowth || 0,
+        conversionGrowth: data.conversionsPreviousPeriod && data.conversionsPreviousPeriod !== 0 
+          ? ((data.conversions - data.conversionsPreviousPeriod) / data.conversionsPreviousPeriod) * 100 
+          : data.conversionGrowth || 0,
+        roasGrowth: data.roasPreviousPeriod && data.roasPreviousPeriod !== 0 
+          ? ((data.roas - data.roasPreviousPeriod) / data.roasPreviousPeriod) * 100 
+          : data.roasGrowth || 0,
+        // Store previous period values
+        adSpendPreviousPeriod: data.adSpendPreviousPeriod || 0,
+        impressionsPreviousPeriod: data.impressionsPreviousPeriod || 0,
+        clicksPreviousPeriod: data.clicksPreviousPeriod || 0,
+        conversionsPreviousPeriod: data.conversionsPreviousPeriod || 0,
+        roasPreviousPeriod: data.roasPreviousPeriod || 0
       });
       
       hasFetchedMetaData.current = true;
@@ -525,7 +550,8 @@ export function HomeTab({
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
-      dateRange: dateRange
+      dateRange: dateRange,
+      showPreviousPeriod: widget.type === 'meta'
     };
 
     // Widget-specific props based on ID
@@ -578,7 +604,11 @@ export function HomeTab({
           prefix: "$",
           valueFormat: "currency",
           hideGraph: true,
-          infoTooltip: "Total ad spend on Meta platforms"
+          infoTooltip: "Total ad spend on Meta platforms",
+          previousValue: metaMetrics.adSpendPreviousPeriod,
+          previousValuePrefix: "$",
+          previousValueFormat: "currency",
+          previousPeriodLabel: previousPeriodLabel
         };
         break;
       case 'meta-impressions':
@@ -587,7 +617,10 @@ export function HomeTab({
           value: metaMetrics.impressions,
           change: metaMetrics.impressionGrowth,
           hideGraph: true,
-          infoTooltip: "Total number of times your ads were viewed"
+          infoTooltip: "Total number of times your ads were viewed",
+          previousValue: metaMetrics.impressionsPreviousPeriod,
+          previousValueFormat: "number",
+          previousPeriodLabel: previousPeriodLabel
         };
         break;
       case 'meta-clicks':
@@ -596,7 +629,10 @@ export function HomeTab({
           value: metaMetrics.clicks,
           change: metaMetrics.clickGrowth,
           hideGraph: true,
-          infoTooltip: "Total number of clicks on your ads"
+          infoTooltip: "Total number of clicks on your ads",
+          previousValue: metaMetrics.clicksPreviousPeriod,
+          previousValueFormat: "number",
+          previousPeriodLabel: previousPeriodLabel
         };
         break;
       case 'meta-conversions':
@@ -605,7 +641,10 @@ export function HomeTab({
           value: metaMetrics.conversions,
           change: metaMetrics.conversionGrowth,
           hideGraph: true,
-          infoTooltip: "Total number of conversions from your ads"
+          infoTooltip: "Total number of conversions from your ads",
+          previousValue: metaMetrics.conversionsPreviousPeriod,
+          previousValueFormat: "number",
+          previousPeriodLabel: previousPeriodLabel
         };
         break;
       case 'meta-roas':
@@ -617,7 +656,12 @@ export function HomeTab({
           valueFormat: "number",
           decimals: 2,
           hideGraph: true,
-          infoTooltip: "Return on ad spend (revenue / ad spend)"
+          infoTooltip: "Return on ad spend (revenue / ad spend)",
+          previousValue: metaMetrics.roasPreviousPeriod,
+          previousValueFormat: "number",
+          previousValueSuffix: "x",
+          previousValueDecimals: 2,
+          previousPeriodLabel: previousPeriodLabel
         };
         break;
       default:
@@ -715,6 +759,40 @@ export function HomeTab({
       </div>
     );
   };
+
+  // Add a function to generate the proper previous period label based on the date range
+  const getPreviousPeriodLabel = () => {
+    if (!dateRange?.from || !dateRange?.to) {
+      return "Previous period";
+    }
+
+    const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    // Handle single day view (compare to yesterday)
+    if (daysDiff === 1) {
+      return "Yesterday";
+    }
+    
+    // Handle week view (compare to previous week)
+    if (daysDiff >= 6 && daysDiff <= 8) {
+      return "Previous week";
+    }
+    
+    // Handle month view (compare to previous month)
+    if (daysDiff >= 28 && daysDiff <= 31) {
+      return "Previous month";
+    }
+    
+    // Handle 90-day view (compare to previous 90 days)
+    if (daysDiff >= 85 && daysDiff <= 95) {
+      return "Previous 90 days";
+    }
+    
+    // For custom ranges, specify the exact days
+    return `Previous ${daysDiff} days`;
+  };
+
+  const previousPeriodLabel = getPreviousPeriodLabel();
 
   return (
     <div className="space-y-2">
