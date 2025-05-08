@@ -205,7 +205,7 @@ export function PlatformTabs({
           console.log("[PlatformTabs] Navigation transition complete, cleared API blocking flag");
             }, 1000);
           }
-    }
+      }
     
     // If we're navigating TO the Meta tab, clear the block flag immediately
     if (value === "meta" && window._blockMetaApiCalls) {

@@ -1235,132 +1235,129 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
-      {/* Remove padding from outermost and apply to an inner wrapper */}
-      <div className="p-8 flex-grow flex flex-col">
-        {/* Remove the red diagnostic border from here */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+      {/* Remove p-8 temporarily for diagnosis */}
+      <div className="flex items-center justify-between mb-6 border-t-4 border-red-500 px-8 pt-8">
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          
+          <div className="flex items-center gap-3 ml-4 pl-4 border-l border-[#333]">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    onClick={refresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Refresh
+                      </>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                  <p>Manually refresh dashboard data</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
-            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-[#333]">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button 
-                      onClick={refresh}
-                      disabled={isRefreshing}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2A2A2A] hover:bg-[#333] border border-[#444] text-sm text-gray-300 hover:text-white transition-colors"
-                    >
-                      {isRefreshing ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                          Refreshing...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="h-4 w-4" />
-                          Refresh
-                        </>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-                    <p>Manually refresh dashboard data</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <span className="text-xs text-gray-500">
-                Last updated: {lastRefreshed?.toLocaleTimeString()}
-              </span>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-gray-500 hover:text-gray-300 transition-colors">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
-                    <p>Dashboard data refreshes automatically every 5 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Only show edit button on home tab */}
-            {activeTab === "site" && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline"
-                      className={cn(
-                        "text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
-                        isEditMode && "bg-[#222] text-white border-[#444] shadow-lg"
-                      )}
-                      onClick={() => setIsEditMode(!isEditMode)}
-                    >
-                      <LayoutGrid className="h-5 w-5 mr-2" />
-                      {isEditMode ? "Done Editing" : "Edit Layout"}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-                    <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-            <DateRangePicker 
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
+            <span className="text-xs text-gray-500">
+              Last updated: {lastRefreshed?.toLocaleTimeString()}
+            </span>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-gray-500 hover:text-gray-300 transition-colors">
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px]">
+                  <p>Dashboard data refreshes automatically every 5 minutes. You can also refresh manually. A {COOLDOWN_SECONDS}-second cooldown applies between manual refreshes to prevent excessive API calls.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
-        {/* WidgetManager and other content will take up remaining space */}
-        <div className="flex-grow">
-          {selectedBrandId && initialDataLoad ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-              <p className="text-gray-400 text-lg">Loading dashboard data...</p>
-              <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-            </div>
-          ) : selectedBrandId ? (
-            <>
-              <WidgetManager 
-                dateRange={dateRange} 
-                brandId={selectedBrandId}
-                metrics={metrics}
-                isLoading={isLoading}
-                isRefreshingData={isRefreshingData}
-                initialDataLoad={initialDataLoad}
-                platformStatus={activePlatforms}
-                existingConnections={connections}
-                brands={brands}
-                isEditMode={isEditMode}
-                handleTabChange={handleTabChange}
-              >
-                {isEditMode && (
-                  <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <LayoutGrid className="h-5 w-5 text-white mr-2" />
-                      <span className="text-white font-medium">Edit Mode Active</span>
-                    </div>
-                    <p className="text-gray-400 text-sm">Drag widgets to reposition or click the "×" to remove them</p>
-                  </div>
-                )}
-                <div className="mt-3">
-                  {/* Removed widgets will be managed by the HomeTab component */}
-                </div>
-              </WidgetManager>
-            </>
-          ) : (
-            <div className="text-center text-gray-400 py-12">
-              Select a brand to view metrics
-            </div>
+        <div className="flex items-center gap-4">
+          {/* Only show edit button on home tab */}
+          {activeTab === "site" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className={cn(
+                      "text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
+                      isEditMode && "bg-[#222] text-white border-[#444] shadow-lg"
+                    )}
+                    onClick={() => setIsEditMode(!isEditMode)}
+                  >
+                    <LayoutGrid className="h-5 w-5 mr-2" />
+                    {isEditMode ? "Done Editing" : "Edit Layout"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                  <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
+          <DateRangePicker 
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+          />
         </div>
+      </div>
+      {/* WidgetManager and other content will take up remaining space */}
+      <div className="flex-grow px-8 pb-8">
+        {selectedBrandId && initialDataLoad ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-400 text-lg">Loading dashboard data...</p>
+            <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+          </div>
+        ) : selectedBrandId ? (
+          <>
+            <WidgetManager 
+              dateRange={dateRange} 
+              brandId={selectedBrandId}
+              metrics={metrics}
+              isLoading={isLoading}
+              isRefreshingData={isRefreshingData}
+              initialDataLoad={initialDataLoad}
+              platformStatus={activePlatforms}
+              existingConnections={connections}
+              brands={brands}
+              isEditMode={isEditMode}
+              handleTabChange={handleTabChange}
+            >
+              {isEditMode && (
+                <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <LayoutGrid className="h-5 w-5 text-white mr-2" />
+                    <span className="text-white font-medium">Edit Mode Active</span>
+                  </div>
+                  <p className="text-gray-400 text-sm">Drag widgets to reposition or click the "×" to remove them</p>
+                </div>
+              )}
+              <div className="mt-3">
+                {/* Removed widgets will be managed by the HomeTab component */}
+              </div>
+            </WidgetManager>
+          </>
+        ) : (
+          <div className="text-center text-gray-400 py-12">
+            Select a brand to view metrics
+          </div>
+        )}
       </div>
     </div>
   )

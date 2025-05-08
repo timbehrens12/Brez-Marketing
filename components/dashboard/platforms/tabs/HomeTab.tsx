@@ -666,8 +666,8 @@ export function HomeTab({
 
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
     if (sectionWidgets.length === 0) return null;
-    
-    return (
+
+  return (
       <div className="mb-5">
         <div className="flex items-center mb-2">
           <Image 
@@ -736,15 +736,15 @@ export function HomeTab({
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <>
+                  ) : (
+                    <>
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
             "Shopify", 
             "shopify", 
             "https://i.imgur.com/cnCcupx.png"
-          )}
+                      )}
           
           {/* Meta Section */}
           {renderWidgetSection(
@@ -797,7 +797,7 @@ export function HomeTab({
                 )}
               >
                 <Image 
-                  src="https://i.imgur.com/6hyyRrs.png" 
+                  src="https://i.imgur.com/6hyyRrs.png"
                   alt="Meta" 
                   width={16} 
                   height={16} 
@@ -806,7 +806,7 @@ export function HomeTab({
                 Meta
               </TabsTrigger>
             </TabsList>
-           
+            
            <div className="px-1 py-2">
               {/* Selected widgets section */}
               {getAddedWidgets().length > 0 && (
@@ -827,12 +827,12 @@ export function HomeTab({
                               height={24} 
                               className="object-contain"
                             />
-                          </div>
+              </div>
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
                             <p className="text-sm text-gray-400">{widget.description}</p>
-                          </div>
-                        </div>
+                </div>
+              </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -887,7 +887,7 @@ export function HomeTab({
                   <p>No {activeWidgetTab} widgets available.</p>
                 </div>
               )}
-            </div>
+              </div>
           </Tabs>
         </DialogContent>
       </Dialog>
