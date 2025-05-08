@@ -35,6 +35,7 @@ interface WidgetManagerProps {
   children?: React.ReactNode;
   brands?: Array<{ id: string, name: string }>;
   isEditMode?: boolean;
+  handleTabChange?: (tab: string) => void;
 }
 
 export function WidgetManager({ 
@@ -48,7 +49,8 @@ export function WidgetManager({
   existingConnections,
   children,
   brands = [],
-  isEditMode = false
+  isEditMode = false,
+  handleTabChange
 }: WidgetManagerProps) {
   const { metrics: contextMetrics, isLoading: contextIsLoading } = useMetrics()
   const [activeTab, setActiveTab] = useState<string>("site")
@@ -97,8 +99,13 @@ export function WidgetManager({
     }
   }, [brandId])
 
-  const handleTabChange = (value: string) => {
+  const handleTabChangeInternal = (value: string) => {
     setActiveTab(value)
+    
+    // Pass the change to the parent component if the handler exists
+    if (handleTabChange) {
+      handleTabChange(value)
+    }
   }
 
   return (
@@ -112,7 +119,7 @@ export function WidgetManager({
         initialDataLoad={initialDataLoad}
         brandId={brandId}
         connections={connections}
-        onTabChange={handleTabChange}
+        onTabChange={handleTabChangeInternal}
         brands={brands}
         isEditMode={isEditMode}
       />

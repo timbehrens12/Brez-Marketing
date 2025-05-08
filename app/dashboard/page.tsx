@@ -145,7 +145,7 @@ export default function DashboardPage() {
   })
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("shopify")
+  const [activeTab, setActiveTab] = useState("site")
   const [isEditMode, setIsEditMode] = useState(false)
   const { metrics: contextMetrics, isLoading: contextIsLoading, fetchMetrics } = useMetrics()
 
@@ -1216,6 +1216,23 @@ export default function DashboardPage() {
     };
   }, [selectedBrandId, dateRange, setMetrics, setLastRefreshed]);
 
+  // Handle tab changes
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    
+    // When changing tabs, automatically exit edit mode
+    if (tab !== "site" && isEditMode) {
+      setIsEditMode(false);
+      
+      // Show a toast to inform the user
+      toast({
+        title: "Edit mode disabled",
+        description: "Edit mode is only available on the Home tab",
+        variant: "default"
+      });
+    }
+  };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -1269,26 +1286,29 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline"
-                  className={cn(
-                    "text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
-                    isEditMode && "bg-[#222] text-white border-[#444] shadow-lg"
-                  )}
-                  onClick={() => setIsEditMode(!isEditMode)}
-                >
-                  <LayoutGrid className="h-5 w-5 mr-2" />
-                  {isEditMode ? "Done Editing" : "Edit Layout"}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
-                <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Only show edit button on home tab */}
+          {activeTab === "site" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    className={cn(
+                      "text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
+                      isEditMode && "bg-[#222] text-white border-[#444] shadow-lg"
+                    )}
+                    onClick={() => setIsEditMode(!isEditMode)}
+                  >
+                    <LayoutGrid className="h-5 w-5 mr-2" />
+                    {isEditMode ? "Done Editing" : "Edit Layout"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
+                  <p>{isEditMode ? "Exit Edit Mode" : "Customize Dashboard"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <DateRangePicker 
             dateRange={dateRange}
             setDateRange={setDateRange}
@@ -1315,6 +1335,7 @@ export default function DashboardPage() {
             existingConnections={connections}
             brands={brands}
             isEditMode={isEditMode}
+            handleTabChange={handleTabChange}
           >
             {isEditMode && (
               <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
