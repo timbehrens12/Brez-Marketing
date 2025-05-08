@@ -1273,18 +1273,15 @@ export default function DashboardPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  variant="ghost"
-                  size="icon"
+                  variant="outline"
                   className={cn(
-                    "text-white hover:bg-white/10 border border-transparent",
-                    isEditMode && "bg-blue-600/30 text-blue-300 border-blue-800/70 shadow-md shadow-blue-900/20"
+                    "text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
+                    isEditMode && "bg-[#222] text-white border-[#444] shadow-lg"
                   )}
                   onClick={() => setIsEditMode(!isEditMode)}
                 >
-                  <LayoutGrid className={cn(
-                    "h-5 w-5",
-                    isEditMode && "animate-pulse"
-                  )} />
+                  <LayoutGrid className="h-5 w-5 mr-2" />
+                  {isEditMode ? "Done Editing" : "Edit Layout"}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-[#222] border border-[#444] text-white text-xs">
@@ -1319,6 +1316,15 @@ export default function DashboardPage() {
             brands={brands}
             isEditMode={isEditMode}
           >
+            {isEditMode && (
+              <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <LayoutGrid className="h-5 w-5 text-white mr-2" />
+                  <span className="text-white font-medium">Edit Mode Active</span>
+                </div>
+                <p className="text-gray-400 text-sm">Drag widgets to reposition or click the "×" to remove them</p>
+              </div>
+            )}
             <div className="mt-3">
               {/* Removed widgets will be managed by the HomeTab component */}
             </div>

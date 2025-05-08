@@ -649,6 +649,7 @@ export function HomeTab({
               >
                 <GripVertical className="h-4 w-4 text-gray-300" />
               </div>
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
               <MetricCard {...widgetProps} />
             </div>
           )}
