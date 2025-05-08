@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Metrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { DateRange } from 'react-day-picker'
@@ -16,7 +16,7 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { DragDropContext, Droppable, Draggable, DroppableProvided } from 'react-beautiful-dnd'
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { format } from 'date-fns'
+import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -176,12 +176,203 @@ export function HomeTab({
     clickGrowth: 0,
     conversionGrowth: 0,
     roasGrowth: 0,
-    adSpendPreviousPeriod: 0,
-    impressionsPreviousPeriod: 0,
-    clicksPreviousPeriod: 0,
-    conversionsPreviousPeriod: 0,
-    roasPreviousPeriod: 0
+    previousAdSpend: 0,
+    previousImpressions: 0,
+    previousClicks: 0, 
+    previousConversions: 0,
+    previousRoas: 0
   });
+
+  // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
+  const toLocalISODateString = (date: Date): string => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  // Function to calculate previous period date range - matches the one in MetaTab
+  const getPreviousPeriodDates = (from: Date, to: Date): { prevFrom: string, prevTo: string } => {
+    // Normalize dates to avoid timezone issues - work with dates at the day level only
+    const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    
+    console.log(`[HomeTab] Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
+    
+    // Case 1: Single day - always compare to the day before
+    const isSingleDay = isSameDay(fromNormalized, toNormalized);
+    if (isSingleDay) {
+      // For a single day view, previous period is always the day before
+      const prevDay = new Date(fromNormalized);
+      prevDay.setDate(prevDay.getDate() - 1);
+      const prevDayStr = toLocalISODateString(prevDay);
+      
+      console.log(`[HomeTab] Single day detected, comparing to previous day: ${prevDayStr}`);
+      
+      return {
+        prevFrom: prevDayStr,
+        prevTo: prevDayStr
+      };
+    }
+    
+    // Case 2: "Last 7 days" preset (Mar 21-27 → should compare to Mar 14-20)
+    // Check if this is the last 7 days preset by looking at the range size and end date
+    const rangeDays = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+    
+    // If we have a 7-day range ending yesterday, it's likely the "Last 7 days" preset
+    const isLast7Days = rangeDays === 7 && isSameDay(toNormalized, yesterday);
+    if (isLast7Days) {
+      // For last 7 days, previous period should be the 7 days before that (not overlapping)
+      const prevFrom = new Date(fromNormalized);
+      prevFrom.setDate(prevFrom.getDate() - 7);
+      
+      const prevTo = new Date(toNormalized);
+      prevTo.setDate(prevTo.getDate() - 7);
+      
+      console.log(`[HomeTab] "Last 7 days" preset detected, comparing to previous 7 days:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(prevFrom),
+        prevTo: toLocalISODateString(prevTo)
+      };
+    }
+    
+    // Case 3: "Last 30 days" preset (similar logic to Last 7 days)
+    const isLast30Days = rangeDays === 30 && isSameDay(toNormalized, yesterday);
+    if (isLast30Days) {
+      // For last 30 days, previous period should be the 30 days before that (not overlapping)
+      const prevFrom = new Date(fromNormalized);
+      prevFrom.setDate(prevFrom.getDate() - 30);
+      
+      const prevTo = new Date(toNormalized);
+      prevTo.setDate(prevTo.getDate() - 30);
+      
+      console.log(`[HomeTab] "Last 30 days" preset detected, comparing to previous 30 days:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(prevFrom),
+        prevTo: toLocalISODateString(prevTo)
+      };
+    }
+    
+    // Case 4: "This month" preset (from start of current month to today)
+    const now = new Date();
+    const startOfCurrentMonth = startOfMonth(now);
+    if (isSameDay(fromNormalized, startOfCurrentMonth)) {
+      // Get the days in current period
+      const daysInCurrentPeriod = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Previous period should be same number of days in previous month
+      const prevMonthStart = startOfMonth(subMonths(now, 1));
+      const prevMonthEnd = new Date(prevMonthStart);
+      prevMonthEnd.setDate(prevMonthStart.getDate() + daysInCurrentPeriod - 1);
+      
+      console.log(`[HomeTab] "This month" pattern detected, comparing to same days in previous month:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevMonthStart)} to ${toLocalISODateString(prevMonthEnd)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(prevMonthStart),
+        prevTo: toLocalISODateString(prevMonthEnd)
+      };
+    }
+    
+    // Case 5: "Last month" preset (entire previous month)
+    const startOfLastMonth = startOfMonth(subMonths(now, 1));
+    const endOfLastMonth = endOfMonth(subMonths(now, 1));
+    if (isSameDay(fromNormalized, startOfLastMonth) && isSameDay(toNormalized, endOfLastMonth)) {
+      // Previous period should be the month before last
+      const startOfPrevMonth = startOfMonth(subMonths(now, 2));
+      const endOfPrevMonth = endOfMonth(subMonths(now, 2));
+      
+      console.log(`[HomeTab] "Last month" pattern detected, comparing to the month before last:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(startOfPrevMonth)} to ${toLocalISODateString(endOfPrevMonth)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(startOfPrevMonth),
+        prevTo: toLocalISODateString(endOfPrevMonth)
+      };
+    }
+    
+    // Case 6: "This year" preset (from start of year to today)
+    const startOfCurrentYear = new Date(now.getFullYear(), 0, 1);
+    if (isSameDay(fromNormalized, startOfCurrentYear)) {
+      // Get the days in current period
+      const daysInCurrentPeriod = Math.round((toNormalized.getTime() - fromNormalized.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Previous period should be same number of days in previous year
+      const prevYearStart = new Date(now.getFullYear() - 1, 0, 1);
+      const prevYearEnd = new Date(prevYearStart);
+      prevYearEnd.setDate(prevYearStart.getDate() + daysInCurrentPeriod - 1);
+      
+      console.log(`[HomeTab] "This year" pattern detected, comparing to same days in previous year:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(prevYearStart)} to ${toLocalISODateString(prevYearEnd)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(prevYearStart),
+        prevTo: toLocalISODateString(prevYearEnd)
+      };
+    }
+    
+    // Case 7: "Last year" preset (entire previous year)
+    const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+    const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+    if (isSameDay(fromNormalized, startOfLastYear) && isSameDay(toNormalized, endOfLastYear)) {
+      // Previous period should be the year before last
+      const startOfPrevYear = new Date(now.getFullYear() - 2, 0, 1);
+      const endOfPrevYear = new Date(now.getFullYear() - 2, 11, 31);
+      
+      console.log(`[HomeTab] "Last year" pattern detected, comparing to the year before last:`, {
+        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+        prevRange: `${toLocalISODateString(startOfPrevYear)} to ${toLocalISODateString(endOfPrevYear)}`
+      });
+      
+      return {
+        prevFrom: toLocalISODateString(startOfPrevYear),
+        prevTo: toLocalISODateString(endOfPrevYear)
+      };
+    }
+    
+    // Case 8: Default for custom date ranges - use equivalent previous period
+    const currentRange = toNormalized.getTime() - fromNormalized.getTime();
+    const daysInRange = Math.ceil(currentRange / (1000 * 60 * 60 * 24)) + 1;
+    
+    const prevFrom = new Date(fromNormalized);
+    prevFrom.setDate(prevFrom.getDate() - daysInRange);
+    
+    const prevTo = new Date(toNormalized);
+    prevTo.setDate(prevTo.getDate() - daysInRange);
+    
+    const prevFromStr = toLocalISODateString(prevFrom);
+    const prevToStr = toLocalISODateString(prevTo);
+    
+    console.log(`[HomeTab] Custom range detected (${daysInRange} days), comparing to previous period:`, {
+      currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
+      prevRange: `${prevFromStr} to ${prevToStr}`
+    });
+    
+    return {
+      prevFrom: prevFromStr,
+      prevTo: prevToStr
+    };
+  };
+
+  // Calculate percentage change function
+  const calculatePercentChange = (current: number, previous: number): number => {
+    if (previous === 0) return 0;
+    return ((current - previous) / Math.abs(previous)) * 100;
+  };
 
   // Treat metrics as ExtendedMetrics to ensure TypeScript compatibility
   const extendedMetrics = metrics as ExtendedMetrics;
@@ -210,6 +401,7 @@ export function HomeTab({
     try {
       setIsLoadingMetaData(true);
 
+      // Current period params
       const params = new URLSearchParams({
         brandId: brandId
       });
@@ -218,20 +410,28 @@ export function HomeTab({
       params.append('from', dateRange.from.toISOString().split('T')[0]);
       params.append('to', dateRange.to.toISOString().split('T')[0]);
       
-      // Add previousPeriod parameter to fetch previous period data
-      params.append('previousPeriod', 'true');
-      
-      // Add parameters for comparing with previous period
-      params.append('includePreviousPeriod', 'true');
-      params.append('includeGrowth', 'true');
-      params.append('calculateGrowth', 'true');
-      
       // Force metrics fetch
       params.append('bypass_cache', 'true');
       params.append('force_load', 'true');
       
-      console.log(`[HomeTab] Fetching Meta data with params: ${params.toString()}`);
+      console.log(`[HomeTab] Fetching Meta data for current period: ${params.toString()}`);
       
+      // Calculate previous period dates using the same logic as MetaTab
+      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+      
+      // Previous period params
+      const prevParams = new URLSearchParams({
+        brandId: brandId
+      });
+      
+      // Add previous period date range
+      prevParams.append('from', prevFrom);
+      prevParams.append('to', prevTo);
+      prevParams.append('bypass_cache', 'true');
+      
+      console.log(`[HomeTab] Fetching Meta data for previous period: ${prevParams.toString()}`);
+      
+      // Fetch current period data
       const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
         cache: 'no-cache',
         headers: {
@@ -239,76 +439,70 @@ export function HomeTab({
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Meta data: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      console.log("[HomeTab] Fetched Meta data:", {
-        adSpend: data.adSpend,
-        impressions: data.impressions,
-        clicks: data.clicks,
-        roas: data.roas,
-        dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0,
-        // Log the previous period values to see what we're getting
-        adSpendPreviousPeriod: data.adSpendPreviousPeriod,
-        impressionsPreviousPeriod: data.impressionsPreviousPeriod,
-        clicksPreviousPeriod: data.clicksPreviousPeriod,
-        conversionsPreviousPeriod: data.conversionsPreviousPeriod,
-        roasPreviousPeriod: data.roasPreviousPeriod,
-        // Also check for alternative naming patterns
-        previousPeriod: data.previousPeriod,
-        previous: data.previous
+      // Fetch previous period data
+      const prevResponse = await fetch(`/api/metrics/meta?${prevParams.toString()}`, { 
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       });
       
-      // Check if previous period data exists under a 'previousPeriod' object instead
-      const previousPeriodData = data.previousPeriod || data.previous || {};
-      
-      // Update state with fetched data
-      if (Array.isArray(data.dailyData) && data.dailyData.length > 0) {
-        setMetaDaily(data.dailyData);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch current period Meta data: ${response.status}`);
       }
       
-      // Store the actual Meta metrics in our local state
+      if (!prevResponse.ok) {
+        throw new Error(`Failed to fetch previous period Meta data: ${prevResponse.status}`);
+      }
+      
+      const currentData = await response.json();
+      const previousData = await prevResponse.json();
+      
+      console.log("[HomeTab] Fetched Meta data for current period:", {
+        adSpend: currentData.adSpend,
+        impressions: currentData.impressions,
+        clicks: currentData.clicks,
+        roas: currentData.roas,
+        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
+      });
+      
+      console.log("[HomeTab] Fetched Meta data for previous period:", {
+        adSpend: previousData.adSpend,
+        impressions: previousData.impressions,
+        clicks: previousData.clicks,
+        roas: previousData.roas,
+        dailyData: Array.isArray(previousData.dailyData) ? previousData.dailyData.length : 0
+      });
+      
+      // Update state with fetched data
+      if (Array.isArray(currentData.dailyData) && currentData.dailyData.length > 0) {
+        setMetaDaily(currentData.dailyData);
+      }
+      
+      // Calculate percentage changes correctly using current and previous period values
+      const adSpendGrowth = calculatePercentChange(currentData.adSpend || 0, previousData.adSpend || 0);
+      const impressionGrowth = calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0);
+      const clickGrowth = calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0);
+      const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0);
+      const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
+      
+      // Store both current metrics and previous period metrics in our local state
       setMetaMetrics({
-        adSpend: data.adSpend || 0,
-        impressions: data.impressions || 0,
-        clicks: data.clicks || 0,
-        conversions: data.conversions || 0,
-        roas: data.roas || 0,
-        // Calculate growth rates properly using previous period data
-        adSpendGrowth: data.adSpendPreviousPeriod && data.adSpendPreviousPeriod !== 0 
-          ? ((data.adSpend - data.adSpendPreviousPeriod) / data.adSpendPreviousPeriod) * 100 
-          : previousPeriodData.adSpend && previousPeriodData.adSpend !== 0
-            ? ((data.adSpend - previousPeriodData.adSpend) / previousPeriodData.adSpend) * 100
-            : data.adSpendGrowth || 0,
-        impressionGrowth: data.impressionsPreviousPeriod && data.impressionsPreviousPeriod !== 0 
-          ? ((data.impressions - data.impressionsPreviousPeriod) / data.impressionsPreviousPeriod) * 100 
-          : previousPeriodData.impressions && previousPeriodData.impressions !== 0
-            ? ((data.impressions - previousPeriodData.impressions) / previousPeriodData.impressions) * 100
-            : data.impressionGrowth || 0,
-        clickGrowth: data.clicksPreviousPeriod && data.clicksPreviousPeriod !== 0 
-          ? ((data.clicks - data.clicksPreviousPeriod) / data.clicksPreviousPeriod) * 100 
-          : previousPeriodData.clicks && previousPeriodData.clicks !== 0
-            ? ((data.clicks - previousPeriodData.clicks) / previousPeriodData.clicks) * 100
-            : data.clickGrowth || 0,
-        conversionGrowth: data.conversionsPreviousPeriod && data.conversionsPreviousPeriod !== 0 
-          ? ((data.conversions - data.conversionsPreviousPeriod) / data.conversionsPreviousPeriod) * 100 
-          : previousPeriodData.conversions && previousPeriodData.conversions !== 0
-            ? ((data.conversions - previousPeriodData.conversions) / previousPeriodData.conversions) * 100
-            : data.conversionGrowth || 0,
-        roasGrowth: data.roasPreviousPeriod && data.roasPreviousPeriod !== 0 
-          ? ((data.roas - data.roasPreviousPeriod) / data.roasPreviousPeriod) * 100 
-          : previousPeriodData.roas && previousPeriodData.roas !== 0
-            ? ((data.roas - previousPeriodData.roas) / previousPeriodData.roas) * 100
-            : data.roasGrowth || 0,
-        // Store previous period values
-        adSpendPreviousPeriod: data.adSpendPreviousPeriod || previousPeriodData.adSpend || 0,
-        impressionsPreviousPeriod: data.impressionsPreviousPeriod || previousPeriodData.impressions || 0,
-        clicksPreviousPeriod: data.clicksPreviousPeriod || previousPeriodData.clicks || 0,
-        conversionsPreviousPeriod: data.conversionsPreviousPeriod || previousPeriodData.conversions || 0,
-        roasPreviousPeriod: data.roasPreviousPeriod || previousPeriodData.roas || 0
+        adSpend: currentData.adSpend || 0,
+        impressions: currentData.impressions || 0,
+        clicks: currentData.clicks || 0,
+        conversions: currentData.conversions || 0,
+        roas: currentData.roas || 0,
+        adSpendGrowth,
+        impressionGrowth,
+        clickGrowth,
+        conversionGrowth,
+        roasGrowth,
+        previousAdSpend: previousData.adSpend || 0,
+        previousImpressions: previousData.impressions || 0,
+        previousClicks: previousData.clicks || 0,
+        previousConversions: previousData.conversions || 0,
+        previousRoas: previousData.roas || 0
       });
       
       hasFetchedMetaData.current = true;
@@ -577,8 +771,7 @@ export function HomeTab({
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
-      dateRange: dateRange,
-      showPreviousPeriod: widget.type === 'meta'
+      dateRange: dateRange
     };
 
     // Widget-specific props based on ID
@@ -624,103 +817,58 @@ export function HomeTab({
         };
         break;
       case 'meta-adspend':
-        // Calculate the percentage change directly to ensure it's set correctly
-        const adSpendChange = metaMetrics.adSpendPreviousPeriod > 0 
-          ? ((metaMetrics.adSpend - metaMetrics.adSpendPreviousPeriod) / metaMetrics.adSpendPreviousPeriod) * 100
-          : 0;
-          
-        console.log('[HomeTab] Meta Ad Spend widget values:', {
-          current: metaMetrics.adSpend,
-          previous: metaMetrics.adSpendPreviousPeriod,
-          calculatedChange: adSpendChange,
-          storedGrowth: metaMetrics.adSpendGrowth
-        });
-          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.adSpend,
-          change: adSpendChange, // Use calculated value instead of stored growth
+          change: metaMetrics.adSpendGrowth,
+          previousValue: metaMetrics.previousAdSpend,
           prefix: "$",
           valueFormat: "currency",
           hideGraph: true,
-          infoTooltip: "Total ad spend on Meta platforms",
-          previousValue: metaMetrics.adSpendPreviousPeriod,
-          previousValuePrefix: "$",
-          previousValueFormat: "currency",
-          previousPeriodLabel: previousPeriodLabel
+          infoTooltip: "Total ad spend on Meta platforms"
         };
         break;
       case 'meta-impressions':
-        // Calculate the percentage change directly
-        const impressionsChange = metaMetrics.impressionsPreviousPeriod > 0
-          ? ((metaMetrics.impressions - metaMetrics.impressionsPreviousPeriod) / metaMetrics.impressionsPreviousPeriod) * 100
-          : 0;
-          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.impressions,
-          change: impressionsChange, // Use calculated value
+          change: metaMetrics.impressionGrowth,
+          previousValue: metaMetrics.previousImpressions,
           hideGraph: true,
-          infoTooltip: "Total number of times your ads were viewed",
-          previousValue: metaMetrics.impressionsPreviousPeriod,
-          previousValueFormat: "number",
-          previousPeriodLabel: previousPeriodLabel
+          infoTooltip: "Total number of times your ads were viewed"
         };
         break;
       case 'meta-clicks':
-        // Calculate the percentage change directly
-        const clicksChange = metaMetrics.clicksPreviousPeriod > 0
-          ? ((metaMetrics.clicks - metaMetrics.clicksPreviousPeriod) / metaMetrics.clicksPreviousPeriod) * 100
-          : 0;
-          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.clicks,
-          change: clicksChange, // Use calculated value
+          change: metaMetrics.clickGrowth,
+          previousValue: metaMetrics.previousClicks,
           hideGraph: true,
-          infoTooltip: "Total number of clicks on your ads",
-          previousValue: metaMetrics.clicksPreviousPeriod,
-          previousValueFormat: "number",
-          previousPeriodLabel: previousPeriodLabel
+          infoTooltip: "Total number of clicks on your ads"
         };
         break;
       case 'meta-conversions':
-        // Calculate the percentage change directly
-        const conversionsChange = metaMetrics.conversionsPreviousPeriod > 0
-          ? ((metaMetrics.conversions - metaMetrics.conversionsPreviousPeriod) / metaMetrics.conversionsPreviousPeriod) * 100
-          : 0;
-          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.conversions,
-          change: conversionsChange, // Use calculated value
+          change: metaMetrics.conversionGrowth,
+          previousValue: metaMetrics.previousConversions,
           hideGraph: true,
-          infoTooltip: "Total number of conversions from your ads",
-          previousValue: metaMetrics.conversionsPreviousPeriod,
-          previousValueFormat: "number",
-          previousPeriodLabel: previousPeriodLabel
+          infoTooltip: "Total number of conversions from your ads"
         };
         break;
       case 'meta-roas':
-        // Calculate the percentage change directly
-        const roasChange = metaMetrics.roasPreviousPeriod > 0
-          ? ((metaMetrics.roas - metaMetrics.roasPreviousPeriod) / metaMetrics.roasPreviousPeriod) * 100
-          : 0;
-          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.roas,
-          change: roasChange, // Use calculated value
+          change: metaMetrics.roasGrowth,
+          previousValue: metaMetrics.previousRoas,
           suffix: "x",
           valueFormat: "number",
           decimals: 2,
           hideGraph: true,
-          infoTooltip: "Return on ad spend (revenue / ad spend)",
-          previousValue: metaMetrics.roasPreviousPeriod,
-          previousValueFormat: "number",
-          previousValueSuffix: "x",
-          previousValueDecimals: 2,
-          previousPeriodLabel: previousPeriodLabel
+          infoTooltip: "Return on ad spend (revenue / ad spend)"
         };
         break;
       default:
@@ -818,40 +966,6 @@ export function HomeTab({
       </div>
     );
   };
-
-  // Add a function to generate the proper previous period label based on the date range
-  const getPreviousPeriodLabel = () => {
-    if (!dateRange?.from || !dateRange?.to) {
-      return "Previous period";
-    }
-
-    const daysDiff = Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    // Handle single day view (compare to yesterday)
-    if (daysDiff === 1) {
-      return "Yesterday";
-    }
-    
-    // Handle week view (compare to previous week)
-    if (daysDiff >= 6 && daysDiff <= 8) {
-      return "Previous week";
-    }
-    
-    // Handle month view (compare to previous month)
-    if (daysDiff >= 28 && daysDiff <= 31) {
-      return "Previous month";
-    }
-    
-    // Handle 90-day view (compare to previous 90 days)
-    if (daysDiff >= 85 && daysDiff <= 95) {
-      return "Previous 90 days";
-    }
-    
-    // For custom ranges, specify the exact days
-    return `Previous ${daysDiff} days`;
-  };
-
-  const previousPeriodLabel = getPreviousPeriodLabel();
 
   return (
     <div className="space-y-2">
