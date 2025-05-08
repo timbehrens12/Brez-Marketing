@@ -140,54 +140,6 @@ const AVAILABLE_WIDGETS: Widget[] = [
     component: 'MetricCard',
     description: 'Meta Return On Ad Spend (ROAS)',
     icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-reach', 
-    type: 'meta', 
-    name: 'Meta Reach', 
-    component: 'MetricCard',
-    description: 'Number of unique users who saw your ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-purchase-value', 
-    type: 'meta', 
-    name: 'Avg. Purchase Value', 
-    component: 'MetricCard',
-    description: 'Average value of purchases from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-results', 
-    type: 'meta', 
-    name: 'Meta Results', 
-    component: 'MetricCard',
-    description: 'Total number of results from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-cost-per-result', 
-    type: 'meta', 
-    name: 'Cost Per Result', 
-    component: 'MetricCard',
-    description: 'Average cost per result from Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-cost-per-click', 
-    type: 'meta', 
-    name: 'Cost Per Click', 
-    component: 'MetricCard',
-    description: 'Average cost per click for your Meta ads',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
-  },
-  { 
-    id: 'meta-ctr', 
-    type: 'meta', 
-    name: 'Click-Through Rate', 
-    component: 'MetricCard',
-    description: 'Percentage of impressions that resulted in clicks',
-    icon: 'https://i.imgur.com/6hyyRrs.png'
   }
 ];
 
@@ -223,7 +175,7 @@ export function HomeTab({
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [isWidgetSelectorOpen, setIsWidgetSelectorOpen] = useState(false);
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
-  const [isEditModeLocal, setIsEditModeLocal] = useState(isEditMode);
+  const [localEditMode, setLocalEditMode] = useState(isEditMode); // Local state to control edit mode
   const supabase = createClientComponentClient();
   
   // State to store Meta daily data
@@ -247,27 +199,13 @@ export function HomeTab({
     previousImpressions: 0,
     previousClicks: 0, 
     previousConversions: 0,
-    previousRoas: 0,
-    // New metrics for the added widgets
-    reach: 0,
-    reachGrowth: 0,
-    previousReach: 0,
-    purchaseValue: 0,
-    purchaseValueGrowth: 0,
-    previousPurchaseValue: 0,
-    results: 0,
-    resultsGrowth: 0,
-    previousResults: 0,
-    costPerResult: 0,
-    costPerResultGrowth: 0,
-    previousCostPerResult: 0,
-    costPerClick: 0,
-    costPerClickGrowth: 0,
-    previousCostPerClick: 0,
-    ctr: 0,
-    ctrGrowth: 0,
-    previousCtr: 0
+    previousRoas: 0
   });
+
+  // Update localEditMode when isEditMode prop changes
+  useEffect(() => {
+    setLocalEditMode(isEditMode);
+  }, [isEditMode]);
 
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
@@ -572,14 +510,6 @@ export function HomeTab({
       const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0);
       const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
       
-      // Calculate percentage changes for new metrics
-      const reachGrowth = calculatePercentChange(currentData.reach || 0, previousData.reach || 0);
-      const purchaseValueGrowth = calculatePercentChange(currentData.purchaseValue || 0, previousData.purchaseValue || 0);
-      const resultsGrowth = calculatePercentChange(currentData.results || 0, previousData.results || 0);
-      const costPerResultGrowth = calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0);
-      const costPerClickGrowth = calculatePercentChange(currentData.costPerClick || 0, previousData.costPerClick || 0);
-      const ctrGrowth = calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0);
-      
       // Store both current metrics and previous period metrics in our local state
       setMetaMetrics({
         adSpend: currentData.adSpend || 0,
@@ -596,26 +526,7 @@ export function HomeTab({
         previousImpressions: previousData.impressions || 0,
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
-        previousRoas: previousData.roas || 0,
-        // New metrics for the added widgets
-        reach: currentData.reach || 0,
-        reachGrowth,
-        previousReach: previousData.reach || 0,
-        purchaseValue: currentData.purchaseValue || 0,
-        purchaseValueGrowth,
-        previousPurchaseValue: previousData.purchaseValue || 0,
-        results: currentData.results || 0,
-        resultsGrowth,
-        previousResults: previousData.results || 0,
-        costPerResult: currentData.costPerResult || 0,
-        costPerResultGrowth,
-        previousCostPerResult: previousData.costPerResult || 0,
-        costPerClick: currentData.costPerClick || 0,
-        costPerClickGrowth,
-        previousCostPerClick: previousData.costPerClick || 0,
-        ctr: currentData.ctr || 0,
-        ctrGrowth,
-        previousCtr: previousData.ctr || 0
+        previousRoas: previousData.roas || 0
       });
       
       hasFetchedMetaData.current = true;
@@ -890,7 +801,7 @@ export function HomeTab({
     if (widget.component === 'SalesByProduct') {
       if (!dateRange || !dateRange.from || !dateRange.to) { // Check if dates are defined
         return (
-          <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center col-span-full">
+          <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg flex items-center justify-center">
             <p className="text-gray-400">Date range not fully selected.</p>
           </div>
         ); // Or some other placeholder
@@ -898,14 +809,14 @@ export function HomeTab({
       // Now TypeScript knows dateRange.from and dateRange.to are Dates
       const salesByProductDateRange = { from: dateRange.from, to: dateRange.to };
 
-      if (isEditModeLocal) {
+      if (localEditMode) {
         return (
           <Draggable key={widget.id} draggableId={widget.id} index={index}>
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full h-full col-span-full" // Make it span the full width
+                className="relative group w-full h-full col-span-full" // Added col-span-full to make it full width
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -914,7 +825,7 @@ export function HomeTab({
                   <GripVertical className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full">
+                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full"> {/* Added padding and background for consistency */}
                   <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
                 </div>
               </div>
@@ -923,21 +834,21 @@ export function HomeTab({
         );
       }
       return (
-        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full">
-          <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
+        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full"> {/* Added col-span-full */}
+           <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
         </div>
       );
     }
 
     if (widget.component === 'InventorySummary') {
-       if (isEditModeLocal) {
+       if (localEditMode) {
         return (
           <Draggable key={widget.id} draggableId={widget.id} index={index}>
             {(provided) => (
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full h-full col-span-full" // Make it span the full width
+                className="relative group w-full h-full col-span-full" // Added col-span-full
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -946,7 +857,7 @@ export function HomeTab({
                   <GripVertical className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full">
+                 <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full"> {/* Added padding and background for consistency */}
                   <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
                 </div>
               </div>
@@ -955,7 +866,7 @@ export function HomeTab({
         );
       }
       return (
-        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full">
+        <div key={widget.id} className="w-full h-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg col-span-full"> {/* Added col-span-full */}
           <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
         </div>
       );
@@ -1058,82 +969,11 @@ export function HomeTab({
           infoTooltip: "Return on ad spend (revenue / ad spend)"
         };
         break;
-      case 'meta-reach':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.reach,
-          change: metaMetrics.reachGrowth,
-          previousValue: metaMetrics.previousReach,
-          hideGraph: true,
-          infoTooltip: "Number of unique users who saw your ads"
-        };
-        break;
-      case 'meta-purchase-value':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.purchaseValue,
-          change: metaMetrics.purchaseValueGrowth,
-          previousValue: metaMetrics.previousPurchaseValue,
-          prefix: "$",
-          valueFormat: "currency",
-          hideGraph: true,
-          infoTooltip: "Average value of purchases from Meta ads"
-        };
-        break;
-      case 'meta-results':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.results,
-          change: metaMetrics.resultsGrowth,
-          previousValue: metaMetrics.previousResults,
-          hideGraph: true,
-          infoTooltip: "Total number of results from Meta ads"
-        };
-        break;
-      case 'meta-cost-per-result':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.costPerResult,
-          change: metaMetrics.costPerResultGrowth,
-          previousValue: metaMetrics.previousCostPerResult,
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2,
-          hideGraph: true,
-          infoTooltip: "Average cost per result from Meta ads"
-        };
-        break;
-      case 'meta-cost-per-click':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.costPerClick,
-          change: metaMetrics.costPerClickGrowth,
-          previousValue: metaMetrics.previousCostPerClick,
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2,
-          hideGraph: true,
-          infoTooltip: "Average cost per click for your Meta ads"
-        };
-        break;
-      case 'meta-ctr':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.ctr,
-          change: metaMetrics.ctrGrowth,
-          previousValue: metaMetrics.previousCtr,
-          suffix: "%",
-          valueFormat: "percentage",
-          decimals: 2,
-          hideGraph: true,
-          infoTooltip: "Percentage of impressions that resulted in clicks"
-        };
-        break;
       default:
         break;
     }
 
-    if (isEditModeLocal) {
+    if (localEditMode) {
       return (
         <Draggable key={widget.id} draggableId={widget.id} index={index}>
           {(provided) => (
@@ -1178,67 +1018,45 @@ export function HomeTab({
 
     return (
       <div className="mb-5">
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center">
-            <Image 
-              src={iconUrl}
-              alt={sectionTitle}
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
-          </div>
-          
-          {/* Add direct customization buttons */}
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-400 hover:text-white border-gray-800 hover:border-gray-700 hover:bg-gray-800/50"
-              onClick={() => {
-                setActiveWidgetTab(platformType as 'shopify' | 'meta');
-                setIsWidgetSelectorOpen(true);
-              }}
-            >
-              <PlusCircle className="h-3.5 w-3.5 mr-2" />
-              Add Widget
-            </Button>
-            {sectionWidgets.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-gray-400 hover:text-white border-gray-800 hover:border-gray-700 hover:bg-gray-800/50"
-                onClick={() => setIsEditModeLocal(!isEditModeLocal)}
-              >
-                {isEditModeLocal ? (
-                  <>
-                    <X className="h-3.5 w-3.5 mr-2" />
-                    Done
-                  </>
-                ) : (
-                  <>
-                    <Pencil className="h-3.5 w-3.5 mr-2" />
-                    Rearrange
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+        <div className="flex items-center mb-2">
+          <Image 
+            src={iconUrl}
+            alt={sectionTitle}
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
         </div>
         
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId={`widgets-${platformType}`} direction="horizontal">
             {(provided: DroppableProvided) => (
               <div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 [&>*.col-span-full]:col-span-4 [&>*.col-span-full]:lg:min-h-[300px]" /* Added utilities to handle col-span-full properly */
                 {...provided.droppableProps}
                 ref={provided.innerRef}
               >
                 {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
                 {provided.placeholder}
                 
-                {/* Remove the "add widget" card in edit mode, since we have section-specific buttons now */}
+                {localEditMode && (
+                  <Card 
+                    className={cn(
+                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
+                      "hover:bg-[#191919] transition-colors duration-200"
+                    )}
+                    onClick={() => {
+                      setActiveWidgetTab(platformType as 'shopify' | 'meta');
+                      setIsWidgetSelectorOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-6 flex flex-col items-center justify-center h-full">
+                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
+                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </Droppable>
@@ -1255,7 +1073,7 @@ export function HomeTab({
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Add widgets to build your personalized dashboard.
+              Click the grid icon above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
             </p>
             <Button
               size="lg"
@@ -1269,6 +1087,44 @@ export function HomeTab({
         </Card>
       ) : (
         <>
+          {/* Display different controls based on edit mode */}
+          {localEditMode ? (
+            <div className="flex justify-between items-center mb-4 bg-[#1A1A1A] p-3 rounded-lg border border-[#333]">
+              <div className="flex items-center">
+                <LayoutGrid className="h-5 w-5 text-gray-400 mr-2" />
+                <span className="text-white font-medium">Edit Dashboard Layout</span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="bg-[#222] border-[#444] text-white hover:bg-[#333]"
+                  onClick={() => setIsWidgetSelectorOpen(true)}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add/Remove Widgets
+                </Button>
+                <Button
+                  variant="outline"
+                  className="bg-green-900/50 border-green-700/50 text-white hover:bg-green-800/50"
+                  onClick={() => setLocalEditMode(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-end mb-4">
+              <Button
+                variant="outline"
+                className="bg-[#1A1A1A] border-[#333] text-gray-300 hover:bg-[#222] hover:text-white"
+                onClick={() => setLocalEditMode(true)}
+              >
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Edit Layout
+              </Button>
+            </div>
+          )}
+          
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
@@ -1285,19 +1141,6 @@ export function HomeTab({
             "https://i.imgur.com/6hyyRrs.png"
           )}
         </>
-      )}
-
-      {/* Add a floating "Done" button when in edit mode */}
-      {isEditModeLocal && (
-        <div className="fixed bottom-5 right-5 z-50">
-          <Button
-            size="lg"
-            onClick={() => setIsEditModeLocal(false)}
-            className="bg-primary hover:bg-primary/90 shadow-lg"
-          >
-            Done Editing
-          </Button>
-        </div>
       )}
 
       {/* Widget Selector Dialog */}
