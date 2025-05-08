@@ -157,6 +157,7 @@ interface HomeTabProps {
   connections: PlatformConnection[]
   brands?: Array<{ id: string, name: string }>
   isEditMode?: boolean
+  onEditModeChange?: (isEditing: boolean) => void
 }
 
 export function HomeTab({
@@ -169,7 +170,8 @@ export function HomeTab({
   platformStatus,
   connections,
   brands = [],
-  isEditMode = false
+  isEditMode = false,
+  onEditModeChange
 }: HomeTabProps) {
   // State for user's selected widgets
   const [widgets, setWidgets] = useState<Widget[]>([]);
@@ -177,6 +179,11 @@ export function HomeTab({
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
   const [editMode, setEditMode] = useState(isEditMode);
   const supabase = createClientComponentClient();
+  
+  // Update edit mode when prop changes
+  useEffect(() => {
+    setEditMode(isEditMode);
+  }, [isEditMode]);
   
   // State to store Meta daily data
   const [metaDaily, setMetaDaily] = useState<DailyDataItem[]>([]);
@@ -816,7 +823,7 @@ export function HomeTab({
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full col-span-full" // Make it span the full width
+                className="relative group w-full col-span-full transition-all duration-200" // Make it span the full width with smoother transitions
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -825,7 +832,7 @@ export function HomeTab({
                   <GripVertical className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full"> {/* Added padding and background for consistency */}
+                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full transition-transform duration-300 ease-in-out"> {/* Added transitions for smoother dragging */}
                   <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
                 </div>
               </div>
@@ -848,7 +855,7 @@ export function HomeTab({
               <div
                 ref={provided.innerRef}
                 {...provided.draggableProps}
-                className="relative group w-full col-span-full" // Make it span the full width
+                className="relative group w-full col-span-full transition-all duration-200" // Make it span the full width with smoother transitions
               >
                 <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
@@ -857,7 +864,7 @@ export function HomeTab({
                   <GripVertical className="h-4 w-4 text-gray-300" />
                 </div>
                 <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                 <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full"> {/* Added padding and background for consistency */}
+                 <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full transition-transform duration-300 ease-in-out"> {/* Added transitions for smoother dragging */}
                   <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
                 </div>
               </div>
@@ -980,7 +987,7 @@ export function HomeTab({
             <div
               ref={provided.innerRef}
               {...provided.draggableProps}
-              className="relative group"
+              className="relative group transition-transform duration-300 ease-in-out transform hover:scale-[1.01] active:scale-[0.99]" // Smoother drag with subtle animations
             >
               <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
@@ -1048,12 +1055,19 @@ export function HomeTab({
   };
 
   const toggleEditMode = () => {
-    if (editMode) {
-      // Save changes when exiting edit mode
-      setEditMode(false);
-    } else {
-      // Enter edit mode
-      setEditMode(true);
+    const newEditMode = !editMode;
+    setEditMode(newEditMode);
+    
+    // Notify parent component about edit mode change if callback is provided
+    if (onEditModeChange) {
+      onEditModeChange(newEditMode);
+    }
+    
+    if (newEditMode) {
+      // When entering edit mode, we could auto-open widget selector if empty
+      if (validWidgets.length === 0) {
+        setIsWidgetSelectorOpen(true);
+      }
     }
   };
 
@@ -1063,59 +1077,21 @@ export function HomeTab({
 
   return (
     <div className="space-y-2">
-      {/* Dashboard header with edit buttons */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-white">Dashboard</h2>
-        <div className="flex gap-2">
-          {editMode ? (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={openWidgetSelector}
-                className="flex items-center"
-              >
-                <PlusCircle className="h-4 w-4 mr-1" />
-                Add/Remove Widgets
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={toggleEditMode}
-                className="flex items-center"
-              >
-                Done
-              </Button>
-            </>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={toggleEditMode}
-              className="flex items-center"
-            >
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit Layout
-            </Button>
-          )}
-        </div>
-      </div>
-
       {validWidgets.length === 0 ? (
         <Card className="bg-[#111] border-[#333] text-center py-10">
           <CardContent className="flex flex-col items-center">
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Click the Edit Layout button above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
+              Use the grid icon to add widgets from Shopify, Meta, and other platforms to build your personalized view.
             </p>
             <Button
               size="lg"
-              onClick={toggleEditMode}
+              onClick={openWidgetSelector}
               className="bg-primary hover:bg-primary/90"
             >
-              <Pencil className="mr-2 h-5 w-5" />
-              Edit Layout
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Add Your First Widget
             </Button>
           </CardContent>
         </Card>
@@ -1143,7 +1119,7 @@ export function HomeTab({
       <Dialog open={isWidgetSelectorOpen} onOpenChange={setIsWidgetSelectorOpen}>
         <DialogContent className="sm:max-w-lg bg-[#111] border-[#333]">
           <DialogHeader>
-            <DialogTitle className="text-white">Add Widgets</DialogTitle>
+            <DialogTitle className="text-white">{editMode ? "Add/Remove Widgets" : "Add Widgets"}</DialogTitle>
             <DialogDescription className="text-gray-400">
               Choose widgets to add to your dashboard. They will be placed in the appropriate section based on platform.
             </DialogDescription>
