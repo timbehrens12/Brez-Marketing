@@ -1234,8 +1234,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-8 max-w-[1600px] mx-auto flex flex-col min-h-screen">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
           
@@ -1315,47 +1315,49 @@ export default function DashboardPage() {
           />
         </div>
       </div>
-
-      {selectedBrandId && initialDataLoad ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-400 text-lg">Loading dashboard data...</p>
-          <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
-        </div>
-      ) : selectedBrandId ? (
-        <>
-          <WidgetManager 
-            dateRange={dateRange} 
-            brandId={selectedBrandId}
-            metrics={metrics}
-            isLoading={isLoading}
-            isRefreshingData={isRefreshingData}
-            initialDataLoad={initialDataLoad}
-            platformStatus={activePlatforms}
-            existingConnections={connections}
-            brands={brands}
-            isEditMode={isEditMode}
-            handleTabChange={handleTabChange}
-          >
-            {isEditMode && (
-              <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
-                <div className="flex items-center">
-                  <LayoutGrid className="h-5 w-5 text-white mr-2" />
-                  <span className="text-white font-medium">Edit Mode Active</span>
+      {/* WidgetManager and other content will take up remaining space */}
+      <div className="flex-grow">
+        {selectedBrandId && initialDataLoad ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-400 text-lg">Loading dashboard data...</p>
+            <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+          </div>
+        ) : selectedBrandId ? (
+          <>
+            <WidgetManager 
+              dateRange={dateRange} 
+              brandId={selectedBrandId}
+              metrics={metrics}
+              isLoading={isLoading}
+              isRefreshingData={isRefreshingData}
+              initialDataLoad={initialDataLoad}
+              platformStatus={activePlatforms}
+              existingConnections={connections}
+              brands={brands}
+              isEditMode={isEditMode}
+              handleTabChange={handleTabChange}
+            >
+              {isEditMode && (
+                <div className="bg-[#222] border border-[#444] rounded-md p-3 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <LayoutGrid className="h-5 w-5 text-white mr-2" />
+                    <span className="text-white font-medium">Edit Mode Active</span>
+                  </div>
+                  <p className="text-gray-400 text-sm">Drag widgets to reposition or click the "×" to remove them</p>
                 </div>
-                <p className="text-gray-400 text-sm">Drag widgets to reposition or click the "×" to remove them</p>
+              )}
+              <div className="mt-3">
+                {/* Removed widgets will be managed by the HomeTab component */}
               </div>
-            )}
-            <div className="mt-3">
-              {/* Removed widgets will be managed by the HomeTab component */}
-            </div>
-          </WidgetManager>
-        </>
-      ) : (
-        <div className="text-center text-gray-400 py-12">
-          Select a brand to view metrics
-        </div>
-      )}
+            </WidgetManager>
+          </>
+        ) : (
+          <div className="text-center text-gray-400 py-12">
+            Select a brand to view metrics
+          </div>
+        )}
+      </div>
     </div>
   )
 }
