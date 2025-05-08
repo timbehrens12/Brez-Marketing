@@ -81,6 +81,54 @@ const AVAILABLE_WIDGETS: Widget[] = [
     description: 'Total units sold on Shopify',
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
+  { 
+    id: 'shopify-conversion', 
+    type: 'shopify', 
+    name: 'Conversion Rate', 
+    component: 'MetricCard',
+    description: 'Online store conversion rate',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
+  { 
+    id: 'shopify-retention', 
+    type: 'shopify', 
+    name: 'Customer Retention', 
+    component: 'MetricCard',
+    description: 'Customer retention rate',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
+  { 
+    id: 'shopify-inventory', 
+    type: 'shopify', 
+    name: 'Inventory Levels', 
+    component: 'MetricCard',
+    description: 'Current inventory levels',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
+  { 
+    id: 'shopify-returnRate', 
+    type: 'shopify', 
+    name: 'Return Rate', 
+    component: 'MetricCard',
+    description: 'Product return rate percentage',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
+  { 
+    id: 'shopify-categories', 
+    type: 'shopify', 
+    name: 'Category Performance', 
+    component: 'MetricCard',
+    description: 'Sales performance by product category',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
+  { 
+    id: 'shopify-shipping', 
+    type: 'shopify', 
+    name: 'Shipping Analytics', 
+    component: 'MetricCard',
+    description: 'Shipping and delivery metrics',
+    icon: 'https://i.imgur.com/cnCcupx.png'
+  },
   
   // Meta widgets
   { 
@@ -121,6 +169,70 @@ const AVAILABLE_WIDGETS: Widget[] = [
     name: 'Meta ROAS', 
     component: 'MetricCard',
     description: 'Meta Return On Ad Spend (ROAS)',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-purchaseValue', 
+    type: 'meta', 
+    name: 'Purchase Value', 
+    component: 'MetricCard',
+    description: 'Total purchase conversion value',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-results', 
+    type: 'meta', 
+    name: 'Results', 
+    component: 'MetricCard',
+    description: 'Total results from Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-costPerResult', 
+    type: 'meta', 
+    name: 'Cost Per Result', 
+    component: 'MetricCard',
+    description: 'Average cost per result',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-costPerClick', 
+    type: 'meta', 
+    name: 'Cost Per Click', 
+    component: 'MetricCard',
+    description: 'Average cost per click',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-ctr', 
+    type: 'meta', 
+    name: 'Click-Through Rate', 
+    component: 'MetricCard',
+    description: 'Click-through rate percentage',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-reach', 
+    type: 'meta', 
+    name: 'Reach', 
+    component: 'MetricCard',
+    description: 'Number of unique users who saw your ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-linkClicks', 
+    type: 'meta', 
+    name: 'Link Clicks', 
+    component: 'MetricCard',
+    description: 'Number of clicks on links in your ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-budget', 
+    type: 'meta', 
+    name: 'Budget', 
+    component: 'MetricCard',
+    description: 'Total budget allocated for Meta ads',
     icon: 'https://i.imgur.com/6hyyRrs.png'
   }
 ];
@@ -180,7 +292,32 @@ export function HomeTab({
     previousImpressions: 0,
     previousClicks: 0, 
     previousConversions: 0,
-    previousRoas: 0
+    previousRoas: 0,
+    // New metrics
+    purchaseValue: 0,
+    results: 0,
+    costPerResult: 0,
+    costPerClick: 0,
+    ctr: 0,
+    reach: 0,
+    linkClicks: 0,
+    budget: 0,
+    purchaseValueGrowth: 0,
+    resultsGrowth: 0,
+    costPerResultGrowth: 0,
+    costPerClickGrowth: 0,
+    ctrGrowth: 0,
+    reachGrowth: 0,
+    linkClicksGrowth: 0,
+    budgetGrowth: 0,
+    previousPurchaseValue: 0,
+    previousResults: 0,
+    previousCostPerResult: 0,
+    previousCostPerClick: 0,
+    previousCtr: 0,
+    previousReach: 0,
+    previousLinkClicks: 0,
+    previousBudget: 0
   });
 
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
@@ -486,6 +623,16 @@ export function HomeTab({
       const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0);
       const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
       
+      // Calculate growth for new metrics
+      const purchaseValueGrowth = calculatePercentChange(currentData.purchaseValue || 0, previousData.purchaseValue || 0);
+      const resultsGrowth = calculatePercentChange(currentData.results || 0, previousData.results || 0);
+      const costPerResultGrowth = calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0);
+      const costPerClickGrowth = calculatePercentChange(currentData.costPerClick || 0, previousData.costPerClick || 0);
+      const ctrGrowth = calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0);
+      const reachGrowth = calculatePercentChange(currentData.reach || 0, previousData.reach || 0);
+      const linkClicksGrowth = calculatePercentChange(currentData.linkClicks || 0, previousData.linkClicks || 0);
+      const budgetGrowth = calculatePercentChange(currentData.budget || 0, previousData.budget || 0);
+      
       // Store both current metrics and previous period metrics in our local state
       setMetaMetrics({
         adSpend: currentData.adSpend || 0,
@@ -502,7 +649,32 @@ export function HomeTab({
         previousImpressions: previousData.impressions || 0,
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
-        previousRoas: previousData.roas || 0
+        previousRoas: previousData.roas || 0,
+        // New metrics
+        purchaseValue: currentData.purchaseValue || 0,
+        results: currentData.results || 0,
+        costPerResult: currentData.costPerResult || 0,
+        costPerClick: currentData.costPerClick || 0,
+        ctr: currentData.ctr || 0,
+        reach: currentData.reach || 0,
+        linkClicks: currentData.linkClicks || 0,
+        budget: currentData.budget || 0,
+        purchaseValueGrowth,
+        resultsGrowth,
+        costPerResultGrowth,
+        costPerClickGrowth,
+        ctrGrowth,
+        reachGrowth,
+        linkClicksGrowth,
+        budgetGrowth,
+        previousPurchaseValue: previousData.purchaseValue || 0,
+        previousResults: previousData.results || 0,
+        previousCostPerResult: previousData.costPerResult || 0,
+        previousCostPerClick: previousData.costPerClick || 0,
+        previousCtr: previousData.ctr || 0,
+        previousReach: previousData.reach || 0,
+        previousLinkClicks: previousData.linkClicks || 0,
+        previousBudget: previousData.budget || 0
       });
       
       hasFetchedMetaData.current = true;
@@ -776,6 +948,7 @@ export function HomeTab({
 
     // Widget-specific props based on ID
     switch (widget.id) {
+      // Shopify widgets
       case 'shopify-sales':
         widgetProps = {
           ...widgetProps,
@@ -816,6 +989,71 @@ export function HomeTab({
           infoTooltip: "Total number of units sold in the selected period"
         };
         break;
+      case 'shopify-conversion':
+        widgetProps = {
+          ...widgetProps,
+          value: metrics.conversionRate || 0,
+          change: metrics.conversionRateGrowth || 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "percentage",
+          suffix: "%",
+          infoTooltip: "Online store conversion rate in the selected period"
+        };
+        break;
+      case 'shopify-retention':
+        widgetProps = {
+          ...widgetProps,
+          value: metrics.customerRetentionRate || 0,
+          change: metrics.retentionGrowth || 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "percentage",
+          suffix: "%",
+          infoTooltip: "Customer retention rate in the selected period"
+        };
+        break;
+      case 'shopify-inventory':
+        widgetProps = {
+          ...widgetProps,
+          value: 0, // Fallback value since inventory property doesn't exist
+          change: 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "number",
+          infoTooltip: "Current inventory levels"
+        };
+        break;
+      case 'shopify-returnRate':
+        widgetProps = {
+          ...widgetProps,
+          value: metrics.returnRate || 0,
+          change: 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "percentage",
+          suffix: "%",
+          infoTooltip: "Product return rate percentage"
+        };
+        break;
+      case 'shopify-categories':
+        widgetProps = {
+          ...widgetProps,
+          value: 0, // Fallback value
+          change: 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "number",
+          infoTooltip: "Sales performance by product category"
+        };
+        break;
+      case 'shopify-shipping':
+        widgetProps = {
+          ...widgetProps,
+          value: 0, // Fallback value
+          change: 0,
+          data: emptyDataset, // Use empty dataset as fallback
+          valueFormat: "number",
+          infoTooltip: "Shipping and delivery metrics"
+        };
+        break;
+      
+      // Meta widgets
       case 'meta-adspend':
         widgetProps = {
           ...widgetProps,
@@ -869,6 +1107,97 @@ export function HomeTab({
           decimals: 2,
           hideGraph: true,
           infoTooltip: "Return on ad spend (revenue / ad spend)"
+        };
+        break;
+      case 'meta-purchaseValue':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.purchaseValue,
+          change: metaMetrics.purchaseValueGrowth,
+          previousValue: metaMetrics.previousPurchaseValue,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Total purchase conversion value"
+        };
+        break;
+      case 'meta-results':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.results,
+          change: metaMetrics.resultsGrowth,
+          previousValue: metaMetrics.previousResults,
+          hideGraph: true,
+          infoTooltip: "Total results from Meta ads"
+        };
+        break;
+      case 'meta-costPerResult':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.costPerResult,
+          change: metaMetrics.costPerResultGrowth,
+          previousValue: metaMetrics.previousCostPerResult,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Average cost per result"
+        };
+        break;
+      case 'meta-costPerClick':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.costPerClick,
+          change: metaMetrics.costPerClickGrowth,
+          previousValue: metaMetrics.previousCostPerClick,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Average cost per click"
+        };
+        break;
+      case 'meta-ctr':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.ctr,
+          change: metaMetrics.ctrGrowth,
+          previousValue: metaMetrics.previousCtr,
+          suffix: "%",
+          valueFormat: "percentage",
+          decimals: 2,
+          hideGraph: true,
+          infoTooltip: "Click-through rate percentage"
+        };
+        break;
+      case 'meta-reach':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.reach,
+          change: metaMetrics.reachGrowth,
+          previousValue: metaMetrics.previousReach,
+          hideGraph: true,
+          infoTooltip: "Number of unique users who saw your ads"
+        };
+        break;
+      case 'meta-linkClicks':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.linkClicks,
+          change: metaMetrics.linkClicksGrowth,
+          previousValue: metaMetrics.previousLinkClicks,
+          hideGraph: true,
+          infoTooltip: "Number of clicks on links in your ads"
+        };
+        break;
+      case 'meta-budget':
+        widgetProps = {
+          ...widgetProps,
+          value: metaMetrics.budget,
+          change: metaMetrics.budgetGrowth,
+          previousValue: metaMetrics.previousBudget,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Total budget allocated for Meta ads"
         };
         break;
       default:
