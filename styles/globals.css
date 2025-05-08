@@ -88,17 +88,57 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-  
-  /* Fix for calendar popover borders */
-  .rdp, 
-  .rdp-months,
-  .rdp-month,
-  .rdp-table,
-  [data-radix-popper-content-wrapper] {
-    @apply border-[#333] !important;
-  }
-  
-  [data-radix-popper-content-wrapper] {
-    @apply !border-[#333] bg-[#2A2A2A];
-  }
+}
+
+/* Fix calendar border and styling issues */
+div[data-radix-popper-content-wrapper] {
+  border: 1px solid #333333 !important;
+  background: #111111 !important;
+  box-shadow: none !important;
+}
+
+div[data-radix-popper-content-wrapper] > * {
+  border-color: #333333 !important;
+  background-color: #111111 !important;
+  box-shadow: none !important;
+}
+
+/* Target all potential white borders */
+[role="dialog"],
+[role="dialog"] > div,
+.rdp,
+.rdp-months,
+.rdp-month,
+.rdp-table,
+[data-radix-popper-content-wrapper] [data-state],
+[data-radix-popper-content-wrapper] * {
+  border-color: #333333 !important;
+}
+
+/* Target popover arrow if any */
+[data-radix-popper-content-wrapper] [data-radix-popper-arrow-wrapper] {
+  color: #333333 !important;
+  fill: #111111 !important;
+}
+
+/* Date picker styles */
+.rdp {
+  --rdp-accent-color: #222222 !important;
+  --rdp-background-color: #111111 !important;
+  margin: 0 !important;
+}
+
+.rdp-months {
+  background-color: #111111 !important;
+}
+
+.rdp-day_selected, 
+.rdp-day_selected:focus-visible, 
+.rdp-day_selected:hover {
+  background-color: #222222 !important;
+  color: white !important;
+}
+
+.rdp-day_range_middle {
+  background-color: #1a1a1a !important;
 }
