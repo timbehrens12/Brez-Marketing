@@ -1235,7 +1235,8 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto flex flex-col min-h-screen">
-      <div className="flex items-center justify-between mb-6">
+      {/* Add a prominent top border to the header row for diagnosis */}
+      <div className="flex items-center justify-between mb-6 border-t-4 border-red-500">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
           
