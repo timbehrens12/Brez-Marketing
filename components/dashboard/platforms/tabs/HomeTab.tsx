@@ -221,6 +221,11 @@ export function HomeTab({
       // Add previousPeriod parameter to fetch previous period data
       params.append('previousPeriod', 'true');
       
+      // Add parameters for comparing with previous period
+      params.append('includePreviousPeriod', 'true');
+      params.append('includeGrowth', 'true');
+      params.append('calculateGrowth', 'true');
+      
       // Force metrics fetch
       params.append('bypass_cache', 'true');
       params.append('force_load', 'true');
@@ -245,8 +250,20 @@ export function HomeTab({
         impressions: data.impressions,
         clicks: data.clicks,
         roas: data.roas,
-        dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
+        dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0,
+        // Log the previous period values to see what we're getting
+        adSpendPreviousPeriod: data.adSpendPreviousPeriod,
+        impressionsPreviousPeriod: data.impressionsPreviousPeriod,
+        clicksPreviousPeriod: data.clicksPreviousPeriod,
+        conversionsPreviousPeriod: data.conversionsPreviousPeriod,
+        roasPreviousPeriod: data.roasPreviousPeriod,
+        // Also check for alternative naming patterns
+        previousPeriod: data.previousPeriod,
+        previous: data.previous
       });
+      
+      // Check if previous period data exists under a 'previousPeriod' object instead
+      const previousPeriodData = data.previousPeriod || data.previous || {};
       
       // Update state with fetched data
       if (Array.isArray(data.dailyData) && data.dailyData.length > 0) {
@@ -263,25 +280,35 @@ export function HomeTab({
         // Calculate growth rates properly using previous period data
         adSpendGrowth: data.adSpendPreviousPeriod && data.adSpendPreviousPeriod !== 0 
           ? ((data.adSpend - data.adSpendPreviousPeriod) / data.adSpendPreviousPeriod) * 100 
-          : data.adSpendGrowth || 0,
+          : previousPeriodData.adSpend && previousPeriodData.adSpend !== 0
+            ? ((data.adSpend - previousPeriodData.adSpend) / previousPeriodData.adSpend) * 100
+            : data.adSpendGrowth || 0,
         impressionGrowth: data.impressionsPreviousPeriod && data.impressionsPreviousPeriod !== 0 
           ? ((data.impressions - data.impressionsPreviousPeriod) / data.impressionsPreviousPeriod) * 100 
-          : data.impressionGrowth || 0,
+          : previousPeriodData.impressions && previousPeriodData.impressions !== 0
+            ? ((data.impressions - previousPeriodData.impressions) / previousPeriodData.impressions) * 100
+            : data.impressionGrowth || 0,
         clickGrowth: data.clicksPreviousPeriod && data.clicksPreviousPeriod !== 0 
           ? ((data.clicks - data.clicksPreviousPeriod) / data.clicksPreviousPeriod) * 100 
-          : data.clickGrowth || 0,
+          : previousPeriodData.clicks && previousPeriodData.clicks !== 0
+            ? ((data.clicks - previousPeriodData.clicks) / previousPeriodData.clicks) * 100
+            : data.clickGrowth || 0,
         conversionGrowth: data.conversionsPreviousPeriod && data.conversionsPreviousPeriod !== 0 
           ? ((data.conversions - data.conversionsPreviousPeriod) / data.conversionsPreviousPeriod) * 100 
-          : data.conversionGrowth || 0,
+          : previousPeriodData.conversions && previousPeriodData.conversions !== 0
+            ? ((data.conversions - previousPeriodData.conversions) / previousPeriodData.conversions) * 100
+            : data.conversionGrowth || 0,
         roasGrowth: data.roasPreviousPeriod && data.roasPreviousPeriod !== 0 
           ? ((data.roas - data.roasPreviousPeriod) / data.roasPreviousPeriod) * 100 
-          : data.roasGrowth || 0,
+          : previousPeriodData.roas && previousPeriodData.roas !== 0
+            ? ((data.roas - previousPeriodData.roas) / previousPeriodData.roas) * 100
+            : data.roasGrowth || 0,
         // Store previous period values
-        adSpendPreviousPeriod: data.adSpendPreviousPeriod || 0,
-        impressionsPreviousPeriod: data.impressionsPreviousPeriod || 0,
-        clicksPreviousPeriod: data.clicksPreviousPeriod || 0,
-        conversionsPreviousPeriod: data.conversionsPreviousPeriod || 0,
-        roasPreviousPeriod: data.roasPreviousPeriod || 0
+        adSpendPreviousPeriod: data.adSpendPreviousPeriod || previousPeriodData.adSpend || 0,
+        impressionsPreviousPeriod: data.impressionsPreviousPeriod || previousPeriodData.impressions || 0,
+        clicksPreviousPeriod: data.clicksPreviousPeriod || previousPeriodData.clicks || 0,
+        conversionsPreviousPeriod: data.conversionsPreviousPeriod || previousPeriodData.conversions || 0,
+        roasPreviousPeriod: data.roasPreviousPeriod || previousPeriodData.roas || 0
       });
       
       hasFetchedMetaData.current = true;
@@ -597,10 +624,22 @@ export function HomeTab({
         };
         break;
       case 'meta-adspend':
+        // Calculate the percentage change directly to ensure it's set correctly
+        const adSpendChange = metaMetrics.adSpendPreviousPeriod > 0 
+          ? ((metaMetrics.adSpend - metaMetrics.adSpendPreviousPeriod) / metaMetrics.adSpendPreviousPeriod) * 100
+          : 0;
+          
+        console.log('[HomeTab] Meta Ad Spend widget values:', {
+          current: metaMetrics.adSpend,
+          previous: metaMetrics.adSpendPreviousPeriod,
+          calculatedChange: adSpendChange,
+          storedGrowth: metaMetrics.adSpendGrowth
+        });
+          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.adSpend,
-          change: metaMetrics.adSpendGrowth,
+          change: adSpendChange, // Use calculated value instead of stored growth
           prefix: "$",
           valueFormat: "currency",
           hideGraph: true,
@@ -612,10 +651,15 @@ export function HomeTab({
         };
         break;
       case 'meta-impressions':
+        // Calculate the percentage change directly
+        const impressionsChange = metaMetrics.impressionsPreviousPeriod > 0
+          ? ((metaMetrics.impressions - metaMetrics.impressionsPreviousPeriod) / metaMetrics.impressionsPreviousPeriod) * 100
+          : 0;
+          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.impressions,
-          change: metaMetrics.impressionGrowth,
+          change: impressionsChange, // Use calculated value
           hideGraph: true,
           infoTooltip: "Total number of times your ads were viewed",
           previousValue: metaMetrics.impressionsPreviousPeriod,
@@ -624,10 +668,15 @@ export function HomeTab({
         };
         break;
       case 'meta-clicks':
+        // Calculate the percentage change directly
+        const clicksChange = metaMetrics.clicksPreviousPeriod > 0
+          ? ((metaMetrics.clicks - metaMetrics.clicksPreviousPeriod) / metaMetrics.clicksPreviousPeriod) * 100
+          : 0;
+          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.clicks,
-          change: metaMetrics.clickGrowth,
+          change: clicksChange, // Use calculated value
           hideGraph: true,
           infoTooltip: "Total number of clicks on your ads",
           previousValue: metaMetrics.clicksPreviousPeriod,
@@ -636,10 +685,15 @@ export function HomeTab({
         };
         break;
       case 'meta-conversions':
+        // Calculate the percentage change directly
+        const conversionsChange = metaMetrics.conversionsPreviousPeriod > 0
+          ? ((metaMetrics.conversions - metaMetrics.conversionsPreviousPeriod) / metaMetrics.conversionsPreviousPeriod) * 100
+          : 0;
+          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.conversions,
-          change: metaMetrics.conversionGrowth,
+          change: conversionsChange, // Use calculated value
           hideGraph: true,
           infoTooltip: "Total number of conversions from your ads",
           previousValue: metaMetrics.conversionsPreviousPeriod,
@@ -648,10 +702,15 @@ export function HomeTab({
         };
         break;
       case 'meta-roas':
+        // Calculate the percentage change directly
+        const roasChange = metaMetrics.roasPreviousPeriod > 0
+          ? ((metaMetrics.roas - metaMetrics.roasPreviousPeriod) / metaMetrics.roasPreviousPeriod) * 100
+          : 0;
+          
         widgetProps = {
           ...widgetProps,
           value: metaMetrics.roas,
-          change: metaMetrics.roasGrowth,
+          change: roasChange, // Use calculated value
           suffix: "x",
           valueFormat: "number",
           decimals: 2,
