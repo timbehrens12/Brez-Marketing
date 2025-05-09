@@ -593,11 +593,6 @@ export function HomeTab({
       const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0);
       const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
       
-      // Calculate CTR properly - as a percentage value already
-      const currentCtr = currentData.impressions > 0 ? (currentData.clicks / currentData.impressions) * 100 : 0;
-      const previousCtr = previousData.impressions > 0 ? (previousData.clicks / previousData.impressions) * 100 : 0;
-      const ctrGrowth = calculatePercentChange(currentCtr, previousCtr);
-      
       // Store both current metrics and previous period metrics in our local state
       setMetaMetrics({
         adSpend: currentData.adSpend || 0,
@@ -615,11 +610,11 @@ export function HomeTab({
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
         previousRoas: previousData.roas || 0,
-        ctr: currentCtr, // Use our calculated CTR value
-        ctrGrowth,
+        ctr: currentData.ctr > 1 ? currentData.ctr / 100 : currentData.ctr || 0,
+        ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
         cpc: currentData.cpc || 0,
         costPerResult: currentData.costPerResult || 0,
-        cprGrowth: calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0)
+        cprGrowth: calculatePercentChange(currentData.cprGrowth || 0, previousData.cprGrowth || 0)
       });
       
       hasFetchedMetaData.current = true;
@@ -1259,9 +1254,10 @@ export function HomeTab({
               <Percent className="h-4 w-4 text-blue-400" />
             </div>
           ),
-          value: metaMetrics.ctr || 0,
+          value: metaMetrics.ctr ? (metaMetrics.ctr * 100) : 0,
           change: metaMetrics.ctrGrowth || 0,
-          valueFormat: "percentage",
+          suffix: "%",
+          valueFormat: "number",
           decimals: 2,
           hideGraph: true,
           infoTooltip: "Click-through rate (clicks ÷ impressions)"
@@ -1459,7 +1455,7 @@ export function HomeTab({
               </div>
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <div className="w-full h-full">
+              <div className="w-full" style={{ minHeight: '100%' }}>
                 <TotalBudgetMetricCard 
                   brandId={brandId}
                   isManuallyRefreshing={isRefreshingData}
@@ -1470,7 +1466,7 @@ export function HomeTab({
         }
         
         return (
-          <div key={widget.id} className="w-full h-full">
+          <div key={widget.id} className="w-full" style={{ minHeight: '100%' }}>
             <TotalBudgetMetricCard 
               brandId={brandId}
               isManuallyRefreshing={isRefreshingData}
