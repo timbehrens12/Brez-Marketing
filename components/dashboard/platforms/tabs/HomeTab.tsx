@@ -704,13 +704,18 @@ export function HomeTab({
     if (widgetIndex <= 0) return; // Already at top
 
     const widget = widgets[widgetIndex];
-    const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
-    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
+    // Get widgets of the same type AND same layout (standard or full-width)
+    const isFullWidth = widget.fullWidth === true;
+    const sameTypeAndLayoutWidgets = widgets.filter(
+      w => w.type === widget.type && (w.fullWidth === true) === isFullWidth
+    );
+    
+    const widgetTypeIndex = sameTypeAndLayoutWidgets.findIndex(w => w.id === widgetId);
     
     if (widgetTypeIndex <= 0) return; // Already at top of its section
 
     const newWidgets = [...widgets];
-    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex - 1].id);
+    const targetIndex = widgets.findIndex(w => w.id === sameTypeAndLayoutWidgets[widgetTypeIndex - 1].id);
     
     newWidgets.splice(widgetIndex, 1); // Remove the widget
     newWidgets.splice(targetIndex, 0, widget); // Insert at new position
@@ -724,13 +729,18 @@ export function HomeTab({
     if (widgetIndex === -1 || widgetIndex >= widgets.length - 1) return; // Already at bottom
 
     const widget = widgets[widgetIndex];
-    const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
-    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
+    // Get widgets of the same type AND same layout (standard or full-width)
+    const isFullWidth = widget.fullWidth === true;
+    const sameTypeAndLayoutWidgets = widgets.filter(
+      w => w.type === widget.type && (w.fullWidth === true) === isFullWidth
+    );
     
-    if (widgetTypeIndex >= sameTypeWidgets.length - 1) return; // Already at bottom of its section
+    const widgetTypeIndex = sameTypeAndLayoutWidgets.findIndex(w => w.id === widgetId);
+    
+    if (widgetTypeIndex >= sameTypeAndLayoutWidgets.length - 1) return; // Already at bottom of its section
 
     const newWidgets = [...widgets];
-    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex + 1].id);
+    const targetIndex = widgets.findIndex(w => w.id === sameTypeAndLayoutWidgets[widgetTypeIndex + 1].id);
     
     newWidgets.splice(widgetIndex, 1); // Remove the widget
     newWidgets.splice(targetIndex, 0, widget); // Insert at new position
