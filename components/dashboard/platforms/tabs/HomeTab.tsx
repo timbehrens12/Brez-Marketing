@@ -727,8 +727,8 @@ export function HomeTab({
           setWidgets(parsedWidgets);
           // Update localStorage with the latest from the database
           localStorage.setItem(`dashboard_widgets_${brandId}`, JSON.stringify(parsedWidgets));
-      }
-    } catch (error) {
+        }
+      } catch (error) {
         console.error('Error loading widgets:', error);
       }
     }
@@ -1635,109 +1635,10 @@ export function HomeTab({
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Widget categories */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-white font-medium">Standard Widgets</h3>
-                      <span className="text-xs text-gray-400">{getAvailableWidgets().filter(w => !w.fullWidth).length} available</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {getAvailableWidgets()
-                        .filter(widget => !widget.fullWidth)
-                        .map(widget => (
-                          <Card 
-                            key={widget.id} 
-                            className="flex flex-col p-3 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
-                            onClick={() => {
-                              addWidget(widget);
-                            }}
-                          >
-                            <div className="flex items-center">
-                              <div className="mr-3 bg-[#333] p-2 rounded-lg">
-                                <Image 
-                                  src={widget.icon || ''} 
-                                  alt={widget.type} 
-                                  width={20} 
-                                  height={20} 
-                                  className="object-contain"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-medium text-white">{widget.name}</h4>
-                                <p className="text-xs text-gray-400">{widget.description}</p>
-                              </div>
-                              <Button 
-                                size="icon"
-                                variant="ghost"
-                                className="ml-2 h-8 w-8 rounded-full bg-[#333] hover:bg-[#444] text-gray-300"
-                              >
-                                <PlusCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))
-                      }
-                    </div>
-                  </div>
-                  
-                  {/* Full-width widgets section */}
-                  {getAvailableWidgets().some(w => w.fullWidth) && (
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-white font-medium">Full-Width Widgets</h3>
-                        <span className="text-xs text-gray-400">{getAvailableWidgets().filter(w => w.fullWidth).length} available</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 gap-3">
-                        {getAvailableWidgets()
-                          .filter(widget => widget.fullWidth)
-                          .map(widget => (
-                            <Card 
-                              key={widget.id} 
-                              className="flex flex-col p-3 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
-                              onClick={() => {
-                                addWidget(widget);
-                              }}
-                            >
-                              <div className="flex items-center">
-                                <div className="mr-3 bg-[#333] p-2 rounded-lg">
-                                  <Image 
-                                    src={widget.icon || ''} 
-                                    alt={widget.type} 
-                                    width={20} 
-                                    height={20} 
-                                    className="object-contain"
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="font-medium text-white">{widget.name}</h4>
-                                    <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded">
-                                      Full width
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-gray-400">{widget.description}</p>
-                                </div>
-                                <Button 
-                                  size="icon"
-                                  variant="ghost"
-                                  className="ml-2 h-8 w-8 rounded-full bg-[#333] hover:bg-[#444] text-gray-300"
-                                >
-                                  <PlusCircle className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </Card>
-                          ))
-                        }
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Selected widgets section */}
+                  {/* Selected widgets section - at the top */}
                   {getAddedWidgets().length > 0 && (
                     <div>
-                      <div className="flex items-center justify-between mb-3 border-t border-[#333] pt-4">
+                      <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-medium">Your Selected Widgets</h3>
                         <span className="text-xs text-gray-400">{getAddedWidgets().length} selected</span>
                       </div>
@@ -1760,9 +1661,7 @@ export function HomeTab({
                             <div className="flex-1">
                               <div className="flex items-center">
                                 <h4 className="font-medium text-white">{widget.name}</h4>
-                                {widget.fullWidth && 
-                                 widget.id !== 'shopify-sales-by-product' && 
-                                 widget.id !== 'shopify-inventory' && (
+                                {widget.fullWidth && (
                                   <span className="ml-2 text-xs bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded">
                                     Full width
                                   </span>
@@ -1782,6 +1681,56 @@ export function HomeTab({
                       </div>
                     </div>
                   )}
+                  
+                  {/* Widget categories - now showing all available widgets together */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-white font-medium">Available Widgets</h3>
+                      <span className="text-xs text-gray-400">{getAvailableWidgets().length} available</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {getAvailableWidgets().map(widget => (
+                        <Card 
+                          key={widget.id} 
+                          className="flex flex-col p-3 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
+                          onClick={() => {
+                            addWidget(widget);
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <div className="mr-3 bg-[#333] p-2 rounded-lg">
+                              <Image 
+                                src={widget.icon || ''} 
+                                alt={widget.type} 
+                                width={20} 
+                                height={20} 
+                                className="object-contain"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-medium text-white">{widget.name}</h4>
+                                {widget.fullWidth && (
+                                  <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded">
+                                    Full width
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-400">{widget.description}</p>
+                            </div>
+                            <Button 
+                              size="icon"
+                              variant="ghost"
+                              className="ml-2 h-8 w-8 rounded-full bg-[#333] hover:bg-[#444] text-gray-300"
+                            >
+                              <PlusCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
