@@ -7,7 +7,11 @@ import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown, Plus, Edit, BarChart4, PackageCheck } from "lucide-react"
+import { 
+  PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, 
+  MoveUp, MoveDown, ArrowUp, ArrowDown, Plus, Edit, DollarSign, Eye, 
+  MousePointer, Users, TrendingUp, Target, Percent, Activity, Zap 
+} from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -18,6 +22,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
 import { SalesByProduct } from '@/components/dashboard/SalesByProduct'
 import { InventorySummary } from '@/components/dashboard/InventorySummary'
+import { TotalBudgetMetricCard } from '@/components/metrics/TotalBudgetMetricCard'
+import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
+import { CampaignWidget } from '@/components/dashboard/platforms/tabs/CampaignWidget'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -143,6 +150,72 @@ const AVAILABLE_WIDGETS: Widget[] = [
     component: 'MetricCard',
     description: 'Meta Return On Ad Spend (ROAS)',
     icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  // Additional Meta widgets
+  { 
+    id: 'meta-reach', 
+    type: 'meta', 
+    name: 'Reach', 
+    component: 'TotalAdSetReachCard',
+    description: 'Estimated number of unique people who saw your ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-budget', 
+    type: 'meta', 
+    name: 'Total Budget', 
+    component: 'TotalBudgetMetricCard',
+    description: 'Total budget for all active Meta ad sets',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-ctr', 
+    type: 'meta', 
+    name: 'CTR', 
+    component: 'MetricCard',
+    description: 'Click-through rate on your Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-cpc', 
+    type: 'meta', 
+    name: 'Cost Per Click', 
+    component: 'MetricCard',
+    description: 'Average cost per click on your Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-cpr', 
+    type: 'meta', 
+    name: 'Cost Per Result', 
+    component: 'MetricCard',
+    description: 'Average cost per result on your Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-results', 
+    type: 'meta', 
+    name: 'Results', 
+    component: 'MetricCard',
+    description: 'Total number of results from your Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-purchase-value', 
+    type: 'meta', 
+    name: 'Purchase Value', 
+    component: 'MetricCard',
+    description: 'Total purchase value from Meta ads',
+    icon: 'https://i.imgur.com/6hyyRrs.png'
+  },
+  { 
+    id: 'meta-campaigns', 
+    type: 'meta', 
+    name: 'Campaign Performance', 
+    component: 'CampaignWidget',
+    description: 'Performance metrics for Meta ad campaigns',
+    icon: 'https://i.imgur.com/6hyyRrs.png',
+    fullWidth: true
   }
 ];
 
@@ -201,9 +274,19 @@ export function HomeTab({
     previousImpressions: 0,
     previousClicks: 0, 
     previousConversions: 0,
-    previousRoas: 0
+    previousRoas: 0,
+    ctr: 0,
+    ctrGrowth: 0,
+    cpc: 0,
+    costPerResult: 0,
+    cprGrowth: 0
   });
 
+  // Additional state for Meta campaign widget
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isSyncingCampaigns, setIsSyncingCampaigns] = useState(false);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -523,7 +606,12 @@ export function HomeTab({
         previousImpressions: previousData.impressions || 0,
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
-        previousRoas: previousData.roas || 0
+        previousRoas: previousData.roas || 0,
+        ctr: currentData.ctr || 0,
+        ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
+        cpc: currentData.cpc || 0,
+        costPerResult: currentData.costPerResult || 0,
+        cprGrowth: calculatePercentChange(currentData.cprGrowth || 0, previousData.cprGrowth || 0)
       });
       
       hasFetchedMetaData.current = true;
@@ -760,6 +848,18 @@ export function HomeTab({
   const getAddedWidgets = () => {
     return widgets.filter(widget => widget.type === activeWidgetTab);
   };
+
+  // Function to refresh campaign data
+  const refreshCampaigns = useCallback((forceRefresh = false) => {
+    // This is just a stub - in a real implementation, this would fetch campaign data
+    console.log(`Refreshing campaigns for brand ${brandId}`);
+  }, [brandId]);
+  
+  // Function to sync campaign data with Meta
+  const syncCampaigns = useCallback(() => {
+    // This is just a stub - in a real implementation, this would sync with Meta
+    console.log(`Syncing campaigns for brand ${brandId}`);
+  }, [brandId]);
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
@@ -1027,6 +1127,305 @@ export function HomeTab({
           infoTooltip: "Return on ad spend (revenue / ad spend)"
         };
         break;
+      case 'meta-ctr':
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>{widget.name}</span>
+              <Percent className="h-4 w-4 text-blue-400" />
+            </div>
+          ),
+          value: metaMetrics.ctr || 0,
+          change: metaMetrics.ctrGrowth || 0,
+          suffix: "%",
+          valueFormat: "percentage",
+          decimals: 2,
+          hideGraph: true,
+          infoTooltip: "Click-through rate (clicks ÷ impressions)"
+        };
+        break;
+      case 'meta-cpc':
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>{widget.name}</span>
+              <MousePointer className="h-4 w-4 text-indigo-400" />
+            </div>
+          ),
+          value: metaMetrics.cpc || 0,
+          prefix: "$",
+          valueFormat: "currency",
+          decimals: 2,
+          hideGraph: true,
+          infoTooltip: "Average cost per click (spend ÷ clicks)"
+        };
+        break;
+      case 'meta-cpr':
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>{widget.name}</span>
+              <DollarSign className="h-4 w-4 text-orange-400" />
+            </div>
+          ),
+          value: metaMetrics.costPerResult || 0,
+          change: metaMetrics.cprGrowth || 0,
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Average cost per result"
+        };
+        break;
+      case 'meta-results':
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>{widget.name}</span>
+              <Target className="h-4 w-4 text-red-400" />
+            </div>
+          ),
+          value: 0, // This value needs to be fetched directly from API
+          valueFormat: "number",
+          hideGraph: true,
+          infoTooltip: "Total number of results from your ads"
+        };
+        break;
+      case 'meta-purchase-value':
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
+                />
+              </div>
+              <span>{widget.name}</span>
+              <ShoppingBag className="h-4 w-4 text-green-400" />
+            </div>
+          ),
+          value: 0, // This value needs to be fetched directly from API
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Total purchase value from your ads"
+        };
+        break;
+      case 'meta-reach':
+        // Special handling for the Reach widget using TotalAdSetReachCard
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="relative group">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <TotalAdSetReachCard 
+                brandId={brandId} 
+                dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+                isManuallyRefreshing={isRefreshingData}
+              />
+            </div>
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="w-full">
+            <TotalAdSetReachCard 
+              brandId={brandId} 
+              dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+              isManuallyRefreshing={isRefreshingData}
+            />
+          </div>
+        );
+        
+      case 'meta-budget':
+        // Special handling for the Total Budget widget using TotalBudgetMetricCard
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="relative group">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <TotalBudgetMetricCard 
+                brandId={brandId}
+                isManuallyRefreshing={isRefreshingData}
+              />
+            </div>
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="w-full">
+            <TotalBudgetMetricCard 
+              brandId={brandId}
+              isManuallyRefreshing={isRefreshingData}
+            />
+          </div>
+        );
+        
+      case 'meta-campaigns':
+        // Campaign Widget (full width)
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="col-span-full relative group mb-4">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <CampaignWidget 
+                brandId={brandId}
+                campaigns={campaigns}
+                isLoading={isLoadingCampaigns || isLoading}
+                isSyncing={isSyncingCampaigns}
+                dateRange={dateRange}
+                onRefresh={refreshCampaigns}
+                onSync={syncCampaigns}
+              />
+            </div>
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="col-span-full mb-4">
+            <CampaignWidget 
+              brandId={brandId}
+              campaigns={campaigns}
+              isLoading={isLoadingCampaigns || isLoading}
+              isSyncing={isSyncingCampaigns}
+              dateRange={dateRange}
+              onRefresh={refreshCampaigns}
+              onSync={syncCampaigns}
+            />
+          </div>
+        );
+        
       default:
         break;
     }
