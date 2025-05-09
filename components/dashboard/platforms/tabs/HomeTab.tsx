@@ -1368,7 +1368,7 @@ export function HomeTab({
         // Special handling for the Reach widget using TotalAdSetReachCard
         if (isEditMode) {
           return (
-            <div key={widget.id} className="relative group">
+            <div key={widget.id} className="relative group h-full">
               <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="destructive"
@@ -1410,7 +1410,7 @@ export function HomeTab({
         }
         
         return (
-          <div key={widget.id} className="w-full">
+          <div key={widget.id} className="w-full h-full">
             <TotalAdSetReachCard 
               brandId={brandId} 
               dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
@@ -1423,7 +1423,7 @@ export function HomeTab({
         // Special handling for the Budget widget using TotalBudgetMetricCard
         if (isEditMode) {
           return (
-            <div key={widget.id} className="relative group">
+            <div key={widget.id} className="relative group h-full">
               <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="destructive"
@@ -1464,7 +1464,7 @@ export function HomeTab({
         }
         
         return (
-          <div key={widget.id} className="w-full">
+          <div key={widget.id} className="w-full h-full">
             <TotalBudgetMetricCard 
               brandId={brandId} 
               isManuallyRefreshing={isRefreshingData}
@@ -1541,7 +1541,7 @@ export function HomeTab({
 
     if (isEditMode) {
       return (
-        <div key={widget.id} className="relative group">
+        <div key={widget.id} className="relative group h-full">
           <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="destructive"
@@ -1581,7 +1581,7 @@ export function HomeTab({
     }
 
     return (
-      <div key={widget.id} className="w-full">
+      <div key={widget.id} className="w-full h-full">
         <MetricCard {...widgetProps} />
       </div>
     );
