@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
+import { DragDropContext, Droppable, Draggable, DroppableProvided } from 'react-beautiful-dnd'
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
@@ -745,6 +746,7 @@ export function HomeTab({
       className: "mb-0", // Ensure MetricCards don't have bottom margin when in a grid
       platform: widget.type,
       dateRange: dateRange,
+      // Pass isRefreshingData to child components that might need it
       isRefreshingData: isRefreshingData 
     };
 
@@ -757,7 +759,7 @@ export function HomeTab({
           </div>
         ); // Or some other placeholder
       }
-      
+      // Now TypeScript knows dateRange.from and dateRange.to are Dates
       const salesByProductDateRange = { from: dateRange.from, to: dateRange.to };
 
       if (editMode) {
@@ -908,12 +910,16 @@ export function HomeTab({
         break;
     }
 
-    // Default for MetricCard widgets
     if (editMode) {
       return (
         <div className="relative group">
           <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-6 w-6 rounded-full"
+              onClick={() => removeWidget(widget.id)}
+            >
               <X className="h-3 w-3" />
             </Button>
           </div>
@@ -966,6 +972,18 @@ export function HomeTab({
   const openWidgetSelector = () => {
     setIsWidgetSelectorOpen(true);
   };
+  
+  // Combined function for when edit button is clicked
+  const handleEditButtonClick = () => {
+    if (editMode) {
+      // If already in edit mode, just toggle off
+      toggleEditMode();
+    } else {
+      // If not in edit mode, turn it on and open widget selector
+      toggleEditMode();
+      openWidgetSelector();
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -975,11 +993,11 @@ export function HomeTab({
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Click the Edit Layout button above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
+              Click the Edit Layout button in the header to add widgets from Shopify, Meta, and other platforms.
             </p>
             <Button
               size="lg"
-              onClick={toggleEditMode}
+              onClick={handleEditButtonClick}
               className="bg-primary hover:bg-primary/90"
             >
               <LayoutGrid className="mr-2 h-5 w-5" />
@@ -989,30 +1007,6 @@ export function HomeTab({
         </Card>
       ) : (
         <>
-          {/* Edit Layout controls that appear above sections when in edit mode */}
-          {editMode && (
-            <div className="mb-4 flex justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={openWidgetSelector}
-                className="bg-[#222] border-[#444] hover:bg-[#333] text-white"
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add/Remove Widgets
-              </Button>
-              
-              <Button
-                variant="default"
-                size="sm"
-                onClick={toggleEditMode}
-                className="bg-primary hover:bg-primary/90"
-              >
-                Done
-              </Button>
-            </div>
-          )}
-          
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
@@ -1028,16 +1022,27 @@ export function HomeTab({
             "meta", 
             "https://i.imgur.com/6hyyRrs.png"
           )}
-          
-          {/* Floating Edit button when not in edit mode */}
-          {!editMode && (
-            <div className="fixed bottom-8 right-8">
-              <Button
-                size="icon"
+
+          {/* Edit mode indicator */}
+          {editMode && (
+            <div className="fixed bottom-4 right-4 z-50 bg-primary text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2">
+              <span>Editing Dashboard</span>
+              <Button 
+                variant="secondary" 
+                size="sm" 
                 onClick={toggleEditMode}
-                className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90"
+                className="ml-2"
               >
-                <LayoutGrid className="h-6 w-6" />
+                Done
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={openWidgetSelector}
+                className="ml-2"
+              >
+                <PlusCircle className="h-4 w-4 mr-1" />
+                Add Widgets
               </Button>
             </div>
           )}
