@@ -7,7 +7,7 @@ import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown, Plus, Edit } from "lucide-react"
+import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown, Plus, Edit, BarChart4, PackageCheck } from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -16,6 +16,8 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { SalesByProductChart } from '@/components/metrics/SalesByProductChart'
+import { InventoryChart } from '@/components/metrics/InventoryChart'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -82,21 +84,21 @@ const AVAILABLE_WIDGETS: Widget[] = [
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
   // Add new full-width Shopify widgets
-  { 
-    id: 'shopify-sales-by-product', 
-    type: 'shopify', 
-    name: 'Sales by Product', 
+  {
+    id: 'shopify-sales-by-product',
+    type: 'shopify',
+    name: 'Sales by Product',
     component: 'SalesByProductChart',
-    description: 'Breakdown of sales by individual products',
+    description: 'Product-specific sales performance',
     icon: 'https://i.imgur.com/cnCcupx.png',
     fullWidth: true
   },
-  { 
-    id: 'shopify-inventory', 
-    type: 'shopify', 
-    name: 'Inventory Status', 
-    component: 'InventoryTable',
-    description: 'Current inventory levels for your products',
+  {
+    id: 'shopify-inventory',
+    type: 'shopify',
+    name: 'Inventory Summary',
+    component: 'InventoryChart',
+    description: 'Current inventory status and metrics',
     icon: 'https://i.imgur.com/cnCcupx.png',
     fullWidth: true
   },
@@ -828,42 +830,6 @@ export function HomeTab({
           infoTooltip: "Total number of units sold in the selected period"
         };
         break;
-      case 'shopify-sales-by-product':
-        // Mock data for Sales by Product widget
-        const salesByProductData = [
-          { product: 'Product A', sales: metrics.totalSales ? metrics.totalSales * 0.4 : 1200 },
-          { product: 'Product B', sales: metrics.totalSales ? metrics.totalSales * 0.25 : 750 },
-          { product: 'Product C', sales: metrics.totalSales ? metrics.totalSales * 0.2 : 600 },
-          { product: 'Product D', sales: metrics.totalSales ? metrics.totalSales * 0.1 : 300 },
-          { product: 'Others', sales: metrics.totalSales ? metrics.totalSales * 0.05 : 150 },
-        ];
-        
-        widgetProps = {
-          ...widgetProps,
-          data: salesByProductData,
-          fullWidth: true,
-          type: 'salesByProduct',
-          infoTooltip: "Sales breakdown by product in the selected period"
-        };
-        break;
-      case 'shopify-inventory':
-        // Mock data for Inventory widget
-        const inventoryData = [
-          { product: 'Product A', sku: 'SKU-001', stock: 32, status: 'In Stock' },
-          { product: 'Product B', sku: 'SKU-002', stock: 15, status: 'In Stock' },
-          { product: 'Product C', sku: 'SKU-003', stock: 5, status: 'Low Stock' },
-          { product: 'Product D', sku: 'SKU-004', stock: 0, status: 'Out of Stock' },
-          { product: 'Product E', sku: 'SKU-005', stock: 48, status: 'In Stock' },
-        ];
-        
-        widgetProps = {
-          ...widgetProps,
-          data: inventoryData,
-          fullWidth: true,
-          type: 'inventory',
-          infoTooltip: "Current inventory status for your products"
-        };
-        break;
       case 'meta-adspend':
         widgetProps = {
           ...widgetProps,
@@ -923,59 +889,6 @@ export function HomeTab({
         break;
     }
 
-    // For full-width widgets, create custom components
-    if (widget.fullWidth) {
-      if (isEditMode) {
-        return (
-          <div key={widget.id} className="relative group col-span-full">
-            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-6 w-6 rounded-full"
-                onClick={() => removeWidget(widget.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetUp(widget.id)}
-                disabled={index === 0}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetDown(widget.id)}
-                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-            
-            {/* Full-width widget content */}
-            {renderFullWidthWidget(widget, widgetProps)}
-          </div>
-        );
-      }
-
-      return (
-        <div key={widget.id} className="w-full col-span-full">
-          {renderFullWidthWidget(widget, widgetProps)}
-        </div>
-      );
-    }
-
-    // For regular widgets (not full-width)
     if (isEditMode) {
       return (
         <div key={widget.id} className="relative group">
@@ -1022,84 +935,6 @@ export function HomeTab({
         <MetricCard {...widgetProps} />
       </div>
     );
-  };
-
-  // Helper function to render full-width widget content
-  const renderFullWidthWidget = (widget: Widget, props: any) => {
-    switch (widget.id) {
-      case 'shopify-sales-by-product':
-        return (
-          <Card className="bg-[#111] border-[#333] overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-white">{props.title}</CardTitle>
-              <CardDescription className="text-gray-400">Top products by sales</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="p-6">
-                {props.data.map((item: any, i: number) => (
-                  <div key={i} className="mb-4 last:mb-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm text-white">{item.product}</span>
-                      <span className="text-sm text-white">${item.sales.toLocaleString()}</span>
-                    </div>
-                    <div className="w-full bg-[#222] rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-[#4c9aff] h-full rounded-full" 
-                        style={{ width: `${(item.sales / Math.max(...props.data.map((d: any) => d.sales))) * 100}%` }} 
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      
-      case 'shopify-inventory':
-        return (
-          <Card className="bg-[#111] border-[#333] overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-white">{props.title}</CardTitle>
-              <CardDescription className="text-gray-400">Current inventory status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-[#333]">
-                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Product</th>
-                      <th className="py-3 px-4 text-sm font-medium text-gray-400">SKU</th>
-                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Stock</th>
-                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {props.data.map((item: any, i: number) => (
-                      <tr key={i} className="border-b border-[#333] last:border-0">
-                        <td className="py-3 px-4 text-sm text-white">{item.product}</td>
-                        <td className="py-3 px-4 text-sm text-gray-300">{item.sku}</td>
-                        <td className="py-3 px-4 text-sm text-white">{item.stock}</td>
-                        <td className="py-3 px-4 text-sm">
-                          <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                            item.status === 'In Stock' ? 'bg-green-900/30 text-green-400' :
-                            item.status === 'Low Stock' ? 'bg-yellow-900/30 text-yellow-400' :
-                            'bg-red-900/30 text-red-400'
-                          }`}>
-                            {item.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      
-      default:
-        return <div>Unsupported full-width widget</div>;
-    }
   };
 
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
