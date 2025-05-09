@@ -1634,9 +1634,9 @@ export function HomeTab({
                   )}
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6 h-full flex flex-col">
                   {/* Widget categories */}
-                  <div>
+                  <div className="flex-shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-white font-medium">Standard Widgets</h3>
                       <span className="text-xs text-gray-400">{getAvailableWidgets().filter(w => !w.fullWidth).length} available</span>
@@ -1683,7 +1683,7 @@ export function HomeTab({
                   
                   {/* Full-width widgets section */}
                   {getAvailableWidgets().some(w => w.fullWidth) && (
-                    <div>
+                    <div className="flex-shrink-0">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-medium">Full-Width Widgets</h3>
                         <span className="text-xs text-gray-400">{getAvailableWidgets().filter(w => w.fullWidth).length} available</span>
@@ -1736,13 +1736,13 @@ export function HomeTab({
                   
                   {/* Selected widgets section */}
                   {getAddedWidgets().length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-3 border-t border-[#333] pt-4">
+                    <div className="border-t border-[#333] pt-4 flex-1 flex flex-col min-h-0">
+                      <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-medium">Your Selected Widgets</h3>
                         <span className="text-xs text-gray-400">{getAddedWidgets().length} selected</span>
                       </div>
                       
-                      <div className="grid grid-cols-1 gap-3">
+                      <div className="grid grid-cols-1 gap-3 overflow-y-auto pr-1">
                         {getAddedWidgets().map(widget => (
                           <Card 
                             key={widget.id} 
