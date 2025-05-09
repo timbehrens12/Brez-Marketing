@@ -30,10 +30,19 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
+// Define inventory item type (topProducts is already defined in Metrics)
+interface InventoryItem {
+  id: string;
+  name: string;
+  image?: string;
+  quantity: number;
+  price: number;
+}
+
 // Extend Metrics type to add our custom properties
-interface ExtendedMetrics extends Omit<Metrics, 'topProducts'> {
+interface ExtendedMetrics extends Metrics {
   dailyMetaData?: DailyDataItem[];
-  // Don't redefine topProducts here since it already exists in the Metrics type
+  inventory?: InventoryItem[];
 }
 
 // Define the widget types we can add to the home page
@@ -44,6 +53,7 @@ interface Widget {
   component: string;
   description?: string;
   icon?: string;
+  isFullWidth?: boolean; // New property to identify full-width widgets
 }
 
 // Available widgets users can add
@@ -81,21 +91,24 @@ const AVAILABLE_WIDGETS: Widget[] = [
     description: 'Total units sold on Shopify',
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
-  { 
-    id: 'shopify-products', 
-    type: 'shopify', 
-    name: 'Sales by Product', 
-    component: 'ProductsCard',
-    description: 'Top-selling products on your store',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+  // New Full-Width Shopify Widgets
+  {
+    id: 'shopify-products',
+    type: 'shopify',
+    name: 'Sales by Product',
+    component: 'ProductSalesChart',
+    description: 'Sales breakdown by product',
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    isFullWidth: true
   },
-  { 
-    id: 'shopify-inventory', 
-    type: 'shopify', 
-    name: 'Inventory Status', 
-    component: 'InventoryCard',
-    description: 'Current inventory levels and alerts',
-    icon: 'https://i.imgur.com/cnCcupx.png'
+  {
+    id: 'shopify-inventory',
+    type: 'shopify',
+    name: 'Inventory',
+    component: 'InventoryTable',
+    description: 'Current inventory levels',
+    icon: 'https://i.imgur.com/cnCcupx.png',
+    isFullWidth: true
   },
   
   // Meta widgets
@@ -758,334 +771,204 @@ export function HomeTab({
       };
     });
 
-    // Special widget components
-    if (widget.id === 'shopify-products') {
-      // This widget needs full width - we'll handle it differently
-      if (isEditMode) {
-        return (
-          <div key={widget.id} className="relative group col-span-1 md:col-span-2 lg:col-span-4">
-            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-6 w-6 rounded-full"
-                onClick={() => removeWidget(widget.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
+    // For full-width widgets, render different components
+    if (widget.isFullWidth) {
+      // Common props for full-width widgets
+      const fullWidthProps = {
+        title: (
+          <div className="flex items-center gap-2">
+            <div className="relative w-4 h-4">
+              <Image 
+                src={widget.icon || ''}
+                alt={`${widget.type} logo`} 
+                width={16} 
+                height={16} 
+                className="object-contain"
+              />
             </div>
-            
-            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetUp(widget.id)}
-                disabled={index === 0}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetDown(widget.id)}
-                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-            
-            <Card className="bg-[#111] border-[#333]">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-md flex items-center gap-2">
-                  <div className="relative w-4 h-4">
-                    <Image 
-                      src={widget.icon || ''}
-                      alt={`${widget.type} logo`} 
-                      width={16} 
-                      height={16} 
-                      className="object-contain"
-                    />
-                  </div>
-                  <span>Top Products</span>
-                </CardTitle>
+            <span>{widget.name}</span>
+          </div>
+        ),
+        loading: isLoading || isRefreshingData,
+        brandId: brandId,
+        dateRange: dateRange
+      };
+
+      // Component-specific props
+      let componentContent;
+      switch (widget.id) {
+        case 'shopify-products':
+          componentContent = (
+            <Card className="w-full bg-[#111] border-[#333]">
+              <CardHeader>
+                {fullWidthProps.title}
               </CardHeader>
-              <CardContent>
-                {isLoading || isRefreshingData ? (
-                  <div className="p-8 flex justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              <CardContent className="h-[300px] flex flex-col">
+                {isLoading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-pulse text-gray-400">Loading product data...</div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <>
                     {metrics.topProducts && metrics.topProducts.length > 0 ? (
-                      <div className="grid gap-4">
-                        <div className="grid grid-cols-12 text-xs text-gray-400 py-2 border-b border-[#333]">
+                      <div className="flex-1 flex flex-col">
+                        <div className="grid grid-cols-12 mb-2 text-sm text-gray-400 border-b border-[#222] pb-2">
                           <div className="col-span-5">Product</div>
                           <div className="col-span-2 text-right">Units</div>
-                          <div className="col-span-2 text-right">Revenue</div>
-                          <div className="col-span-3 text-right">% of Total</div>
+                          <div className="col-span-3 text-right">Sales</div>
+                          <div className="col-span-2 text-right">% of Total</div>
                         </div>
-                        {metrics.topProducts.slice(0, 5).map((product, i) => (
-                          <div key={i} className="grid grid-cols-12 items-center py-3 border-b border-[#222] text-sm">
-                            <div className="col-span-5 flex items-center">
-                              <span className="font-medium text-white">{product.title}</span>
-                            </div>
-                            <div className="col-span-2 text-right text-gray-300">{product.quantity}</div>
-                            <div className="col-span-2 text-right text-gray-300">
-                              ${product.revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <div className="col-span-3 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="text-gray-300">
-                                  {((product.revenue / (metrics.totalSales || 1)) * 100).toFixed(1)}%
+                        <div className="flex-1 overflow-y-auto">
+                          {metrics.topProducts.map((product, idx) => (
+                            <div key={idx} className="grid grid-cols-12 py-2 border-b border-[#222] text-sm">
+                              <div className="col-span-5 text-white flex items-center">
+                                {/* Use product image placeholder since topProducts doesn't have image */}
+                                <div className="w-8 h-8 mr-2 rounded bg-[#333] flex items-center justify-center">
+                                  <ShoppingBag className="w-4 h-4 text-gray-400" />
                                 </div>
-                                <div className="w-24 bg-[#222] rounded-full h-2">
-                                  <div 
-                                    className="bg-primary h-2 rounded-full" 
-                                    style={{ width: `${(product.revenue / (metrics.totalSales || 1)) * 100}%` }}
-                                  ></div>
-                                </div>
+                                <span className="truncate">{product.title}</span>
                               </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <p>No product data available for the selected period.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        );
-      }
-      
-      return (
-        <div key={widget.id} className="w-full col-span-1 md:col-span-2 lg:col-span-4">
-          <Card className="bg-[#111] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md flex items-center gap-2">
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src={widget.icon || ''}
-                    alt={`${widget.type} logo`} 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
-                <span>Top Products</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading || isRefreshingData ? (
-                <div className="p-8 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {metrics.topProducts && metrics.topProducts.length > 0 ? (
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-12 text-xs text-gray-400 py-2 border-b border-[#333]">
-                        <div className="col-span-5">Product</div>
-                        <div className="col-span-2 text-right">Units</div>
-                        <div className="col-span-2 text-right">Revenue</div>
-                        <div className="col-span-3 text-right">% of Total</div>
-                      </div>
-                      {metrics.topProducts.slice(0, 5).map((product, i) => (
-                        <div key={i} className="grid grid-cols-12 items-center py-3 border-b border-[#222] text-sm">
-                          <div className="col-span-5 flex items-center">
-                            <span className="font-medium text-white">{product.title}</span>
-                          </div>
-                          <div className="col-span-2 text-right text-gray-300">{product.quantity}</div>
-                          <div className="col-span-2 text-right text-gray-300">
-                            ${product.revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                          <div className="col-span-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <div className="text-gray-300">
+                              <div className="col-span-2 text-right text-gray-300">{product.quantity.toLocaleString()}</div>
+                              <div className="col-span-3 text-right text-white">
+                                ${product.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <div className="col-span-2 text-right text-gray-300">
                                 {((product.revenue / (metrics.totalSales || 1)) * 100).toFixed(1)}%
                               </div>
-                              <div className="w-24 bg-[#222] rounded-full h-2">
-                                <div 
-                                  className="bg-primary h-2 rounded-full" 
-                                  style={{ width: `${(product.revenue / (metrics.totalSales || 1)) * 100}%` }}
-                                ></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No product data available for the selected period.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-    
-    if (widget.id === 'shopify-inventory') {
-      // Create a placeholder inventory alerts array if not present in metrics
-      const lowStockItems = metrics.topProducts ? 
-        metrics.topProducts
-          .filter(p => p.quantity < 10) // Example threshold, adjust as needed
-          .map(p => ({
-            title: p.title,
-            quantity: p.quantity
-          }))
-        : [];
-        
-      // Render inventory widget
-      if (isEditMode) {
-        return (
-          <div key={widget.id} className="relative group col-span-1 md:col-span-2 lg:col-span-2">
-            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-6 w-6 rounded-full"
-                onClick={() => removeWidget(widget.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetUp(widget.id)}
-                disabled={index === 0}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetDown(widget.id)}
-                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-            
-            <Card className="bg-[#111] border-[#333] h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-md flex items-center gap-2">
-                  <div className="relative w-4 h-4">
-                    <Image 
-                      src={widget.icon || ''}
-                      alt={`${widget.type} logo`} 
-                      width={16} 
-                      height={16} 
-                      className="object-contain"
-                    />
-                  </div>
-                  <span>Inventory Status</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading || isRefreshingData ? (
-                  <div className="p-8 flex justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {lowStockItems.length > 0 ? (
-                      <div>
-                        <h4 className="text-sm font-medium text-red-400 mb-2">Low Stock Alerts</h4>
-                        <div className="space-y-2">
-                          {lowStockItems.slice(0, 5).map((item, i) => (
-                            <div key={i} className="flex justify-between items-center p-2 bg-[#1A1010] rounded border border-[#3A2020]">
-                              <span className="text-sm font-medium text-white">{item.title}</span>
-                              <span className="text-xs px-2 py-1 bg-red-900/50 rounded-full text-red-200">
-                                {item.quantity} left
-                              </span>
                             </div>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <p>No inventory alerts at this time.</p>
+                      <div className="flex-1 flex items-center justify-center text-gray-500">
+                        No product data available
                       </div>
                     )}
-                  </div>
+                  </>
                 )}
               </CardContent>
             </Card>
-          </div>
-        );
-      }
-      
-      return (
-        <div key={widget.id} className="w-full col-span-1 md:col-span-2 lg:col-span-2">
-          <Card className="bg-[#111] border-[#333] h-full">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-md flex items-center gap-2">
-                <div className="relative w-4 h-4">
-                  <Image 
-                    src={widget.icon || ''}
-                    alt={`${widget.type} logo`} 
-                    width={16} 
-                    height={16} 
-                    className="object-contain"
-                  />
-                </div>
-                <span>Inventory Status</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading || isRefreshingData ? (
-                <div className="p-8 flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {lowStockItems.length > 0 ? (
-                    <div>
-                      <h4 className="text-sm font-medium text-red-400 mb-2">Low Stock Alerts</h4>
-                      <div className="space-y-2">
-                        {lowStockItems.slice(0, 5).map((item, i) => (
-                          <div key={i} className="flex justify-between items-center p-2 bg-[#1A1010] rounded border border-[#3A2020]">
-                            <span className="text-sm font-medium text-white">{item.title}</span>
-                            <span className="text-xs px-2 py-1 bg-red-900/50 rounded-full text-red-200">
-                              {item.quantity} left
-                            </span>
+          );
+          break;
+        case 'shopify-inventory':
+          // Simple mock inventory data since it's not in the Metrics interface
+          const mockInventory: InventoryItem[] = [
+            { id: '1', name: 'T-Shirt', quantity: 23, price: 24.99 },
+            { id: '2', name: 'Hoodie', quantity: 8, price: 49.99 },
+            { id: '3', name: 'Jeans', quantity: 15, price: 59.99 },
+            { id: '4', name: 'Hat', quantity: 0, price: 19.99 },
+            { id: '5', name: 'Sneakers', quantity: 3, price: 89.99 },
+          ];
+          
+          componentContent = (
+            <Card className="w-full bg-[#111] border-[#333]">
+              <CardHeader>
+                {fullWidthProps.title}
+              </CardHeader>
+              <CardContent className="h-[300px] flex flex-col">
+                {isLoading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-pulse text-gray-400">Loading inventory data...</div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 flex flex-col">
+                      <div className="grid grid-cols-12 mb-2 text-sm text-gray-400 border-b border-[#222] pb-2">
+                        <div className="col-span-5">Product</div>
+                        <div className="col-span-2 text-right">In Stock</div>
+                        <div className="col-span-3 text-right">Price</div>
+                        <div className="col-span-2 text-right">Status</div>
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        {mockInventory.map((item, idx) => (
+                          <div key={idx} className="grid grid-cols-12 py-2 border-b border-[#222] text-sm">
+                            <div className="col-span-5 text-white flex items-center">
+                              <div className="w-8 h-8 mr-2 rounded bg-[#333] flex items-center justify-center">
+                                <ShoppingBag className="w-4 h-4 text-gray-400" />
+                              </div>
+                              <span className="truncate">{item.name}</span>
+                            </div>
+                            <div className="col-span-2 text-right text-gray-300">{item.quantity}</div>
+                            <div className="col-span-3 text-right text-white">
+                              ${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="col-span-2 text-right">
+                              <span 
+                                className={`px-2 py-1 rounded text-xs ${
+                                  item.quantity > 10 
+                                    ? 'bg-green-900/30 text-green-400' 
+                                    : item.quantity > 0 
+                                      ? 'bg-yellow-900/30 text-yellow-400' 
+                                      : 'bg-red-900/30 text-red-400'
+                                }`}
+                              >
+                                {item.quantity > 10 ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock'}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No inventory alerts at this time.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+          break;
+        default:
+          componentContent = <div>Unknown full-width widget type</div>;
+          break;
+      }
+
+      if (isEditMode) {
+        return (
+          <div key={widget.id} className="relative group col-span-full">
+            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-6 w-6 rounded-full"
+                onClick={() => removeWidget(widget.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                onClick={() => moveWidgetUp(widget.id)}
+                disabled={index === 0}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                onClick={() => moveWidgetDown(widget.id)}
+                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+            {componentContent}
+          </div>
+        );
+      }
+
+      return (
+        <div key={widget.id} className="col-span-full">
+          {componentContent}
         </div>
       );
     }
 
-    // For MetricCard widgets which are the default
+    // For regular widgets, use MetricCard as before
     let widgetProps: any = {
       title: (
         <div className="flex items-center gap-2">
@@ -1260,6 +1143,10 @@ export function HomeTab({
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
     if (sectionWidgets.length === 0) return null;
 
+    // Group widgets into regular and full-width
+    const regularWidgets = sectionWidgets.filter(w => !w.isFullWidth);
+    const fullWidthWidgets = sectionWidgets.filter(w => w.isFullWidth);
+
     return (
       <div className="mb-5 relative">
         <div className="flex items-center mb-2">
@@ -1289,7 +1176,11 @@ export function HomeTab({
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
+          {/* Render regular widgets in a grid */}
+          {regularWidgets.map((widget, index) => renderWidget(widget, sectionWidgets.indexOf(widget)))}
+          
+          {/* Render full-width widgets (each takes up full row) */}
+          {fullWidthWidgets.map((widget, index) => renderWidget(widget, sectionWidgets.indexOf(widget)))}
         </div>
       </div>
     );
