@@ -182,9 +182,6 @@ export function HomeTab({
     previousRoas: 0
   });
 
-  // New state for the floating widget editor panel
-  const [activeSection, setActiveSection] = useState<'shopify' | 'meta' | null>(null);
-
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -956,71 +953,6 @@ export function HomeTab({
     );
   };
 
-  // Render the floating widget editor panel
-  const renderWidgetEditorPanel = () => {
-    if (!isEditMode) return null;
-    
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <Card className="bg-[#222] border-[#444] shadow-xl">
-          <CardContent className="p-4">
-            <div className="flex flex-col space-y-2">
-              <h3 className="text-white text-sm font-medium mb-1">Widget Editor</h3>
-              
-              <div className="flex space-x-2">
-                <Button 
-                  size="sm" 
-                  className="bg-[#333] hover:bg-[#444] text-white"
-                  onClick={() => {
-                    setActiveWidgetTab('shopify');
-                    setIsWidgetSelectorOpen(true);
-                  }}
-                  disabled={!shopifyConnection}
-                >
-                  <div className="flex items-center">
-                    <Image 
-                      src="https://i.imgur.com/cnCcupx.png" 
-                      alt="Shopify" 
-                      width={16} 
-                      height={16} 
-                      className="mr-2" 
-                    />
-                    <span>Add Shopify</span>
-                  </div>
-                </Button>
-                
-                <Button 
-                  size="sm" 
-                  className="bg-[#333] hover:bg-[#444] text-white"
-                  onClick={() => {
-                    setActiveWidgetTab('meta');
-                    setIsWidgetSelectorOpen(true);
-                  }}
-                  disabled={!metaConnection}
-                >
-                  <div className="flex items-center">
-                    <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta" 
-                      width={16} 
-                      height={16} 
-                      className="mr-2" 
-                    />
-                    <span>Add Meta</span>
-                  </div>
-                </Button>
-              </div>
-              
-              <div className="mt-1 text-xs text-gray-400">
-                Hover over widgets to reorder or remove
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-2 relative">
       {validWidgets.length === 0 ? (
@@ -1058,9 +990,6 @@ export function HomeTab({
             "meta", 
             "https://i.imgur.com/6hyyRrs.png"
           )}
-          
-          {/* Floating Widget Editor Panel */}
-          {renderWidgetEditorPanel()}
         </>
       )}
 
