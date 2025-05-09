@@ -7,7 +7,7 @@ import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown } from "lucide-react"
+import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown, Plus, Edit } from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
@@ -181,6 +181,9 @@ export function HomeTab({
     previousConversions: 0,
     previousRoas: 0
   });
+
+  // New state for the floating widget editor panel
+  const [activeSection, setActiveSection] = useState<'shopify' | 'meta' | null>(null);
 
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
@@ -919,7 +922,7 @@ export function HomeTab({
     if (sectionWidgets.length === 0) return null;
 
     return (
-      <div className="mb-5">
+      <div className="mb-5 relative">
         <div className="flex items-center mb-2">
           <Image 
             src={iconUrl}
@@ -929,35 +932,97 @@ export function HomeTab({
             className="mr-2"
           />
           <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
           
+          {/* Add button for this section - visible only in edit mode */}
           {isEditMode && (
-            <Card 
-              className={cn(
-                "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                "hover:bg-[#191919] transition-colors duration-200"
-              )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-2 h-7 w-7 rounded-full bg-[#333] hover:bg-[#444]"
               onClick={() => {
                 setActiveWidgetTab(platformType as 'shopify' | 'meta');
                 setIsWidgetSelectorOpen(true);
               }}
             >
-              <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
-                <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
-              </CardContent>
-            </Card>
+              <Plus className="h-4 w-4" />
+            </Button>
           )}
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
         </div>
       </div>
     );
   };
 
+  // Render the floating widget editor panel
+  const renderWidgetEditorPanel = () => {
+    if (!isEditMode) return null;
+    
+    return (
+      <div className="fixed bottom-6 right-6 z-50">
+        <Card className="bg-[#222] border-[#444] shadow-xl">
+          <CardContent className="p-4">
+            <div className="flex flex-col space-y-2">
+              <h3 className="text-white text-sm font-medium mb-1">Widget Editor</h3>
+              
+              <div className="flex space-x-2">
+                <Button 
+                  size="sm" 
+                  className="bg-[#333] hover:bg-[#444] text-white"
+                  onClick={() => {
+                    setActiveWidgetTab('shopify');
+                    setIsWidgetSelectorOpen(true);
+                  }}
+                  disabled={!shopifyConnection}
+                >
+                  <div className="flex items-center">
+                    <Image 
+                      src="https://i.imgur.com/cnCcupx.png" 
+                      alt="Shopify" 
+                      width={16} 
+                      height={16} 
+                      className="mr-2" 
+                    />
+                    <span>Add Shopify</span>
+                  </div>
+                </Button>
+                
+                <Button 
+                  size="sm" 
+                  className="bg-[#333] hover:bg-[#444] text-white"
+                  onClick={() => {
+                    setActiveWidgetTab('meta');
+                    setIsWidgetSelectorOpen(true);
+                  }}
+                  disabled={!metaConnection}
+                >
+                  <div className="flex items-center">
+                    <Image 
+                      src="https://i.imgur.com/6hyyRrs.png" 
+                      alt="Meta" 
+                      width={16} 
+                      height={16} 
+                      className="mr-2" 
+                    />
+                    <span>Add Meta</span>
+                  </div>
+                </Button>
+              </div>
+              
+              <div className="mt-1 text-xs text-gray-400">
+                Hover over widgets to reorder or remove
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
       {validWidgets.length === 0 ? (
         <Card className="bg-[#111] border-[#333] text-center py-10">
           <CardContent className="flex flex-col items-center">
@@ -993,6 +1058,9 @@ export function HomeTab({
             "meta", 
             "https://i.imgur.com/6hyyRrs.png"
           )}
+          
+          {/* Floating Widget Editor Panel */}
+          {renderWidgetEditorPanel()}
         </>
       )}
 
