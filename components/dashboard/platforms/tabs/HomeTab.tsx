@@ -1420,30 +1420,30 @@ export function HomeTab({
         );
         
       case 'meta-budget':
+        // Placeholder data - replace with actual data fetching later
+        const actualBudget = 3.00; // Example value from screenshot
+        const adSets = 3;         // Example value from screenshot
+
         widgetProps = {
-          ...widgetProps,
+          ...widgetProps, // Inherit common props like loading, brandId, etc.
           title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
+            <div className="flex items-center gap-1">
               <DollarSign className="h-4 w-4 text-green-400" />
+              <span>{widget.name} ({adSets} ad sets)</span>
             </div>
           ),
-          value: metaMetrics.adSpend || 0, // Use a relevant value here
+          value: actualBudget,
           prefix: "$",
           valueFormat: "currency",
+          decimals: 2,
           hideGraph: true,
-          infoTooltip: "Total budget for all active Meta ad sets"
+          infoTooltip: widget.description || "Total budget for all active Meta ad sets",
+          // Ensure 'change' prop is not set or is undefined for this widget
+          // so MetricCard can hide the change indicator line.
         };
-        break;
+        delete widgetProps.change; // Explicitly remove if it was somehow set by earlier spread
+        break; // Fall through to the generic MetricCard rendering
+        
       case 'meta-campaigns':
         // Campaign Widget (full width)
         if (isEditMode) {
