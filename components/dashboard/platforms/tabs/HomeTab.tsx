@@ -1626,7 +1626,7 @@ export function HomeTab({
               {getAddedWidgets().length > 0 && (
                 <>
                   <h3 className="text-white text-sm font-medium mb-2">Selected Widgets</h3>
-                  <div className="grid grid-cols-1 gap-3 mb-4">
+                  <div className="grid grid-cols-1 gap-3 mb-4 max-h-40 overflow-y-auto pr-2">
                     {getAddedWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
@@ -1671,7 +1671,7 @@ export function HomeTab({
               {getAvailableWidgets().length > 0 && (
                 <>
                   <h3 className="text-white text-sm font-medium mb-2">Available Widgets</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2">
                     {getAvailableWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
