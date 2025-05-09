@@ -287,6 +287,9 @@ export function HomeTab({
   const [isSyncingCampaigns, setIsSyncingCampaigns] = useState(false);
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
   
+  // Add state to track the last fetched dates for campaigns
+  const lastFetchedCampaignDates = useRef({from: '', to: ''});
+  
   // Helper function to convert a Date to a consistent ISO date string (YYYY-MM-DD) in local time
   const toLocalISODateString = (date: Date): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -849,14 +852,20 @@ export function HomeTab({
     return widgets.filter(widget => widget.type === activeWidgetTab);
   };
 
-  // Function to refresh campaign data
-  const refreshCampaigns = useCallback(async (forceRefresh = false) => {
-    if (!brandId || !metaConnection) return [];
+  // Function to fetch campaign data from the API
+  const fetchCampaigns = useCallback(async (forceRefresh = false) => {
+    if (!brandId || !metaConnection) {
+      console.log('[HomeTab] Cannot fetch campaigns without brandId or Meta connection');
+      return;
+    }
     
-    setIsLoadingCampaigns(true);
+    // Set loading state if we're doing a manual refresh or if campaigns are empty
+    if (forceRefresh || campaigns.length === 0) {
+      setIsLoadingCampaigns(true);
+    }
     
     try {
-      // Construct the API URL
+      // Construct the URL with required parameters
       let url = `/api/meta/campaigns?brandId=${brandId}`;
       
       // Add date range parameters if available
@@ -864,44 +873,65 @@ export function HomeTab({
         const fromDate = dateRange.from.toISOString().split('T')[0];
         const toDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${fromDate}&to=${toDate}`;
+        
+        // Skip refresh if dates haven't changed and not forcing
+        if (!forceRefresh && 
+            lastFetchedCampaignDates.current.from === fromDate && 
+            lastFetchedCampaignDates.current.to === toDate &&
+            campaigns.length > 0) {
+          console.log(`[HomeTab] Using cached campaigns data for range ${fromDate} to ${toDate}`);
+          return campaigns;
+        }
+        
+        // Update last fetched dates
+        lastFetchedCampaignDates.current = { from: fromDate, to: toDate };
         console.log(`[HomeTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
       }
       
       // Add forceRefresh parameter if needed
       if (forceRefresh) {
         url += `&forceRefresh=true`;
-        console.log('[HomeTab] Force refreshing campaigns');
       }
       
+      console.log(`[HomeTab] Fetching campaigns from ${url}`);
+      
       const response = await fetch(url, {
-        cache: 'no-cache', // Avoid browser cache
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaign data (status ${response.status})`);
+        throw new Error(`Failed to fetch campaigns data: ${response.status}`);
       }
       
       const data = await response.json();
       
-      if (data.campaigns && Array.isArray(data.campaigns)) {
+      if (Array.isArray(data.campaigns)) {
+        console.log(`[HomeTab] Successfully fetched ${data.campaigns.length} campaigns`);
         setCampaigns(data.campaigns);
-        console.log(`[HomeTab] Fetched ${data.campaigns.length} campaigns`);
         return data.campaigns;
+      } else {
+        console.warn('[HomeTab] Received invalid campaigns data format');
+        return campaigns; // Return existing campaigns on error
       }
-      
-      return [];
     } catch (error) {
-      console.error("[HomeTab] Error fetching campaigns:", error);
-      toast.error("Failed to load campaigns");
-      return [];
+      console.error('[HomeTab] Error fetching campaigns:', error);
+      toast.error('Failed to load campaign data');
+      return campaigns; // Return existing campaigns on error
     } finally {
-      setIsLoadingCampaigns(false);
+      // Add a small delay before setting loading to false for smoother UX
+      setTimeout(() => setIsLoadingCampaigns(false), 300);
     }
-  }, [brandId, dateRange, metaConnection]);
-  
+  }, [brandId, dateRange, metaConnection, campaigns]);
+
   // Function to sync campaign data with Meta
   const syncCampaigns = useCallback(async () => {
-    if (!brandId || !metaConnection) return;
+    if (!brandId || !metaConnection) {
+      console.log('[HomeTab] Cannot sync campaigns without brandId or Meta connection');
+      return;
+    }
     
     setIsSyncingCampaigns(true);
     toast.loading("Syncing Meta campaigns...", { id: "meta-campaigns-sync" });
@@ -921,27 +951,24 @@ export function HomeTab({
       if (response.ok) {
         toast.success("Meta campaigns synced", { id: "meta-campaigns-sync" });
         // Reload campaigns after sync
-        refreshCampaigns(true);
+        fetchCampaigns(true);
       } else {
         toast.error("Failed to sync Meta campaigns", { id: "meta-campaigns-sync" });
       }
     } catch (error) {
-      console.error("Error syncing Meta campaigns:", error);
+      console.error('[HomeTab] Error syncing Meta campaigns:', error);
       toast.error("Error syncing Meta campaigns", { id: "meta-campaigns-sync" });
     } finally {
       setIsSyncingCampaigns(false);
     }
-  }, [brandId, metaConnection, refreshCampaigns]);
+  }, [brandId, metaConnection, fetchCampaigns]);
 
-  // Fetch campaigns when a meta widget is added or date range changes
+  // Add an effect to fetch campaign data when needed
   useEffect(() => {
-    const hasMetaCampaignWidget = validWidgets.some(w => w.id === 'meta-campaigns');
-    
-    if (hasMetaCampaignWidget && metaConnection) {
-      console.log("[HomeTab] Fetching campaigns for Campaign Performance widget");
-      refreshCampaigns();
+    if (metaConnection && validWidgets.some(widget => widget.id === 'meta-campaigns')) {
+      fetchCampaigns();
     }
-  }, [dateRange, metaConnection, validWidgets, refreshCampaigns]);
+  }, [metaConnection, dateRange, fetchCampaigns, validWidgets]);
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
@@ -1487,7 +1514,7 @@ export function HomeTab({
                 isLoading={isLoadingCampaigns || isLoading}
                 isSyncing={isSyncingCampaigns}
                 dateRange={dateRange}
-                onRefresh={refreshCampaigns}
+                onRefresh={fetchCampaigns}
                 onSync={syncCampaigns}
               />
             </div>
@@ -1502,7 +1529,7 @@ export function HomeTab({
               isLoading={isLoadingCampaigns || isLoading}
               isSyncing={isSyncingCampaigns}
               dateRange={dateRange}
-              onRefresh={refreshCampaigns}
+              onRefresh={fetchCampaigns}
               onSync={syncCampaigns}
             />
           </div>
