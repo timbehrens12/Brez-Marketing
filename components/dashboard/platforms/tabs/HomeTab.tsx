@@ -1420,62 +1420,30 @@ export function HomeTab({
         );
         
       case 'meta-budget':
-        // Special handling for the Total Budget widget using TotalBudgetMetricCard
-        if (isEditMode) {
-          return (
-            <div key={widget.id} className="relative group w-full h-full">
-              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="h-6 w-6 rounded-full"
-                  onClick={() => removeWidget(widget.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                  onClick={() => moveWidgetUp(widget.id)}
-                >
-                  <ArrowUp className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                  onClick={() => moveWidgetDown(widget.id)}
-                >
-                  <ArrowDown className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <div className="bg-[#111] border border-[#333] rounded-lg h-full min-h-[160px] w-full">
-                <TotalBudgetMetricCard 
-                  brandId={brandId}
-                  isManuallyRefreshing={isRefreshingData}
+        widgetProps = {
+          ...widgetProps,
+          title: (
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <Image 
+                  src={widget.icon || ''}
+                  alt={`${widget.type} logo`} 
+                  width={16} 
+                  height={16} 
+                  className="object-contain"
                 />
               </div>
+              <span>{widget.name}</span>
+              <DollarSign className="h-4 w-4 text-green-400" />
             </div>
-          );
-        }
-        
-        return (
-          <div key={widget.id} className="w-full">
-            <div className="bg-[#111] border border-[#333] rounded-lg h-full min-h-[160px]">
-              <TotalBudgetMetricCard 
-                brandId={brandId}
-                isManuallyRefreshing={isRefreshingData}
-              />
-            </div>
-          </div>
-        );
-        
+          ),
+          value: metaMetrics.adSpend || 0, // Use a relevant value here
+          prefix: "$",
+          valueFormat: "currency",
+          hideGraph: true,
+          infoTooltip: "Total budget for all active Meta ad sets"
+        };
+        break;
       case 'meta-campaigns':
         // Campaign Widget (full width)
         if (isEditMode) {
