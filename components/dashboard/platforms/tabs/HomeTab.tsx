@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { MetricCard } from "@/components/metrics/MetricCard"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { InventorySummary } from "@/components/dashboard/InventorySummary"
-import { DragDropContext, Droppable, Draggable, DroppableProvided } from 'react-beautiful-dnd'
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
@@ -157,7 +156,6 @@ interface HomeTabProps {
   connections: PlatformConnection[]
   brands?: Array<{ id: string, name: string }>
   isEditMode?: boolean
-  onEditModeChange?: (isEditing: boolean) => void
 }
 
 export function HomeTab({
@@ -170,8 +168,7 @@ export function HomeTab({
   platformStatus,
   connections,
   brands = [],
-  isEditMode = false,
-  onEditModeChange
+  isEditMode = false
 }: HomeTabProps) {
   // State for user's selected widgets
   const [widgets, setWidgets] = useState<Widget[]>([]);
@@ -179,11 +176,6 @@ export function HomeTab({
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
   const [editMode, setEditMode] = useState(isEditMode);
   const supabase = createClientComponentClient();
-  
-  // Update edit mode when prop changes
-  useEffect(() => {
-    setEditMode(isEditMode);
-  }, [isEditMode]);
   
   // State to store Meta daily data
   const [metaDaily, setMetaDaily] = useState<DailyDataItem[]>([]);
@@ -703,53 +695,6 @@ export function HomeTab({
     toast.success('Widget removed from dashboard');
   };
 
-  // Modify the handleDragEnd function to work with our new sectioned layout
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    // Get droppable ID to determine which section is being dragged within
-    const sourceDroppableId = result.source.droppableId;
-    const destinationDroppableId = result.destination.droppableId;
-    
-    // Copy the current widgets array
-    const newWidgets = [...widgets];
-    
-    // Find widget indices that match the platform type of the droppable area
-    const platformType = sourceDroppableId.split('-')[1]; // 'widgets-shopify' -> 'shopify'
-    const platformWidgets = newWidgets.filter(w => w.type === platformType);
-    
-    // If dragging between sections, handle that special case
-    if (sourceDroppableId !== destinationDroppableId) {
-      // This shouldn't happen with our current setup, but we handle it anyway
-      toast("Can't move between sections. Widgets must stay in their platform section.");
-      return;
-    }
-    
-    // Get the correct widgets for this section
-    const sectionWidgets = newWidgets.filter(w => w.type === platformType);
-    
-    // Get the widget that was dragged
-    const [removed] = sectionWidgets.splice(result.source.index, 1);
-    
-    // Insert the widget at the new position
-    sectionWidgets.splice(result.destination.index, 0, removed);
-    
-    // Map the dragged widgets back to their original indices in the full widgets array
-    const updatedWidgets = [...newWidgets];
-    let sectionIndex = 0;
-    
-    for (let i = 0; i < updatedWidgets.length; i++) {
-      if (updatedWidgets[i].type === platformType) {
-        updatedWidgets[i] = sectionWidgets[sectionIndex];
-        sectionIndex++;
-      }
-    }
-    
-    // Update the state and save to database
-    setWidgets(updatedWidgets);
-    saveWidgets(updatedWidgets);
-  };
-
   // Filter available widgets by platform and remove already added ones
   const getAvailableWidgets = () => {
     const addedWidgetIds = widgets.map(w => w.id);
@@ -800,7 +745,6 @@ export function HomeTab({
       className: "mb-0", // Ensure MetricCards don't have bottom margin when in a grid
       platform: widget.type,
       dateRange: dateRange,
-      // Pass isRefreshingData to child components that might need it
       isRefreshingData: isRefreshingData 
     };
 
@@ -813,67 +757,51 @@ export function HomeTab({
           </div>
         ); // Or some other placeholder
       }
-      // Now TypeScript knows dateRange.from and dateRange.to are Dates
+      
       const salesByProductDateRange = { from: dateRange.from, to: dateRange.to };
 
       if (editMode) {
         return (
-          <Draggable key={widget.id} draggableId={widget.id} index={index}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                className="relative group w-full col-span-full transition-all duration-200" // Make it span the full width with smoother transitions
-              >
-                <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
-                </div>
-                <div className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" {...provided.dragHandleProps}>
-                  <GripVertical className="h-4 w-4 text-gray-300" />
-                </div>
-                <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full transition-transform duration-300 ease-in-out"> {/* Added transitions for smoother dragging */}
-                  <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
-                </div>
-              </div>
-            )}
-          </Draggable>
+          <div className="relative group w-full col-span-full"> 
+            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+            <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full">
+              <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
+            </div>
+          </div>
         );
       }
+      
       return (
-        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg"> {/* Make it span the full width */}
-           <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
+        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg">
+          <SalesByProduct brandId={brandId} dateRange={salesByProductDateRange} isRefreshing={isRefreshingData} />
         </div>
       );
     }
 
     if (widget.component === 'InventorySummary') {
-       if (editMode) {
+      if (editMode) {
         return (
-          <Draggable key={widget.id} draggableId={widget.id} index={index}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                className="relative group w-full col-span-full transition-all duration-200" // Make it span the full width with smoother transitions
-              >
-                <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}><X className="h-3 w-3" /></Button>
-                </div>
-                <div className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" {...provided.dragHandleProps}>
-                  <GripVertical className="h-4 w-4 text-gray-300" />
-                </div>
-                <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-                 <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full transition-transform duration-300 ease-in-out"> {/* Added transitions for smoother dragging */}
-                  <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
-                </div>
-              </div>
-            )}
-          </Draggable>
+          <div className="relative group w-full col-span-full">
+            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+            <div className="p-1 bg-[#1A1A1A] border border-[#333] rounded-lg h-full">
+              <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
+            </div>
+          </div>
         );
       }
+      
       return (
-        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg"> {/* Make it span the full width */}
+        <div key={widget.id} className="w-full col-span-full p-1 bg-[#1A1A1A] border border-[#333] rounded-lg">
           <InventorySummary brandId={brandId} isLoading={isLoadingMetaData || isLoading} isRefreshingData={isRefreshingData} />
         </div>
       );
@@ -980,36 +908,18 @@ export function HomeTab({
         break;
     }
 
+    // Default for MetricCard widgets
     if (editMode) {
       return (
-        <Draggable key={widget.id} draggableId={widget.id} index={index}>
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              className="relative group transition-transform duration-300 ease-in-out transform hover:scale-[1.01] active:scale-[0.99]" // Smoother drag with subtle animations
-            >
-              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="h-6 w-6 rounded-full"
-                  onClick={() => removeWidget(widget.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-              <div 
-                className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" 
-                {...provided.dragHandleProps}
-              >
-                <GripVertical className="h-4 w-4 text-gray-300" />
-              </div>
-              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <MetricCard {...widgetProps} />
-            </div>
-          )}
-        </Draggable>
+        <div className="relative group">
+          <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={() => removeWidget(widget.id)}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+          <MetricCard {...widgetProps} />
+        </div>
       );
     }
 
@@ -1036,38 +946,20 @@ export function HomeTab({
           <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
         </div>
         
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId={`widgets-${platformType}`} direction="horizontal">
-            {(provided: DroppableProvided) => (
-              <div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-              >
-                {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
+        </div>
       </div>
     );
   };
 
   const toggleEditMode = () => {
-    const newEditMode = !editMode;
-    setEditMode(newEditMode);
-    
-    // Notify parent component about edit mode change if callback is provided
-    if (onEditModeChange) {
-      onEditModeChange(newEditMode);
-    }
-    
-    if (newEditMode) {
-      // When entering edit mode, we could auto-open widget selector if empty
-      if (validWidgets.length === 0) {
-        setIsWidgetSelectorOpen(true);
-      }
+    if (editMode) {
+      // Save changes when exiting edit mode
+      setEditMode(false);
+    } else {
+      // Enter edit mode
+      setEditMode(true);
     }
   };
 
@@ -1083,20 +975,44 @@ export function HomeTab({
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Use the grid icon to add widgets from Shopify, Meta, and other platforms to build your personalized view.
+              Click the Edit Layout button above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
             </p>
             <Button
               size="lg"
-              onClick={openWidgetSelector}
+              onClick={toggleEditMode}
               className="bg-primary hover:bg-primary/90"
             >
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Add Your First Widget
+              <LayoutGrid className="mr-2 h-5 w-5" />
+              Edit Layout
             </Button>
           </CardContent>
         </Card>
       ) : (
         <>
+          {/* Edit Layout controls that appear above sections when in edit mode */}
+          {editMode && (
+            <div className="mb-4 flex justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openWidgetSelector}
+                className="bg-[#222] border-[#444] hover:bg-[#333] text-white"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add/Remove Widgets
+              </Button>
+              
+              <Button
+                variant="default"
+                size="sm"
+                onClick={toggleEditMode}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Done
+              </Button>
+            </div>
+          )}
+          
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
@@ -1112,6 +1028,19 @@ export function HomeTab({
             "meta", 
             "https://i.imgur.com/6hyyRrs.png"
           )}
+          
+          {/* Floating Edit button when not in edit mode */}
+          {!editMode && (
+            <div className="fixed bottom-8 right-8">
+              <Button
+                size="icon"
+                onClick={toggleEditMode}
+                className="h-12 w-12 rounded-full bg-primary hover:bg-primary/90"
+              >
+                <LayoutGrid className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
         </>
       )}
 
@@ -1119,7 +1048,7 @@ export function HomeTab({
       <Dialog open={isWidgetSelectorOpen} onOpenChange={setIsWidgetSelectorOpen}>
         <DialogContent className="sm:max-w-lg bg-[#111] border-[#333]">
           <DialogHeader>
-            <DialogTitle className="text-white">{editMode ? "Add/Remove Widgets" : "Add Widgets"}</DialogTitle>
+            <DialogTitle className="text-white">Add Widgets</DialogTitle>
             <DialogDescription className="text-gray-400">
               Choose widgets to add to your dashboard. They will be placed in the appropriate section based on platform.
             </DialogDescription>
