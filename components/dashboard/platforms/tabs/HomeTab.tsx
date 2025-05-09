@@ -704,16 +704,58 @@ export function HomeTab({
     if (widgetIndex <= 0) return; // Already at top
 
     const widget = widgets[widgetIndex];
-    // Only filter by type, ignoring whether it's full-width or not
+    const isFullWidth = widget.fullWidth === true;
     const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
     
-    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
+    // If we're moving a full-width widget
+    if (isFullWidth) {
+      // Find all widgets of the same type above this one
+      const widgetsAbove = sameTypeWidgets.filter((w, idx) => {
+        const widgetGlobalIndex = widgets.findIndex(globalW => globalW.id === w.id);
+        return widgetGlobalIndex < widgetIndex;
+      });
+      
+      if (widgetsAbove.length === 0) return; // Already at the top of its section
+      
+      // Find the closest widget or widget group above
+      const standardWidgetsAbove = widgetsAbove.filter(w => !w.fullWidth);
+      const fullWidthWidgetsAbove = widgetsAbove.filter(w => w.fullWidth);
+      
+      let targetIndex: number;
+      
+      // If there's a full-width widget above, move just above it
+      if (fullWidthWidgetsAbove.length > 0) {
+        const closestFullWidthWidget = fullWidthWidgetsAbove[fullWidthWidgetsAbove.length - 1];
+        targetIndex = widgets.findIndex(w => w.id === closestFullWidthWidget.id);
+      } 
+      // If there are standard widgets above, move above the first standard widget (treat them as a block)
+      else if (standardWidgetsAbove.length > 0) {
+        // Find first standard widget of this type in the global widget array
+        const firstStandardWidgetId = standardWidgetsAbove[0].id;
+        targetIndex = widgets.findIndex(w => w.id === firstStandardWidgetId);
+      }
+      else {
+        return; // No valid target to move above
+      }
+      
+      // Move the widget
+      const newWidgets = [...widgets];
+      newWidgets.splice(widgetIndex, 1); // Remove the widget
+      newWidgets.splice(targetIndex, 0, widget); // Insert at new position
+      saveWidgets(newWidgets);
+      return;
+    }
     
-    if (widgetTypeIndex <= 0) return; // Already at top of its section
-
+    // For standard widgets, just move within the standard widget group
+    const standardWidgetsOfSameType = sameTypeWidgets.filter(w => !w.fullWidth);
+    const widgetTypeIndex = standardWidgetsOfSameType.findIndex(w => w.id === widgetId);
+    
+    if (widgetTypeIndex <= 0) return; // Already at top of its group
+    
+    const targetWidget = standardWidgetsOfSameType[widgetTypeIndex - 1];
+    const targetIndex = widgets.findIndex(w => w.id === targetWidget.id);
+    
     const newWidgets = [...widgets];
-    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex - 1].id);
-    
     newWidgets.splice(widgetIndex, 1); // Remove the widget
     newWidgets.splice(targetIndex, 0, widget); // Insert at new position
     
@@ -724,18 +766,65 @@ export function HomeTab({
   const moveWidgetDown = (widgetId: string) => {
     const widgetIndex = widgets.findIndex(w => w.id === widgetId);
     if (widgetIndex === -1 || widgetIndex >= widgets.length - 1) return; // Already at bottom
-
+    
     const widget = widgets[widgetIndex];
-    // Only filter by type, ignoring whether it's full-width or not
+    const isFullWidth = widget.fullWidth === true;
     const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
     
-    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
+    // If we're moving a full-width widget
+    if (isFullWidth) {
+      // Find all widgets of the same type below this one
+      const widgetsBelow = sameTypeWidgets.filter((w, idx) => {
+        const widgetGlobalIndex = widgets.findIndex(globalW => globalW.id === w.id);
+        return widgetGlobalIndex > widgetIndex;
+      });
+      
+      if (widgetsBelow.length === 0) return; // Already at the bottom of its section
+      
+      // Find the closest widget or widget group below
+      const standardWidgetsBelow = widgetsBelow.filter(w => !w.fullWidth);
+      const fullWidthWidgetsBelow = widgetsBelow.filter(w => w.fullWidth);
+      
+      let targetIndex: number;
+      
+      // If there's a full-width widget below, move just below it
+      if (fullWidthWidgetsBelow.length > 0) {
+        const closestFullWidthWidget = fullWidthWidgetsBelow[0];
+        targetIndex = widgets.findIndex(w => w.id === closestFullWidthWidget.id) + 1;
+      } 
+      // If there are standard widgets below, move below the last standard widget (treat them as a block)
+      else if (standardWidgetsBelow.length > 0) {
+        // Find last standard widget of this type in the global widget array
+        const lastStandardWidgetId = standardWidgetsBelow[standardWidgetsBelow.length - 1].id;
+        targetIndex = widgets.findIndex(w => w.id === lastStandardWidgetId) + 1;
+      }
+      else {
+        return; // No valid target to move below
+      }
+      
+      // If target index goes beyond array bounds, adjust it
+      if (targetIndex > widgets.length) {
+        targetIndex = widgets.length;
+      }
+      
+      // Move the widget
+      const newWidgets = [...widgets];
+      newWidgets.splice(widgetIndex, 1); // Remove the widget
+      newWidgets.splice(targetIndex, 0, widget); // Insert at new position
+      saveWidgets(newWidgets);
+      return;
+    }
     
-    if (widgetTypeIndex >= sameTypeWidgets.length - 1) return; // Already at bottom of its section
-
+    // For standard widgets, just move within the standard widget group
+    const standardWidgetsOfSameType = sameTypeWidgets.filter(w => !w.fullWidth);
+    const widgetTypeIndex = standardWidgetsOfSameType.findIndex(w => w.id === widgetId);
+    
+    if (widgetTypeIndex >= standardWidgetsOfSameType.length - 1) return; // Already at bottom of its group
+    
+    const targetWidget = standardWidgetsOfSameType[widgetTypeIndex + 1];
+    const targetIndex = widgets.findIndex(w => w.id === targetWidget.id) + 1;
+    
     const newWidgets = [...widgets];
-    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex + 1].id);
-    
     newWidgets.splice(widgetIndex, 1); // Remove the widget
     newWidgets.splice(targetIndex, 0, widget); // Insert at new position
     
