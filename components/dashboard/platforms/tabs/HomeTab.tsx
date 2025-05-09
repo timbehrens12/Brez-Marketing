@@ -610,7 +610,7 @@ export function HomeTab({
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
         previousRoas: previousData.roas || 0,
-        ctr: currentData.ctr > 1 ? currentData.ctr / 100 : currentData.ctr || 0,
+        ctr: currentData.ctr || 0,
         ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
         cpc: currentData.cpc || 0,
         costPerResult: currentData.costPerResult || 0,
@@ -1254,11 +1254,11 @@ export function HomeTab({
               <Percent className="h-4 w-4 text-blue-400" />
             </div>
           ),
-          value: metaMetrics.ctr ? (metaMetrics.ctr * 100) : 0,
+          value: metaMetrics.ctr || 0,
           change: metaMetrics.ctrGrowth || 0,
-          suffix: "%",
           valueFormat: "number",
           decimals: 2,
+          suffix: "%",
           hideGraph: true,
           infoTooltip: "Click-through rate (clicks ÷ impressions)"
         };
@@ -1455,22 +1455,26 @@ export function HomeTab({
               </div>
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <div className="w-full" style={{ minHeight: '100%' }}>
-                <TotalBudgetMetricCard 
-                  brandId={brandId}
-                  isManuallyRefreshing={isRefreshingData}
-                />
+              <div className="h-full flex">
+                <Card className="bg-[#111] border-[#333] w-full">
+                  <TotalBudgetMetricCard 
+                    brandId={brandId}
+                    isManuallyRefreshing={isRefreshingData}
+                  />
+                </Card>
               </div>
             </div>
           );
         }
         
         return (
-          <div key={widget.id} className="w-full" style={{ minHeight: '100%' }}>
-            <TotalBudgetMetricCard 
-              brandId={brandId}
-              isManuallyRefreshing={isRefreshingData}
-            />
+          <div key={widget.id} className="w-full h-full">
+            <Card className="bg-[#111] border-[#333] w-full h-full">
+              <TotalBudgetMetricCard 
+                brandId={brandId}
+                isManuallyRefreshing={isRefreshingData}
+              />
+            </Card>
           </div>
         );
         
