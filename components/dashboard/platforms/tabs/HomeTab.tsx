@@ -16,6 +16,7 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { Draggable } from 'react-beautiful-dnd'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -30,19 +31,11 @@ interface DailyDataItem {
   [key: string]: string | number | undefined;
 }
 
-// Define inventory item type (topProducts is already defined in Metrics)
-interface InventoryItem {
-  id: string;
-  name: string;
-  image?: string;
-  quantity: number;
-  price: number;
-}
-
 // Extend Metrics type to add our custom properties
 interface ExtendedMetrics extends Metrics {
   dailyMetaData?: DailyDataItem[];
-  inventory?: InventoryItem[];
+  salesByProductData?: Array<{ productName: string; sales: number; unitsSold: number; [key: string]: any }>;
+  inventoryData?: Array<{ productName: string; stockLevel: number; status: string; [key: string]: any }>;
 }
 
 // Define the widget types we can add to the home page
@@ -53,7 +46,8 @@ interface Widget {
   component: string;
   description?: string;
   icon?: string;
-  isFullWidth?: boolean; // New property to identify full-width widgets
+  isFullWidth?: boolean;
+  displayType?: 'simple' | 'table' | 'list';
 }
 
 // Available widgets users can add
@@ -91,24 +85,25 @@ const AVAILABLE_WIDGETS: Widget[] = [
     description: 'Total units sold on Shopify',
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
-  // New Full-Width Shopify Widgets
-  {
-    id: 'shopify-products',
+  { 
+    id: 'shopify-sales-by-product',
     type: 'shopify',
     name: 'Sales by Product',
-    component: 'ProductSalesChart',
-    description: 'Sales breakdown by product',
+    component: 'MetricCard',
+    description: 'Breakdown of sales by top products',
     icon: 'https://i.imgur.com/cnCcupx.png',
-    isFullWidth: true
+    isFullWidth: true,
+    displayType: 'table'
   },
-  {
+  { 
     id: 'shopify-inventory',
     type: 'shopify',
-    name: 'Inventory',
-    component: 'InventoryTable',
-    description: 'Current inventory levels',
+    name: 'Product Inventory',
+    component: 'MetricCard',
+    description: 'Overview of product inventory levels',
     icon: 'https://i.imgur.com/cnCcupx.png',
-    isFullWidth: true
+    isFullWidth: true,
+    displayType: 'table'
   },
   
   // Meta widgets
@@ -771,204 +766,9 @@ export function HomeTab({
       };
     });
 
-    // For full-width widgets, render different components
-    if (widget.isFullWidth) {
-      // Common props for full-width widgets
-      const fullWidthProps = {
-        title: (
-          <div className="flex items-center gap-2">
-            <div className="relative w-4 h-4">
-              <Image 
-                src={widget.icon || ''}
-                alt={`${widget.type} logo`} 
-                width={16} 
-                height={16} 
-                className="object-contain"
-              />
-            </div>
-            <span>{widget.name}</span>
-          </div>
-        ),
-        loading: isLoading || isRefreshingData,
-        brandId: brandId,
-        dateRange: dateRange
-      };
-
-      // Component-specific props
-      let componentContent;
-      switch (widget.id) {
-        case 'shopify-products':
-          componentContent = (
-            <Card className="w-full bg-[#111] border-[#333]">
-              <CardHeader>
-                {fullWidthProps.title}
-              </CardHeader>
-              <CardContent className="h-[300px] flex flex-col">
-                {isLoading ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="animate-pulse text-gray-400">Loading product data...</div>
-                  </div>
-                ) : (
-                  <>
-                    {metrics.topProducts && metrics.topProducts.length > 0 ? (
-                      <div className="flex-1 flex flex-col">
-                        <div className="grid grid-cols-12 mb-2 text-sm text-gray-400 border-b border-[#222] pb-2">
-                          <div className="col-span-5">Product</div>
-                          <div className="col-span-2 text-right">Units</div>
-                          <div className="col-span-3 text-right">Sales</div>
-                          <div className="col-span-2 text-right">% of Total</div>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                          {metrics.topProducts.map((product, idx) => (
-                            <div key={idx} className="grid grid-cols-12 py-2 border-b border-[#222] text-sm">
-                              <div className="col-span-5 text-white flex items-center">
-                                {/* Use product image placeholder since topProducts doesn't have image */}
-                                <div className="w-8 h-8 mr-2 rounded bg-[#333] flex items-center justify-center">
-                                  <ShoppingBag className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <span className="truncate">{product.title}</span>
-                              </div>
-                              <div className="col-span-2 text-right text-gray-300">{product.quantity.toLocaleString()}</div>
-                              <div className="col-span-3 text-right text-white">
-                                ${product.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                              <div className="col-span-2 text-right text-gray-300">
-                                {((product.revenue / (metrics.totalSales || 1)) * 100).toFixed(1)}%
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center text-gray-500">
-                        No product data available
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-          break;
-        case 'shopify-inventory':
-          // Simple mock inventory data since it's not in the Metrics interface
-          const mockInventory: InventoryItem[] = [
-            { id: '1', name: 'T-Shirt', quantity: 23, price: 24.99 },
-            { id: '2', name: 'Hoodie', quantity: 8, price: 49.99 },
-            { id: '3', name: 'Jeans', quantity: 15, price: 59.99 },
-            { id: '4', name: 'Hat', quantity: 0, price: 19.99 },
-            { id: '5', name: 'Sneakers', quantity: 3, price: 89.99 },
-          ];
-          
-          componentContent = (
-            <Card className="w-full bg-[#111] border-[#333]">
-              <CardHeader>
-                {fullWidthProps.title}
-              </CardHeader>
-              <CardContent className="h-[300px] flex flex-col">
-                {isLoading ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="animate-pulse text-gray-400">Loading inventory data...</div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1 flex flex-col">
-                      <div className="grid grid-cols-12 mb-2 text-sm text-gray-400 border-b border-[#222] pb-2">
-                        <div className="col-span-5">Product</div>
-                        <div className="col-span-2 text-right">In Stock</div>
-                        <div className="col-span-3 text-right">Price</div>
-                        <div className="col-span-2 text-right">Status</div>
-                      </div>
-                      <div className="flex-1 overflow-y-auto">
-                        {mockInventory.map((item, idx) => (
-                          <div key={idx} className="grid grid-cols-12 py-2 border-b border-[#222] text-sm">
-                            <div className="col-span-5 text-white flex items-center">
-                              <div className="w-8 h-8 mr-2 rounded bg-[#333] flex items-center justify-center">
-                                <ShoppingBag className="w-4 h-4 text-gray-400" />
-                              </div>
-                              <span className="truncate">{item.name}</span>
-                            </div>
-                            <div className="col-span-2 text-right text-gray-300">{item.quantity}</div>
-                            <div className="col-span-3 text-right text-white">
-                              ${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </div>
-                            <div className="col-span-2 text-right">
-                              <span 
-                                className={`px-2 py-1 rounded text-xs ${
-                                  item.quantity > 10 
-                                    ? 'bg-green-900/30 text-green-400' 
-                                    : item.quantity > 0 
-                                      ? 'bg-yellow-900/30 text-yellow-400' 
-                                      : 'bg-red-900/30 text-red-400'
-                                }`}
-                              >
-                                {item.quantity > 10 ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock'}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-          break;
-        default:
-          componentContent = <div>Unknown full-width widget type</div>;
-          break;
-      }
-
-      if (isEditMode) {
-        return (
-          <div key={widget.id} className="relative group col-span-full">
-            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-6 w-6 rounded-full"
-                onClick={() => removeWidget(widget.id)}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetUp(widget.id)}
-                disabled={index === 0}
-              >
-                <ArrowUp className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                onClick={() => moveWidgetDown(widget.id)}
-                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-              >
-                <ArrowDown className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-            {componentContent}
-          </div>
-        );
-      }
-
-      return (
-        <div key={widget.id} className="col-span-full">
-          {componentContent}
-        </div>
-      );
-    }
-
-    // For regular widgets, use MetricCard as before
+    // For demo, we'll use MetricCard for all widgets with different properties
+    // In a real implementation, you'd render different components based on widget.component
+    
     let widgetProps: any = {
       title: (
         <div className="flex items-center gap-2">
@@ -988,7 +788,9 @@ export function HomeTab({
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
-      dateRange: dateRange
+      dateRange: dateRange,
+      displayType: widget.displayType || 'simple',
+      isFullWidth: widget.isFullWidth || false
     };
 
     // Widget-specific props based on ID
@@ -1032,6 +834,28 @@ export function HomeTab({
           data: metrics.unitsSoldData || [],
           infoTooltip: "Total number of units sold in the selected period"
         };
+        break;
+      case 'shopify-sales-by-product':
+        widgetProps = {
+          ...widgetProps,
+          data: extendedMetrics.salesByProductData || [],
+          hideGraph: true,
+          infoTooltip: widget.description || "Breakdown of sales by product",
+        };
+        delete widgetProps.value;
+        delete widgetProps.change;
+        delete widgetProps.prefix;
+        break;
+      case 'shopify-inventory':
+        widgetProps = {
+          ...widgetProps,
+          data: extendedMetrics.inventoryData || [],
+          hideGraph: true,
+          infoTooltip: widget.description || "Current inventory levels for products",
+        };
+        delete widgetProps.value;
+        delete widgetProps.change;
+        delete widgetProps.prefix;
         break;
       case 'meta-adspend':
         widgetProps = {
@@ -1092,49 +916,59 @@ export function HomeTab({
         break;
     }
 
+    const fullWidthClasses = widget.isFullWidth ? "md:col-span-2 lg:col-span-4" : "";
+
     if (isEditMode) {
       return (
-        <div key={widget.id} className="relative group">
-          <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="destructive"
-              size="icon"
-              className="h-6 w-6 rounded-full"
-              onClick={() => removeWidget(widget.id)}
+        <Draggable key={widget.id} draggableId={widget.id} index={index}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.draggableProps}
+              className={cn("relative group", fullWidthClasses)}
             >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-          
-          <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-              onClick={() => moveWidgetUp(widget.id)}
-              disabled={index === 0}
-            >
-              <ArrowUp className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-              onClick={() => moveWidgetDown(widget.id)}
-              disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-            >
-              <ArrowDown className="h-3 w-3" />
-            </Button>
-          </div>
-          
-          <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-          <MetricCard {...widgetProps} />
-        </div>
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                  disabled={index === 0}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                  disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className={cn("absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none", {"opacity-0 group-hover:opacity-100": !isEditMode})}></div>
+              <MetricCard {...widgetProps} />
+            </div>
+          )}
+        </Draggable>
       );
     }
 
     return (
-      <div key={widget.id} className="w-full">
+      <div key={widget.id} className={cn("w-full", fullWidthClasses)}>
         <MetricCard {...widgetProps} />
       </div>
     );
@@ -1142,10 +976,6 @@ export function HomeTab({
 
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
     if (sectionWidgets.length === 0) return null;
-
-    // Group widgets into regular and full-width
-    const regularWidgets = sectionWidgets.filter(w => !w.isFullWidth);
-    const fullWidthWidgets = sectionWidgets.filter(w => w.isFullWidth);
 
     return (
       <div className="mb-5 relative">
@@ -1176,11 +1006,7 @@ export function HomeTab({
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Render regular widgets in a grid */}
-          {regularWidgets.map((widget, index) => renderWidget(widget, sectionWidgets.indexOf(widget)))}
-          
-          {/* Render full-width widgets (each takes up full row) */}
-          {fullWidthWidgets.map((widget, index) => renderWidget(widget, sectionWidgets.indexOf(widget)))}
+          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
         </div>
       </div>
     );
@@ -1281,7 +1107,7 @@ export function HomeTab({
               </TabsTrigger>
             </TabsList>
             
-           <div className="px-1 py-2">
+           <div className="px-1 py-2 max-h-[60vh] overflow-y-auto">
               {/* Selected widgets section */}
               {getAddedWidgets().length > 0 && (
                 <>
@@ -1329,7 +1155,10 @@ export function HomeTab({
                     {getAvailableWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
-                        className="flex flex-col p-4 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
+                        className={cn(
+                          "flex flex-col p-4 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150",
+                          widget.isFullWidth && "sm:col-span-2"
+                        )}
                         onClick={() => {
                           addWidget(widget);
                           // Optional: close modal when adding if that's better UX
