@@ -1661,11 +1661,6 @@ export function HomeTab({
                             <div className="flex-1">
                               <div className="flex items-center">
                                 <h4 className="font-medium text-white">{widget.name}</h4>
-                                {widget.fullWidth && (
-                                  <span className="ml-2 text-xs bg-emerald-900/50 text-emerald-400 px-1.5 py-0.5 rounded">
-                                    Full width
-                                  </span>
-                                )}
                               </div>
                             </div>
                             <Button
@@ -1711,11 +1706,6 @@ export function HomeTab({
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <h4 className="font-medium text-white">{widget.name}</h4>
-                                {widget.fullWidth && (
-                                  <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded">
-                                    Full width
-                                  </span>
-                                )}
                               </div>
                               <p className="text-xs text-gray-400">{widget.description}</p>
                             </div>
