@@ -1455,26 +1455,20 @@ export function HomeTab({
               </div>
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <div className="h-full flex">
-                <Card className="bg-[#111] border-[#333] w-full">
-                  <TotalBudgetMetricCard 
-                    brandId={brandId}
-                    isManuallyRefreshing={isRefreshingData}
-                  />
-                </Card>
-              </div>
+              <TotalBudgetMetricCard 
+                brandId={brandId}
+                isManuallyRefreshing={isRefreshingData}
+              />
             </div>
           );
         }
         
         return (
-          <div key={widget.id} className="w-full h-full">
-            <Card className="bg-[#111] border-[#333] w-full h-full">
-              <TotalBudgetMetricCard 
-                brandId={brandId}
-                isManuallyRefreshing={isRefreshingData}
-              />
-            </Card>
+          <div key={widget.id} className="w-full">
+            <TotalBudgetMetricCard 
+              brandId={brandId}
+              isManuallyRefreshing={isRefreshingData}
+            />
           </div>
         );
         
