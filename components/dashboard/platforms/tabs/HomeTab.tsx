@@ -1568,8 +1568,8 @@ export function HomeTab({
 
       {/* Widget Selector Dialog */}
       <Dialog open={isWidgetSelectorOpen} onOpenChange={setIsWidgetSelectorOpen}>
-        <DialogContent className="sm:max-w-lg bg-[#111] border-[#333] max-h-[90vh] flex flex-col">
-          <DialogHeader className="pb-2">
+        <DialogContent className="sm:max-w-lg bg-[#111] border-[#333] max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="pb-2 shrink-0">
             <DialogTitle className="text-white">Add Widgets</DialogTitle>
             <DialogDescription className="text-gray-400">
               Choose widgets to add to your dashboard.
@@ -1580,9 +1580,9 @@ export function HomeTab({
             defaultValue={activeWidgetTab} 
             value={activeWidgetTab} 
             onValueChange={(value) => setActiveWidgetTab(value as 'shopify' | 'meta')}
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col overflow-hidden"
           >
-            <TabsList className="grid w-full grid-cols-2 mb-4 bg-[#222] border-[#444]">
+            <TabsList className="grid w-full grid-cols-2 mb-4 bg-[#222] border-[#444] shrink-0">
               <TabsTrigger 
                 value="shopify" 
                 className={cn(
@@ -1621,7 +1621,7 @@ export function HomeTab({
               </TabsTrigger>
             </TabsList>
             
-            <div className="px-1 py-0 overflow-y-auto flex-1 min-h-0">
+            <div className="px-1 py-0 overflow-y-auto flex-1 min-h-0 h-[60vh]">
               {getAvailableWidgets().length === 0 && getAddedWidgets().length === 0 ? (
                 <div className="text-center py-8">
                   <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
