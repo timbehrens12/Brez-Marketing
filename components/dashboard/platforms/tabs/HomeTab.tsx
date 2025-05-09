@@ -7,13 +7,12 @@ import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid } from "lucide-react"
+import { PlusCircle, X, Settings, Pencil, GripVertical, ShoppingBag, Facebook, LayoutGrid, MoveUp, MoveDown, ArrowUp, ArrowDown } from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { MetricCard } from "@/components/metrics/MetricCard"
-import { DragDropContext, Droppable, Draggable, DroppableProvided } from 'react-beautiful-dnd'
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
@@ -677,51 +676,44 @@ export function HomeTab({
     toast.success('Widget removed from dashboard');
   };
 
-  // Modify the handleDragEnd function to work with our new sectioned layout
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  // Move widget up in order within its section
+  const moveWidgetUp = (widgetId: string) => {
+    const widgetIndex = widgets.findIndex(w => w.id === widgetId);
+    if (widgetIndex <= 0) return; // Already at top
+
+    const widget = widgets[widgetIndex];
+    const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
+    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
     
-    // Get droppable ID to determine which section is being dragged within
-    const sourceDroppableId = result.source.droppableId;
-    const destinationDroppableId = result.destination.droppableId;
-    
-    // Copy the current widgets array
+    if (widgetTypeIndex <= 0) return; // Already at top of its section
+
     const newWidgets = [...widgets];
+    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex - 1].id);
     
-    // Find widget indices that match the platform type of the droppable area
-    const platformType = sourceDroppableId.split('-')[1]; // 'widgets-shopify' -> 'shopify'
-    const platformWidgets = newWidgets.filter(w => w.type === platformType);
+    newWidgets.splice(widgetIndex, 1); // Remove the widget
+    newWidgets.splice(targetIndex, 0, widget); // Insert at new position
     
-    // If dragging between sections, handle that special case
-    if (sourceDroppableId !== destinationDroppableId) {
-      // This shouldn't happen with our current setup, but we handle it anyway
-      toast("Can't move between sections. Widgets must stay in their platform section.");
-      return;
-    }
+    saveWidgets(newWidgets);
+  };
+
+  // Move widget down in order within its section
+  const moveWidgetDown = (widgetId: string) => {
+    const widgetIndex = widgets.findIndex(w => w.id === widgetId);
+    if (widgetIndex === -1 || widgetIndex >= widgets.length - 1) return; // Already at bottom
+
+    const widget = widgets[widgetIndex];
+    const sameTypeWidgets = widgets.filter(w => w.type === widget.type);
+    const widgetTypeIndex = sameTypeWidgets.findIndex(w => w.id === widgetId);
     
-    // Get the correct widgets for this section
-    const sectionWidgets = newWidgets.filter(w => w.type === platformType);
+    if (widgetTypeIndex >= sameTypeWidgets.length - 1) return; // Already at bottom of its section
+
+    const newWidgets = [...widgets];
+    const targetIndex = widgets.findIndex(w => w.id === sameTypeWidgets[widgetTypeIndex + 1].id);
     
-    // Get the widget that was dragged
-    const [removed] = sectionWidgets.splice(result.source.index, 1);
+    newWidgets.splice(widgetIndex, 1); // Remove the widget
+    newWidgets.splice(targetIndex, 0, widget); // Insert at new position
     
-    // Insert the widget at the new position
-    sectionWidgets.splice(result.destination.index, 0, removed);
-    
-    // Map the dragged widgets back to their original indices in the full widgets array
-    const updatedWidgets = [...newWidgets];
-    let sectionIndex = 0;
-    
-    for (let i = 0; i < updatedWidgets.length; i++) {
-      if (updatedWidgets[i].type === platformType) {
-        updatedWidgets[i] = sectionWidgets[sectionIndex];
-        sectionIndex++;
-      }
-    }
-    
-    // Update the state and save to database
-    setWidgets(updatedWidgets);
-    saveWidgets(updatedWidgets);
+    saveWidgets(newWidgets);
   };
 
   // Filter available widgets by platform and remove already added ones
@@ -877,34 +869,42 @@ export function HomeTab({
 
     if (isEditMode) {
       return (
-        <Draggable key={widget.id} draggableId={widget.id} index={index}>
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              className="relative group"
+        <div key={widget.id} className="relative group">
+          <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-6 w-6 rounded-full"
+              onClick={() => removeWidget(widget.id)}
             >
-              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="h-6 w-6 rounded-full"
-                  onClick={() => removeWidget(widget.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-              <div 
-                className="absolute top-1.5 right-1.5 z-10 h-7 w-7 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 bg-[#333]/80 hover:bg-[#444]/80 transition-all cursor-move" 
-                {...provided.dragHandleProps}
-              >
-                <GripVertical className="h-4 w-4 text-gray-300" />
-              </div>
-              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <MetricCard {...widgetProps} />
-            </div>
-          )}
-        </Draggable>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+              onClick={() => moveWidgetUp(widget.id)}
+              disabled={index === 0}
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+              onClick={() => moveWidgetDown(widget.id)}
+              disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+          <MetricCard {...widgetProps} />
+        </div>
       );
     }
 
@@ -918,7 +918,7 @@ export function HomeTab({
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
     if (sectionWidgets.length === 0) return null;
 
-  return (
+    return (
       <div className="mb-5">
         <div className="flex items-center mb-2">
           <Image 
@@ -931,38 +931,27 @@ export function HomeTab({
           <h2 className="text-lg font-medium text-white">{sectionTitle}</h2>
         </div>
         
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId={`widgets-${platformType}`} direction="horizontal">
-            {(provided: DroppableProvided) => (
-              <div 
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" 
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-              >
-                {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
-                {provided.placeholder}
-                
-                {isEditMode && (
-                  <Card 
-                    className={cn(
-                      "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
-                      "hover:bg-[#191919] transition-colors duration-200"
-                    )}
-                    onClick={() => {
-                      setActiveWidgetTab(platformType as 'shopify' | 'meta');
-                      setIsWidgetSelectorOpen(true);
-                    }}
-                  >
-                    <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                      <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
-                      <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
+          
+          {isEditMode && (
+            <Card 
+              className={cn(
+                "bg-[#111] border-[#333] border-dashed flex flex-col items-center justify-center cursor-pointer",
+                "hover:bg-[#191919] transition-colors duration-200"
+              )}
+              onClick={() => {
+                setActiveWidgetTab(platformType as 'shopify' | 'meta');
+                setIsWidgetSelectorOpen(true);
+              }}
+            >
+              <CardContent className="p-6 flex flex-col items-center justify-center h-full">
+                <PlusCircle className="h-8 w-8 text-gray-500 mb-2" />
+                <p className="text-gray-400 text-sm">Add {sectionTitle} Widget</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     );
   };
@@ -973,29 +962,29 @@ export function HomeTab({
         <Card className="bg-[#111] border-[#333] text-center py-10">
           <CardContent className="flex flex-col items-center">
             <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-xl font-medium text-white mb-2">Your Dashboard Awaits</h3>
+            <h3 className="text-xl font-medium text-white mb-2">Build Your Custom Dashboard</h3>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Click the grid icon above to add widgets from Shopify, Meta, and other platforms to build your personalized view.
+              Add widgets from your connected platforms to create a personalized view of your most important metrics.
             </p>
             <Button
               size="lg"
               onClick={() => setIsWidgetSelectorOpen(true)}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-[#444] hover:bg-[#555] text-white"
             >
               <PlusCircle className="mr-2 h-5 w-5" />
-              Add Your First Widget
+              Add Widgets
             </Button>
           </CardContent>
         </Card>
-                  ) : (
-                    <>
+      ) : (
+        <>
           {/* Shopify Section */}
           {renderWidgetSection(
             shopifyWidgets, 
             "Shopify", 
             "shopify", 
             "https://i.imgur.com/cnCcupx.png"
-                      )}
+          )}
           
           {/* Meta Section */}
           {renderWidgetSection(
@@ -1030,6 +1019,7 @@ export function HomeTab({
                   "flex items-center text-gray-300 data-[state=active]:bg-[#333] data-[state=active]:text-white",
                   "focus-visible:ring-offset-0 focus-visible:ring-primary"
                 )}
+                disabled={!shopifyConnection}
               >
                 <Image 
                   src="https://i.imgur.com/cnCcupx.png" 
@@ -1039,6 +1029,7 @@ export function HomeTab({
                   className="mr-2"
                 />
                 Shopify
+                {!shopifyConnection && <span className="ml-1 text-xs">(Not Connected)</span>}
               </TabsTrigger>
               <TabsTrigger 
                 value="meta" 
@@ -1046,6 +1037,7 @@ export function HomeTab({
                   "flex items-center text-gray-300 data-[state=active]:bg-[#333] data-[state=active]:text-white",
                   "focus-visible:ring-offset-0 focus-visible:ring-primary"
                 )}
+                disabled={!metaConnection}
               >
                 <Image 
                   src="https://i.imgur.com/6hyyRrs.png"
@@ -1055,6 +1047,7 @@ export function HomeTab({
                   className="mr-2"
                 />
                 Meta
+                {!metaConnection && <span className="ml-1 text-xs">(Not Connected)</span>}
               </TabsTrigger>
             </TabsList>
             
@@ -1078,12 +1071,12 @@ export function HomeTab({
                               height={24} 
                               className="object-contain"
                             />
-              </div>
+                          </div>
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
                             <p className="text-sm text-gray-400">{widget.description}</p>
-                </div>
-              </div>
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1098,20 +1091,22 @@ export function HomeTab({
                 </>
               )}
 
-              {/* Available widgets section */}
+              {/* Available widgets section with improved layout and visuals */}
               {getAvailableWidgets().length > 0 && (
                 <>
                   <h3 className="text-white text-sm font-medium mb-2">Available Widgets</h3>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {getAvailableWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
-                        className="flex justify-between items-center p-3 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
+                        className="flex flex-col p-4 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
                         onClick={() => {
                           addWidget(widget);
+                          // Optional: close modal when adding if that's better UX
+                          // setIsWidgetSelectorOpen(false); 
                         }}
                       >
-                        <div className="flex items-center">
+                        <div className="flex items-center mb-2">
                           <div className="mr-3 bg-[#333] p-2 rounded-lg">
                             <Image 
                               src={widget.icon || ''} 
@@ -1121,12 +1116,18 @@ export function HomeTab({
                               className="object-contain"
                             />
                           </div>
-                          <div>
-                            <h4 className="font-medium text-white">{widget.name}</h4>
-                            <p className="text-sm text-gray-400">{widget.description}</p>
-                          </div>
+                          <h4 className="font-medium text-white text-lg">{widget.name}</h4>
                         </div>
-                        <PlusCircle className="h-5 w-5 text-gray-400 hover:text-white" />
+                        <p className="text-sm text-gray-400 mb-3">{widget.description}</p>
+                        <div className="mt-auto pt-2 border-t border-[#333] flex justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="bg-[#333] hover:bg-[#444] border-[#555] text-white"
+                          >
+                            <PlusCircle className="h-4 w-4 mr-1" /> Add
+                          </Button>
+                        </div>
                       </Card>
                     ))}
                   </div>
@@ -1134,11 +1135,18 @@ export function HomeTab({
               )}
 
               {getAvailableWidgets().length === 0 && getAddedWidgets().length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No {activeWidgetTab} widgets available.</p>
+                <div className="text-center py-8">
+                  <LayoutGrid className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                  <p className="text-gray-400">No {activeWidgetTab} widgets available.</p>
+                  {activeWidgetTab === 'shopify' && !shopifyConnection && (
+                    <p className="text-gray-500 mt-2">Connect your Shopify store to add widgets.</p>
+                  )}
+                  {activeWidgetTab === 'meta' && !metaConnection && (
+                    <p className="text-gray-500 mt-2">Connect your Meta Ads account to add widgets.</p>
+                  )}
                 </div>
               )}
-              </div>
+            </div>
           </Tabs>
         </DialogContent>
       </Dialog>
