@@ -1420,29 +1420,57 @@ export function HomeTab({
         );
         
       case 'meta-budget':
-        // Placeholder data - replace with actual data fetching later
-        const actualBudget = 3.00; // Example value from screenshot
-        const adSets = 3;         // Example value from screenshot
-
-        widgetProps = {
-          ...widgetProps, // Inherit common props like loading, brandId, etc.
-          title: (
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4 text-green-400" />
-              <span>{widget.name} ({adSets} ad sets)</span>
+        // Special handling for the Budget widget using TotalBudgetMetricCard
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="relative group">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <TotalBudgetMetricCard 
+                brandId={brandId} 
+                isManuallyRefreshing={isRefreshingData}
+              />
             </div>
-          ),
-          value: actualBudget,
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2,
-          hideGraph: true,
-          infoTooltip: widget.description || "Total budget for all active Meta ad sets",
-          // Ensure 'change' prop is not set or is undefined for this widget
-          // so MetricCard can hide the change indicator line.
-        };
-        delete widgetProps.change; // Explicitly remove if it was somehow set by earlier spread
-        break; // Fall through to the generic MetricCard rendering
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="w-full">
+            <TotalBudgetMetricCard 
+              brandId={brandId} 
+              isManuallyRefreshing={isRefreshingData}
+            />
+          </div>
+        );
         
       case 'meta-campaigns':
         // Campaign Widget (full width)
