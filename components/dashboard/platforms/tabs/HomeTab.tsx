@@ -850,16 +850,98 @@ export function HomeTab({
   };
 
   // Function to refresh campaign data
-  const refreshCampaigns = useCallback((forceRefresh = false) => {
-    // This is just a stub - in a real implementation, this would fetch campaign data
-    console.log(`Refreshing campaigns for brand ${brandId}`);
-  }, [brandId]);
+  const refreshCampaigns = useCallback(async (forceRefresh = false) => {
+    if (!brandId || !metaConnection) return [];
+    
+    setIsLoadingCampaigns(true);
+    
+    try {
+      // Construct the API URL
+      let url = `/api/meta/campaigns?brandId=${brandId}`;
+      
+      // Add date range parameters if available
+      if (dateRange?.from && dateRange?.to) {
+        const fromDate = dateRange.from.toISOString().split('T')[0];
+        const toDate = dateRange.to.toISOString().split('T')[0];
+        url += `&from=${fromDate}&to=${toDate}`;
+        console.log(`[HomeTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
+      }
+      
+      // Add forceRefresh parameter if needed
+      if (forceRefresh) {
+        url += `&forceRefresh=true`;
+        console.log('[HomeTab] Force refreshing campaigns');
+      }
+      
+      const response = await fetch(url, {
+        cache: 'no-cache', // Avoid browser cache
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch campaign data (status ${response.status})`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.campaigns && Array.isArray(data.campaigns)) {
+        setCampaigns(data.campaigns);
+        console.log(`[HomeTab] Fetched ${data.campaigns.length} campaigns`);
+        return data.campaigns;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error("[HomeTab] Error fetching campaigns:", error);
+      toast.error("Failed to load campaigns");
+      return [];
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  }, [brandId, dateRange, metaConnection]);
   
   // Function to sync campaign data with Meta
-  const syncCampaigns = useCallback(() => {
-    // This is just a stub - in a real implementation, this would sync with Meta
-    console.log(`Syncing campaigns for brand ${brandId}`);
-  }, [brandId]);
+  const syncCampaigns = useCallback(async () => {
+    if (!brandId || !metaConnection) return;
+    
+    setIsSyncingCampaigns(true);
+    toast.loading("Syncing Meta campaigns...", { id: "meta-campaigns-sync" });
+    
+    try {
+      const response = await fetch(`/api/meta/campaigns/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          forceRefresh: true
+        }),
+      });
+      
+      if (response.ok) {
+        toast.success("Meta campaigns synced", { id: "meta-campaigns-sync" });
+        // Reload campaigns after sync
+        refreshCampaigns(true);
+      } else {
+        toast.error("Failed to sync Meta campaigns", { id: "meta-campaigns-sync" });
+      }
+    } catch (error) {
+      console.error("Error syncing Meta campaigns:", error);
+      toast.error("Error syncing Meta campaigns", { id: "meta-campaigns-sync" });
+    } finally {
+      setIsSyncingCampaigns(false);
+    }
+  }, [brandId, metaConnection, refreshCampaigns]);
+
+  // Fetch campaigns when a meta widget is added or date range changes
+  useEffect(() => {
+    const hasMetaCampaignWidget = validWidgets.some(w => w.id === 'meta-campaigns');
+    
+    if (hasMetaCampaignWidget && metaConnection) {
+      console.log("[HomeTab] Fetching campaigns for Campaign Performance widget");
+      refreshCampaigns();
+    }
+  }, [dateRange, metaConnection, validWidgets, refreshCampaigns]);
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
