@@ -593,6 +593,11 @@ export function HomeTab({
       const conversionGrowth = calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0);
       const roasGrowth = calculatePercentChange(currentData.roas || 0, previousData.roas || 0);
       
+      // Calculate CTR properly - as a percentage value already
+      const currentCtr = currentData.impressions > 0 ? (currentData.clicks / currentData.impressions) * 100 : 0;
+      const previousCtr = previousData.impressions > 0 ? (previousData.clicks / previousData.impressions) * 100 : 0;
+      const ctrGrowth = calculatePercentChange(currentCtr, previousCtr);
+      
       // Store both current metrics and previous period metrics in our local state
       setMetaMetrics({
         adSpend: currentData.adSpend || 0,
@@ -610,11 +615,11 @@ export function HomeTab({
         previousClicks: previousData.clicks || 0,
         previousConversions: previousData.conversions || 0,
         previousRoas: previousData.roas || 0,
-        ctr: currentData.ctr || 0,
-        ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
+        ctr: currentCtr, // Use our calculated CTR value
+        ctrGrowth,
         cpc: currentData.cpc || 0,
         costPerResult: currentData.costPerResult || 0,
-        cprGrowth: calculatePercentChange(currentData.cprGrowth || 0, previousData.cprGrowth || 0)
+        cprGrowth: calculatePercentChange(currentData.costPerResult || 0, previousData.costPerResult || 0)
       });
       
       hasFetchedMetaData.current = true;
@@ -1256,7 +1261,6 @@ export function HomeTab({
           ),
           value: metaMetrics.ctr || 0,
           change: metaMetrics.ctrGrowth || 0,
-          suffix: "%",
           valueFormat: "percentage",
           decimals: 2,
           hideGraph: true,
@@ -1423,7 +1427,7 @@ export function HomeTab({
         // Special handling for the Total Budget widget using TotalBudgetMetricCard
         if (isEditMode) {
           return (
-            <div key={widget.id} className="relative group">
+            <div key={widget.id} className="relative group w-full h-full">
               <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="destructive"
@@ -1455,16 +1459,18 @@ export function HomeTab({
               </div>
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              <TotalBudgetMetricCard 
-                brandId={brandId}
-                isManuallyRefreshing={isRefreshingData}
-              />
+              <div className="w-full h-full">
+                <TotalBudgetMetricCard 
+                  brandId={brandId}
+                  isManuallyRefreshing={isRefreshingData}
+                />
+              </div>
             </div>
           );
         }
         
         return (
-          <div key={widget.id} className="w-full">
+          <div key={widget.id} className="w-full h-full">
             <TotalBudgetMetricCard 
               brandId={brandId}
               isManuallyRefreshing={isRefreshingData}
