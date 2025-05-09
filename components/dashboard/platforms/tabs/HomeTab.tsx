@@ -16,8 +16,8 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
-import { SalesByProductChart } from '@/components/metrics/SalesByProductChart'
-import { InventoryChart } from '@/components/metrics/InventoryChart'
+import { SalesByProduct } from '@/components/dashboard/SalesByProduct'
+import { InventorySummary } from '@/components/dashboard/InventorySummary'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -83,12 +83,12 @@ const AVAILABLE_WIDGETS: Widget[] = [
     description: 'Total units sold on Shopify',
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
-  // Add new full-width Shopify widgets
+  // Add full-width Shopify widgets
   {
     id: 'shopify-sales-by-product',
     type: 'shopify',
     name: 'Sales by Product',
-    component: 'SalesByProductChart',
+    component: 'SalesByProduct',
     description: 'Product-specific sales performance',
     icon: 'https://i.imgur.com/cnCcupx.png',
     fullWidth: true
@@ -97,7 +97,7 @@ const AVAILABLE_WIDGETS: Widget[] = [
     id: 'shopify-inventory',
     type: 'shopify',
     name: 'Inventory Summary',
-    component: 'InventoryChart',
+    component: 'InventorySummary',
     description: 'Current inventory status and metrics',
     icon: 'https://i.imgur.com/cnCcupx.png',
     fullWidth: true
@@ -830,6 +830,138 @@ export function HomeTab({
           infoTooltip: "Total number of units sold in the selected period"
         };
         break;
+      case 'shopify-sales-by-product':
+        // Sales by Product widget (full width)
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="col-span-full relative group mb-4">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              {dateRange.from && dateRange.to ? (
+                <SalesByProduct 
+                  brandId={brandId}
+                  dateRange={{
+                    from: dateRange.from,
+                    to: dateRange.to
+                  }}
+                  isRefreshing={isRefreshingData}
+                />
+              ) : (
+                <Card className="bg-[#111] border-[#333] p-6 text-center">
+                  <CardContent>
+                    <p className="text-gray-400">Please select a date range to view sales by product</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="col-span-full mb-4">
+            {dateRange.from && dateRange.to ? (
+              <SalesByProduct 
+                brandId={brandId}
+                dateRange={{
+                  from: dateRange.from,
+                  to: dateRange.to
+                }}
+                isRefreshing={isRefreshingData}
+              />
+            ) : (
+              <Card className="bg-[#111] border-[#333] p-6 text-center">
+                <CardContent>
+                  <p className="text-gray-400">Please select a date range to view sales by product</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+        
+      case 'shopify-inventory':
+        // Inventory Summary widget (full width)
+        if (isEditMode) {
+          return (
+            <div key={widget.id} className="col-span-full relative group mb-4">
+              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-6 w-6 rounded-full"
+                  onClick={() => removeWidget(widget.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetUp(widget.id)}
+                >
+                  <ArrowUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                  onClick={() => moveWidgetDown(widget.id)}
+                >
+                  <ArrowDown className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+              <InventorySummary 
+                brandId={brandId}
+                isLoading={isLoading}
+                isRefreshingData={isRefreshingData}
+              />
+            </div>
+          );
+        }
+        
+        return (
+          <div key={widget.id} className="col-span-full mb-4">
+            <InventorySummary 
+              brandId={brandId}
+              isLoading={isLoading}
+              isRefreshingData={isRefreshingData}
+            />
+          </div>
+        );
+        
       case 'meta-adspend':
         widgetProps = {
           ...widgetProps,
@@ -940,6 +1072,10 @@ export function HomeTab({
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
     if (sectionWidgets.length === 0) return null;
 
+    // Separate standard widgets from full-width widgets
+    const standardWidgets = sectionWidgets.filter(w => !w.fullWidth);
+    const fullWidthWidgets = sectionWidgets.filter(w => w.fullWidth);
+
     return (
       <div className="mb-5 relative">
         <div className="flex items-center mb-2">
@@ -968,9 +1104,15 @@ export function HomeTab({
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {sectionWidgets.map((widget, index) => renderWidget(widget, index))}
-        </div>
+        {/* Render standard-sized widgets in a grid */}
+        {standardWidgets.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            {standardWidgets.map((widget, index) => renderWidget(widget, index))}
+          </div>
+        )}
+        
+        {/* Render full-width widgets in sequence */}
+        {fullWidthWidgets.map((widget, index) => renderWidget(widget, index + standardWidgets.length))}
       </div>
     );
   };
@@ -1093,7 +1235,10 @@ export function HomeTab({
                           </div>
                           <div>
                             <h4 className="font-medium text-white">{widget.name}</h4>
-                            <p className="text-sm text-gray-400">{widget.description}</p>
+                            <p className="text-sm text-gray-400">
+                              {widget.description}
+                              {widget.fullWidth && <span className="ml-2 text-xs text-emerald-400">(Full width)</span>}
+                            </p>
                           </div>
                         </div>
                         <Button
@@ -1136,6 +1281,11 @@ export function HomeTab({
                             />
                           </div>
                           <h4 className="font-medium text-white text-lg">{widget.name}</h4>
+                          {widget.fullWidth && (
+                            <span className="ml-2 text-xs bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded">
+                              Full width
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-400 mb-3">{widget.description}</p>
                         <div className="mt-auto pt-2 border-t border-[#333] flex justify-end">
