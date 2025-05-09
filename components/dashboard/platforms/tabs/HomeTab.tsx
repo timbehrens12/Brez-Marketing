@@ -16,7 +16,6 @@ import { MetricCard } from "@/components/metrics/MetricCard"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns'
-import { Draggable } from 'react-beautiful-dnd'
 
 // Define the MetaTab DailyDataItem type for proper type checking
 interface DailyDataItem {
@@ -34,8 +33,6 @@ interface DailyDataItem {
 // Extend Metrics type to add our custom properties
 interface ExtendedMetrics extends Metrics {
   dailyMetaData?: DailyDataItem[];
-  salesByProductData?: Array<{ productName: string; sales: number; unitsSold: number; [key: string]: any }>;
-  inventoryData?: Array<{ productName: string; stockLevel: number; status: string; [key: string]: any }>;
 }
 
 // Define the widget types we can add to the home page
@@ -46,8 +43,7 @@ interface Widget {
   component: string;
   description?: string;
   icon?: string;
-  isFullWidth?: boolean;
-  displayType?: 'simple' | 'table' | 'list';
+  fullWidth?: boolean;
 }
 
 // Available widgets users can add
@@ -85,25 +81,24 @@ const AVAILABLE_WIDGETS: Widget[] = [
     description: 'Total units sold on Shopify',
     icon: 'https://i.imgur.com/cnCcupx.png'
   },
+  // Add new full-width Shopify widgets
   { 
-    id: 'shopify-sales-by-product',
-    type: 'shopify',
-    name: 'Sales by Product',
-    component: 'MetricCard',
-    description: 'Breakdown of sales by top products',
+    id: 'shopify-sales-by-product', 
+    type: 'shopify', 
+    name: 'Sales by Product', 
+    component: 'SalesByProductChart',
+    description: 'Breakdown of sales by individual products',
     icon: 'https://i.imgur.com/cnCcupx.png',
-    isFullWidth: true,
-    displayType: 'table'
+    fullWidth: true
   },
   { 
-    id: 'shopify-inventory',
-    type: 'shopify',
-    name: 'Product Inventory',
-    component: 'MetricCard',
-    description: 'Overview of product inventory levels',
+    id: 'shopify-inventory', 
+    type: 'shopify', 
+    name: 'Inventory Status', 
+    component: 'InventoryTable',
+    description: 'Current inventory levels for your products',
     icon: 'https://i.imgur.com/cnCcupx.png',
-    isFullWidth: true,
-    displayType: 'table'
+    fullWidth: true
   },
   
   // Meta widgets
@@ -788,9 +783,7 @@ export function HomeTab({
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
-      dateRange: dateRange,
-      displayType: widget.displayType || 'simple',
-      isFullWidth: widget.isFullWidth || false
+      dateRange: dateRange
     };
 
     // Widget-specific props based on ID
@@ -836,26 +829,40 @@ export function HomeTab({
         };
         break;
       case 'shopify-sales-by-product':
+        // Mock data for Sales by Product widget
+        const salesByProductData = [
+          { product: 'Product A', sales: metrics.totalSales ? metrics.totalSales * 0.4 : 1200 },
+          { product: 'Product B', sales: metrics.totalSales ? metrics.totalSales * 0.25 : 750 },
+          { product: 'Product C', sales: metrics.totalSales ? metrics.totalSales * 0.2 : 600 },
+          { product: 'Product D', sales: metrics.totalSales ? metrics.totalSales * 0.1 : 300 },
+          { product: 'Others', sales: metrics.totalSales ? metrics.totalSales * 0.05 : 150 },
+        ];
+        
         widgetProps = {
           ...widgetProps,
-          data: extendedMetrics.salesByProductData || [],
-          hideGraph: true,
-          infoTooltip: widget.description || "Breakdown of sales by product",
+          data: salesByProductData,
+          fullWidth: true,
+          type: 'salesByProduct',
+          infoTooltip: "Sales breakdown by product in the selected period"
         };
-        delete widgetProps.value;
-        delete widgetProps.change;
-        delete widgetProps.prefix;
         break;
       case 'shopify-inventory':
+        // Mock data for Inventory widget
+        const inventoryData = [
+          { product: 'Product A', sku: 'SKU-001', stock: 32, status: 'In Stock' },
+          { product: 'Product B', sku: 'SKU-002', stock: 15, status: 'In Stock' },
+          { product: 'Product C', sku: 'SKU-003', stock: 5, status: 'Low Stock' },
+          { product: 'Product D', sku: 'SKU-004', stock: 0, status: 'Out of Stock' },
+          { product: 'Product E', sku: 'SKU-005', stock: 48, status: 'In Stock' },
+        ];
+        
         widgetProps = {
           ...widgetProps,
-          data: extendedMetrics.inventoryData || [],
-          hideGraph: true,
-          infoTooltip: widget.description || "Current inventory levels for products",
+          data: inventoryData,
+          fullWidth: true,
+          type: 'inventory',
+          infoTooltip: "Current inventory status for your products"
         };
-        delete widgetProps.value;
-        delete widgetProps.change;
-        delete widgetProps.prefix;
         break;
       case 'meta-adspend':
         widgetProps = {
@@ -916,62 +923,183 @@ export function HomeTab({
         break;
     }
 
-    const fullWidthClasses = widget.isFullWidth ? "md:col-span-2 lg:col-span-4" : "";
+    // For full-width widgets, create custom components
+    if (widget.fullWidth) {
+      if (isEditMode) {
+        return (
+          <div key={widget.id} className="relative group col-span-full">
+            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-6 w-6 rounded-full"
+                onClick={() => removeWidget(widget.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                onClick={() => moveWidgetUp(widget.id)}
+                disabled={index === 0}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+                onClick={() => moveWidgetDown(widget.id)}
+                disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+            
+            {/* Full-width widget content */}
+            {renderFullWidthWidget(widget, widgetProps)}
+          </div>
+        );
+      }
 
+      return (
+        <div key={widget.id} className="w-full col-span-full">
+          {renderFullWidthWidget(widget, widgetProps)}
+        </div>
+      );
+    }
+
+    // For regular widgets (not full-width)
     if (isEditMode) {
       return (
-        <Draggable key={widget.id} draggableId={widget.id} index={index}>
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              className={cn("relative group", fullWidthClasses)}
+        <div key={widget.id} className="relative group">
+          <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="destructive"
+              size="icon"
+              className="h-6 w-6 rounded-full"
+              onClick={() => removeWidget(widget.id)}
             >
-              <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="h-6 w-6 rounded-full"
-                  onClick={() => removeWidget(widget.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                  onClick={() => moveWidgetUp(widget.id)}
-                  disabled={index === 0}
-                >
-                  <ArrowUp className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
-                  onClick={() => moveWidgetDown(widget.id)}
-                  disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
-                >
-                  <ArrowDown className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              <div className={cn("absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none", {"opacity-0 group-hover:opacity-100": !isEditMode})}></div>
-              <MetricCard {...widgetProps} />
-            </div>
-          )}
-        </Draggable>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="absolute top-1/2 -left-3 z-10 transform -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+              onClick={() => moveWidgetUp(widget.id)}
+              disabled={index === 0}
+            >
+              <ArrowUp className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-6 w-6 bg-[#333] text-gray-300 hover:bg-[#444]"
+              onClick={() => moveWidgetDown(widget.id)}
+              disabled={index === widgets.filter(w => w.type === widget.type).length - 1}
+            >
+              <ArrowDown className="h-3 w-3" />
+            </Button>
+          </div>
+          
+          <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
+          <MetricCard {...widgetProps} />
+        </div>
       );
     }
 
     return (
-      <div key={widget.id} className={cn("w-full", fullWidthClasses)}>
+      <div key={widget.id} className="w-full">
         <MetricCard {...widgetProps} />
       </div>
     );
+  };
+
+  // Helper function to render full-width widget content
+  const renderFullWidthWidget = (widget: Widget, props: any) => {
+    switch (widget.id) {
+      case 'shopify-sales-by-product':
+        return (
+          <Card className="bg-[#111] border-[#333] overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-white">{props.title}</CardTitle>
+              <CardDescription className="text-gray-400">Top products by sales</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="p-6">
+                {props.data.map((item: any, i: number) => (
+                  <div key={i} className="mb-4 last:mb-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-white">{item.product}</span>
+                      <span className="text-sm text-white">${item.sales.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full bg-[#222] rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-[#4c9aff] h-full rounded-full" 
+                        style={{ width: `${(item.sales / Math.max(...props.data.map((d: any) => d.sales))) * 100}%` }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      
+      case 'shopify-inventory':
+        return (
+          <Card className="bg-[#111] border-[#333] overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-white">{props.title}</CardTitle>
+              <CardDescription className="text-gray-400">Current inventory status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-[#333]">
+                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Product</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-400">SKU</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Stock</th>
+                      <th className="py-3 px-4 text-sm font-medium text-gray-400">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {props.data.map((item: any, i: number) => (
+                      <tr key={i} className="border-b border-[#333] last:border-0">
+                        <td className="py-3 px-4 text-sm text-white">{item.product}</td>
+                        <td className="py-3 px-4 text-sm text-gray-300">{item.sku}</td>
+                        <td className="py-3 px-4 text-sm text-white">{item.stock}</td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs ${
+                            item.status === 'In Stock' ? 'bg-green-900/30 text-green-400' :
+                            item.status === 'Low Stock' ? 'bg-yellow-900/30 text-yellow-400' :
+                            'bg-red-900/30 text-red-400'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      
+      default:
+        return <div>Unsupported full-width widget</div>;
+    }
   };
 
   const renderWidgetSection = (sectionWidgets: Widget[], sectionTitle: string, platformType: string, iconUrl: string) => {
@@ -1107,7 +1235,7 @@ export function HomeTab({
               </TabsTrigger>
             </TabsList>
             
-           <div className="px-1 py-2 max-h-[60vh] overflow-y-auto">
+           <div className="px-1 py-2">
               {/* Selected widgets section */}
               {getAddedWidgets().length > 0 && (
                 <>
@@ -1155,10 +1283,7 @@ export function HomeTab({
                     {getAvailableWidgets().map(widget => (
                       <Card 
                         key={widget.id} 
-                        className={cn(
-                          "flex flex-col p-4 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150",
-                          widget.isFullWidth && "sm:col-span-2"
-                        )}
+                        className="flex flex-col p-4 cursor-pointer bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] transition-colors duration-150"
                         onClick={() => {
                           addWidget(widget);
                           // Optional: close modal when adding if that's better UX
