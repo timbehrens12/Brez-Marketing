@@ -432,9 +432,10 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-auto p-0" 
+          className="w-auto p-0 data-[state=closed]:animate-none" 
           align="start"
-          style={{ background: "#111111" }}
+          forceMount
+          sideOffset={5}
         >
           <div className="space-y-4 p-4 bg-[#111111] text-white">
             <div className="flex">
