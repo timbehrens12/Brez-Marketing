@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { Check, ChevronDown, Building2, Store, Briefcase, Tag } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Check, ChevronDown, Building2, Store, Briefcase, Tag, Search } from "lucide-react"
 import { useBrandContext } from "@/lib/context/BrandContext"
 import { useUser } from "@clerk/nextjs"
 import { cn } from "@/lib/utils"
@@ -17,9 +17,16 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
   const { user } = useUser()
   const [isOpen, setIsOpen] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Additional safety check to filter brands by user
   const userBrands = brands.filter((brand: any) => brand.user_id === user?.id)
+
+  // Filter brands based on search query
+  const filteredBrands = userBrands.filter((brand: any) => 
+    brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   // Find the selected brand when selectedBrandId changes
   useEffect(() => {
@@ -30,6 +37,15 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
       setSelectedBrand(null)
     }
   }, [selectedBrandId, userBrands])
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100)
+    } else {
+      setSearchQuery("")
+    }
+  }, [isOpen])
 
   const handleSelect = (brand: any) => {
     setSelectedBrand(brand)
@@ -79,8 +95,24 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
           className="absolute z-10 w-full mt-1 origin-top-right rounded-md shadow-lg animate-in fade-in-50 zoom-in-95 duration-100"
         >
           <div className="py-1 bg-[#1A1A1A] border border-[#333] rounded-md shadow-xs max-h-60 overflow-auto">
-            {userBrands.length > 0 ? (
-              userBrands.map((brand: any) => (
+            {/* Search input */}
+            <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search brands..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-sm bg-[#252525] border border-[#333] rounded text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+
+            {filteredBrands.length > 0 ? (
+              filteredBrands.map((brand: any) => (
                 <button
                   key={brand.id}
                   className={cn(
@@ -102,6 +134,10 @@ export default function BrandSelector({ onSelect, selectedBrandId, className }: 
                   </div>
                 </button>
               ))
+            ) : searchQuery ? (
+              <div className="px-3 py-2 text-sm text-gray-500">
+                No brands found matching "{searchQuery}"
+              </div>
             ) : (
               <div className="px-3 py-2 text-sm text-gray-500">
                 No brands available
