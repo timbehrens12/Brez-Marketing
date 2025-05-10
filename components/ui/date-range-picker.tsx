@@ -43,7 +43,11 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-[#2A2A2A] border-[#333]" align="start">
+        <PopoverContent 
+          className="w-auto p-0" 
+          align="start"
+          style={{ background: "#2A2A2A", border: "1px solid #333" }}
+        >
           <Calendar
             initialFocus
             mode="range"
