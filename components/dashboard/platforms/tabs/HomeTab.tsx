@@ -1458,7 +1458,6 @@ export function HomeTab({
               <TotalBudgetMetricCard 
                 brandId={brandId} 
                 isManuallyRefreshing={isRefreshingData}
-                className="mb-0"
               />
             </div>
           );
@@ -1469,7 +1468,6 @@ export function HomeTab({
             <TotalBudgetMetricCard 
               brandId={brandId} 
               isManuallyRefreshing={isRefreshingData}
-              className="mb-0"
             />
           </div>
         );

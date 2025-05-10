@@ -8,10 +8,9 @@ import { MetricCard } from './MetricCard'
 interface TotalBudgetMetricCardProps {
   brandId: string
   isManuallyRefreshing?: boolean
-  className?: string
 }
 
-export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, className }: TotalBudgetMetricCardProps) {
+export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }: TotalBudgetMetricCardProps) {
   const [totalBudget, setTotalBudget] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
@@ -122,7 +121,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, c
       prefix="$"
       hideGraph={true}
       infoTooltip="Shows the total budget for all active Meta ad sets. This value automatically updates when campaigns or ad sets change."
-      className={className}
+      className="h-full"
     />
   )
 } 
