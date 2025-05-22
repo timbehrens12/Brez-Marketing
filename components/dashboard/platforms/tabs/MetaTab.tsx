@@ -58,7 +58,7 @@ import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget 
 import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
-import { MetaBackfillButton } from '@/components/dashboard/platforms/MetaBackfillButton'
+
 
 interface MetaTabProps {
   dateRange: DateRange | undefined
@@ -4662,18 +4662,6 @@ Try creating at least one active campaign in Meta Ads Manager.
           />
         ) : null}
       </div>
-
-             {/* Add the MetaBackfillButton component after the CampaignWidget */}
-       <div className="mb-4 flex justify-end">
-         <MetaBackfillButton 
-           brandId={brandId} 
-           onComplete={() => {
-             handleManualRefresh();
-             toast.success("Dashboard refreshed with updated data");
-           }}
-           variant="outline"
-         />
-        </div>
               </>
             )
           } catch (error) {
