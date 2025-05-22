@@ -127,8 +127,8 @@ export async function GET(request: NextRequest) {
     let dataSource = 'meta_ad_insights';
 
     // If no data or zero value from meta_ad_insights, try meta_campaign_daily_stats
-    if (totalValue === 0 && (!filteredInsights || filteredInsights.length === 0)) {
-      console.log(`No data or zero value for ${metric} from meta_ad_insights for ${fromDate} to ${toDate}. Trying meta_campaign_daily_stats.`);
+    if (totalValue === 0) {
+      console.log(`Zero value for ${metric} from meta_ad_insights for ${fromDate} to ${toDate}. Trying meta_campaign_daily_stats.`);
       
       const { data: dailyStats, error: dailyStatsError } = await supabase
         .from('meta_campaign_daily_stats')
@@ -167,8 +167,8 @@ export async function GET(request: NextRequest) {
     }
     
     // If still no data after checking both sources (or if initial data was non-zero), return the calculated value
-    if (dataSource === 'meta_ad_insights' && (!filteredInsights || filteredInsights.length === 0) && totalValue === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate} for metric ${metric} from any source`)
+    if (totalValue === 0 && dataSource === 'meta_ad_insights' && (!filteredInsights || filteredInsights.length === 0)) {
+      console.log(`No data found for period ${fromDate} to ${toDate} for metric ${metric} from meta_ad_insights and meta_campaign_daily_stats also yielded zero or no data (or was not queried if initial value was non-zero).`)
       return NextResponse.json({ 
         value: 0, 
         growth: 0,
