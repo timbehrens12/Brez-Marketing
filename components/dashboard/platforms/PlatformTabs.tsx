@@ -360,7 +360,7 @@ export function PlatformTabs({
                       className="object-contain drop-shadow-md"
                     />
                   </div>
-                  <span className="text-sm font-medium hidden sm:inline">Store</span>
+                  <span className="text-sm font-medium hidden sm:inline">Shopify</span>
                 </div>
                 {activeTab === "shopify" && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500/50 rounded-full"></div>

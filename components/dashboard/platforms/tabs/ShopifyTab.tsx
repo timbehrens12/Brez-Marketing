@@ -236,7 +236,7 @@ export function ShopifyTab({
     }
     
     // Check if this is a 30-day preset by looking at the date range
-    const daysDiff = differenceInDays(dateRange.to, dateRange.from);
+    /*const daysDiff = differenceInDays(dateRange.to, dateRange.from);
     const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
     
     if (isLast30Days) {
@@ -247,41 +247,28 @@ export function ShopifyTab({
       }, 300);
       
       return () => clearTimeout(refreshTimeout);
-    }
-  }, [brandId, dateRange, safeDispatchRefresh]);
+    }*/
 
-  // Replace the tab activation useEffect
+  }, [dateRange, safeDispatchRefresh])
+
+  // Add a useEffect hook to listen for tab visibility changes
   useEffect(() => {
-    // This function will be called when this tab becomes visible
-    const handleTabVisibility = (event?: Event) => {
-      console.log('[ShopifyTab] Tab became visible');
-      
-      // Check if event has a detail property with dateRange (for customEvent)
-      const customEvent = event as CustomEvent;
-      const eventTimestamp = customEvent?.detail?.timestamp;
-      
-      // If this is a recent event that might have come from PlatformTabs.tsx
-      // and we already refreshed recently, skip to avoid duplication
-      if (eventTimestamp && Date.now() - eventTimestamp < 1000 && 
-          Date.now() - lastRefreshRef.current < 2000) {
-        console.log('[ShopifyTab] Skipping refresh because PlatformTabs already triggered one');
-        return;
-      }
-      
-      // Otherwise proceed with the refresh
-      safeDispatchRefresh('tab-became-visible');
-    };
-    
-    // Call it once on mount to ensure data is loaded
-    handleTabVisibility();
-    
-    // Listen for tab activation events from parent components
-    window.addEventListener('shopify-tab-activated', handleTabVisibility);
-    
-    return () => {
-      window.removeEventListener('shopify-tab-activated', handleTabVisibility);
-    };
-  }, [brandId, dateRange, safeDispatchRefresh]);
+    // const handleTabVisibility = (event?: Event) => {
+    //   if (document.visibilityState === 'visible') {
+    //     console.log('[ShopifyTab] Tab became visible, refreshing data');
+    //     // Refresh data when tab becomes visible, with debouncing
+    //     safeDispatchRefresh('tab-became-visible');
+    //   }
+    // };
+    // 
+    // // Add event listener for visibility change
+    // document.addEventListener('visibilitychange', handleTabVisibility);
+    // 
+    // // Cleanup function to remove event listener
+    // return () => {
+    //   document.removeEventListener('visibilitychange', handleTabVisibility);
+    // };
+  }, [safeDispatchRefresh]); // Re-run if safeDispatchRefresh changes (e.g. brandId, dateRange)
 
   // Add check for empty metrics and force refresh if needed
   useEffect(() => {

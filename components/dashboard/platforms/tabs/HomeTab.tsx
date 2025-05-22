@@ -731,7 +731,7 @@ export function HomeTab({
     }
     
     // Refresh data on mount
-    refreshAllData();
+    // refreshAllData(); // Commented out to prevent auto-refresh on mount
     
     // No dependency on dateRange to avoid duplicate fetches,
     // this is specifically for mount/navigation
