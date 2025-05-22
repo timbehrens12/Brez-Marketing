@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
 
-    console.log(`ADSPEND SINGLE METRIC API: Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`ADSPEND SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
 
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
@@ -21,18 +21,6 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
-      .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
-
-    if (connectionError || !connection) {
-      return NextResponse.json({ value: 0 , _meta: { error: 'No active Meta connection found or db error'} })
-    }
-    
     if (isYesterdayPreset) {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
@@ -41,34 +29,34 @@ export async function GET(request: NextRequest) {
       console.log(`ADSPEND SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
 
-    const { data: insights, error: dbError } = await supabase
-      .from('meta_ad_insights')
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_campaign_daily_stats')
       .select('date, spend')
-      .eq('connection_id', connection.id)
+      .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
 
     if (dbError) {
-      console.error(`ADSPEND SINGLE METRIC API: Error retrieving Meta insights:`, dbError)
+      console.error(`ADSPEND SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
 
-    let filteredInsights = insights || []
+    let filteredStats = dailyStats || []
     if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
+      filteredStats = filteredStats.filter(item => {
         const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
     }
 
-    if (!filteredInsights || filteredInsights.length === 0) {
+    if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0, 
-        _meta: { from: fromDate, to: toDate, records: 0 }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
 
-    const totalSpend = filteredInsights.reduce((sum, item) => {
+    const totalSpend = filteredStats.reduce((sum, item) => {
       const spendVal = parseFloat(item.spend || '0')
       return sum + (isNaN(spendVal) ? 0 : spendVal)
     }, 0)
@@ -78,7 +66,8 @@ export async function GET(request: NextRequest) {
       _meta: {
         from: fromDate,
         to: toDate,
-        records: filteredInsights.length,
+        records: filteredStats.length,
+        source: 'meta_campaign_daily_stats'
       }
     }
     return NextResponse.json(result)
