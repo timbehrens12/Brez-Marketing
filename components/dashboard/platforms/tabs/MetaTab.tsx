@@ -4304,21 +4304,21 @@ Try creating at least one active campaign in Meta Ads Manager.
         if (brandId) {
           console.log("[MetaTab] Forcing campaign refresh on mount");
           await fetchCampaigns(true);
-
+          
           // Also refresh all metrics directly
           console.log("[MetaTab] Refreshing all metrics on mount");
           await fetchAllMetricsDirectly();
-
+          
           console.log("[MetaTab] Mount refresh completed successfully");
         }
       } catch (error) {
         console.error("[MetaTab] Error during mount refresh:", error);
       }
     };*/
-
+    
     // Execute the refresh
     // refreshOnMount(); // Removed to rely on other effects for data loading
-
+    
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
   
@@ -4661,7 +4661,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             onSync={syncMetaInsights}
           />
         ) : null}
-      </div>
+        </div>
               </>
             )
           } catch (error) {
