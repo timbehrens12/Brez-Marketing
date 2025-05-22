@@ -4437,16 +4437,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
+            previousValue={adSpendData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={adSpendData.previousValue !== 0 
-              ? ((adSpendData.value - adSpendData.previousValue) / adSpendData.previousValue) * 100 
-              : adSpendData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={adSpendData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4461,16 +4459,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={roasData.value}
+            previousValue={roasData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={roasData.previousValue !== 0 
-              ? ((roasData.value - roasData.previousValue) / roasData.previousValue) * 100 
-              : roasData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="number"
             suffix="x"
             hideGraph={true}
-            previousValue={roasData.previousValue}
             previousValueFormat="number"
             previousValueSuffix="x"
             showPreviousPeriod={true}
@@ -4485,15 +4481,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={impressionsData.value}
+            previousValue={impressionsData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={impressionsData.previousValue !== 0 
-              ? ((impressionsData.value - impressionsData.previousValue) / impressionsData.previousValue) * 100 
-              : impressionsData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="number"
             hideGraph={true}
-            previousValue={impressionsData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4517,15 +4511,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={clicksData.value}
+            previousValue={clicksData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={clicksData.previousValue !== 0 
-              ? ((clicksData.value - clicksData.previousValue) / clicksData.previousValue) * 100 
-              : clicksData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="number"
             hideGraph={true}
-            previousValue={clicksData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4539,16 +4531,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={purchaseValueData.value}
+            previousValue={purchaseValueData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={purchaseValueData.previousValue !== 0 
-              ? ((purchaseValueData.value - purchaseValueData.previousValue) / purchaseValueData.previousValue) * 100 
-              : purchaseValueData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={purchaseValueData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4563,15 +4553,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={resultsData.value}
+            previousValue={resultsData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={resultsData.previousValue !== 0 
-              ? ((resultsData.value - resultsData.previousValue) / resultsData.previousValue) * 100 
-              : resultsData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="number"
             hideGraph={true}
-            previousValue={resultsData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4585,16 +4573,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerResultData.value}
+            previousValue={costPerResultData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={costPerResultData.previousValue !== 0 
-              ? ((costPerResultData.value - costPerResultData.previousValue) / costPerResultData.previousValue) * 100 
-              : costPerResultData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={costPerResultData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4609,17 +4595,15 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerClickData.value}
+            previousValue={costPerClickData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={costPerClickData.previousValue !== 0 
-              ? ((costPerClickData.value - costPerClickData.previousValue) / costPerClickData.previousValue) * 100 
-              : costPerClickData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="currency"
             prefix="$"
             decimals={2}
             hideGraph={true}
-            previousValue={costPerClickData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             previousValueDecimals={2}
@@ -4635,16 +4619,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={ctrData.value}
+            previousValue={ctrData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={ctrData.previousValue !== 0 
-              ? ((ctrData.value - ctrData.previousValue) / ctrData.previousValue) * 100 
-              : ctrData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
-            previousValue={ctrData.previousValue}
             previousValueFormat="percentage"
             previousValueDecimals={2}
             showPreviousPeriod={true}
@@ -4659,15 +4641,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={linkClicksData.value}
+            previousValue={linkClicksData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
             hideChange={false}
-            change={linkClicksData.previousValue !== 0 
-              ? ((linkClicksData.value - linkClicksData.previousValue) / linkClicksData.previousValue) * 100 
-              : linkClicksData.value > 0 ? 100 : 0}
+            // Remove manually calculated 'change' prop
             valueFormat="number"
             hideGraph={true}
-            previousValue={linkClicksData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
