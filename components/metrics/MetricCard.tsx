@@ -226,11 +226,11 @@ export function MetricCard({
       
       if (previousValue === 0) {
         if (currentValue === 0) {
-          // Change: Return isNewActivity: true when both values are 0, to show N/A
-          return { value: null, isPositive: false, isZero: false, isNewActivity: true }; // Both 0, show N/A
+          // Both values are 0, show 0% instead of N/A
+          return { value: 0, isPositive: false, isZero: true, isNewActivity: false };
         }
-        // Previous was 0, current is not. Consider this new activity or N/A.
-        return { value: null, isPositive: currentValue > 0, isZero: false, isNewActivity: true }; 
+        // Previous was 0, current is not. This is new activity.
+        return { value: 100, isPositive: true, isZero: false, isNewActivity: false }; 
       }
       
       // Standard calculation if previousValue is not 0
@@ -366,7 +366,7 @@ export function MetricCard({
                     const formattedPrevValue = formatPreviousValue();
                     
                     // Force to show N/A if previousValue is 0, regardless of current value
-                    const displayNA = previousValue === 0 || percentChange.isNewActivity;
+                    const displayNA = percentChange.isNewActivity;
                     
                     return (
                       <div className="flex items-center">
