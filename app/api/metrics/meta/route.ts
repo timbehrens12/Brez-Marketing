@@ -259,147 +259,66 @@ export async function GET(request: NextRequest) {
       toDate = endDate.toISOString().split('T')[0];
     }
     
-    console.log(`EXACT DATE QUERY: meta_ad_insights from [${fromDate}] to [${toDate}] for connection ${connection.id}`)
+    console.log(`EXACT DATE QUERY: meta_campaign_daily_stats from [${fromDate}] to [${toDate}] for brand ${brandId}`)
     
     if (dateDebug || debug) {
-      console.log(`SQL date filters: connection_id=${connection.id}, date >= ${fromDate}, date <= ${toDate}`);
+      console.log(`SQL date filters: brand_id=${brandId}, date >= ${fromDate}, date <= ${toDate}`);
       if (requestedFromDate || requestedToDate) {
         console.log(`Original requested dates: from=${requestedFromDate}, to=${requestedToDate}`);
       }
     }
-    
-    // If a query for the current date range fails due to rate limiting,
-    // try to find the most recent data for this brand and use that
-    const tryGetCachedDataOnError = async (error: any, brandId: string, connectionId: string) => {
-      console.log(`[Meta Metrics] Error fetching data, checking for cached data:`, error);
-      
-      // Check if this is a rate limiting error
-      const isRateLimited = typeof error === 'string' && error.includes('rate limit') || 
-        (error && error.code === 80004) ||
-        (error && error.message && error.message.includes('too many calls'));
-        
-      if (!isRateLimited) {
-        console.log(`[Meta Metrics] Not a rate limiting error, returning empty data`);
-        return null;
-      }
-      
-      console.log(`[Meta Metrics] Rate limit detected, trying to use cached data`);
-      
-      try {
-        // Try to get the most recent meta_ad_insights data for this brand
-        const { data: cachedData } = await supabase
-          .from('meta_ad_insights')
-          .select('*')
-          .eq('brand_id', brandId)
-          .eq('connection_id', connectionId)
-          .order('date', { ascending: false })
-          .limit(30); // Get last 30 days of data
-        
-        if (cachedData && cachedData.length > 0) {
-          console.log(`[Meta Metrics] Found ${cachedData.length} cached records to use`);
-          return {
-            success: true,
-            cached: true,
-            rateLimited: true,
-            data: cachedData
-          };
-        }
-      } catch (cacheError) {
-        console.error(`[Meta Metrics] Error fetching cached data:`, cacheError);
-      }
-      
-      return null;
-    };
-    
-    const todayStr = new Date().toISOString().split('T')[0];
-    const isFetchingToday = fromDate === todayStr && toDate === todayStr;
+
     let insightsForProcessing: any[] = [];
     let error: any = null;
 
-    if (isFetchingToday) {
-      console.log(`[API /api/metrics/meta] Request for TODAY: ${todayStr}`);
-      if (refresh || forceLoad) {
+    // MODIFIED: Always fetch data from meta_campaign_daily_stats for widgets showing totals
+    console.log(`[API /api/metrics/meta] Fetching from meta_campaign_daily_stats for date range: ${fromDate} to ${toDate}`);
+    const { data: dailyStatsData, error: dailyStatsError } = await supabase
+      .from('meta_campaign_daily_stats')
+      .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
+      .eq('brand_id', brandId)
+      .gte('date', fromDate)
+      .lte('date', toDate)
+      .order('date', { ascending: true });
+
+    if (dailyStatsError) {
+      console.error(`[API /api/metrics/meta] Error fetching from meta_campaign_daily_stats:`, dailyStatsError);
+      error = dailyStatsError;
+    } else if (dailyStatsData && dailyStatsData.length > 0) {
+      console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_campaign_daily_stats.`);
+      insightsForProcessing = dailyStatsData;
+    } else {
+      console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
+      
+      // Try to update data for today only if needed and explicitly requested
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isFetchingToday = fromDate === todayStr || toDate === todayStr;
+      
+      if (isFetchingToday && (refresh || forceLoad)) {
         console.log(`[API /api/metrics/meta] Triggering LIVE SYNC for today's data (brand: ${brandId})`);
         try {
           const syncResult = await fetchMetaAdInsights(brandId, new Date(todayStr), new Date(todayStr));
           if (syncResult.success) {
             console.log(`[API /api/metrics/meta] Today's data sync successful. Count: ${syncResult.count}`);
-            // After sync, directly fetch from meta_ad_insights for today
-            const { data: todayFreshInsights, error: freshError } = await supabase
-        .from('meta_ad_insights')
-              .select('date, spend, impressions, clicks, conversions, reach, actions, action_values')
+            // After sync, check meta_campaign_daily_stats again
+            const { data: refreshedDailyStats, error: refreshError } = await supabase
+              .from('meta_campaign_daily_stats')
+              .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
               .eq('brand_id', brandId)
-              .eq('date', todayStr);
-            if (freshError) {
-              console.error(`[API /api/metrics/meta] Error fetching from meta_ad_insights after sync:`, freshError);
-              error = freshError;
-            } else if (todayFreshInsights && todayFreshInsights.length > 0) {
-              console.log(`[API /api/metrics/meta] Successfully fetched ${todayFreshInsights.length} records from meta_ad_insights for today after sync.`);
-              insightsForProcessing = todayFreshInsights;
-            } else {
-              console.log(`[API /api/metrics/meta] No records found in meta_ad_insights for today after sync.`);
+              .gte('date', fromDate)
+              .lte('date', toDate)
+              .order('date', { ascending: true });
+              
+            if (refreshError) {
+              console.error(`[API /api/metrics/meta] Error fetching refreshed data:`, refreshError);
+            } else if (refreshedDailyStats && refreshedDailyStats.length > 0) {
+              console.log(`[API /api/metrics/meta] Found ${refreshedDailyStats.length} records after sync`);
+              insightsForProcessing = refreshedDailyStats;
             }
-          } else {
-            console.error(`[API /api/metrics/meta] Today's data sync FAILED:`, syncResult.error, syncResult.details);
-            // Potentially set error here if sync failure should block further attempts
           }
         } catch (syncError) {
-          console.error(`[API /api/metrics/meta] Exception during today's data sync:`, syncError);
-          error = syncError;
+          console.error(`[API /api/metrics/meta] Exception during data sync:`, syncError);
         }
-      } else {
-        // Not a force refresh, just try to get today's data from meta_ad_insights directly
-        console.log(`[API /api/metrics/meta] Fetching existing data from meta_ad_insights for today (brand: ${brandId})`);
-        const { data: existingTodayInsights, error: existingError } = await supabase
-          .from('meta_ad_insights')
-          .select('date, spend, impressions, clicks, conversions, reach, actions, action_values')
-          .eq('brand_id', brandId)
-          .eq('date', todayStr);
-        if (existingError) {
-          console.error(`[API /api/metrics/meta] Error fetching existing today's data from meta_ad_insights:`, existingError);
-          error = existingError;
-        } else if (existingTodayInsights && existingTodayInsights.length > 0) {
-          console.log(`[API /api/metrics/meta] Found ${existingTodayInsights.length} existing records in meta_ad_insights for today.`);
-          insightsForProcessing = existingTodayInsights;
-        }
-      }
-      
-      // If after attempting to get today's data (either via sync or direct read) it's still empty, then log it.
-      if (insightsForProcessing.length === 0 && !error) {
-        console.log(`[API /api/metrics/meta] No data for today in meta_ad_insights, will proceed to check meta_campaign_daily_stats (but it likely won't have today).`);
-        // For today, if meta_ad_insights is empty, we probably don't want to fall back to meta_campaign_daily_stats
-        // as the latter is for finalized daily data. So, we might return empty or a specific message.
-        // However, the current logic below will fall back.
-      }
-    }
-
-    // If not fetching today OR if fetching today resulted in no data from meta_ad_insights (and no critical error occurred)
-    if (!isFetchingToday || insightsForProcessing.length === 0) {
-      // Only query meta_campaign_daily_stats if not fetching today, or if today's specific fetch yielded nothing.
-      // If isFetchingToday and insightsForProcessing is empty, it means the sync might have yielded nothing for today, or failed silently for this path.
-      if (!isFetchingToday || (isFetchingToday && insightsForProcessing.length === 0)) {
-         console.log(`[API /api/metrics/meta] Fetching from meta_campaign_daily_stats for date range: ${fromDate} to ${toDate}`);
-        const { data: dailyStatsData, error: dailyStatsError } = await supabase
-          .from('meta_campaign_daily_stats')
-          .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
-          .eq('brand_id', brandId)
-          .gte('date', fromDate)
-          .lte('date', toDate)
-          .order('date', { ascending: true });
-
-        if (dailyStatsError) {
-          console.error(`[API /api/metrics/meta] Error fetching from meta_campaign_daily_stats:`, dailyStatsError);
-          if (!error) error = dailyStatsError; // Prioritize earlier errors
-        } else if (dailyStatsData && dailyStatsData.length > 0) {
-          // Only use dailyStatsData if insightsForProcessing is still empty
-          // This ensures that if we are fetching today and found *some* data in meta_ad_insights, we prefer that.
-          if (insightsForProcessing.length === 0) {
-             console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_campaign_daily_stats.`);
-            insightsForProcessing = dailyStatsData;
-          }
-        } else {
-          console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
-            }
       }
     }
 
@@ -413,56 +332,56 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
       
-    // Format the insights (either from meta_ad_insights for today, or meta_campaign_daily_stats for history)
+    // Format the insights (now always from meta_campaign_daily_stats for totals)
     let formattedInsights = insightsForProcessing.map(stat => ({
       date: stat.date,
       spend: stat.spend?.toString() || "0",
       impressions: stat.impressions?.toString() || "0",
       clicks: stat.clicks?.toString() || "0",
-      conversions: stat.conversions?.toString() || "0", // processMetaData might recalculate from actions
+      conversions: stat.conversions?.toString() || "0",
       reach: stat.reach?.toString() || "0",
-      ctr: stat.ctr?.toString() || "0", // May not be present in meta_ad_insights direct fetch
-      cpc: stat.cpc?.toString() || "0", // May not be present in meta_ad_insights direct fetch
+      ctr: stat.ctr?.toString() || "0",
+      cpc: stat.cpc?.toString() || "0",
       actions: stat.actions || [], 
       action_values: stat.action_values || [],
       connection_id: connection.id 
     }));
     
-    // Apply date filtering if needed (e.g. for 'yesterday' preset if it somehow lands here after today logic)
-      if (isYesterdayPreset) {
-        console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+    // Apply date filtering if needed
+    if (isYesterdayPreset) {
+      console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       formattedInsights = formattedInsights.filter(item => {
-          const dateStart = new Date(item.date).toISOString().split('T')[0];
-          const exactMatch = dateStart === fromDate;
+        const dateStart = new Date(item.date).toISOString().split('T')[0];
+        const exactMatch = dateStart === fromDate;
         if (!exactMatch) console.log(`Filtering out non-yesterday data point: ${dateStart} (expected ${fromDate})`);
-          return exactMatch;
-        });
+        return exactMatch;
+      });
       console.log(`YESTERDAY VALIDATION: After filtering, kept ${formattedInsights.length} records out of ${(insightsForProcessing || []).length}`);
-      // ... rest of yesterday refresh logic ...
-        if (refresh) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
-            console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
-            fromDate = yesterdayStr;
-            toDate = yesterdayStr;
-            formattedInsights = formattedInsights.filter(item => {
-              const itemDate = new Date(item.date).toISOString().split('T')[0];
-              return itemDate === yesterdayStr;
-            });
-            console.log(`REFRESH CORRECTION: Re-filtered to ${formattedInsights.length} records with date ${yesterdayStr}`);
-          }
+      
+      if (refresh) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
+          console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
+          fromDate = yesterdayStr;
+          toDate = yesterdayStr;
+          formattedInsights = formattedInsights.filter(item => {
+            const itemDate = new Date(item.date).toISOString().split('T')[0];
+            return itemDate === yesterdayStr;
+          });
+          console.log(`REFRESH CORRECTION: Re-filtered to ${formattedInsights.length} records with date ${yesterdayStr}`);
         }
       }
-    else if (fromDate === toDate && !isFetchingToday) { // Single day but not *today*
-        console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+    }
+    else if (fromDate === toDate) { // Single day query
+      console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       formattedInsights = formattedInsights.filter(item => {
-          const dateStart = new Date(item.date).toISOString().split('T')[0];
-          return dateStart === fromDate;
-        });
+        const dateStart = new Date(item.date).toISOString().split('T')[0];
+        return dateStart === fromDate;
+      });
       console.log(`SINGLE DAY VALIDATION: After filtering, kept ${formattedInsights.length} records out of ${(insightsForProcessing || []).length}`);
-      }
+    }
       
     if (!formattedInsights || formattedInsights.length === 0) {
       console.log(`[API /api/metrics/meta] No data found to process for date range ${fromDate} to ${toDate}`);
@@ -474,89 +393,36 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API /api/metrics/meta] Processing ${formattedInsights.length} records for period ${fromDate} to ${toDate}`);
     const processedData = processMetaData(formattedInsights);
-      
-      // Calculate total metrics
-      const totalSpent = processedData.dailyData.reduce((sum, item) => sum + item.spend, 0);
-      const totalImpressions = processedData.dailyData.reduce((sum, item) => sum + item.impressions, 0);
-      const totalClicks = processedData.dailyData.reduce((sum, item) => sum + item.clicks, 0);
-      const totalConversions = processedData.dailyData.reduce((sum, item) => sum + item.conversions, 0);
-      
-      // REMOVED: Incorrect daily reach summation. Need account-level API call for accurate period reach.
-      const totalReach = 0; // Placeholder - Overview reach needs proper implementation
-      console.log(`>>> [API Meta Metrics] Meta metrics calculated (Reach calculation removed pending proper implementation): spent=${totalSpent}, impressions=${totalImpressions}, clicks=${totalClicks}, conversions=${totalConversions}`);
-      
-      // Calculate average metrics
-      const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-      const cpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
-      const cpcLink = totalClicks > 0 ? totalSpent / totalClicks : 0;
-      const costPerResult = totalConversions > 0 ? totalSpent / totalConversions : 0;
-      const roas = totalSpent > 0 ? (totalConversions * 50) / totalSpent : 0; // Assuming $50 per conversion if not available
-      
-      // Calculate growth metrics based on available data
-      const impressionGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'impressions') : 0;
-      const clickGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'clicks') : 0;
-      const adSpendGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'spend') : 0;
-      const conversionGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'conversions') : 0;
-      const ctrGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'ctr') : 0;
-      const roasGrowth = processedData.dailyData.length >= 2 ? calculateGrowth(processedData.dailyData, 'roas') : 0;
-      
-      // Calculate frequency
-      const frequency = 0; // Cannot calculate frequency without correct totalReach
-      
-      // Add debug info
-      console.log(`>>> [API Meta Metrics] Meta metrics calculated (Reach removed): adSpend=${totalSpent}, impressions=${totalImpressions}, clicks=${totalClicks}, ctr=${ctr.toFixed(2)}%`)
-      
-      // Add date range info to help client validate
-      const response = {
-        ...processedData,
-        _dateRange: {
-          from: fromDate,
-          to: toDate,
-          requested: { 
-            from: requestedFromDate || fromDate, 
-            to: requestedToDate || toDate 
-          },
-          isYesterdayPreset: isYesterdayPreset,
-          isSingleDay: fromDate === toDate,
-          actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || [],
-          adSpend: totalSpent,
-          impressions: totalImpressions,
-          clicks: totalClicks,
-          conversions: totalConversions,
-          ctr: ctr,
-          cpc: cpc,
-          cpcLink: cpcLink,
-          costPerResult: costPerResult,
-          roas: roas,
-          adSpendGrowth: adSpendGrowth,
-          impressionGrowth: impressionGrowth,
-          clickGrowth: clickGrowth,
-          conversionGrowth: conversionGrowth,
-          ctrGrowth: ctrGrowth,
-          roasGrowth: roasGrowth,
-          frequency: frequency,
-          budget: totalSpent > 0 ? totalSpent / processedData.dailyData.length : 0, // Average daily budget
-          reach: totalReach
-        }
-      };
-      
-      // Add to cache 
-      if (!bypassCache) {
-        apiCache.set(cacheKey, {
-          timestamp: Date.now(),
-          data: response
-        });
+    
+    // Add date range info to help client validate
+    const response = {
+      ...processedData,
+      _dateRange: {
+        from: fromDate,
+        to: toDate,
+        requested: { 
+          from: requestedFromDate || fromDate, 
+          to: requestedToDate || toDate 
+        },
+        isYesterdayPreset: isYesterdayPreset,
+        isSingleDay: fromDate === toDate,
+        actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || [],
+        dataSource: 'meta_campaign_daily_stats' // Added to indicate the source of data
       }
-      
-      // Return response
-      return NextResponse.json(response)
-  } catch (outerError) {
-    console.error('[API /api/metrics/meta] Outer catch error:', outerError);
-    return NextResponse.json({ 
-      error: 'Server error', 
-      details: outerError instanceof Error ? outerError.message : 'Unknown error',
-      _dateRange: { error: 'server_error' }
-    }, { status: 500 });
+    };
+    
+    // Add to cache 
+    if (!bypassCache) {
+      apiCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: response
+      });
+    }
+    
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error('Error processing Meta metrics:', error)
+    return NextResponse.json({ error: 'Failed to process Meta metrics' }, { status: 500 })
   }
 }
 
