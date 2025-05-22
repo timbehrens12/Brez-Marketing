@@ -2759,15 +2759,15 @@ Try creating at least one active campaign in Meta Ads Manager.
       const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
       
       // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
+      const response = await fetch(`/api/metrics/meta/single/adSpend?${params.toString()}`)
       
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'adSpend')
+      // prevParams.append('metric', 'adSpend') // No longer needed for specific route
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single?${prevParams.toString()}`)
+      const prevResponse = await fetch(`/api/metrics/meta/single/adSpend?${prevParams.toString()}`)
       
       // Process responses
       const data = await response.json()
