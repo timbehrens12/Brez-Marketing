@@ -678,11 +678,11 @@ export function MetaTab({
     
     try {
       // Format date range correctly to ensure proper filtering
-      let fromDateInternal = dateRange?.from;
-      let toDateInternal = dateRange?.to;
+      let fromDate = dateRange?.from;
+      let toDate = dateRange?.to;
       
       // Check if we have a valid date range before proceeding
-      if (!fromDateInternal && !toDateInternal) {
+      if (!fromDate && !toDate) {
         console.log("No date range provided, aborting fetch");
         setError("Invalid date range");
         setLoading(false);
@@ -692,15 +692,13 @@ export function MetaTab({
       
       // Detect special presets - improve detection mechanism
       const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-                              (fromDateInternal && toDateInternal && 
-                               isSameDay(fromDateInternal, toDateInternal) && 
-                               isYesterday(fromDateInternal));
+                              (fromDate && toDate && 
+                               isSameDay(fromDate, toDate) && 
+                               isYesterday(fromDate));
       
-      const isTodayPreset = (dateRange as any)?._preset === 'today' ||
-                              (fromDateInternal && toDateInternal &&
-                               isSameDay(fromDateInternal, toDateInternal) &&
-                               isSameDay(fromDateInternal, new Date()));
-      
+      const isToday = (dateRange as any)?._preset === 'today';
+      const isCustomRange = !isYesterdayPreset && !isToday;
+
       const params = new URLSearchParams({
         brandId: brandId as string,
         strict_date_range: 'true',  // Always enforce strict date handling
@@ -709,50 +707,49 @@ export function MetaTab({
         refresh: 'true'             // Force refresh every time to prevent stale data
       });
       
+      // Handle special presets with explicit date determination
       if (isYesterdayPreset) {
+        // For yesterday preset, use exact date match
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         yesterday.setHours(0, 0, 0, 0);
-        const dayBeforeYesterday = new Date(yesterday);
-        dayBeforeYesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
         
-        params.append('from', dayBeforeYesterday.toISOString().split('T')[0]);
-        params.append('to', yesterday.toISOString().split('T')[0]);
-        params.append('preset', 'yesterday'); 
-        console.log(`Using yesterday preset, fetching data from ${dayBeforeYesterday.toISOString().split('T')[0]} to ${yesterday.toISOString().split('T')[0]} for growth calculation.`);
+        // CRITICAL: Set exactly the same date for both from and to
+        params.append('from', yesterdayStr);
+        params.append('to', yesterdayStr); // Same date for both
+        params.append('preset', 'yesterday'); // Add explicit preset marker
+        
+        console.log(`Using yesterday preset with exact date: ${yesterdayStr}`);
+        
+        // Force log to troubleshoot
+        console.warn(`YESTERDAY ONLY: Fetching data only for ${yesterdayStr}`);
       } 
-      else if (isTodayPreset) {
+      else if (isToday) {
+        // For today preset, use today's date only
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const yesterdayForToday = new Date(today);
-        yesterdayForToday.setDate(today.getDate() - 1);
-        
-        params.append('from', yesterdayForToday.toISOString().split('T')[0]);
-        params.append('to', today.toISOString().split('T')[0]);
+        const todayStr = today.toISOString().split('T')[0];
+        params.append('from', todayStr);
+        params.append('to', todayStr); // Same date for both
         params.append('preset', 'today');
-        console.log(`Using today preset, fetching data from ${yesterdayForToday.toISOString().split('T')[0]} to ${today.toISOString().split('T')[0]} for growth calculation.`);
+        console.log(`Using today preset with exact date: ${todayStr}`);
       }
-      else if (fromDateInternal) {
-        let finalFromDate = new Date(fromDateInternal);
-        finalFromDate.setHours(0, 0, 0, 0);
-        let finalToDate = toDateInternal ? new Date(toDateInternal) : new Date(finalFromDate);
-        finalToDate.setHours(23, 59, 59, 999);
-
-        // If from and to are the same (single day custom selection), adjust 'from' to be the day before
-        if (isSameDay(finalFromDate, finalToDate)) {
-          const dayBeforeFinalToDate = new Date(finalToDate);
-          dayBeforeFinalToDate.setDate(finalToDate.getDate() - 1);
-          dayBeforeFinalToDate.setHours(0,0,0,0);
-          params.append('from', dayBeforeFinalToDate.toISOString().split('T')[0]);
-          console.log(`Custom single day selection: ${finalToDate.toISOString().split('T')[0]}. Fetching from ${dayBeforeFinalToDate.toISOString().split('T')[0]} for growth.`);
-        } else {
-          params.append('from', finalFromDate.toISOString().split('T')[0]);
+      else if (fromDate) {
+        // For normal date ranges
+        const formattedFromDate = new Date(fromDate);
+        formattedFromDate.setHours(0, 0, 0, 0);
+        params.append('from', formattedFromDate.toISOString().split('T')[0]);
+        
+        if (toDate) {
+          const formattedToDate = new Date(toDate);
+          formattedToDate.setHours(23, 59, 59, 999);
+          params.append('to', formattedToDate.toISOString().split('T')[0]);
         }
-        params.append('to', finalToDate.toISOString().split('T')[0]);
       }
       
       // Prevent flash of old data by clearing metrics before API call for specific presets
-      if (isYesterdayPreset || isTodayPreset) {
+      if (isYesterdayPreset || isToday) {
         // Reset metrics to prevent flash of old data when switching between presets
         setMetricsData({
           adSpend: 0,
@@ -836,35 +833,18 @@ export function MetaTab({
             
             // Validate that all daily data points are from yesterday only
             const hasNonYesterdayData = responseData.dailyData.some((dataPoint: any) => 
-              new Date(dataPoint.date).toISOString().split('T')[0] !== yesterdayStr 
+              dataPoint.date !== yesterdayStr
             );
             
             if (hasNonYesterdayData) {
-              console.warn(`YESTERDAY PRESET: Received data contains non-yesterday dates. Expected only ${yesterdayStr}. Filtering dailyData.`);
+              console.warn("Received data contains non-yesterday dates for yesterday preset");
               
               // Filter to only include yesterday data
               responseData.dailyData = responseData.dailyData.filter((dataPoint: any) => 
-                new Date(dataPoint.date).toISOString().split('T')[0] === yesterdayStr
+                dataPoint.date === yesterdayStr
               );
               
-              console.log(`Filtered daily data to only include ${yesterdayStr}. Count: ${responseData.dailyData.length}`);
-            }
-          }
-          // Additional validation for today preset
-          if (isTodayPreset && responseData && responseData.dailyData) {
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-
-            const hasNonTodayData = responseData.dailyData.some((dataPoint: any) => 
-              new Date(dataPoint.date).toISOString().split('T')[0] !== todayStr
-            );
-
-            if (hasNonTodayData) {
-              console.warn(`TODAY PRESET: Received data contains non-today dates. Expected only ${todayStr}. Filtering dailyData.`);
-              responseData.dailyData = responseData.dailyData.filter((dataPoint: any) => 
-                new Date(dataPoint.date).toISOString().split('T')[0] === todayStr
-              );
-              console.log(`Filtered daily data to only include ${todayStr}. Count: ${responseData.dailyData.length}`);
+              console.log(`Filtered daily data to only include ${yesterdayStr}`);
             }
           }
           
@@ -877,12 +857,12 @@ export function MetaTab({
           );
           
           // For today preset, we may have zeros, which is legitimate - don't retry
-          if (hasAnyData || isTodayPreset) {
+          if (hasAnyData || isToday) {
             break; // We have valid data, exit retry loop
           }
           
           // For yesterday and custom ranges, if we got zeros, retry
-          if ((isYesterdayPreset || isTodayPreset) && !hasAnyData && retryCount < maxRetries) {
+          if ((isYesterdayPreset || isCustomRange) && !hasAnyData && retryCount < maxRetries) {
             console.log(`No data received for ${isYesterdayPreset ? 'yesterday' : 'custom range'}, retrying...`);
             retryCount++;
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
@@ -942,9 +922,9 @@ export function MetaTab({
                          responseData.clicks > 0 || 
                          (Array.isArray(responseData.dailyData) && responseData.dailyData.length > 0);
                            
-      if (!hasRealData && metricsData.adSpend > 0 && !isTodayPreset) {
+      if (!hasRealData && metricsData.adSpend > 0 && !isToday) {
         // For today and yesterday, zero data might be legitimate
-        if (!isYesterdayPreset && !isTodayPreset) {
+        if (!isYesterdayPreset && !isToday) {
           toast.warning("No Meta data available", {
             description: "No data found for the selected date range.",
             duration: 4000
@@ -967,7 +947,7 @@ export function MetaTab({
         impressions: responseData.impressions,
         clicks: responseData.clicks,
         dailyDataLength: responseData.dailyData?.length || 0,
-        preset: isYesterdayPreset ? 'yesterday' : isTodayPreset ? 'today' : 'custom'
+        preset: isYesterdayPreset ? 'yesterday' : isToday ? 'today' : 'custom'
       });
 
       // Update metrics with validated data
@@ -4459,7 +4439,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={adSpendData.value}
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4480,7 +4459,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={roasData.value}
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
@@ -4501,7 +4479,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={impressionsData.value}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -4510,14 +4487,12 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
-          {/* Removing the original Reach MetricCard */}
-          
-          {/* Using TotalAdSetReachCard as the main Reach card */}
+          {/* Using TotalAdSetReachCard as the main Reach card - This card handles its own comparison if needed */}
           <TotalAdSetReachCard 
             brandId={brandId || ''} 
             dateRange={dateRange}
             isManuallyRefreshing={isManuallyRefreshing}
-            campaigns={campaigns}
+            campaigns={campaigns} // Pass campaigns data
           />
           
           <MetricCard
@@ -4530,7 +4505,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={clicksData.value}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
@@ -4549,7 +4523,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={purchaseValueData.value}
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4570,7 +4543,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={resultsData.value}
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={resultsData.previousValue}
@@ -4589,7 +4561,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerResultData.value}
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4610,7 +4581,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerClickData.value}
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             decimals={2}
@@ -4633,7 +4603,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={ctrData.value}
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
@@ -4654,7 +4623,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={linkClicksData.value}
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
             previousValue={linkClicksData.previousValue}
