@@ -2010,26 +2010,6 @@ const CampaignWidget = ({
     };
   }, [expandedCampaign, adSets, checkAdSetStatuses]);
 
-  // Add an effect to force refresh campaigns data when the component mounts
-  useEffect(() => {
-    if (brandId && campaigns.length === 0 && !isLoading && !refreshing) {
-      console.log('[CampaignWidget] No campaigns data available, forcing refresh...');
-      if (onRefresh) {
-        onRefresh(true); // Force refresh
-      }
-    } else if (campaigns.length > 0) {
-      // Log campaign data for debugging
-      console.log(`[CampaignWidget] Campaign data available: ${campaigns.length} campaigns`);
-      console.log(`[CampaignWidget] First campaign data:`, campaigns[0] ? {
-        id: campaigns[0].campaign_id,
-        name: campaigns[0].campaign_name,
-        spend: campaigns[0].spent,
-        impressions: campaigns[0].impressions,
-        clicks: campaigns[0].clicks
-      } : 'No campaign data');
-    }
-  }, [brandId, campaigns.length, isLoading, refreshing, onRefresh]);
-
   // Return the JSX for the component
   return (
     <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">

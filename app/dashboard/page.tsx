@@ -601,29 +601,9 @@ export default function DashboardPage() {
               
               // Also fetch the campaigns directly to ensure we have the latest data
               try {
-                console.log("[Dashboard] Refreshing campaign data for widgets");
-                const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&refresh=true&t=${Date.now()}&forceRefresh=true&from=${fromDateStr}&to=${toDateStr}`, {
-                  headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                  }
-                });
-                
+                const campaignsResponse = await fetch(`/api/meta/campaigns?brandId=${selectedBrandId}&refresh=true&t=${Date.now()}`);
                 if (campaignsResponse.ok) {
                   console.log("Campaigns refreshed successfully");
-                  
-                  // Also refresh ad sets to ensure budget data is correct
-                  const updateBudgetsResponse = await fetch(`/api/meta/update-campaign-budgets?brandId=${selectedBrandId}&forceRefresh=true`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    }
-                  });
-                  
-                  if (updateBudgetsResponse.ok) {
-                    console.log("Campaign budgets updated successfully");
-                  }
                 }
               } catch (campaignError) {
                 console.error("Error refreshing campaigns:", campaignError);
@@ -631,15 +611,7 @@ export default function DashboardPage() {
               
               // Dispatch a custom event to notify Meta components about the resync
               window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-                detail: { 
-                  brandId: selectedBrandId, 
-                  timestamp: Date.now(), 
-                  forceRefresh: true,
-                  dateRange: {
-                    from: fromDateStr,
-                    to: toDateStr
-                  }
-                }
+                detail: { brandId: selectedBrandId, timestamp: Date.now(), forceRefresh: true }
               }));
             }
           } catch (resyncError) {
