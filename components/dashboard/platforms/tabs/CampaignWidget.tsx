@@ -1372,10 +1372,10 @@ const CampaignWidget = ({
         let insightsInRange = 0;
 
         campaign.daily_insights.forEach(insight => {
-          const insightDateStr = insight.date; // Log the raw string
-          const insightDateObj = new Date(insightDateStr); // Parse it
+          const insightDateStr = insight.date; // e.g., "2025-05-22"
+          // Parse as local midnight by appending T00:00:00
+          const insightDateObj = new Date(insightDateStr + "T00:00:00"); 
 
-          // Use dateRange.from and dateRange.to directly
           const rangeStart = dateRange?.from; 
           const rangeEnd = dateRange?.to;
 
