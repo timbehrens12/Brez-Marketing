@@ -37,14 +37,15 @@ export function MetaBackfillButton({
       // Calculate yesterday's date
       const yesterday = subDays(new Date(), 1)
       const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
-      
+      const specificDateStr = "2025-05-21"; // Date to be fixed
+
       // Show initial toast
-      toast.loading(`Backfilling Meta data for ${yesterdayStr}...`, {
+      toast.loading(`Backfilling Meta data for ${yesterdayStr} and ${specificDateStr}...`, {
         id: "meta-backfill",
       })
       
-      // Call the backfill API
-      const response = await fetch('/api/meta/backfill', {
+      // Call the backfill API for yesterday
+      const responseYesterday = await fetch('/api/meta/backfill', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -56,13 +57,32 @@ export function MetaBackfillButton({
         })
       })
       
-      const data = await response.json()
+      const dataYesterday = await responseYesterday.json()
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to backfill data')
+      if (!responseYesterday.ok) {
+        throw new Error(dataYesterday.error || `Failed to backfill data for ${yesterdayStr}`)
+      }
+
+      // Call the backfill API for the specific date 2025-05-21
+      const responseSpecificDate = await fetch('/api/meta/backfill', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          brandId,
+          dateFrom: specificDateStr,
+          dateTo: specificDateStr
+        })
+      })
+
+      const dataSpecificDate = await responseSpecificDate.json();
+
+      if (!responseSpecificDate.ok) {
+        throw new Error(dataSpecificDate.error || `Failed to backfill data for ${specificDateStr}`);
       }
       
-      toast.success(`Successfully backfilled Meta data (${data.count} records)`, {
+      toast.success(`Successfully backfilled Meta data for ${yesterdayStr} (${dataYesterday.count} records) and ${specificDateStr} (${dataSpecificDate.count} records)`, {
         id: "meta-backfill",
       })
       
