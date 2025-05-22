@@ -69,6 +69,7 @@ import { format } from "date-fns"
 import { fetchMetaAdSets } from '@/lib/services/meta-service'; // Ensure correct import if needed, might be fetched via API though
 import { DateRange as DateRangePicker } from 'react-day-picker'; // Make sure DateRange type is imported
 import { supabase } from '@/lib/supabase'; // Import supabase
+import { startOfDay, endOfDay } from 'date-fns'; // Import date-fns functions
 
 // Debug flag to control verbosity
 const DEBUG_LOGGING = false;
@@ -1346,36 +1347,93 @@ const CampaignWidget = ({
 
   // Filter campaigns based on search query and inactive status
   const filteredCampaigns = useMemo(() => {
-    const filtered = localCampaigns.filter(campaign => {
+    const processedCampaigns = localCampaigns.map(campaign => {
+      // Check if essential metrics are missing or zero, and daily_insights exist
+      const primaryMetricsMissing = campaign.spent === undefined || campaign.spent === 0 ||
+                                campaign.impressions === undefined || campaign.impressions === 0 ||
+                                campaign.clicks === undefined || campaign.clicks === 0;
+      const hasDailyInsights = campaign.daily_insights && campaign.daily_insights.length > 0;
+
+      if (primaryMetricsMissing && hasDailyInsights) {
+        let aggregatedSpent = 0;
+        let aggregatedImpressions = 0;
+        let aggregatedClicks = 0;
+        let aggregatedConversions = 0;
+        let aggregatedPurchaseValue = 0;
+
+        campaign.daily_insights.forEach(insight => {
+          const insightDate = new Date(insight.date);
+          const fromDate = dateRange?.from ? startOfDay(new Date(dateRange.from)) : null;
+          const toDate = dateRange?.to ? endOfDay(new Date(dateRange.to)) : null;
+
+          let isInRange = true;
+          if (fromDate && insightDate < fromDate) isInRange = false;
+          if (toDate && insightDate > toDate) isInRange = false;
+          
+          if (isInRange) {
+            aggregatedSpent += Number(insight.spent || 0);
+            aggregatedImpressions += Number(insight.impressions || 0);
+            aggregatedClicks += Number(insight.clicks || 0);
+            aggregatedConversions += Number(insight.conversions || 0);
+            if (insight.value) {
+                 aggregatedPurchaseValue += Number(insight.value || 0);
+            }
+          }
+        });
+
+        const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
+        const updatedCampaign = {
+          ...campaign,
+          spent: aggregatedSpent,
+          impressions: aggregatedImpressions,
+          clicks: aggregatedClicks,
+          conversions: aggregatedConversions,
+          roas: calculatedRoas > 0 || campaign.roas === 0 || campaign.roas === undefined ? calculatedRoas : campaign.roas,
+          ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) * 100 : 0,
+          cpc: aggregatedClicks > 0 ? aggregatedSpent / aggregatedClicks : 0,
+          cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+        };
+        return updatedCampaign;
+      }
+      return campaign;
+    });
+
+    const filteredAndSortedCampaigns = processedCampaigns.filter(campaign => {
       const searchMatch = 
         !searchQuery || 
         campaign.campaign_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase());
+        (campaign.account_name && campaign.account_name.toLowerCase().includes(searchQuery.toLowerCase()));
       const statusMatch = showInactive || campaign.status.toUpperCase() === 'ACTIVE';
       return searchMatch && statusMatch;
     }).sort((a, b) => {
       if (sortBy === 'status') {
-        if (a.status.toUpperCase() === 'ACTIVE' && b.status.toUpperCase() !== 'ACTIVE') return sortOrder === 'asc' ? 1 : -1;
-        if (a.status.toUpperCase() !== 'ACTIVE' && b.status.toUpperCase() === 'ACTIVE') return sortOrder === 'asc' ? -1 : 1;
+        const aActive = a.status.toUpperCase() === 'ACTIVE';
+        const bActive = b.status.toUpperCase() === 'ACTIVE';
+        if (aActive && !bActive) return sortOrder === 'asc' ? 1 : -1;
+        if (!aActive && bActive) return sortOrder === 'asc' ? -1 : 1;
         return a.status.localeCompare(b.status) * (sortOrder === 'asc' ? 1 : -1);
       }
       const aValue = a[sortBy as keyof Campaign] as number || 0;
       const bValue = b[sortBy as keyof Campaign] as number || 0;
       return (aValue - bValue) * (sortOrder === 'asc' ? 1 : -1);
     });
-    console.log(`[CW DEBUG] Filtered Campaigns Count: ${filtered.length}`);
-    if (filtered.length > 0) {
-        console.log(`[CW DEBUG] First Filtered Campaign Metrics:`, {
-            name: filtered[0].campaign_name,
-            id: filtered[0].campaign_id,
-            spend: filtered[0].spent,
-            impressions: filtered[0].impressions,
-            clicks: filtered[0].clicks,
-            status: filtered[0].status
-        });
+
+    if (DEBUG_LOGGING) {
+      console.log(`[CW DEBUG] Filtered & Sorted Campaigns Count: ${filteredAndSortedCampaigns.length}`);
+      if (filteredAndSortedCampaigns.length > 0) {
+          console.log(`[CW DEBUG] First Filtered & Sorted Campaign Prop Metrics:`, {
+              name: filteredAndSortedCampaigns[0].campaign_name,
+              id: filteredAndSortedCampaigns[0].campaign_id,
+              spend: filteredAndSortedCampaigns[0].spent,
+              impressions: filteredAndSortedCampaigns[0].impressions,
+              clicks: filteredAndSortedCampaigns[0].clicks,
+              status: filteredAndSortedCampaigns[0].status,
+              roas: filteredAndSortedCampaigns[0].roas
+          });
+      }
     }
-    return filtered;
-  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder]);
+    return filteredAndSortedCampaigns;
+  }, [localCampaigns, searchQuery, showInactive, sortBy, sortOrder, dateRange]);
 
   // Toggle metric visibility
   const toggleMetric = useCallback((metricId: string) => {

@@ -449,7 +449,7 @@ export function MetaTab({
         const cached = localStorage.getItem(`meta-campaigns-${brandId}`);
         if (cached) {
           const parsedCache = JSON.parse(cached);
-          setCachedCampaigns(formatCampaigns(parsedCache)); // Apply formatting here
+          setCachedCampaigns(parsedCache);
         }
       } catch (e) {
         console.error("Error loading cached campaigns:", e);
@@ -635,22 +635,21 @@ export function MetaTab({
       }
       
       // Cache campaigns in component state
-      const formattedData = formatCampaigns(data.campaigns); // Format here
-      setCampaigns(formattedData);
-      // setCachedCampaigns(formattedData); // This will be handled by the localStorage effect if campaigns state changes
-
-      logger.debug(`[MetaTab] Loaded ${formattedData.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
+      setCampaigns(data.campaigns);
+      setCachedCampaigns(data.campaigns);
+      
+      logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
       
       window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
-        detail: { count: formattedData.length }
+        detail: { count: data.campaigns.length }
       }));
       
-      return formattedData; // Return formatted data
+      return data.campaigns;
     } catch (error) {
       logger.error("Error fetching campaigns:", error);
       toast.error("Failed to load campaigns", { description: (error as Error).message });
       // Don't clear campaigns on error, keep potentially stale data
-      return campaigns; // Return existing (potentially formatted) campaigns on error
+      return campaigns; // Return existing campaigns on error
     } finally {
       // Add a small delay before removing loading state for smoother UX
       setTimeout(() => setIsLoadingCampaigns(false), 300);
