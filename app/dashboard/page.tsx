@@ -1047,33 +1047,10 @@ export default function DashboardPage() {
   useEffect(() => {
     // Don't do initial fetch here - we'll do it in the selectedBrandId effect
     
-    // Set up interval for periodic refresh
-    const interval = setInterval(() => {
-      if (selectedBrandId) {
-        console.log('Running 5-minute automatic refresh for all data...');
-        // For periodic refreshes, we don't want to show the full-screen loader
-        setInitialDataLoad(false);
-        
-        // Increment the auto refresh counter
-        autoRefreshCountRef.current += 1;
-        
-        // Every 2nd cycle (every 10 minutes), do a full Meta resync to ensure data is fresh
-        const shouldDoFullResync = autoRefreshCountRef.current % 2 === 0;
-        
-        if (shouldDoFullResync) {
-          console.log('Performing full Meta resync on 10-minute cycle');
-        }
-        
-        // Call fetchAllData with appropriate resync flag
-        fetchAllData(shouldDoFullResync);
-        
-        // Update the last refreshed timestamp
-        setLastRefreshed(new Date());
-      }
-    }, 300000); // 300000 ms = 5 minutes
-    
     // Clean up interval on unmount
-    return () => clearInterval(interval);
+    return () => {
+      //clearInterval(interval);
+    };
   }, [selectedBrandId]);
 
   // Instead, add explicit call to fetchAllData when brand is selected
@@ -1382,14 +1359,14 @@ export default function DashboardPage() {
 
   // Enhance the effect for visibility changes to make sure it triggers a full resync
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    /*const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && pathname === '/dashboard') {
         // Always do a full refresh when the page becomes visible again
         console.log('[Dashboard] Page became visible, triggering hard refresh.');
         fetchAllData(true); // Force full resync
         lastHardRefreshRef.current = Date.now();
       }
-    };
+    };*/
 
     // Handle navigation back to the dashboard - always do a full refresh
     if (pathname === '/dashboard' && lastPathRef.current !== '/dashboard' && !initialLoadFlag.current) {
@@ -1401,10 +1378,10 @@ export default function DashboardPage() {
     lastPathRef.current = pathname;
     initialLoadFlag.current = false; // Set to false after initial assessment
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    //document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      //document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [pathname, fetchAllData]);
 

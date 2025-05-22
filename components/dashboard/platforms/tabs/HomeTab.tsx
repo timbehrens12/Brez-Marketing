@@ -742,7 +742,7 @@ export function HomeTab({
     if (validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
       fetchMetaData();
     }
-  }, [dateRange?.from?.toISOString(), dateRange?.to?.toISOString(), brandId, metaConnection, validWidgets.length]);
+  }, [dateRange, brandId, metaConnection, validWidgets.length]);
 
   // Function to fetch campaign data from the API
   const fetchCampaigns = useCallback(async (forceRefresh = false) => {
@@ -793,7 +793,7 @@ export function HomeTab({
       // Always ensure loading is set to false eventually
       setIsLoadingCampaigns(false);
     }
-  }, [brandId, metaConnection, dateRange?.from?.toISOString(), dateRange?.to?.toISOString()]); // Removed campaigns.length, keep dateRange for now as it's part of the API call
+  }, [brandId, metaConnection, dateRange]); // Removed campaigns.length, keep dateRange for now as it's part of the API call
 
   // React to the isRefreshingData prop from parent component
   useEffect(() => {
@@ -1007,7 +1007,7 @@ export function HomeTab({
     if (metaConnection && validWidgets.some(widget => widget.id === 'meta-campaigns')) {
       fetchCampaigns();
     }
-  }, [metaConnection, fetchCampaigns, validWidgets]);
+  }, [metaConnection, dateRange, fetchCampaigns, validWidgets]);
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {

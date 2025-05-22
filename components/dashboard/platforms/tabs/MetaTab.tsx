@@ -4090,7 +4090,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.log(`[MetaTab] Setting up 5-minute auto-refresh for Meta data`);
       
       // Set up a 5-minute interval for auto-refresh
-      const intervalId = setInterval(() => {
+      /*const intervalId = setInterval(() => {
         // Only refresh if the component is still mounted and the page is visible
         if (isMounted.current && document.visibilityState === 'visible') {
           console.log(`[MetaTab] Auto-refresh triggered`);
@@ -4102,11 +4102,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
           });
         }
-      }, 5 * 60 * 1000); // 5 minutes in milliseconds
+      }, 5 * 60 * 1000); // 5 minutes in milliseconds*/
       
       // Clean up the interval when the component unmounts
       return () => {
-        clearInterval(intervalId);
+        /*clearInterval(intervalId);*/
         console.log(`[MetaTab] Cleaned up 5-minute auto-refresh interval`);
       };
     }

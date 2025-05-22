@@ -123,29 +123,7 @@ export function PlatformTabs({
       c.platform_type === 'shopify' && c.status === 'active'
     )
     setSelectedConnection(shopifyConnection || null)
-    
-    // Check if we're using the "Last 30 days" preset and trigger a refresh
-    if (dateRange && dateRange.from && dateRange.to) {
-      const daysDiff = differenceInDays(dateRange.to, dateRange.from);
-      const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
-      
-      if (isLast30Days && shopifyConnection) {
-        console.log('[PlatformTabs] Last 30 days preset detected with connection change');
-        // Dispatch refresh events
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-            detail: { 
-              brandId, 
-              timestamp: Date.now(),
-              dateRange,
-              forceFetch: true
-            }
-          }));
-          window.dispatchEvent(new Event('refresh-metrics'));
-        }, 500);
-      }
-    }
-  }, [connections, dateRange, brandId]);
+  }, [connections]);
   
   // Memoize the safeMetrics object to prevent recalculation on every render
   const safeMetrics = useMemo(() => {
@@ -221,44 +199,6 @@ export function PlatformTabs({
       tiktok: value === "tiktok",
       googleads: value === "googleads"
     });
-    
-    // If switching to Shopify tab with Last 30 days preset, dispatch refresh
-    // but only if we haven't done so recently (debounce)
-    if (value === "shopify" && dateRange && dateRange.from && dateRange.to) {
-      const daysDiff = differenceInDays(dateRange.to, dateRange.from);
-      const isLast30Days = daysDiff >= 25 && daysDiff <= 35;
-      
-      if (isLast30Days) {
-        console.log('[PlatformTabs] Switching to Shopify tab with Last 30 days preset');
-        
-        // Prevent multiple refreshes within 2 seconds
-        const now = Date.now();
-        if (now - lastShopifyRefreshRef.current > 2000) {
-          lastShopifyRefreshRef.current = now;
-          
-          // Add a small delay to ensure we don't fire events too quickly
-          setTimeout(() => {
-        // When using Last 30 days preset, ensure we're using the real last 30 days
-        const today = new Date();
-        const thirtyDaysAgo = subDays(today, 30);
-        const exactDateRange = {
-          from: startOfDay(thirtyDaysAgo),
-          to: endOfDay(today)
-        };
-        
-        // Dispatch shopify-tab-activated event with the exact date range
-        window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
-          detail: {
-                dateRange: exactDateRange,
-                timestamp: now // Add timestamp to help track this specific event
-          }
-        }));
-          }, 100);
-        } else {
-          console.log('[PlatformTabs] Skipped duplicate Shopify refresh (debounced)');
-        }
-      }
-    }
     
     // Notify parent of tab change
     if (onTabChange) {
