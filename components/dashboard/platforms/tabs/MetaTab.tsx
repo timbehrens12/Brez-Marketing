@@ -105,44 +105,6 @@ interface MetricsDataType {
   dailyData: DailyDataItem[];
 }
 
-// NEW: Define MetaMetricsState for overview metrics
-interface MetaOverviewMetricsState {
-  adSpend: number;
-  previousAdSpend: number;
-  adSpendGrowth: number | null;
-  roas: number;
-  previousRoas: number;
-  roasGrowth: number | null;
-  impressions: number;
-  previousImpressions: number;
-  impressionGrowth: number | null;
-  clicks: number;
-  previousClicks: number;
-  clickGrowth: number | null;
-  purchaseValue: number;
-  previousPurchaseValue: number;
-  purchaseValueGrowth: number | null;
-  results: number;
-  previousResults: number;
-  resultsGrowth: number | null;
-  costPerResult: number;
-  previousCostPerResult: number;
-  costPerResultGrowth: number | null;
-  costPerClick: number;
-  previousCostPerClick: number;
-  costPerClickGrowth: number | null;
-  ctr: number;
-  previousCtr: number;
-  ctrGrowth: number | null;
-  reach: number;
-  previousReach: number;
-  reachGrowth: number | null;
-  linkClicks: number;
-  previousLinkClicks: number;
-  linkClicksGrowth: number | null;
-  isLoading: boolean;
-}
-
 // Add type definition for the global timeouts array
 declare global {
   interface Window {
@@ -3507,83 +3469,21 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
-    if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch overview metrics: Missing date range or brand ID");
-      setMetaOverviewMetrics(prev => ({ ...prev, isLoading: false }));
-      return;
-    }
-
-    setMetaOverviewMetrics(prev => ({ ...prev, isLoading: true }));
-    const currentFromStr = dateRange.from.toISOString().split('T')[0];
-    const currentToStr = dateRange.to.toISOString().split('T')[0];
-    const { prevFrom: prevFromStr, prevTo: prevToStr } = getPreviousPeriodDates(dateRange.from, dateRange.to);
-
-    const fetchMetricData = async (metricName: string, endpointName: string) => {
-      try {
-        const currentParams = new URLSearchParams({ brandId, metric: metricName, from: currentFromStr, to: currentToStr });
-        const prevParams = new URLSearchParams({ brandId, metric: metricName, from: prevFromStr, to: prevToStr });
-
-        const [currentRes, prevRes] = await Promise.all([
-          fetch(`/api/metrics/meta/single/${endpointName}?${currentParams.toString()}`),
-          fetch(`/api/metrics/meta/single/${endpointName}?${prevParams.toString()}`)
-        ]);
-
-        if (!currentRes.ok || !prevRes.ok) {
-          console.error(`Error fetching ${metricName}. Current: ${currentRes.status}, Previous: ${prevRes.status}`);
-          const currentError = !currentRes.ok ? await currentRes.json().catch(() => ({})) : {};
-          const prevError = !prevRes.ok ? await prevRes.json().catch(() => ({})) : {};
-          console.error(`Error details for ${metricName}:`, { currentError, prevError });
-          return { currentValue: 0, previousValue: 0 };
-        }
-
-        const currentData = await currentRes.json();
-        const prevData = await prevRes.json();
-        return { currentValue: currentData.value || 0, previousValue: prevData.value || 0 };
-      } catch (error) {
-        console.error(`Exception fetching ${metricName}:`, error);
-        return { currentValue: 0, previousValue: 0 };
-      }
-    };
-
-    try {
-      const [
-        adSpend, roas, impressions, clicks, purchaseValue, results,
-        costPerResult, costPerClick, ctr, reach, linkClicks
-      ] = await Promise.all([
-        fetchMetricData('adSpend', 'adSpend'),
-        fetchMetricData('roas', 'roas'),
-        fetchMetricData('impressions', 'impressions'),
-        fetchMetricData('clicks', 'clicks'),
-        fetchMetricData('purchaseValue', 'purchase-conversion-value'),
-        fetchMetricData('results', 'results'),
-        fetchMetricData('costPerResult', 'cost-per-result'),
-        fetchMetricData('costPerClick', 'cost-per-click'),
-        fetchMetricData('ctr', 'click-through-rate'),
-        fetchMetricData('reach', 'reach'),
-        fetchMetricData('link_clicks', 'link_clicks'),
-      ]);
-
-      setMetaOverviewMetrics({
-        adSpend: adSpend.currentValue, previousAdSpend: adSpend.previousValue, adSpendGrowth: calculatePercentChange(adSpend.currentValue, adSpend.previousValue),
-        roas: roas.currentValue, previousRoas: roas.previousValue, roasGrowth: calculatePercentChange(roas.currentValue, roas.previousValue),
-        impressions: impressions.currentValue, previousImpressions: impressions.previousValue, impressionGrowth: calculatePercentChange(impressions.currentValue, impressions.previousValue),
-        clicks: clicks.currentValue, previousClicks: clicks.previousValue, clickGrowth: calculatePercentChange(clicks.currentValue, clicks.previousValue),
-        purchaseValue: purchaseValue.currentValue, previousPurchaseValue: purchaseValue.previousValue, purchaseValueGrowth: calculatePercentChange(purchaseValue.currentValue, purchaseValue.previousValue),
-        results: results.currentValue, previousResults: results.previousValue, resultsGrowth: calculatePercentChange(results.currentValue, results.previousValue),
-        costPerResult: costPerResult.currentValue, previousCostPerResult: costPerResult.previousValue, costPerResultGrowth: calculatePercentChange(costPerResult.currentValue, costPerResult.previousValue),
-        costPerClick: costPerClick.currentValue, previousCostPerClick: costPerClick.previousValue, costPerClickGrowth: calculatePercentChange(costPerClick.currentValue, costPerClick.previousValue),
-        ctr: ctr.currentValue, previousCtr: ctr.previousValue, ctrGrowth: calculatePercentChange(ctr.currentValue, ctr.previousValue),
-        reach: reach.currentValue, previousReach: reach.previousValue, reachGrowth: calculatePercentChange(reach.currentValue, reach.previousValue),
-        linkClicks: linkClicks.currentValue, previousLinkClicks: linkClicks.previousValue, linkClicksGrowth: calculatePercentChange(linkClicks.currentValue, linkClicks.previousValue),
-        isLoading: false,
-      });
-      toast.success("Meta overview metrics refreshed.");
-    } catch (error) {
-      console.error("Error fetching one or more Meta overview metrics:", error);
-      setMetaOverviewMetrics(prev => ({ ...prev, isLoading: false }));
-      toast.error("Failed to refresh some Meta overview metrics.");
-    }
-  };
+    await Promise.all([
+      fetchAdSpendDirectly(),
+      fetchRoasDirectly(),
+      fetchImpressionsDirectly(),
+      fetchClicksDirectly(),
+      fetchPurchaseValueDirectly(),
+      fetchResultsDirectly(),
+      fetchCostPerResultDirectly(),
+      fetchCostPerClickDirectly(),
+      fetchCtrDirectly(),
+      fetchReachDirectly(), // Ensure this is called
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly() // Ensure this is also called for consistency
+    ])
+  }
 
   // Update the useEffect to call the new fetch functions
   useEffect(() => {
@@ -4260,12 +4160,24 @@ Try creating at least one active campaign in Meta Ads Manager.
 
   // Add a proper date comparison function to avoid infinite loops
   const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {
-    if (!date1 && !date2) return true;
-    if (!date1 || !date2) return false;
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
-  };
+  if (!date1 && !date2) return true;
+  if (!date1 || !date2) return false;
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+};
+
+// Calculate percentage change between current and previous values
+const calculatePercentChange = (current: number, previous: number): number | null => {
+  if (previous === 0) {
+    // Return null when there's no previous data to compare against
+    return null; // This will display as "N/A" in the UI
+  }
+  if (current === previous) { // Handle cases where current and previous are the same
+    return 0;
+  }
+  return ((current - previous) / Math.abs(previous)) * 100;
+};
 
   // Store previous date range for comparison
   const prevDateRangeRef = useRef<{ from?: Date; to?: Date } | undefined>(undefined);
@@ -4422,33 +4334,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
   
-  // NEW: State for Meta Overview Metrics
-  const [metaOverviewMetrics, setMetaOverviewMetrics] = useState<MetaOverviewMetricsState>({
-    adSpend: 0, previousAdSpend: 0, adSpendGrowth: null,
-    roas: 0, previousRoas: 0, roasGrowth: null,
-    impressions: 0, previousImpressions: 0, impressionGrowth: null,
-    clicks: 0, previousClicks: 0, clickGrowth: null,
-    purchaseValue: 0, previousPurchaseValue: 0, purchaseValueGrowth: null,
-    results: 0, previousResults: 0, resultsGrowth: null,
-    costPerResult: 0, previousCostPerResult: 0, costPerResultGrowth: null,
-    costPerClick: 0, previousCostPerClick: 0, costPerClickGrowth: null,
-    ctr: 0, previousCtr: 0, ctrGrowth: null,
-    reach: 0, previousReach: 0, reachGrowth: null,
-    linkClicks: 0, previousLinkClicks: 0, linkClicksGrowth: null,
-    isLoading: true, // Start with loading true
-  });
-  
-  // Ensure calculatePercentChange returns null for N/A cases
-  const calculatePercentChange = (current: number, previous: number): number | null => {
-    if (previous === 0) {
-      return null; // This will lead to "N/A" in MetricCard
-    }
-    if (current === previous) {
-      return 0;
-    }
-    return ((current - previous) / Math.abs(previous)) * 100;
-  };
-  
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4563,17 +4448,21 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Ad Spend</span>
               </div>
             }
-            value={metaOverviewMetrics.adSpend}
-            previousValue={metaOverviewMetrics.previousAdSpend}
-            change={metaOverviewMetrics.adSpendGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={adSpendData.value}
+            data={[]}
+            loading={adSpendData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            data={[]}
+            previousValue={adSpendData.previousValue}
+            previousValueFormat="currency"
+            previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(adSpendData.value, adSpendData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4583,17 +4472,21 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">ROAS</span>
               </div>
             }
-            value={metaOverviewMetrics.roas}
-            previousValue={metaOverviewMetrics.previousRoas}
-            change={metaOverviewMetrics.roasGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={roasData.value}
+            data={[]}
+            loading={roasData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
-            data={[]}
+            previousValue={roasData.previousValue}
+            previousValueFormat="number"
+            previousValueSuffix="x"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(roasData.value, roasData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4603,25 +4496,27 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Impressions</span>
               </div>
             }
-            value={metaOverviewMetrics.impressions}
-            previousValue={metaOverviewMetrics.previousImpressions}
-            change={metaOverviewMetrics.impressionGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={impressionsData.value}
+            data={[]}
+            loading={impressionsData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="number"
             hideGraph={true}
-            data={[]}
+            previousValue={impressionsData.previousValue}
+            previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(impressionsData.value, impressionsData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
+          {/* Using TotalAdSetReachCard as the main Reach card */}
           <TotalAdSetReachCard 
             brandId={brandId || ''} 
             dateRange={dateRange}
-            isManuallyRefreshing={isManuallyRefreshing} // Pass down refreshing state
-            // Assuming TotalAdSetReachCard fetches its own current/previous or has its own logic
-            // If it needs direct previousValue for comparison, that needs to be handled within it
-            // or passed similarly if its data source aligns with metaOverviewMetrics.reach
+            isManuallyRefreshing={isManuallyRefreshing}
+            campaigns={campaigns}
           />
           
           <MetricCard
@@ -4631,16 +4526,19 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Clicks</span>
               </div>
             }
-            value={metaOverviewMetrics.clicks}
-            previousValue={metaOverviewMetrics.previousClicks}
-            change={metaOverviewMetrics.clickGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={clicksData.value}
+            data={[]}
+            loading={clicksData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="number"
             hideGraph={true}
-            data={[]}
+            previousValue={clicksData.previousValue}
+            previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(clicksData.value, clicksData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4650,17 +4548,21 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Avg. Purchase Value</span>
               </div>
             }
-            value={metaOverviewMetrics.purchaseValue}
-            previousValue={metaOverviewMetrics.previousPurchaseValue}
-            change={metaOverviewMetrics.purchaseValueGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={purchaseValueData.value}
+            data={[]}
+            loading={purchaseValueData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            data={[]}
+            previousValue={purchaseValueData.previousValue}
+            previousValueFormat="currency"
+            previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(purchaseValueData.value, purchaseValueData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4670,16 +4572,19 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Results</span>
               </div>
             }
-            value={metaOverviewMetrics.results}
-            previousValue={metaOverviewMetrics.previousResults}
-            change={metaOverviewMetrics.resultsGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={resultsData.value}
+            data={[]}
+            loading={resultsData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="number"
             hideGraph={true}
-            data={[]}
+            previousValue={resultsData.previousValue}
+            previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(resultsData.value, resultsData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4689,17 +4594,21 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Cost Per Result</span>
               </div>
             }
-            value={metaOverviewMetrics.costPerResult}
-            previousValue={metaOverviewMetrics.previousCostPerResult}
-            change={metaOverviewMetrics.costPerResultGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={costPerResultData.value}
+            data={[]}
+            loading={costPerResultData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            data={[]}
+            previousValue={costPerResultData.previousValue}
+            previousValueFormat="currency"
+            previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(costPerResultData.value, costPerResultData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4709,18 +4618,23 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Cost Per Click</span>
               </div>
             }
-            value={metaOverviewMetrics.costPerClick}
-            previousValue={metaOverviewMetrics.previousCostPerClick}
-            change={metaOverviewMetrics.costPerClickGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={costPerClickData.value}
+            data={[]}
+            loading={costPerClickData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="currency"
             prefix="$"
             decimals={2}
             hideGraph={true}
-            data={[]}
+            previousValue={costPerClickData.previousValue}
+            previousValueFormat="currency"
+            previousValuePrefix="$"
+            previousValueDecimals={2}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(costPerClickData.value, costPerClickData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4730,17 +4644,21 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">CTR</span>
               </div>
             }
-            value={metaOverviewMetrics.ctr} 
-            previousValue={metaOverviewMetrics.previousCtr} 
-            change={metaOverviewMetrics.ctrGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
-            hideChange={false} 
-            valueFormat="percentage" 
+            value={ctrData.value}
+            data={[]}
+            loading={ctrData.isLoading || isManuallyRefreshing}
+            hideChange={false}
+            valueFormat="percentage"
             decimals={2}
             hideGraph={true}
-            data={[]}
+            previousValue={ctrData.previousValue}
+            previousValueFormat="percentage"
+            previousValueDecimals={2}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(ctrData.value, ctrData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4750,16 +4668,19 @@ Try creating at least one active campaign in Meta Ads Manager.
                 <span className="ml-0.5">Link Clicks</span>
               </div>
             }
-            value={metaOverviewMetrics.linkClicks}
-            previousValue={metaOverviewMetrics.previousLinkClicks}
-            change={metaOverviewMetrics.linkClicksGrowth}
-            loading={metaOverviewMetrics.isLoading || isManuallyRefreshing}
+            value={linkClicksData.value}
+            data={[]}
+            loading={linkClicksData.isLoading || isManuallyRefreshing}
             hideChange={false}
             valueFormat="number"
             hideGraph={true}
-            data={[]}
+            previousValue={linkClicksData.previousValue}
+            previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            change={calculatePercentChange(linkClicksData.value, linkClicksData.previousValue)}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
