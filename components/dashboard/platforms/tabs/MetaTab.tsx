@@ -3658,52 +3658,36 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (event.detail?.brandId === brandId) {
         console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
         
-        // Prevent re-fetch if the event originated from this tab's own full refresh cycle
-        if (event.detail?.source === 'metatab-refresh') {
-          console.log("[MetaTab] Ignoring metaDataRefreshed event from self ('metatab-refresh') to prevent double fetch.");
-          return;
+        // If forceRefresh is set to true in the event, force a full refresh
+        if (event.detail?.forceRefresh) {
+          console.log("Force refresh requested, fetching latest campaigns data");
+          
+          // Force a fetch from the API to get the most up-to-date data
+          fetchCampaigns(true); // Pass true to force refresh
         }
         
-        // Only refresh if we're not already refreshing (prevents cascading refreshes)
-        if (!isManuallyRefreshing) {
-          // Check if we have an active refresh already running
-          if (isMetaFetchInProgress()) {
-            console.log("[MetaTab] Skipping refresh from event - another refresh is already in progress");
-            return;
-          }
-          
-          console.log("[MetaTab] Refreshing metrics due to metaDataRefreshed event");
-          // Use a Promise.all for batch updates rather than individual API calls
-          setIsManuallyRefreshing(true);
-          
-          // Single batch update instead of individual metric updates
-          Promise.all([
-            fetchAllMetricsDirectly()
-          ])
-          .catch(error => {
-            console.error("Error refreshing metrics from metaDataRefreshed event:", error);
-          })
-          .finally(() => {
-            setIsManuallyRefreshing(false);
-          });
-        } else {
-          console.log("[MetaTab] Already refreshing, skipping metaDataRefreshed event");
+        // Always refresh the metrics display
+        fetchAllMetricsDirectly();
+
+        // If the event indicates data was backfilled, also trigger a full data reload for the tab
+        if (event.detail?.backfilled === true) {
+          console.log("[MetaTab] Backfill event detected, forcing full data reload.");
+          // Ensure fetchMetaData is called to reload metrics for the current view
+          fetchMetaData(); 
+          // And ensure campaigns are also re-fetched with fresh data
+          fetchCampaigns(true);
         }
       }
     };
 
     // Add the event listener
     window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-    
-    // Also listen for 'meta-data-refreshed' event (alternate format used elsewhere)
-    window.addEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
 
     // Cleanup on component unmount
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-      window.removeEventListener('meta-data-refreshed', handleMetaDataRefreshed as EventListener);
     };
-  }, [brandId, isManuallyRefreshing]);
+  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly]); // Added fetchMetaData and fetchAllMetricsDirectly to dependencies
 
   // Function to manually sync Meta insights data
   const syncMetaInsights = async () => {
@@ -4337,36 +4321,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
-  
-  // Add a listener for the metaDataRefreshed event from the dashboard
-  useEffect(() => {
-    // Define the event handler
-    const handleMetaDataRefreshed = (event: CustomEvent) => {
-      // Check if this event is for our brand
-      if (event.detail?.brandId === brandId) {
-        console.log("Received metaDataRefreshed event", event.detail);
-        
-        // If forceRefresh is set to true in the event, force a full refresh
-        if (event.detail?.forceRefresh) {
-          console.log("Force refresh requested, fetching latest campaigns data");
-          
-          // Force a fetch from the API to get the most up-to-date data
-          fetchCampaigns();
-        }
-        
-        // Always refresh the metrics display
-        fetchAllMetricsDirectly();
-      }
-    };
-
-    // Add the event listener
-    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-
-    // Cleanup on component unmount
-    return () => {
-      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
-    };
-  }, [brandId]);
   
   return (
     <TooltipProvider>
