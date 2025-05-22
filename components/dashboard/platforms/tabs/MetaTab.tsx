@@ -629,22 +629,43 @@ export function MetaTab({
 
       if (!data || !Array.isArray(data.campaigns)) {
         logger.warn('[MetaTab] Invalid campaign data received from API');
+        
+        // Don't clear existing campaigns in this case
+        if (campaigns.length > 0) {
+          logger.debug('[MetaTab] Keeping existing campaigns as API returned invalid data');
+          return campaigns;
+        }
+        
         setCampaigns([]);
         setCachedCampaigns([]);
         return [];
       }
       
-      // Cache campaigns in component state
-      setCampaigns(data.campaigns);
-      setCachedCampaigns(data.campaigns);
-      
-      logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
-      
-      window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
-        detail: { count: data.campaigns.length }
+      // Make sure all campaigns have valid non-zero values
+      const sanitizedCampaigns = data.campaigns.map((campaign: any) => ({
+        ...campaign,
+        spent: typeof campaign.spent === 'number' ? campaign.spent : 0,
+        impressions: typeof campaign.impressions === 'number' ? campaign.impressions : 0,
+        clicks: typeof campaign.clicks === 'number' ? campaign.clicks : 0,
+        conversions: typeof campaign.conversions === 'number' ? campaign.conversions : 0,
+        ctr: typeof campaign.ctr === 'number' ? campaign.ctr : 0,
+        cpc: typeof campaign.cpc === 'number' ? campaign.cpc : 0,
+        cost_per_conversion: typeof campaign.cost_per_conversion === 'number' ? campaign.cost_per_conversion : 0,
+        roas: typeof campaign.roas === 'number' ? campaign.roas : 0,
+        reach: typeof campaign.reach === 'number' ? campaign.reach : 0
       }));
       
-      return data.campaigns;
+      // Cache campaigns in component state
+      setCampaigns(sanitizedCampaigns);
+      setCachedCampaigns(sanitizedCampaigns);
+      
+      logger.debug(`[MetaTab] Loaded ${sanitizedCampaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
+      
+      window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
+        detail: { count: sanitizedCampaigns.length }
+      }));
+      
+      return sanitizedCampaigns;
     } catch (error) {
       logger.error("Error fetching campaigns:", error);
       toast.error("Failed to load campaigns", { description: (error as Error).message });
@@ -4297,30 +4318,14 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
     }
     
-    // Fetch campaigns and metrics when component is mounted/visited
-    /*const refreshOnMount = async () => {
-      try {
-        // Force a refresh of campaign data
-        if (brandId) {
-          console.log("[MetaTab] Forcing campaign refresh on mount");
-          await fetchCampaigns(true);
-
-          // Also refresh all metrics directly
-          console.log("[MetaTab] Refreshing all metrics on mount");
-          await fetchAllMetricsDirectly();
-
-          console.log("[MetaTab] Mount refresh completed successfully");
-        }
-      } catch (error) {
-        console.error("[MetaTab] Error during mount refresh:", error);
-      }
-    };*/
-
-    // Execute the refresh
-    // refreshOnMount(); // Removed to rely on other effects for data loading
-
-    // No dependencies to ensure this only runs on mount/navigation
-  }, []);
+    // Fetch campaigns data when component is mounted/visited to ensure CampaignWidget has data
+    if (brandId && campaigns.length === 0) {
+      console.log("[MetaTab] Forcing campaign fetch on mount");
+      fetchCampaigns(true);
+    }
+    
+    // No dependency on dateRange to avoid duplicate fetches,
+  }, [brandId, campaigns.length, fetchCampaigns]);
   
   return (
     <TooltipProvider>
