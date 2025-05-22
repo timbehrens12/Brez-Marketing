@@ -12,13 +12,9 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const preset = url.searchParams.get('preset')
-    
-    // Check if this is a yesterday preset
-    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`REACH API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`REACH API: Fetching for brand ${brandId} from ${from} to ${to}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -54,27 +50,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Special handling for yesterday preset to ensure exact date
-    let fromDate = from
-    let toDate = to
-    
-    if (isYesterdayPreset) {
-      // Use exactly yesterday's date
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      fromDate = yesterday.toISOString().split('T')[0]
-      toDate = fromDate // Force same day
-      console.log(`REACH API: Using exact yesterday date ${fromDate}`)
-    }
-    
     // UPDATED: Query meta_campaign_daily_stats for reach data
     // This table has deduplicated reach values that are more accurate 
     const { data: campaignStats, error: statsError } = await supabase
       .from('meta_campaign_daily_stats')
       .select('date, reach')
       .eq('brand_id', brandId)
-      .gte('date', fromDate)
-      .lte('date', toDate)
+      .gte('date', from)
+      .lte('date', to)
     
     if (statsError) {
       console.log(`Error retrieving campaign stats: ${JSON.stringify(statsError)}`)
@@ -84,33 +67,22 @@ export async function GET(request: NextRequest) {
         .from('meta_ad_insights')
         .select('date, reach')
         .eq('brand_id', brandId)
-      .gte('date', fromDate)
-      .lte('date', toDate)
+      .gte('date', from)
+      .lte('date', to)
     
     if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
       return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
     }
     
-    // Filter to ensure exact date match for yesterday
-    let filteredInsights = insights || []
-    
-    if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
-        const dateStr = new Date(item.date).toISOString().split('T')[0]
-        return dateStr === fromDate
-      })
-      console.log(`REACH API (FALLBACK): Filtered to ${filteredInsights.length} records for ${fromDate}`)
-    }
-    
     // If no data, return zeros
-    if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate}`)
+    if (!insights || insights.length === 0) {
+      console.log(`No data found for period ${from} to ${to}`)
       return NextResponse.json({ 
         value: 0,
         _meta: {
-          from: fromDate,
-          to: toDate,
+          from,
+          to,
             records: 0,
             source: 'fallback_insights'
         }
@@ -121,7 +93,7 @@ export async function GET(request: NextRequest) {
     let totalReach = 0
     let recordsWithReach = 0
     
-    filteredInsights.forEach(insight => {
+    insights.forEach(insight => {
       if (insight.reach && !isNaN(insight.reach) && insight.reach > 0) {
         totalReach += parseInt(insight.reach)
         recordsWithReach++
@@ -132,39 +104,28 @@ export async function GET(request: NextRequest) {
       const result = {
         value: totalReach,
         _meta: {
-          from: fromDate,
-          to: toDate,
-          records: filteredInsights.length,
+          from,
+          to,
+          records: insights.length,
           recordsWithReach,
           source: 'fallback_insights',
-          dates: [...new Set(filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+          dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
         }
       }
       
-      console.log(`REACH API (FALLBACK): Returning reach = ${result.value}, based on ${filteredInsights.length} records`)
+      console.log(`REACH API (FALLBACK): Returning reach = ${result.value}, based on ${insights.length} records`)
       
       return NextResponse.json(result)
     }
     
-    // Filter to ensure exact date match for yesterday
-    let filteredCampaignStats = campaignStats || []
-    
-    if (isYesterdayPreset) {
-      filteredCampaignStats = filteredCampaignStats.filter(item => {
-        const dateStr = new Date(item.date).toISOString().split('T')[0]
-        return dateStr === fromDate
-      })
-      console.log(`REACH API: Filtered to ${filteredCampaignStats.length} records for ${fromDate}`)
-    }
-    
     // If no campaign stats data, return zeros
-    if (!filteredCampaignStats || filteredCampaignStats.length === 0) {
-      console.log(`No campaign stats found for period ${fromDate} to ${toDate}`)
+    if (!campaignStats || campaignStats.length === 0) {
+      console.log(`No campaign stats found for period ${from} to ${to}`)
       return NextResponse.json({ 
         value: 0,
         _meta: {
-          from: fromDate,
-          to: toDate,
+          from,
+          to,
           records: 0,
           source: 'campaign_stats'
         }
@@ -175,7 +136,7 @@ export async function GET(request: NextRequest) {
     let totalReach = 0
     let recordsWithReach = 0
     
-    filteredCampaignStats.forEach(stat => {
+    campaignStats.forEach(stat => {
       if (stat.reach && !isNaN(stat.reach) && stat.reach > 0) {
         totalReach += parseInt(stat.reach)
         recordsWithReach++
@@ -186,16 +147,16 @@ export async function GET(request: NextRequest) {
     const result = {
       value: totalReach,
       _meta: {
-        from: fromDate,
-        to: toDate,
-        records: filteredCampaignStats.length,
+        from,
+        to,
+        records: campaignStats.length,
         recordsWithReach,
         source: 'campaign_stats',
-        dates: [...new Set(filteredCampaignStats.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        dates: [...new Set(campaignStats.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`REACH API: Returning reach = ${result.value}, based on ${filteredCampaignStats.length} campaign stats records`)
+    console.log(`REACH API: Returning reach = ${result.value}, based on ${campaignStats.length} campaign stats records`)
     
     return NextResponse.json(result)
   } catch (error) {

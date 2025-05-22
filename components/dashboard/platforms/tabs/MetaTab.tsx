@@ -2834,7 +2834,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'roas')
+      // prevParams.append('metric', 'roas') // No longer needed
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/roas?${prevParams.toString()}`)
@@ -2895,7 +2895,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'impressions')
+      // prevParams.append('metric', 'impressions') // No longer needed
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/impressions?${prevParams.toString()}`)
@@ -2957,7 +2957,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'clicks')
+      // prevParams.append('metric', 'clicks') // No longer needed
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/clicks?${prevParams.toString()}`)
@@ -3018,7 +3018,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'purchaseValue')
+      // prevParams.append('metric', 'purchaseValue') // No longer needed
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/purchase-conversion-value?${prevParams.toString()}`)

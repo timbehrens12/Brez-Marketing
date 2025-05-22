@@ -12,13 +12,9 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const preset = url.searchParams.get('preset')
-    
-    // Check if this is a yesterday preset
-    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`COST PER RESULT API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`COST PER RESULT API: Fetching for brand ${brandId} from ${from} to ${to}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -54,51 +50,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Special handling for yesterday preset to ensure exact date
-    let fromDate = from
-    let toDate = to
-    
-    if (isYesterdayPreset) {
-      // Use exactly yesterday's date
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      fromDate = yesterday.toISOString().split('T')[0]
-      toDate = fromDate // Force same day
-      console.log(`COST PER RESULT API: Using exact yesterday date ${fromDate}`)
-    }
-    
     // Query meta_ad_insights including the actions array, spend, and cost_per_result
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
       .select('date, actions, spend, results, cost_per_result')
       .eq('connection_id', connection.id)
-      .gte('date', fromDate)
-      .lte('date', toDate)
+      .gte('date', from)
+      .lte('date', to)
     
-        if (error) {
+    if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
       return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
     }
-
-    // Filter to ensure exact date match for yesterday
-    let filteredInsights = insights || []
     
-    if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
-        const dateStr = new Date(item.date).toISOString().split('T')[0]
-        return dateStr === fromDate
-      })
-      console.log(`COST PER RESULT API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
-    }
-
     // If no data, return zeros
-    if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate}`)
+    if (!insights || insights.length === 0) {
+      console.log(`No data found for period ${from} to ${to}`)
       return NextResponse.json({ 
         value: 0,
         _meta: {
-          from: fromDate,
-          to: toDate,
+          from,
+          to,
           records: 0
         }
       })
@@ -108,7 +80,7 @@ export async function GET(request: NextRequest) {
     let totalCPR = 0
     let validRecords = 0
     
-    filteredInsights.forEach(insight => {
+    insights.forEach(insight => {
       if (insight.cost_per_result != null && insight.cost_per_result > 0) {
         totalCPR += parseFloat(insight.cost_per_result.toString())
         validRecords++
@@ -125,7 +97,7 @@ export async function GET(request: NextRequest) {
       let totalSpend = 0
       let totalResults = 0
       
-      filteredInsights.forEach(insight => {
+      insights.forEach(insight => {
         // Add up the spend
         totalSpend += parseFloat(insight.spend) || 0
         
@@ -161,15 +133,15 @@ export async function GET(request: NextRequest) {
     const result = {
       value: parseFloat(avgCPR.toFixed(2)),
       _meta: {
-        from: fromDate,
-        to: toDate,
-        records: filteredInsights.length,
+        from,
+        to,
+        records: insights.length,
         source: validRecords > 0 ? 'database' : 'calculated',
-        dates: [...new Set(filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`COST PER RESULT API: Returning CPR = ${result.value}, based on ${filteredInsights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
+    console.log(`COST PER RESULT API: Returning CPR = ${result.value}, based on ${insights.length} records (source: ${validRecords > 0 ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {

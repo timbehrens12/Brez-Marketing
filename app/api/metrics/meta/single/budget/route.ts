@@ -12,13 +12,9 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const preset = url.searchParams.get('preset')
-    
-    // Check if this is a yesterday preset (for consistency, though budget doesn't use date filtering)
-    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`BUDGET API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`BUDGET API: Fetching for brand ${brandId} from ${from} to ${to}`)
     
     // Validate required parameters
     if (!brandId) {
