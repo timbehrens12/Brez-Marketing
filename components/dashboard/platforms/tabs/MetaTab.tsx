@@ -4439,7 +4439,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={adSpendData.value}
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={adSpendData.previousValue !== 0 
+              ? ((adSpendData.value - adSpendData.previousValue) / adSpendData.previousValue) * 100 
+              : adSpendData.value > 0 ? 100 : 0}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4460,7 +4463,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={roasData.value}
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={roasData.previousValue !== 0 
+              ? ((roasData.value - roasData.previousValue) / roasData.previousValue) * 100 
+              : roasData.value > 0 ? 100 : 0}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
@@ -4481,7 +4487,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={impressionsData.value}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={impressionsData.previousValue !== 0 
+              ? ((impressionsData.value - impressionsData.previousValue) / impressionsData.previousValue) * 100 
+              : impressionsData.value > 0 ? 100 : 0}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -4510,7 +4519,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={clicksData.value}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={clicksData.previousValue !== 0 
+              ? ((clicksData.value - clicksData.previousValue) / clicksData.previousValue) * 100 
+              : clicksData.value > 0 ? 100 : 0}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
@@ -4529,7 +4541,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={purchaseValueData.value}
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={purchaseValueData.previousValue !== 0 
+              ? ((purchaseValueData.value - purchaseValueData.previousValue) / purchaseValueData.previousValue) * 100 
+              : purchaseValueData.value > 0 ? 100 : 0}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4550,7 +4565,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={resultsData.value}
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={resultsData.previousValue !== 0 
+              ? ((resultsData.value - resultsData.previousValue) / resultsData.previousValue) * 100 
+              : resultsData.value > 0 ? 100 : 0}
             valueFormat="number"
             hideGraph={true}
             previousValue={resultsData.previousValue}
@@ -4569,7 +4587,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerResultData.value}
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={costPerResultData.previousValue !== 0 
+              ? ((costPerResultData.value - costPerResultData.previousValue) / costPerResultData.previousValue) * 100 
+              : costPerResultData.value > 0 ? 100 : 0}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4590,7 +4611,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerClickData.value}
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={costPerClickData.previousValue !== 0 
+              ? ((costPerClickData.value - costPerClickData.previousValue) / costPerClickData.previousValue) * 100 
+              : costPerClickData.value > 0 ? 100 : 0}
             valueFormat="currency"
             prefix="$"
             decimals={2}
@@ -4613,7 +4637,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={ctrData.value}
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={ctrData.previousValue !== 0 
+              ? ((ctrData.value - ctrData.previousValue) / ctrData.previousValue) * 100 
+              : ctrData.value > 0 ? 100 : 0}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
@@ -4634,7 +4661,10 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={linkClicksData.value}
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={linkClicksData.previousValue !== 0 
+              ? ((linkClicksData.value - linkClicksData.previousValue) / linkClicksData.previousValue) * 100 
+              : linkClicksData.value > 0 ? 100 : 0}
             valueFormat="number"
             hideGraph={true}
             previousValue={linkClicksData.previousValue}

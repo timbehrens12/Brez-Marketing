@@ -68,30 +68,11 @@ export async function GET(request: NextRequest) {
       console.log(`SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
     
-    // Determine the correct column to select and sum based on the metric parameter
-    let metricColumn = 'spend'; // Default to spend
-    if (metric === 'impressions') metricColumn = 'impressions';
-    else if (metric === 'clicks') metricColumn = 'clicks';
-    else if (metric === 'conversions') metricColumn = 'conversions'; // Assuming 'conversions' is a direct column
-    else if (metric === 'reach') metricColumn = 'reach';
-    else if (metric === 'link_clicks') metricColumn = 'link_clicks'; // Assuming 'inline_link_clicks' is stored as 'link_clicks' in DB
-    // For ROAS, value is more complex, might need spend and action_values or purchase_conversion_value
-    // For CTR, CPC, CostPerResult, these are calculated metrics, not direct sums from a single column here.
-    // This endpoint is primarily for sum-able metrics.
-
-    let selectString = `date, ${metricColumn}`;
-    if (metric === 'roas') {
-      // ROAS needs spend and a value column (e.g., purchase_conversion_value or sum of action_values)
-      // Assuming a column like 'purchase_value' or similar might exist or action_values are used.
-      // This needs to align with how ROAS is calculated elsewhere or what data is available.
-      // For simplicity here, let's assume we might have a direct 'purchase_value' or need 'action_values'.
-      // If using 'actions', it gets more complex to sum in SQL directly here for a generic endpoint.
-      selectString = 'date, spend, actions, action_values'; // Fetch necessary fields for ROAS
-    }
-    
+    // Query meta_ad_insights for just the data we need
+    // This is a much more focused query than the full metrics endpoint
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select(selectString)
+      .select('date, spend')
       .eq('connection_id', connection.id)
       .gte('date', fromDate)
       .lte('date', toDate)
@@ -106,7 +87,7 @@ export async function GET(request: NextRequest) {
     
     if (isYesterdayPreset) {
       filteredInsights = filteredInsights.filter(item => {
-        const dateStr = new Date((item as any).date).toISOString().split('T')[0]
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
       console.log(`SINGLE METRIC API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
@@ -126,43 +107,20 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate the sum for the requested metric
-    let totalValue = 0;
-    if (metric === 'roas') {
-      let totalSpendForRoas = 0;
-      let totalPurchaseValue = 0;
-      filteredInsights.forEach(item => {
-        totalSpendForRoas += Number((item as any).spend || 0);
-        // Simplified ROAS: sum up action_values array if present, specifically looking for purchase values.
-        // This logic should mirror how ROAS is calculated elsewhere for consistency.
-        if ((item as any).actions && Array.isArray((item as any).actions)) {
-          (item as any).actions.forEach((action: any) => {
-            if (action.action_type && (action.action_type.includes('purchase') || action.action_type.includes('offsite_conversion'))) {
-              totalPurchaseValue += Number(action.value || 0);
-            }
-          });
-        }
-      });
-      totalValue = totalSpendForRoas > 0 ? totalPurchaseValue / totalSpendForRoas : 0;
-    } else {
-      totalValue = filteredInsights.reduce((sum, item) => {
-        const val = (item as any)[metricColumn];
-        const numVal = typeof val === 'string' ? parseFloat(val) : Number(val);
-        return sum + (isNaN(numVal) ? 0 : numVal);
-      }, 0);
-    }
-        
-    const resultValue = (metric === 'roas' || metric === 'ctr' || metric === 'cpc') 
-                        ? parseFloat(totalValue.toFixed(2)) 
-                        : Math.round(totalValue);
-
+    // Calculate the sum for ad spend
+    const totalSpend = filteredInsights.reduce((sum, item) => {
+      const spend = typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend
+      return sum + (isNaN(spend) ? 0 : spend)
+    }, 0)
+    
+    // Return the results without growth data
     const result = {
-      value: resultValue,
+      value: parseFloat(totalSpend.toFixed(2)),
       _meta: {
         from: fromDate,
         to: toDate,
         records: filteredInsights.length,
-        dates: filteredInsights.map(item => new Date((item as any).date).toISOString().split('T')[0])
+        dates: filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0])
       }
     }
     
