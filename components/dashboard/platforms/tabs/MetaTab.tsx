@@ -4322,6 +4322,19 @@ Try creating at least one active campaign in Meta Ads Manager.
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
   
+  // Add this helper function within the MetaTab component scope
+  const calculatePercentChange = (current: number, previous: number): number | null => {
+    if (previous === 0) {
+      // If previous is 0, change is infinite or undefined.
+      // Return null to indicate "N/A" or if current is also 0, return 0% change.
+      return current === 0 ? 0 : null;
+    }
+    if (current === previous) {
+      return 0; // No change
+    }
+    return ((current - previous) / Math.abs(previous)) * 100;
+  };
+  
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4437,17 +4450,19 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
+            change={calculatePercentChange(adSpendData.value, adSpendData.previousValue)}
+            previousValue={adSpendData.previousValue}
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={adSpendData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="currency"
             previousValuePrefix="$"
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4458,17 +4473,19 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={roasData.value}
+            change={calculatePercentChange(roasData.value, roasData.previousValue)}
+            previousValue={roasData.previousValue}
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
-            previousValue={roasData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="number"
             previousValueSuffix="x"
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4479,18 +4496,18 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={impressionsData.value}
+            change={calculatePercentChange(impressionsData.value, impressionsData.previousValue)}
+            previousValue={impressionsData.previousValue}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
-            previousValue={impressionsData.previousValue}
-            previousValueFormat="number"
             showPreviousPeriod={true}
+            previousValueFormat="number"
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
-          
-          {/* Removing the original Reach MetricCard */}
           
           {/* Using TotalAdSetReachCard as the main Reach card */}
           <TotalAdSetReachCard 
@@ -4508,15 +4525,17 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={clicksData.value}
+            change={calculatePercentChange(clicksData.value, clicksData.previousValue)}
+            previousValue={clicksData.previousValue}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
-            previousValue={clicksData.previousValue}
-            previousValueFormat="number"
             showPreviousPeriod={true}
+            previousValueFormat="number"
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4527,17 +4546,19 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={purchaseValueData.value}
+            change={calculatePercentChange(purchaseValueData.value, purchaseValueData.previousValue)}
+            previousValue={purchaseValueData.previousValue}
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={purchaseValueData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="currency"
             previousValuePrefix="$"
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4548,15 +4569,17 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={resultsData.value}
+            change={calculatePercentChange(resultsData.value, resultsData.previousValue)}
+            previousValue={resultsData.previousValue}
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
-            previousValue={resultsData.previousValue}
-            previousValueFormat="number"
             showPreviousPeriod={true}
+            previousValueFormat="number"
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4567,17 +4590,19 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerResultData.value}
+            change={calculatePercentChange(costPerResultData.value, costPerResultData.previousValue)}
+            previousValue={costPerResultData.previousValue}
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
-            previousValue={costPerResultData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="currency"
             previousValuePrefix="$"
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4588,19 +4613,21 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerClickData.value}
+            change={calculatePercentChange(costPerClickData.value, costPerClickData.previousValue)}
+            previousValue={costPerClickData.previousValue}
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="currency"
             prefix="$"
             decimals={2}
             hideGraph={true}
-            previousValue={costPerClickData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="currency"
             previousValuePrefix="$"
             previousValueDecimals={2}
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4611,17 +4638,19 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={ctrData.value}
+            change={calculatePercentChange(ctrData.value, ctrData.previousValue)}
+            previousValue={ctrData.previousValue}
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
-            previousValue={ctrData.previousValue}
+            showPreviousPeriod={true}
             previousValueFormat="percentage"
             previousValueDecimals={2}
-            showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <MetricCard
@@ -4632,15 +4661,17 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={linkClicksData.value}
+            change={calculatePercentChange(linkClicksData.value, linkClicksData.previousValue)}
+            previousValue={linkClicksData.previousValue}
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
             valueFormat="number"
             hideGraph={true}
-            previousValue={linkClicksData.previousValue}
-            previousValueFormat="number"
             showPreviousPeriod={true}
+            previousValueFormat="number"
             previousPeriodLabel={getPreviousPeriodLabel()}
+            nullChangeText="N/A"
+            nullChangeTooltip="No data for previous period"
           />
           
           <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />

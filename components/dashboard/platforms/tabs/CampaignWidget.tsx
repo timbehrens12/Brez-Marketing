@@ -1358,13 +1358,12 @@ const CampaignWidget = ({
         insightsCount: campaign.daily_insights?.length || 0
       });
       
+      // ALWAYS try to aggregate metrics from daily_insights when they exist
+      // This ensures we use the most detailed data available
       const hasDailyInsights = campaign.daily_insights && campaign.daily_insights.length > 0;
 
-      // If daily_insights are available, ALWAYS use them to aggregate metrics
-      // for the campaign row display, as this provides the most accurate
-      // representation for the selected dateRange.
       if (hasDailyInsights) {
-        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights. Aggregating...`);
+        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
         let aggregatedSpent = 0;
         let aggregatedImpressions = 0;
         let aggregatedClicks = 0;
