@@ -267,28 +267,28 @@ export async function GET(request: NextRequest) {
         console.log(`Original requested dates: from=${requestedFromDate}, to=${requestedToDate}`);
       }
     }
-
+    
     let insightsForProcessing: any[] = [];
     let error: any = null;
 
     // MODIFIED: Always fetch data from meta_campaign_daily_stats for widgets showing totals
-    console.log(`[API /api/metrics/meta] Fetching from meta_campaign_daily_stats for date range: ${fromDate} to ${toDate}`);
-    const { data: dailyStatsData, error: dailyStatsError } = await supabase
-      .from('meta_campaign_daily_stats')
-      .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
-      .eq('brand_id', brandId)
-      .gte('date', fromDate)
-      .lte('date', toDate)
-      .order('date', { ascending: true });
+         console.log(`[API /api/metrics/meta] Fetching from meta_campaign_daily_stats for date range: ${fromDate} to ${toDate}`);
+        const { data: dailyStatsData, error: dailyStatsError } = await supabase
+          .from('meta_campaign_daily_stats')
+          .select('date, spend, impressions, clicks, conversions, reach, ctr, cpc')
+          .eq('brand_id', brandId)
+          .gte('date', fromDate)
+          .lte('date', toDate)
+          .order('date', { ascending: true });
 
-    if (dailyStatsError) {
-      console.error(`[API /api/metrics/meta] Error fetching from meta_campaign_daily_stats:`, dailyStatsError);
+        if (dailyStatsError) {
+          console.error(`[API /api/metrics/meta] Error fetching from meta_campaign_daily_stats:`, dailyStatsError);
       error = dailyStatsError;
-    } else if (dailyStatsData && dailyStatsData.length > 0) {
-      console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_campaign_daily_stats.`);
-      insightsForProcessing = dailyStatsData;
-    } else {
-      console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
+        } else if (dailyStatsData && dailyStatsData.length > 0) {
+             console.log(`[API /api/metrics/meta] Using ${dailyStatsData.length} records from meta_campaign_daily_stats.`);
+            insightsForProcessing = dailyStatsData;
+        } else {
+          console.log(`[API /api/metrics/meta] No records found in meta_campaign_daily_stats for the range.`);
       
       // Try to update data for today only if needed and explicitly requested
       const todayStr = new Date().toISOString().split('T')[0];
@@ -318,7 +318,7 @@ export async function GET(request: NextRequest) {
           }
         } catch (syncError) {
           console.error(`[API /api/metrics/meta] Exception during data sync:`, syncError);
-        }
+            }
       }
     }
 
@@ -348,40 +348,40 @@ export async function GET(request: NextRequest) {
     }));
     
     // Apply date filtering if needed
-    if (isYesterdayPreset) {
-      console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+      if (isYesterdayPreset) {
+        console.log(`YESTERDAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       formattedInsights = formattedInsights.filter(item => {
-        const dateStart = new Date(item.date).toISOString().split('T')[0];
-        const exactMatch = dateStart === fromDate;
+          const dateStart = new Date(item.date).toISOString().split('T')[0];
+          const exactMatch = dateStart === fromDate;
         if (!exactMatch) console.log(`Filtering out non-yesterday data point: ${dateStart} (expected ${fromDate})`);
-        return exactMatch;
-      });
+          return exactMatch;
+        });
       console.log(`YESTERDAY VALIDATION: After filtering, kept ${formattedInsights.length} records out of ${(insightsForProcessing || []).length}`);
       
-      if (refresh) {
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
-          console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
-          fromDate = yesterdayStr;
-          toDate = yesterdayStr;
-          formattedInsights = formattedInsights.filter(item => {
-            const itemDate = new Date(item.date).toISOString().split('T')[0];
-            return itemDate === yesterdayStr;
-          });
-          console.log(`REFRESH CORRECTION: Re-filtered to ${formattedInsights.length} records with date ${yesterdayStr}`);
+        if (refresh) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+          if (fromDate !== yesterdayStr || toDate !== yesterdayStr) {
+            console.warn(`REFRESH WARNING: Date mismatch - expected ${yesterdayStr} but got ${fromDate} to ${toDate}`);
+            fromDate = yesterdayStr;
+            toDate = yesterdayStr;
+            formattedInsights = formattedInsights.filter(item => {
+              const itemDate = new Date(item.date).toISOString().split('T')[0];
+              return itemDate === yesterdayStr;
+            });
+            console.log(`REFRESH CORRECTION: Re-filtered to ${formattedInsights.length} records with date ${yesterdayStr}`);
+          }
         }
       }
-    }
     else if (fromDate === toDate) { // Single day query
-      console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
+        console.log(`SINGLE DAY VALIDATION: Filtering data to ensure exact match for ${fromDate}`);
       formattedInsights = formattedInsights.filter(item => {
-        const dateStart = new Date(item.date).toISOString().split('T')[0];
-        return dateStart === fromDate;
-      });
+          const dateStart = new Date(item.date).toISOString().split('T')[0];
+          return dateStart === fromDate;
+        });
       console.log(`SINGLE DAY VALIDATION: After filtering, kept ${formattedInsights.length} records out of ${(insightsForProcessing || []).length}`);
-    }
+      }
       
     if (!formattedInsights || formattedInsights.length === 0) {
       console.log(`[API /api/metrics/meta] No data found to process for date range ${fromDate} to ${toDate}`);
@@ -393,33 +393,33 @@ export async function GET(request: NextRequest) {
 
     console.log(`[API /api/metrics/meta] Processing ${formattedInsights.length} records for period ${fromDate} to ${toDate}`);
     const processedData = processMetaData(formattedInsights);
-    
-    // Add date range info to help client validate
-    const response = {
-      ...processedData,
-      _dateRange: {
-        from: fromDate,
-        to: toDate,
-        requested: { 
-          from: requestedFromDate || fromDate, 
-          to: requestedToDate || toDate 
-        },
-        isYesterdayPreset: isYesterdayPreset,
-        isSingleDay: fromDate === toDate,
-        actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || [],
+      
+      // Add date range info to help client validate
+      const response = {
+        ...processedData,
+        _dateRange: {
+          from: fromDate,
+          to: toDate,
+          requested: { 
+            from: requestedFromDate || fromDate, 
+            to: requestedToDate || toDate 
+          },
+          isYesterdayPreset: isYesterdayPreset,
+          isSingleDay: fromDate === toDate,
+          actualDataDates: processedData.dailyData?.map((day: any) => day.date).sort() || [],
         dataSource: 'meta_campaign_daily_stats' // Added to indicate the source of data
+        }
+      };
+      
+      // Add to cache 
+      if (!bypassCache) {
+        apiCache.set(cacheKey, {
+          timestamp: Date.now(),
+          data: response
+        });
       }
-    };
-    
-    // Add to cache 
-    if (!bypassCache) {
-      apiCache.set(cacheKey, {
-        timestamp: Date.now(),
-        data: response
-      });
-    }
-    
-    return NextResponse.json(response)
+      
+      return NextResponse.json(response)
   } catch (error) {
     console.error('Error processing Meta metrics:', error)
     return NextResponse.json({ error: 'Failed to process Meta metrics' }, { status: 500 })
