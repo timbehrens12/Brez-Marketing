@@ -1348,18 +1348,28 @@ const CampaignWidget = ({
   // Filter campaigns based on search query and inactive status
   const filteredCampaigns = useMemo(() => {
     const processedCampaigns = localCampaigns.map(campaign => {
-      // Check if essential metrics are missing or zero, and daily_insights exist
-      const primaryMetricsMissing = campaign.spent === undefined || campaign.spent === 0 ||
-                                campaign.impressions === undefined || campaign.impressions === 0 ||
-                                campaign.clicks === undefined || campaign.clicks === 0;
+      // DEBUG LOG campaign details to diagnose zero values
+      console.log(`[CW DEBUG] Processing campaign ${campaign.campaign_id}:`, {
+        name: campaign.campaign_name,
+        spent: campaign.spent, 
+        impressions: campaign.impressions,
+        clicks: campaign.clicks,
+        hasDailyInsights: campaign.daily_insights?.length > 0,
+        insightsCount: campaign.daily_insights?.length || 0
+      });
+      
+      // ALWAYS try to aggregate metrics from daily_insights when they exist
+      // This ensures we use the most detailed data available
       const hasDailyInsights = campaign.daily_insights && campaign.daily_insights.length > 0;
 
-      if (primaryMetricsMissing && hasDailyInsights) {
+      if (hasDailyInsights) {
+        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
         let aggregatedSpent = 0;
         let aggregatedImpressions = 0;
         let aggregatedClicks = 0;
         let aggregatedConversions = 0;
         let aggregatedPurchaseValue = 0;
+        let insightsInRange = 0;
 
         campaign.daily_insights.forEach(insight => {
           const insightDate = new Date(insight.date);
@@ -1371,29 +1381,41 @@ const CampaignWidget = ({
           if (toDate && insightDate > toDate) isInRange = false;
           
           if (isInRange) {
+            insightsInRange++;
             aggregatedSpent += Number(insight.spent || 0);
             aggregatedImpressions += Number(insight.impressions || 0);
             aggregatedClicks += Number(insight.clicks || 0);
             aggregatedConversions += Number(insight.conversions || 0);
             if (insight.value) {
-                 aggregatedPurchaseValue += Number(insight.value || 0);
+              aggregatedPurchaseValue += Number(insight.value || 0);
             }
           }
         });
 
+        // Log the aggregated metrics for debugging
+        console.log(`[CW DEBUG] Campaign ${campaign.campaign_id}: Found ${insightsInRange} insights in selected date range. Aggregated metrics:`, {
+          spent: aggregatedSpent,
+          impressions: aggregatedImpressions,
+          clicks: aggregatedClicks,
+          conversions: aggregatedConversions,
+          purchaseValue: aggregatedPurchaseValue
+        });
+
         const calculatedRoas = aggregatedSpent > 0 ? aggregatedPurchaseValue / aggregatedSpent : 0;
-        const updatedCampaign = {
+        
+        // Create a new campaign object with aggregated metrics
+        return {
           ...campaign,
           spent: aggregatedSpent,
           impressions: aggregatedImpressions,
           clicks: aggregatedClicks,
           conversions: aggregatedConversions,
-          roas: calculatedRoas > 0 || campaign.roas === 0 || campaign.roas === undefined ? calculatedRoas : campaign.roas,
+          roas: calculatedRoas > 0 ? calculatedRoas : campaign.roas || 0,
           ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) * 100 : 0,
           cpc: aggregatedClicks > 0 ? aggregatedSpent / aggregatedClicks : 0,
           cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
+          has_data_in_range: insightsInRange > 0
         };
-        return updatedCampaign;
       }
       return campaign;
     });

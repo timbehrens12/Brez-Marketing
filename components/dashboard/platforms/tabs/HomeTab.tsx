@@ -751,9 +751,7 @@ export function HomeTab({
       return;
     }
     
-    // Simplified: always set loading true if we are about to fetch, 
-    // unless campaigns are already present and not forcing a refresh.
-    if (forceRefresh || campaigns.length === 0) {
+    if (forceRefresh || campaigns.length === 0) { // Keep campaigns.length here for initial load case
       setIsLoadingCampaigns(true);
     }
     
@@ -768,10 +766,15 @@ export function HomeTab({
         localToDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${localFromDate}&to=${localToDate}`;
         
-        // Removed the early return based on date checking.
-        // The calling useEffect should manage when to call this based on dateRange changes.
-        // The forceRefresh flag can be used if a true forced fetch is needed.
-        // lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate}; // Still update this for logging/debugging if needed elsewhere
+        if (!forceRefresh && 
+            lastFetchedCampaignDates.current.from === localFromDate && 
+            lastFetchedCampaignDates.current.to === localToDate) {
+          console.log('[HomeTab] Skipping campaign fetch as dates are unchanged and not forcing.');
+          // Only set loading to false if it was true
+          if (isLoadingCampaigns) setIsLoadingCampaigns(false);
+          return;
+        }
+        lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
       }
       
       console.log(`[HomeTab] Fetching Meta campaigns: ${url}`);

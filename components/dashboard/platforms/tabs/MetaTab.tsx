@@ -1976,13 +1976,13 @@ Try creating at least one active campaign in Meta Ads Manager.
             console.log(`[MetaTab] Starting campaign fetch (requestId: ${currentRequestId})`);
             
             // Capture current campaigns to restore if fetch fails
-            // const previousCampaignsSnapshot = [...campaigns]; // Not strictly needed if forceRefresh=true always gets fresh data
+            const previousCampaignsSnapshot = [...campaigns];
             
-            // Execute the fetch with the specific date range, ensuring forceRefresh is true
-            await fetchCampaigns(true); // MODIFIED: Ensure forceRefresh is true
+            // Execute the fetch with the specific date range
+            await fetchCampaigns(false);
             
             // Get metrics data only after campaigns are retrieved
-            if (isMounted.current) {
+      if (isMounted.current) {
               await fetchMetaData();
             }
           } catch (error) {
@@ -2032,10 +2032,10 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Cleanup function
     return () => {
       if (timeoutId) {
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
       }
     };
-  }, [dateRange, brandId /* campaigns was removed from deps to avoid loop with its own update */]);
+  }, [dateRange, brandId, campaigns]);
 
   // Add an effect to handle data refresh that maintains date ranges
 
