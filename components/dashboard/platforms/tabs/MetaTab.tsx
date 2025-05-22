@@ -2733,63 +2733,59 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Fetch Ad Spend data directly from the database
   const fetchAdSpendDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("Cannot fetch Ad Spend: Missing date range or brand ID")
-      return
+      console.log("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Cannot fetch: Missing date range or brand ID");
+      setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
+      return;
     }
     
-    setAdSpendData(prev => ({ ...prev, isLoading: true }))
+    setAdSpendData(prev => ({ ...prev, isLoading: true }));
     
     try {
-      // Construct URL params for current period
-      const params = new URLSearchParams()
-      params.append('brandId', brandId)
-      params.append('metric', 'adSpend')
-      
-      // Set date parameters - simple approach
-      const fromDate = dateRange.from
-      const toDate = dateRange.to
-      
-      params.append('from', fromDate.toISOString().split('T')[0])
-      params.append('to', toDate.toISOString().split('T')[0])
-      
-      // Log what we're doing
-      console.log(`Fetching Ad Spend for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
-      
-      // Calculate previous period date range using our simplified helper function
-      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
-      
-      // Fetch data for current period
-      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
-      
-      // Fetch data for previous period
-      const prevParams = new URLSearchParams()
-      prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'adSpend')
-      prevParams.append('from', prevFrom)
-      prevParams.append('to', prevTo)
-      const prevResponse = await fetch(`/api/metrics/meta/single?${prevParams.toString()}`)
-      
-      // Process responses
-      const data = await response.json()
-      const prevData = await prevResponse.json()
-      
-      if (response.ok && prevResponse.ok) {
+      const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
+      const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
+      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+
+      // Fetch current period data
+      const currentParams = new URLSearchParams({
+        brandId,
+        metric: 'adSpend',
+        from: fromDateStr,
+        to: toDateStr,
+      });
+      const currentResponse = await fetch(`/api/metrics/meta/single/adSpend?${currentParams.toString()}`);
+      const currentData = await currentResponse.json();
+
+      // Fetch previous period data
+      const previousParams = new URLSearchParams({
+        brandId,
+        metric: 'adSpend',
+        from: prevFrom,
+        to: prevTo,
+      });
+      const previousResponse = await fetch(`/api/metrics/meta/single/adSpend?${previousParams.toString()}`);
+      const previousData = await previousResponse.json();
+
+      console.log("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Current API:", currentData.value, "Previous API:", previousData.value);
+
+      if (currentResponse.ok && previousResponse.ok) {
         setAdSpendData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentData.value || 0,
+          previousValue: previousData.value || 0,
           isLoading: false,
-          lastUpdated: new Date()
-        })
-        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+          lastUpdated: new Date(),
+        });
       } else {
-        console.error("Error fetching Ad Spend data:", data.error || prevData.error)
-        setAdSpendData(prev => ({ ...prev, isLoading: false }))
+        console.error("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Error fetching data:", {
+          currentError: currentData.error,
+          previousError: previousData.error,
+        });
+        setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
       }
     } catch (error) {
-      console.error("Error in Ad Spend fetch:", error)
-      setAdSpendData(prev => ({ ...prev, isLoading: false }))
+      console.error("Error in Ad Spend fetch:", error);
+      setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
     }
-  }
+  };
   
   // Fetch ROAS data directly from the database
   const fetchRoasDirectly = async () => {

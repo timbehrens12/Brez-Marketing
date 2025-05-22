@@ -96,6 +96,9 @@ export function MetricCard({
   nullChangeText = "N/A",
   nullChangeTooltip = "No previous data to compare",
 }: MetricCardProps & { brandId?: string }) {
+
+  console.log("[MetricCard DEBUG] Props Received - Title:", title, "Value:", value, "PreviousValue:", previousValue, "HideChange:", hideChange, "Loading:", loading);
+
   // Use a more robust conversion with error catching
   const safeValue = useMemo(() => {
     try {
@@ -219,35 +222,43 @@ export function MetricCard({
   const calculatePercentChange = (): { value: number | null; isPositive: boolean; isZero: boolean; isNewActivity: boolean } => {
     try {
       const currentValue = Number(value);
+      const safePreviousValue = Number(previousValue); // Ensure previousValue is also treated as a number
+      
+      console.log("[MetricCard DEBUG] calculatePercentChange - CurrentValue:", currentValue, "SafePreviousValue:", safePreviousValue);
+
       if (isNaN(currentValue)) {
-        // Handle cases where current value is not a number
+        console.log("[MetricCard DEBUG] calculatePercentChange - Current value is NaN");
         return { value: null, isPositive: false, isZero: false, isNewActivity: false };
       }
       
-      if (previousValue === 0) {
+      if (safePreviousValue === 0) {
         if (currentValue === 0) {
-          // Change: Return isNewActivity: true when both values are 0, to show N/A
-          return { value: null, isPositive: false, isZero: false, isNewActivity: true }; // Both 0, show N/A
+          console.log("[MetricCard DEBUG] calculatePercentChange - Both current and previous are 0");
+          return { value: null, isPositive: false, isZero: false, isNewActivity: true }; 
         }
-        // Previous was 0, current is not. Consider this new activity or N/A.
+        console.log("[MetricCard DEBUG] calculatePercentChange - Previous is 0, current is not. New activity.");
         return { value: null, isPositive: currentValue > 0, isZero: false, isNewActivity: true }; 
       }
       
       // Standard calculation if previousValue is not 0
-      const change = ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
-      if (isNaN(change)) {
-        // Handle cases where change calculation results in NaN (e.g. previousValue is non-zero but somehow problematic)
+      const changeCalc = ((currentValue - safePreviousValue) / Math.abs(safePreviousValue)) * 100;
+      console.log("[MetricCard DEBUG] calculatePercentChange - Calculated Change:", changeCalc);
+
+      if (isNaN(changeCalc)) {
+        console.log("[MetricCard DEBUG] calculatePercentChange - Change calculation resulted in NaN");
         return { value: null, isPositive: false, isZero: false, isNewActivity: false };
       }
       
-      return { 
-        value: Math.abs(change),
-        isPositive: change > 0,
-        isZero: change === 0,
+      const result = {
+        value: Math.abs(changeCalc),
+        isPositive: changeCalc > 0,
+        isZero: changeCalc === 0,
         isNewActivity: false
       };
+      console.log("[MetricCard DEBUG] calculatePercentChange - Result:", result);
+      return result;
     } catch (error) {
-      console.error("Error calculating percentage change:", error);
+      console.error("[MetricCard DEBUG] calculatePercentChange - Error:", error);
       return { value: null, isPositive: false, isZero: false, isNewActivity: false }; // Return null on error
     }
   };
@@ -305,6 +316,11 @@ export function MetricCard({
   }
 
   try {
+    const percentChange = calculatePercentChange();
+    const displayChange = !hideChange && (percentChange.value !== null || percentChange.isNewActivity);
+    
+    console.log("[MetricCard DEBUG] Rendering - percentChange:", percentChange, "displayChange Decision:", displayChange, "hideChange Prop:", hideChange);
+
     return (
       <Card className={cn("bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]", className)}>
         <CardHeader className="p-4 pb-2">
@@ -362,7 +378,6 @@ export function MetricCard({
               {showPreviousPeriod && previousValue !== undefined && (
                 <div className="mt-1">
                   {(() => {
-                    const percentChange = calculatePercentChange();
                     const formattedPrevValue = formatPreviousValue();
                     
                     // Force to show N/A if previousValue is 0, regardless of current value
