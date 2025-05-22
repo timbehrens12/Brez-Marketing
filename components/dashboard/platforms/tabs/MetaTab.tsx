@@ -4167,50 +4167,23 @@ Try creating at least one active campaign in Meta Ads Manager.
 
   // Add a proper date comparison function to avoid infinite loops
   const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {
-  if (!date1 && !date2) return true;
-  if (!date1 || !date2) return false;
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate();
-};
+    if (!date1 && !date2) return true;
+    if (!date1 || !date2) return false;
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+  };
 
 // Calculate percentage change between current and previous values
 const calculatePercentChange = (current: number, previous: number): number | null => {
-  // Special case: if current has value but previous is zero, show +100% increase
-  if ((previous === 0 || Math.abs(previous) < 0.0001) && current > 0) {
-    return 100; // Show 100% increase when going from 0 to a positive number
-  }
-  
-  // If both are zero or very close to zero, show 0% change
-  if ((previous === 0 || Math.abs(previous) < 0.0001) && 
-      (current === 0 || Math.abs(current) < 0.0001)) {
+  if (previous === 0) {
+    // Return null when there's no previous data to compare against
+    return null; // This will display as "N/A" in the UI
+    }
+  if (current === previous) { // Handle cases where current and previous are the same
     return 0;
   }
-  
-  // If previous has value but current is zero, show -100% decrease
-  if (previous > 0 && (current === 0 || Math.abs(current) < 0.0001)) {
-    return -100;
-  }
-  
-  // Handle cases where current and previous are the same
-  if (Math.abs(current - previous) < 0.0001) {
-    return 0;
-  }
-  
-  // Calculate the percentage change with sign (positive for increase, negative for decrease)
-  const change = ((current - previous) / Math.abs(previous)) * 100;
-  
-  // For very small changes, return 0 rather than extremely small numbers
-  if (Math.abs(change) < 0.1) {
-    return 0;
-  }
-  
-  // Ensure we don't return NaN or Infinity
-  if (isNaN(change) || !isFinite(change)) {
-    return null;
-  }
-  
-  return change;
+  return ((current - previous) / Math.abs(previous)) * 100;
 };
 
   // Store previous date range for comparison
@@ -4350,21 +4323,21 @@ const calculatePercentChange = (current: number, previous: number): number | nul
         if (brandId) {
           console.log("[MetaTab] Forcing campaign refresh on mount");
           await fetchCampaigns(true);
-
+          
           // Also refresh all metrics directly
           console.log("[MetaTab] Refreshing all metrics on mount");
           await fetchAllMetricsDirectly();
-
+          
           console.log("[MetaTab] Mount refresh completed successfully");
         }
       } catch (error) {
         console.error("[MetaTab] Error during mount refresh:", error);
       }
     };*/
-
+    
     // Execute the refresh
     // refreshOnMount(); // Removed to rely on other effects for data loading
-
+    
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
   
@@ -4480,10 +4453,10 @@ const calculatePercentChange = (current: number, previous: number): number | nul
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
-                    <div className="flex items-center gap-1.5">
-                      <DollarSign className="h-4 w-4 text-green-400" />
-                      <span className="ml-0.5">Ad Spend</span>
-                    </div>
+              <div className="flex items-center gap-1.5">
+                <DollarSign className="h-4 w-4 text-green-400" />
+                <span className="ml-0.5">Ad Spend</span>
+              </div>
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -4589,10 +4562,10 @@ const calculatePercentChange = (current: number, previous: number): number | nul
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
-                    <div className="flex items-center gap-1.5">
-                      <TrendingUp className="h-4 w-4 text-gray-400" />
-                      <span className="ml-0.5">ROAS</span>
-                    </div>
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4 text-gray-400" />
+                <span className="ml-0.5">ROAS</span>
+              </div>
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -4698,10 +4671,10 @@ const calculatePercentChange = (current: number, previous: number): number | nul
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
-                    <div className="flex items-center gap-1.5">
-                      <Eye className="h-4 w-4 text-amber-400" />
-                      <span className="ml-0.5">Impressions</span>
-                    </div>
+              <div className="flex items-center gap-1.5">
+                <Eye className="h-4 w-4 text-amber-400" />
+                <span className="ml-0.5">Impressions</span>
+              </div>
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -4815,10 +4788,10 @@ const calculatePercentChange = (current: number, previous: number): number | nul
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
-                    <div className="flex items-center gap-1.5">
-                      <MousePointer className="h-4 w-4 text-indigo-400" />
-                      <span className="ml-0.5">Clicks</span>
-                    </div>
+              <div className="flex items-center gap-1.5">
+                <MousePointer className="h-4 w-4 text-indigo-400" />
+                <span className="ml-0.5">Clicks</span>
+              </div>
                     <TooltipProvider delayDuration={300}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -5080,7 +5053,7 @@ const calculatePercentChange = (current: number, previous: number): number | nul
             onSync={syncMetaInsights}
           />
         ) : null}
-      </div>
+        </div>
               </>
             )
           } catch (error) {
