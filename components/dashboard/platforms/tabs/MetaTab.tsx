@@ -4176,9 +4176,20 @@ Try creating at least one active campaign in Meta Ads Manager.
 
 // Calculate percentage change between current and previous values
 const calculatePercentChange = (current: number, previous: number): number | null => {
-  // If previous is zero or very close to zero, return null to avoid division by zero issues
-  if (previous === 0 || Math.abs(previous) < 0.0001) {
-    return null; // This will display as "N/A" in the UI
+  // Special case: if current has value but previous is zero, show +100% increase
+  if ((previous === 0 || Math.abs(previous) < 0.0001) && current > 0) {
+    return 100; // Show 100% increase when going from 0 to a positive number
+  }
+  
+  // If both are zero or very close to zero, show 0% change
+  if ((previous === 0 || Math.abs(previous) < 0.0001) && 
+      (current === 0 || Math.abs(current) < 0.0001)) {
+    return 0;
+  }
+  
+  // If previous has value but current is zero, show -100% decrease
+  if (previous > 0 && (current === 0 || Math.abs(current) < 0.0001)) {
+    return -100;
   }
   
   // Handle cases where current and previous are the same
