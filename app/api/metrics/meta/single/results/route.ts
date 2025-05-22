@@ -12,9 +12,13 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    
+    // Check if this is a yesterday preset
+    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`META RESULTS API: Fetching for brand ${brandId} from ${from} to ${to}`)
+    console.log(`META RESULTS API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -50,44 +54,68 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
+    // Special handling for yesterday preset to ensure exact date
+    let fromDate = from
+    let toDate = to
+    
+    if (isYesterdayPreset) {
+      // Use exactly yesterday's date
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate // Force same day
+      console.log(`META RESULTS API: Using exact yesterday date ${fromDate}`)
+    }
+    
     // Query meta_ad_insights including the results column and actions array for fallback
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
       .select('date, results, actions')
       .eq('connection_id', connection.id)
-      .gte('date', from)
-      .lte('date', to)
+      .gte('date', fromDate)
+      .lte('date', toDate)
     
     if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
       return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
     }
     
+    // Filter to ensure exact date match for yesterday
+    let filteredInsights = insights || []
+    
+    if (isYesterdayPreset) {
+      filteredInsights = filteredInsights.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
+      })
+      console.log(`META RESULTS API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
+    }
+    
     // If no data, return zeros
-    if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
+    if (!filteredInsights || filteredInsights.length === 0) {
+      console.log(`No data found for period ${fromDate} to ${toDate}`)
       return NextResponse.json({ 
         value: 0,
         _meta: {
-          from,
-          to,
+          from: fromDate,
+          to: toDate,
           records: 0
         }
       })
     }
     
     // Try to use the stored results first
-    let hasStoredResults = insights.some(insight => insight.results > 0)
+    let hasStoredResults = filteredInsights.some(insight => insight.results > 0)
     let totalResults = 0
     
     if (hasStoredResults) {
       // Sum up the stored results values
-      totalResults = insights.reduce((sum, insight) => sum + (insight.results || 0), 0)
+      totalResults = filteredInsights.reduce((sum, insight) => sum + (insight.results || 0), 0)
     } else {
       // Fallback: Calculate "results" from the actions array
       // In Meta, "results" typically refers to the primary objective of the campaign
       // Common action_types for results include: 'purchase', 'lead', 'offsite_conversion', etc.
-      insights.forEach(insight => {
+      filteredInsights.forEach(insight => {
         if (insight.actions && Array.isArray(insight.actions)) {
           insight.actions.forEach((action: any) => {
             if (
@@ -110,15 +138,15 @@ export async function GET(request: NextRequest) {
     const result = {
       value: parseFloat(totalResults.toFixed(2)),
       _meta: {
-        from,
-        to,
-        records: insights.length,
+        from: fromDate,
+        to: toDate,
+        records: filteredInsights.length,
         source: hasStoredResults ? 'database' : 'calculated',
-        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        dates: [...new Set(filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0]))]
       }
     }
     
-    console.log(`META RESULTS API: Returning results = ${result.value}, based on ${insights.length} records (source: ${hasStoredResults ? 'database' : 'calculated'})`)
+    console.log(`META RESULTS API: Returning results = ${result.value}, based on ${filteredInsights.length} records (source: ${hasStoredResults ? 'database' : 'calculated'})`)
     
     return NextResponse.json(result)
   } catch (error) {

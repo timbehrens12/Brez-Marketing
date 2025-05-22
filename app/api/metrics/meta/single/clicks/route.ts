@@ -12,9 +12,13 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    
+    // Check if this is a yesterday preset
+    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`META CLICKS API: Fetching for brand ${brandId} from ${from} to ${to}`)
+    console.log(`META CLICKS API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -74,9 +78,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
-    // Parse date range
-    const fromDate = from
-    const toDate = to
+    // Special handling for yesterday preset to ensure exact date
+    let fromDate = from
+    let toDate = to
+    
+    if (isYesterdayPreset) {
+      // Use exactly yesterday's date
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate // Force same day
+      console.log(`META CLICKS API: Using exact yesterday date ${fromDate}`)
+    }
     
     // Query meta_ad_insights for this time period
     const { data: insights, error } = await supabase
@@ -116,8 +129,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
     }
     
+    // Filter to ensure exact date match for yesterday
+    let filteredInsights = insights || []
+    
+    if (isYesterdayPreset) {
+      filteredInsights = filteredInsights.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
+      })
+      console.log(`META CLICKS API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
+    }
+    
     // If no data, return zeros
-    if (!insights || insights.length === 0) {
+    if (!filteredInsights || filteredInsights.length === 0) {
       console.log(`No data found for period ${fromDate} to ${toDate}`)
       return NextResponse.json({ 
         value: 0,
@@ -128,12 +152,6 @@ export async function GET(request: NextRequest) {
         }
       })
     }
-    
-    // Filter out any records outside the requested date range
-    const filteredInsights = insights.filter(insight => {
-      const insightDate = new Date(insight.date).toISOString().split('T')[0]
-      return insightDate >= fromDate && insightDate <= toDate
-    })
     
     // Calculate total clicks
     const totalClicks = filteredInsights.reduce((sum, insight) => {

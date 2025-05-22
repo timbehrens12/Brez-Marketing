@@ -12,9 +12,13 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    
+    // Check if this is a yesterday preset
+    const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`PURCHASE CONVERSION VALUE API: Fetching for brand ${brandId} from ${from} to ${to}`)
+    console.log(`PURCHASE CONVERSION VALUE API: Fetching for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -50,27 +54,51 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ value: 0 })
     }
     
+    // Special handling for yesterday preset to ensure exact date
+    let fromDate = from
+    let toDate = to
+    
+    if (isYesterdayPreset) {
+      // Use exactly yesterday's date
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate // Force same day
+      console.log(`PURCHASE CONVERSION VALUE API: Using exact yesterday date ${fromDate}`)
+    }
+    
     // Query meta_ad_insights for purchase_conversion_value and action_values data as fallback
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
       .select('date, purchase_conversion_value, action_values')
       .eq('connection_id', connection.id)
-      .gte('date', from)
-      .lte('date', to)
+      .gte('date', fromDate)
+      .lte('date', toDate)
     
-    if (error) {
+        if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
       return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
     }
+
+    // Filter to ensure exact date match for yesterday
+    let filteredInsights = insights || []
     
+    if (isYesterdayPreset) {
+      filteredInsights = filteredInsights.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
+      })
+      console.log(`PURCHASE CONVERSION VALUE API: Filtered to ${filteredInsights.length} records for ${fromDate}`)
+    }
+
     // If no data, return zeros
-    if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
+    if (!filteredInsights || filteredInsights.length === 0) {
+      console.log(`No data found for period ${fromDate} to ${toDate}`)
       return NextResponse.json({ 
         value: 0,
         _meta: {
-          from,
-          to,
+          from: fromDate,
+          to: toDate,
           records: 0
         }
       })
@@ -119,8 +147,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         value: 0,
         _meta: {
-          from,
-          to,
+          from: fromDate,
+          to: toDate,
           records: 0,
           hasValidData: false
         }
@@ -138,8 +166,8 @@ export async function GET(request: NextRequest) {
     const result = {
       value: parseFloat(averageValue.toFixed(2)),
       _meta: {
-        from,
-        to,
+        from: fromDate,
+        to: toDate,
         records: recordCount,
         totalValue: parseFloat(totalValue.toFixed(2)),
         source: dataSource,
