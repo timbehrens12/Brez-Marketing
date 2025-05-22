@@ -4298,27 +4298,27 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
     
     // Fetch campaigns and metrics when component is mounted/visited
-    const refreshOnMount = async () => {
+    /*const refreshOnMount = async () => {
       try {
         // Force a refresh of campaign data
         if (brandId) {
           console.log("[MetaTab] Forcing campaign refresh on mount");
           await fetchCampaigns(true);
-          
+
           // Also refresh all metrics directly
           console.log("[MetaTab] Refreshing all metrics on mount");
           await fetchAllMetricsDirectly();
-          
+
           console.log("[MetaTab] Mount refresh completed successfully");
         }
       } catch (error) {
         console.error("[MetaTab] Error during mount refresh:", error);
       }
-    };
-    
+    };*/
+
     // Execute the refresh
-    refreshOnMount();
-    
+    // refreshOnMount(); // Removed to rely on other effects for data loading
+
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
   
