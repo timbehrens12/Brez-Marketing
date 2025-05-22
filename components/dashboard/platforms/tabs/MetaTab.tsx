@@ -172,6 +172,7 @@ function releaseMetaFetchLock(fetchId: number | string): void {
 type MetricDataState = {
   value: number;
   previousValue: number;
+  growthPercentage: number | null;
   isLoading: boolean;
   lastUpdated: Date | null;
 }
@@ -2329,96 +2330,108 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, []);
 
   // Update the state types to include previous period data
-  const [adSpendData, setAdSpendData] = useState({
+  const [adSpendData, setAdSpendData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
-  const [roasData, setRoasData] = useState({
+  const [roasData, setRoasData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
-  const [impressionsData, setImpressionsData] = useState({
+  const [impressionsData, setImpressionsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
-  const [clicksData, setClicksData] = useState({
+  const [clicksData, setClicksData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for the new Purchase Conversion Value widget
-  const [purchaseValueData, setPurchaseValueData] = useState({
+  const [purchaseValueData, setPurchaseValueData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for the new Results widget
-  const [resultsData, setResultsData] = useState({
+  const [resultsData, setResultsData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for Cost Per Result widget
-  const [costPerResultData, setCostPerResultData] = useState({
+  const [costPerResultData, setCostPerResultData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for Cost Per Click widget
-  const [costPerClickData, setCostPerClickData] = useState({
+  const [costPerClickData, setCostPerClickData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for CTR (Click-Through Rate) widget
-  const [ctrData, setCtrData] = useState({
+  const [ctrData, setCtrData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
-    isLoading: true,
-    lastUpdated: null as Date | null
-  })
+    growthPercentage: null,
+    isLoading: false,
+    lastUpdated: null
+  });
   
   // Add state for reach data
   const [reachData, setReachData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
+    growthPercentage: null,
     isLoading: true, // Changed from false
     lastUpdated: null
-  })
+  });
   
   const [linkClicksData, setLinkClicksData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
+    growthPercentage: null,
     isLoading: true, // Changed from false
     lastUpdated: null
-  })
+  });
   
   // Add budgetData state after linkClicksData
   const [budgetData, setBudgetData] = useState<MetricDataState>({
     value: 0,
     previousValue: 0,
+    growthPercentage: null,
     isLoading: true, // Changed from false
     lastUpdated: null
-  })
+  });
   
   // Add this state near other state declarations
   const [campaignReachLoaded, setCampaignReachLoaded] = useState(false);
@@ -2730,6 +2743,17 @@ Try creating at least one active campaign in Meta Ads Manager.
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
+  // Add the calculateGrowthPercentage function right before the fetchAdSpendDirectly function
+  const calculateGrowthPercentage = (current: number, previous: number): number | null => {
+    if (previous === 0) {
+      return current > 0 ? 100 : 0;
+    }
+    if (isNaN(current) || isNaN(previous)) {
+      return null;
+    }
+    return ((current - previous) / Math.abs(previous)) * 100;
+  };
+
   // Fetch Ad Spend data directly from the database
   const fetchAdSpendDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
@@ -2774,13 +2798,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setAdSpendData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Ad Spend data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Ad Spend data:", data.error || prevData.error)
         setAdSpendData(prev => ({ ...prev, isLoading: false }))
@@ -2835,13 +2864,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setRoasData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`ROAS data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching ROAS data:", data.error || prevData.error)
         setRoasData(prev => ({ ...prev, isLoading: false }))
@@ -2896,13 +2930,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setImpressionsData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Impressions data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Impressions data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Impressions data:", data.error || prevData.error)
         setImpressionsData(prev => ({ ...prev, isLoading: false }))
@@ -2958,13 +2997,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setClicksData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Clicks data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Clicks data:", data.error || prevData.error)
         setClicksData(prev => ({ ...prev, isLoading: false }))
@@ -3019,13 +3063,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setPurchaseValueData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Purchase Conversion Value data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Purchase Conversion Value data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Purchase Conversion Value data:", data.error || prevData.error)
         setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
@@ -3080,13 +3129,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setResultsData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Results data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Results data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Results data:", data.error || prevData.error)
         setResultsData(prev => ({ ...prev, isLoading: false }))
@@ -3141,13 +3195,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setCostPerResultData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Cost Per Result data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Cost Per Result data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Cost Per Result data:", data.error || prevData.error)
         setCostPerResultData(prev => ({ ...prev, isLoading: false }))
@@ -3202,13 +3261,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setCostPerClickData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Cost Per Click data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Cost Per Click data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Cost Per Click data:", data.error || prevData.error)
         setCostPerClickData(prev => ({ ...prev, isLoading: false }))
@@ -3263,13 +3327,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setCtrData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`CTR data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`CTR data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching CTR data:", data.error || prevData.error)
         setCtrData(prev => ({ ...prev, isLoading: false }))
@@ -3331,8 +3400,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     setReachData({
           value: currentData.value || 0,
           previousValue: prevData.value || 0,
-      isLoading: false, 
-      lastUpdated: new Date()
+          growthPercentage: calculateGrowthPercentage(currentData.value || 0, prevData.value || 0),
+          isLoading: false, 
+          lastUpdated: new Date()
         })
         console.log(`Reach data fetched directly: ${currentData.value}, Previous: ${prevData.value}`)
       } else {
@@ -3389,13 +3459,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setLinkClicksData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Link Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Link Clicks data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Link Clicks data:", data.error || prevData.error)
         setLinkClicksData(prev => ({ ...prev, isLoading: false }))
@@ -3450,13 +3525,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const growthPercentage = calculateGrowthPercentage(currentValue, previousValue);
+        
         setBudgetData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
+          growthPercentage: growthPercentage,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Budget data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Budget data fetched directly: ${currentValue}, Previous: ${previousValue}, Growth: ${growthPercentage}%`)
       } else {
         console.error("Error fetching Budget data:", data.error || prevData.error)
         setBudgetData(prev => ({ ...prev, isLoading: false }))
@@ -4439,7 +4519,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={adSpendData.value}
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={adSpendData.growthPercentage}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4460,7 +4541,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={roasData.value}
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={roasData.growthPercentage}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
@@ -4481,7 +4563,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={impressionsData.value}
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={impressionsData.growthPercentage}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -4510,7 +4593,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={clicksData.value}
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={clicksData.growthPercentage}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
@@ -4529,7 +4613,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={purchaseValueData.value}
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={purchaseValueData.growthPercentage}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4550,7 +4635,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={resultsData.value}
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={resultsData.growthPercentage}
             valueFormat="number"
             hideGraph={true}
             previousValue={resultsData.previousValue}
@@ -4569,7 +4655,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerResultData.value}
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={costPerResultData.growthPercentage}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4590,7 +4677,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={costPerClickData.value}
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={costPerClickData.growthPercentage}
             valueFormat="currency"
             prefix="$"
             decimals={2}
@@ -4613,7 +4701,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={ctrData.value}
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={ctrData.growthPercentage}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
@@ -4634,7 +4723,8 @@ Try creating at least one active campaign in Meta Ads Manager.
             value={linkClicksData.value}
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={true}
+            hideChange={false}
+            change={linkClicksData.growthPercentage}
             valueFormat="number"
             hideGraph={true}
             previousValue={linkClicksData.previousValue}
