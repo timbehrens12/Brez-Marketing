@@ -2733,59 +2733,63 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Fetch Ad Spend data directly from the database
   const fetchAdSpendDirectly = async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
-      console.log("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Cannot fetch: Missing date range or brand ID");
-      setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
-      return;
+      console.log("Cannot fetch Ad Spend: Missing date range or brand ID")
+      return
     }
     
-    setAdSpendData(prev => ({ ...prev, isLoading: true }));
+    setAdSpendData(prev => ({ ...prev, isLoading: true }))
     
     try {
-      const fromDateStr = format(dateRange.from, 'yyyy-MM-dd');
-      const toDateStr = format(dateRange.to, 'yyyy-MM-dd');
-      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
-
-      // Fetch current period data
-      const currentParams = new URLSearchParams({
-        brandId,
-        metric: 'adSpend',
-        from: fromDateStr,
-        to: toDateStr,
-      });
-      const currentResponse = await fetch(`/api/metrics/meta/single/adSpend?${currentParams.toString()}`);
-      const currentData = await currentResponse.json();
-
-      // Fetch previous period data
-      const previousParams = new URLSearchParams({
-        brandId,
-        metric: 'adSpend',
-        from: prevFrom,
-        to: prevTo,
-      });
-      const previousResponse = await fetch(`/api/metrics/meta/single/adSpend?${previousParams.toString()}`);
-      const previousData = await previousResponse.json();
-
-      console.log("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Current API:", currentData.value, "Previous API:", previousData.value);
-
-      if (currentResponse.ok && previousResponse.ok) {
+      // Construct URL params for current period
+      const params = new URLSearchParams()
+      params.append('brandId', brandId)
+      params.append('metric', 'adSpend')
+      
+      // Set date parameters - simple approach
+      const fromDate = dateRange.from
+      const toDate = dateRange.to
+      
+      params.append('from', fromDate.toISOString().split('T')[0])
+      params.append('to', toDate.toISOString().split('T')[0])
+      
+      // Log what we're doing
+      console.log(`Fetching Ad Spend for date range: ${fromDate.toISOString().split('T')[0]} to ${toDate.toISOString().split('T')[0]}`)
+      
+      // Calculate previous period date range using our simplified helper function
+      const { prevFrom, prevTo } = getPreviousPeriodDates(fromDate, toDate)
+      
+      // Fetch data for current period
+      const response = await fetch(`/api/metrics/meta/single?${params.toString()}`)
+      
+      // Fetch data for previous period
+      const prevParams = new URLSearchParams()
+      prevParams.append('brandId', brandId)
+      prevParams.append('metric', 'adSpend')
+      prevParams.append('from', prevFrom)
+      prevParams.append('to', prevTo)
+      const prevResponse = await fetch(`/api/metrics/meta/single?${prevParams.toString()}`)
+      
+      // Process responses
+      const data = await response.json()
+      const prevData = await prevResponse.json()
+      
+      if (response.ok && prevResponse.ok) {
         setAdSpendData({
-          value: currentData.value || 0,
-          previousValue: previousData.value || 0,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
-          lastUpdated: new Date(),
-        });
+          lastUpdated: new Date()
+        })
+        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
-        console.error("[MetaTab DATA_FETCH_DEBUG] Ad Spend - Error fetching data:", {
-          currentError: currentData.error,
-          previousError: previousData.error,
-        });
-        setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
+        console.error("Error fetching Ad Spend data:", data.error || prevData.error)
+        setAdSpendData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
-      console.error("Error in Ad Spend fetch:", error);
-      setAdSpendData(prev => ({ ...prev, isLoading: false, value: 0, previousValue: 0 }));
+      console.error("Error in Ad Spend fetch:", error)
+      setAdSpendData(prev => ({ ...prev, isLoading: false }))
     }
-  };
+  }
   
   // Fetch ROAS data directly from the database
   const fetchRoasDirectly = async () => {
@@ -4433,14 +4437,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
-            previousValue={adSpendData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
+            previousValue={adSpendData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4455,14 +4458,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={roasData.value}
-            previousValue={roasData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
+            previousValue={roasData.previousValue}
             previousValueFormat="number"
             previousValueSuffix="x"
             showPreviousPeriod={true}
@@ -4477,13 +4479,12 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={impressionsData.value}
-            previousValue={impressionsData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={impressionsData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4507,13 +4508,12 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={clicksData.value}
-            previousValue={clicksData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={clicksData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4527,14 +4527,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={purchaseValueData.value}
-            previousValue={purchaseValueData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={purchaseValueData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
+            previousValue={purchaseValueData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4549,13 +4548,12 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={resultsData.value}
-            previousValue={resultsData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={resultsData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={resultsData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
@@ -4569,14 +4567,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerResultData.value}
-            previousValue={costPerResultData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={costPerResultData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
+            previousValue={costPerResultData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             showPreviousPeriod={true}
@@ -4591,15 +4588,14 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerClickData.value}
-            previousValue={costPerClickData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={costPerClickData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="currency"
             prefix="$"
             decimals={2}
             hideGraph={true}
+            previousValue={costPerClickData.previousValue}
             previousValueFormat="currency"
             previousValuePrefix="$"
             previousValueDecimals={2}
@@ -4615,14 +4611,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={ctrData.value}
-            previousValue={ctrData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={ctrData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
+            previousValue={ctrData.previousValue}
             previousValueFormat="percentage"
             previousValueDecimals={2}
             showPreviousPeriod={true}
@@ -4637,13 +4632,12 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={linkClicksData.value}
-            previousValue={linkClicksData.previousValue} // Ensure previousValue is passed
             data={[]}
             loading={linkClicksData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            // Remove manually calculated 'change' prop
+            hideChange={true}
             valueFormat="number"
             hideGraph={true}
+            previousValue={linkClicksData.previousValue}
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}

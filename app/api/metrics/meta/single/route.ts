@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     const metric = url.searchParams.get('metric') || 'adSpend'
     const preset = url.searchParams.get('preset')
     
+    // Define a type for our insight items
+    type InsightItem = {
+      date: string | Date;
+      [key: string]: any; // Allows for dynamic metric key
+    };
+    
     // Check if this is a yesterday preset
     const isYesterdayPreset = preset === 'yesterday'
     
@@ -72,10 +78,11 @@ export async function GET(request: NextRequest) {
     // This is a much more focused query than the full metrics endpoint
     const { data: insights, error } = await supabase
       .from('meta_ad_insights')
-      .select('date, spend')
+      .select(`date, ${metric}`)
       .eq('connection_id', connection.id)
       .gte('date', fromDate)
       .lte('date', toDate)
+      .returns<InsightItem[]>() // Add return type for Supabase query
     
     if (error) {
       console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
@@ -83,10 +90,10 @@ export async function GET(request: NextRequest) {
     }
     
     // Filter to ensure exact date match for yesterday
-    let filteredInsights = insights || []
+    let filteredInsights: InsightItem[] = insights || []
     
     if (isYesterdayPreset) {
-      filteredInsights = filteredInsights.filter(item => {
+      filteredInsights = filteredInsights.filter((item: InsightItem) => {
         const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
@@ -95,7 +102,7 @@ export async function GET(request: NextRequest) {
     
     // If no data, return zeros
     if (!filteredInsights || filteredInsights.length === 0) {
-      console.log(`No data found for period ${fromDate} to ${toDate}`)
+      console.log(`No data found for period ${fromDate} to ${toDate} for metric ${metric}`)
       return NextResponse.json({ 
         value: 0, 
         growth: 0,
@@ -107,20 +114,21 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Calculate the sum for ad spend
-    const totalSpend = filteredInsights.reduce((sum, item) => {
-      const spend = typeof item.spend === 'string' ? parseFloat(item.spend) : item.spend
-      return sum + (isNaN(spend) ? 0 : spend)
+    // Calculate the sum for the requested metric
+    const totalValue = filteredInsights.reduce((sum, item: InsightItem) => {
+      const valueString = item[metric] as string | number;
+      const value = typeof valueString === 'string' ? parseFloat(valueString) : valueString;
+      return sum + (isNaN(value) ? 0 : value)
     }, 0)
     
     // Return the results without growth data
     const result = {
-      value: parseFloat(totalSpend.toFixed(2)),
+      value: parseFloat(totalValue.toFixed(2)),
       _meta: {
         from: fromDate,
         to: toDate,
         records: filteredInsights.length,
-        dates: filteredInsights.map(item => new Date(item.date).toISOString().split('T')[0])
+        dates: filteredInsights.map((item: InsightItem) => new Date(item.date).toISOString().split('T')[0])
       }
     }
     
