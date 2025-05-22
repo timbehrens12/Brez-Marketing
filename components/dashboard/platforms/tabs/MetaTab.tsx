@@ -3580,12 +3580,12 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
     
     // Set up a new 5-minute refresh interval
-    const timer = setInterval(() => {
+    /*const timer = setInterval(() => {
       console.log("Auto-refreshing metrics (5-minute interval)")
       refreshAllMetricsDirectly()
     }, 5 * 60 * 1000) // 5 minutes in milliseconds
     
-    setRefreshTimer(timer)
+    setRefreshTimer(timer)*/
     
     // Clean up on unmount
     return () => {
