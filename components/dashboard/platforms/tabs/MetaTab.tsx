@@ -12,7 +12,7 @@ import {
   CalendarIcon, Check, ChevronsUpDown, Clock, Download, 
   FacebookIcon, MoreHorizontal, PenTool, SettingsIcon, 
   Terminal, User2, Wrench, CalendarRange, Percent, Info, 
-  HelpCircle
+  HelpCircle, TrendingDown, Minus
 } from "lucide-react"
 import classNames from "classnames"
 import { format } from "date-fns"
@@ -174,6 +174,7 @@ type MetricDataState = {
   previousValue: number;
   isLoading: boolean;
   lastUpdated: Date | null;
+  percentChange?: number | null;
 }
 
 // Add these constants near the top of the file, after the imports
@@ -2333,7 +2334,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     value: 0,
     previousValue: 0,
     isLoading: true,
-    lastUpdated: null as Date | null
+    lastUpdated: null as Date | null,
+    percentChange: null as number | null
   })
   
   const [roasData, setRoasData] = useState({
@@ -2774,13 +2776,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        const currentValue = data.value || 0;
+        const previousValue = prevData.value || 0;
+        const percentChange = calculatePercentChange(currentValue, previousValue);
+        
         setAdSpendData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
           isLoading: false,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          percentChange: percentChange
         })
-        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}, Change: ${percentChange}%`)
       } else {
         console.error("Error fetching Ad Spend data:", data.error || prevData.error)
         setAdSpendData(prev => ({ ...prev, isLoading: false }))
@@ -4169,14 +4176,30 @@ Try creating at least one active campaign in Meta Ads Manager.
 
 // Calculate percentage change between current and previous values
 const calculatePercentChange = (current: number, previous: number): number | null => {
-  if (previous === 0) {
-    // Return null when there's no previous data to compare against
+  // If previous is zero or very close to zero, return null to avoid division by zero issues
+  if (previous === 0 || Math.abs(previous) < 0.0001) {
     return null; // This will display as "N/A" in the UI
   }
-  if (current === previous) { // Handle cases where current and previous are the same
+  
+  // Handle cases where current and previous are the same
+  if (Math.abs(current - previous) < 0.0001) {
     return 0;
   }
-  return ((current - previous) / Math.abs(previous)) * 100;
+  
+  // Calculate the percentage change with sign (positive for increase, negative for decrease)
+  const change = ((current - previous) / Math.abs(previous)) * 100;
+  
+  // For very small changes, return 0 rather than extremely small numbers
+  if (Math.abs(change) < 0.1) {
+    return 0;
+  }
+  
+  // Ensure we don't return NaN or Infinity
+  if (isNaN(change) || !isFinite(change)) {
+    return null;
+  }
+  
+  return change;
 };
 
   // Store previous date range for comparison
@@ -4441,75 +4464,332 @@ const calculatePercentChange = (current: number, previous: number): number | nul
         
         {/* Direct DB connection widgets with grid layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-green-400" />
-                <span className="ml-0.5">Ad Spend</span>
+          <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+                    <div className="flex items-center gap-1.5">
+                      <DollarSign className="h-4 w-4 text-green-400" />
+                      <span className="ml-0.5">Ad Spend</span>
+                    </div>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex cursor-help ml-1.5">
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-300 transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="center"
+                          className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px] p-2 rounded-md shadow-md z-50"
+                        >
+                          <p>Total amount spent on Meta ads</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
+                </div>
+                {(adSpendData.isLoading || isManuallyRefreshing) && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
               </div>
-            }
-            value={adSpendData.value}
-            data={[]}
-            loading={adSpendData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            valueFormat="currency"
-            prefix="$"
-            hideGraph={true}
-            previousValue={adSpendData.previousValue}
-            previousValueFormat="currency"
-            previousValuePrefix="$"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-            change={calculatePercentChange(adSpendData.value, adSpendData.previousValue)}
-            nullChangeText="N/A"
-            nullChangeTooltip="No data for previous period"
-          />
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              {(adSpendData.isLoading || isManuallyRefreshing) ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center h-8">
+                    <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="font-bold text-xl md:text-3xl text-white">
+                    ${adSpendData.value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </div>
+                  
+                  <div className="mt-1">
+                    {(() => {
+                      const percentChange = calculatePercentChange(adSpendData.value, adSpendData.previousValue);
+                      const isNA = percentChange === null;
+                      const isZero = percentChange === 0;
+                      const isPositive = percentChange !== null && percentChange > 0;
+                      
+                      return (
+                        <div className="flex items-center">
+                          <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                            isNA
+                              ? "text-blue-500 bg-blue-500/10" 
+                              : isZero 
+                                ? "text-gray-500 bg-gray-500/10" 
+                                : isPositive 
+                                  ? "text-green-500 bg-green-500/10" 
+                                  : "text-red-500 bg-red-500/10"
+                          }`}>
+                            <div className="flex items-center">
+                              {isNA ? (
+                                <span className="mr-1">ⓘ</span>
+                              ) : isZero ? (
+                                <Minus className="w-3 h-3 mr-1" />
+                              ) : isPositive ? (
+                                <TrendingUp className="w-3 h-3 mr-1" />
+                              ) : (
+                                <TrendingDown className="w-3 h-3 mr-1" />
+                              )}
+                              <span>
+                                {isNA
+                                  ? "N/A"
+                                  : isZero 
+                                    ? '0%'
+                                    : `${Math.abs(percentChange || 0).toFixed(1)}%`}
+                              </span>
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help ml-1">
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  align="center"
+                                  className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                >
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{getPreviousPeriodLabel()}</p>
+                                    <p className="text-gray-300">Amount: ${adSpendData.previousValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-gray-400" />
-                <span className="ml-0.5">ROAS</span>
+          <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+                    <div className="flex items-center gap-1.5">
+                      <TrendingUp className="h-4 w-4 text-gray-400" />
+                      <span className="ml-0.5">ROAS</span>
+                    </div>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex cursor-help ml-1.5">
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-300 transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="center"
+                          className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px] p-2 rounded-md shadow-md z-50"
+                        >
+                          <p>Return on Ad Spend (Revenue ÷ Ad Spend)</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
+                </div>
+                {(roasData.isLoading || isManuallyRefreshing) && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
               </div>
-            }
-            value={roasData.value}
-            data={[]}
-            loading={roasData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            valueFormat="number"
-            suffix="x"
-            hideGraph={true}
-            previousValue={roasData.previousValue}
-            previousValueFormat="number"
-            previousValueSuffix="x"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-            change={calculatePercentChange(roasData.value, roasData.previousValue)}
-            nullChangeText="N/A"
-            nullChangeTooltip="No data for previous period"
-          />
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              {(roasData.isLoading || isManuallyRefreshing) ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center h-8">
+                    <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="font-bold text-xl md:text-3xl text-white">
+                    {roasData.value.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1})}x
+                  </div>
+                  
+                  <div className="mt-1">
+                    {(() => {
+                      const percentChange = calculatePercentChange(roasData.value, roasData.previousValue);
+                      const isNA = percentChange === null;
+                      const isZero = percentChange === 0;
+                      const isPositive = percentChange !== null && percentChange > 0;
+                      
+                      return (
+                        <div className="flex items-center">
+                          <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                            isNA
+                              ? "text-blue-500 bg-blue-500/10" 
+                              : isZero 
+                                ? "text-gray-500 bg-gray-500/10" 
+                                : isPositive 
+                                  ? "text-green-500 bg-green-500/10" 
+                                  : "text-red-500 bg-red-500/10"
+                          }`}>
+                            <div className="flex items-center">
+                              {isNA ? (
+                                <span className="mr-1">ⓘ</span>
+                              ) : isZero ? (
+                                <Minus className="w-3 h-3 mr-1" />
+                              ) : isPositive ? (
+                                <TrendingUp className="w-3 h-3 mr-1" />
+                              ) : (
+                                <TrendingDown className="w-3 h-3 mr-1" />
+                              )}
+                              <span>
+                                {isNA
+                                  ? "N/A"
+                                  : isZero 
+                                    ? '0%'
+                                    : `${Math.abs(percentChange || 0).toFixed(1)}%`}
+                              </span>
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help ml-1">
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  align="center"
+                                  className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                >
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{getPreviousPeriodLabel()}</p>
+                                    <p className="text-gray-300">ROAS: {roasData.previousValue.toLocaleString('en-US', {minimumFractionDigits: 1, maximumFractionDigits: 1})}x</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <Eye className="h-4 w-4 text-amber-400" />
-                <span className="ml-0.5">Impressions</span>
+          <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="h-4 w-4 text-amber-400" />
+                      <span className="ml-0.5">Impressions</span>
+                    </div>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex cursor-help ml-1.5">
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-300 transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="center"
+                          className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px] p-2 rounded-md shadow-md z-50"
+                        >
+                          <p>Number of times your ads were displayed</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
+                </div>
+                {(impressionsData.isLoading || isManuallyRefreshing) && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
               </div>
-            }
-            value={impressionsData.value}
-            data={[]}
-            loading={impressionsData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={impressionsData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-            change={calculatePercentChange(impressionsData.value, impressionsData.previousValue)}
-            nullChangeText="N/A"
-            nullChangeTooltip="No data for previous period"
-          />
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              {(impressionsData.isLoading || isManuallyRefreshing) ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center h-8">
+                    <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="font-bold text-xl md:text-3xl text-white">
+                    {impressionsData.value.toLocaleString()}
+                  </div>
+                  
+                  <div className="mt-1">
+                    {(() => {
+                      const percentChange = calculatePercentChange(impressionsData.value, impressionsData.previousValue);
+                      const isNA = percentChange === null;
+                      const isZero = percentChange === 0;
+                      const isPositive = percentChange !== null && percentChange > 0;
+                      
+                      return (
+                        <div className="flex items-center">
+                          <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                            isNA
+                              ? "text-blue-500 bg-blue-500/10" 
+                              : isZero 
+                                ? "text-gray-500 bg-gray-500/10" 
+                                : isPositive 
+                                  ? "text-green-500 bg-green-500/10" 
+                                  : "text-red-500 bg-red-500/10"
+                          }`}>
+                            <div className="flex items-center">
+                              {isNA ? (
+                                <span className="mr-1">ⓘ</span>
+                              ) : isZero ? (
+                                <Minus className="w-3 h-3 mr-1" />
+                              ) : isPositive ? (
+                                <TrendingUp className="w-3 h-3 mr-1" />
+                              ) : (
+                                <TrendingDown className="w-3 h-3 mr-1" />
+                              )}
+                              <span>
+                                {isNA
+                                  ? "N/A"
+                                  : isZero 
+                                    ? '0%'
+                                    : `${Math.abs(percentChange || 0).toFixed(1)}%`}
+                              </span>
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help ml-1">
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  align="center"
+                                  className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                >
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{getPreviousPeriodLabel()}</p>
+                                    <p className="text-gray-300">Impressions: {impressionsData.previousValue.toLocaleString()}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           
           {/* Using TotalAdSetReachCard as the main Reach card */}
           <TotalAdSetReachCard 
@@ -4519,27 +4799,114 @@ const calculatePercentChange = (current: number, previous: number): number | nul
             campaigns={campaigns}
           />
           
-          <MetricCard
-            title={
-              <div className="flex items-center gap-1.5">
-                <MousePointer className="h-4 w-4 text-indigo-400" />
-                <span className="ml-0.5">Clicks</span>
+          <Card className="bg-[#111] border-[#333] shadow-md overflow-hidden transition-all duration-200 hover:border-[#444]">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-sm font-medium text-gray-200 flex items-center">
+                    <div className="flex items-center gap-1.5">
+                      <MousePointer className="h-4 w-4 text-indigo-400" />
+                      <span className="ml-0.5">Clicks</span>
+                    </div>
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="inline-flex cursor-help ml-1.5">
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-300 transition-colors" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="center"
+                          className="bg-[#222] border border-[#444] text-white text-xs max-w-[220px] p-2 rounded-md shadow-md z-50"
+                        >
+                          <p>Total number of clicks on your ads</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
+                </div>
+                {(clicksData.isLoading || isManuallyRefreshing) && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
               </div>
-            }
-            value={clicksData.value}
-            data={[]}
-            loading={clicksData.isLoading || isManuallyRefreshing}
-            hideChange={false}
-            valueFormat="number"
-            hideGraph={true}
-            previousValue={clicksData.previousValue}
-            previousValueFormat="number"
-            showPreviousPeriod={true}
-            previousPeriodLabel={getPreviousPeriodLabel()}
-            change={calculatePercentChange(clicksData.value, clicksData.previousValue)}
-            nullChangeText="N/A"
-            nullChangeTooltip="No data for previous period"
-          />
+            </CardHeader>
+            <CardContent className="p-4 pt-2">
+              {(clicksData.isLoading || isManuallyRefreshing) ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-center h-8">
+                    <div className="w-32 h-8 bg-gray-800 rounded animate-pulse"></div>
+                  </div>
+                  <div className="flex items-center mt-2">
+                    <div className="w-20 h-5 bg-gray-800/50 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="font-bold text-xl md:text-3xl text-white">
+                    {clicksData.value.toLocaleString()}
+                  </div>
+                  
+                  <div className="mt-1">
+                    {(() => {
+                      const percentChange = calculatePercentChange(clicksData.value, clicksData.previousValue);
+                      const isNA = percentChange === null;
+                      const isZero = percentChange === 0;
+                      const isPositive = percentChange !== null && percentChange > 0;
+                      
+                      return (
+                        <div className="flex items-center">
+                          <div className={`flex items-center space-x-1 rounded-full px-2 py-0.5 ${
+                            isNA
+                              ? "text-blue-500 bg-blue-500/10" 
+                              : isZero 
+                                ? "text-gray-500 bg-gray-500/10" 
+                                : isPositive 
+                                  ? "text-green-500 bg-green-500/10" 
+                                  : "text-red-500 bg-red-500/10"
+                          }`}>
+                            <div className="flex items-center">
+                              {isNA ? (
+                                <span className="mr-1">ⓘ</span>
+                              ) : isZero ? (
+                                <Minus className="w-3 h-3 mr-1" />
+                              ) : isPositive ? (
+                                <TrendingUp className="w-3 h-3 mr-1" />
+                              ) : (
+                                <TrendingDown className="w-3 h-3 mr-1" />
+                              )}
+                              <span>
+                                {isNA
+                                  ? "N/A"
+                                  : isZero 
+                                    ? '0%'
+                                    : `${Math.abs(percentChange || 0).toFixed(1)}%`}
+                              </span>
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help ml-1">
+                                  <Info className="h-3 w-3 text-gray-400" />
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                  side="top" 
+                                  align="center"
+                                  className="z-50 bg-black border border-gray-800 text-xs p-2 max-w-[220px]"
+                                >
+                                  <div className="space-y-1">
+                                    <p className="font-medium">{getPreviousPeriodLabel()}</p>
+                                    <p className="text-gray-300">Clicks: {clicksData.previousValue.toLocaleString()}</p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           
           <MetricCard
             title={
@@ -4659,6 +5026,7 @@ const calculatePercentChange = (current: number, previous: number): number | nul
             change={calculatePercentChange(ctrData.value, ctrData.previousValue)}
             nullChangeText="N/A"
             nullChangeTooltip="No data for previous period"
+            infoTooltip="Click-through rate (clicks ÷ impressions)"
           />
           
           <MetricCard
