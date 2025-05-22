@@ -2773,6 +2773,15 @@ Try creating at least one active campaign in Meta Ads Manager.
       const data = await response.json()
       const prevData = await prevResponse.json()
       
+      // DETAILED LOGGING FOR PREVIOUS PERIOD DATA
+      console.log(`[MetaTab - fetchAdSpendDirectly] Raw prevData for ${prevFrom} to ${prevTo}:`, JSON.stringify(prevData));
+      if (prevData && typeof prevData.value === 'number') {
+        console.log(`[MetaTab - fetchAdSpendDirectly] Valid prevData.value: ${prevData.value}`);
+      } else {
+        console.error(`[MetaTab - fetchAdSpendDirectly] Invalid or missing prevData.value! Received:`, prevData);
+      }
+      // END DETAILED LOGGING
+      
       if (response.ok && prevResponse.ok) {
         setAdSpendData({
           value: data.value || 0,
