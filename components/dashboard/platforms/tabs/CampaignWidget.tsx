@@ -1462,7 +1462,7 @@ const CampaignWidget = ({
               clicks: filteredAndSortedCampaigns[0].clicks,
               status: filteredAndSortedCampaigns[0].status,
               roas: filteredAndSortedCampaigns[0].roas
-          });
+        });
       }
     }
     return filteredAndSortedCampaigns;
