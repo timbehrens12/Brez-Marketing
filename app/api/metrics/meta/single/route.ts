@@ -12,8 +12,25 @@ export async function GET(request: NextRequest) {
     const brandId = url.searchParams.get('brandId')
     const from = url.searchParams.get('from')
     const to = url.searchParams.get('to')
-    const metric = url.searchParams.get('metric') || 'adSpend'
+    const requestedMetric = url.searchParams.get('metric') || 'adSpend'
     const preset = url.searchParams.get('preset')
+    
+    // Map frontend metric names to database column names
+    const metricColumnMap: { [key: string]: string } = {
+      'adSpend': 'spend',
+      'impressions': 'impressions',
+      'clicks': 'clicks',
+      'conversions': 'conversions', // Assuming 'conversions' is a column
+      'roas': 'roas',             // Assuming 'roas' is a column
+      'ctr': 'ctr',               // Assuming 'ctr' is a column
+      'cpc': 'cpc',               // Assuming 'cpc' is a column
+      'costPerResult': 'cost_per_conversion', // Assuming 'cost_per_conversion'
+      'purchaseValue': 'purchase_value', // Assuming 'purchase_value'
+      'linkClicks': 'inline_link_clicks' // Assuming 'inline_link_clicks'
+      // Add other mappings as necessary
+    };
+
+    const metric = metricColumnMap[requestedMetric] || 'spend'; // Default to 'spend' if mapping not found
     
     // Define a type for our insight items
     type InsightItem = {
@@ -25,7 +42,7 @@ export async function GET(request: NextRequest) {
     const isYesterdayPreset = preset === 'yesterday'
     
     // Log the request
-    console.log(`SINGLE METRIC API: Fetching ${metric} for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`SINGLE METRIC API: Fetching ${requestedMetric} (column: ${metric}) for brand ${brandId} from ${from} to ${to}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     // Validate required parameters
     if (!brandId) {
@@ -132,7 +149,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    console.log(`SINGLE METRIC API: Returning ${metric} = ${result.value}`)
+    console.log(`SINGLE METRIC API: Returning ${requestedMetric} = ${result.value}`)
     
     return NextResponse.json(result)
   } catch (error) {
