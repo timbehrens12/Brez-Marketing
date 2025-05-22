@@ -1372,13 +1372,24 @@ const CampaignWidget = ({
         let insightsInRange = 0;
 
         campaign.daily_insights.forEach(insight => {
-          const insightDate = new Date(insight.date);
-          const fromDate = dateRange?.from ? startOfDay(new Date(dateRange.from)) : null;
-          const toDate = dateRange?.to ? endOfDay(new Date(dateRange.to)) : null;
+          const insightDateStr = insight.date; // Log the raw string
+          const insightDateObj = new Date(insightDateStr); // Parse it
 
-          let isInRange = true;
-          if (fromDate && insightDate < fromDate) isInRange = false;
-          if (toDate && insightDate > toDate) isInRange = false;
+          // Use dateRange.from and dateRange.to directly
+          const rangeStart = dateRange?.from; 
+          const rangeEnd = dateRange?.to;
+
+          // Log all date objects in ISO format for consistent comparison across timezones
+          console.log(`[CW DEBUG DATE] Insight Raw: "${insightDateStr}", Parsed Insight UTC: ${insightDateObj.toISOString()}, Range Start UTC: ${rangeStart?.toISOString()}, Range End UTC: ${rangeEnd?.toISOString()}`);
+          // Also log local string representations for human readability
+          console.log(`[CW DEBUG DATE] Parsed Insight Local: ${insightDateObj.toString()}, Range Start Local: ${rangeStart?.toString()}, Range End Local: ${rangeEnd?.toString()}`);
+
+          let isInRange = false;
+          if (rangeStart && rangeEnd && insightDateObj >= rangeStart && insightDateObj <= rangeEnd) {
+            isInRange = true;
+          }
+          
+          console.log(`[CW DEBUG DATE] Is In Range: ${isInRange}`);
           
           if (isInRange) {
             insightsInRange++;
