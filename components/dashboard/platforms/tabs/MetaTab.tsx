@@ -2746,10 +2746,14 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add the calculateGrowthPercentage function right before the fetchAdSpendDirectly function
   const calculateGrowthPercentage = (current: number, previous: number): number | null => {
     if (previous === 0) {
-      return current > 0 ? 100 : 0;
+      // Return null when there's no previous data to compare against
+      return null; // This will display as "N/A" in the UI
     }
     if (isNaN(current) || isNaN(previous)) {
       return null;
+    }
+    if (current === previous) { // Handle cases where current and previous are the same
+      return 0;
     }
     return ((current - previous) / Math.abs(previous)) * 100;
   };
