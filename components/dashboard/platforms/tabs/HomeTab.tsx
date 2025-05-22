@@ -737,12 +737,25 @@ export function HomeTab({
     // this is specifically for mount/navigation
   }, [brandId, metaConnection, shopifyConnection]);
 
+  const prevDateRangeRefForMeta = useRef<{from: string, to: string} | null>(null);
+
   // Load Meta data when component mounts or date range changes
   useEffect(() => {
-    if (validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
-      fetchMetaData();
+    if (validWidgets.some(widget => widget.type === 'meta') && metaConnection && dateRange?.from && dateRange?.to) {
+      const currentFromISO = dateRange.from.toISOString();
+      const currentToISO = dateRange.to.toISOString();
+
+      if (prevDateRangeRefForMeta.current?.from !== currentFromISO || prevDateRangeRefForMeta.current?.to !== currentToISO) {
+        console.log("[HomeTab] Meta relevant date range values changed, fetching Meta data");
+        prevDateRangeRefForMeta.current = { from: currentFromISO, to: currentToISO };
+        fetchMetaData();
+      } else {
+        // console.log("[HomeTab] Meta relevant date range object ref may have changed, but values are the same. Skipping fetchMetaData.");
+      }
+    } else if (!dateRange?.from || !dateRange?.to) {
+      // console.log("[HomeTab] Meta relevant date range is incomplete, skipping fetchMetaData.");
     }
-  }, [dateRange, brandId, metaConnection, validWidgets.length]);
+  }, [dateRange, brandId, metaConnection, validWidgets]); // Dependencies remain, internal check handles stability
 
   // Function to fetch campaign data from the API
   const fetchCampaigns = useCallback(async (forceRefresh = false) => {
@@ -751,9 +764,11 @@ export function HomeTab({
       return;
     }
     
-    if (forceRefresh || campaigns.length === 0) { // Keep campaigns.length here for initial load case
-      setIsLoadingCampaigns(true);
-    }
+    // Only set loading to true if we are actually going to fetch
+    // This prevents a flicker if we return early due to unchanged dates later
+    // if (forceRefresh || campaigns.length === 0) { 
+    //   setIsLoadingCampaigns(true); // This will be set inside the conditional fetch
+    // }
     
     try {
       let url = `/api/meta/campaigns?brandId=${brandId}`;
@@ -766,17 +781,29 @@ export function HomeTab({
         localToDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${localFromDate}&to=${localToDate}`;
         
+        // The actual check for whether to fetch will happen in the calling useEffect
+        // For now, we just prepare the URL if dates are present.
+        // The lastFetchedCampaignDates ref is still useful for direct calls to fetchCampaigns (e.g. manual refresh button)
         if (!forceRefresh && 
             lastFetchedCampaignDates.current.from === localFromDate && 
             lastFetchedCampaignDates.current.to === localToDate) {
-          console.log('[HomeTab] Skipping campaign fetch as dates are unchanged and not forcing.');
-          // Only set loading to false if it was true
-          if (isLoadingCampaigns) setIsLoadingCampaigns(false);
+          console.log('[HomeTab] Skipping campaign fetch inside fetchCampaigns as dates are unchanged and not forcing.');
+          // if (isLoadingCampaigns) setIsLoadingCampaigns(false); // We might not have set it true
           return;
         }
         lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
       }
       
+      // Set loading true only if we are proceeding to fetch
+      if (forceRefresh || campaigns.length === 0) {
+         setIsLoadingCampaigns(true);
+      } else if (localFromDate && lastFetchedCampaignDates.current.from !== localFromDate) { 
+        // If dates changed and it's not an initial load, also set loading.
+        // This condition might be redundant if the calling useEffect handles it.
+        setIsLoadingCampaigns(true);
+      }
+
+
       console.log(`[HomeTab] Fetching Meta campaigns: ${url}`);
       const response = await fetch(url);
       
@@ -793,7 +820,7 @@ export function HomeTab({
       // Always ensure loading is set to false eventually
       setIsLoadingCampaigns(false);
     }
-  }, [brandId, metaConnection, dateRange]); // Removed campaigns.length, keep dateRange for now as it's part of the API call
+  }, [brandId, metaConnection, dateRange, campaigns.length, setIsLoadingCampaigns]); // Added campaigns.length and setIsLoadingCampaigns
 
   // React to the isRefreshingData prop from parent component
   useEffect(() => {
@@ -814,7 +841,7 @@ export function HomeTab({
         fetchShopifyData();
       }
     }
-  }, [isRefreshingData]); // Dependencies: isRefreshingData only, other functions should be stable due to useCallback
+  }, [isRefreshingData, fetchMetaData, fetchCampaigns, validWidgets, metaConnection, shopifyConnection, fetchShopifyData]); // Added fetchShopifyData
 
   // Load user's saved widget configuration
   useEffect(() => {

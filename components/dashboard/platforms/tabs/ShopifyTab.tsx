@@ -373,34 +373,43 @@ export function ShopifyTab({
     }
   }, [metrics, connection, isLoading, isRefreshingData, dateRange, brandId]);
 
+  const prevDateRangeRef = useRef<{from: string, to: string} | null>(null);
+
   // Add a new effect for date range changes to force refresh data
   useEffect(() => {
     // When date range changes, force refresh the data
     if (connection && dateRange?.from && dateRange?.to) {
-      console.log('[ShopifyTab] Date range changed, forcing refresh');
-      
-      // Format dates as yyyy-MM-dd
-      const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-      
-      // Wait a moment to let other effects settle
-      setTimeout(() => {
-        // Dispatch force refresh event with formatted dates
-        window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            dateRange: {
-              from: formattedFromDate,
-              to: formattedToDate
-            },
-            forceFetch: true,
-            bypassCache: true
-          }
-        }));
-      }, 300);
+      const currentFromISO = dateRange.from.toISOString();
+      const currentToISO = dateRange.to.toISOString();
+
+      if (prevDateRangeRef.current?.from !== currentFromISO || prevDateRangeRef.current?.to !== currentToISO) {
+        console.log('[ShopifyTab] Date range values changed, forcing refresh');
+        prevDateRangeRef.current = { from: currentFromISO, to: currentToISO };
+
+        const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
+        const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
+        
+        // Wait a moment to let other effects settle
+        setTimeout(() => {
+          // Dispatch force refresh event with formatted dates
+          window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+            detail: { 
+              brandId, 
+              timestamp: Date.now(),
+              dateRange: {
+                from: formattedFromDate,
+                to: formattedToDate
+              },
+              forceFetch: true,
+              bypassCache: true
+            }
+          }));
+        }, 300);
+      } else {
+        // console.log('[ShopifyTab] Date range object ref may have changed, but underlying values are the same. Skipping event dispatch.');
+      }
     }
-  }, [dateRange, connection, brandId]);
+  }, [dateRange, connection, brandId]); // Keep dependencies, internal comparison handles object ref changes
 
   useEffect(() => {
     // This effect runs once on mount, after the component has rendered
