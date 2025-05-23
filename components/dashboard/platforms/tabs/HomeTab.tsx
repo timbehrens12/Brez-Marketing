@@ -766,9 +766,12 @@ export function HomeTab({
         localToDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${localFromDate}&to=${localToDate}`;
         
-        if (!forceRefresh && 
-            lastFetchedCampaignDates.current.from === localFromDate && 
-            lastFetchedCampaignDates.current.to === localToDate) {
+        // Check if this is a different date range than last fetched
+        const isDifferentDateRange = 
+          lastFetchedCampaignDates.current.from !== localFromDate || 
+          lastFetchedCampaignDates.current.to !== localToDate;
+        
+        if (!forceRefresh && !isDifferentDateRange) {
           console.log('[HomeTab] Skipping campaign fetch as dates are unchanged and not forcing.');
           // Only set loading to false if it was true
           if (isLoadingCampaigns) setIsLoadingCampaigns(false);
@@ -777,8 +780,19 @@ export function HomeTab({
         lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
       }
       
+      // Force cache busting for date range requests
+      if (localFromDate && localToDate) {
+        url += `&forceRefresh=true&t=${Date.now()}`;
+      }
+      
       console.log(`[HomeTab] Fetching Meta campaigns: ${url}`);
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch campaigns: ${response.status}`);
