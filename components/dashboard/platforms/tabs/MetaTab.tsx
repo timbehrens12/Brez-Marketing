@@ -4373,6 +4373,17 @@ Try creating at least one active campaign in Meta Ads Manager.
                               handleManualRefresh(); // Or a more targeted refresh if preferred
                             }}
                           />
+
+                          <MetaSpecificDateSyncButton 
+                            brandId={brandId}
+                            syncDate="2025-05-23"
+                            buttonLabel="Sync Today (May 23, 2025)"
+                            className="px-3 py-1 text-xs bg-green-700 hover:bg-green-600 text-white rounded-md"
+                            onComplete={() => {
+                              toast.success("Triggering dashboard refresh after specific date sync (Today).");
+                              handleManualRefresh(); // Or a more targeted refresh if preferred
+                            }}
+                          />
                           
                           <button
                             onClick={debugDateRange}
