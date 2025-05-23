@@ -3241,7 +3241,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Construct URL params for current period
       const params = new URLSearchParams()
       params.append('brandId', brandId)
-      params.append('metric', 'ctr')
+      // params.append('metric', 'ctr') // No longer needed for specific route
       
       // Set date parameters - simple approach
       const fromDate = dateRange.from
@@ -3262,7 +3262,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'ctr')
+      // prevParams.append('metric', 'ctr') // No longer needed for specific route
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/click-through-rate?${prevParams.toString()}`)
@@ -3271,6 +3271,15 @@ Try creating at least one active campaign in Meta Ads Manager.
       const data = await response.json()
       const prevData = await prevResponse.json()
       
+      // DETAILED LOGGING FOR PREVIOUS PERIOD DATA for CTR
+      console.log(`[MetaTab - fetchCtrDirectly] Raw prevData for ${prevFrom} to ${prevTo}:`, JSON.stringify(prevData));
+      if (prevData && typeof prevData.value === 'number') {
+        console.log(`[MetaTab - fetchCtrDirectly] Valid prevData.value: ${prevData.value}`);
+      } else {
+        console.error(`[MetaTab - fetchCtrDirectly] Invalid or missing prevData.value! Received:`, prevData);
+      }
+      // END DETAILED LOGGING
+
       if (!data.error && !prevData.error) {
         setCtrData({
           value: data.value || 0,
@@ -3388,7 +3397,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Fetch data for previous period
       const prevParams = new URLSearchParams()
       prevParams.append('brandId', brandId)
-      prevParams.append('metric', 'link_clicks')
+      // prevParams.append('metric', 'link_clicks') // No longer needed
       prevParams.append('from', prevFrom)
       prevParams.append('to', prevTo)
       const prevResponse = await fetch(`/api/metrics/meta/single/link_clicks?${prevParams.toString()}`)

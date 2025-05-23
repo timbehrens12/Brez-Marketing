@@ -10,102 +10,82 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const brandId = url.searchParams.get('brandId')
-    const from = url.searchParams.get('from')
-    const to = url.searchParams.get('to')
-    
-    // Log the request
-    console.log(`COST PER CLICK API: Fetching for brand ${brandId} from ${from} to ${to}`)
-    
-    // Validate required parameters
-    if (!brandId) {
-      return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 })
+    let fromDate = url.searchParams.get('from')
+    let toDate = url.searchParams.get('to')
+    const preset = url.searchParams.get('preset')
+    const isYesterdayPreset = preset === 'yesterday'
+
+    console.log(`CPC SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+
+    if (!brandId || !fromDate || !toDate) {
+      return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
-    
-    if (!from || !to) {
-      return NextResponse.json({ error: 'Date range is required' }, { status: 400 })
-    }
-    
-    // Initialize Supabase client
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-    
-    // Get Meta connection
-    const { data: connection, error: connectionError } = await supabase
-      .from('platform_connections')
-      .select('id')
+        
+    if (isYesterdayPreset) {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      fromDate = yesterday.toISOString().split('T')[0]
+      toDate = fromDate 
+      console.log(`CPC SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
+    }
+
+    // CPC = Spend / Clicks
+    const { data: dailyStats, error: dbError } = await supabase
+      .from('meta_campaign_daily_stats') 
+      .select('date, spend, clicks') // Need spend and clicks
       .eq('brand_id', brandId)
-      .eq('platform_type', 'meta')
-      .eq('status', 'active')
-      .single()
-    
-    if (connectionError) {
-      console.log(`Error retrieving Meta connection: ${JSON.stringify(connectionError)}`)
-      return NextResponse.json({ error: 'Error retrieving Meta connection' }, { status: 500 })
+      .gte('date', fromDate)
+      .lte('date', toDate)
+
+    if (dbError) {
+      console.error(`CPC SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
-    
-    if (!connection) {
-      console.log(`No active Meta connection found for brand ${brandId}`)
-      return NextResponse.json({ value: 0 })
-    }
-    
-    // Query meta_ad_insights for clicks and spend
-    const { data: insights, error } = await supabase
-      .from('meta_ad_insights')
-      .select('date, clicks, spend, cost_per_click')
-      .eq('connection_id', connection.id)
-      .gte('date', from)
-      .lte('date', to)
-    
-    if (error) {
-      console.log(`Error retrieving Meta insights: ${JSON.stringify(error)}`)
-      return NextResponse.json({ error: 'Error retrieving data' }, { status: 500 })
-    }
-    
-    // If no data, return zeros
-    if (!insights || insights.length === 0) {
-      console.log(`No data found for period ${from} to ${to}`)
-      return NextResponse.json({ 
-        value: 0,
-        _meta: {
-          from,
-          to,
-          records: 0
-        }
+
+    let filteredStats = dailyStats || []
+    if (isYesterdayPreset) { 
+      filteredStats = filteredStats.filter(item => {
+        const dateStr = new Date(item.date).toISOString().split('T')[0]
+        return dateStr === fromDate
       })
     }
+
+    if (!filteredStats || filteredStats.length === 0) {
+      return NextResponse.json({ 
+        value: 0, 
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
+      })
+    }
+
+    const totalSpend = filteredStats.reduce((sum, item) => {
+      const spendVal = parseFloat(item.spend || '0')
+      return sum + (isNaN(spendVal) ? 0 : spendVal)
+    }, 0)
+
+    const totalClicks = filteredStats.reduce((sum, item) => {
+      const clicksVal = parseInt(item.clicks || '0')
+      return sum + (isNaN(clicksVal) ? 0 : clicksVal)
+    }, 0)
     
-    // ** ALWAYS calculate CPC based on total spend and total clicks for the period **
-    let totalSpend = 0
-    let totalClicks = 0
-    
-    insights.forEach(insight => {
-      totalSpend += parseFloat(insight.spend) || 0
-      totalClicks += parseInt(insight.clicks) || 0
-    })
-    
-    const calculatedCPC = totalClicks > 0 ? totalSpend / totalClicks : 0
-    
-    // Return the result
+    const cpcValue = totalClicks > 0 ? totalSpend / totalClicks : 0;
+
     const result = {
-      value: parseFloat(calculatedCPC.toFixed(2)),
+      value: parseFloat(cpcValue.toFixed(2)),
       _meta: {
-        from,
-        to,
-        records: insights.length,
-        source: 'calculated', // Always calculated now
-        totalSpend: totalSpend.toFixed(2), // Add debug info
-        totalClicks: totalClicks, // Add debug info
-        dates: [...new Set(insights.map(item => new Date(item.date).toISOString().split('T')[0]))]
+        from: fromDate,
+        to: toDate,
+        records: filteredStats.length,
+        source: 'meta_campaign_daily_stats'
       }
     }
-    
-    console.log(`COST PER CLICK API: Returning CPC = ${result.value}, based on ${insights.length} records (source: ${result._meta.source})`)
-    
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error in Cost Per Click metric endpoint:', error)
+    console.error('CPC SINGLE METRIC API: Error in endpoint:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 
