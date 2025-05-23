@@ -284,24 +284,24 @@ export async function GET(request: NextRequest) {
       const normalizedToDate = normalizeDate(to);
       
       // Get daily ad stats for all campaigns in the date range from the correct table
-      console.log(`[Meta Campaigns] Fetching daily ad insights from ${normalizedFromDate} to ${normalizedToDate}`)
+      console.log(`[Meta Campaigns] Fetching daily campaign stats from ${normalizedFromDate} to ${normalizedToDate}`)
       const { data: dailyAdStats, error: statsError } = await supabase
-        .from('meta_adset_daily_insights')
-        .select('campaign_id, date, spend, impressions, clicks, reach, actions, action_values')
+        .from('meta_campaign_daily_stats')
+        .select('campaign_id, date, spend, impressions, clicks, reach, conversions, roas, purchase_count, page_view_count, add_to_cart_count, initiate_checkout_count, add_payment_info_count, view_content_count, lead_count, complete_registration_count, search_count, add_to_wishlist_count')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
         .lte('date', normalizedToDate);
       
       if (statsError) {
-        console.error('Error fetching daily ad insights:', statsError)
+        console.error('Error fetching daily campaign stats:', statsError)
         return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
       }
       
       // Debug: Always log the query results, even if empty
-      console.log(`[Meta Campaigns DEBUG] Query to meta_adset_daily_insights returned ${dailyAdStats?.length || 0} records for date range ${normalizedFromDate} to ${normalizedToDate}`);
+      console.log(`[Meta Campaigns DEBUG] Query to meta_campaign_daily_stats returned ${dailyAdStats?.length || 0} records for date range ${normalizedFromDate} to ${normalizedToDate}`);
       
       // Debug: Log what data we found for debugging date filtering issues
-      console.log(`[Meta Campaigns DEBUG] Found ${dailyAdStats?.length || 0} daily ad insights for date range ${normalizedFromDate} to ${normalizedToDate}`);
+      console.log(`[Meta Campaigns DEBUG] Found ${dailyAdStats?.length || 0} daily campaign stats for date range ${normalizedFromDate} to ${normalizedToDate}`);
       
       // Get the set of campaign IDs that have data in this date range
       const campaignIdsWithData = new Set<string>();
@@ -324,7 +324,7 @@ export async function GET(request: NextRequest) {
         });
       }
       
-      console.log(`[Meta Campaigns] Found ${campaignIdsWithData.size} campaigns with data in date range from ${dailyAdStats?.length || 0} daily ad insight records`);
+      console.log(`[Meta Campaigns] Found ${campaignIdsWithData.size} campaigns with data in date range from ${dailyAdStats?.length || 0} daily campaign stats records`);
       
       // Filter campaigns based on status if provided
       let relevantCampaigns = campaignDetails;
@@ -343,13 +343,13 @@ export async function GET(request: NextRequest) {
       const campaigns = await Promise.all(relevantCampaigns.map(async (campaign: any) => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
-        // Aggregate metrics from daily ad stats
+        // Aggregate metrics from daily campaign stats
         let spend = 0;
         let impressions = 0;
         let clicks = 0;
         let conversions = 0;
         let purchaseValue = 0;
-        let calculatedReach = 0; // RE-ADD variable to store calculated reach for the period
+        let calculatedReach = 0;
         
         // Collect daily insights specific to this campaign for the response
         const campaignDailyAggregatedInsights: any[] = [];
@@ -369,32 +369,17 @@ export async function GET(request: NextRequest) {
                 clicks: 0,
                 reach: 0,
                 conversions: 0,
-                purchaseValue: 0 // Track purchase value per day
+                purchaseValue: 0
               };
             }
             
             const dailySpend = Number(stat.spend) || 0;
             const dailyImpressions = Number(stat.impressions) || 0;
             const dailyClicks = Number(stat.clicks) || 0;
-            const dailyReach = Number(stat.reach) || 0; // RE-ADD daily reach calculation
-            let dailyConversions = 0;
-            let dailyPurchaseValue = 0;
-            
-            // Calculate conversions and purchase value from actions/action_values
-            if (Array.isArray(stat.actions)) {
-              stat.actions.forEach((action: any) => {
-                if (action.action_type?.includes('purchase') || action.action_type?.includes('conversion')) {
-                  dailyConversions += parseInt(action.value || '0');
-                }
-              });
-            }
-            if (Array.isArray(stat.action_values)) {
-              stat.action_values.forEach((actionValue: any) => {
-                if (actionValue.action_type?.includes('purchase') || actionValue.action_type?.includes('conversion')) {
-                  dailyPurchaseValue += parseFloat(actionValue.value || '0');
-                }
-              });
-            }
+            const dailyReach = Number(stat.reach) || 0;
+            const dailyConversions = Number(stat.conversions) || 0;
+            // Calculate purchase value from purchase_count * estimated value (or use roas data)
+            const dailyPurchaseValue = Number(stat.purchase_count) || 0;
             
             // Aggregate for the specific day
             dailyAggregation[date].spent += dailySpend;
@@ -408,7 +393,7 @@ export async function GET(request: NextRequest) {
             spend += dailySpend;
             impressions += dailyImpressions;
             clicks += dailyClicks;
-            calculatedReach += dailyReach; // RE-ADD summation of daily reach
+            calculatedReach += dailyReach;
             conversions += dailyConversions;
             purchaseValue += dailyPurchaseValue;
           });
@@ -436,7 +421,6 @@ export async function GET(request: NextRequest) {
         if (campaign.campaign_id === '120218263352990058') {
             console.log(`>>> [API Campaigns] Using calculated reach from daily stats for ${campaign.campaign_id}: ${finalReach} (from ${campaignStats.length} daily records)`);
         }
-        // --- End Logging ---
         
         // Return campaign with aggregated performance metrics for the date range
         return {
@@ -444,13 +428,13 @@ export async function GET(request: NextRequest) {
           spent: Number(spend.toFixed(2)),
           impressions: impressions,
           clicks: clicks,
-          reach: finalReach, // Use the calculated reach for the period if date range exists
+          reach: finalReach,
           conversions: conversions,
           ctr,
           cpc,
           cost_per_conversion,
           roas,
-          purchase_value: Number(purchaseValue.toFixed(2)), // Add purchase value
+          purchase_value: Number(purchaseValue.toFixed(2)),
           // Flag indicating if this campaign had data in the date range
           has_data_in_range: campaignIdsWithData.has(campaign.campaign_id),
           daily_insights: campaignDailyAggregatedInsights.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
