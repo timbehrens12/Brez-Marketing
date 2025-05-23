@@ -2343,10 +2343,9 @@ const CampaignWidget = ({
                                 displayValue = '---'; // Not available
                               }
                             } else {
-                              // Other metrics: Use aggregate if available, else campaign prop
-                              value = isExpandedAndLoaded && aggregateMetrics
-                                ? (aggregateMetrics[metricId as keyof Campaign] as number ?? 0) 
-                                : (campaign[metricId as keyof Campaign] as number);
+                              // Metrics should come from the 'campaign' object,
+                              // which is processed by 'filteredCampaigns' useMemo and should have daily_insights aggregated.
+                              value = campaign[metricId as keyof Campaign] as number;
                               displayValue = formatValue(value, metric.format);
                                 }
 
