@@ -1364,6 +1364,15 @@ const CampaignWidget = ({
 
       if (hasDailyInsights) {
         console.log(`[CW DEBUG] Campaign ${campaign.campaign_id} has ${campaign.daily_insights.length} daily insights`);
+        
+        // Log current date range
+        console.log(`[CW DEBUG RANGE] Current dateRange:`, {
+          from: dateRange?.from?.toISOString(),
+          to: dateRange?.to?.toISOString(),
+          fromLocal: dateRange?.from?.toString(),
+          toLocal: dateRange?.to?.toString()
+        });
+        
         let aggregatedSpent = 0;
         let aggregatedImpressions = 0;
         let aggregatedClicks = 0;
@@ -1385,22 +1394,27 @@ const CampaignWidget = ({
               effectiveRangeStart.getMonth() === effectiveRangeEnd.getMonth() &&
               effectiveRangeStart.getDate() === effectiveRangeEnd.getDate()) {
             
+            console.log(`[CW DEBUG SINGLE] Detected single day range, adjusting end time`);
             // Create a new Date object for effectiveRangeEnd to avoid mutating the prop
             effectiveRangeEnd = new Date(effectiveRangeStart);
             effectiveRangeEnd.setHours(23, 59, 59, 999);
           }
 
           // Log all date objects in ISO format for consistent comparison across timezones
-          console.log(`[CW DEBUG DATE] Insight Raw: "${insightDateStr}", Parsed Insight UTC: ${insightDateObj.toISOString()}, Range Start UTC: ${effectiveRangeStart?.toISOString()}, Range End UTC: ${effectiveRangeEnd?.toISOString()}`);
-          // Also log local string representations for human readability
-          console.log(`[CW DEBUG DATE] Parsed Insight Local: ${insightDateObj.toString()}, Range Start Local: ${effectiveRangeStart?.toString()}, Range End Local: ${effectiveRangeEnd?.toString()}`);
+          console.log(`[CW DEBUG DATE] Insight "${insightDateStr}" -> Parsed: ${insightDateObj.toISOString()}, Range: ${effectiveRangeStart?.toISOString()} to ${effectiveRangeEnd?.toISOString()}`);
+          console.log(`[CW DEBUG DATE] Insight metrics:`, {
+            spent: insight.spent,
+            impressions: insight.impressions, 
+            clicks: insight.clicks,
+            conversions: insight.conversions
+          });
 
           let isInRange = false;
           if (effectiveRangeStart && effectiveRangeEnd && insightDateObj >= effectiveRangeStart && insightDateObj <= effectiveRangeEnd) {
             isInRange = true;
           }
           
-          console.log(`[CW DEBUG DATE] Is In Range: ${isInRange}`);
+          console.log(`[CW DEBUG DATE] Is "${insightDateStr}" in range? ${isInRange}`);
           
           if (isInRange) {
             insightsInRange++;

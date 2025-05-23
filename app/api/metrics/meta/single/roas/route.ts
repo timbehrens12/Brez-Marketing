@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
     let toDate = url.searchParams.get('to')
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
-
+    
     console.log(`ROAS SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
-
+    
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
-
+    
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       toDate = fromDate 
       console.log(`ROAS SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
-
+    
     // ROAS = (sum of purchase_value or equivalent conversion value) / (sum of spend)
     // We need to select spend and the relevant conversion/purchase value columns.
     // Assuming 'conversions' column in meta_campaign_daily_stats represents purchase conversion value for simplicity here.
@@ -44,23 +44,23 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
-
+    
     if (dbError) {
       console.error(`ROAS SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
-
+    
     let filteredStats = dailyStats || []
-    if (isYesterdayPreset) { 
+    if (isYesterdayPreset) {
       filteredStats = filteredStats.filter(item => {
         const dateStr = new Date(item.date).toISOString().split('T')[0]
         return dateStr === fromDate
       })
     }
-
+    
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
-        value: 0, 
+        value: 0,
         _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }

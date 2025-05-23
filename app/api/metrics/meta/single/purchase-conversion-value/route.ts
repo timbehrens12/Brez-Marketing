@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
-
+    
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-        
+    
     if (isYesterdayPreset) {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
@@ -45,12 +45,12 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
-
+    
     if (dbError) {
       console.error(`PURCHASE_VALUE SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
-
+    
     let filteredStats = dailyStats || []
     if (isYesterdayPreset) { 
       filteredStats = filteredStats.filter(item => {
@@ -58,18 +58,18 @@ export async function GET(request: NextRequest) {
         return dateStr === fromDate
       })
     }
-
+    
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
-        value: 0, 
+        value: 0,
         _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
 
     const totalPurchaseValue = filteredStats.reduce((sum, item) => {
       const value = parseFloat(item.conversions || '0') // Assuming 'conversions' field is the purchase value
-      return sum + (isNaN(value) ? 0 : value)
-    }, 0)
+        return sum + (isNaN(value) ? 0 : value)
+      }, 0)
     
     // Count the number of entries that had conversions, approximating number of purchase events
     const numberOfPurchaseEvents = filteredStats.filter(item => parseFloat(item.conversions || '0') > 0).length;

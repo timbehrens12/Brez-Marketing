@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
     }
-
+    
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
-        
+    
     if (isYesterdayPreset) {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
-
+    
     if (dbError) {
       console.error(`CLICKS SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
@@ -53,10 +53,10 @@ export async function GET(request: NextRequest) {
         return dateStr === fromDate
       })
     }
-
+    
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
-        value: 0, 
+        value: 0,
         _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       const clicksVal = parseInt(item.clicks || '0')
       return sum + (isNaN(clicksVal) ? 0 : clicksVal)
     }, 0)
-
+    
     const result = {
       value: totalClicks,
       _meta: {
