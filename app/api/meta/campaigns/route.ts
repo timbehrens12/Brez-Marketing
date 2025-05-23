@@ -161,6 +161,22 @@ export async function GET(request: NextRequest) {
         if (!insightsError && campaignInsights && campaignInsights.length > 0) {
           console.log(`[Meta Campaigns] Successfully retrieved ${campaignInsights.length} campaigns using date range function`)
           
+          // Debug: Log what data the database function returned
+          console.log(`[Meta Campaigns DB FUNCTION DEBUG] Retrieved campaigns for date range ${from} to ${to}`);
+          const testCampaignFromDB = campaignInsights.find(campaign => campaign.campaign_id === '120218263352990058');
+          if (testCampaignFromDB) {
+            console.log(`[Meta Campaigns DB FUNCTION DEBUG] Test campaign 120218263352990058 from DB function:`);
+            console.log(`  Campaign spent: ${testCampaignFromDB.spent}, impressions: ${testCampaignFromDB.impressions}, clicks: ${testCampaignFromDB.clicks}`);
+            if (testCampaignFromDB.daily_insights && testCampaignFromDB.daily_insights.length > 0) {
+              console.log(`  Daily insights (${testCampaignFromDB.daily_insights.length} records):`);
+              testCampaignFromDB.daily_insights.forEach((insight: any) => {
+                console.log(`    Date: ${insight.date}, Spent: ${insight.spent}, Impressions: ${insight.impressions}, Clicks: ${insight.clicks}`);
+              });
+            } else {
+              console.log(`  No daily_insights from DB function`);
+            }
+          }
+          
           // Filter by status if provided
           let filteredCampaigns = campaignInsights;
           if (status) {
