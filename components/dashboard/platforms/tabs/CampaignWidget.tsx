@@ -1376,16 +1376,27 @@ const CampaignWidget = ({
           // Parse as local midnight by appending T00:00:00
           const insightDateObj = new Date(insightDateStr + "T00:00:00"); 
 
-          const rangeStart = dateRange?.from; 
-          const rangeEnd = dateRange?.to;
+          let effectiveRangeStart = dateRange?.from;
+          let effectiveRangeEnd = dateRange?.to;
+
+          // If dateRange is a single day, adjust effectiveRangeEnd to be end of that day
+          if (effectiveRangeStart && effectiveRangeEnd && 
+              effectiveRangeStart.getFullYear() === effectiveRangeEnd.getFullYear() &&
+              effectiveRangeStart.getMonth() === effectiveRangeEnd.getMonth() &&
+              effectiveRangeStart.getDate() === effectiveRangeEnd.getDate()) {
+            
+            // Create a new Date object for effectiveRangeEnd to avoid mutating the prop
+            effectiveRangeEnd = new Date(effectiveRangeStart);
+            effectiveRangeEnd.setHours(23, 59, 59, 999);
+          }
 
           // Log all date objects in ISO format for consistent comparison across timezones
-          console.log(`[CW DEBUG DATE] Insight Raw: "${insightDateStr}", Parsed Insight UTC: ${insightDateObj.toISOString()}, Range Start UTC: ${rangeStart?.toISOString()}, Range End UTC: ${rangeEnd?.toISOString()}`);
+          console.log(`[CW DEBUG DATE] Insight Raw: "${insightDateStr}", Parsed Insight UTC: ${insightDateObj.toISOString()}, Range Start UTC: ${effectiveRangeStart?.toISOString()}, Range End UTC: ${effectiveRangeEnd?.toISOString()}`);
           // Also log local string representations for human readability
-          console.log(`[CW DEBUG DATE] Parsed Insight Local: ${insightDateObj.toString()}, Range Start Local: ${rangeStart?.toString()}, Range End Local: ${rangeEnd?.toString()}`);
+          console.log(`[CW DEBUG DATE] Parsed Insight Local: ${insightDateObj.toString()}, Range Start Local: ${effectiveRangeStart?.toString()}, Range End Local: ${effectiveRangeEnd?.toString()}`);
 
           let isInRange = false;
-          if (rangeStart && rangeEnd && insightDateObj >= rangeStart && insightDateObj <= rangeEnd) {
+          if (effectiveRangeStart && effectiveRangeEnd && insightDateObj >= effectiveRangeStart && insightDateObj <= effectiveRangeEnd) {
             isInRange = true;
           }
           
