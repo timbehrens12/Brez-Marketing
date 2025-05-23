@@ -149,91 +149,97 @@ export async function GET(request: NextRequest) {
       
       // Try using the get_campaign_insights_by_date_range function first
       try {
-        const { data: campaignInsights, error: insightsError } = await supabase.rpc(
-          'get_campaign_insights_by_date_range',
-          {
-            brand_uuid: brandId,
-            p_from_date: from,
-            p_to_date: to
-          }
-        )
+        // TEMPORARY: Disable the database function to force using the fallback logic
+        // The database function seems to have issues with returning daily_insights for certain dates
+        const FORCE_FALLBACK = true;
         
-        if (!insightsError && campaignInsights && campaignInsights.length > 0) {
-          console.log(`[Meta Campaigns] Successfully retrieved ${campaignInsights.length} campaigns using date range function`)
-          
-          // Debug: Log what data the database function returned
-          console.log(`[Meta Campaigns DB FUNCTION DEBUG] Retrieved campaigns for date range ${from} to ${to}`);
-          const testCampaignFromDB = campaignInsights.find(campaign => campaign.campaign_id === '120218263352990058');
-          if (testCampaignFromDB) {
-            console.log(`[Meta Campaigns DB FUNCTION DEBUG] Test campaign 120218263352990058 from DB function:`);
-            console.log(`  Campaign spent: ${testCampaignFromDB.spent}, impressions: ${testCampaignFromDB.impressions}, clicks: ${testCampaignFromDB.clicks}`);
-            if (testCampaignFromDB.daily_insights && testCampaignFromDB.daily_insights.length > 0) {
-              console.log(`  Daily insights (${testCampaignFromDB.daily_insights.length} records):`);
-              testCampaignFromDB.daily_insights.forEach((insight: any) => {
-                console.log(`    Date: ${insight.date}, Spent: ${insight.spent}, Impressions: ${insight.impressions}, Clicks: ${insight.clicks}`);
-              });
-            } else {
-              console.log(`  No daily_insights from DB function`);
+        if (!FORCE_FALLBACK) {
+          const { data: campaignInsights, error: insightsError } = await supabase.rpc(
+            'get_campaign_insights_by_date_range',
+            {
+              brand_uuid: brandId,
+              p_from_date: from,
+              p_to_date: to
             }
-          }
+          )
           
-          // Filter by status if provided
-          let filteredCampaigns = campaignInsights;
-          if (status) {
-            const upperStatus = status.toUpperCase();
-            filteredCampaigns = campaignInsights.filter((campaign: any) => {
-              const campaignStatus = (campaign.status || '').toUpperCase();
-              return campaignStatus === upperStatus;
+          if (!insightsError && campaignInsights && campaignInsights.length > 0) {
+            console.log(`[Meta Campaigns] Successfully retrieved ${campaignInsights.length} campaigns using date range function`)
+            
+            // Debug: Log what data the database function returned
+            console.log(`[Meta Campaigns DB FUNCTION DEBUG] Retrieved campaigns for date range ${from} to ${to}`);
+            const testCampaignFromDB = campaignInsights.find(campaign => campaign.campaign_id === '120218263352990058');
+            if (testCampaignFromDB) {
+              console.log(`[Meta Campaigns DB FUNCTION DEBUG] Test campaign 120218263352990058 from DB function:`);
+              console.log(`  Campaign spent: ${testCampaignFromDB.spent}, impressions: ${testCampaignFromDB.impressions}, clicks: ${testCampaignFromDB.clicks}`);
+              if (testCampaignFromDB.daily_insights && testCampaignFromDB.daily_insights.length > 0) {
+                console.log(`  Daily insights (${testCampaignFromDB.daily_insights.length} records):`);
+                testCampaignFromDB.daily_insights.forEach((insight: any) => {
+                  console.log(`    Date: ${insight.date}, Spent: ${insight.spent}, Impressions: ${insight.impressions}, Clicks: ${insight.clicks}`);
+                });
+              } else {
+                console.log(`  No daily_insights from DB function`);
+              }
+            }
+            
+            // Filter by status if provided
+            let filteredCampaigns = campaignInsights;
+            if (status) {
+              const upperStatus = status.toUpperCase();
+              filteredCampaigns = campaignInsights.filter((campaign: any) => {
+                const campaignStatus = (campaign.status || '').toUpperCase();
+                return campaignStatus === upperStatus;
+              });
+            }
+            
+            // Sort campaigns
+            const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
+              const valueA = a[sortBy] || 0;
+              const valueB = b[sortBy] || 0;
+              
+              if (sortOrder.toLowerCase() === 'asc') {
+                return valueA - valueB;
+              } else {
+                return valueB - valueA;
+              }
+            });
+            
+            // Apply limit
+            const limitedCampaigns = limit > 0 ? sortedCampaigns.slice(0, limit) : sortedCampaigns;
+            
+            // Log debug info for our test campaign
+            const testCampaign = limitedCampaigns.find(campaign => campaign.campaign_id === '120218263352990058');
+            if (testCampaign) {
+              console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaign.campaign_name}`);
+              console.log(`>>> [API Campaigns] Reach value directly from Meta API: ${testCampaign.reach}`);
+              
+              // Log insights data if available
+              if (testCampaign.insights && testCampaign.insights.length > 0) {
+                console.log(`>>> [API Campaigns] Insights data for campaign 120218263352990058:`);
+                testCampaign.insights.forEach((insight: any) => {
+                  console.log(`>>>   Date: ${insight.date_start}, Reach: ${insight.reach}`);
+                });
+              }
+
+              // Log daily insights if available
+              if (testCampaign.daily_insights && testCampaign.daily_insights.length > 0) {
+                console.log(`>>> [API Campaigns] Daily insights for campaign 120218263352990058:`);
+                testCampaign.daily_insights.forEach((insight: any) => {
+                  console.log(`>>>   Date: ${insight.date}, Reach: ${insight.reach}`);
+                });
+              }
+            }
+            
+            return NextResponse.json({
+              campaigns: limitedCampaigns,
+              dateRange: {
+                from: from,
+                to: to
+              },
+              source: 'db_function',
+              lastRefresh: new Date().toISOString()
             });
           }
-          
-          // Sort campaigns
-          const sortedCampaigns = [...filteredCampaigns].sort((a, b) => {
-            const valueA = a[sortBy] || 0;
-            const valueB = b[sortBy] || 0;
-            
-            if (sortOrder.toLowerCase() === 'asc') {
-              return valueA - valueB;
-            } else {
-              return valueB - valueA;
-            }
-          });
-          
-          // Apply limit
-          const limitedCampaigns = limit > 0 ? sortedCampaigns.slice(0, limit) : sortedCampaigns;
-          
-          // Log debug info for our test campaign
-          const testCampaign = limitedCampaigns.find(campaign => campaign.campaign_id === '120218263352990058');
-          if (testCampaign) {
-            console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaign.campaign_name}`);
-            console.log(`>>> [API Campaigns] Reach value directly from Meta API: ${testCampaign.reach}`);
-            
-            // Log insights data if available
-            if (testCampaign.insights && testCampaign.insights.length > 0) {
-              console.log(`>>> [API Campaigns] Insights data for campaign 120218263352990058:`);
-              testCampaign.insights.forEach((insight: any) => {
-                console.log(`>>>   Date: ${insight.date_start}, Reach: ${insight.reach}`);
-              });
-            }
-
-            // Log daily insights if available
-            if (testCampaign.daily_insights && testCampaign.daily_insights.length > 0) {
-              console.log(`>>> [API Campaigns] Daily insights for campaign 120218263352990058:`);
-              testCampaign.daily_insights.forEach((insight: any) => {
-                console.log(`>>>   Date: ${insight.date}, Reach: ${insight.reach}`);
-              });
-            }
-          }
-          
-          return NextResponse.json({
-            campaigns: limitedCampaigns,
-            dateRange: {
-              from: from,
-              to: to
-            },
-            source: 'db_function',
-            lastRefresh: new Date().toISOString()
-          });
         }
       } catch (functionError) {
         console.error('Error fetching campaigns by date range:', functionError)
