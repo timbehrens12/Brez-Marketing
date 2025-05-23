@@ -801,6 +801,31 @@ export function HomeTab({
       const data = await response.json();
       setCampaigns(data.campaigns || []);
       console.log(`[HomeTab] Loaded ${data.campaigns?.length || 0} Meta campaigns`);
+      
+      // DEBUG: Log what the campaigns API returned for the date range
+      console.log(`[HomeTab CAMPAIGNS API DEBUG] Response for date range ${localFromDate} to ${localToDate}:`, {
+        campaignCount: data.campaigns?.length || 0,
+        source: data.source,
+        campaignsWithData: data.campaignsWithData,
+        totalCampaigns: data.totalCampaigns
+      });
+      
+      // DEBUG: Check if our test campaign has daily_insights
+      const testCampaign = data.campaigns?.find((c: any) => c.campaign_id === '120218263352990058');
+      if (testCampaign) {
+        console.log(`[HomeTab CAMPAIGNS API DEBUG] Test campaign 120218263352990058 for ${localFromDate}:`, {
+          spent: testCampaign.spent,
+          impressions: testCampaign.impressions,
+          clicks: testCampaign.clicks,
+          hasDailyInsights: testCampaign.daily_insights && testCampaign.daily_insights.length > 0,
+          dailyInsightsCount: testCampaign.daily_insights?.length || 0,
+          hasDataInRange: testCampaign.has_data_in_range
+        });
+        
+        if (testCampaign.daily_insights && testCampaign.daily_insights.length > 0) {
+          console.log(`[HomeTab CAMPAIGNS API DEBUG] Daily insights details:`, testCampaign.daily_insights);
+        }
+      }
     } catch (error) {
       console.error('[HomeTab] Error fetching campaigns:', error);
     } finally {
