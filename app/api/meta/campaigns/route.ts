@@ -275,6 +275,22 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Error fetching campaign statistics' }, { status: 500 })
       }
       
+      // Debug: Log what data we found for debugging date filtering issues
+      console.log(`[Meta Campaigns DEBUG] Found ${dailyAdStats?.length || 0} daily ad insights for date range ${normalizedFromDate} to ${normalizedToDate}`);
+      if (dailyAdStats && dailyAdStats.length > 0) {
+        const uniqueDates = [...new Set(dailyAdStats.map(stat => stat.date))].sort();
+        console.log(`[Meta Campaigns DEBUG] Unique dates in results: ${uniqueDates.join(', ')}`);
+        
+        // Debug the test campaign specifically
+        const testCampaignStats = dailyAdStats.filter(stat => stat.campaign_id === '120218263352990058');
+        if (testCampaignStats.length > 0) {
+          console.log(`[Meta Campaigns DEBUG] Test campaign 120218263352990058 has ${testCampaignStats.length} records:`);
+          testCampaignStats.forEach(stat => {
+            console.log(`  Date: ${stat.date}, Spend: ${stat.spend}, Impressions: ${stat.impressions}, Clicks: ${stat.clicks}`);
+          });
+        }
+      }
+      
       // Get the set of campaign IDs that have data in this date range
       const campaignIdsWithData = new Set<string>();
       
