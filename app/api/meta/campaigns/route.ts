@@ -400,7 +400,7 @@ export async function GET(request: NextRequest) {
           
           // Add derived metrics to daily aggregated insights
           Object.values(dailyAggregation).forEach(dailyStat => {
-            dailyStat.ctr = dailyStat.impressions > 0 ? (dailyStat.clicks / dailyStat.impressions) * 100 : 0;
+            dailyStat.ctr = dailyStat.impressions > 0 ? (dailyStat.clicks / dailyStat.impressions) : 0;
             dailyStat.cpc = dailyStat.clicks > 0 ? (dailyStat.spent / dailyStat.clicks) : 0;
             dailyStat.cost_per_conversion = dailyStat.conversions > 0 ? (dailyStat.spent / dailyStat.conversions) : 0;
             dailyStat.roas = dailyStat.spent > 0 ? (dailyStat.purchaseValue / dailyStat.spent) : 0;
@@ -409,7 +409,7 @@ export async function GET(request: NextRequest) {
         }
         
         // Calculate overall derived metrics for the campaign over the period
-        const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+        const ctr = impressions > 0 ? (clicks / impressions) : 0;
         const cpc = clicks > 0 ? (spend / clicks) : 0;
         const cost_per_conversion = conversions > 0 ? spend / conversions : 0;
         const roas = purchaseValue > 0 && spend > 0 ? purchaseValue / spend : 0;

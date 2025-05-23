@@ -1447,7 +1447,7 @@ const CampaignWidget = ({
           clicks: aggregatedClicks,
           conversions: aggregatedConversions,
           roas: calculatedRoas > 0 ? calculatedRoas : campaign.roas || 0,
-          ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) * 100 : 0,
+          ctr: aggregatedImpressions > 0 ? (aggregatedClicks / aggregatedImpressions) : 0,
           cpc: aggregatedClicks > 0 ? aggregatedSpent / aggregatedClicks : 0,
           cost_per_conversion: aggregatedConversions > 0 ? aggregatedSpent / aggregatedConversions : 0,
           has_data_in_range: insightsInRange > 0
