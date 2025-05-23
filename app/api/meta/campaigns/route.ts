@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
             
             // Debug: Log what data the database function returned
             console.log(`[Meta Campaigns DB FUNCTION DEBUG] Retrieved campaigns for date range ${from} to ${to}`);
-            const testCampaignFromDB = campaignInsights.find(campaign => campaign.campaign_id === '120218263352990058');
+            const testCampaignFromDB = campaignInsights.find((campaign: any) => campaign.campaign_id === '120218263352990058');
             if (testCampaignFromDB) {
               console.log(`[Meta Campaigns DB FUNCTION DEBUG] Test campaign 120218263352990058 from DB function:`);
               console.log(`  Campaign spent: ${testCampaignFromDB.spent}, impressions: ${testCampaignFromDB.impressions}, clicks: ${testCampaignFromDB.clicks}`);
@@ -208,7 +208,7 @@ export async function GET(request: NextRequest) {
             const limitedCampaigns = limit > 0 ? sortedCampaigns.slice(0, limit) : sortedCampaigns;
             
             // Log debug info for our test campaign
-            const testCampaign = limitedCampaigns.find(campaign => campaign.campaign_id === '120218263352990058');
+            const testCampaign = limitedCampaigns.find((campaign: any) => campaign.campaign_id === '120218263352990058');
             if (testCampaign) {
               console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaign.campaign_name}`);
               console.log(`>>> [API Campaigns] Reach value directly from Meta API: ${testCampaign.reach}`);
@@ -286,7 +286,7 @@ export async function GET(request: NextRequest) {
       // Get daily ad stats for all campaigns in the date range from the correct table
       console.log(`[Meta Campaigns] Fetching daily ad insights from ${normalizedFromDate} to ${normalizedToDate}`)
       const { data: dailyAdStats, error: statsError } = await supabase
-        .from('meta_ad_insights')
+        .from('meta_adset_daily_insights')
         .select('campaign_id, date, spend, impressions, clicks, reach, actions, action_values')
         .eq('brand_id', brandId)
         .gte('date', normalizedFromDate)
@@ -298,7 +298,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Debug: Always log the query results, even if empty
-      console.log(`[Meta Campaigns DEBUG] Query to meta_ad_insights returned ${dailyAdStats?.length || 0} records for date range ${normalizedFromDate} to ${normalizedToDate}`);
+      console.log(`[Meta Campaigns DEBUG] Query to meta_adset_daily_insights returned ${dailyAdStats?.length || 0} records for date range ${normalizedFromDate} to ${normalizedToDate}`);
       
       // Debug: Log what data we found for debugging date filtering issues
       console.log(`[Meta Campaigns DEBUG] Found ${dailyAdStats?.length || 0} daily ad insights for date range ${normalizedFromDate} to ${normalizedToDate}`);
@@ -340,7 +340,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Process campaigns with their aggregated stats
-      const campaigns = await Promise.all(relevantCampaigns.map(async (campaign) => {
+      const campaigns = await Promise.all(relevantCampaigns.map(async (campaign: any) => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
         // Aggregate metrics from daily ad stats
@@ -478,7 +478,7 @@ export async function GET(request: NextRequest) {
       const limitedCampaigns = limit > 0 ? sortedCampaigns.slice(0, limit) : sortedCampaigns;
       
       // Log debug info for our test campaign
-      const testCampaign = limitedCampaigns.find(campaign => campaign.campaign_id === '120218263352990058');
+      const testCampaign = limitedCampaigns.find((campaign: any) => campaign.campaign_id === '120218263352990058');
       if (testCampaign) {
         console.log(`>>> [API Campaigns] Found test campaign 120218263352990058: ${testCampaign.campaign_name}`);
         console.log(`>>> [API Campaigns] Reach value calculated from daily stats: ${testCampaign.reach}`); // New log
