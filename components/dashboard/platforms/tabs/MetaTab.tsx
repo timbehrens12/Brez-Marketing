@@ -58,6 +58,7 @@ import { CampaignWidget } from "./CampaignWidget" // Import the Campaign Widget 
 import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
+import { MetaSpecificDateSyncButton } from '@/components/dashboard/platforms/tabs/MetaSpecificDateSyncButton'; // Import the new button
 
 
 interface MetaTabProps {
@@ -4361,6 +4362,17 @@ Try creating at least one active campaign in Meta Ads Manager.
                           >
                             Force Fetch Meta Data
                           </button>
+                          
+                          <MetaSpecificDateSyncButton 
+                            brandId={brandId}
+                            syncDate="2025-05-22"
+                            buttonLabel="Sync May 22, 2025 Data"
+                            className="px-3 py-1 text-xs bg-blue-700 hover:bg-blue-600 text-white rounded-md"
+                            onComplete={() => {
+                              toast.success("Triggering dashboard refresh after specific date sync.");
+                              handleManualRefresh(); // Or a more targeted refresh if preferred
+                            }}
+                          />
                           
                           <button
                             onClick={debugDateRange}
