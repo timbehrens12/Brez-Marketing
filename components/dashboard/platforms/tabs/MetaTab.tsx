@@ -4269,25 +4269,13 @@ Try creating at least one active campaign in Meta Ads Manager.
         return;
       }
       
-      // Use throttling to prevent multiple refreshes within a short time
-      const REFRESH_THROTTLE_MS = 2000; // 2 seconds
-      const now = Date.now();
-      const lastRefresh = window._lastMetaRefresh || 0;
-      
-      if (now - lastRefresh < REFRESH_THROTTLE_MS) {
-        console.log(`[MetaTab] Throttling refresh - too recent (${now - lastRefresh}ms ago)`);
-        return;
-      }
-      
-      // Update the last refresh timestamp
-      window._lastMetaRefresh = now;
-      
-      // Trigger the refresh with the current brand ID
-      refreshAllMetaData(brandId).then(success => {
+      // ALWAYS use forceRefreshAllMetaData for these events to bypass cooldowns
+      console.log(`[MetaTab] Triggering FORCE refresh for event: ${eventType}`);
+      forceRefreshAllMetaData(brandId).then(success => {
         if (success) {
-          console.log(`[MetaTab] Refresh completed successfully for ${eventType}`);
+          console.log(`[MetaTab] FORCE refresh completed successfully for ${eventType}`);
         } else {
-          console.log(`[MetaTab] Refresh completed with errors for ${eventType}`);
+          console.log(`[MetaTab] FORCE refresh completed with errors for ${eventType}`);
         }
       });
     };
@@ -4313,7 +4301,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         delete window._refreshMetaData;
       }
     };
-  }, [brandId, refreshAllMetaData]);
+  }, [brandId, refreshAllMetaData, forceRefreshAllMetaData]);
 
   // Add a proper date comparison function to avoid infinite loops
   const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {

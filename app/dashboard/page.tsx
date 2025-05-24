@@ -51,6 +51,7 @@ import {
 } from '@/lib/utils/platformUtils'
 import { useDataRefresh } from '@/contexts/DataRefreshContext'
 import { Button } from "@/components/ui/button"
+import { fetchHelper } from "@/lib/utils/fetchHelper"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
 import { MetricsContext } from "@/contexts/metricsContext"
@@ -1075,41 +1076,6 @@ export default function DashboardPage() {
     }
   }, [selectedBrandId]);
 
-  // Add a more direct and immediate initial load trigger
-  useEffect(() => {
-    // This effect runs whenever selectedBrandId changes and we have Meta platform
-    if (selectedBrandId && activePlatforms.meta) {
-      console.log('[Dashboard] DIRECT TRIGGER: Brand selected with Meta platform, forcing immediate refresh');
-      
-      // Always trigger immediate refresh when brand is selected
-      const triggerRefresh = async () => {
-        try {
-          console.log('[Dashboard] DIRECT: Starting immediate full data refresh');
-          await fetchAllData(true); // Always force full resync
-          markDataRefreshed('both');
-          
-          // Also dispatch events to ensure all components refresh
-          window.dispatchEvent(new CustomEvent('page-refresh', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              timestamp: Date.now(), 
-              forceRefresh: true,
-              source: 'brand-selection-direct',
-              priority: 'immediate'
-            }
-          }));
-          
-          console.log('[Dashboard] DIRECT: Immediate refresh completed');
-        } catch (error) {
-          console.error('[Dashboard] DIRECT: Error during immediate refresh:', error);
-        }
-      };
-      
-      // Trigger immediately without any delays
-      triggerRefresh();
-    }
-  }, [selectedBrandId, activePlatforms.meta]); // Trigger whenever brand or Meta platform status changes
-
   // After removing useEffect for Meta metrics, add back the platform connection references
   const platforms = {
     shopify: connectionStoreConnections.some((c: PlatformConnection) => c.platform_type === 'shopify'),
@@ -1367,33 +1333,19 @@ export default function DashboardPage() {
       // Force aggressive refresh regardless of cooldown
       lastHardRefreshRef.current = now;
       
-      // Trigger immediate aggressive refresh like manual buttons
-      const triggerNavigationRefresh = async () => {
-        try {
-          console.log('[Dashboard] NAVIGATION: Starting aggressive refresh');
-          
-          // Use a single event to avoid multiple refreshes
-          window.dispatchEvent(new CustomEvent('page-refresh', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              timestamp: now, 
-              forceRefresh: true,
-              source: 'page-navigation'
-            }
-          }));
-          
-          // Perform aggressive data refresh like manual buttons
-          await fetchAllData(true);
-          markDataRefreshed('both');
-          
-          console.log('[Dashboard] NAVIGATION: Aggressive refresh completed');
-        } catch (error) {
-          console.error('[Dashboard] NAVIGATION: Error during refresh:', error);
+      // Use a single event to avoid multiple refreshes
+      window.dispatchEvent(new CustomEvent('page-refresh', { 
+        detail: { 
+          brandId: selectedBrandId, 
+          timestamp: now, 
+          forceRefresh: true,
+          source: 'page-navigation'
         }
-      };
+      }));
       
-      // Trigger immediately
-      triggerNavigationRefresh();
+      // Perform aggressive data refresh like manual buttons
+      fetchAllData(true);
+      markDataRefreshed('both');
     }
     
     // Update the last path ref for next comparison
@@ -1403,7 +1355,7 @@ export default function DashboardPage() {
   // Add specific effect for initial page load - use same aggressive refresh as manual button
   useEffect(() => {
     // Only run if we have a selected brand and Meta is connected
-    if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta) {
+    if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta && !isLoading && !initialDataLoad) {
       console.log('[Dashboard] Initial page load detected, triggering IMMEDIATE FULL DATA RESYNC');
       
       // Cancel any existing timeout to prevent duplicates
@@ -1413,17 +1365,14 @@ export default function DashboardPage() {
         delete window._initialLoadTimeoutId;
       }
       
-      // Mark as done immediately to prevent re-running
-      initialLoadFlag.current = false;
-      
-      // Force immediate aggressive refresh, ignoring any cooldowns or loading states
+      // Force immediate aggressive refresh, ignoring any cooldowns
       console.log('[Dashboard] Performing IMMEDIATE full Meta data resync on initial load');
       
       // Set the timestamp to avoid duplicating refreshes
       const refreshTime = Date.now();
       lastHardRefreshRef.current = refreshTime;
       
-      // Trigger immediate aggressive refresh without any delay
+      // Trigger immediate aggressive refresh instead of using timeout
       (async () => {
         try {
           console.log('[Dashboard] Starting FULL Meta data resync on initial load');
@@ -1449,10 +1398,13 @@ export default function DashboardPage() {
           
         } catch (error) {
           console.error('[Dashboard] Error during initial load full resync:', error);
+        } finally {
+          // Mark as done to prevent re-running
+          initialLoadFlag.current = false;
         }
       })();
     }
-  }, [selectedBrandId, activePlatforms.meta]);
+  }, [selectedBrandId, activePlatforms.meta, isLoading, initialDataLoad]);
 
   // Enhance the effect for visibility changes to make sure it triggers a full resync
   useEffect(() => {
