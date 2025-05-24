@@ -18,6 +18,8 @@ import { calculateMetrics } from "@/utils/metrics"
 import Image from "next/image"
 import { SalesByProduct } from "@/components/dashboard/SalesByProduct"
 import { format } from "date-fns"
+import { useDataRefresh } from "@/contexts/DataRefreshContext"
+import { formatLastUpdated } from "@/lib/utils/timeAgo"
 
 interface ShopifyTabProps {
   connection: PlatformConnection
@@ -196,6 +198,9 @@ export function ShopifyTab({
   // Add a ref to track when we last dispatched a refresh event
   const lastRefreshRef = useRef<number>(0);
   const isInitialMountRef = useRef<boolean>(true);
+  
+  // Use the data refresh context
+  const { lastShopifyRefresh, markDataRefreshed } = useDataRefresh();
 
   // Add a function to safely dispatch refresh events with debouncing
   const safeDispatchRefresh = useCallback((reason: string) => {
@@ -222,10 +227,13 @@ export function ShopifyTab({
           reason
         }
       }));
+      
+      // Mark Shopify data as refreshed
+      markDataRefreshed('shopify');
     } else {
       console.log(`[ShopifyTab] Skipped duplicate refresh (debounced) - reason: ${reason}`);
     }
-  }, [brandId, dateRange]);
+  }, [brandId, dateRange, markDataRefreshed]);
 
   // Replace the Last 30 days preset useEffect
   useEffect(() => {
@@ -251,24 +259,7 @@ export function ShopifyTab({
 
   }, [dateRange, safeDispatchRefresh])
 
-  // Add a useEffect hook to listen for tab visibility changes
-  useEffect(() => {
-    // const handleTabVisibility = (event?: Event) => {
-    //   if (document.visibilityState === 'visible') {
-    //     console.log('[ShopifyTab] Tab became visible, refreshing data');
-    //     // Refresh data when tab becomes visible, with debouncing
-    //     safeDispatchRefresh('tab-became-visible');
-    //   }
-    // };
-    // 
-    // // Add event listener for visibility change
-    // document.addEventListener('visibilitychange', handleTabVisibility);
-    // 
-    // // Cleanup function to remove event listener
-    // return () => {
-    //   document.removeEventListener('visibilitychange', handleTabVisibility);
-    // };
-  }, [safeDispatchRefresh]); // Re-run if safeDispatchRefresh changes (e.g. brandId, dateRange)
+  // Remove tab visibility refresh - we only want to refresh on manual button click or page navigation
 
   // Add check for empty metrics and force refresh if needed
   useEffect(() => {
@@ -483,6 +474,9 @@ export function ShopifyTab({
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-white">Sales Summary</h3>
+          <span className="text-xs text-gray-500">
+            {formatLastUpdated(lastShopifyRefresh)}
+          </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard

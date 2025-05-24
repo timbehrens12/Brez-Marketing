@@ -164,32 +164,10 @@ export function PlatformTabs({
     averagePurchaseValue: safeMetrics.averageOrderValue || 0
   }), [safeMetrics]);
 
-  // Handle tab change with visibility tracking
+  // Handle tab change with proper navigation refresh
   const handleValueChange = (value: string) => {
+    const previousTab = activeTab;
     setActiveTab(value);
-    
-    // If we're leaving the Meta tab, set the global block flag to stop API calls temporarily
-    if (activeTab === "meta" && value !== "meta") {
-      console.log("[PlatformTabs] Leaving Meta tab, enabling temporary blocking during transition");
-      
-      if (window._blockMetaApiCalls !== undefined) {
-        // Only temporarily block Meta API calls
-        window._blockMetaApiCalls = true;
-        
-        // Automatically clear the block flag after a brief delay
-        // This ensures that when we navigate back, we can fetch immediately
-        setTimeout(() => {
-          window._blockMetaApiCalls = false;
-          console.log("[PlatformTabs] Navigation transition complete, cleared API blocking flag");
-            }, 1000);
-          }
-      }
-    
-    // If we're navigating TO the Meta tab, clear the block flag immediately
-    if (value === "meta" && window._blockMetaApiCalls) {
-      console.log("[PlatformTabs] Navigating to Meta tab, clearing API blocking flag");
-      window._blockMetaApiCalls = false;
-    }
     
     // Update visibility state for all tabs
     setTabVisibility({
@@ -199,6 +177,36 @@ export function PlatformTabs({
       tiktok: value === "tiktok",
       googleads: value === "googleads"
     });
+    
+    // Only trigger refresh when actually navigating between different tabs (not initial load)
+    if (previousTab !== value && previousTab !== "site") {
+      console.log(`[PlatformTabs] Navigating from ${previousTab} to ${value} - triggering data refresh`);
+      
+      // Trigger refresh for the target tab's data
+      if (value === "shopify") {
+        console.log("[PlatformTabs] Refreshing Shopify data on navigation");
+        window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            reason: 'tab-navigation',
+            forceFetch: true,
+            bypassCache: true
+          }
+        }));
+      } else if (value === "meta") {
+        console.log("[PlatformTabs] Refreshing Meta data on navigation");
+        window.dispatchEvent(new CustomEvent('page-refresh', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            reason: 'tab-navigation',
+            forceRefresh: true,
+            source: 'tab-navigation'
+          }
+        }));
+      }
+    }
     
     // Notify parent of tab change
     if (onTabChange) {

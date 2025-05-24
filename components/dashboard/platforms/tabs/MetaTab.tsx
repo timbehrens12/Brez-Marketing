@@ -59,6 +59,8 @@ import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
 import { MetaSpecificDateSyncButton } from '@/components/dashboard/platforms/tabs/MetaSpecificDateSyncButton'; // Import the new button
+import { useDataRefresh } from "@/contexts/DataRefreshContext"
+import { formatLastUpdated } from "@/lib/utils/timeAgo"
 
 
 interface MetaTabProps {
@@ -425,6 +427,9 @@ export function MetaTab({
 
   // Add this state near the other state declarations
   const [showDebugControls, setShowDebugControls] = useState(false);
+  
+  // Use the data refresh context
+  const { lastMetaRefresh, markDataRefreshed } = useDataRefresh();
 
   // Add this function to toggle debug controls
   const toggleDebugControls = () => {
@@ -1235,6 +1240,9 @@ export function MetaTab({
         detail: { brandId, refreshType: 'manual' } 
       });
       window.dispatchEvent(refreshEvent);
+      
+      // Mark Meta data as refreshed
+      markDataRefreshed('meta');
       
       toast.success("Meta data refreshed successfully");
     } catch (error) {
@@ -4465,6 +4473,9 @@ Try creating at least one active campaign in Meta Ads Manager.
           <LineChart className="h-5 w-5 text-gray-400 mr-2" />
           <h2 className="text-lg font-semibold">Meta Data Overview</h2>
           <div className="ml-auto flex items-center">
+            <span className="text-xs text-gray-500">
+              {formatLastUpdated(lastMetaRefresh)}
+            </span>
           </div>
         </div>
         

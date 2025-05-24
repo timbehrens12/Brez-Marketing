@@ -49,7 +49,7 @@ import {
   getFilteredConnections,
   getPlatformStatusFromConnections
 } from '@/lib/utils/platformUtils'
-import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
+import { useDataRefresh } from '@/contexts/DataRefreshContext'
 import { Button } from "@/components/ui/button"
 import { fetchHelper } from "@/lib/utils/fetchHelper"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -62,6 +62,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import useSWR from 'swr'
 import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
+import { formatLastUpdated } from "@/lib/utils/timeAgo"
 
 interface WidgetData {
   shopify?: any;
@@ -160,11 +161,23 @@ export default function DashboardPage() {
   const [isRefreshingData, setIsRefreshingData] = useState(false);
 
   // Add missing state for lastRefreshed
-  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const { 
+    lastShopifyRefresh, 
+    lastMetaRefresh, 
+    markDataRefreshed 
+  } = useDataRefresh();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshCooldown, setRefreshCooldown] = useState(false);
   const [cooldownMessage, setCooldownMessage] = useState('');
   const COOLDOWN_SECONDS = 30; // 30 seconds cooldown between manual refreshes
+  
+  // Get the most recent refresh time for display
+  const getLastRefreshTime = () => {
+    if (!lastShopifyRefresh && !lastMetaRefresh) return null;
+    if (!lastShopifyRefresh) return lastMetaRefresh;
+    if (!lastMetaRefresh) return lastShopifyRefresh;
+    return lastShopifyRefresh > lastMetaRefresh ? lastShopifyRefresh : lastMetaRefresh;
+  };
 
   // Add a ref to track if we're still mounted
   const isMounted = useRef(true);
@@ -758,8 +771,8 @@ export default function DashboardPage() {
         setIsRefreshingData(false);
       }
       
-      // Set the last refreshed timestamp
-      setLastRefreshed(new Date());
+      // Mark data as refreshed 
+      markDataRefreshed('both');
     }
   }
 
@@ -989,7 +1002,7 @@ export default function DashboardPage() {
       
       // For manual refresh (clicking the button), always do a full Meta resync
       await fetchAllData(true)
-      setLastRefreshed(new Date())
+      markDataRefreshed('both')
       
       // Add this line to check for data gaps after refresh
       detectMetaDataGaps();
@@ -1025,8 +1038,9 @@ export default function DashboardPage() {
       setCooldownMessage(`Please wait ${remainingSeconds} seconds before refreshing again.`)
       
       // Start countdown
+      const refreshStartTime = Date.now()
       const countdownInterval = setInterval(() => {
-        const secondsLeft = Math.max(0, remainingSeconds - Math.floor((Date.now() - (lastRefreshed?.getTime() || Date.now())) / 1000))
+        const secondsLeft = Math.max(0, remainingSeconds - Math.floor((Date.now() - refreshStartTime) / 1000))
         setCooldownMessage(`Please wait ${secondsLeft} seconds before refreshing again.`)
         
         if (secondsLeft <= 0) {
@@ -1228,8 +1242,8 @@ export default function DashboardPage() {
           // Broadcast the update to ensure all components refresh
           window.dispatchEvent(new Event('refresh-metrics'));
           
-          // Update last refreshed timestamp
-          setLastRefreshed(new Date());
+          // Mark that Shopify data was refreshed
+          markDataRefreshed('shopify');
         } catch (error) {
           console.error('[Dashboard] Error refreshing Shopify metrics:', error);
         } finally {
@@ -1245,7 +1259,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('force-shopify-refresh', handleShopifyRefresh);
     };
-  }, [selectedBrandId, dateRange, setMetrics, setLastRefreshed]);
+      }, [selectedBrandId, dateRange, setMetrics, markDataRefreshed]);
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
@@ -1291,7 +1305,7 @@ export default function DashboardPage() {
         
         // Then perform a normal data refresh
         fetchAllData(true);
-        setLastRefreshed(new Date());
+        markDataRefreshed('both');
       } else {
         console.log(`[Dashboard] Skipping navigation refresh - too soon after last refresh (${(now - lastHardRefreshRef.current)/1000}s)`);
       }
@@ -1421,7 +1435,7 @@ export default function DashboardPage() {
             </TooltipProvider>
             
             <span className="text-xs text-gray-500">
-              Last updated: {lastRefreshed?.toLocaleTimeString()}
+              {formatLastUpdated(getLastRefreshTime())}
             </span>
             
             <TooltipProvider>
