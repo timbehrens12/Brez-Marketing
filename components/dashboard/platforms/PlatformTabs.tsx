@@ -196,26 +196,16 @@ export function PlatformTabs({
           }
         }));
       } else if (value === "meta") {
-        console.log("[PlatformTabs] Triggering aggressive Meta data refresh on navigation");
-        // Dispatch a more aggressive refresh event that will trigger full resync
+        console.log("[PlatformTabs] Triggering Meta data refresh on navigation");
+        // Dispatch only one event to prevent double refresh
         window.dispatchEvent(new CustomEvent('meta-aggressive-refresh', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            reason: 'tab-navigation-aggressive',
-            forceRefresh: true,
-            source: 'tab-navigation-aggressive',
-            aggressiveRefresh: true
-          }
-        }));
-        // Also dispatch the regular page-refresh event as backup
-        window.dispatchEvent(new CustomEvent('page-refresh', { 
           detail: { 
             brandId, 
             timestamp: Date.now(),
             reason: 'tab-navigation',
             forceRefresh: true,
-            source: 'tab-navigation'
+            source: 'tab-navigation',
+            aggressiveRefresh: true
           }
         }));
       }

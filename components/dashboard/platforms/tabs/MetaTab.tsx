@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useDataRefresh } from '@/contexts/DataRefreshContext'
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   DollarSign, LineChart, MousePointerClick, TrendingUp, Loader2, 
@@ -59,7 +60,6 @@ import { TotalBudgetMetricCard } from "../../../metrics/TotalBudgetMetricCard"
 import MetaFixButton from "./meta-fix-button" // Import the Meta Fix Button
 import { TotalAdSetReachCard } from '@/components/dashboard/platforms/metrics/TotalAdSetReachCard'
 import { MetaSpecificDateSyncButton } from '@/components/dashboard/platforms/tabs/MetaSpecificDateSyncButton'; // Import the new button
-import { useDataRefresh } from "@/contexts/DataRefreshContext"
 import { formatLastUpdated } from "@/lib/utils/timeAgo"
 
 
@@ -309,6 +309,7 @@ export function MetaTab({
   initialDataLoad = false, 
   brandId 
 }: MetaTabProps) {
+  const { markDataRefreshed } = useDataRefresh();
   const mountTimeRef = useRef(Date.now());
 
   // Helper function to create a default metrics object
@@ -4144,9 +4145,10 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Skip if component is unmounted
     if (!isMounted.current) return;
     
-    // Define the event handler for regular refresh
-    const handleGlobalRefresh = () => {
-      console.log(`[MetaTab] Global page refresh detected`);
+    // Use a single handler to prevent double refresh calls
+    const handleRefresh = (event: Event) => {
+      const eventType = event.type;
+      console.log(`[MetaTab] Refresh event detected: ${eventType}`);
       
       // Only refresh if we have a brand ID
       if (!brandId) {
@@ -4154,40 +4156,32 @@ Try creating at least one active campaign in Meta Ads Manager.
         return;
       }
       
-      // Trigger the refresh with the current brand ID
-      refreshAllMetaData(brandId).then(success => {
-        if (success) {
-          console.log(`[MetaTab] Global refresh completed successfully`);
-        } else {
-          console.log(`[MetaTab] Global refresh completed with errors`);
-        }
-      });
-    };
-    
-    // Define the event handler for aggressive refresh (tab navigation)
-    const handleAggressiveRefresh = () => {
-      console.log(`[MetaTab] AGGRESSIVE Meta refresh detected (tab navigation)`);
+      // Use throttling to prevent multiple refreshes within a short time
+      const REFRESH_THROTTLE_MS = 2000; // 2 seconds
+      const now = Date.now();
+      const lastRefresh = window._lastMetaRefresh || 0;
       
-      // Only refresh if we have a brand ID
-      if (!brandId) {
-        console.log(`[MetaTab] No brand ID available, skipping aggressive refresh`);
+      if (now - lastRefresh < REFRESH_THROTTLE_MS) {
+        console.log(`[MetaTab] Throttling refresh - too recent (${now - lastRefresh}ms ago)`);
         return;
       }
       
-      // Trigger the same aggressive refresh as manual refresh button
-      console.log(`[MetaTab] Performing FULL Meta data resync due to tab navigation`);
+      // Update the last refresh timestamp
+      window._lastMetaRefresh = now;
+      
+      // Trigger the refresh with the current brand ID
       refreshAllMetaData(brandId).then(success => {
         if (success) {
-          console.log(`[MetaTab] Aggressive refresh completed successfully`);
+          console.log(`[MetaTab] Refresh completed successfully for ${eventType}`);
         } else {
-          console.log(`[MetaTab] Aggressive refresh completed with errors`);
+          console.log(`[MetaTab] Refresh completed with errors for ${eventType}`);
         }
       });
     };
     
-    // Register the event listeners
-    window.addEventListener('page-refresh', handleGlobalRefresh);
-    window.addEventListener('meta-aggressive-refresh', handleAggressiveRefresh);
+    // Register the single event handler for both event types
+    window.addEventListener('page-refresh', handleRefresh);
+    window.addEventListener('meta-aggressive-refresh', handleRefresh);
     
     // Expose the refresh function to the window for external access
     if (typeof window !== 'undefined') {
@@ -4197,8 +4191,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // Clean up the event listeners when the component unmounts
     return () => {
-      window.removeEventListener('page-refresh', handleGlobalRefresh);
-      window.removeEventListener('meta-aggressive-refresh', handleAggressiveRefresh);
+      window.removeEventListener('page-refresh', handleRefresh);
+      window.removeEventListener('meta-aggressive-refresh', handleRefresh);
       
       // Clean up the exposed function
       if (typeof window !== 'undefined') {

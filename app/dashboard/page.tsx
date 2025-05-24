@@ -757,8 +757,8 @@ export default function DashboardPage() {
         }
       }
       
-      // Now call the normal fetchMetaMetrics function with force refresh
-      await fetchMetaMetrics(true, true);
+      // Skip fetchMetaMetrics since we already did a full Meta resync above
+      // await fetchMetaMetrics(true, true);
       
     } catch (error) {
       console.error('Error refreshing data:', error)
