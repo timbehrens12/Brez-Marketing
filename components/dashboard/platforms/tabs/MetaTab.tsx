@@ -4269,13 +4269,25 @@ Try creating at least one active campaign in Meta Ads Manager.
         return;
       }
       
-      // ALWAYS use forceRefreshAllMetaData for these events to bypass cooldowns
-      console.log(`[MetaTab] Triggering FORCE refresh for event: ${eventType}`);
-      forceRefreshAllMetaData(brandId).then(success => {
+      // Use throttling to prevent multiple refreshes within a short time
+      const REFRESH_THROTTLE_MS = 2000; // 2 seconds
+      const now = Date.now();
+      const lastRefresh = window._lastMetaRefresh || 0;
+      
+      if (now - lastRefresh < REFRESH_THROTTLE_MS) {
+        console.log(`[MetaTab] Throttling refresh - too recent (${now - lastRefresh}ms ago)`);
+        return;
+      }
+      
+      // Update the last refresh timestamp
+      window._lastMetaRefresh = now;
+      
+      // Trigger the refresh with the current brand ID
+      refreshAllMetaData(brandId).then(success => {
         if (success) {
-          console.log(`[MetaTab] FORCE refresh completed successfully for ${eventType}`);
+          console.log(`[MetaTab] Refresh completed successfully for ${eventType}`);
         } else {
-          console.log(`[MetaTab] FORCE refresh completed with errors for ${eventType}`);
+          console.log(`[MetaTab] Refresh completed with errors for ${eventType}`);
         }
       });
     };
@@ -4301,7 +4313,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         delete window._refreshMetaData;
       }
     };
-  }, [brandId, refreshAllMetaData, forceRefreshAllMetaData]);
+  }, [brandId, refreshAllMetaData]);
 
   // Add a proper date comparison function to avoid infinite loops
   const areDatesEqual = (date1: Date | undefined, date2: Date | undefined): boolean => {
@@ -4466,6 +4478,63 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // No dependencies to ensure this only runs on mount/navigation
   }, []);
+  
+  // Add a simple, robust event listener for aggressive refresh
+  useEffect(() => {
+    const handleForceResync = (event: CustomEvent) => {
+      if (event.detail?.brandId === brandId) {
+        console.log('[MetaTab] Received meta-force-resync event - triggering immediate fresh data pull');
+        
+        // Clear any existing blocking flags
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+        }
+        
+        // Force immediate refresh of all Meta data with cache busting
+        const forceRefreshAllData = async () => {
+          try {
+            // Step 1: Trigger Meta API resync
+            const resyncResponse = await fetch('/api/meta/resync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                brandId, 
+                days: 30,
+                force_refresh: true,
+                bypass_cache: true
+              })
+            });
+            
+            if (resyncResponse.ok) {
+              console.log('[MetaTab] Meta API resync completed successfully');
+              
+              // Step 2: Refresh campaigns
+              await fetchCampaigns(true);
+              
+              // Step 3: Refresh all metrics
+              await fetchAllMetricsDirectly();
+              
+              // Step 4: Mark data as refreshed
+              markDataRefreshed('meta');
+              
+              console.log('[MetaTab] Force resync completed successfully');
+            }
+          } catch (error) {
+            console.error('[MetaTab] Error during force resync:', error);
+          }
+        };
+        
+        forceRefreshAllData();
+      }
+    };
+    
+    window.addEventListener('meta-force-resync', handleForceResync as EventListener);
+    
+    return () => {
+      window.removeEventListener('meta-force-resync', handleForceResync as EventListener);
+    };
+  }, [brandId, fetchCampaigns, fetchAllMetricsDirectly, markDataRefreshed]);
   
   return (
     <TooltipProvider>

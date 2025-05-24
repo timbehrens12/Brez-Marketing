@@ -45,19 +45,15 @@ import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { BrandSelectionTrigger } from '@/components/dashboard/BrandSelectionTrigger'
 import { LongTextFormatter } from '@/lib/utils/longText'
 import useBrandIdParam from '@/lib/hooks/useBrandIdParam'
-import {
-  getFilteredConnections,
-  getPlatformStatusFromConnections
-} from '@/lib/utils/platformUtils'
+import { getFilteredConnections, getPlatformStatusFromConnections } from '@/lib/utils/platformUtils'
+import { fetchHelper } from "@/lib/utils/fetchHelper"
+import { MetricsContext } from "@/contexts/metricsContext"
+import { Brand } from "@/types/brand"
 import { useDataRefresh } from '@/contexts/DataRefreshContext'
 import { Button } from "@/components/ui/button"
-import { fetchHelper } from "@/lib/utils/fetchHelper"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
-import { MetricsContext } from "@/contexts/metricsContext"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Brand } from "@/types/brand"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import useSWR from 'swr'
 import { cn } from "@/lib/utils"
@@ -128,6 +124,33 @@ function formatDate(date: Date | undefined): string {
 
 // Add a constant for maximum loading time
 const MAX_LOADING_TIME = 30000; // 30 seconds maximum loading time
+
+// Add this function at the top level (after imports, before component)
+const triggerAggressiveRefresh = async (brandId: string, reason: string) => {
+  console.log(`[Dashboard] Triggering aggressive refresh for ${reason}`);
+  
+  // Dispatch immediate Meta resync event
+  window.dispatchEvent(new CustomEvent('meta-force-resync', { 
+    detail: { 
+      brandId, 
+      timestamp: Date.now(),
+      source: reason,
+      forceRefresh: true
+    }
+  }));
+  
+  // Dispatch Shopify refresh event
+  window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+    detail: { 
+      brandId, 
+      timestamp: Date.now(),
+      reason: `aggressive-${reason}`,
+      forceFetch: true,
+      bypassCache: true,
+      aggressiveRefresh: true
+    }
+  }));
+};
 
 export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
@@ -1155,145 +1178,48 @@ export default function DashboardPage() {
     )
   }
 
-  // Add a listener for the force-shopify-refresh event (including aggressive refreshes)
+  // Enhanced effect to handle navigation between different pages within our app
   useEffect(() => {
-    const handleShopifyRefresh = (event: any) => {
-      const isAggressive = event.detail?.aggressiveRefresh || event.detail?.reason?.includes('aggressive');
-      console.log(`[Dashboard] Received ${isAggressive ? 'AGGRESSIVE' : 'regular'} force-shopify-refresh event`);
-      
-      // Only proceed if we have a selected brand
-      if (!selectedBrandId) return;
-      
-      // Set loading state just for Shopify data
-      setIsRefreshingData(true);
-      
-      // For aggressive refreshes, also trigger a full Shopify sync first
-      const fetchShopifyMetrics = async () => {
-        try {
-          // If this is an aggressive refresh, first sync fresh data from Shopify API
-          if (isAggressive) {
-            console.log('[Dashboard] Performing AGGRESSIVE Shopify refresh - syncing from API first');
-            
-            const shopifyConnection = connections.find(c => 
-              c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
-            );
-            
-            if (shopifyConnection) {
-              try {
-                const syncOrdersResponse = await fetch('/api/shopify/sync', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ 
-                    connectionId: shopifyConnection.id,
-                    forceRefresh: true,
-                    bypassCache: true
-                  })
-                });
-                
-                if (syncOrdersResponse.ok) {
-                  console.log('[Dashboard] Shopify sync completed for aggressive refresh');
-                  // Wait for the sync to complete
-                  await new Promise(resolve => setTimeout(resolve, 3000));
-                }
-              } catch (syncError) {
-                console.error('[Dashboard] Error during aggressive Shopify sync:', syncError);
-              }
-            }
-          }
-          
-          const params = new URLSearchParams({
-            brandId: selectedBrandId,
-            platform: 'shopify', // Explicitly specify Shopify platform
-            force: 'true', // Always force refresh
-            bypass_cache: 'true', // Always bypass cache for explicit refreshes
-            nocache: 'true' // Redundant but ensuring all cache flags are covered
-          });
-          
-          // Handle different date formats consistently - use string or Date object
-          let fromDate, toDate;
-          
-          if (event.detail?.dateRange?.from) {
-            // Check if it's already a formatted string (yyyy-MM-dd)
-            if (typeof event.detail.dateRange.from === 'string' && 
-                /^\d{4}-\d{2}-\d{2}$/.test(event.detail.dateRange.from)) {
-              fromDate = event.detail.dateRange.from;
-            } else {
-              // It's a Date object or some other format, ensure it's formatted correctly
-              fromDate = format(new Date(event.detail.dateRange.from), 'yyyy-MM-dd');
-            }
-          } else if (dateRange?.from) {
-            fromDate = format(dateRange.from, 'yyyy-MM-dd');
-          } else {
-            // Fallback to 30 days ago
-            fromDate = format(subDays(new Date(), 30), 'yyyy-MM-dd');
-          }
-          
-          if (event.detail?.dateRange?.to) {
-            // Check if it's already a formatted string (yyyy-MM-dd)
-            if (typeof event.detail.dateRange.to === 'string' && 
-                /^\d{4}-\d{2}-\d{2}$/.test(event.detail.dateRange.to)) {
-              toDate = event.detail.dateRange.to;
-            } else {
-              // It's a Date object or some other format, ensure it's formatted correctly
-              toDate = format(new Date(event.detail.dateRange.to), 'yyyy-MM-dd');
-            }
-          } else if (dateRange?.to) {
-            toDate = format(dateRange.to, 'yyyy-MM-dd');
-          } else {
-            // Fallback to today
-            toDate = format(new Date(), 'yyyy-MM-dd');
-          }
-          
-          // Now add the properly formatted dates to params
-          params.append('from', fromDate);
-          params.append('to', toDate);
-          
-          // Log what dates we're actually using
-          console.log(`[Dashboard] Fetching Shopify metrics with date range: ${fromDate} to ${toDate}`);
-          
-          // Add cache buster for refresh
-          params.append('t', new Date().getTime().toString());
+    const currentPath = pathname;
+    const previousPath = lastPathRef.current;
+    
+    // Skip if on first load or if there's no previous path
+    if (!previousPath || previousPath === currentPath) {
+      lastPathRef.current = currentPath;
+      return;
+    }
+    
+    console.log(`[Dashboard] Navigation detected: ${previousPath} → ${currentPath}`);
+    
+    // Always trigger navigation refresh when coming to dashboard, regardless of cooldown
+    if (currentPath === '/dashboard' && selectedBrandId) {
+      console.log('[Dashboard] Triggering navigation refresh to dashboard');
+      triggerAggressiveRefresh(selectedBrandId, 'page-navigation');
+      markDataRefreshed('both');
+    }
+    
+    // Update the last path ref for next comparison
+    lastPathRef.current = pathname;
+  }, [pathname, selectedBrandId, markDataRefreshed]);
 
-          console.log(`[Dashboard] ${isAggressive ? 'AGGRESSIVELY' : 'Explicitly'} refreshing Shopify metrics with params:`, Object.fromEntries(params));
-          
-          const response = await fetch(`/api/metrics?${params.toString()}`);
-          
-          if (!response.ok) {
-            throw new Error(`Failed to fetch Shopify metrics: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          console.log(`[Dashboard] ${isAggressive ? 'Aggressively' : ''} refreshed Shopify metrics:`, data);
-          
-          // Update metrics state to show the refreshed data
-          setMetrics(prevMetrics => ({
-            ...prevMetrics,
-            ...data
-          }));
-          
-          // Broadcast the update to ensure all components refresh
-          window.dispatchEvent(new Event('refresh-metrics'));
-          
-          // Mark that Shopify data was refreshed
-          markDataRefreshed('shopify');
-        } catch (error) {
-          console.error('[Dashboard] Error refreshing Shopify metrics:', error);
-        } finally {
-          setIsRefreshingData(false);
-        }
-      };
+  // Add specific effect for initial page load - use same aggressive refresh as manual button
+  useEffect(() => {
+    // Only run if we have a selected brand and this is the first load
+    if (initialLoadFlag.current && selectedBrandId && !isLoading && !initialDataLoad) {
+      console.log('[Dashboard] Initial page load detected, triggering IMMEDIATE refresh');
       
-      fetchShopifyMetrics();
-    };
-    
-    window.addEventListener('force-shopify-refresh', handleShopifyRefresh);
-    
-    return () => {
-      window.removeEventListener('force-shopify-refresh', handleShopifyRefresh);
-    };
-      }, [selectedBrandId, dateRange, setMetrics, markDataRefreshed, connections]);
+      // Set the timestamp to avoid duplicating refreshes
+      const refreshTime = Date.now();
+      lastHardRefreshRef.current = refreshTime;
+      
+      // Trigger immediate aggressive refresh
+      triggerAggressiveRefresh(selectedBrandId, 'initial-page-load');
+      markDataRefreshed('both');
+      
+      // Mark as done to prevent re-running
+      initialLoadFlag.current = false;
+    }
+  }, [selectedBrandId, isLoading, initialDataLoad, markDataRefreshed]);
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
@@ -1311,128 +1237,6 @@ export default function DashboardPage() {
       });
     }
   };
-
-  // Enhanced effect to handle navigation between different pages within our app
-  useEffect(() => {
-    const currentPath = pathname;
-    const previousPath = lastPathRef.current;
-    
-    // Skip if on first load or if there's no previous path
-    if (!previousPath || previousPath === currentPath) {
-      lastPathRef.current = currentPath;
-      return;
-    }
-    
-    console.log(`[Dashboard] Navigation detected: ${previousPath} → ${currentPath}`);
-    
-    // Always trigger navigation refresh when coming to dashboard, regardless of cooldown
-    if (currentPath === '/dashboard' && selectedBrandId && activePlatforms.meta) {
-      const now = Date.now();
-      console.log('[Dashboard] Triggering AGGRESSIVE navigation refresh to dashboard');
-      
-      // Force aggressive refresh regardless of cooldown
-      lastHardRefreshRef.current = now;
-      
-      // Use a single event to avoid multiple refreshes
-      window.dispatchEvent(new CustomEvent('page-refresh', { 
-        detail: { 
-          brandId: selectedBrandId, 
-          timestamp: now, 
-          forceRefresh: true,
-          source: 'page-navigation'
-        }
-      }));
-      
-      // Perform aggressive data refresh like manual buttons
-      fetchAllData(true);
-      markDataRefreshed('both');
-    }
-    
-    // Update the last path ref for next comparison
-    lastPathRef.current = pathname;
-  }, [pathname, selectedBrandId, activePlatforms.meta]);
-
-  // Add specific effect for initial page load - use same aggressive refresh as manual button
-  useEffect(() => {
-    // Only run if we have a selected brand and Meta is connected
-    if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta && !isLoading && !initialDataLoad) {
-      console.log('[Dashboard] Initial page load detected, triggering IMMEDIATE FULL DATA RESYNC');
-      
-      // Cancel any existing timeout to prevent duplicates
-      const existingTimeout = window._initialLoadTimeoutId;
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-        delete window._initialLoadTimeoutId;
-      }
-      
-      // Force immediate aggressive refresh, ignoring any cooldowns
-      console.log('[Dashboard] Performing IMMEDIATE full Meta data resync on initial load');
-      
-      // Set the timestamp to avoid duplicating refreshes
-      const refreshTime = Date.now();
-      lastHardRefreshRef.current = refreshTime;
-      
-      // Trigger immediate aggressive refresh instead of using timeout
-      (async () => {
-        try {
-          console.log('[Dashboard] Starting FULL Meta data resync on initial load');
-          
-          // Call the same aggressive fetchAllData function that the manual refresh button uses
-          await fetchAllData(true); // Force full Meta resync just like manual refresh
-          markDataRefreshed('both');
-          
-          console.log('[Dashboard] Initial load full resync completed successfully');
-          
-          // Also dispatch events to ensure all components refresh
-          window.dispatchEvent(new CustomEvent('page-refresh', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              timestamp: refreshTime, 
-              forceRefresh: true,
-              source: 'initial-page-load-full-resync',
-              priority: 'high',
-              isInitialLoad: true,
-              id: refreshTime.toString()
-            }
-          }));
-          
-        } catch (error) {
-          console.error('[Dashboard] Error during initial load full resync:', error);
-        } finally {
-          // Mark as done to prevent re-running
-          initialLoadFlag.current = false;
-        }
-      })();
-    }
-  }, [selectedBrandId, activePlatforms.meta, isLoading, initialDataLoad]);
-
-  // Enhance the effect for visibility changes to make sure it triggers a full resync
-  useEffect(() => {
-    /*const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && pathname === '/dashboard') {
-        // Always do a full refresh when the page becomes visible again
-        console.log('[Dashboard] Page became visible, triggering hard refresh.');
-        fetchAllData(true); // Force full resync
-        lastHardRefreshRef.current = Date.now();
-      }
-    };*/
-
-    // Handle navigation back to the dashboard - always do a full refresh
-    if (pathname === '/dashboard' && lastPathRef.current !== '/dashboard' && !initialLoadFlag.current) {
-      console.log('[Dashboard] Navigated back to dashboard, triggering IMMEDIATE hard refresh.');
-      fetchAllData(true); // Force full resync
-      lastHardRefreshRef.current = Date.now();
-    }
-    
-    lastPathRef.current = pathname;
-    initialLoadFlag.current = false; // Set to false after initial assessment
-
-    //document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      //document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [pathname, fetchAllData]);
 
   return (
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">

@@ -178,18 +178,18 @@ export function PlatformTabs({
       googleads: value === "googleads"
     });
     
-    // Only trigger refresh when actually navigating between different tabs (not initial load)
-    if (previousTab !== value && previousTab !== "site") {
-      console.log(`[PlatformTabs] Navigating from ${previousTab} to ${value} - triggering AGGRESSIVE data refresh`);
+    // Only trigger refresh when actually navigating between different tabs
+    if (previousTab !== value && brandId) {
+      console.log(`[PlatformTabs] Navigating from ${previousTab} to ${value} - triggering data refresh`);
       
       // Trigger refresh for the target tab's data
       if (value === "shopify") {
-        console.log("[PlatformTabs] Triggering aggressive Shopify data refresh on navigation");
+        console.log("[PlatformTabs] Triggering Shopify data refresh on navigation");
         window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
           detail: { 
             brandId, 
             timestamp: Date.now(),
-            reason: 'tab-navigation-aggressive',
+            reason: 'tab-navigation',
             forceFetch: true,
             bypassCache: true,
             aggressiveRefresh: true
@@ -197,15 +197,12 @@ export function PlatformTabs({
         }));
       } else if (value === "meta") {
         console.log("[PlatformTabs] Triggering Meta data refresh on navigation");
-        // Dispatch only one event to prevent double refresh
-        window.dispatchEvent(new CustomEvent('meta-aggressive-refresh', { 
+        window.dispatchEvent(new CustomEvent('meta-force-resync', { 
           detail: { 
             brandId, 
             timestamp: Date.now(),
-            reason: 'tab-navigation',
-            forceRefresh: true,
             source: 'tab-navigation',
-            aggressiveRefresh: true
+            forceRefresh: true
           }
         }));
       }

@@ -463,6 +463,65 @@ export function ShopifyTab({
     }, 1000); // Give the component time to render first
   }, [brandId, dateRange]);
 
+  // Add event listener for force Shopify refresh
+  useEffect(() => {
+    const handleForceRefresh = (event: CustomEvent) => {
+      if (event.detail?.brandId === brandId) {
+        console.log('[ShopifyTab] Received force-shopify-refresh event - triggering immediate refresh');
+        
+        const forceFreshData = async () => {
+          try {
+            // First sync orders from Shopify API
+            if (connection?.id) {
+              const syncResponse = await fetch('/api/shopify/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                  connectionId: connection.id,
+                  forceRefresh: true,
+                  bypassCache: true
+                })
+              });
+              
+              if (syncResponse.ok) {
+                console.log('[ShopifyTab] Shopify sync completed');
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for sync
+              }
+            }
+            
+            // Then fetch fresh metrics
+            const fromDate = format(dateRange.from, 'yyyy-MM-dd');
+            const toDate = format(dateRange.to, 'yyyy-MM-dd');
+            
+            const metricsResponse = await fetch(
+              `/api/metrics?brandId=${brandId}&from=${fromDate}&to=${toDate}&platform=shopify&force=true&bypass_cache=true&t=${Date.now()}`
+            );
+            
+            if (metricsResponse.ok) {
+              console.log('[ShopifyTab] Fresh metrics fetched successfully');
+              
+              // Trigger UI refresh
+              window.dispatchEvent(new Event('refresh-metrics'));
+              
+              // Mark data as refreshed
+              markDataRefreshed('shopify');
+            }
+          } catch (error) {
+            console.error('[ShopifyTab] Error during force refresh:', error);
+          }
+        };
+        
+        forceFreshData();
+      }
+    };
+    
+    window.addEventListener('force-shopify-refresh', handleForceRefresh as EventListener);
+    
+    return () => {
+      window.removeEventListener('force-shopify-refresh', handleForceRefresh as EventListener);
+    };
+  }, [brandId, connection?.id, dateRange, markDataRefreshed]);
+
   return (
     <div className="space-y-8">
       {/* Debug info */}
