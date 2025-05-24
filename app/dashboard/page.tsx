@@ -1312,37 +1312,40 @@ export default function DashboardPage() {
     }
   };
 
-  // Add a new effect to trigger hard refresh on page navigation/load
+  // Enhanced effect to handle navigation between different pages within our app
   useEffect(() => {
-    // Check if this is a real navigation (not the initial load)
-    if (pathname && selectedBrandId && activePlatforms.meta) {
+    const currentPath = pathname;
+    const previousPath = lastPathRef.current;
+    
+    // Skip if on first load or if there's no previous path
+    if (!previousPath || previousPath === currentPath) {
+      lastPathRef.current = currentPath;
+      return;
+    }
+    
+    console.log(`[Dashboard] Navigation detected: ${previousPath} → ${currentPath}`);
+    
+    // Always trigger navigation refresh when coming to dashboard, regardless of cooldown
+    if (currentPath === '/dashboard' && selectedBrandId && activePlatforms.meta) {
       const now = Date.now();
-      const MIN_REFRESH_INTERVAL = 10000; // 10 seconds minimum between hard refreshes
+      console.log('[Dashboard] Triggering AGGRESSIVE navigation refresh to dashboard');
       
-      // Only perform the refresh if we haven't just done one
-      if (now - lastHardRefreshRef.current > MIN_REFRESH_INTERVAL) {
-        console.log('[Dashboard] Page navigation detected, triggering hard refresh');
-        
-        // Update the last refresh timestamp
-        lastHardRefreshRef.current = now;
-        
-        // First, dispatch the events to refresh all widgets, including campaign widget
-        // Use a single event to avoid multiple refreshes
-        window.dispatchEvent(new CustomEvent('page-refresh', { 
-          detail: { 
-            brandId: selectedBrandId, 
-            timestamp: now, 
-            forceRefresh: true,
-            source: 'page-navigation'
-          }
-        }));
-        
-        // Then perform a normal data refresh
-        fetchAllData(true);
-        markDataRefreshed('both');
-      } else {
-        console.log(`[Dashboard] Skipping navigation refresh - too soon after last refresh (${(now - lastHardRefreshRef.current)/1000}s)`);
-      }
+      // Force aggressive refresh regardless of cooldown
+      lastHardRefreshRef.current = now;
+      
+      // Use a single event to avoid multiple refreshes
+      window.dispatchEvent(new CustomEvent('page-refresh', { 
+        detail: { 
+          brandId: selectedBrandId, 
+          timestamp: now, 
+          forceRefresh: true,
+          source: 'page-navigation'
+        }
+      }));
+      
+      // Perform aggressive data refresh like manual buttons
+      fetchAllData(true);
+      markDataRefreshed('both');
     }
     
     // Update the last path ref for next comparison
@@ -1353,7 +1356,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Only run if we have a selected brand and Meta is connected
     if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta && !isLoading && !initialDataLoad) {
-      console.log('[Dashboard] Initial page load detected, triggering FULL DATA RESYNC');
+      console.log('[Dashboard] Initial page load detected, triggering IMMEDIATE FULL DATA RESYNC');
       
       // Cancel any existing timeout to prevent duplicates
       const existingTimeout = window._initialLoadTimeoutId;
@@ -1362,22 +1365,17 @@ export default function DashboardPage() {
         delete window._initialLoadTimeoutId;
       }
       
-      // Check if a refresh was already done very recently
-      const now = Date.now();
-      if (now - lastHardRefreshRef.current < 15000) {
-        console.log('[Dashboard] Skipping initial load refresh - too soon after another refresh');
-        initialLoadFlag.current = false;
-        return;
-      }
+      // Force immediate aggressive refresh, ignoring any cooldowns
+      console.log('[Dashboard] Performing IMMEDIATE full Meta data resync on initial load');
       
-      // Store the timeout ID so we can clear it if needed
-      window._initialLoadTimeoutId = setTimeout(async () => {
+      // Set the timestamp to avoid duplicating refreshes
+      const refreshTime = Date.now();
+      lastHardRefreshRef.current = refreshTime;
+      
+      // Trigger immediate aggressive refresh instead of using timeout
+      (async () => {
         try {
-          // Set the timestamp to avoid duplicating refreshes
-          const refreshTime = Date.now();
-          lastHardRefreshRef.current = refreshTime;
-          
-          console.log('[Dashboard] Performing FULL Meta data resync on initial load');
+          console.log('[Dashboard] Starting FULL Meta data resync on initial load');
           
           // Call the same aggressive fetchAllData function that the manual refresh button uses
           await fetchAllData(true); // Force full Meta resync just like manual refresh
@@ -1403,17 +1401,8 @@ export default function DashboardPage() {
         } finally {
           // Mark as done to prevent re-running
           initialLoadFlag.current = false;
-          delete window._initialLoadTimeoutId;
         }
-      }, 3000); // Reduced to 3 seconds since we want fresh data quickly
-      
-      // Cleanup if component unmounts before timeout
-      return () => {
-        if (window._initialLoadTimeoutId) {
-          clearTimeout(window._initialLoadTimeoutId);
-          delete window._initialLoadTimeoutId;
-        }
-      };
+      })();
     }
   }, [selectedBrandId, activePlatforms.meta, isLoading, initialDataLoad]);
 
@@ -1430,7 +1419,7 @@ export default function DashboardPage() {
 
     // Handle navigation back to the dashboard - always do a full refresh
     if (pathname === '/dashboard' && lastPathRef.current !== '/dashboard' && !initialLoadFlag.current) {
-      console.log('[Dashboard] Navigated back to dashboard, triggering hard refresh.');
+      console.log('[Dashboard] Navigated back to dashboard, triggering IMMEDIATE hard refresh.');
       fetchAllData(true); // Force full resync
       lastHardRefreshRef.current = Date.now();
     }

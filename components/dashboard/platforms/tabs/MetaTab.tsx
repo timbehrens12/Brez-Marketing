@@ -4108,6 +4108,119 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   };
 
+  // Add a force refresh function that bypasses all cooldowns and locks - for debug use
+  const forceRefreshAllMetaData = async (triggerBrandId: string): Promise<boolean> => {
+    console.log(`[MetaTab] 🚨 FORCE refresh triggered (bypassing all locks) for brandId: ${triggerBrandId}`);
+    
+    // Clear any existing locks/flags first
+    if (typeof window !== 'undefined') {
+      window._metaFetchLock = false;
+      window._blockMetaApiCalls = false;
+      window._disableAutoMetaFetch = false;
+      window._activeFetchIds?.clear();
+      window._lastMetaRefresh = undefined;
+    }
+    
+    // Generate a unique request ID for this refresh
+    const refreshId = `force-refresh-${Date.now()}`;
+    
+    // Force acquire lock
+    if (typeof window !== 'undefined') {
+      window._metaFetchLock = true;
+      if (!window._activeFetchIds) window._activeFetchIds = new Set();
+      window._activeFetchIds.add(refreshId);
+    }
+
+    setIsManuallyRefreshing(true);
+    
+    try {
+      console.log(`[MetaTab] 🚀 Starting FORCE refresh (${refreshId}) - ignoring all cooldowns`);
+      
+      // Step 1: Force sync from Meta API
+      const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}&force=true`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Refresh-ID': refreshId,
+          'X-Force-Refresh': 'true'
+        }
+      });
+      
+      if (!syncResponse.ok) {
+        console.error(`[MetaTab] FORCE sync failed: ${syncResponse.status}`);
+        toast.error("Force refresh failed - Meta API sync error");
+        return false;
+      }
+      
+      console.log(`[MetaTab] ✅ FORCE Meta API sync completed`);
+      
+      // Step 2: Force refresh campaigns
+      await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true&bypass_cache=true`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Refresh-ID': refreshId,
+          'X-Force-Refresh': 'true'
+        }
+      });
+      
+      console.log(`[MetaTab] ✅ FORCE campaign refresh completed`);
+      
+      // Step 3: Force refresh metrics
+      await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true&force=true`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'X-Refresh-ID': refreshId,
+          'X-Force-Refresh': 'true'
+        }
+      });
+      
+      console.log(`[MetaTab] ✅ FORCE metrics refresh completed`);
+      
+      // Step 4: Force trigger frontend updates
+      if (refreshAllMetricsDirectlyRef.current) {
+        console.log(`[MetaTab] 🚀 FORCE triggering frontend refresh`);
+        await refreshAllMetricsDirectlyRef.current();
+      }
+      
+      // Dispatch force refresh events
+      if (typeof window !== 'undefined') {
+        console.log(`[MetaTab] 📣 Dispatching FORCE refresh events`);
+        
+        window.dispatchEvent(new CustomEvent('meta-force-refreshed', {
+          detail: {
+            success: true,
+            refreshId,
+            timestamp: new Date().toISOString(),
+            forced: true
+          }
+        }));
+        
+        window.dispatchEvent(new CustomEvent('page-refresh', {
+          detail: {
+            brandId: triggerBrandId, 
+            timestamp: Date.now(),
+            source: 'metatab-force-refresh',
+            forced: true
+          }
+        }));
+      }
+      
+      toast.success("Force refresh completed successfully!");
+      return true;
+    } catch (error) {
+      console.error(`[MetaTab] Error during FORCE refresh:`, error);
+      toast.error("Force refresh failed");
+      return false;
+    } finally {
+      setIsManuallyRefreshing(false);
+      // Release the force lock
+      if (typeof window !== 'undefined') {
+        window._metaFetchLock = false;
+        window._activeFetchIds?.delete(refreshId);
+      }
+    }
+  };
+
   // Update the effect that handles auto-refresh to use the global refresh handler
   useEffect(() => {
     // Skip if auto-refresh is disabled or the component is unmounting
