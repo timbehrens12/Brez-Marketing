@@ -430,7 +430,7 @@ export function MetaTab({
   const [showDebugControls, setShowDebugControls] = useState(false);
   
   // Use the data refresh context
-  const { lastMetaRefresh, markDataRefreshed } = useDataRefresh();
+  const { lastMetaRefresh } = useDataRefresh(); // Removed markDataRefreshed from here
 
   // Add this function to toggle debug controls
   const toggleDebugControls = () => {
