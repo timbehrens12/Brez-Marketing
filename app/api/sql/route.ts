@@ -135,20 +135,20 @@ END $$;
 `
 
 const addLastRefreshDateColumnSQL = `
--- Add last_refresh_date column to meta_campaign_daily_insights table if it doesn't exist
+-- Add last_refresh_date column to meta_campaign_daily_stats table if it doesn't exist
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
     FROM information_schema.columns
     WHERE table_schema = 'public'
-    AND table_name = 'meta_campaign_daily_insights'
+    AND table_name = 'meta_campaign_daily_stats'
     AND column_name = 'last_refresh_date'
   ) THEN
-    ALTER TABLE public.meta_campaign_daily_insights 
+    ALTER TABLE public.meta_campaign_daily_stats 
     ADD COLUMN last_refresh_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
     
-    COMMENT ON COLUMN public.meta_campaign_daily_insights.last_refresh_date IS 'Timestamp of when the campaign insights were last refreshed from Meta API';
+    COMMENT ON COLUMN public.meta_campaign_daily_stats.last_refresh_date IS 'Timestamp of when the campaign stats were last refreshed from Meta API';
   END IF;
 END $$;
 `
@@ -182,8 +182,8 @@ export async function GET(request: NextRequest) {
       results.push({ operation: 'create_adset_insights_function', success: true })
     }
     
-    // Run SQL to add last_refresh_date column to meta_campaign_daily_insights
-    console.log('Adding last_refresh_date column to meta_campaign_daily_insights table...')
+    // Run SQL to add last_refresh_date column to meta_campaign_daily_stats
+    console.log('Adding last_refresh_date column to meta_campaign_daily_stats table...')
     const { data: refreshDateData, error: refreshDateError } = await supabase.rpc('exec_sql', { sql: addLastRefreshDateColumnSQL })
     
     if (refreshDateError) {
