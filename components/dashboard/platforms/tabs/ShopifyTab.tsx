@@ -203,10 +203,12 @@ export function ShopifyTab({
   const { lastShopifyRefresh, markDataRefreshed } = useDataRefresh();
 
   // Add a function to safely dispatch refresh events with debouncing
-  const safeDispatchRefresh = useCallback((reason: string) => {
+  const safeDispatchRefresh = useCallback((reason: string, forceNoDebounce: boolean = false) => {
     const now = Date.now();
-    // Debounce to prevent multiple refreshes within 2 seconds
-    if (now - lastRefreshRef.current > 2000) {
+    // For aggressive refreshes, reduce debounce time or skip it entirely
+    const debounceTime = reason.includes('aggressive') || forceNoDebounce ? 500 : 2000;
+    
+    if (now - lastRefreshRef.current > debounceTime || forceNoDebounce) {
       lastRefreshRef.current = now;
       console.log(`[ShopifyTab] Dispatching force-shopify-refresh event (reason: ${reason})`);
       
@@ -224,7 +226,8 @@ export function ShopifyTab({
           },
           forceFetch: true,
           bypassCache: true,
-          reason
+          reason,
+          aggressiveRefresh: reason.includes('aggressive') || forceNoDebounce
         }
       }));
       

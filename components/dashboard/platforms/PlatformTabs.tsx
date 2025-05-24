@@ -180,22 +180,35 @@ export function PlatformTabs({
     
     // Only trigger refresh when actually navigating between different tabs (not initial load)
     if (previousTab !== value && previousTab !== "site") {
-      console.log(`[PlatformTabs] Navigating from ${previousTab} to ${value} - triggering data refresh`);
+      console.log(`[PlatformTabs] Navigating from ${previousTab} to ${value} - triggering AGGRESSIVE data refresh`);
       
       // Trigger refresh for the target tab's data
       if (value === "shopify") {
-        console.log("[PlatformTabs] Refreshing Shopify data on navigation");
+        console.log("[PlatformTabs] Triggering aggressive Shopify data refresh on navigation");
         window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
           detail: { 
             brandId, 
             timestamp: Date.now(),
-            reason: 'tab-navigation',
+            reason: 'tab-navigation-aggressive',
             forceFetch: true,
-            bypassCache: true
+            bypassCache: true,
+            aggressiveRefresh: true
           }
         }));
       } else if (value === "meta") {
-        console.log("[PlatformTabs] Refreshing Meta data on navigation");
+        console.log("[PlatformTabs] Triggering aggressive Meta data refresh on navigation");
+        // Dispatch a more aggressive refresh event that will trigger full resync
+        window.dispatchEvent(new CustomEvent('meta-aggressive-refresh', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            reason: 'tab-navigation-aggressive',
+            forceRefresh: true,
+            source: 'tab-navigation-aggressive',
+            aggressiveRefresh: true
+          }
+        }));
+        // Also dispatch the regular page-refresh event as backup
         window.dispatchEvent(new CustomEvent('page-refresh', { 
           detail: { 
             brandId, 

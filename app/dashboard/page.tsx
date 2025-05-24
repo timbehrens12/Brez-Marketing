@@ -1155,10 +1155,11 @@ export default function DashboardPage() {
     )
   }
 
-  // Add a listener for the force-shopify-refresh event
+  // Add a listener for the force-shopify-refresh event (including aggressive refreshes)
   useEffect(() => {
     const handleShopifyRefresh = (event: any) => {
-      console.log('[Dashboard] Received force-shopify-refresh event, refreshing Shopify data');
+      const isAggressive = event.detail?.aggressiveRefresh || event.detail?.reason?.includes('aggressive');
+      console.log(`[Dashboard] Received ${isAggressive ? 'AGGRESSIVE' : 'regular'} force-shopify-refresh event`);
       
       // Only proceed if we have a selected brand
       if (!selectedBrandId) return;
@@ -1166,9 +1167,42 @@ export default function DashboardPage() {
       // Set loading state just for Shopify data
       setIsRefreshingData(true);
       
-      // Call the API directly to refresh Shopify metrics
+      // For aggressive refreshes, also trigger a full Shopify sync first
       const fetchShopifyMetrics = async () => {
         try {
+          // If this is an aggressive refresh, first sync fresh data from Shopify API
+          if (isAggressive) {
+            console.log('[Dashboard] Performing AGGRESSIVE Shopify refresh - syncing from API first');
+            
+            const shopifyConnection = connections.find(c => 
+              c.platform_type === 'shopify' && c.status === 'active' && c.brand_id === selectedBrandId
+            );
+            
+            if (shopifyConnection) {
+              try {
+                const syncOrdersResponse = await fetch('/api/shopify/sync', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ 
+                    connectionId: shopifyConnection.id,
+                    forceRefresh: true,
+                    bypassCache: true
+                  })
+                });
+                
+                if (syncOrdersResponse.ok) {
+                  console.log('[Dashboard] Shopify sync completed for aggressive refresh');
+                  // Wait for the sync to complete
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+              } catch (syncError) {
+                console.error('[Dashboard] Error during aggressive Shopify sync:', syncError);
+              }
+            }
+          }
+          
           const params = new URLSearchParams({
             brandId: selectedBrandId,
             platform: 'shopify', // Explicitly specify Shopify platform
@@ -1222,7 +1256,7 @@ export default function DashboardPage() {
           // Add cache buster for refresh
           params.append('t', new Date().getTime().toString());
 
-          console.log('[Dashboard] Explicitly refreshing Shopify metrics with params:', Object.fromEntries(params));
+          console.log(`[Dashboard] ${isAggressive ? 'AGGRESSIVELY' : 'Explicitly'} refreshing Shopify metrics with params:`, Object.fromEntries(params));
           
           const response = await fetch(`/api/metrics?${params.toString()}`);
           
@@ -1231,7 +1265,7 @@ export default function DashboardPage() {
           }
           
           const data = await response.json();
-          console.log('[Dashboard] Refreshed Shopify metrics:', data);
+          console.log(`[Dashboard] ${isAggressive ? 'Aggressively' : ''} refreshed Shopify metrics:`, data);
           
           // Update metrics state to show the refreshed data
           setMetrics(prevMetrics => ({
@@ -1259,7 +1293,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('force-shopify-refresh', handleShopifyRefresh);
     };
-      }, [selectedBrandId, dateRange, setMetrics, markDataRefreshed]);
+      }, [selectedBrandId, dateRange, setMetrics, markDataRefreshed, connections]);
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
@@ -1315,11 +1349,11 @@ export default function DashboardPage() {
     lastPathRef.current = pathname;
   }, [pathname, selectedBrandId, activePlatforms.meta]);
 
-  // Add specific effect for initial page load
+  // Add specific effect for initial page load - use same aggressive refresh as manual button
   useEffect(() => {
     // Only run if we have a selected brand and Meta is connected
     if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta && !isLoading && !initialDataLoad) {
-      console.log('[Dashboard] Initial page load detected, triggering hard refresh');
+      console.log('[Dashboard] Initial page load detected, triggering FULL DATA RESYNC');
       
       // Cancel any existing timeout to prevent duplicates
       const existingTimeout = window._initialLoadTimeoutId;
@@ -1337,29 +1371,41 @@ export default function DashboardPage() {
       }
       
       // Store the timeout ID so we can clear it if needed
-      window._initialLoadTimeoutId = setTimeout(() => {
-        // Set the timestamp to avoid duplicating refreshes with the navigation effect
-        const refreshTime = Date.now();
-        lastHardRefreshRef.current = refreshTime;
-        
-        // Dispatch a SINGLE event with very specific properties to avoid multiple handlers firing
-        console.log('[Dashboard] Dispatching single refresh event for initial load');
-        window.dispatchEvent(new CustomEvent('page-refresh', { 
-          detail: { 
-            brandId: selectedBrandId, 
-            timestamp: refreshTime, 
-            forceRefresh: true,
-            source: 'initial-page-load',
-            priority: 'high',
-            isInitialLoad: true,
-            id: refreshTime.toString() // Unique ID to help with deduplication
-          }
-        }));
-        
-        // Mark as done to prevent re-running
-        initialLoadFlag.current = false;
-        delete window._initialLoadTimeoutId;
-      }, 5000); // 5 second delay to ensure components are fully mounted
+      window._initialLoadTimeoutId = setTimeout(async () => {
+        try {
+          // Set the timestamp to avoid duplicating refreshes
+          const refreshTime = Date.now();
+          lastHardRefreshRef.current = refreshTime;
+          
+          console.log('[Dashboard] Performing FULL Meta data resync on initial load');
+          
+          // Call the same aggressive fetchAllData function that the manual refresh button uses
+          await fetchAllData(true); // Force full Meta resync just like manual refresh
+          markDataRefreshed('both');
+          
+          console.log('[Dashboard] Initial load full resync completed successfully');
+          
+          // Also dispatch events to ensure all components refresh
+          window.dispatchEvent(new CustomEvent('page-refresh', { 
+            detail: { 
+              brandId: selectedBrandId, 
+              timestamp: refreshTime, 
+              forceRefresh: true,
+              source: 'initial-page-load-full-resync',
+              priority: 'high',
+              isInitialLoad: true,
+              id: refreshTime.toString()
+            }
+          }));
+          
+        } catch (error) {
+          console.error('[Dashboard] Error during initial load full resync:', error);
+        } finally {
+          // Mark as done to prevent re-running
+          initialLoadFlag.current = false;
+          delete window._initialLoadTimeoutId;
+        }
+      }, 3000); // Reduced to 3 seconds since we want fresh data quickly
       
       // Cleanup if component unmounts before timeout
       return () => {

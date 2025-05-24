@@ -4139,12 +4139,12 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [brandId]);
 
-  // Listen for global page refresh event
+  // Listen for global page refresh event and aggressive refresh events
   useEffect(() => {
     // Skip if component is unmounted
     if (!isMounted.current) return;
     
-    // Define the event handler
+    // Define the event handler for regular refresh
     const handleGlobalRefresh = () => {
       console.log(`[MetaTab] Global page refresh detected`);
       
@@ -4164,8 +4164,30 @@ Try creating at least one active campaign in Meta Ads Manager.
       });
     };
     
-    // Register the event listener for the global refresh button
+    // Define the event handler for aggressive refresh (tab navigation)
+    const handleAggressiveRefresh = () => {
+      console.log(`[MetaTab] AGGRESSIVE Meta refresh detected (tab navigation)`);
+      
+      // Only refresh if we have a brand ID
+      if (!brandId) {
+        console.log(`[MetaTab] No brand ID available, skipping aggressive refresh`);
+        return;
+      }
+      
+      // Trigger the same aggressive refresh as manual refresh button
+      console.log(`[MetaTab] Performing FULL Meta data resync due to tab navigation`);
+      refreshAllMetaData(brandId).then(success => {
+        if (success) {
+          console.log(`[MetaTab] Aggressive refresh completed successfully`);
+        } else {
+          console.log(`[MetaTab] Aggressive refresh completed with errors`);
+        }
+      });
+    };
+    
+    // Register the event listeners
     window.addEventListener('page-refresh', handleGlobalRefresh);
+    window.addEventListener('meta-aggressive-refresh', handleAggressiveRefresh);
     
     // Expose the refresh function to the window for external access
     if (typeof window !== 'undefined') {
@@ -4173,9 +4195,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       window._refreshMetaData = () => refreshAllMetaData(brandId);
     }
     
-    // Clean up the event listener when the component unmounts
+    // Clean up the event listeners when the component unmounts
     return () => {
       window.removeEventListener('page-refresh', handleGlobalRefresh);
+      window.removeEventListener('meta-aggressive-refresh', handleAggressiveRefresh);
       
       // Clean up the exposed function
       if (typeof window !== 'undefined') {
