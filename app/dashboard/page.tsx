@@ -125,32 +125,99 @@ function formatDate(date: Date | undefined): string {
 // Add a constant for maximum loading time
 const MAX_LOADING_TIME = 30000; // 30 seconds maximum loading time
 
-// Add this function at the top level (after imports, before component)
+// Fix the triggerAggressiveRefresh function to actually force real data fetches
 const triggerAggressiveRefresh = async (brandId: string, reason: string) => {
-  console.log(`[Dashboard] Triggering aggressive refresh for ${reason}`);
+  console.log(`[Dashboard] Triggering aggressive refresh for ${reason}`)
   
-  // Dispatch immediate Meta resync event
-  window.dispatchEvent(new CustomEvent('meta-force-resync', { 
-    detail: { 
-      brandId, 
-      timestamp: Date.now(),
-      source: reason,
-      forceRefresh: true
-    }
-  }));
-  
-  // Dispatch Shopify refresh event
-  window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-    detail: { 
-      brandId, 
-      timestamp: Date.now(),
-      reason: `aggressive-${reason}`,
-      forceFetch: true,
-      bypassCache: true,
-      aggressiveRefresh: true
-    }
-  }));
-};
+  try {
+    // Step 1: Force Meta data refresh with proper cache busting
+    const metaRefreshResponse = await fetch('/api/meta/resync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brandId,
+        forceRefresh: true,
+        bypassCache: true,
+        aggressiveSync: true,
+        startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 7 days
+        endDate: new Date().toISOString().split('T')[0],
+        clearCache: true
+      })
+    })
+    
+    const metaResult = await metaRefreshResponse.json()
+    console.log(`[Dashboard] Meta refresh result:`, metaResult)
+    
+    // Step 2: Force Shopify data refresh  
+    const shopifyRefreshResponse = await fetch('/api/shopify/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brandId,
+        forceRefresh: true,
+        bypassCache: true,
+        aggressiveSync: true,
+        clearCache: true
+      })
+    })
+    
+    const shopifyResult = await shopifyRefreshResponse.json()
+    console.log(`[Dashboard] Shopify refresh result:`, shopifyResult)
+    
+    // Step 3: Wait a moment for data to propagate, then dispatch events
+    setTimeout(() => {
+      // Dispatch Meta refresh event
+      window.dispatchEvent(new CustomEvent('meta-force-resync', { 
+        detail: { 
+          brandId, 
+          timestamp: Date.now(),
+          source: reason,
+          forceRefresh: true,
+          freshData: true
+        }
+      }))
+      
+      // Dispatch Shopify refresh event  
+      window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+        detail: { 
+          brandId, 
+          timestamp: Date.now(),
+          reason: `aggressive-${reason}`,
+          forceFetch: true,
+          bypassCache: true,
+          aggressiveRefresh: true,
+          freshData: true
+        }
+      }))
+      
+      console.log(`[Dashboard] Dispatched refresh events after ${reason}`)
+    }, 2000) // Wait 2 seconds for API calls to complete
+    
+  } catch (error) {
+    console.error(`[Dashboard] Error in aggressive refresh:`, error)
+    
+    // Fallback: still dispatch events even if API calls fail
+    window.dispatchEvent(new CustomEvent('meta-force-resync', { 
+      detail: { 
+        brandId, 
+        timestamp: Date.now(),
+        source: reason,
+        forceRefresh: true
+      }
+    }))
+    
+    window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+      detail: { 
+        brandId, 
+        timestamp: Date.now(),
+        reason: `aggressive-${reason}`,
+        forceFetch: true,
+        bypassCache: true,
+        aggressiveRefresh: true
+      }
+    }))
+  }
+}
 
 export default function DashboardPage() {
   const { userId, isLoaded } = useAuth()
