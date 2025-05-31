@@ -663,14 +663,19 @@ export function HomeTab({
     const fromDate = dateRange.from.toISOString().split('T')[0];
     const toDate = dateRange.to.toISOString().split('T')[0];
     
-    if (daysDiff > 1.1) {
-      console.error(`[HomeTab] 🚨 CRITICAL: fetchMetaData aborted - date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate})`);
+    // Only apply strict validation for what appear to be single-day presets that got corrupted
+    // Allow legitimate multi-day ranges (weeks, months, custom ranges)
+    const isLikelySingleDayPreset = daysDiff < 1.5; // Less than 1.5 days suggests single-day intent
+    const isCorruptedSingleDay = isLikelySingleDayPreset && fromDate !== toDate;
+    
+    if (isCorruptedSingleDay) {
+      console.error(`[HomeTab] 🚨 CRITICAL: Corrupted single-day preset detected - spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - aborting data fetch to prevent mixing!`);
       console.error("[HomeTab] 🚨 This would cause data mixing between different days - aborting to protect data integrity");
       setIsLoadingMetaData(false);
       return;
     }
     
-    console.log(`[HomeTab] ✅ fetchMetaData date range validation passed: ${fromDate} to ${toDate} (${daysDiff.toFixed(2)} days)`);
+    console.log(`[HomeTab] ✅ Date range validation passed: ${fromDate} to ${toDate} (${daysDiff.toFixed(2)} days)`);
 
     const refreshId = `home-meta-refresh-${Date.now()}`;
     
@@ -689,10 +694,19 @@ export function HomeTab({
         return;
       }
       toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 }); // Show loading toast for hard refresh
+      setIsLoadingMetaData(true); // Set loading true for hard refresh
+    } else {
+      // For soft refresh, only set loading if we don't have any existing data to prevent flashing
+      if (metaMetrics.adSpend === 0 && metaMetrics.impressions === 0) {
+        console.log("[HomeTab] No existing data - setting loading state for soft refresh");
+        setIsLoadingMetaData(true);
+      } else {
+        console.log("[HomeTab] Existing data found - keeping data visible during soft refresh to prevent flashing");
+        // Don't set loading true to prevent data flashing
+      }
     }
 
     try {
-      setIsLoadingMetaData(true); // Always set loading true when fetch starts
       let criticalStepFailed = false; // Flag to track failure in critical steps
 
       if(isHardRefresh) {
@@ -781,6 +795,9 @@ export function HomeTab({
         params.append('bypass_cache', 'true');
         params.append('force_load', 'true'); // Ensure backend re-fetches from DB
         params.append('refresh', 'true'); // Instructs backend to re-calculate/re-fetch if needed
+      } else {
+        // For soft refresh (historical data), use lighter cache control
+        console.log("[HomeTab] Soft refresh - allowing backend caching for historical data");
       }
       // params.append('debug', 'true'); // Optional: for more verbose logging from backend
       
@@ -800,22 +817,25 @@ export function HomeTab({
       
       console.log(`[HomeTab] Fetching Meta data for previous period (refreshId: ${refreshId}): ${prevParams.toString()}`);
       
+      // Use different cache strategies based on refresh type
+      const cacheStrategy = isHardRefresh ? 'no-store' : 'default';
+      const cacheHeaders: Record<string, string> = {
+        'X-Refresh-ID': refreshId
+      };
+      
+      if (isHardRefresh) {
+        cacheHeaders['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+        cacheHeaders['Pragma'] = 'no-cache';
+      }
+      
       const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-        cache: 'no-store', // Client-side cache instruction
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate', // HTTP cache instruction
-          'Pragma': 'no-cache', // For older HTTP/1.0 caches
-          'X-Refresh-ID': refreshId
-        }
+        cache: cacheStrategy,
+        headers: cacheHeaders
       });
       
       const prevResponse = await fetch(`/api/metrics/meta?${prevParams.toString()}`, { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Refresh-ID': refreshId
-        }
+        cache: cacheStrategy,
+        headers: cacheHeaders
       });
       
       if (!response.ok) {
@@ -990,8 +1010,14 @@ export function HomeTab({
     
     // CRITICAL SAFETY CHECK: Prevent data mixing when switching between single-day presets
     const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysDiff > 1.1) {
-      console.error(`[HomeTab] 🚨 CRITICAL: Date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - this likely indicates a date preset switching bug!`);
+    
+    // Only apply strict validation for what appear to be single-day presets that got corrupted
+    // Allow legitimate multi-day ranges (weeks, months, custom ranges)
+    const isLikelySingleDayPreset = daysDiff < 1.5; // Less than 1.5 days suggests single-day intent
+    const isCorruptedSingleDay = isLikelySingleDayPreset && fromDate !== toDate;
+    
+    if (isCorruptedSingleDay) {
+      console.error(`[HomeTab] 🚨 CRITICAL: Corrupted single-day preset detected in syncMetaInsights - spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate})`);
       console.error("[HomeTab] 🚨 Aborting sync to prevent data mixing between different days");
       return;
     }
@@ -1001,6 +1027,20 @@ export function HomeTab({
     try {
       console.log("[HomeTab] Syncing Meta insights data just like Meta page...");
       setIsLoadingMetaData(true);
+    
+      // Smart sync logic: Skip API sync for historical data (older than 3 days)
+      const today = new Date();
+      const threeDaysAgo = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000));
+      const isRecentData = dateRange.to >= threeDaysAgo;
+      
+      if (!isRecentData) {
+        console.log("[HomeTab] Historical data detected - skipping Meta API sync, fetching from database only");
+        // For historical data, just fetch from database without API sync
+        await fetchMetaData(false);
+        return;
+      }
+      
+      console.log("[HomeTab] Recent data detected - proceeding with Meta API sync");
     
       // Add timeout to prevent hanging requests
       const timeoutPromise = new Promise((_, reject) => 
@@ -1168,8 +1208,13 @@ export function HomeTab({
       const fromDate = dateRange.from.toISOString().split('T')[0];
       const toDate = dateRange.to.toISOString().split('T')[0];
       
-      if (daysDiff > 1.1) {
-        console.error(`[HomeTab] 🚨 CRITICAL: Date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - aborting data fetch to prevent data mixing!`);
+      // Only apply strict validation for what appear to be single-day presets that got corrupted
+      // Allow legitimate multi-day ranges (weeks, months, custom ranges)
+      const isLikelySingleDayPreset = daysDiff < 1.5; // Less than 1.5 days suggests single-day intent
+      const isCorruptedSingleDay = isLikelySingleDayPreset && fromDate !== toDate;
+      
+      if (isCorruptedSingleDay) {
+        console.error(`[HomeTab] 🚨 CRITICAL: Corrupted single-day preset detected - spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - aborting data fetch to prevent mixing!`);
         console.error("[HomeTab] 🚨 This likely indicates a date preset switching bug where yesterday's data would be mixed with today's data");
         return;
       }
@@ -1180,7 +1225,20 @@ export function HomeTab({
       if (metaConnection) {
         if (!isInitialDataLoad) {
           console.log("[HomeTab] Meta connection active, calling fetchMetaData with hard refresh (not initial load).");
-          fetchMetaData(true); // Pass true for hard refresh
+          
+          // Smart refresh logic: Only do hard refresh for recent data, soft refresh for historical data
+          const today = new Date();
+          const threeDaysAgo = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000));
+          const isRecentData = dateRange.to >= threeDaysAgo;
+          
+          if (isRecentData) {
+            console.log("[HomeTab] Recent data detected - using hard refresh to get latest from Meta API");
+            fetchMetaData(true); // Hard refresh for recent data
+          } else {
+            console.log("[HomeTab] Historical data detected - using soft refresh from database");
+            fetchMetaData(false); // Soft refresh for historical data (faster)
+          }
+          
           if (widgets.some(widget => widget.id === 'meta-campaigns')) {
               console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
             fetchCampaigns(true); // forceRefresh is true here
@@ -1293,14 +1351,20 @@ export function HomeTab({
         const currentToDate = dateRange.to.toISOString().split('T')[0];
         console.log(`[HomeTab] ⚡ Global refresh using CURRENT date range: ${currentFromDate} to ${currentToDate}`);
         
-        // Additional safety check: If the date range spans more than expected for single-day ranges, warn
-        const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysDiff > 1.1) { // Allow slight tolerance for timezone differences
-          console.warn(`[HomeTab] ⚠️  WARNING: Date range spans ${daysDiff.toFixed(2)} days - this might be incorrect for single day presets`);
-        }
+        // Smart refresh logic: Only do aggressive syncing for recent data
+        const today = new Date();
+        const threeDaysAgo = new Date(today.getTime() - (3 * 24 * 60 * 60 * 1000));
+        const isRecentData = dateRange.to >= threeDaysAgo;
         
-        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-        syncMetaInsights();
+        if (isRecentData) {
+          console.log("[HomeTab] Recent data detected - performing full sync with Meta API");
+          toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+          syncMetaInsights();
+        } else {
+          console.log("[HomeTab] Historical data detected - using fast database refresh only");
+          toast.info("Refreshing historical data...", { id: "meta-global-refresh-toast" });
+          fetchMetaData(false); // Soft refresh for historical data
+        }
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
