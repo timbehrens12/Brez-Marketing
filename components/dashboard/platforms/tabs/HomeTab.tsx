@@ -360,7 +360,11 @@ export function HomeTab({
     previousPurchaseValue: number;
   }
   
-  // State for direct Meta metrics
+  // Add state to track if this is the initial load (to prevent showing stale data)
+  const [isInitialDataLoad, setIsInitialDataLoad] = useState<boolean>(true);
+  const [isMetaDataRefreshing, setIsMetaDataRefreshing] = useState<boolean>(false);
+
+  // State for Meta metrics with computed growth rates
   const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>({
     adSpend: 0,
     impressions: 0,
@@ -922,6 +926,9 @@ export function HomeTab({
         return newMetrics;
       });
       
+      // Mark that we've successfully loaded fresh data
+      setIsInitialDataLoad(false);
+      
       setMetaDaily(currentData.dailyData || []);
       hasFetchedMetaData.current = true;
       
@@ -1135,14 +1142,19 @@ export function HomeTab({
   // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[HomeTab] useEffect detected change in brandId or dateRange. Fetching all data.");
-      // For Meta, trigger a sync when brand or date range changes.
+      console.log("[HomeTab] useEffect detected change in brandId or dateRange.");
+      
+      // For Meta, only trigger sync if it's not the initial data load
       if (metaConnection) {
-        console.log("[HomeTab] Meta connection active, calling fetchMetaData with hard refresh.");
-        fetchMetaData(true); // Pass true for hard refresh
-        if (widgets.some(widget => widget.id === 'meta-campaigns')) {
-            console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
-          fetchCampaigns(true); // forceRefresh is true here
+        if (!isInitialDataLoad) {
+          console.log("[HomeTab] Meta connection active, calling fetchMetaData with hard refresh (not initial load).");
+          fetchMetaData(true); // Pass true for hard refresh
+          if (widgets.some(widget => widget.id === 'meta-campaigns')) {
+              console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
+            fetchCampaigns(true); // forceRefresh is true here
+          }
+        } else {
+          console.log("[HomeTab] Meta connection active but skipping fetchMetaData during initial load (syncMetaInsights will handle it).");
         }
       } else {
         console.log("[HomeTab] Meta connection not active, skipping Meta data fetch.");
@@ -1151,6 +1163,7 @@ export function HomeTab({
         setCampaigns([]); // Also clear campaigns
         setIsLoadingMetaData(false);
         setIsLoadingCampaigns(false);
+        setIsInitialDataLoad(false); // Reset initial load flag if no connection
       }
 
       if (shopifyConnection) {
@@ -1311,6 +1324,10 @@ export function HomeTab({
     
     console.log("[HomeTab] Component mounted with brandId and metaConnection - triggering ONE-TIME refresh like Meta page");
     
+    // Start with loading state for Meta data to prevent showing stale data
+    setIsLoadingMetaData(true);
+    setIsMetaDataRefreshing(true);
+    
     // Clear any API blocking flags that might be set to ensure we can fetch data
     if (window._blockMetaApiCalls !== undefined) {
       window._blockMetaApiCalls = false;
@@ -1329,7 +1346,9 @@ export function HomeTab({
       
       // Call the EXACT same function that the Meta page uses
       // This ensures 100% identical behavior and fetches fresh data from Meta API
-      syncMetaInsights();
+      syncMetaInsights().finally(() => {
+        setIsMetaDataRefreshing(false);
+      });
     }, 100);
     
     // Cleanup timeout on unmount
@@ -1513,7 +1532,7 @@ export function HomeTab({
         adSpendGrowth: metaMetrics.adSpendGrowth,
         impressionGrowth: metaMetrics.impressionGrowth,
         clickGrowth: metaMetrics.clickGrowth,
-        isLoading: isLoadingMetaData || isComprehensiveRefreshing
+        isLoading: isLoadingMetaData || isComprehensiveRefreshing || isInitialDataLoad || isMetaDataRefreshing
       });
     }
     
@@ -1545,7 +1564,7 @@ export function HomeTab({
           <span>{widget.name}</span>
         </div>
       ),
-      loading: (widget.type === 'meta' ? (isLoadingMetaData || isComprehensiveRefreshing) : isLoading) || isRefreshingData,
+      loading: (widget.type === 'meta' ? (isLoadingMetaData || isComprehensiveRefreshing || isInitialDataLoad || isMetaDataRefreshing) : isLoading) || isRefreshingData,
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
