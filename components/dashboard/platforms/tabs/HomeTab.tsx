@@ -658,11 +658,21 @@ export function HomeTab({
       return;
     }
 
-    const refreshId = `home-meta-refresh-${Date.now()}`;
-    
-    // Extract date range parameters early for consistent use across all API calls
+    // CRITICAL SAFETY CHECK: Prevent data mixing when switching between single-day presets
+    const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
     const fromDate = dateRange.from.toISOString().split('T')[0];
     const toDate = dateRange.to.toISOString().split('T')[0];
+    
+    if (daysDiff > 1.1) {
+      console.error(`[HomeTab] 🚨 CRITICAL: fetchMetaData aborted - date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate})`);
+      console.error("[HomeTab] 🚨 This would cause data mixing between different days - aborting to protect data integrity");
+      setIsLoadingMetaData(false);
+      return;
+    }
+    
+    console.log(`[HomeTab] ✅ fetchMetaData date range validation passed: ${fromDate} to ${toDate} (${daysDiff.toFixed(2)} days)`);
+
+    const refreshId = `home-meta-refresh-${Date.now()}`;
     
     console.log(`[HomeTab] 📅 Date Range for ALL API calls: ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
 
@@ -977,6 +987,15 @@ export function HomeTab({
     // Extract and log date range for clarity
     const fromDate = dateRange.from.toISOString().split('T')[0];
     const toDate = dateRange.to.toISOString().split('T')[0];
+    
+    // CRITICAL SAFETY CHECK: Prevent data mixing when switching between single-day presets
+    const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff > 1.1) {
+      console.error(`[HomeTab] 🚨 CRITICAL: Date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - this likely indicates a date preset switching bug!`);
+      console.error("[HomeTab] 🚨 Aborting sync to prevent data mixing between different days");
+      return;
+    }
+    
     console.log(`[HomeTab] 📅 Syncing Meta insights for date range: ${fromDate} to ${toDate}`);
     
     try {
@@ -1144,6 +1163,19 @@ export function HomeTab({
     if (brandId && dateRange?.from && dateRange?.to) {
       console.log("[HomeTab] useEffect detected change in brandId or dateRange.");
       
+      // CRITICAL SAFETY CHECK: Prevent data mixing when switching between single-day presets
+      const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
+      const fromDate = dateRange.from.toISOString().split('T')[0];
+      const toDate = dateRange.to.toISOString().split('T')[0];
+      
+      if (daysDiff > 1.1) {
+        console.error(`[HomeTab] 🚨 CRITICAL: Date range spans ${daysDiff.toFixed(2)} days (${fromDate} to ${toDate}) - aborting data fetch to prevent data mixing!`);
+        console.error("[HomeTab] 🚨 This likely indicates a date preset switching bug where yesterday's data would be mixed with today's data");
+        return;
+      }
+      
+      console.log(`[HomeTab] ✅ Date range validation passed: ${fromDate} to ${toDate} (${daysDiff.toFixed(2)} days)`);
+      
       // For Meta, only trigger sync if it's not the initial data load
       if (metaConnection) {
         if (!isInitialDataLoad) {
@@ -1249,6 +1281,24 @@ export function HomeTab({
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta sync.");
+        
+        // CRITICAL FIX: Validate date range before proceeding to prevent data mixing
+        if (!dateRange?.from || !dateRange?.to) {
+          console.log("[HomeTab] ⚠️  Global refresh aborted: Invalid or missing current date range");
+          return;
+        }
+        
+        // Log the current date range being used to detect any issues
+        const currentFromDate = dateRange.from.toISOString().split('T')[0];
+        const currentToDate = dateRange.to.toISOString().split('T')[0];
+        console.log(`[HomeTab] ⚡ Global refresh using CURRENT date range: ${currentFromDate} to ${currentToDate}`);
+        
+        // Additional safety check: If the date range spans more than expected for single-day ranges, warn
+        const daysDiff = Math.abs(dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysDiff > 1.1) { // Allow slight tolerance for timezone differences
+          console.warn(`[HomeTab] ⚠️  WARNING: Date range spans ${daysDiff.toFixed(2)} days - this might be incorrect for single day presets`);
+        }
+        
         toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
         syncMetaInsights();
       } else {
@@ -1267,7 +1317,7 @@ export function HomeTab({
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
       }
     };
-  }, [brandId, metaConnection]);
+  }, [brandId, metaConnection, dateRange]);
 
   // Function to manually trigger a hard refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {
