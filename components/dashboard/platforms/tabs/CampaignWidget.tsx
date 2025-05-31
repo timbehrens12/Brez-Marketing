@@ -72,7 +72,7 @@ import { supabase } from '@/lib/supabase'; // Import supabase
 import { startOfDay, endOfDay } from 'date-fns'; // Import date-fns functions
 
 // Debug flag to control verbosity
-const DEBUG_LOGGING = true;
+const DEBUG_LOGGING = false;
 
 // Logger for controlled output
 const logger = {
