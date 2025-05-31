@@ -610,6 +610,7 @@ export function HomeTab({
 
       // Step 1: Fetch fresh data from Meta API and update database (HARD PULL) - Only for hard refresh
       if (isHardRefresh) {
+        console.log(`[HomeTab] Step 1: Meta API sync (${refreshId})`);
       const syncResponse = await fetch(`/api/meta/sync?brandId=${brandId}`, {
         method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Refresh-ID': refreshId }
@@ -618,10 +619,13 @@ export function HomeTab({
           console.error(`[HomeTab] Meta API sync failed (${refreshId}): ${syncResponse.status} ${syncResponse.statusText}`);
           toast.error(`Meta API sync failed: ${syncResponse.statusText}`, { id: "meta-refresh-toast" });
           criticalStepFailed = true;
+        } else {
+          console.log(`[HomeTab] ✅ Meta API sync completed (${refreshId})`);
         } 
       
         // Step 2: Refresh campaigns with latest data - Only for hard refresh
         if (!criticalStepFailed) {
+          console.log(`[HomeTab] Step 2: Campaign refresh (${refreshId})`);
           const campaignResponse = await fetch(`/api/meta/campaigns?brandId=${brandId}&forceRefresh=true`, {
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
@@ -629,11 +633,14 @@ export function HomeTab({
             console.error(`[HomeTab] Campaign data refresh failed (${refreshId}): ${campaignResponse.status} ${campaignResponse.statusText}`);
             toast.error(`Meta campaign refresh failed: ${campaignResponse.statusText}`, { id: "meta-refresh-toast" });
             criticalStepFailed = true;
+          } else {
+            console.log(`[HomeTab] ✅ Campaign refresh completed (${refreshId})`);
           }
         }
       
         // Step 3: Refresh ad sets data - Only for hard refresh
         if (!criticalStepFailed) {
+          console.log(`[HomeTab] Step 3: Ad set budgets refresh (${refreshId})`);
           const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`, {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
@@ -642,6 +649,8 @@ export function HomeTab({
             console.error(`[HomeTab] Ad set budgets refresh failed (${refreshId}): ${budgetResponse.status} ${budgetResponse.statusText}`);
             toast.error(`Meta ad set budget refresh failed: ${budgetResponse.statusText} (Status: ${budgetResponse.status})`, { id: "meta-refresh-toast", duration: 10000 });
             criticalStepFailed = true;
+          } else {
+            console.log(`[HomeTab] ✅ Ad set budgets refresh completed (${refreshId})`);
           }
         }
       } // End of isHardRefresh specific steps
@@ -657,6 +666,7 @@ export function HomeTab({
       }
       
       // Step 4: Now fetch the refreshed metrics data for display
+      console.log(`[HomeTab] Step 4: Fetching refreshed metrics (${refreshId})`);
 
       // Current period params
       const params = new URLSearchParams({ brandId: brandId });
@@ -1003,7 +1013,7 @@ export function HomeTab({
 
   // Add debounced refresh function
   const debouncedMetaRefresh = useRef<NodeJS.Timeout | null>(null);
-  
+    
   const triggerMetaRefresh = useCallback((isHardRefresh = true) => {
     // Clear any pending refresh
     if (debouncedMetaRefresh.current) {
@@ -1013,7 +1023,7 @@ export function HomeTab({
     // Debounce the refresh call
     debouncedMetaRefresh.current = setTimeout(() => {
       fetchMetaData(isHardRefresh);
-    }, 300); // 300ms debounce
+    }, 100); // Reduced from 300ms to 100ms for faster response
   }, [fetchMetaData]);
 
   // CONSOLIDATED: Single useEffect for initial load and data changes
@@ -1022,14 +1032,6 @@ export function HomeTab({
         return;
       }
       
-    // Throttle data fetching to prevent excessive calls
-    const now = Date.now();
-    const timeSinceLastFetch = now - lastDataFetchTime.current;
-    if (timeSinceLastFetch < 1000) { // Don't fetch more than once per second
-      return;
-    }
-    lastDataFetchTime.current = now;
-      
     // Track if this is a brand change
     const isBrandChange = currentBrandId.current !== brandId;
     if (isBrandChange) {
@@ -1037,11 +1039,10 @@ export function HomeTab({
       // Clear cached data on brand change to prevent showing wrong brand's data
       if (typeof window !== 'undefined') {
         localStorage.removeItem(`meta_metrics_${brandId}`);
+        console.log(`[HomeTab] Cleared cached data for brand change to: ${brandId}`);
       }
-    }
-    
-    // Only log on brand changes or significant events, not every render
-    if (isBrandChange) {
+      // Reset the metrics to initial state to prevent showing stale data
+      setMetaMetrics(initialMetaMetricsState);
       console.log("[HomeTab] Brand changed. Fetching all data for new brand:", brandId);
     }
     
