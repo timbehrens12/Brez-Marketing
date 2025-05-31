@@ -271,14 +271,12 @@ function acquireMetaFetchLock(fetchId: number | string): boolean {
 
   // If a lock is already active by another fetch, don't allow a new one
   if (window._metaFetchLock === true && !window._activeFetchIds?.has(fetchId)) {
-    console.log(`[HomeTab] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
     return false;
   }
   
   window._metaFetchLock = true; // Set the global lock
   window._activeFetchIds?.add(fetchId); // Register this fetchId
   
-  console.log(`[HomeTab] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
   return true;
 }
 
@@ -291,9 +289,6 @@ function releaseMetaFetchLock(fetchId: number | string): void {
   // If no other active fetches, release the global lock
   if ((window._activeFetchIds?.size ?? 0) === 0) {
     window._metaFetchLock = false;
-    console.log(`[HomeTab] 🔓 Released Meta fetch lock (last fetchId: ${fetchId}). No active fetches.`);
-  } else {
-    console.log(`[HomeTab] 🔒 Meta Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
   }
 }
 
@@ -327,6 +322,7 @@ export function HomeTab({
   // Add a ref to prevent duplicate initial loads
   const isInitialLoadInProgress = useRef(false);
   const currentBrandId = useRef<string | null>(null);
+  const lastDataFetchTime = useRef<number>(0);
   
   // Define an interface for MetaMetrics state
   interface MetaMetricsState {
@@ -413,8 +409,6 @@ export function HomeTab({
     const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
     const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
     
-    console.log(`[HomeTab] Calculating previous dates for range: ${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`);
-    
     // Case 1: Single day - always compare to the day before
     const isSingleDay = isSameDay(fromNormalized, toNormalized);
     if (isSingleDay) {
@@ -422,8 +416,6 @@ export function HomeTab({
       const prevDay = new Date(fromNormalized);
       prevDay.setDate(prevDay.getDate() - 1);
       const prevDayStr = toLocalISODateString(prevDay);
-      
-      console.log(`[HomeTab] Single day detected, comparing to previous day: ${prevDayStr}`);
       
       return {
         prevFrom: prevDayStr,
@@ -448,11 +440,6 @@ export function HomeTab({
       const prevTo = new Date(toNormalized);
       prevTo.setDate(prevTo.getDate() - 7);
       
-      console.log(`[HomeTab] "Last 7 days" preset detected, comparing to previous 7 days:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
-      });
-      
       return {
         prevFrom: toLocalISODateString(prevFrom),
         prevTo: toLocalISODateString(prevTo)
@@ -468,11 +455,6 @@ export function HomeTab({
       
       const prevTo = new Date(toNormalized);
       prevTo.setDate(prevTo.getDate() - 30);
-      
-      console.log(`[HomeTab] "Last 30 days" preset detected, comparing to previous 30 days:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(prevFrom)} to ${toLocalISODateString(prevTo)}`
-      });
       
       return {
         prevFrom: toLocalISODateString(prevFrom),
@@ -492,11 +474,6 @@ export function HomeTab({
       const prevMonthEnd = new Date(prevMonthStart);
       prevMonthEnd.setDate(prevMonthStart.getDate() + daysInCurrentPeriod - 1);
       
-      console.log(`[HomeTab] "This month" pattern detected, comparing to same days in previous month:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(prevMonthStart)} to ${toLocalISODateString(prevMonthEnd)}`
-      });
-      
       return {
         prevFrom: toLocalISODateString(prevMonthStart),
         prevTo: toLocalISODateString(prevMonthEnd)
@@ -510,11 +487,6 @@ export function HomeTab({
       // Previous period should be the month before last
       const startOfPrevMonth = startOfMonth(subMonths(now, 2));
       const endOfPrevMonth = endOfMonth(subMonths(now, 2));
-      
-      console.log(`[HomeTab] "Last month" pattern detected, comparing to the month before last:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(startOfPrevMonth)} to ${toLocalISODateString(endOfPrevMonth)}`
-      });
       
       return {
         prevFrom: toLocalISODateString(startOfPrevMonth),
@@ -533,11 +505,6 @@ export function HomeTab({
       const prevYearEnd = new Date(prevYearStart);
       prevYearEnd.setDate(prevYearStart.getDate() + daysInCurrentPeriod - 1);
       
-      console.log(`[HomeTab] "This year" pattern detected, comparing to same days in previous year:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(prevYearStart)} to ${toLocalISODateString(prevYearEnd)}`
-      });
-      
       return {
         prevFrom: toLocalISODateString(prevYearStart),
         prevTo: toLocalISODateString(prevYearEnd)
@@ -551,11 +518,6 @@ export function HomeTab({
       // Previous period should be the year before last
       const startOfPrevYear = new Date(now.getFullYear() - 2, 0, 1);
       const endOfPrevYear = new Date(now.getFullYear() - 2, 11, 31);
-      
-      console.log(`[HomeTab] "Last year" pattern detected, comparing to the year before last:`, {
-        currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-        prevRange: `${toLocalISODateString(startOfPrevYear)} to ${toLocalISODateString(endOfPrevYear)}`
-      });
       
       return {
         prevFrom: toLocalISODateString(startOfPrevYear),
@@ -575,11 +537,6 @@ export function HomeTab({
     
     const prevFromStr = toLocalISODateString(prevFrom);
     const prevToStr = toLocalISODateString(prevTo);
-    
-    console.log(`[HomeTab] Custom range detected (${daysInRange} days), comparing to previous period:`, {
-      currentRange: `${toLocalISODateString(fromNormalized)} to ${toLocalISODateString(toNormalized)}`,
-      prevRange: `${prevFromStr} to ${prevToStr}`
-    });
     
     return {
       prevFrom: prevFromStr,
@@ -620,7 +577,6 @@ export function HomeTab({
   // Fetch Meta data directly from API with HARD PULL logic (same as MetaTab)
   const fetchMetaData = useCallback(async (isHardRefresh = true) => { // Added isHardRefresh parameter
     if (!brandId || !dateRange?.from || !dateRange?.to || !metaConnection) {
-      console.log("[HomeTab] Skipping Meta data fetch: Missing brandId, dateRange, or Meta connection.");
       // If it's not a hard refresh (e.g. initial soft load), still set loading to false if applicable
       if (!isHardRefresh) {
         setIsLoadingMetaData(false);
@@ -633,12 +589,10 @@ export function HomeTab({
     // For hard refreshes, attempt to acquire lock
     if (isHardRefresh) {
       if (isMetaFetchInProgress()) {
-        console.log(`[HomeTab] ⚠️ HARD PULL Meta refresh skipped - fetch already in progress for refreshId: ${refreshId}`);
         toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" });
         return;
       }
       if (!acquireMetaFetchLock(refreshId)) {
-        console.log(`[HomeTab] ⛔ Failed to acquire global lock for HARD PULL Meta refreshId: ${refreshId}`);
         toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" });
         return;
       }
@@ -651,55 +605,43 @@ export function HomeTab({
       let criticalStepFailed = false; // Flag to track failure in critical steps
 
       if(isHardRefresh) {
-        console.log(`[HomeTab] 🔄 Starting HARD PULL Meta data refresh for brandId: ${brandId}, refreshId: ${refreshId}`);
-      } else {
-        console.log(`[HomeTab] 🔄 Starting SOFT PULL Meta data refresh for brandId: ${brandId}, refreshId: ${refreshId}`);
+        console.log(`[HomeTab] Starting Meta API hard refresh (${refreshId})`);
       }
 
       // Step 1: Fetch fresh data from Meta API and update database (HARD PULL) - Only for hard refresh
       if (isHardRefresh) {
-        console.log(`[HomeTab] 🚀 Step 1: Meta API sync (refreshId: ${refreshId})`);
       const syncResponse = await fetch(`/api/meta/sync?brandId=${brandId}`, {
         method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Refresh-ID': refreshId }
       });
       if (!syncResponse.ok) {
-          console.error(`[HomeTab] CRITICAL FAILURE: Meta API sync failed (refreshId: ${refreshId}): ${syncResponse.status} ${syncResponse.statusText}`);
+          console.error(`[HomeTab] Meta API sync failed (${refreshId}): ${syncResponse.status} ${syncResponse.statusText}`);
           toast.error(`Meta API sync failed: ${syncResponse.statusText}`, { id: "meta-refresh-toast" });
           criticalStepFailed = true;
-        } else {
-          console.log(`[HomeTab] ✅ Meta API sync completed (refreshId: ${refreshId})`);
-        }
+        } 
       
         // Step 2: Refresh campaigns with latest data - Only for hard refresh
         if (!criticalStepFailed) {
-          console.log(`[HomeTab] 🚀 Step 2: Campaign data refresh (refreshId: ${refreshId})`);
           const campaignResponse = await fetch(`/api/meta/campaigns?brandId=${brandId}&forceRefresh=true`, {
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
           if (!campaignResponse.ok) {
-            console.error(`[HomeTab] CRITICAL FAILURE: Campaign data refresh failed (refreshId: ${refreshId}): ${campaignResponse.status} ${campaignResponse.statusText}`);
+            console.error(`[HomeTab] Campaign data refresh failed (${refreshId}): ${campaignResponse.status} ${campaignResponse.statusText}`);
             toast.error(`Meta campaign refresh failed: ${campaignResponse.statusText}`, { id: "meta-refresh-toast" });
             criticalStepFailed = true;
-          } else {
-            console.log(`[HomeTab] ✅ Campaign data refreshed (refreshId: ${refreshId})`);
           }
         }
       
         // Step 3: Refresh ad sets data - Only for hard refresh
-        // THIS IS THE KNOWN FAILING ENDPOINT FROM LOGS
         if (!criticalStepFailed) {
-          console.log(`[HomeTab] 🚀 Step 3: Ad set budgets refresh (refreshId: ${refreshId})`);
           const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`, {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
           if (!budgetResponse.ok) {
-            console.error(`[HomeTab] CRITICAL FAILURE: Ad set budgets refresh failed (refreshId: ${refreshId}): ${budgetResponse.status} ${budgetResponse.statusText}`);
+            console.error(`[HomeTab] Ad set budgets refresh failed (${refreshId}): ${budgetResponse.status} ${budgetResponse.statusText}`);
             toast.error(`Meta ad set budget refresh failed: ${budgetResponse.statusText} (Status: ${budgetResponse.status})`, { id: "meta-refresh-toast", duration: 10000 });
             criticalStepFailed = true;
-          } else {
-            console.log(`[HomeTab] ✅ Ad set budgets refreshed (refreshId: ${refreshId})`);
           }
         }
       } // End of isHardRefresh specific steps
@@ -715,7 +657,6 @@ export function HomeTab({
       }
       
       // Step 4: Now fetch the refreshed metrics data for display
-      console.log(`[HomeTab] 🚀 Step 4: Fetching refreshed metrics (refreshId: ${refreshId})`);
 
       // Current period params
       const params = new URLSearchParams({ brandId: brandId });
@@ -728,9 +669,6 @@ export function HomeTab({
         params.append('force_load', 'true'); // Ensure backend re-fetches from DB
         params.append('refresh', 'true'); // Instructs backend to re-calculate/re-fetch if needed
       }
-      // params.append('debug', 'true'); // Optional: for more verbose logging from backend
-      
-      console.log(`[HomeTab] Fetching Meta data with params (refreshId: ${refreshId}): ${params.toString()}`);
       
       const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
       const prevParams = new URLSearchParams({ brandId: brandId });
@@ -742,9 +680,6 @@ export function HomeTab({
       prevParams.append('force_load', 'true');
       prevParams.append('refresh', 'true');
       }
-      // prevParams.append('debug', 'true');
-      
-      console.log(`[HomeTab] Fetching Meta data for previous period (refreshId: ${refreshId}): ${prevParams.toString()}`);
       
       const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
         cache: 'no-store', // Client-side cache instruction
@@ -766,61 +701,30 @@ export function HomeTab({
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Unknown error fetching current Meta data" }));
-        console.error(`[HomeTab] Failed to fetch current period Meta data (refreshId: ${refreshId}): ${response.status}`, errorData);
+        console.error(`[HomeTab] Failed to fetch current period Meta data (${refreshId}): ${response.status}`, errorData);
         throw new Error(errorData.error || `Failed to fetch current period Meta data: ${response.status}`);
       }
       
       if (!prevResponse.ok) {
         const errorData = await prevResponse.json().catch(() => ({ error: "Unknown error fetching previous Meta data" }));
-        console.error(`[HomeTab] Failed to fetch previous period Meta data (refreshId: ${refreshId}): ${prevResponse.status}`, errorData);
+        console.error(`[HomeTab] Failed to fetch previous period Meta data (${refreshId}): ${prevResponse.status}`, errorData);
         throw new Error(errorData.error || `Failed to fetch previous period Meta data: ${prevResponse.status}`);
       }
       
       const currentData = await response.json();
       const previousData = await prevResponse.json();
-      
-      // ... (rest of the data processing and state setting logic)
-      // Ensure all console logs also include refreshId for better tracking
-      console.log(`[HomeTab] Fetched Meta data for current period (refreshId: ${refreshId}):`, {
-        adSpend: currentData.adSpend,
-        impressions: currentData.impressions,
-        // ... (other metrics)
-        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
-      });
-      
-      console.log(`[HomeTab] Fetched Meta data for previous period (refreshId: ${refreshId}):`, {
-        adSpend: previousData.adSpend,
-        impressions: previousData.impressions,
-        // ... (other metrics)
-        dailyData: Array.isArray(previousData.dailyData) ? previousData.dailyData.length : 0
-      });
 
       if (currentData.adSpend === 0 && currentData.impressions === 0 && currentData.clicks === 0 && isHardRefresh) {
-        console.warn(`[HomeTab] Initial HARD PULL data fetch returned empty results (refreshId: ${refreshId}). This might indicate no ad activity or a sync delay.`);
-        // Potentially add a small delay and a single retry here if this is common for very fresh data
+        console.warn(`[HomeTab] Hard refresh returned empty results (${refreshId}). This might indicate no ad activity or a sync delay.`);
       }
 
-      // 🔥🔥🔥 MAJOR DEBUG: Log the exact values we're about to set
-      console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: About to call setMetaMetrics with data (refreshId: ${refreshId}):`);
-      console.log(`🔥🔥🔥 [HomeTab] CURRENT DATA:`, {
+      console.log(`[HomeTab] Setting metaMetrics for refreshId: ${refreshId}`);
+      console.log(`[HomeTab] Current Data:`, {
         adSpend: currentData.adSpend,
         impressions: currentData.impressions,
         clicks: currentData.clicks,
         conversions: currentData.conversions,
-        roas: currentData.roas,
-        ctr: currentData.ctr,
-        cpc: currentData.cpc,
-        costPerResult: currentData.costPerResult
-      });
-      console.log(`🔥🔥🔥 [HomeTab] PREVIOUS DATA:`, {
-        adSpend: previousData.adSpend,
-        impressions: previousData.impressions,
-        clicks: previousData.clicks,
-        conversions: previousData.conversions,
-        roas: previousData.roas,
-        ctr: previousData.ctr,
-        cpc: previousData.cpc,
-        costPerResult: previousData.costPerResult
+        roas: currentData.roas
       });
 
       setMetaMetrics(prev => {
@@ -863,26 +767,7 @@ export function HomeTab({
           localStorage.setItem(`meta_metrics_${brandId}`, JSON.stringify(newMetrics));
         }
         
-        // 🔥🔥🔥 MAJOR DEBUG: Log the exact values we're setting
-        console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: Setting metaMetrics to NEW VALUES (refreshId: ${refreshId}):`);
-        console.log(`🔥🔥🔥 [HomeTab] NEW METRICS:`, {
-          adSpend: newMetrics.adSpend,
-          impressions: newMetrics.impressions,
-          clicks: newMetrics.clicks,
-          conversions: newMetrics.conversions,
-          roas: newMetrics.roas,
-          ctr: newMetrics.ctr,
-          cpc: newMetrics.cpc,
-          costPerResult: newMetrics.costPerResult,
-          adSpendGrowth: newMetrics.adSpendGrowth,
-          impressionGrowth: newMetrics.impressionGrowth,
-          clickGrowth: newMetrics.clickGrowth,
-          conversionGrowth: newMetrics.conversionGrowth,
-          roasGrowth: newMetrics.roasGrowth,
-          ctrGrowth: newMetrics.ctrGrowth,
-          cpcGrowth: newMetrics.cpcGrowth,
-          cprGrowth: newMetrics.cprGrowth
-        });
+        console.log(`[HomeTab] Meta metrics updated successfully (refreshId: ${refreshId})`);
         
         return newMetrics;
       });
@@ -900,17 +785,13 @@ export function HomeTab({
         window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
             detail: { brandId, timestamp: Date.now(), source: 'HomeTabHardRefresh', refreshId }
         }));
-          console.log(`[HomeTab] 📣 Dispatched metaDataRefreshed event (refreshId: ${refreshId})`);
         }
-        console.log(`[HomeTab] ✅ FULL HARD PULL Meta data refresh completed successfully (refreshId: ${refreshId})`);
-      } else if (!isHardRefresh) {
-        console.log(`[HomeTab] ✅ SOFT PULL Meta data refresh completed successfully (refreshId: ${refreshId})`);
+        console.log(`[HomeTab] Hard refresh completed successfully (${refreshId})`);
       }
       
     } catch (error) {
-      console.error(`[HomeTab] Error during Meta data fetch (refreshId: ${refreshId}):`, error);
+      console.error(`[HomeTab] Error during Meta data fetch (${refreshId}):`, error);
       toast.error("Error fetching Meta data. Check console for details.", { id: "meta-refresh-toast" });
-      // setMetaMetrics to a default error state or keep previous data? For now, log and show toast.
     } finally {
       setIsLoadingMetaData(false);
       if (isHardRefresh) {
@@ -926,8 +807,6 @@ export function HomeTab({
       console.error("[HomeTab] Cannot sync data - missing brand ID or date range");
       return;
     }
-    
-    console.log("[HomeTab] Syncing Meta insights data just like Meta page...");
     
     setIsLoadingMetaData(true);
     
@@ -992,7 +871,6 @@ export function HomeTab({
   // Function to fetch campaign data from the API - RESTORED FROM BACKUP & MOVED EARLIER
   const fetchCampaigns = useCallback(async (forceRefresh = false) => {
     if (!brandId || !metaConnection) {
-      console.log('[HomeTab] Cannot fetch campaigns without brandId or Meta connection');
       setIsLoadingCampaigns(false);
       return;
     }
@@ -1019,7 +897,6 @@ export function HomeTab({
         
         // If not forcing refresh and dates are the same, and we already have campaigns, skip.
         if (!forceRefresh && !isDifferentDateRange && campaigns.length > 0) {
-          console.log('[HomeTab] Skipping campaign fetch: dates unchanged, not forcing, and campaigns exist.');
           setIsLoadingCampaigns(false); // Ensure loading is false
           return;
         }
@@ -1031,7 +908,6 @@ export function HomeTab({
         url += `${url.includes('?') ? '&' : '?'}forceRefresh=true&t=${Date.now()}`;
       }
       
-      console.log(`[HomeTab] Fetching Meta campaigns: ${url}`);
       const response = await fetch(url, {
         cache: 'no-store',
         headers: {
@@ -1046,12 +922,9 @@ export function HomeTab({
       
       const data = await response.json();
       setCampaigns(data.campaigns || []);
-      console.log(`[HomeTab] Loaded ${data.campaigns?.length || 0} Meta campaigns`);
       
     } catch (error) {
       console.error('[HomeTab] Error fetching campaigns:', error);
-      // Potentially set campaigns to empty array on error after logging
-      // setCampaigns([]);
     } finally {
       setIsLoadingCampaigns(false);
     }
@@ -1146,10 +1019,17 @@ export function HomeTab({
   // CONSOLIDATED: Single useEffect for initial load and data changes
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.log("[HomeTab] Skipping data fetch: Missing brandId or dateRange");
+        return;
+      }
+      
+    // Throttle data fetching to prevent excessive calls
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastDataFetchTime.current;
+    if (timeSinceLastFetch < 1000) { // Don't fetch more than once per second
       return;
     }
-    
+    lastDataFetchTime.current = now;
+      
     // Track if this is a brand change
     const isBrandChange = currentBrandId.current !== brandId;
     if (isBrandChange) {
@@ -1160,34 +1040,28 @@ export function HomeTab({
       }
     }
     
-    console.log("[HomeTab] Data dependencies changed. Fetching all data.", {
-      brandId,
-      dateRange: `${dateRange.from.toISOString()} to ${dateRange.to.toISOString()}`,
-      isBrandChange
-    });
+    // Only log on brand changes or significant events, not every render
+    if (isBrandChange) {
+      console.log("[HomeTab] Brand changed. Fetching all data for new brand:", brandId);
+    }
     
     // For Meta
     if (metaConnection) {
-      console.log("[HomeTab] Meta connection active, triggering refresh");
       // Use debounced refresh to prevent multiple rapid calls
       triggerMetaRefresh(true);
       
       if (widgets.some(widget => widget.id === 'meta-campaigns')) {
-        console.log("[HomeTab] Campaign widget present, fetching campaigns");
-        fetchCampaigns(true);
-      }
-    } else {
-      console.log("[HomeTab] Meta connection not active");
+            fetchCampaigns(true);
+        }
+      } else {
       setIsLoadingMetaData(false);
       setIsLoadingCampaigns(false);
     }
 
     // For Shopify
     if (shopifyConnection) {
-      console.log("[HomeTab] Shopify connection active, fetching data");
-      fetchShopifyData();
-    } else {
-      console.log("[HomeTab] Shopify connection not active");
+          fetchShopifyData();
+      } else {
       setIsLoadingShopifyData(false);
     }
     
@@ -1222,8 +1096,6 @@ export function HomeTab({
           
           triggerMetaRefresh(true);
           window._lastMetaRefresh = now;
-        } else {
-          console.log(`[HomeTab] Page visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
         }
       }
     };
@@ -1237,17 +1109,15 @@ export function HomeTab({
   // Listen for global refresh events (keep this one as it handles external events)
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         // Don't refresh if we just refreshed
         const now = Date.now();
         const timeSinceLastRefresh = now - (window._lastMetaRefresh || 0);
         if (timeSinceLastRefresh < 5000) { // 5 seconds
-          console.log("[HomeTab] Ignoring global refresh - just refreshed recently");
           return;
         }
         
-        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta sync.");
+        console.log("[HomeTab] Global refresh event triggered for brandId:", brandId);
         toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
         triggerMetaRefresh(true);
       }
@@ -1272,7 +1142,6 @@ export function HomeTab({
       toast.error("Cannot refresh Meta data: No brand selected or Meta not connected.");
       return;
     }
-    console.log("[HomeTab] Manual Meta refresh triggered.");
     syncMetaInsights(); // Use syncMetaInsights instead of fetchMetaData
   };
 
@@ -1428,7 +1297,6 @@ export function HomeTab({
   // Function to sync campaign data with Meta
   const syncCampaigns = useCallback(async () => {
     if (!brandId || !metaConnection) {
-      console.log('[HomeTab] Cannot sync campaigns without brandId or Meta connection');
       return;
     }
     
@@ -1471,26 +1339,7 @@ export function HomeTab({
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
-    // 🔥🔥🔥 MAJOR DEBUG: Log current metaMetrics state when rendering widgets
-    if (widget.type === 'meta') {
-      console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: renderWidget called for "${widget.id}". Current metaMetrics state:`, {
-        adSpend: metaMetrics.adSpend,
-        impressions: metaMetrics.impressions,
-        clicks: metaMetrics.clicks,
-        conversions: metaMetrics.conversions,
-        roas: metaMetrics.roas,
-        ctr: metaMetrics.ctr,
-        cpc: metaMetrics.cpc,
-        costPerResult: metaMetrics.costPerResult,
-        previousAdSpend: metaMetrics.previousAdSpend,
-        previousImpressions: metaMetrics.previousImpressions,
-        previousClicks: metaMetrics.previousClicks,
-        adSpendGrowth: metaMetrics.adSpendGrowth,
-        impressionGrowth: metaMetrics.impressionGrowth,
-        clickGrowth: metaMetrics.clickGrowth,
-        isLoading: isLoadingMetaData || isComprehensiveRefreshing
-      });
-    }
+    // Remove the excessive debug logging that was causing log spam
     
     // Create empty datasets for metrics that don't exist in the Metrics type
     const emptyDataset = Array.from({ length: 7 }).map((_, i) => {
@@ -2174,26 +2023,7 @@ export function HomeTab({
     }
 
     // 🔥🔥🔥 MAJOR DEBUG: Log final widget props before rendering MetricCard
-    if (widget.type === 'meta') {
-      console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: About to render MetricCard for "${widget.id}" with props:`, {
-        widgetId: widget.id,
-        value: widgetProps.value,
-        change: widgetProps.change,
-        previousValue: widgetProps.previousValue,
-        loading: widgetProps.loading,
-        title: typeof widgetProps.title === 'string' ? widgetProps.title : 'complex title object',
-        metaMetricsSnapshot: {
-          adSpend: metaMetrics.adSpend,
-          impressions: metaMetrics.impressions,
-          clicks: metaMetrics.clicks,
-          conversions: metaMetrics.conversions,
-          roas: metaMetrics.roas,
-          ctr: metaMetrics.ctr,
-          cpc: metaMetrics.cpc,
-          costPerResult: metaMetrics.costPerResult
-        }
-      });
-    }
+    // Removed excessive debug logging to prevent log spam
 
     return (
       <div key={widget.id} className="w-full">
@@ -2258,7 +2088,6 @@ export function HomeTab({
         try {
           const cachedMetrics = JSON.parse(cached);
           setMetaMetrics(cachedMetrics);
-          console.log('[HomeTab] Loaded cached meta metrics for brand:', brandId);
         } catch (e) {
           console.error('[HomeTab] Failed to parse cached meta metrics:', e);
         }
