@@ -42,23 +42,12 @@ import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
 import { AINotification } from "@/components/dashboard/AINotification"
 import { useNotifications } from "@/contexts/NotificationContext"
-import { StatusBadge } from '@/components/dashboard/StatusBadge'
-import { BrandSelectionTrigger } from '@/components/dashboard/BrandSelectionTrigger'
-import { LongTextFormatter } from '@/lib/utils/longText'
-import useBrandIdParam from '@/lib/hooks/useBrandIdParam'
-import {
-  getFilteredConnections,
-  getPlatformStatusFromConnections
-} from '@/lib/utils/platformUtils'
 import { useDataRefresh } from '@/lib/hooks/useDataRefresh'
 import { Button } from "@/components/ui/button"
-import { fetchHelper } from "@/lib/utils/fetchHelper"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency, formatNumber, formatPercentage } from "@/lib/utils/formatters"
-import { MetricsContext } from "@/contexts/metricsContext"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Brand } from "@/types/brand"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import useSWR from 'swr'
 import { cn } from "@/lib/utils"
@@ -159,8 +148,6 @@ export default function DashboardPage() {
 
   // Add a new state for data refresh that's separate from initial loading
   const [isRefreshingData, setIsRefreshingData] = useState(false);
-
-
 
   // Add a ref to track if we're still mounted
   const isMounted = useRef(true);
@@ -930,8 +917,6 @@ export default function DashboardPage() {
     }
   }, [selectedBrandId, activePlatforms.meta, isLoading, initialDataLoad, detectMetaDataGaps]);
 
-
-
   // Set up periodic data refresh
   useEffect(() => {
     // Don't do initial fetch here - we'll do it in the selectedBrandId effect
@@ -1135,17 +1120,90 @@ export default function DashboardPage() {
     };
   }, [selectedBrandId, dateRange, setMetrics]);
 
-  // Add a listener for the force-dashboard-refresh event to bypass throttling
+  // Handle tab changes
+  const handleTabChange = (tab: string) => {
+    const previousTab = activeTab;
+    setActiveTab(tab);
+    
+    // When changing tabs, automatically exit edit mode
+    if (tab !== "site" && isEditMode) {
+      setIsEditMode(false);
+      
+      // Show a toast to inform the user
+      toast({
+        title: "Edit mode disabled",
+        description: "Edit mode is only available on the Home tab",
+        variant: "default"
+      });
+    }
+    
+    // Refresh data when switching between platform tabs (as requested by user)
+    // This keeps refresh when going from one tab to another within the page
+    if (previousTab !== tab && selectedBrandId) {
+      console.log(`[Dashboard] Tab changed from ${previousTab} to ${tab} - triggering refresh for internal tab navigation`);
+      
+      // Refresh when switching to Shopify tab
+      if (tab === "shopify" && activePlatforms.shopify) {
+        setTimeout(() => {
+          const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
+          const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
+          
+          window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
+            detail: { 
+              brandId: selectedBrandId, 
+              timestamp: Date.now(),
+              dateRange: {
+                from: formattedFromDate,
+                to: formattedToDate
+              },
+              forceFetch: true,
+              bypassCache: true,
+              reason: 'internal-tab-switch'
+            }
+          }));
+        }, 100);
+      }
+      
+      // Refresh when switching to Meta tab
+      if (tab === "meta" && activePlatforms.meta) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('page-refresh', { 
+            detail: { 
+              brandId: selectedBrandId, 
+              timestamp: Date.now(), 
+              forceRefresh: true,
+              source: 'internal-tab-switch'
+            }
+          }));
+        }, 100);
+      }
+      
+      // Refresh when switching to Home tab
+      if (tab === "site") {
+        setTimeout(() => {
+          // Trigger refresh for home tab widgets
+          window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+            detail: { 
+              brandId: selectedBrandId, 
+              refreshType: 'tab-switch' 
+            } 
+          }));
+        }, 100);
+      }
+    }
+  };
+
+  // Keep the force refresh event listener for manual refresh button
   useEffect(() => {
     const handleForceDashboardRefresh = (event: any) => {
-      console.log('[Dashboard] Received force-dashboard-refresh event, bypassing throttling');
+      console.log('[Dashboard] Received force-dashboard-refresh event from manual refresh button');
       
       // Only proceed if we have a selected brand and this is for our brand
       if (!selectedBrandId || event.detail?.brandId !== selectedBrandId) return;
       
       // Check if this event requests bypassing throttling
       if (event.detail?.bypassThrottling) {
-        console.log('[Dashboard] Bypassing throttling and forcing immediate refresh');
+        console.log('[Dashboard] Manual refresh triggered - forcing immediate refresh');
         
         // Reset the last refresh timestamp to allow immediate refresh
         lastHardRefreshRef.current = 0;
@@ -1164,143 +1222,6 @@ export default function DashboardPage() {
       window.removeEventListener('force-dashboard-refresh', handleForceDashboardRefresh);
     };
   }, [selectedBrandId, fetchAllData]);
-
-  // Handle tab changes
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    
-    // When changing tabs, automatically exit edit mode
-    if (tab !== "site" && isEditMode) {
-      setIsEditMode(false);
-      
-      // Show a toast to inform the user
-      toast({
-        title: "Edit mode disabled",
-        description: "Edit mode is only available on the Home tab",
-        variant: "default"
-      });
-    }
-  };
-
-  // Add a new effect to trigger hard refresh on page navigation/load
-  useEffect(() => {
-    // Check if this is a real navigation (not the initial load)
-    if (pathname && selectedBrandId && activePlatforms.meta) {
-      const now = Date.now();
-      const MIN_REFRESH_INTERVAL = 10000; // 10 seconds minimum between hard refreshes
-      
-      // Only perform the refresh if we haven't just done one
-      if (now - lastHardRefreshRef.current > MIN_REFRESH_INTERVAL) {
-        console.log('[Dashboard] Page navigation detected, triggering hard refresh');
-        
-        // Update the last refresh timestamp
-        lastHardRefreshRef.current = now;
-        
-        // First, dispatch the events to refresh all widgets, including campaign widget
-        // Use a single event to avoid multiple refreshes
-        window.dispatchEvent(new CustomEvent('page-refresh', { 
-          detail: { 
-            brandId: selectedBrandId, 
-            timestamp: now, 
-            forceRefresh: true,
-            source: 'page-navigation'
-          }
-        }));
-        
-        // Then perform a normal data refresh
-        fetchAllData(true);
-      } else {
-        console.log(`[Dashboard] Skipping navigation refresh - too soon after last refresh (${(now - lastHardRefreshRef.current)/1000}s)`);
-      }
-    }
-    
-    // Update the last path ref for next comparison
-    lastPathRef.current = pathname;
-  }, [pathname, selectedBrandId, activePlatforms.meta]);
-
-  // Add specific effect for initial page load
-  useEffect(() => {
-    // Only run if we have a selected brand and Meta is connected
-    if (initialLoadFlag.current && selectedBrandId && activePlatforms.meta && !isLoading && !initialDataLoad) {
-      console.log('[Dashboard] Initial page load detected, triggering hard refresh');
-      
-      // Cancel any existing timeout to prevent duplicates
-      const existingTimeout = window._initialLoadTimeoutId;
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-        delete window._initialLoadTimeoutId;
-      }
-      
-      // Check if a refresh was already done very recently
-      const now = Date.now();
-      if (now - lastHardRefreshRef.current < 15000) {
-        console.log('[Dashboard] Skipping initial load refresh - too soon after another refresh');
-        initialLoadFlag.current = false;
-        return;
-      }
-      
-      // Store the timeout ID so we can clear it if needed
-      window._initialLoadTimeoutId = setTimeout(() => {
-        // Set the timestamp to avoid duplicating refreshes with the navigation effect
-        const refreshTime = Date.now();
-        lastHardRefreshRef.current = refreshTime;
-        
-        // Dispatch a SINGLE event with very specific properties to avoid multiple handlers firing
-        console.log('[Dashboard] Dispatching single refresh event for initial load');
-        window.dispatchEvent(new CustomEvent('page-refresh', { 
-          detail: { 
-            brandId: selectedBrandId, 
-            timestamp: refreshTime, 
-            forceRefresh: true,
-            source: 'initial-page-load',
-            priority: 'high',
-            isInitialLoad: true,
-            id: refreshTime.toString() // Unique ID to help with deduplication
-          }
-        }));
-        
-        // Mark as done to prevent re-running
-        initialLoadFlag.current = false;
-        delete window._initialLoadTimeoutId;
-      }, 5000); // 5 second delay to ensure components are fully mounted
-      
-      // Cleanup if component unmounts before timeout
-      return () => {
-        if (window._initialLoadTimeoutId) {
-          clearTimeout(window._initialLoadTimeoutId);
-          delete window._initialLoadTimeoutId;
-        }
-      };
-    }
-  }, [selectedBrandId, activePlatforms.meta, isLoading, initialDataLoad]);
-
-  // Enhance the effect for visibility changes to make sure it triggers a full resync
-  useEffect(() => {
-    /*const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && pathname === '/dashboard') {
-        // Always do a full refresh when the page becomes visible again
-        console.log('[Dashboard] Page became visible, triggering hard refresh.');
-        fetchAllData(true); // Force full resync
-        lastHardRefreshRef.current = Date.now();
-      }
-    };*/
-
-    // Handle navigation back to the dashboard - always do a full refresh
-    if (pathname === '/dashboard' && lastPathRef.current !== '/dashboard' && !initialLoadFlag.current) {
-      console.log('[Dashboard] Navigated back to dashboard, triggering hard refresh.');
-      fetchAllData(true); // Force full resync
-      lastHardRefreshRef.current = Date.now();
-    }
-    
-    lastPathRef.current = pathname;
-    initialLoadFlag.current = false; // Set to false after initial assessment
-
-    //document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      //document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [pathname, fetchAllData]);
 
   return (
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">

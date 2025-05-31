@@ -404,36 +404,10 @@ export function ShopifyTab({
 
   // Add effect to refresh data every time the component mounts (navigation)
   useEffect(() => {
-    console.log('[ShopifyTab] Component mounted - triggering refresh on navigation');
-    
-    // Only refresh if we have a valid connection and date range
-    if (connection && dateRange?.from && dateRange?.to && brandId) {
-      // Format dates as yyyy-MM-dd
-      const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-      const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-      
-      // Small delay to ensure component is fully mounted
-      const refreshTimeout = setTimeout(() => {
-        console.log('[ShopifyTab] Forcing refresh on mount/navigation');
-        
-        // Dispatch the same refresh event that the refresh button would trigger
-        window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            dateRange: {
-              from: formattedFromDate,
-              to: formattedToDate
-            },
-            forceFetch: true,
-            bypassCache: true,
-            reason: 'component-mount-navigation'
-          }
-        }));
-      }, 100); // Small delay to ensure DOM is ready
-      
-      return () => clearTimeout(refreshTimeout);
-    }
+    // REMOVED: Auto-refresh on component mount/navigation
+    // The user wanted to disable hard refresh when navigating between pages
+    // Only refresh when explicitly clicking refresh button or changing tabs within the page
+    console.log('[ShopifyTab] Component mounted - auto-refresh disabled per user request');
   }, [brandId]); // Only depend on brandId to trigger on navigation
 
   useEffect(() => {
