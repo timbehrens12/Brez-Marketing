@@ -328,10 +328,6 @@ export function HomeTab({
   const isInitialLoadInProgress = useRef(false);
   const currentBrandId = useRef<string | null>(null);
   
-  // Add state to track if we're in initial loading phase (prevents showing zeros)
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [hasValidMetaData, setHasValidMetaData] = useState(false);
-  
   // Define an interface for MetaMetrics state
   interface MetaMetricsState {
     adSpend: number;
@@ -365,34 +361,19 @@ export function HomeTab({
   }
   
   // State for direct Meta metrics
-  const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>({
-    adSpend: 0,
-    impressions: 0,
-    clicks: 0,
-    conversions: 0,
-    roas: 0,
-    adSpendGrowth: 0,
-    impressionGrowth: 0,
-    clickGrowth: 0,
-    conversionGrowth: 0,
-    roasGrowth: 0,
-    previousAdSpend: 0,
-    previousImpressions: 0,
-    previousClicks: 0,
-    previousConversions: 0,
-    previousRoas: 0,
-    ctr: 0,
-    previousCtr: 0,
-    ctrGrowth: 0,
-    cpc: 0,
-    previousCpc: 0,
-    cpcGrowth: 0,
-    costPerResult: 0,
-    cprGrowth: 0,
-    results: 0,
-    previousResults: 0,
-    purchaseValue: 0,
-    previousPurchaseValue: 0
+  const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>(() => {
+    // Initialize from localStorage if available to prevent initial flash
+    if (typeof window !== 'undefined' && brandId) {
+      const cached = localStorage.getItem(`meta_metrics_${brandId}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {
+          console.error('[HomeTab] Failed to parse cached meta metrics:', e);
+        }
+      }
+    }
+    return initialMetaMetricsState;
   });
   const initialMetaMetricsState = {
     adSpend: 0,
@@ -676,6 +657,7 @@ export function HomeTab({
     }
 
     try {
+      // IMPORTANT: Don't reset metaMetrics to 0 here - keep existing data while loading
       setIsLoadingMetaData(true); // Always set loading true when fetch starts
       let criticalStepFailed = false; // Flag to track failure in critical steps
 
@@ -887,6 +869,11 @@ export function HomeTab({
           cprGrowth: calculatePercentChange(currentData.costPerResult, previousData.costPerResult),
         };
         
+        // Cache the metrics to localStorage
+        if (typeof window !== 'undefined' && brandId) {
+          localStorage.setItem(`meta_metrics_${brandId}`, JSON.stringify(newMetrics));
+        }
+        
         // 🔥🔥🔥 MAJOR DEBUG: Log the exact values we're setting
         console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: Setting metaMetrics to NEW VALUES (refreshId: ${refreshId}):`);
         console.log(`🔥🔥🔥 [HomeTab] NEW METRICS:`, {
@@ -913,10 +900,6 @@ export function HomeTab({
       
       setMetaDaily(currentData.dailyData || []);
       hasFetchedMetaData.current = true;
-      
-      // Mark that we have valid data and are no longer initializing
-      setHasValidMetaData(true);
-      setIsInitializing(false);
       
       // Only show success and dispatch event if it was a hard refresh and ALL critical steps passed
       if (isHardRefresh && !criticalStepFailed) { // Re-check criticalStepFailed, though it should lead to early return if true
@@ -993,10 +976,6 @@ export function HomeTab({
 
         // After successful sync, fetch the refreshed data
         await fetchMetaData(true);
-        
-        // Mark that we have valid data and are no longer initializing
-        setHasValidMetaData(true);
-        setIsInitializing(false);
         
         // Dispatch event to notify other widgets (reach, budget, etc.)
         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
@@ -1120,149 +1099,131 @@ export function HomeTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, dateRange, shopifyConnection]); // Minimal necessary dependencies
 
-  // Add debouncing and fetch coordination refs
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitialLoadComplete = useRef(false);
-  const lastFetchSignature = useRef<string>('');
-
-  // Consolidated fetch function that prevents race conditions
-  const fetchAllData = useCallback(async (options: {
-    isHardRefresh?: boolean;
-    isInitialLoad?: boolean;
-    skipCache?: boolean;
-  } = {}) => {
-    const { isHardRefresh = false, isInitialLoad = false, skipCache = false } = options;
-    
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.log("[HomeTab] Skipping fetch: Missing brandId or dateRange");
-      return;
-    }
-
-    // Create a signature for this fetch to prevent duplicates
-    const fetchSignature = `${brandId}-${dateRange.from.toISOString()}-${dateRange.to.toISOString()}-${isHardRefresh}`;
-    if (fetchSignature === lastFetchSignature.current && !skipCache) {
-      console.log("[HomeTab] Skipping duplicate fetch with same signature");
-      return;
-    }
-    lastFetchSignature.current = fetchSignature;
-
-    // Clear any pending fetch timeouts
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-      fetchTimeoutRef.current = null;
-    }
-
-    // Check if already fetching to prevent race conditions
-    if (isMetaFetchInProgress() && !isInitialLoad) {
-      console.log("[HomeTab] Meta fetch already in progress, skipping");
-      return;
-    }
-
-    console.log(`[HomeTab] Starting consolidated data fetch - isHardRefresh: ${isHardRefresh}, isInitialLoad: ${isInitialLoad}`);
-
-    // Fetch Meta data if connection exists
-    if (metaConnection) {
-      if (isInitialLoad) {
-        // For initial load, use the exact same sync as Meta page
-        console.log("[HomeTab] Initial load - using syncMetaInsights like Meta page");
-        await syncMetaInsights();
-      } else if (isHardRefresh) {
-        // For hard refresh, use fetchMetaData
-        console.log("[HomeTab] Hard refresh - using fetchMetaData");
-        await fetchMetaData(true);
-      } else {
-        // For soft refresh, use fetchMetaData without hard refresh
-        console.log("[HomeTab] Soft refresh - using fetchMetaData");
-        await fetchMetaData(false);
-      }
-
-      // Fetch campaigns if the widget is present
-      if (widgets.some(widget => widget.id === 'meta-campaigns')) {
-        console.log("[HomeTab] Campaign widget present, fetching campaigns");
-        await fetchCampaigns(isHardRefresh || isInitialLoad);
-      }
-    }
-
-    // Fetch Shopify data if connection exists
-    if (shopifyConnection) {
-      console.log("[HomeTab] Fetching Shopify data");
-      await fetchShopifyData();
-    }
-
-    if (isInitialLoad) {
-      isInitialLoadComplete.current = true;
-    }
-  }, [brandId, dateRange, metaConnection, shopifyConnection, widgets, syncMetaInsights, fetchMetaData, fetchCampaigns, fetchShopifyData]);
-
-  // Main effect - handles brandId and dateRange changes
+  // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
-    // Clear any pending timeouts
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
-
-    // Reset signature when brand or date changes
-    lastFetchSignature.current = '';
-
     if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[HomeTab] Main effect: brandId or dateRange changed");
-      
-      // Determine if this is initial load
-      const isInitialLoad = !isInitialLoadComplete.current;
-      
-      // If this is initial load or brand changed, set initializing state
-      if (isInitialLoad || currentBrandId.current !== brandId) {
-        setIsInitializing(true);
-        setHasValidMetaData(false);
-        currentBrandId.current = brandId;
-      }
-      
-      // Add a small delay to prevent rapid-fire calls during component initialization
-      fetchTimeoutRef.current = setTimeout(() => {
-        fetchAllData({ 
-          isHardRefresh: true, 
-          isInitialLoad,
-          skipCache: true 
-        });
-      }, isInitialLoad ? 100 : 50);
-    } else {
-      console.log("[HomeTab] Main effect: Missing brandId or dateRange, resetting states");
-      // Reset states when essential data is missing
-      setIsInitializing(true);
-      setHasValidMetaData(false);
-      if (!metaConnection) {
-        setMetaMetrics(initialMetaMetricsState);
+      console.log("[HomeTab] useEffect detected change in brandId or dateRange. Fetching all data.");
+      // For Meta, trigger a sync when brand or date range changes.
+      if (metaConnection) {
+        console.log("[HomeTab] Meta connection active, calling fetchMetaData with hard refresh.");
+        fetchMetaData(true); // Pass true for hard refresh
+        if (widgets.some(widget => widget.id === 'meta-campaigns')) {
+            console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
+          fetchCampaigns(true); // forceRefresh is true here
+        }
+      } else {
+        console.log("[HomeTab] Meta connection not active, skipping Meta data fetch.");
+        setMetaMetrics(initialMetaMetricsState); // Reset meta metrics if connection lost
         setMetaDaily([]);
-        setCampaigns([]);
+        setCampaigns([]); // Also clear campaigns
         setIsLoadingMetaData(false);
         setIsLoadingCampaigns(false);
       }
-      if (!shopifyConnection) {
+
+      if (shopifyConnection) {
+        console.log("[HomeTab] Shopify connection active, calling fetchShopifyData.");
+        fetchShopifyData();
+      } else {
+        console.log("[HomeTab] Shopify connection not active, skipping Shopify data fetch.");
+        // Reset Shopify metrics if connection lost (if you have a similar state for Shopify)
+        // setShopifyMetrics(initialShopifyMetricsState); 
         setIsLoadingShopifyData(false);
       }
+    } else {
+      console.log("[HomeTab] Skipping data fetch in useEffect: Missing brandId or full dateRange.");
+      // If essential parameters are missing, ensure loading states are false.
+      setIsLoadingMetaData(false);
+      setIsLoadingShopifyData(false);
+      setIsLoadingCampaigns(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId, dateRange, metaConnection, shopifyConnection, widgets]); // fetchMetaData & fetchShopifyData are memoized. Added widgets for campaign check.
+
+  // Add debounced refresh function
+  const debouncedMetaRefresh = useRef<NodeJS.Timeout | null>(null);
+  
+  const triggerMetaRefresh = useCallback((isHardRefresh = true) => {
+    // Clear any pending refresh
+    if (debouncedMetaRefresh.current) {
+      clearTimeout(debouncedMetaRefresh.current);
+    }
+    
+    // Debounce the refresh call
+    debouncedMetaRefresh.current = setTimeout(() => {
+      fetchMetaData(isHardRefresh);
+    }, 300); // 300ms debounce
+  }, [fetchMetaData]);
+
+  // CONSOLIDATED: Single useEffect for initial load and data changes
+  useEffect(() => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[HomeTab] Skipping data fetch: Missing brandId or dateRange");
+      return;
+    }
+    
+    // Track if this is a brand change
+    const isBrandChange = currentBrandId.current !== brandId;
+    if (isBrandChange) {
+      currentBrandId.current = brandId;
+      // Clear cached data on brand change to prevent showing wrong brand's data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`meta_metrics_${brandId}`);
+      }
+    }
+    
+    console.log("[HomeTab] Data dependencies changed. Fetching all data.", {
+      brandId,
+      dateRange: `${dateRange.from.toISOString()} to ${dateRange.to.toISOString()}`,
+      isBrandChange
+    });
+    
+    // For Meta
+    if (metaConnection) {
+      console.log("[HomeTab] Meta connection active, triggering refresh");
+      // Use debounced refresh to prevent multiple rapid calls
+      triggerMetaRefresh(true);
+      
+      if (widgets.some(widget => widget.id === 'meta-campaigns')) {
+        console.log("[HomeTab] Campaign widget present, fetching campaigns");
+        fetchCampaigns(true);
+      }
+    } else {
+      console.log("[HomeTab] Meta connection not active");
+      setIsLoadingMetaData(false);
+      setIsLoadingCampaigns(false);
     }
 
-    // Cleanup function
+    // For Shopify
+    if (shopifyConnection) {
+      console.log("[HomeTab] Shopify connection active, fetching data");
+      fetchShopifyData();
+    } else {
+      console.log("[HomeTab] Shopify connection not active");
+      setIsLoadingShopifyData(false);
+    }
+    
+    // Cleanup debounce on unmount
     return () => {
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-        fetchTimeoutRef.current = null;
+      if (debouncedMetaRefresh.current) {
+        clearTimeout(debouncedMetaRefresh.current);
       }
     };
-  }, [brandId, dateRange, metaConnection, shopifyConnection, fetchAllData]);
+  }, [brandId, dateRange, metaConnection, shopifyConnection, widgets, triggerMetaRefresh, fetchCampaigns, fetchShopifyData]);
 
-  // Visibility change effect - simplified and debounced
+  // SIMPLIFIED: Single visibility change handler
   useEffect(() => {
-    let visibilityTimeout: NodeJS.Timeout;
-
+    if (!brandId || !metaConnection || !dateRange?.from || !dateRange?.to) {
+      return;
+    }
+    
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isInitialLoadComplete.current) {
+      if (document.visibilityState === "visible") {
         const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshTime.current;
+        const timeSinceLastRefresh = now - (window._lastMetaRefresh || 0);
         
-        // Only refresh if it's been more than 60 seconds since last refresh
-        if (timeSinceLastRefresh > 60000) {
-          console.log("[HomeTab] Page became visible - refreshing after 60s threshold");
+        // Only refresh if it's been more than 5 minutes since last refresh
+        if (timeSinceLastRefresh > 300000) { // 5 minutes
+          console.log("[HomeTab] Page became visible after 5+ minutes. Refreshing Meta data...");
           
           // Clear any blocking flags
           if (typeof window !== 'undefined') {
@@ -1270,14 +1231,10 @@ export function HomeTab({
             window._disableAutoMetaFetch = false;
           }
           
-          // Debounce the visibility refresh
-          clearTimeout(visibilityTimeout);
-          visibilityTimeout = setTimeout(() => {
-            fetchAllData({ isHardRefresh: true });
-            lastRefreshTime.current = now;
-          }, 200);
+          triggerMetaRefresh(true);
+          window._lastMetaRefresh = now;
         } else {
-          console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last)`);
+          console.log(`[HomeTab] Page visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
         }
       }
     };
@@ -1285,25 +1242,25 @@ export function HomeTab({
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      clearTimeout(visibilityTimeout);
     };
-  }, [fetchAllData]);
+  }, [brandId, metaConnection, dateRange, triggerMetaRefresh]);
 
-  // Global refresh events - simplified
+  // Listen for global refresh events (keep this one as it handles external events)
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
-      if (event.detail?.brandId === brandId && metaConnection && isInitialLoadComplete.current) {
-        console.log("[HomeTab] Received global refresh event, debouncing...");
-        
-        // Debounce global refresh events
-        if (fetchTimeoutRef.current) {
-          clearTimeout(fetchTimeoutRef.current);
+      console.log("[HomeTab] Received global refresh event:", event.detail);
+      if (event.detail?.brandId === brandId && metaConnection) {
+        // Don't refresh if we just refreshed
+        const now = Date.now();
+        const timeSinceLastRefresh = now - (window._lastMetaRefresh || 0);
+        if (timeSinceLastRefresh < 5000) { // 5 seconds
+          console.log("[HomeTab] Ignoring global refresh - just refreshed recently");
+          return;
         }
         
-        fetchTimeoutRef.current = setTimeout(() => {
-          console.log("[HomeTab] Executing global refresh");
-          fetchAllData({ isHardRefresh: true });
-        }, 300);
+        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta sync.");
+        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+        triggerMetaRefresh(true);
       }
     };
 
@@ -1318,19 +1275,16 @@ export function HomeTab({
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
       }
     };
-  }, [brandId, metaConnection, fetchAllData]);
+  }, [brandId, metaConnection, triggerMetaRefresh]);
 
-  // Remove the duplicate useEffect hooks that were causing race conditions
-  // (All the other useEffect hooks that called fetchMetaData or syncMetaInsights have been removed)
-
-  // Manual refresh function
+  // Function to manually trigger a hard refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {
     if (!brandId || !metaConnection) {
       toast.error("Cannot refresh Meta data: No brand selected or Meta not connected.");
       return;
     }
-    console.log("[HomeTab] Manual Meta refresh triggered");
-    fetchAllData({ isHardRefresh: true, skipCache: true });
+    console.log("[HomeTab] Manual Meta refresh triggered.");
+    syncMetaInsights(); // Use syncMetaInsights instead of fetchMetaData
   };
 
   // Load user's saved widget configuration
@@ -1545,9 +1499,7 @@ export function HomeTab({
         adSpendGrowth: metaMetrics.adSpendGrowth,
         impressionGrowth: metaMetrics.impressionGrowth,
         clickGrowth: metaMetrics.clickGrowth,
-        isLoading: isLoadingMetaData || isComprehensiveRefreshing,
-        isInitializing: isInitializing,
-        hasValidMetaData: hasValidMetaData
+        isLoading: isLoadingMetaData || isComprehensiveRefreshing
       });
     }
     
@@ -1579,10 +1531,7 @@ export function HomeTab({
           <span>{widget.name}</span>
         </div>
       ),
-      loading: (widget.type === 'meta' ? 
-        (isLoadingMetaData || isComprehensiveRefreshing || (isInitializing && !hasValidMetaData)) : 
-        isLoading
-      ) || isRefreshingData,
+      loading: (widget.type === 'meta' ? (isLoadingMetaData || isComprehensiveRefreshing) : isLoading) || isRefreshingData,
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
