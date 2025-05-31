@@ -1297,26 +1297,13 @@ export function HomeTab({
     }
   }, [brandId, dateRange, metaConnection, shopifyConnection, widgets]);
 
-  // Effect for initial mount and visibility changes to trigger database-based refresh for Meta data
+  // Effect for initial mount to trigger database-based refresh for Meta data (removed visibility change listener)
   useEffect(() => {
     if (!brandId || !metaConnection) {
-      console.log("[HomeTab] Skipping Meta mount/visibility refresh: no brandId or Meta not connected.");
+      console.log("[HomeTab] Skipping Meta mount refresh: no brandId or Meta not connected.");
       return;
     }
     
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log("[HomeTab] Page became visible. Triggering Meta database sync.");
-        // Clear any potential blocking flags from other tabs/components
-        if (typeof window !== 'undefined') {
-          window._blockMetaApiCalls = false;
-          window._disableAutoMetaFetch = false;
-          console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on visibility change.");
-        }
-        syncMetaInsights(); // Use database-based sync
-      }
-    };
-
     // Initial sync on mount (or when brandId/metaConnection becomes available)
     console.log("[HomeTab] Component mounted/brandId/metaConnection ready. Triggering initial Meta database sync.");
     // Clear potential blocking flags first
@@ -1326,35 +1313,7 @@ export function HomeTab({
       console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on mount.");
     }
     syncMetaInsights(); // Use database-based sync
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
   }, [brandId, metaConnection]);
-
-  // Keep the existing visibility change logic separate
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && dateRange?.from && dateRange?.to && metaConnection) {
-        const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshTime.current;
-        // Only refresh if it's been more than 60 seconds since last refresh
-        if (timeSinceLastRefresh > 60000) {
-          console.log("[HomeTab] Page became visible. Refreshing Meta data after 60s threshold...");
-          syncMetaInsights(); // Use database-based sync
-          lastRefreshTime.current = now;
-        } else {
-          console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [brandId, metaConnection, dateRange]);
 
   // Listen for global refresh events (e.g., from MetaTab)
   useEffect(() => {
