@@ -584,7 +584,7 @@ export function HomeTab({
       return;
     }
 
-    const refreshId = `home-meta-refresh-${Date.now()}`;
+      const refreshId = `home-meta-refresh-${Date.now()}`;
 
     // For hard refreshes, attempt to acquire lock
     if (isHardRefresh) {
@@ -709,40 +709,61 @@ export function HomeTab({
       
       const currentData = await response.json();
       const previousData = await prevResponse.json();
-
+      
+      // Debug: Log API response structure (only once, not spam)
+      if (isHardRefresh) {
+        console.log('[HomeTab] API Response Structure - Current:', Object.keys(currentData));
+        console.log('[HomeTab] API Response Structure - Previous:', Object.keys(previousData));
+        console.log('[HomeTab] Current Data Sample:', {
+          adSpend: currentData.adSpend || currentData.spend || currentData.totalSpend,
+          impressions: currentData.impressions,
+          clicks: currentData.clicks,
+          conversions: currentData.conversions,
+          roas: currentData.roas
+        });
+      }
+      
       setMetaMetrics(prev => {
         const newMetrics = {
           ...prev,
-        adSpend: currentData.adSpend || 0,
-        impressions: currentData.impressions || 0,
-        clicks: currentData.clicks || 0,
-          conversions: currentData.conversions || 0, // Assuming conversions is part of the API response
-        roas: currentData.roas || 0,
+          // Try multiple possible property names for ad spend
+          adSpend: currentData.adSpend || currentData.spend || currentData.totalSpend || 0,
+          impressions: currentData.impressions || 0,
+          clicks: currentData.clicks || 0,
+          conversions: currentData.conversions || 0,
+          roas: currentData.roas || 0,
           ctr: currentData.ctr || 0,
           cpc: currentData.cpc || 0,
-          costPerResult: currentData.costPerResult || 0,
-          results: currentData.results || 0, // Assuming 'results' exists
-          purchaseValue: currentData.purchaseValue || 0, // Assuming 'purchaseValue' exists
+          costPerResult: currentData.costPerResult || currentData.cost_per_result || 0,
+          results: currentData.results || currentData.conversions || 0,
+          purchaseValue: currentData.purchaseValue || currentData.purchase_value || 0,
 
-        previousAdSpend: previousData.adSpend || 0,
-        previousImpressions: previousData.impressions || 0,
-        previousClicks: previousData.clicks || 0,
-        previousConversions: previousData.conversions || 0,
-        previousRoas: previousData.roas || 0,
+          // Previous period data with multiple property name attempts
+          previousAdSpend: previousData.adSpend || previousData.spend || previousData.totalSpend || 0,
+          previousImpressions: previousData.impressions || 0,
+          previousClicks: previousData.clicks || 0,
+          previousConversions: previousData.conversions || 0,
+          previousRoas: previousData.roas || 0,
           previousCtr: previousData.ctr || 0,
           previousCpc: previousData.cpc || 0,
-          // previousCostPerResult: previousData.costPerResult || 0, // Assuming this should be here
-          previousResults: previousData.results || 0,
-          previousPurchaseValue: previousData.purchaseValue || 0,
+          previousResults: previousData.results || previousData.conversions || 0,
+          previousPurchaseValue: previousData.purchaseValue || previousData.purchase_value || 0,
 
-          adSpendGrowth: calculatePercentChange(currentData.adSpend, previousData.adSpend),
-          impressionGrowth: calculatePercentChange(currentData.impressions, previousData.impressions),
-          clickGrowth: calculatePercentChange(currentData.clicks, previousData.clicks),
-          conversionGrowth: calculatePercentChange(currentData.conversions, previousData.conversions),
-          roasGrowth: calculatePercentChange(currentData.roas, previousData.roas),
-          ctrGrowth: calculatePercentChange(currentData.ctr, previousData.ctr),
-          cpcGrowth: calculatePercentChange(currentData.cpc, previousData.cpc),
-          cprGrowth: calculatePercentChange(currentData.costPerResult, previousData.costPerResult),
+          // Calculate growth rates
+          adSpendGrowth: calculatePercentChange(
+            currentData.adSpend || currentData.spend || currentData.totalSpend || 0, 
+            previousData.adSpend || previousData.spend || previousData.totalSpend || 0
+          ),
+          impressionGrowth: calculatePercentChange(currentData.impressions || 0, previousData.impressions || 0),
+          clickGrowth: calculatePercentChange(currentData.clicks || 0, previousData.clicks || 0),
+          conversionGrowth: calculatePercentChange(currentData.conversions || 0, previousData.conversions || 0),
+          roasGrowth: calculatePercentChange(currentData.roas || 0, previousData.roas || 0),
+          ctrGrowth: calculatePercentChange(currentData.ctr || 0, previousData.ctr || 0),
+          cpcGrowth: calculatePercentChange(currentData.cpc || 0, previousData.cpc || 0),
+          cprGrowth: calculatePercentChange(
+            currentData.costPerResult || currentData.cost_per_result || 0, 
+            previousData.costPerResult || previousData.cost_per_result || 0
+          ),
         };
         
         // Cache the metrics to localStorage
@@ -942,17 +963,13 @@ export function HomeTab({
   // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[HomeTab] useEffect detected change in brandId or dateRange. Fetching all data.");
       // For Meta, trigger a sync when brand or date range changes.
       if (metaConnection) {
-        console.log("[HomeTab] Meta connection active, calling fetchMetaData with hard refresh.");
         fetchMetaData(true); // Pass true for hard refresh
         if (widgets.some(widget => widget.id === 'meta-campaigns')) {
-            console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
           fetchCampaigns(true); // forceRefresh is true here
         }
       } else {
-        console.log("[HomeTab] Meta connection not active, skipping Meta data fetch.");
         setMetaMetrics(initialMetaMetricsState); // Reset meta metrics if connection lost
         setMetaDaily([]);
         setCampaigns([]); // Also clear campaigns
@@ -961,16 +978,11 @@ export function HomeTab({
       }
 
       if (shopifyConnection) {
-        console.log("[HomeTab] Shopify connection active, calling fetchShopifyData.");
         fetchShopifyData();
       } else {
-        console.log("[HomeTab] Shopify connection not active, skipping Shopify data fetch.");
-        // Reset Shopify metrics if connection lost (if you have a similar state for Shopify)
-        // setShopifyMetrics(initialShopifyMetricsState); 
         setIsLoadingShopifyData(false);
       }
     } else {
-      console.log("[HomeTab] Skipping data fetch in useEffect: Missing brandId or full dateRange.");
       // If essential parameters are missing, ensure loading states are false.
       setIsLoadingMetaData(false);
       setIsLoadingShopifyData(false);
@@ -988,23 +1000,16 @@ export function HomeTab({
       clearTimeout(debouncedMetaRefresh.current);
     }
     
-    // For hard refresh (like brand changes), use syncMetaInsights for guaranteed fresh data
-    if (isHardRefresh) {
-      debouncedMetaRefresh.current = setTimeout(() => {
-        syncMetaInsights();
-      }, 100);
-    } else {
-      // For soft refreshes, use regular fetchMetaData
-      debouncedMetaRefresh.current = setTimeout(() => {
-        fetchMetaData(isHardRefresh);
-      }, 100);
-    }
-  }, [fetchMetaData, syncMetaInsights]);
+    // Always use fetchMetaData for consistent data handling
+    debouncedMetaRefresh.current = setTimeout(() => {
+      fetchMetaData(isHardRefresh);
+    }, 100);
+  }, [fetchMetaData]);
 
   // CONSOLIDATED: Single useEffect for initial load and data changes
   useEffect(() => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
-        return;
+    return;
       }
       
     // Track if this is a brand change
@@ -1034,25 +1039,25 @@ export function HomeTab({
 
     // For Shopify
     if (shopifyConnection) {
-          fetchShopifyData();
+        fetchShopifyData();
       } else {
       setIsLoadingShopifyData(false);
-    }
+      }
     
     // Cleanup debounce on unmount
     return () => {
       if (debouncedMetaRefresh.current) {
         clearTimeout(debouncedMetaRefresh.current);
-      }
+    }
     };
   }, [brandId, dateRange, metaConnection, shopifyConnection, widgets, triggerMetaRefresh, fetchCampaigns, fetchShopifyData]);
 
   // SIMPLIFIED: Single visibility change handler
   useEffect(() => {
     if (!brandId || !metaConnection || !dateRange?.from || !dateRange?.to) {
-      return;
-    }
-    
+        return;
+      }
+      
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         const now = Date.now();
@@ -1060,7 +1065,6 @@ export function HomeTab({
         
         // Only refresh if it's been more than 5 minutes since last refresh
         if (timeSinceLastRefresh > 300000) { // 5 minutes
-          console.log("[HomeTab] Page became visible after 5+ minutes. Refreshing Meta data...");
           
           // Clear any blocking flags
           if (typeof window !== 'undefined') {
@@ -1091,7 +1095,6 @@ export function HomeTab({
           return;
         }
         
-        console.log("[HomeTab] Global refresh event triggered for brandId:", brandId);
         toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
         triggerMetaRefresh(true);
       }
