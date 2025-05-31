@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Metrics } from '@/types/metrics'
 import { PlatformConnection } from '@/types/platformConnection'
 import { DateRange } from 'react-day-picker'
@@ -310,6 +310,15 @@ export function HomeTab({
   const [activeWidgetTab, setActiveWidgetTab] = useState<'shopify' | 'meta'>('shopify');
   const supabase = createClientComponentClient();
   
+  // Memoize dateRange to prevent unnecessary re-renders and effect triggers
+  const memoizedDateRange = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) {
+      return undefined; // Or a default range if appropriate
+    }
+    // Return a new object only if from/to actually change
+    return { from: dateRange.from, to: dateRange.to };
+  }, [dateRange?.from, dateRange?.to]);
+
   // State to store Meta daily data
   const [metaDaily, setMetaDaily] = useState<any[]>([]);
   const [shopifyDaily, setShopifyDaily] = useState<any[]>([]);
@@ -565,10 +574,12 @@ export function HomeTab({
   const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
   
   // Filter widgets that require connections that don't exist
-  const validWidgets = widgets.filter(widget => 
-    (widget.type === 'shopify' && shopifyConnection) || 
-    (widget.type === 'meta' && metaConnection)
-  );
+  const validWidgets = useMemo(() => {
+    return widgets.filter(widget => 
+      (widget.type === 'shopify' && shopifyConnection) || 
+      (widget.type === 'meta' && metaConnection)
+    );
+  }, [widgets, shopifyConnection, metaConnection]);
 
   // Group widgets by platform
   const shopifyWidgets = validWidgets.filter(widget => widget.type === 'shopify');
@@ -576,7 +587,7 @@ export function HomeTab({
 
   // Fetch Meta data directly from API with HARD PULL logic (same as MetaTab)
   const fetchMetaData = useCallback(async (isHardRefresh = true) => { // Added isHardRefresh parameter
-    if (!brandId || !dateRange?.from || !dateRange?.to || !metaConnection) {
+    if (!brandId || !memoizedDateRange?.from || !memoizedDateRange?.to || !metaConnection) {
       // If it's not a hard refresh (e.g. initial soft load), still set loading to false if applicable
       if (!isHardRefresh) {
         setIsLoadingMetaData(false);
@@ -630,7 +641,7 @@ export function HomeTab({
       
         // Step 3: Refresh ad sets data - Only for hard refresh
         if (!criticalStepFailed) {
-          const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`, {
+          const budgetResponse = await fetch(`/api/meta/update-campaign-budgets?brandId=${brandId}&forceRefresh=true`, {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
@@ -656,8 +667,8 @@ export function HomeTab({
 
       // Current period params
       const params = new URLSearchParams({ brandId: brandId });
-      if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
-      if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
+      if (memoizedDateRange.from) params.append('from', memoizedDateRange.from.toISOString().split('T')[0]);
+      if (memoizedDateRange.to) params.append('to', memoizedDateRange.to.toISOString().split('T')[0]);
       
       // Apply aggressive cache busting for hard refreshes or if specified
       if (isHardRefresh) {
@@ -666,7 +677,7 @@ export function HomeTab({
         params.append('refresh', 'true'); // Instructs backend to re-calculate/re-fetch if needed
       }
       
-      const { prevFrom, prevTo } = getPreviousPeriodDates(dateRange.from, dateRange.to);
+      const { prevFrom, prevTo } = getPreviousPeriodDates(memoizedDateRange.from, memoizedDateRange.to);
       const prevParams = new URLSearchParams({ brandId: brandId });
       if (prevFrom) prevParams.append('from', prevFrom);
       if (prevTo) prevParams.append('to', prevTo);
@@ -789,11 +800,11 @@ export function HomeTab({
     }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, dateRange, metaConnection, getPreviousPeriodDates, calculatePercentChange]); // Removed setIsLoadingMetaData from deps, it's a setter
+  }, [brandId, memoizedDateRange, metaConnection, getPreviousPeriodDates, calculatePercentChange]); // Removed setIsLoadingMetaData from deps, it's a setter
 
   // EXACT COPY OF META PAGE SYNC FUNCTION - THIS IS WHAT MAKES IT WORK
   const syncMetaInsights = async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
+    if (!brandId || !memoizedDateRange?.from || !memoizedDateRange?.to) {
       return;
     }
     
@@ -801,8 +812,8 @@ export function HomeTab({
     
     try {
       // Format dates in YYYY-MM-DD format
-      const startDate = dateRange.from.toISOString().split('T')[0];
-      const endDate = dateRange.to.toISOString().split('T')[0];
+      const startDate = memoizedDateRange.from.toISOString().split('T')[0];
+      const endDate = memoizedDateRange.to.toISOString().split('T')[0];
       
       const response = await fetch('/api/meta/insights/sync', {
             method: 'POST',
@@ -874,9 +885,9 @@ export function HomeTab({
       let localFromDate: string | undefined;
       let localToDate: string | undefined;
 
-      if (dateRange?.from && dateRange?.to) {
-        localFromDate = dateRange.from.toISOString().split('T')[0];
-        localToDate = dateRange.to.toISOString().split('T')[0];
+      if (memoizedDateRange?.from && memoizedDateRange?.to) {
+        localFromDate = memoizedDateRange.from.toISOString().split('T')[0];
+        localToDate = memoizedDateRange.to.toISOString().split('T')[0];
         url += `&from=${localFromDate}&to=${localToDate}`;
         
         const isDifferentDateRange = 
@@ -917,11 +928,11 @@ export function HomeTab({
       setIsLoadingCampaigns(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, metaConnection, dateRange, setIsLoadingCampaigns, setCampaigns, campaigns.length]); // Added relevant setters and campaigns.length
+  }, [brandId, metaConnection, memoizedDateRange, setIsLoadingCampaigns, setCampaigns]); // campaigns.length removed, added setIsLoadingCampaigns, setCampaigns
 
   // Fetch Shopify data when brandId or dateRange changes
   const fetchShopifyData = useCallback(async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to || !shopifyConnection) {
+    if (!brandId || !memoizedDateRange?.from || !memoizedDateRange?.to || !shopifyConnection) {
       // Ensure loading state is false if prerequisites aren't met
       setIsLoadingShopifyData(false);
       return;
@@ -930,8 +941,8 @@ export function HomeTab({
     try {
       const params = new URLSearchParams({
         brandId: brandId,
-        from: dateRange.from.toISOString().split('T')[0],
-        to: dateRange.to.toISOString().split('T')[0]
+        from: memoizedDateRange.from.toISOString().split('T')[0],
+        to: memoizedDateRange.to.toISOString().split('T')[0]
       });
       const response = await fetch(`/api/metrics/shopify?${params.toString()}`);
       if (!response.ok) {
@@ -947,11 +958,11 @@ export function HomeTab({
       setIsLoadingShopifyData(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, dateRange, shopifyConnection]); // Minimal necessary dependencies
+  }, [brandId, memoizedDateRange, shopifyConnection]); // Minimal necessary dependencies
 
   // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to) {
+    if (brandId && memoizedDateRange?.from && memoizedDateRange?.to) {
       // For Meta, trigger a sync when brand or date range changes.
       if (metaConnection) {
         fetchMetaData(true); // Pass true for hard refresh
@@ -978,7 +989,7 @@ export function HomeTab({
       setIsLoadingCampaigns(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, dateRange, metaConnection, shopifyConnection, widgets]); // fetchMetaData & fetchShopifyData are memoized. Added widgets for campaign check.
+  }, [brandId, memoizedDateRange, metaConnection, shopifyConnection, widgets]); // fetchMetaData & fetchShopifyData are memoized. Added widgets for campaign check.
 
   // Add debounced refresh function
   const debouncedMetaRefresh = useRef<NodeJS.Timeout | null>(null);
@@ -997,7 +1008,7 @@ export function HomeTab({
 
   // CONSOLIDATED: Single useEffect for initial load and data changes
   useEffect(() => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
+    if (!brandId || !memoizedDateRange?.from || !memoizedDateRange?.to) {
     return;
       }
       
@@ -1039,11 +1050,11 @@ export function HomeTab({
         clearTimeout(debouncedMetaRefresh.current);
     }
     };
-  }, [brandId, dateRange, metaConnection, shopifyConnection, widgets, triggerMetaRefresh, fetchCampaigns, fetchShopifyData]);
+  }, [brandId, memoizedDateRange, metaConnection, shopifyConnection, widgets, triggerMetaRefresh, fetchCampaigns, fetchShopifyData]);
 
   // SIMPLIFIED: Single visibility change handler
   useEffect(() => {
-    if (!brandId || !metaConnection || !dateRange?.from || !dateRange?.to) {
+    if (!brandId || !metaConnection || !memoizedDateRange?.from || !memoizedDateRange?.to) {
         return;
       }
       
@@ -1071,7 +1082,7 @@ export function HomeTab({
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [brandId, metaConnection, dateRange, triggerMetaRefresh]);
+  }, [brandId, metaConnection, memoizedDateRange, triggerMetaRefresh]);
 
   // Listen for global refresh events (keep this one as it handles external events)
   useEffect(() => {
@@ -1296,13 +1307,6 @@ export function HomeTab({
     }
   }, [brandId, metaConnection, fetchCampaigns]);
 
-  // Add an effect to fetch campaign data when needed
-  useEffect(() => {
-    if (metaConnection && validWidgets.some(widget => widget.id === 'meta-campaigns')) {
-      fetchCampaigns();
-    }
-  }, [metaConnection, dateRange, fetchCampaigns, validWidgets]);
-
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
     // Remove the excessive debug logging that was causing log spam
@@ -1339,7 +1343,7 @@ export function HomeTab({
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
-      dateRange: dateRange
+      dateRange: memoizedDateRange
     };
 
     // Widget-specific props based on ID
@@ -1420,13 +1424,10 @@ export function HomeTab({
               </div>
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-              {dateRange.from && dateRange.to ? (
+              {memoizedDateRange?.from && memoizedDateRange?.to ? (
                 <SalesByProduct 
                   brandId={brandId}
-                  dateRange={{
-                    from: dateRange.from,
-                    to: dateRange.to
-                  }}
+                  dateRange={memoizedDateRange}
                   isRefreshing={isRefreshingData}
                 />
               ) : (
@@ -1442,13 +1443,10 @@ export function HomeTab({
         
         return (
           <div key={widget.id} className="col-span-full mb-4">
-            {dateRange.from && dateRange.to ? (
+            {memoizedDateRange?.from && memoizedDateRange?.to ? (
               <SalesByProduct 
                 brandId={brandId}
-                dateRange={{
-                  from: dateRange.from,
-                  to: dateRange.to
-                }}
+                dateRange={memoizedDateRange}
                 isRefreshing={isRefreshingData}
               />
             ) : (
@@ -1813,7 +1811,7 @@ export function HomeTab({
                 campaigns={campaigns}
                 isLoading={isLoadingCampaigns}
                 isSyncing={isSyncingCampaigns}
-                dateRange={dateRange}
+                dateRange={memoizedDateRange}
                 onRefresh={() => fetchCampaigns(true)}
                 onSync={syncCampaigns}
               />
@@ -1828,7 +1826,7 @@ export function HomeTab({
               campaigns={campaigns}
               isLoading={isLoadingCampaigns}
               isSyncing={isSyncingCampaigns}
-              dateRange={dateRange}
+              dateRange={memoizedDateRange}
               onRefresh={() => fetchCampaigns(true)}
               onSync={syncCampaigns}
             />
@@ -1873,7 +1871,7 @@ export function HomeTab({
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
               <TotalAdSetReachCard 
                 brandId={brandId} 
-                dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+                dateRange={memoizedDateRange?.from && memoizedDateRange?.to ? memoizedDateRange : undefined}
                 isManuallyRefreshing={isRefreshingData}
               />
             </div>
@@ -1884,7 +1882,7 @@ export function HomeTab({
           <div key={widget.id} className="w-full">
             <TotalAdSetReachCard 
               brandId={brandId} 
-              dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+              dateRange={memoizedDateRange?.from && memoizedDateRange?.to ? memoizedDateRange : undefined}
               isManuallyRefreshing={isRefreshingData}
             />
           </div>
