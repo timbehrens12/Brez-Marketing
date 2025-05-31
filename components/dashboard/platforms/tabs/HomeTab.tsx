@@ -710,18 +710,7 @@ export function HomeTab({
       const currentData = await response.json();
       const previousData = await prevResponse.json();
       
-      // Debug: Log API response structure (only once, not spam)
-      if (isHardRefresh) {
-        console.log('[HomeTab] API Response Structure - Current:', Object.keys(currentData));
-        console.log('[HomeTab] API Response Structure - Previous:', Object.keys(previousData));
-        console.log('[HomeTab] Current Data Sample:', {
-          adSpend: currentData.adSpend || currentData.spend || currentData.totalSpend,
-          impressions: currentData.impressions,
-          clicks: currentData.clicks,
-          conversions: currentData.conversions,
-          roas: currentData.roas
-        });
-      }
+      // Removed debug logging to prevent spam
       
       setMetaMetrics(prev => {
         const newMetrics = {
