@@ -360,21 +360,7 @@ export function HomeTab({
     previousPurchaseValue: number;
   }
   
-  // State for direct Meta metrics
-  const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>(() => {
-    // Initialize from localStorage if available to prevent initial flash
-    if (typeof window !== 'undefined' && brandId) {
-      const cached = localStorage.getItem(`meta_metrics_${brandId}`);
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch (e) {
-          console.error('[HomeTab] Failed to parse cached meta metrics:', e);
-        }
-      }
-    }
-    return initialMetaMetricsState;
-  });
+  // Define initial state for Meta metrics
   const initialMetaMetricsState = {
     adSpend: 0,
     impressions: 0,
@@ -404,6 +390,9 @@ export function HomeTab({
     purchaseValue: 0,
     previousPurchaseValue: 0
   };
+
+  // State for direct Meta metrics
+  const [metaMetrics, setMetaMetrics] = useState<MetaMetricsState>(initialMetaMetricsState);
 
   // Additional state for Meta campaign widget
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -2260,6 +2249,22 @@ export function HomeTab({
       </div>
     );
   };
+
+  // Load cached metrics on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && brandId) {
+      const cached = localStorage.getItem(`meta_metrics_${brandId}`);
+      if (cached) {
+        try {
+          const cachedMetrics = JSON.parse(cached);
+          setMetaMetrics(cachedMetrics);
+          console.log('[HomeTab] Loaded cached meta metrics for brand:', brandId);
+        } catch (e) {
+          console.error('[HomeTab] Failed to parse cached meta metrics:', e);
+        }
+      }
+    }
+  }, [brandId]); // Run when brandId changes
 
   return (
     <div className="space-y-2 relative">
