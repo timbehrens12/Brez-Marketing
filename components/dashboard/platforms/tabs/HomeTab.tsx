@@ -655,12 +655,6 @@ export function HomeTab({
     }
 
     const refreshId = `home-meta-refresh-${Date.now()}`;
-    
-    // Extract date range parameters early for consistent use across all API calls
-    const fromDate = dateRange.from.toISOString().split('T')[0];
-    const toDate = dateRange.to.toISOString().split('T')[0];
-    
-    console.log(`[HomeTab] 📅 Date Range for ALL API calls: ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
 
     // For hard refreshes, attempt to acquire lock
     if (isHardRefresh) {
@@ -689,11 +683,8 @@ export function HomeTab({
 
       // Step 1: Fetch fresh data from Meta API and update database (HARD PULL) - Only for hard refresh
       if (isHardRefresh) {
-        console.log(`[HomeTab] 🚀 Step 1: Meta API sync with date range ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
-        const syncUrl = `/api/meta/sync?brandId=${brandId}&from=${fromDate}&to=${toDate}`;
-        console.log(`[HomeTab] Sync URL: ${syncUrl}`);
-        
-        const syncResponse = await fetch(syncUrl, {
+        console.log(`[HomeTab] 🚀 Step 1: Meta API sync (refreshId: ${refreshId})`);
+      const syncResponse = await fetch(`/api/meta/sync?brandId=${brandId}`, {
         method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Refresh-ID': refreshId }
       });
@@ -707,11 +698,8 @@ export function HomeTab({
       
         // Step 2: Refresh campaigns with latest data - Only for hard refresh
         if (!criticalStepFailed) {
-          console.log(`[HomeTab] 🚀 Step 2: Campaign data refresh with date range ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
-          const campaignUrl = `/api/meta/campaigns?brandId=${brandId}&from=${fromDate}&to=${toDate}&forceRefresh=true`;
-          console.log(`[HomeTab] Campaign URL: ${campaignUrl}`);
-          
-          const campaignResponse = await fetch(campaignUrl, {
+          console.log(`[HomeTab] 🚀 Step 2: Campaign data refresh (refreshId: ${refreshId})`);
+          const campaignResponse = await fetch(`/api/meta/campaigns?brandId=${brandId}&forceRefresh=true`, {
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
           if (!campaignResponse.ok) {
@@ -726,11 +714,8 @@ export function HomeTab({
         // Step 3: Refresh ad sets data - Only for hard refresh
         // THIS IS THE KNOWN FAILING ENDPOINT FROM LOGS
         if (!criticalStepFailed) {
-          console.log(`[HomeTab] 🚀 Step 3: Ad set budgets refresh with date range ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
-          const budgetUrl = `/api/meta/campaign-budgets?brandId=${brandId}&from=${fromDate}&to=${toDate}&forceRefresh=true`;
-          console.log(`[HomeTab] Budget URL: ${budgetUrl}`);
-          
-          const budgetResponse = await fetch(budgetUrl, {
+          console.log(`[HomeTab] 🚀 Step 3: Ad set budgets refresh (refreshId: ${refreshId})`);
+          const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true`, {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
           });
@@ -755,12 +740,12 @@ export function HomeTab({
       }
       
       // Step 4: Now fetch the refreshed metrics data for display
-      console.log(`[HomeTab] 🚀 Step 4: Fetching refreshed metrics with date range ${fromDate} to ${toDate} (refreshId: ${refreshId})`);
+      console.log(`[HomeTab] 🚀 Step 4: Fetching refreshed metrics (refreshId: ${refreshId})`);
 
       // Current period params
       const params = new URLSearchParams({ brandId: brandId });
-      params.append('from', fromDate);
-      params.append('to', toDate);
+      if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
+      if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
       
       // Apply aggressive cache busting for hard refreshes or if specified
       if (isHardRefresh) {
@@ -957,73 +942,68 @@ export function HomeTab({
 
   // EXACT COPY OF META PAGE SYNC FUNCTION - THIS IS WHAT MAKES IT WORK
   const syncMetaInsights = async () => {
-    if (!brandId || !metaConnection) {
-      console.log("[HomeTab] Cannot sync Meta insights: Missing brandId or metaConnection");
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.error("[HomeTab] Cannot sync data - missing brand ID or date range");
       return;
     }
     
-    if (!dateRange?.from || !dateRange?.to) {
-      console.log("[HomeTab] Cannot sync Meta insights: Missing date range");
-      return;
-    }
+    console.log("[HomeTab] Syncing Meta insights data just like Meta page...");
     
-    // Extract and log date range for clarity
-    const fromDate = dateRange.from.toISOString().split('T')[0];
-    const toDate = dateRange.to.toISOString().split('T')[0];
-    console.log(`[HomeTab] 📅 Syncing Meta insights for date range: ${fromDate} to ${toDate}`);
+    setIsLoadingMetaData(true);
     
     try {
-      console.log("[HomeTab] Syncing Meta insights data just like Meta page...");
-      setIsLoadingMetaData(true);
-    
-      // Add timeout to prevent hanging requests
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000)
-      );
+      // Format dates in YYYY-MM-DD format
+      const startDate = dateRange.from.toISOString().split('T')[0];
+      const endDate = dateRange.to.toISOString().split('T')[0];
       
-      const syncPromise = fetch(`/api/meta/insights/sync`, {
+      const response = await fetch('/api/meta/insights/sync', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-              brandId: brandId,
-          dateRange: {
-            from: dateRange.from.toISOString(),
-            to: dateRange.to.toISOString()
-          }
+          brandId,
+          startDate,
+          endDate,
+          forceRefresh: true
         })
-      });
-            
-      const response = await Promise.race([syncPromise, timeoutPromise]) as Response;
+            });
             
             if (!response.ok) {
-        if (response.status === 504) {
-          console.warn("[HomeTab] Meta API sync timed out (504) - trying to fetch existing data instead");
-          // Fallback to fetching existing data from database
-          await fetchMetaData(false); // Don't force refresh, just get what's available
-          return;
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync Meta insights');
       }
       
       const result = await response.json();
-      console.log("[HomeTab] Meta insights sync successful:", result);
       
-      // After successful sync, fetch the updated data
-      await fetchMetaData(true);
-              
-    } catch (error) {
-      console.error("[HomeTab] Error syncing Meta insights:", error);
-      
-      // On any error, try to fetch existing data as fallback
-      console.log("[HomeTab] Falling back to existing database data...");
-      try {
-        await fetchMetaData(false);
-      } catch (fallbackError) {
-        console.error("[HomeTab] Even fallback data fetch failed:", fallbackError);
-        toast.error("Unable to load Meta data. Please try again later.");
+      if (result.success) {
+        console.log(`[HomeTab] Meta insights synced successfully - synced ${result.count || 0} records from Meta.`);
+        toast.success("Meta insights synced successfully", {
+          description: `Synced ${result.count || 0} records from Meta.`,
+          duration: 5000
+        });
+
+        // After successful sync, fetch the refreshed data
+        await fetchMetaData(true);
+        
+        // Dispatch event to notify other widgets (reach, budget, etc.)
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            forceRefresh: true,
+            syncedRecords: result.count || 0
+          }
+        }));
+      } else {
+        throw new Error(result.error || 'Failed to sync Meta insights');
       }
+        } catch (error) {
+      console.error('[HomeTab] Error syncing Meta insights:', error);
+      toast.error("Failed to sync Meta insights", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 5000
+      });
     } finally {
       setIsLoadingMetaData(false);
     }
@@ -1053,8 +1033,6 @@ export function HomeTab({
         localToDate = dateRange.to.toISOString().split('T')[0];
         url += `&from=${localFromDate}&to=${localToDate}`;
         
-        console.log(`[HomeTab] 📅 Fetching campaigns for date range: ${localFromDate} to ${localToDate}`);
-        
         const isDifferentDateRange = 
           lastFetchedCampaignDates.current.from !== localFromDate || 
           lastFetchedCampaignDates.current.to !== localToDate;
@@ -1066,8 +1044,6 @@ export function HomeTab({
           return;
         }
         lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
-      } else {
-        console.log('[HomeTab] ⚠️ No date range provided for campaigns fetch');
       }
       
       // Add cache busting if forcing or if date range is specified (implies a new context)
@@ -1090,7 +1066,7 @@ export function HomeTab({
       
       const data = await response.json();
       setCampaigns(data.campaigns || []);
-      console.log(`[HomeTab] ✅ Loaded ${data.campaigns?.length || 0} Meta campaigns for date range ${localFromDate} to ${localToDate}`);
+      console.log(`[HomeTab] Loaded ${data.campaigns?.length || 0} Meta campaigns`);
       
     } catch (error) {
       console.error('[HomeTab] Error fetching campaigns:', error);
@@ -1181,80 +1157,87 @@ export function HomeTab({
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        // REMOVED: This was causing unwanted tab-switching refreshes  
-        // console.log("[HomeTab] Page became visible. Triggering Meta hard refresh.");
-        // fetchMetaData(true); // Hard refresh Meta data
+        console.log("[HomeTab] Page became visible. Triggering Meta hard refresh.");
+        // Clear any potential blocking flags from other tabs/components
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+          console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on visibility change.");
+        }
+        fetchMetaData(true); // Hard refresh Meta data
       }
     };
 
     // Initial hard refresh on mount (or when brandId/metaConnection becomes available)
-    // REMOVED: This was causing duplicate mount refreshes - we have better logic later
-    // console.log("[HomeTab] Component mounted/brandId/metaConnection ready. Triggering initial Meta hard refresh.");
-    // // Clear potential blocking flags first
-    // if (typeof window !== 'undefined') {
-    //   window._blockMetaApiCalls = false;
-    //   window._disableAutoMetaFetch = false;
-    //   console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on mount.");
-    // }
-    // fetchMetaData(true); // Hard refresh Meta data
+    console.log("[HomeTab] Component mounted/brandId/metaConnection ready. Triggering initial Meta hard refresh.");
+    // Clear potential blocking flags first
+    if (typeof window !== 'undefined') {
+      window._blockMetaApiCalls = false;
+      window._disableAutoMetaFetch = false;
+      console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on mount.");
+    }
+    fetchMetaData(true); // Hard refresh Meta data
 
-    // REMOVED: Commenting out visibility event listeners since handlers are disabled
-    // document.addEventListener("visibilitychange", handleVisibilityChange);
-    // return () => {
-    //   document.removeEventListener("visibilitychange", handleVisibilityChange);
-    // };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, metaConnection]); // fetchMetaData is memoized
 
   // Keep the existing visibility change logic separate
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && dateRange?.from && dateRange?.to && metaConnection) {
-        // REMOVED: This was also causing unwanted tab-switching refreshes
-        // const now = Date.now();
-        // const timeSinceLastRefresh = now - lastRefreshTime.current;
-        // if (timeSinceLastRefresh > 60000) {
-        //   console.log("[HomeTab] Page became visible. Refreshing Meta data after 60s threshold...");
-        //   syncMetaInsights();
-        //   lastRefreshTime.current = now;
-        // } else {
-        //   console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
-        // }
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshTime.current;
+        // Only refresh if it's been more than 60 seconds since last refresh
+        if (timeSinceLastRefresh > 60000) {
+          console.log("[HomeTab] Page became visible. Refreshing Meta data after 60s threshold...");
+          syncMetaInsights(); // Use syncMetaInsights instead of fetchMetaData
+          lastRefreshTime.current = now;
+      } else {
+          console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
+        }
       }
     };
 
-    // REMOVED: Commenting out visibility event listeners since handlers are disabled
-    // document.addEventListener("visibilitychange", handleVisibilityChange);
-    // return () => {
-    //   document.removeEventListener("visibilitychange", handleVisibilityChange);
-    // };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, metaConnection, dateRange]); // Keep dependencies minimal
 
-  // Listen for global refresh events (e.g., from MetaTab or page navigation)
+  // Listen for global refresh events (e.g., from MetaTab)
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta sync.");
         toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-        syncMetaInsights();
+        syncMetaInsights(); // Use syncMetaInsights instead of fetchMetaData
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
     };
-    
+
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
-      window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      // Potentially listen to 'page-refresh' or 'meta-refresh-all' if those are more standard
+      // window.addEventListener('page-refresh', handleGlobalRefresh as EventListener);
+      window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener); // Listen to this specific event
     }
     
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
+        // window.removeEventListener('page-refresh', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
       }
     };
-  }, [brandId, metaConnection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId, metaConnection]); // fetchMetaData is memoized
 
   // Function to manually trigger a hard refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {
@@ -1833,17 +1816,15 @@ export function HomeTab({
               <Percent className="h-4 w-4 text-blue-400" />
             </div>
           ),
-          value: metaMetrics.ctr, // Already in percentage format from API (e.g., 2.5 for 2.5%)
-          change: metaMetrics.ctrGrowth,
-          previousValue: metaMetrics.previousCtr, // Already in percentage format
-          suffix: "%", // Add % suffix since API returns percentage value, not decimal
-          valueFormat: "number", // Changed from "percentage" to "number" since API already multiplies by 100
+          value: metaMetrics.ctr, // Should be decimal now
+          change: metaMetrics.ctrGrowth, // Should be based on decimals now
+          previousValue: metaMetrics.previousCtr, // Should be decimal and available now
+          valueFormat: "percentage",
           decimals: 2,
           hideGraph: true,
           showPreviousPeriod: true, 
-          previousValueFormat: "number", // Changed from "percentage" to "number"
+          previousValueFormat: "percentage", 
           previousValueDecimals: 2,
-          previousValueSuffix: "%", // Add % suffix for previous value too
           infoTooltip: "Click-through rate (clicks ÷ impressions)",
           nullChangeText: "N/A",
           nullChangeTooltip: "No data for previous period"
