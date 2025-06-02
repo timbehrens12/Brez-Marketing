@@ -321,6 +321,10 @@ export function HomeTab({
   const [isLoadingMetaData, setIsLoadingMetaData] = useState(false);
   const [isLoadingShopifyData, setIsLoadingShopifyData] = useState(false);
   const [isComprehensiveRefreshing, setIsComprehensiveRefreshing] = useState(false);
+  
+  // NEW: Unified loading state for all Meta widgets to ensure consistent loading
+  const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(false);
+  
   const hasFetchedMetaData = useRef(false); // Ref to track if initial Meta data fetch has happened
   const lastRefreshTime = useRef(0); // Track last refresh time for visibility handling
   
@@ -964,7 +968,11 @@ export function HomeTab({
     
     console.log("[HomeTab] Syncing Meta insights data through database...");
     
+    // Set ALL Meta widget loading states to true for consistent loading
     setIsLoadingMetaData(true);
+    setIsLoadingAllMetaWidgets(true);
+    setIsLoadingCampaigns(true); // Also set campaign loading to sync with other widgets
+    
     toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 });
     
     try {
@@ -998,9 +1006,15 @@ export function HomeTab({
       if (result.success) {
         console.log(`[HomeTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
         
-        // Step 2: Now fetch the refreshed data from database
-        console.log(`[HomeTab] 🚀 Step 2: Fetching refreshed data from database (refreshId: ${refreshId})`);
-        await fetchMetaDataFromDatabase(refreshId);
+        // Step 2: Now fetch the refreshed data from database AND campaigns in parallel
+        console.log(`[HomeTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
+        
+        // Fetch metrics data and campaigns in parallel to ensure consistent loading
+        await Promise.all([
+          fetchMetaDataFromDatabase(refreshId),
+          // If campaign widget is present, also refresh campaigns
+          widgets.some(widget => widget.id === 'meta-campaigns') ? fetchCampaigns(true, true) : Promise.resolve()
+        ]);
         
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
@@ -1029,7 +1043,10 @@ export function HomeTab({
         id: "meta-refresh-toast"
       });
     } finally {
+      // Clear ALL Meta widget loading states at the same time for consistent loading
       setIsLoadingMetaData(false);
+      setIsLoadingAllMetaWidgets(false);
+      setIsLoadingCampaigns(false);
       releaseMetaFetchLock(refreshId);
     }
   };
@@ -1163,15 +1180,17 @@ export function HomeTab({
   }, [brandId, dateRange, metaConnection, getPreviousPeriodDates, calculatePercentChange]);
 
   // Function to fetch campaign data from the API - RESTORED FROM BACKUP & MOVED EARLIER
-  const fetchCampaigns = useCallback(async (forceRefresh = false) => {
+  const fetchCampaigns = useCallback(async (forceRefresh = false, skipLoadingState = false) => {
     if (!brandId || !metaConnection) {
       console.log('[HomeTab] Cannot fetch campaigns without brandId or Meta connection');
-      setIsLoadingCampaigns(false);
+      if (!skipLoadingState) {
+        setIsLoadingCampaigns(false);
+      }
       return;
     }
     
-    // Only set loading true if we are actually going to fetch
-    if (forceRefresh || campaigns.length === 0) { 
+    // Only set loading true if we are actually going to fetch AND not skipping loading state
+    if ((forceRefresh || campaigns.length === 0) && !skipLoadingState) { 
       setIsLoadingCampaigns(true);
     }
     
@@ -1193,7 +1212,9 @@ export function HomeTab({
         // If not forcing refresh and dates are the same, and we already have campaigns, skip.
         if (!forceRefresh && !isDifferentDateRange && campaigns.length > 0) {
           console.log('[HomeTab] Skipping campaign fetch: dates unchanged, not forcing, and campaigns exist.');
-          setIsLoadingCampaigns(false); // Ensure loading is false
+          if (!skipLoadingState) {
+            setIsLoadingCampaigns(false); // Ensure loading is false
+          }
           return;
         }
         lastFetchedCampaignDates.current = {from: localFromDate, to: localToDate};
@@ -1226,7 +1247,10 @@ export function HomeTab({
       // Potentially set campaigns to empty array on error after logging
       // setCampaigns([]);
     } finally {
-      setIsLoadingCampaigns(false);
+      // Only clear loading state if we're not skipping it (i.e., not coordinated with other loading)
+      if (!skipLoadingState) {
+        setIsLoadingCampaigns(false);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, metaConnection, dateRange, setIsLoadingCampaigns, setCampaigns, campaigns.length]); // Added relevant setters and campaigns.length
@@ -1269,16 +1293,15 @@ export function HomeTab({
       if (metaConnection) {
         console.log("[HomeTab] Meta connection active, calling syncMetaInsights for database refresh.");
         syncMetaInsights(); // Use database-based sync instead of direct API calls
-        if (widgets.some(widget => widget.id === 'meta-campaigns')) {
-          console.log("[HomeTab] Campaign widget present, calling fetchCampaigns with forceRefresh.");
-          fetchCampaigns(true);
-        }
+        // Note: Campaign fetching is now handled within syncMetaInsights for coordinated loading
       } else {
         console.log("[HomeTab] Meta connection not active, skipping Meta data fetch.");
         setMetaMetrics(initialMetaMetricsState);
         setMetaDaily([]);
         setCampaigns([]);
+        // Clear all Meta loading states when not connected
         setIsLoadingMetaData(false);
+        setIsLoadingAllMetaWidgets(false);
         setIsLoadingCampaigns(false);
       }
 
@@ -1291,7 +1314,9 @@ export function HomeTab({
       }
     } else {
       console.log("[HomeTab] Skipping data fetch in useEffect: Missing brandId or full dateRange.");
+      // Clear all loading states when prerequisites aren't met
       setIsLoadingMetaData(false);
+      setIsLoadingAllMetaWidgets(false);
       setIsLoadingShopifyData(false);
       setIsLoadingCampaigns(false);
     }
@@ -1675,7 +1700,7 @@ export function HomeTab({
           <span>{widget.name}</span>
         </div>
       ),
-      loading: (widget.type === 'meta' ? (isLoadingMetaData || isComprehensiveRefreshing) : isLoading) || isRefreshingData,
+      loading: (widget.type === 'meta' ? isLoadingAllMetaWidgets : isLoading) || isRefreshingData,
       brandId: brandId,
       className: "mb-0",
       platform: widget.type,
@@ -2151,7 +2176,7 @@ export function HomeTab({
               <MemoizedCampaignWidget 
                 brandId={brandId}
                 campaigns={campaigns}
-                isLoading={isLoadingCampaigns}
+                isLoading={isLoadingAllMetaWidgets}
                 isSyncing={isSyncingCampaigns}
                 dateRange={dateRange}
                 onRefresh={() => fetchCampaigns(true)}
@@ -2166,7 +2191,7 @@ export function HomeTab({
             <MemoizedCampaignWidget 
               brandId={brandId}
               campaigns={campaigns}
-              isLoading={isLoadingCampaigns}
+              isLoading={isLoadingAllMetaWidgets}
               isSyncing={isSyncingCampaigns}
               dateRange={dateRange}
               onRefresh={() => fetchCampaigns(true)}
@@ -2214,7 +2239,7 @@ export function HomeTab({
               <TotalAdSetReachCard 
                 brandId={brandId} 
                 dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-                isManuallyRefreshing={isRefreshingData}
+                isManuallyRefreshing={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2225,7 +2250,7 @@ export function HomeTab({
             <TotalAdSetReachCard 
               brandId={brandId} 
               dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-              isManuallyRefreshing={isRefreshingData}
+              isManuallyRefreshing={isLoadingAllMetaWidgets}
             />
           </div>
         );
@@ -2268,7 +2293,7 @@ export function HomeTab({
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
               <TotalBudgetMetricCard 
                 brandId={brandId} 
-                isManuallyRefreshing={isRefreshingData}
+                isManuallyRefreshing={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2278,7 +2303,7 @@ export function HomeTab({
           <div key={widget.id} className="w-full">
             <TotalBudgetMetricCard 
               brandId={brandId} 
-              isManuallyRefreshing={isRefreshingData}
+              isManuallyRefreshing={isLoadingAllMetaWidgets}
             />
           </div>
         );
