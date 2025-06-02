@@ -1306,14 +1306,14 @@ export function HomeTab({
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log("[HomeTab] Page became visible. Triggering Meta database sync.");
-        // Clear any potential blocking flags from other tabs/components
+        console.log("[HomeTab] Page became visible - auto-refresh disabled per user request.");
+        // Clear any potential blocking flags from other tabs/components but don't auto-refresh
         if (typeof window !== 'undefined') {
           window._blockMetaApiCalls = false;
           window._disableAutoMetaFetch = false;
-          console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on visibility change.");
+          console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on visibility change (no auto-refresh).");
         }
-        syncMetaInsights(); // Use database-based sync
+        // REMOVED: syncMetaInsights(); // User requested no auto-refresh on tab switch
       }
     };
 
@@ -1333,13 +1333,17 @@ export function HomeTab({
     };
   }, [brandId, metaConnection]);
 
-  // Keep the existing visibility change logic separate
+  // Keep the existing visibility change logic separate - DISABLED AUTO-REFRESH
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && dateRange?.from && dateRange?.to && metaConnection) {
         const now = Date.now();
         const timeSinceLastRefresh = now - lastRefreshTime.current;
-        // Only refresh if it's been more than 60 seconds since last refresh
+        // DISABLED: Only refresh if it's been more than 60 seconds since last refresh
+        console.log("[HomeTab] Page became visible - auto-refresh disabled per user request.");
+        console.log(`[HomeTab] Time since last refresh: ${Math.floor(timeSinceLastRefresh / 1000)}s (refresh disabled)`);
+        // REMOVED: Auto-refresh functionality per user request
+        /*
         if (timeSinceLastRefresh > 60000) {
           console.log("[HomeTab] Page became visible. Refreshing Meta data after 60s threshold...");
           syncMetaInsights(); // Use database-based sync
@@ -1347,6 +1351,7 @@ export function HomeTab({
         } else {
           console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
         }
+        */
       }
     };
 
