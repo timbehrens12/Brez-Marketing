@@ -945,7 +945,7 @@ export function HomeTab({
   }, [brandId, dateRange, metaConnection, getPreviousPeriodDates, calculatePercentChange]); // Removed setIsLoadingMetaData from deps, it's a setter
 
   // EXACT COPY OF META PAGE SYNC FUNCTION - THIS IS WHAT MAKES IT WORK
-  const syncMetaInsights = useCallback(async () => {
+  const syncMetaInsights = async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
       console.error("[HomeTab] Cannot sync data - missing brand ID or date range");
       return;
@@ -1052,7 +1052,7 @@ export function HomeTab({
       setIsLoadingCampaigns(false);
       releaseMetaFetchLock(refreshId);
     }
-  }, [brandId, dateRange, widgets, fetchMetaDataFromDatabase, fetchCampaigns]);
+  };
 
   // Simplified function to fetch Meta data from database after sync
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
