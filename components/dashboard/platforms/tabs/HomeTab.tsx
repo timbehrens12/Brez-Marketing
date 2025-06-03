@@ -322,8 +322,12 @@ export function HomeTab({
   const [isLoadingShopifyData, setIsLoadingShopifyData] = useState(false);
   const [isComprehensiveRefreshing, setIsComprehensiveRefreshing] = useState(false);
   
-  // NEW: Unified loading state for all Meta widgets to ensure consistent loading
-  const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(false);
+  // Get connection info early for initial state
+  const shopifyConnection = connections.find(c => c.platform_type === 'shopify' && c.status === 'active');
+  const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
+  
+  // NEW: Unified loading state for all Meta widgets - start as true if Meta is connected to prevent individual loading
+  const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(!!metaConnection);
   
   const hasFetchedMetaData = useRef(false); // Ref to track if initial Meta data fetch has happened
   const lastRefreshTime = useRef(0); // Track last refresh time for visibility handling
@@ -633,10 +637,6 @@ export function HomeTab({
   const extendedMetrics = metrics as ExtendedMetrics;
   const metaData = metaDaily.length > 0 ? metaDaily : extendedMetrics.dailyMetaData || [];
 
-  // Get connection info
-  const shopifyConnection = connections.find(c => c.platform_type === 'shopify' && c.status === 'active');
-  const metaConnection = connections.find(c => c.platform_type === 'meta' && c.status === 'active');
-  
   // Filter widgets that require connections that don't exist
   const validWidgets = widgets.filter(widget => 
     (widget.type === 'shopify' && shopifyConnection) || 
@@ -1287,6 +1287,19 @@ export function HomeTab({
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, dateRange, shopifyConnection]); // Minimal necessary dependencies
+
+  // Effect to handle Meta connection changes and set unified loading state
+  useEffect(() => {
+    if (metaConnection && brandId && dateRange?.from && dateRange?.to) {
+      // When Meta connection becomes available, set loading state immediately
+      setIsLoadingAllMetaWidgets(true);
+      console.log("[HomeTab] Meta connection detected, setting unified loading state to true");
+    } else if (!metaConnection) {
+      // When Meta connection is lost, clear loading state
+      setIsLoadingAllMetaWidgets(false);
+      console.log("[HomeTab] Meta connection lost, clearing unified loading state");
+    }
+  }, [metaConnection, brandId, dateRange?.from, dateRange?.to]);
 
   // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
