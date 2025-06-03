@@ -4160,12 +4160,19 @@ Try creating at least one active campaign in Meta Ads Manager.
       return false;
     }
 
-    setIsManuallyRefreshing(true); // Set overarching loading state at the very start
+    // Set BOTH loading states for coordinated unified loading like initial page load
+    setIsManuallyRefreshing(true);
+    setIsLoadingAllMetaWidgets(true); // CRUCIAL: This enables unified loading across all widgets
+    
+    // Add loading toast for visual feedback during hard refresh
+    const loadingToastId = `meta-refresh-${refreshId}`;
+    toast.loading("Refreshing Meta data...", { id: loadingToastId, duration: 15000 });
     
     try {
-      console.log(`[MetaTab] 🚀 Starting global refresh (${refreshId})`);
+      console.log(`[MetaTab] 🚀 Starting global refresh with unified loading (${refreshId})`);
       
-      // Step 1: Fetch fresh data from Meta API and update database
+      // Step 1: Fetch fresh data from Meta API and update database (hard pull)
+      console.log(`[MetaTab] 🚀 Step 1: Meta API sync (${refreshId})`);
       const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
         method: 'POST',
         headers: {
@@ -4175,57 +4182,33 @@ Try creating at least one active campaign in Meta Ads Manager.
       });
       
       if (!syncResponse.ok) {
-        console.error(`[MetaTab] Failed to sync Meta data from API: ${syncResponse.status}`);
-        toast.error("Failed to refresh Meta data from API");
+        console.error(`[MetaTab] CRITICAL FAILURE: Meta API sync failed (${refreshId}): ${syncResponse.status} ${syncResponse.statusText}`);
+        toast.error(`Meta API sync failed: ${syncResponse.statusText}`, { id: loadingToastId });
         return false;
       }
       
-      console.log(`[MetaTab] ✅ Meta API sync completed`);
+      console.log(`[MetaTab] ✅ Meta API sync completed (${refreshId})`);
       
       // Step 2: Refresh campaigns with latest data
-      await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
+      console.log(`[MetaTab] 🚀 Step 2: Campaign data refresh (${refreshId})`);
+      const campaignResponse = await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
         headers: {
           'Cache-Control': 'no-cache',
           'X-Refresh-ID': refreshId
         }
       });
       
-      console.log(`[MetaTab] ✅ Campaign data refreshed`);
-      
-      // Step 2.5: Explicitly trigger a campaign status check via direct API call for top campaigns
-      try {
-        console.log(`[MetaTab] 🔍 Explicitly checking campaign statuses`);
-        if (campaigns && campaigns.length > 0) {
-          // Get top 3 active campaigns to check
-          const topCampaigns = [...campaigns]
-            .filter(c => c.status.toUpperCase() === 'ACTIVE')
-            .slice(0, 3);
-          
-          // Check each campaign status with direct API call
-          for (const campaign of topCampaigns) {
-            console.log(`[MetaTab] Checking status for campaign: ${campaign.campaign_id}`);
-            await fetch('/api/meta/campaign-status-check', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Refresh-ID': refreshId
-              },
-              body: JSON.stringify({
-                brandId: triggerBrandId,
-                campaignId: campaign.campaign_id,
-                refreshStatus: true,
-                forceRefresh: true
-              })
-            });
-          }
-          console.log(`[MetaTab] ✅ Direct campaign status checks completed`);
-        }
-      } catch (statusError) {
-        console.error(`[MetaTab] Error during direct campaign status checks:`, statusError);
+      if (!campaignResponse.ok) {
+        console.error(`[MetaTab] CRITICAL FAILURE: Campaign data refresh failed (${refreshId}): ${campaignResponse.status} ${campaignResponse.statusText}`);
+        toast.error(`Meta campaign refresh failed: ${campaignResponse.statusText}`, { id: loadingToastId });
+        return false;
       }
       
-      // Step 3: Refresh ad sets data
-      await fetch(`/api/meta/campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
+      console.log(`[MetaTab] ✅ Campaign data refreshed (${refreshId})`);
+      
+      // Step 3: Refresh ad sets data (budget data)
+      console.log(`[MetaTab] 🚀 Step 3: Ad set budgets refresh (${refreshId})`);
+      const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache',
@@ -4233,78 +4216,64 @@ Try creating at least one active campaign in Meta Ads Manager.
         }
       });
       
-      console.log(`[MetaTab] ✅ Ad set budgets refreshed`);
-      
-      // Step 4: Refresh metrics for the dashboard
-      await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'X-Refresh-ID': refreshId
-        }
-      });
-      
-      console.log(`[MetaTab] ✅ Metrics refreshed`);
-      
-      // Step 5: NOW, trigger the frontend metric state updates using the ref
-      // This will set individual loading states correctly and re-fetch for UI
-      if (refreshAllMetricsDirectlyRef.current) {
-        console.log(`[MetaTab] 🚀 Triggering frontend refresh via refreshAllMetricsDirectlyRef.current()`);
-        await refreshAllMetricsDirectlyRef.current();
-      } else {
-        console.warn("[MetaTab] refreshAllMetricsDirectlyRef.current is not available to refresh frontend metrics.");
+      if (!budgetResponse.ok) {
+        console.error(`[MetaTab] CRITICAL FAILURE: Ad set budgets refresh failed (${refreshId}): ${budgetResponse.status} ${budgetResponse.statusText}`);
+        toast.error(`Meta ad set budget refresh failed: ${budgetResponse.statusText} (Status: ${budgetResponse.status})`, { id: loadingToastId, duration: 10000 });
+        return false;
       }
       
-      // Success! Dispatch a custom event to notify any components that might be listening
+      console.log(`[MetaTab] ✅ Ad set budgets refreshed (${refreshId})`);
+      
+      // Step 4: Now use the SAME unified approach as initial page load
+      // This ensures all widgets load together with coordinated loading states
+      console.log(`[MetaTab] 🚀 Step 4: Unified frontend refresh like initial page load (${refreshId})`);
+      
+      if (refreshAllMetricsDirectlyRef.current) {
+        // Use the same function that handles unified loading on initial load
+        await refreshAllMetricsDirectlyRef.current();
+        console.log(`[MetaTab] ✅ Unified frontend refresh completed (${refreshId})`);
+      } else {
+        console.warn(`[MetaTab] refreshAllMetricsDirectlyRef.current is not available for unified refresh (${refreshId})`);
+        // Fallback to direct fetchAllMetricsDirectly if ref is not available
+        await fetchAllMetricsDirectly();
+      }
+      
+      // Success! Dispatch events to notify other components
       if (typeof window !== 'undefined') {
-        // Dispatch more specific events to ensure all components react
-        console.log(`[MetaTab] 📣 Dispatching detailed refresh events`);
+        console.log(`[MetaTab] 📣 Dispatching refresh completion events (${refreshId})`);
         
-        // Legacy event
-        window.dispatchEvent(new CustomEvent('meta-data-refreshed', {
-          detail: {
-            success: true,
-            refreshId,
-            timestamp: new Date().toISOString()
-          }
-        }));
-        
-        // Dispatch additional events to make sure components notice
-        window.dispatchEvent(new CustomEvent('page-refresh', {
-          detail: {
-            brandId: triggerBrandId, 
-            timestamp: Date.now(),
-            source: 'metatab-refresh'
-          }
-        }));
-        
+        // Dispatch metaDataRefreshed event for cross-component coordination
         window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
           detail: {
             brandId: triggerBrandId,
             timestamp: Date.now(),
             forceRefresh: true,
-            source: 'metatab-refresh'
+            source: 'metatab-global-refresh',
+            refreshId
           }
         }));
         
-        // Also dispatch event on document for cross-iframe compatibility
-        document.dispatchEvent(new CustomEvent('meta-refresh-all', {
-          detail: {
-            brandId: triggerBrandId,
-            timestamp: Date.now()
-          }
-        }));
+        // Update last successful refresh timestamp
+        window._lastMetaRefresh = Date.now();
       }
       
-      toast.success("Meta data refreshed successfully");
+      toast.success("Meta data refreshed!", { id: loadingToastId });
+      console.log(`[MetaTab] ✅ FULL global refresh with unified loading completed successfully (${refreshId})`);
       return true;
+      
     } catch (error) {
-      console.error(`[MetaTab] Error during global refresh:`, error);
-      toast.error("Failed to refresh Meta data");
+      console.error(`[MetaTab] Error during global refresh (${refreshId}):`, error);
+      toast.error("Failed to refresh Meta data", { 
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        id: loadingToastId 
+      });
       return false;
     } finally {
-      // Always release the lock when done
-      setIsManuallyRefreshing(false); // Clear overarching loading state at the very end
+      // Clear BOTH loading states together for consistent behavior
+      setIsLoadingAllMetaWidgets(false); // Clear unified loading first
+      setIsManuallyRefreshing(false); // Then clear manual refresh state
       releaseMetaFetchLock(refreshId);
+      console.log(`[MetaTab] 🔓 Global refresh cleanup completed (${refreshId})`);
     }
   };
 
