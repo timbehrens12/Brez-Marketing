@@ -3518,6 +3518,11 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Fetch all metrics data directly
   const fetchAllMetricsDirectly = async () => {
+    console.log("[MetaTab] Starting unified loading for all Meta widgets");
+    
+    // Set unified loading state to true for all widgets
+    setIsLoadingAllMetaWidgets(true);
+    
     await Promise.all([
       fetchAdSpendDirectly(),
       fetchRoasDirectly(),
@@ -3531,24 +3536,26 @@ Try creating at least one active campaign in Meta Ads Manager.
       fetchReachDirectly(), // Ensure this is called
       fetchLinkClicksDirectly(),
       fetchBudgetDirectly() // Ensure this is also called for consistency
-    ])
+    ]);
+    
+    // Clear unified loading state when all metrics are loaded
+    setIsLoadingAllMetaWidgets(false);
+    console.log("[MetaTab] Unified loading completed - all Meta widgets loaded");
   }
 
   // Update the useEffect to call the new fetch functions
   useEffect(() => {
     if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("Date range changed, fetching all metrics directly")
-      fetchAllMetricsDirectly()
+      console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
+      setIsLoadingAllMetaWidgets(true);
+      fetchAllMetricsDirectly() // This function will clear the loading state when complete
+    } else {
+      // If no valid dateRange or brandId, clear loading state
+      setIsLoadingAllMetaWidgets(false);
     }
   }, [dateRange, brandId])
 
-  // Add a separate effect for initial load
-  useEffect(() => {
-    if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("Initial load, fetching all metrics directly")
-      fetchAllMetricsDirectly()
-    }
-  }, [])
+  // Remove the duplicate initial load effect - the above effect handles it all
 
   // Update the manual refresh function
   const refreshMetricsDirectly = async () => {
@@ -3567,23 +3574,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       return
     }
     
-    // Set global refreshing state first for UI feedback
-    setIsManuallyRefreshing(true)
+    console.log("[MetaTab] Starting manual refresh with unified loading for all Meta widgets");
     
-    // Set loading states for all widgets in a single React update cycle
-    // to avoid multiple renders
-    setAdSpendData(prev => ({ ...prev, isLoading: true }))
-    setRoasData(prev => ({ ...prev, isLoading: true }))
-    setImpressionsData(prev => ({ ...prev, isLoading: true }))
-    setClicksData(prev => ({ ...prev, isLoading: true }))
-    setPurchaseValueData(prev => ({ ...prev, isLoading: true }))
-    setResultsData(prev => ({ ...prev, isLoading: true }))
-    setCostPerResultData(prev => ({ ...prev, isLoading: true }))
-    setCostPerClickData(prev => ({ ...prev, isLoading: true }))
-    setCtrData(prev => ({ ...prev, isLoading: true }))
-    setReachData(prev => ({ ...prev, isLoading: true }))
-    setLinkClicksData(prev => ({ ...prev, isLoading: true }))
-    setBudgetData(prev => ({ ...prev, isLoading: true }))
+    // Set unified loading state for all widgets (replaces individual loading states)
+    setIsLoadingAllMetaWidgets(true);
+    setIsManuallyRefreshing(true);
     
     try {
       console.log("Refreshing all metrics directly")
@@ -3613,7 +3608,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.error("Error refreshing metrics:", error)
       toast.error("Failed to refresh metrics")
     } finally {
+      // Clear unified loading state when refresh is complete
+      setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false)
+      console.log("[MetaTab] Manual refresh with unified loading completed");
     }
   }, [dateRange, brandId, 
      fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
@@ -3680,21 +3678,25 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a separate effect for handling the isRefreshingData prop
   useEffect(() => {
     if (isRefreshingData && brandId) {
-      console.log("[MetaTab] Parent component triggered refresh via isRefreshingData prop");
+      console.log("[MetaTab] Parent component triggered refresh via isRefreshingData prop with unified loading");
       
-      // Set our internal refreshing state to sync with parent
+      // Set unified loading state for consistent behavior
+      setIsLoadingAllMetaWidgets(true);
       setIsManuallyRefreshing(true);
       
       // Use Promise.all to ensure all operations complete before we reset loading state
       Promise.all([
-        fetchAllMetricsDirectly(),
+        fetchAllMetricsDirectly(), // This will handle its own unified loading
         fetchCampaigns(true)
       ])
       .catch(error => {
         console.error("[MetaTab] Error during refresh triggered by parent:", error);
       })
       .finally(() => {
+        // fetchAllMetricsDirectly already handles its unified loading, but we ensure it's cleared here too
+        setIsLoadingAllMetaWidgets(false);
         setIsManuallyRefreshing(false);
+        console.log("[MetaTab] Parent-triggered refresh with unified loading completed");
       });
     }
   }, [isRefreshingData, brandId]);
@@ -3745,11 +3747,15 @@ Try creating at least one active campaign in Meta Ads Manager.
       return;
     }
     
+    console.log("[MetaTab] Starting sync with unified loading for all Meta widgets");
+    
     toast.info("Syncing Meta insights data...", {
       description: "This might take a moment depending on the date range.",
       duration: 5000
     });
     
+    // Set unified loading state for all widgets during sync
+    setIsLoadingAllMetaWidgets(true);
     setIsManuallyRefreshing(true);
     
     try {
@@ -3784,7 +3790,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         });
         
         // After successful sync, refresh the data
-        refreshMetaData();
+        await fetchAllMetricsDirectly(); // This will manage its own unified loading
         
         // Dispatch event to notify other widgets (reach, budget, etc.)
         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
@@ -3805,7 +3811,10 @@ Try creating at least one active campaign in Meta Ads Manager.
         duration: 5000
       });
     } finally {
+      // Clear unified loading state when sync is complete
+      setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false);
+      console.log("[MetaTab] Sync with unified loading completed");
     }
   };
 
