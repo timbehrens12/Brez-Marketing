@@ -9,6 +9,7 @@ interface TotalAdSetReachCardProps {
   dateRange?: DateRange
   isManuallyRefreshing?: boolean
   campaigns?: any[]
+  disableAutoFetch?: boolean
 }
 
 // Helper function to get previous period dates (simplified from MetaTab)
@@ -59,7 +60,8 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
   brandId, 
   dateRange,
   isManuallyRefreshing = false,
-  campaigns = []
+  campaigns = [],
+  disableAutoFetch = false
 }) => {
   const [totalReach, setTotalReach] = useState<number>(0)
   const [previousReach, setPreviousReach] = useState<number>(0)
@@ -161,6 +163,12 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
 
   // Effect for handling dependency changes and triggering fetches
   useEffect(() => {
+    // Don't auto-fetch if disableAutoFetch is true (unified loading in control)
+    if (disableAutoFetch) {
+      console.log("[TotalAdSetReachCard] Auto-fetch disabled, skipping initial fetch");
+      return;
+    }
+    
     // Abort previous fetch if it's still running
     fetchControllerRef.current?.abort();
     
@@ -183,7 +191,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       // Abort the controller stored in the ref, not the local variable
       fetchControllerRef.current?.abort(); 
     };
-  }, [brandId, dateRange, fetchReachDirectly]); // Keep original dependencies
+  }, [brandId, dateRange, fetchReachDirectly, disableAutoFetch]); // Added disableAutoFetch to dependencies
 
   // Add effect to handle manual refreshes
   useEffect(() => {

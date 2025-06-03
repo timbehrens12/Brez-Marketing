@@ -8,9 +8,10 @@ import { MetricCard } from './MetricCard'
 interface TotalBudgetMetricCardProps {
   brandId: string
   isManuallyRefreshing?: boolean
+  disableAutoFetch?: boolean
 }
 
-export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }: TotalBudgetMetricCardProps) {
+export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false }: TotalBudgetMetricCardProps) {
   const [totalBudget, setTotalBudget] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
@@ -59,10 +60,16 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false }:
   
   // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
+    // Don't auto-fetch if disableAutoFetch is true (unified loading in control)
+    if (disableAutoFetch) {
+      console.log("[TotalMetaBudget] Auto-fetch disabled, skipping initial fetch");
+      return;
+    }
+    
     if (brandId) {
       fetchTotalBudget()
     }
-  }, [brandId, fetchTotalBudget, isManuallyRefreshing])
+  }, [brandId, fetchTotalBudget, isManuallyRefreshing, disableAutoFetch])
   
   // Add a listener for the metaDataRefreshed event
   useEffect(() => {

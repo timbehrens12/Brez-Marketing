@@ -1031,6 +1031,9 @@ export function HomeTab({
           }
         }));
         
+        // NEW: Trigger special widgets (Reach/Budget) to refresh after unified loading completes
+        console.log("[HomeTab] Triggering special widgets refresh after unified loading completion");
+        
         console.log(`[HomeTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
@@ -2240,6 +2243,7 @@ export function HomeTab({
                 brandId={brandId} 
                 dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
                 isManuallyRefreshing={isLoadingAllMetaWidgets}
+                disableAutoFetch={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2251,6 +2255,7 @@ export function HomeTab({
               brandId={brandId} 
               dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
               isManuallyRefreshing={isLoadingAllMetaWidgets}
+              disableAutoFetch={isLoadingAllMetaWidgets}
             />
           </div>
         );
@@ -2292,8 +2297,9 @@ export function HomeTab({
               
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
               <TotalBudgetMetricCard 
-                brandId={brandId} 
+                brandId={brandId}
                 isManuallyRefreshing={isLoadingAllMetaWidgets}
+                disableAutoFetch={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2302,8 +2308,9 @@ export function HomeTab({
         return (
           <div key={widget.id} className="w-full">
             <TotalBudgetMetricCard 
-              brandId={brandId} 
+              brandId={brandId}
               isManuallyRefreshing={isLoadingAllMetaWidgets}
+              disableAutoFetch={isLoadingAllMetaWidgets}
             />
           </div>
         );
@@ -2429,6 +2436,15 @@ export function HomeTab({
       </div>
     );
   };
+
+  // NEW: Function to trigger refresh of special Meta widgets after coordinated loading
+  const triggerSpecialWidgetsRefresh = useCallback(() => {
+    // Trigger refresh for Reach and Budget widgets by dispatching custom events
+    console.log("[HomeTab] Triggering special widgets refresh after unified loading");
+    window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+      detail: { brandId, source: 'homeTab-unified' }
+    }));
+  }, [brandId]);
 
   return (
     <div className="space-y-2 relative">
