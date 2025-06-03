@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
@@ -413,6 +413,9 @@ export function MetaTab({
   // Loading states - add more granular control
   const [isDateChangeLoading, setIsDateChangeLoading] = useState<boolean>(false);
   const [initialLoadStarted, setInitialLoadStarted] = useState<boolean>(false);
+  
+  // NEW: Unified loading state for all Meta widgets - prevents staggered loading
+  const [isLoadingAllMetaWidgets, setIsLoadingAllMetaWidgets] = useState(true);
   
   // Add this after the loading states to ensure widget visibility during loading
   const showLoadingPlaceholder = loading && !initialLoadStarted;
@@ -4842,7 +4845,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={adSpendData.value}
             data={[]}
-            loading={adSpendData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4862,7 +4865,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={roasData.value}
             data={[]}
-            loading={roasData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="number"
             suffix="x"
             hideGraph={true}
@@ -4882,7 +4885,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={impressionsData.value}
             data={[]}
-            loading={impressionsData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="number"
             hideGraph={true}
             previousValue={impressionsData.previousValue}
@@ -4895,8 +4898,9 @@ Try creating at least one active campaign in Meta Ads Manager.
           <TotalAdSetReachCard 
             brandId={brandId || ''} 
             dateRange={dateRange}
-            isManuallyRefreshing={isManuallyRefreshing}
+            isManuallyRefreshing={isLoadingAllMetaWidgets}
             campaigns={campaigns} // Pass campaigns data
+            unifiedLoading={isLoadingAllMetaWidgets}
           />
           
           <MetricCard
@@ -4908,7 +4912,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={clicksData.value}
             data={[]}
-            loading={clicksData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="number"
             hideGraph={true}
             previousValue={clicksData.previousValue}
@@ -4926,7 +4930,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={purchaseValueData.value}
             data={[]}
-            loading={purchaseValueData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4946,7 +4950,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={resultsData.value}
             data={[]}
-            loading={resultsData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="number"
             hideGraph={true}
             previousValue={resultsData.previousValue}
@@ -4964,7 +4968,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={costPerResultData.value}
             data={[]}
-            loading={costPerResultData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
             prefix="$"
             hideGraph={true}
@@ -4984,7 +4988,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={costPerClickData.value}
             data={[]}
-            loading={costPerClickData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
             prefix="$"
             decimals={2}
@@ -5006,7 +5010,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={ctrData.value}
             data={[]}
-            loading={ctrData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="percentage"
             decimals={2}
             hideGraph={true}
@@ -5026,7 +5030,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             }
             value={linkClicksData.value}
             data={[]}
-            loading={linkClicksData.isLoading || isManuallyRefreshing}
+            loading={isLoadingAllMetaWidgets}
             valueFormat="number"
             hideGraph={true}
             previousValue={linkClicksData.previousValue}
@@ -5035,7 +5039,11 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousPeriodLabel={getPreviousPeriodLabel()}
           />
           
-          <TotalBudgetMetricCard brandId={brandId || ''} isManuallyRefreshing={isManuallyRefreshing} />
+          <TotalBudgetMetricCard 
+            brandId={brandId || ''} 
+            isManuallyRefreshing={isLoadingAllMetaWidgets}
+            unifiedLoading={isLoadingAllMetaWidgets}
+          />
         </div>
       </div>
       
@@ -5046,7 +5054,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             key={`campaigns-widget-${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`}
             brandId={brandId || ''}
             campaigns={campaigns.length > 0 ? campaigns : cachedCampaigns}
-            isLoading={isLoadingCampaigns}
+            isLoading={isLoadingAllMetaWidgets}
             isSyncing={isSyncing}
             dateRange={dateRange}
             onRefresh={fetchCampaigns}
