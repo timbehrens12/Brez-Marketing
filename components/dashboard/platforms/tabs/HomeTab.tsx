@@ -945,7 +945,7 @@ export function HomeTab({
   }, [brandId, dateRange, metaConnection, getPreviousPeriodDates, calculatePercentChange]); // Removed setIsLoadingMetaData from deps, it's a setter
 
   // EXACT COPY OF META PAGE SYNC FUNCTION - THIS IS WHAT MAKES IT WORK
-  const syncMetaInsights = async () => {
+  const syncMetaInsights = useCallback(async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
       console.error("[HomeTab] Cannot sync data - missing brand ID or date range");
       return;
@@ -1052,7 +1052,7 @@ export function HomeTab({
       setIsLoadingCampaigns(false);
       releaseMetaFetchLock(refreshId);
     }
-  };
+  }, [brandId, dateRange, widgets, fetchMetaDataFromDatabase, fetchCampaigns]);
 
   // Simplified function to fetch Meta data from database after sync
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
@@ -1378,26 +1378,60 @@ export function HomeTab({
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta database sync.");
+        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta database sync with unified loading.");
         toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-        syncMetaInsights(); // Use database-based sync
+        syncMetaInsights(); // Use database-based sync with unified loading
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
     };
 
+    // Handle page refresh events from global refresh button
+    const handlePageRefresh = (event: CustomEvent) => {
+      console.log("[HomeTab] Received page refresh event from global refresh button:", event.detail);
+      if (event.detail?.brandId === brandId && event.detail?.source === 'global-refresh' && metaConnection) {
+        console.log("[HomeTab] Global refresh button triggered page refresh. Starting unified Meta refresh.");
+        toast.loading("Refreshing all Meta widgets...", { id: "meta-global-refresh-toast", duration: 10000 });
+        syncMetaInsights(); // Trigger unified loading for all Meta widgets
+      }
+    };
+
+    // Handle refresh-all-widgets events from global refresh button  
+    const handleRefreshAllWidgets = (event: CustomEvent) => {
+      console.log("[HomeTab] Received refresh-all-widgets event from global refresh button:", event.detail);
+      if (event.detail?.brandId === brandId && event.detail?.source === 'global-refresh' && metaConnection) {
+        console.log("[HomeTab] Global refresh button triggered widget refresh. Starting unified Meta refresh.");
+        toast.loading("Refreshing all Meta widgets...", { id: "meta-global-refresh-toast", duration: 10000 });
+        syncMetaInsights(); // Trigger unified loading for all Meta widgets
+      }
+    };
+
     if (typeof window !== 'undefined') {
+      // Listen for Meta-specific refresh events
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
+      window.addEventListener('meta-data-refreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      
+      // Listen for global refresh button events
+      window.addEventListener('page-refresh', handlePageRefresh as EventListener);
+      window.addEventListener('refresh-all-widgets', handleRefreshAllWidgets as EventListener);
+      window.addEventListener('refresh-metrics', handleGlobalRefresh as EventListener);
     }
     
     return () => {
       if (typeof window !== 'undefined') {
+        // Clean up Meta-specific refresh events
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
+        window.removeEventListener('meta-data-refreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+        
+        // Clean up global refresh button events
+        window.removeEventListener('page-refresh', handlePageRefresh as EventListener);
+        window.removeEventListener('refresh-all-widgets', handleRefreshAllWidgets as EventListener);
+        window.removeEventListener('refresh-metrics', handleGlobalRefresh as EventListener);
       }
     };
-  }, [brandId, metaConnection]);
+  }, [brandId, metaConnection, syncMetaInsights]);
 
   // Function to manually trigger a database-based refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {
