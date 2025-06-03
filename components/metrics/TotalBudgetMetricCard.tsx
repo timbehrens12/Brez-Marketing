@@ -9,9 +9,10 @@ interface TotalBudgetMetricCardProps {
   brandId: string
   isManuallyRefreshing?: boolean
   disableAutoFetch?: boolean
+  unifiedLoading?: boolean
 }
 
-export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false }: TotalBudgetMetricCardProps) {
+export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false, unifiedLoading = false }: TotalBudgetMetricCardProps) {
   const [totalBudget, setTotalBudget] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
@@ -122,7 +123,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       }
       value={totalBudget}
       data={[]}
-      loading={isLoading || isManuallyRefreshing}
+      loading={isLoading || isManuallyRefreshing || unifiedLoading}
       hideChange={true}
       valueFormat="currency"
       prefix="$"

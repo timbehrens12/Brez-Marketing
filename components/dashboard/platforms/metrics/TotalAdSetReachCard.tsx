@@ -10,6 +10,7 @@ interface TotalAdSetReachCardProps {
   isManuallyRefreshing?: boolean
   campaigns?: any[]
   disableAutoFetch?: boolean
+  unifiedLoading?: boolean
 }
 
 // Helper function to get previous period dates (simplified from MetaTab)
@@ -61,7 +62,8 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
   dateRange,
   isManuallyRefreshing = false,
   campaigns = [],
-  disableAutoFetch = false
+  disableAutoFetch = false,
+  unifiedLoading = false
 }) => {
   const [totalReach, setTotalReach] = useState<number>(0)
   const [previousReach, setPreviousReach] = useState<number>(0)
@@ -268,7 +270,7 @@ export const TotalAdSetReachCard: FC<TotalAdSetReachCardProps> = ({
       value={totalReach}
       previousValue={previousReach}
       data={[]}
-      loading={isLoading}
+      loading={isLoading || unifiedLoading}
       valueFormat="number"
       hideGraph={true}
       showPreviousPeriod={true}

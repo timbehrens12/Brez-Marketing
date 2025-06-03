@@ -1358,49 +1358,20 @@ export function HomeTab({
       }
     };
 
-    // Initial sync on mount (or when brandId/metaConnection becomes available)
-    console.log("[HomeTab] Component mounted/brandId/metaConnection ready. Triggering initial Meta database sync.");
+    // REMOVED: Initial sync on mount is now handled by the main data loading useEffect
     // Clear potential blocking flags first
     if (typeof window !== 'undefined') {
       window._blockMetaApiCalls = false;
       window._disableAutoMetaFetch = false;
       console.log("[HomeTab] Cleared _blockMetaApiCalls and _disableAutoMetaFetch flags on mount.");
     }
-    syncMetaInsights(); // Use database-based sync
+    // REMOVED: syncMetaInsights(); // Use database-based sync
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [brandId, metaConnection]);
-
-  // Keep the existing visibility change logic separate - DISABLED AUTO-REFRESH
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && dateRange?.from && dateRange?.to && metaConnection) {
-        const now = Date.now();
-        const timeSinceLastRefresh = now - lastRefreshTime.current;
-        // DISABLED: Only refresh if it's been more than 60 seconds since last refresh
-        console.log("[HomeTab] Page became visible - auto-refresh disabled per user request.");
-        console.log(`[HomeTab] Time since last refresh: ${Math.floor(timeSinceLastRefresh / 1000)}s (refresh disabled)`);
-        // REMOVED: Auto-refresh functionality per user request
-        /*
-        if (timeSinceLastRefresh > 60000) {
-          console.log("[HomeTab] Page became visible. Refreshing Meta data after 60s threshold...");
-          syncMetaInsights(); // Use database-based sync
-          lastRefreshTime.current = now;
-        } else {
-          console.log(`[HomeTab] Page became visible but skipping refresh (only ${Math.floor(timeSinceLastRefresh / 1000)}s since last refresh)`);
-        }
-        */
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [brandId, metaConnection, dateRange]);
 
   // Listen for global refresh events (e.g., from MetaTab)
   useEffect(() => {
@@ -1475,40 +1446,6 @@ export function HomeTab({
       loadUserWidgets();
     }
   }, [brandId]); // Run once when brandId is set
-
-  // EXACT COPY FROM META PAGE - Component mount refresh logic
-  useEffect(() => {
-    // Only run this effect once when the component first mounts with a brandId
-    if (!brandId || !metaConnection) return;
-    
-    console.log("[HomeTab] Component mounted with brandId and metaConnection - triggering ONE-TIME database sync like Meta page");
-    
-    // Clear any API blocking flags that might be set to ensure we can fetch data
-    if (window._blockMetaApiCalls !== undefined) {
-      window._blockMetaApiCalls = false;
-      console.log("[HomeTab] Cleared _blockMetaApiCalls flag on mount");
-    }
-    
-    // Clear any auto-fetch blocking flags
-    if (window._disableAutoMetaFetch !== undefined) {
-      window._disableAutoMetaFetch = false;
-      console.log("[HomeTab] Cleared _disableAutoMetaFetch flag on mount");
-    }
-    
-    // Execute the refresh with a small delay to ensure component is fully mounted
-    const timeoutId = setTimeout(() => {
-      console.log("[HomeTab] Calling syncMetaInsights - exact same as Meta page sync button but through database");
-      
-      // Call the database-based sync function
-      syncMetaInsights();
-    }, 100);
-    
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-    
-    // IMPORTANT: Only depend on brandId and metaConnection, NOT on other dependencies
-    // This ensures the effect only runs once when brandId is first available
-  }, [brandId, metaConnection]);
 
   // Save widgets when they change
   const saveWidgets = async (updatedWidgets: Widget[]) => {
@@ -1667,104 +1604,63 @@ export function HomeTab({
 
   // Render a single widget based on its type
   const renderWidget = (widget: Widget, index: number) => {
-    // 🔥🔥🔥 MAJOR DEBUG: Log current metaMetrics state when rendering widgets
-    if (widget.type === 'meta') {
-      console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: renderWidget called for "${widget.id}". Current metaMetrics state:`, {
-        adSpend: metaMetrics.adSpend,
-        impressions: metaMetrics.impressions,
-        clicks: metaMetrics.clicks,
-        conversions: metaMetrics.conversions,
-        roas: metaMetrics.roas,
-        ctr: metaMetrics.ctr,
-        cpc: metaMetrics.cpc,
-        costPerResult: metaMetrics.costPerResult,
-        previousAdSpend: metaMetrics.previousAdSpend,
-        previousImpressions: metaMetrics.previousImpressions,
-        previousClicks: metaMetrics.previousClicks,
-        adSpendGrowth: metaMetrics.adSpendGrowth,
-        impressionGrowth: metaMetrics.impressionGrowth,
-        clickGrowth: metaMetrics.clickGrowth,
-        isLoading: isLoadingMetaData || isComprehensiveRefreshing
-      });
-    }
-    
-    // Create empty datasets for metrics that don't exist in the Metrics type
-    const emptyDataset = Array.from({ length: 7 }).map((_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - 6 + i);
-      return {
-        date: date.toISOString(),
-        value: 0
-      };
-    });
-
-    // For demo, we'll use MetricCard for all widgets with different properties
-    // In a real implementation, you'd render different components based on widget.component
-    
-    let widgetProps: any = {
-      title: (
-        <div className="flex items-center gap-2">
-          <div className="relative w-4 h-4">
-            <Image 
-              src={widget.icon || ''}
-              alt={`${widget.type} logo`} 
-              width={16} 
-              height={16} 
-              className="object-contain"
-            />
-          </div>
-          <span>{widget.name}</span>
-        </div>
-      ),
-      loading: (widget.type === 'meta' ? isLoadingAllMetaWidgets : isLoading) || isRefreshingData,
-      brandId: brandId,
-      className: "mb-0",
-      platform: widget.type,
-      dateRange: dateRange
-    };
-
     // Widget-specific props based on ID
     switch (widget.id) {
       case 'shopify-sales':
-        widgetProps = {
-          ...widgetProps,
-          value: metrics.totalSales || 0,
-          change: metrics.salesGrowth || 0,
-          prefix: "$",
-          valueFormat: "currency",
-          data: metrics.salesData || [],
-          infoTooltip: "Total revenue from all orders in the selected period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metrics.totalSales || 0}
+              change={metrics.salesGrowth || 0}
+              prefix="$"
+              valueFormat="currency"
+              data={metrics.salesData || []}
+              infoTooltip="Total revenue from all orders in the selected period"
+              loading={isLoading}
+            />
+          </div>
+        );
       case 'shopify-orders':
-        widgetProps = {
-          ...widgetProps,
-          value: metrics.ordersPlaced || 0,
-          change: metrics.ordersGrowth || 0,
-          data: metrics.ordersData || [],
-          infoTooltip: "Total number of orders placed in the selected period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metrics.ordersPlaced || 0}
+              change={metrics.ordersGrowth || 0}
+              data={metrics.ordersData || []}
+              infoTooltip="Total number of orders placed in the selected period"
+              loading={isLoading}
+            />
+          </div>
+        );
       case 'shopify-aov':
-        widgetProps = {
-          ...widgetProps,
-          value: metrics.averageOrderValue || 0,
-          change: metrics.aovGrowth || 0,
-          prefix: "$",
-          valueFormat: "currency",
-          data: metrics.aovData || [],
-          infoTooltip: "Average value of orders in the selected period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metrics.averageOrderValue || 0}
+              change={metrics.aovGrowth || 0}
+              prefix="$"
+              valueFormat="currency"
+              data={metrics.aovData || []}
+              infoTooltip="Average value of orders in the selected period"
+              loading={isLoading}
+            />
+          </div>
+        );
       case 'shopify-units':
-        widgetProps = {
-          ...widgetProps,
-          value: metrics.unitsSold || 0,
-          change: metrics.unitsGrowth || 0,
-          data: metrics.unitsSoldData || [],
-          infoTooltip: "Total number of units sold in the selected period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metrics.unitsSold || 0}
+              change={metrics.unitsGrowth || 0}
+              data={metrics.unitsSoldData || []}
+              infoTooltip="Total number of units sold in the selected period"
+            />
+          </div>
+        );
       case 'shopify-sales-by-product':
         // Sales by Product widget (full width)
         if (isEditMode) {
@@ -1898,261 +1794,236 @@ export function HomeTab({
         );
         
       case 'meta-adspend':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.adSpend,
-          change: metaMetrics.adSpendGrowth,
-          previousValue: metaMetrics.previousAdSpend,
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2,
-          hideGraph: true,
-          showPreviousPeriod: true,
-          previousValueFormat: "currency",
-          previousValueDecimals: 2,
-          previousValuePrefix: "$",
-          infoTooltip: "Total amount spent on Meta ads",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.adSpend}
+              change={metaMetrics.adSpendGrowth}
+              previousValue={metaMetrics.previousAdSpend}
+              prefix="$"
+              valueFormat="currency"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="currency"
+              previousValueDecimals={2}
+              previousValuePrefix="$"
+              infoTooltip="Total amount spent on Meta ads"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-impressions':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.impressions,
-          change: metaMetrics.impressionGrowth,
-          previousValue: metaMetrics.previousImpressions,
-          hideGraph: true,
-          valueFormat: "number",
-          decimals: 0,
-          showPreviousPeriod: true,
-          previousValueFormat: "number",
-          previousValueDecimals: 0,
-          infoTooltip: "Total number of times your ads were viewed",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.impressions}
+              change={metaMetrics.impressionGrowth}
+              previousValue={metaMetrics.previousImpressions}
+              hideGraph={true}
+              valueFormat="number"
+              decimals={0}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={0}
+              infoTooltip="Total number of times your ads were viewed"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-clicks':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.clicks,
-          change: metaMetrics.clickGrowth,
-          previousValue: metaMetrics.previousClicks,
-          hideGraph: true,
-          valueFormat: "number",
-          decimals: 0,
-          showPreviousPeriod: true,
-          previousValueFormat: "number",
-          previousValueDecimals: 0,
-          infoTooltip: "Total number of clicks on your ads",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.clicks}
+              change={metaMetrics.clickGrowth}
+              previousValue={metaMetrics.previousClicks}
+              hideGraph={true}
+              valueFormat="number"
+              decimals={0}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={0}
+              infoTooltip="Total number of clicks on your ads"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-conversions':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.conversions,
-          change: metaMetrics.conversionGrowth,
-          previousValue: metaMetrics.previousConversions,
-          hideGraph: true,
-          valueFormat: "number",
-          decimals: 0,
-          showPreviousPeriod: true,
-          previousValueFormat: "number",
-          previousValueDecimals: 0,
-          infoTooltip: "Total number of conversions from your ads",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.conversions}
+              change={metaMetrics.conversionGrowth}
+              previousValue={metaMetrics.previousConversions}
+              hideGraph={true}
+              valueFormat="number"
+              decimals={0}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={0}
+              infoTooltip="Total number of conversions from your ads"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-roas':
-        widgetProps = {
-          ...widgetProps,
-          value: metaMetrics.roas,
-          change: metaMetrics.roasGrowth,
-          previousValue: metaMetrics.previousRoas, 
-          suffix: "x",
-          valueFormat: "number",
-          decimals: 2,
-          hideGraph: true,
-          showPreviousPeriod: true,
-          previousValueFormat: "number",
-          previousValueDecimals: 2,
-          previousValueSuffix: "x",
-          infoTooltip: "Return on ad spend (revenue / ad spend)",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.roas}
+              change={metaMetrics.roasGrowth}
+              previousValue={metaMetrics.previousRoas}
+              suffix="x"
+              valueFormat="number"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="number"
+              previousValueDecimals={2}
+              previousValueSuffix="x"
+              infoTooltip="Return on ad spend (revenue / ad spend)"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-ctr':
-        widgetProps = {
-          ...widgetProps,
-          title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
-              <Percent className="h-4 w-4 text-blue-400" />
-            </div>
-          ),
-          value: metaMetrics.ctr, // Should be decimal now
-          change: metaMetrics.ctrGrowth, // Should be based on decimals now
-          previousValue: metaMetrics.previousCtr, // Should be decimal and available now
-          valueFormat: "percentage",
-          decimals: 2,
-          hideGraph: true,
-          showPreviousPeriod: true, 
-          previousValueFormat: "percentage", 
-          previousValueDecimals: 2,
-          infoTooltip: "Click-through rate (clicks ÷ impressions)",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.ctr}
+              change={metaMetrics.ctrGrowth}
+              previousValue={metaMetrics.previousCtr}
+              valueFormat="percentage"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="percentage"
+              previousValueDecimals={2}
+              infoTooltip="Click-through rate (clicks ÷ impressions)"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-cpc':
-        widgetProps = {
-          ...widgetProps,
-          title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
-              <MousePointer className="h-4 w-4 text-indigo-400" />
-            </div>
-          ),
-          value: metaMetrics.cpc,
-          change: metaMetrics.cpcGrowth, // Now available
-          previousValue: metaMetrics.previousCpc, // Now available
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2,
-          hideGraph: true,
-          showPreviousPeriod: true, 
-          previousValueFormat: "currency", 
-          previousValueDecimals: 2,
-          previousValuePrefix: "$",
-          infoTooltip: "Average cost per click (spend ÷ clicks)",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.cpc}
+              change={metaMetrics.cpcGrowth}
+              previousValue={metaMetrics.previousCpc}
+              prefix="$"
+              valueFormat="currency"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="currency"
+              previousValueDecimals={2}
+              previousValuePrefix="$"
+              infoTooltip="Average cost per click (spend ÷ clicks)"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-cpr':
-        widgetProps = {
-          ...widgetProps,
-          title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
-              <DollarSign className="h-4 w-4 text-orange-400" />
-            </div>
-          ),
-          value: metaMetrics.costPerResult || 0,
-          change: metaMetrics.cprGrowth || 0, 
-          prefix: "$",
-          valueFormat: "currency",
-          decimals: 2, 
-          hideGraph: true,
-          showPreviousPeriod: true, 
-          previousValueFormat: "currency", 
-          previousValueDecimals: 2,
-          previousValuePrefix: "$",
-          previousValue: 0,
-          infoTooltip: "Average cost per result",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.costPerResult || 0}
+              change={metaMetrics.cprGrowth || 0}
+              prefix="$"
+              valueFormat="currency"
+              decimals={2}
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValueFormat="currency"
+              previousValueDecimals={2}
+              previousValuePrefix="$"
+              previousValue={0}
+              infoTooltip="Average cost per result"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-results':
-        widgetProps = {
-          ...widgetProps,
-          title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
-              <Target className="h-4 w-4 text-red-400" />
-            </div>
-          ),
-          value: metaMetrics.conversions, // Use conversions as results (this is the actual results data)
-          change: metaMetrics.conversionGrowth,
-          valueFormat: "number",
-          hideGraph: true,
-          showPreviousPeriod: true,
-          previousValue: metaMetrics.previousConversions,
-          previousValueFormat: "number",
-          infoTooltip: "Total number of results from your ads",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={metaMetrics.conversions}
+              change={metaMetrics.conversionGrowth}
+              valueFormat="number"
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValue={metaMetrics.previousConversions}
+              previousValueFormat="number"
+              infoTooltip="Total number of results from your ads"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-purchase-value':
         // Calculate purchase value from ROAS and spend (this is how it's done in MetaTab)
-        const purchaseValue = metaMetrics.adSpend * metaMetrics.roas;
-        const previousPurchaseValue = metaMetrics.previousAdSpend * metaMetrics.previousRoas;
+        const purchaseValue = metaMetrics.roas * metaMetrics.adSpend;
+        const previousPurchaseValue = metaMetrics.previousRoas * metaMetrics.previousAdSpend;
         const purchaseValueGrowth = calculatePercentChange(purchaseValue, previousPurchaseValue);
         
-        widgetProps = {
-          ...widgetProps,
-          title: (
-            <div className="flex items-center gap-2">
-              <div className="relative w-4 h-4">
-                <Image 
-                  src={widget.icon || ''}
-                  alt={`${widget.type} logo`} 
-                  width={16} 
-                  height={16} 
-                  className="object-contain"
-                />
-              </div>
-              <span>{widget.name}</span>
-              <DollarSign className="h-4 w-4 text-green-400" />
-            </div>
-          ),
-          value: purchaseValue,
-          change: purchaseValueGrowth,
-          prefix: "$",
-          valueFormat: "currency",
-          hideGraph: true,
-          showPreviousPeriod: true,
-          previousValue: previousPurchaseValue,
-          previousValueFormat: "currency",
-          previousValuePrefix: "$",
-          infoTooltip: "Total purchase value from your ads (calculated from ROAS × Ad Spend)",
-          nullChangeText: "N/A",
-          nullChangeTooltip: "No data for previous period"
-        };
-        break;
+        return (
+          <div key={widget.id} className="w-full">
+            <MetricCard 
+              title={widget.name}
+              value={purchaseValue}
+              change={purchaseValueGrowth}
+              prefix="$"
+              valueFormat="currency"
+              hideGraph={true}
+              showPreviousPeriod={true}
+              previousValue={previousPurchaseValue}
+              previousValueFormat="currency"
+              previousValuePrefix="$"
+              infoTooltip="Total purchase value from your ads (calculated from ROAS × Ad Spend)"
+              nullChangeText="N/A"
+              nullChangeTooltip="No data for previous period"
+              data={[]}
+              loading={isLoadingAllMetaWidgets}
+            />
+          </div>
+        );
       case 'meta-campaigns':
         // Campaign Widget (full width)
         if (isEditMode) {
@@ -2255,8 +2126,9 @@ export function HomeTab({
               <TotalAdSetReachCard 
                 brandId={brandId} 
                 dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-                isManuallyRefreshing={isLoadingAllMetaWidgets}
+                isManuallyRefreshing={false}
                 disableAutoFetch={isLoadingAllMetaWidgets}
+                unifiedLoading={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2267,8 +2139,9 @@ export function HomeTab({
             <TotalAdSetReachCard 
               brandId={brandId} 
               dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-              isManuallyRefreshing={isLoadingAllMetaWidgets}
+              isManuallyRefreshing={false}
               disableAutoFetch={isLoadingAllMetaWidgets}
+              unifiedLoading={isLoadingAllMetaWidgets}
             />
           </div>
         );
@@ -2311,8 +2184,9 @@ export function HomeTab({
               <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
               <TotalBudgetMetricCard 
                 brandId={brandId}
-                isManuallyRefreshing={isLoadingAllMetaWidgets}
+                isManuallyRefreshing={false}
                 disableAutoFetch={isLoadingAllMetaWidgets}
+                unifiedLoading={isLoadingAllMetaWidgets}
               />
             </div>
           );
@@ -2322,8 +2196,9 @@ export function HomeTab({
           <div key={widget.id} className="w-full">
             <TotalBudgetMetricCard 
               brandId={brandId}
-              isManuallyRefreshing={isLoadingAllMetaWidgets}
+              isManuallyRefreshing={false}
               disableAutoFetch={isLoadingAllMetaWidgets}
+              unifiedLoading={isLoadingAllMetaWidgets}
             />
           </div>
         );
@@ -2368,7 +2243,20 @@ export function HomeTab({
           </div>
           
           <div className="absolute inset-0 border-2 border-dashed border-[#444] rounded-lg pointer-events-none"></div>
-          <MetricCard {...widgetProps} />
+          <MetricCard 
+            title={widget.name}
+            value={widget.type === 'meta' ? metaMetrics.adSpend : metrics.totalSales || 0}
+            change={widget.type === 'meta' ? metaMetrics.adSpendGrowth : metrics.salesGrowth || 0}
+            prefix={widget.type === 'meta' ? "$" : undefined}
+            valueFormat={widget.type === 'meta' ? "currency" : undefined}
+            data={widget.type === 'meta' ? [] : metrics.salesData || []}
+            infoTooltip={widget.type === 'meta' ? "Total revenue from all orders in the selected period" : undefined}
+            brandId={brandId}
+            className="mb-0"
+            platform={widget.type}
+            dateRange={dateRange}
+            loading={widget.type === 'meta' ? isLoadingAllMetaWidgets : isLoading}
+          />
         </div>
       );
     }
@@ -2377,11 +2265,11 @@ export function HomeTab({
     if (widget.type === 'meta') {
       console.log(`🔥🔥🔥 [HomeTab] MAJOR DEBUG: About to render MetricCard for "${widget.id}" with props:`, {
         widgetId: widget.id,
-        value: widgetProps.value,
-        change: widgetProps.change,
-        previousValue: widgetProps.previousValue,
-        loading: widgetProps.loading,
-        title: typeof widgetProps.title === 'string' ? widgetProps.title : 'complex title object',
+        value: widget.type === 'meta' ? metaMetrics.adSpend : metrics.totalSales || 0,
+        change: widget.type === 'meta' ? metaMetrics.adSpendGrowth : metrics.salesGrowth || 0,
+        previousValue: widget.type === 'meta' ? metaMetrics.previousAdSpend : metrics.totalSales || 0,
+        loading: widget.type === 'meta' ? isLoadingAllMetaWidgets : isLoading,
+        title: typeof widget.name === 'string' ? widget.name : 'complex title object',
         metaMetricsSnapshot: {
           adSpend: metaMetrics.adSpend,
           impressions: metaMetrics.impressions,
@@ -2397,7 +2285,19 @@ export function HomeTab({
 
     return (
       <div key={widget.id} className="w-full">
-        <MetricCard {...widgetProps} />
+        <MetricCard 
+          title={widget.name}
+          value={widget.type === 'meta' ? metaMetrics.adSpend : metrics.totalSales || 0}
+          change={widget.type === 'meta' ? metaMetrics.adSpendGrowth : metrics.salesGrowth || 0}
+          prefix={widget.type === 'meta' ? "$" : undefined}
+          valueFormat={widget.type === 'meta' ? "currency" : undefined}
+          data={widget.type === 'meta' ? [] : metrics.salesData || []}
+          infoTooltip={widget.type === 'meta' ? "Total revenue from all orders in the selected period" : undefined}
+          brandId={brandId}
+          className="mb-0"
+          platform={widget.type}
+          dateRange={dateRange}
+        />
       </div>
     );
   };
