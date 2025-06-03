@@ -247,6 +247,7 @@ declare global {
     _metaFetchLock?: boolean; // Global lock to prevent multiple simultaneous hard refreshes
     _lastManualRefresh?: number; // Timestamp of the last manual refresh
     _lastMetaRefresh?: number; // Timestamp of the last successful Meta refresh
+    _refreshMetaData?: (triggerBrandId: string) => Promise<boolean>; // To expose HomeTab's Meta refresh function
   }
 }
 
@@ -1432,6 +1433,25 @@ export function HomeTab({
       }
     };
   }, [brandId, metaConnection, syncMetaInsights]);
+
+  // Expose refresh function to global window for global refresh button
+  useEffect(() => {
+    if (typeof window !== 'undefined' && metaConnection) {
+      window._refreshMetaData = async (triggerBrandId: string) => {
+        if (triggerBrandId === brandId) {
+          console.log(`[HomeTab] Global refresh called for brandId: ${triggerBrandId}`);
+          await syncMetaInsights();
+          return true;
+        }
+        return false;
+      };
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete window._refreshMetaData;
+      }
+    };
+  }, [brandId, metaConnection]);
 
   // Function to manually trigger a database-based refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {
