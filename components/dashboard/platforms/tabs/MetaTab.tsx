@@ -572,9 +572,6 @@ export function MetaTab({
   const fetchCampaigns = async (forceRefresh = false) => {
     if (!brandId) return;
     
-    // NOTE: Campaign loading state is now managed by unified loading system
-    // so we don't set individual loading states here
-    
     // Construct the API URL
     let url = `/api/meta/campaigns?brandId=${brandId}`;
     let dateRangeQuery = '';
@@ -582,51 +579,81 @@ export function MetaTab({
     if (dateRange?.from && dateRange?.to) {
       const fromDate = dateRange.from.toISOString().split('T')[0];
       const toDate = dateRange.to.toISOString().split('T')[0];
-      url += `&from=${fromDate}&to=${toDate}`;
-      dateRangeQuery = `${fromDate}_${toDate}`;
+      dateRangeQuery = `&from=${fromDate}&to=${toDate}`;
+      url += dateRangeQuery;
+      logger.debug(`[MetaTab] Fetching campaigns with date range: ${fromDate} to ${toDate}`);
+    } else {
+      logger.debug('[MetaTab] Fetching campaigns with no specific date range (likely lifetime)');
     }
     
     if (forceRefresh) {
-      url += `&forceRefresh=true&t=${Date.now()}`;
+      url += `&forceRefresh=true`;
+      logger.debug('[MetaTab] Force refreshing campaigns');
     }
     
+    // Apply throttling to prevent too many fetches, especially non-forced ones
+    const fetchKey = `fetch-campaigns-${brandId}-${dateRangeQuery}`;
+    if (!forceRefresh && !throttle(fetchKey, 15000)) { // Throttle non-forced refreshes for the same range
+      logger.debug(`[MetaTab] Throttled campaign fetch for range ${dateRangeQuery} - skipping`);
+      return;
+    }
+    
+    // NOTE: Campaign loading state is now managed by unified loading system
+    // so we don't set individual loading states here
+    
     try {
-      console.log(`Fetching Meta campaigns: ${url}`);
+      logger.debug(`[MetaTab] Fetching URL: ${url}`);
       const response = await fetch(url, {
-        cache: 'no-store',
+        cache: 'no-store', // Prevent browser caching
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache', // Tell server/proxy not to cache
+          'Pragma': 'no-cache', // For older HTTP/1.0 compatibility
+          'Expires': '0', // Expire immediately
         }
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch campaigns: ${response.statusText}`);
+        // Handle specific errors like 429 (Rate Limit) potentially
+        throw new Error(`Failed to fetch campaigns: ${response.status} ${response.statusText}`);
       }
       
       const data = await response.json();
-      const fetchedCampaigns = data.campaigns || [];
       
-      setCampaigns(fetchedCampaigns);
-      console.log(`Loaded ${fetchedCampaigns.length} Meta campaigns`);
-      
-      if (fetchedCampaigns.length > 0) {
-        console.log("Campaigns data structure:", fetchedCampaigns[0]);
+      // *** DETAILED API RESPONSE LOGGING ***
+      console.log("[MetaTab DEBUG] Raw API Response Data:", JSON.stringify(data, null, 2)); 
+      if (data && Array.isArray(data.campaigns) && data.campaigns.length > 0) {
+          console.log("[MetaTab DEBUG] First Campaign OBJECT from API:", JSON.stringify(data.campaigns[0], null, 2));
+          console.log(`[MetaTab DEBUG] First Campaign METRICS from API: spend=${data.campaigns[0]?.spent}, impressions=${data.campaigns[0]?.impressions}, clicks=${data.campaigns[0]?.clicks}`);
+      } else {
+          console.log("[MetaTab DEBUG] API response did not contain a valid campaigns array.");
+      }
+      // *** END DETAILED LOGGING ***
+
+      if (!data || !Array.isArray(data.campaigns)) {
+        logger.warn('[MetaTab] Invalid campaign data received from API');
+        setCampaigns([]);
+        setCachedCampaigns([]);
+        return [];
       }
       
-      // Cache the successful fetch timestamp and data for optimization
-      setLastRefresh(new Date());
+      // Cache campaigns in component state
+      setCampaigns(data.campaigns);
+      setCachedCampaigns(data.campaigns);
       
-      // Artificial delay to show loading state briefly for better UX
-      // NOTE: This timeout is now managed by unified loading system
-      setTimeout(() => {
-        // No longer setting individual loading state
-        console.log("Campaign fetch completed");
-      }, 300);
+      logger.debug(`[MetaTab] Loaded ${data.campaigns.length} campaigns for range: ${dateRangeQuery || 'lifetime'}`);
       
+      window.dispatchEvent(new CustomEvent('meta-campaigns-loaded', {
+        detail: { count: data.campaigns.length }
+      }));
+      
+      return data.campaigns;
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
-      toast.error(`Failed to fetch campaign data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error("Error fetching campaigns:", error);
+      toast.error("Failed to load campaigns", { description: (error as Error).message });
+      // Don't clear campaigns on error, keep potentially stale data
+      return campaigns; // Return existing campaigns on error
     }
+    // NOTE: No finally block needed since loading state is managed by unified system
   };
 
     async function fetchMetaData() {
@@ -1481,12 +1508,15 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (isDateChangeLoading) {
         setIsDateChangeLoading(false);
       }
+      if (isLoadingAllMetaWidgets) {
+        setIsLoadingAllMetaWidgets(false);
+      }
     }, 15000); // 15 second maximum loading time
 
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [loading, isDateChangeLoading]);
+  }, [loading, isDateChangeLoading, isLoadingAllMetaWidgets]);
 
   // Add a function to patch the global fetch method to block Meta API calls
   const patchFetch = () => {
@@ -3648,8 +3678,24 @@ Try creating at least one active campaign in Meta Ads Manager.
     if (isRefreshingData && brandId) {
       console.log("[MetaTab] Parent component triggered refresh via isRefreshingData prop with unified loading");
       
-      // Simply call fetchAllMetricsDirectly which now handles unified loading for ALL data
-      fetchAllMetricsDirectly();
+      // Set unified loading state for consistent behavior
+      setIsLoadingAllMetaWidgets(true);
+      setIsManuallyRefreshing(true);
+      
+      // Use Promise.all to ensure all operations complete before we reset loading state
+      Promise.all([
+        fetchAllMetricsDirectly(), // This will handle its own unified loading
+        fetchCampaigns(true)
+      ])
+      .catch(error => {
+        console.error("[MetaTab] Error during refresh triggered by parent:", error);
+      })
+      .finally(() => {
+        // fetchAllMetricsDirectly already handles its unified loading, but we ensure it's cleared here too
+        setIsLoadingAllMetaWidgets(false);
+        setIsManuallyRefreshing(false);
+        console.log("[MetaTab] Parent-triggered refresh with unified loading completed");
+      });
     }
   }, [isRefreshingData, brandId]);
 
@@ -4048,6 +4094,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Show loading toast notification
     toast.loading("Refreshing all Meta data for selected date range...", { id: "meta-refresh-all" });
     
+    // Use unified loading state instead of separate campaign loading
     setIsLoadingAllMetaWidgets(true);
     
     try {
@@ -4073,9 +4120,11 @@ Try creating at least one active campaign in Meta Ads Manager.
         description: "There was a problem refreshing Meta data. Please try again."
       });
     } finally {
+      // Use unified loading state instead of separate campaign loading
       setIsLoadingAllMetaWidgets(false);
     }
   }, [fetchCampaigns, refreshCampaignAdSetBudgets, refreshMetricsDirectly]);
+  
   
   // Refresh data when date range changes - DISABLED TO PREVENT AUTO-REFRESH
   /*
