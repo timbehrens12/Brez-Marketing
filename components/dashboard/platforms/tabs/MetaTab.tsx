@@ -3695,6 +3695,12 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (event.detail?.brandId === brandId) {
         console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
 
+        // **COORDINATION CHECK**: Skip if this is from a tab-switch-initiated sync
+        if (isTabSwitchSyncRef.current) {
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - triggered by tab switch sync");
+          return;
+        }
+
         // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicate events
         if (hasRecentlyRefreshed(2000)) {
           console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - recently refreshed");
@@ -3736,7 +3742,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     };
-  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly]); // Added fetchMetaData and fetchAllMetricsDirectly to dependencies
+  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly]);
 
   // Function to manually sync Meta insights data
   const syncMetaInsights = async () => {
@@ -4894,6 +4900,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [isRefreshingData]); // Only trigger on refresh flag changes
 
+  // Add a ref to track tab-switch-initiated syncs
+  const isTabSwitchSyncRef = useRef(false);
+
   // Add a listener for the targeted meta-tab-activated event
   useEffect(() => {
     const handleMetaTabActivated = (event: CustomEvent) => {
@@ -4908,11 +4917,20 @@ Try creating at least one active campaign in Meta Ads Manager.
 
         console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
         
+        // **NEW**: Set flag to indicate this is a tab-switch-initiated sync
+        isTabSwitchSyncRef.current = true;
+        
         // Use the same sync function as the manual sync button for consistency
         if (dateRange?.from && dateRange?.to) {
-          syncMetaInsights();
+          syncMetaInsights().finally(() => {
+            // Clear the flag after sync completes
+            setTimeout(() => {
+              isTabSwitchSyncRef.current = false;
+            }, 1000); // Wait 1 second before allowing metaDataRefreshed events again
+          });
         } else {
           console.log("[MetaTab] Skipping sync - no date range available");
+          isTabSwitchSyncRef.current = false;
         }
       }
     };

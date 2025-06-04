@@ -1142,24 +1142,39 @@ export default function DashboardPage() {
     }
     
     // Dispatch targeted event for the specific tab
-    if (typeof window !== 'undefined') {
-      const event = new CustomEvent(`${tab}-tab-activated`, {
-        detail: { 
-          brandId: selectedBrandId, 
-          previousTab: activeTab,
-          timestamp: Date.now()
-        }
-      });
-      window.dispatchEvent(event);
-      console.log(`[Dashboard] Dispatched ${tab}-tab-activated event`);
+    if (tab === 'meta') {
+      // Dispatch the targeted Meta tab activation event
+      window.dispatchEvent(new CustomEvent('meta-tab-activated', {
+        detail: { brandId: selectedBrandId, timestamp: Date.now() }
+      }));
+      console.log(`[Dashboard] Dispatched meta-tab-activated event`);
       
-      // Clear the tab switch flag after a short delay to allow the refresh to start
-      if (tab === 'meta') {
-        setTimeout(() => {
-          window._metaTabSwitchInProgress = false;
-          console.log(`[Dashboard] Cleared _metaTabSwitchInProgress flag after Meta tab activation`);
-        }, 2000); // 2 second delay to allow refresh to complete
-      }
+      // Clear the tab switch flag after a delay to allow the event to be processed
+      setTimeout(() => {
+        window._metaTabSwitchInProgress = false;
+        console.log(`[Dashboard] Cleared _metaTabSwitchInProgress flag after Meta tab activation`);
+      }, 2000); // Wait 2 seconds for the sync to complete
+      
+    } else if (tab === 'shopify') {
+      // Dispatch event for Shopify tab
+      window.dispatchEvent(new CustomEvent('shopify-tab-activated', {
+        detail: { brandId: selectedBrandId, timestamp: Date.now() }
+      }));
+      console.log(`[Dashboard] Dispatched shopify-tab-activated event`);
+      
+    } else if (tab === 'site') {
+      // Dispatch event for Site tab
+      window.dispatchEvent(new CustomEvent('site-tab-activated', {
+        detail: { brandId: selectedBrandId, timestamp: Date.now() }
+      }));
+      console.log(`[Dashboard] Dispatched site-tab-activated event`);
+      
+    } else {
+      // For other tabs, dispatch a generic event
+      window.dispatchEvent(new CustomEvent('page-refresh', {
+        detail: { brandId: selectedBrandId, timestamp: Date.now(), activeTab: tab }
+      }));
+      console.log(`[Dashboard] Dispatched page-refresh event for ${tab} tab`);
     }
   };
 
