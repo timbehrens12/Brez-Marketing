@@ -8,8 +8,7 @@ declare global {
   interface Window {
     _metaFetchLock?: boolean
     _activeFetchIds?: Set<number | string>
-    _refreshMetaData?: (triggerBrandId: string) => Promise<boolean>
-    _homeTabSyncMetaInsights?: () => Promise<void>
+    _refreshMetaData?: () => Promise<boolean>
   }
 }
 
@@ -196,24 +195,10 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
         console.log(`[GlobalRefresh] 📱 Refreshing Meta platform`)
         
         const metaRefresh = async () => {
-          console.log(`[GlobalRefresh] 🔄 Starting Meta refresh using HomeTab's unified loading system`)
+          console.log(`[GlobalRefresh] 🔄 Starting Meta refresh using MetaTab's unified loading system`)
           
-          // PRIORITY 1: Use HomeTab's unified sync function if available
-          // This ensures all Meta widgets load together with unified loading states
-          if (typeof window !== 'undefined' && window._homeTabSyncMetaInsights) {
-            console.log(`[GlobalRefresh] 🚀 Using HomeTab's syncMetaInsights function for unified loading`)
-            
-            try {
-              await window._homeTabSyncMetaInsights()
-              console.log(`[GlobalRefresh] ✅ HomeTab Meta unified sync completed successfully`)
-              return // Exit early - HomeTab handles everything including events
-            } catch (error) {
-              console.error(`[GlobalRefresh] ❌ HomeTab Meta unified sync failed:`, error)
-              throw error
-            }
-          }
-          
-          // FALLBACK 1: Use MetaTab's unified refresh function if HomeTab not available  
+          // Instead of duplicating the API calls here, use the MetaTab's unified refresh function
+          // This ensures the global refresh button uses the same coordinated loading approach
           if (typeof window !== 'undefined' && window._refreshMetaData) {
             console.log(`[GlobalRefresh] 🚀 Using MetaTab's refreshAllMetaData function for unified loading`)
             
@@ -224,7 +209,7 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
             // 4. Ad set budget refresh
             // 5. Frontend state updates with coordinated loading
             try {
-              const success = await window._refreshMetaData(triggerBrandId)
+              const success = await window._refreshMetaData()
               if (success) {
                 console.log(`[GlobalRefresh] ✅ Meta unified refresh completed successfully`)
               } else {
@@ -235,8 +220,8 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
               throw error
             }
           } else {
-            // FALLBACK 2: Manual API calls if neither unified system is available
-            console.warn(`[GlobalRefresh] ⚠️ No unified refresh system available, falling back to manual API calls`)
+            // Fallback to original approach if MetaTab's refresh function is not available
+            console.warn(`[GlobalRefresh] ⚠️ MetaTab's unified refresh not available, falling back to manual API calls`)
             
           // Step 1: Fetch fresh data from Meta API and update database
           const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
@@ -397,12 +382,8 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
         console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Active platforms:`, activePlatforms)
         console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Brand ID:`, triggerBrandId)
         
-        // Check if HomeTab's unified system was used for Meta refresh
-        const homeTabWasUsed = activePlatforms.meta && typeof window._homeTabSyncMetaInsights === 'function'
-        
-        // Dispatch Meta-specific events if Meta was refreshed AND HomeTab wasn't used
-        // (HomeTab dispatches its own events, so we avoid duplicates)
-        if (activePlatforms.meta && !homeTabWasUsed) {
+        // Dispatch Meta-specific events if Meta was refreshed
+        if (activePlatforms.meta) {
           console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching Meta-specific events`)
           
           window.dispatchEvent(new CustomEvent('meta-data-refreshed', {
@@ -421,8 +402,6 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
               source: 'global-refresh'
             }
           }))
-        } else if (homeTabWasUsed) {
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Skipping Meta events - HomeTab unified system handled refresh`)
         }
         
         // Dispatch Shopify-specific events if Shopify was refreshed
@@ -439,54 +418,46 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
           }))
         }
         
-        // Only dispatch competing global events if HomeTab wasn't used
-        // (These events can cause conflicts with HomeTab's unified loading)
-        if (!homeTabWasUsed) {
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching global coordination events`)
-          
-          // Dispatch global events for all widgets
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching page-refresh event`)
-          window.dispatchEvent(new CustomEvent('page-refresh', {
-            detail: {
-              brandId: triggerBrandId, 
-              timestamp: Date.now(),
-              source: 'global-refresh',
-              forceRefresh: true,
-              platforms: activePlatforms
-            }
-          }))
-          
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching refresh-metrics event`)
-          window.dispatchEvent(new CustomEvent('refresh-metrics', {
-            detail: {
-              brandId: triggerBrandId,
-              timestamp: Date.now(),
-              source: 'global-refresh'
-            }
-          }))
-          
-          // Dispatch event specifically for home page widgets
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching refresh-all-widgets event`)
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Event detail:`, {
+        // Dispatch global events for all widgets
+        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching page-refresh event`)
+        window.dispatchEvent(new CustomEvent('page-refresh', {
+          detail: {
+            brandId: triggerBrandId, 
+            timestamp: Date.now(),
+            source: 'global-refresh',
+            forceRefresh: true,
+            platforms: activePlatforms
+          }
+        }))
+        
+        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching refresh-metrics event`)
+        window.dispatchEvent(new CustomEvent('refresh-metrics', {
+          detail: {
+            brandId: triggerBrandId,
+            timestamp: Date.now(),
+            source: 'global-refresh'
+          }
+        }))
+        
+        // Dispatch event specifically for home page widgets
+        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Dispatching refresh-all-widgets event`)
+        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Event detail:`, {
+          brandId: triggerBrandId,
+          timestamp: Date.now(),
+          platforms: activePlatforms,
+          source: 'global-refresh'
+        })
+        
+        window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
+          detail: {
             brandId: triggerBrandId,
             timestamp: Date.now(),
             platforms: activePlatforms,
             source: 'global-refresh'
-          })
-          
-          window.dispatchEvent(new CustomEvent('refresh-all-widgets', {
-            detail: {
-              brandId: triggerBrandId,
-              timestamp: Date.now(),
-              platforms: activePlatforms,
-              source: 'global-refresh'
-            }
-          }))
-        } else {
-          console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: Skipping global coordination events - HomeTab unified system used`)
-        }
+          }
+        }))
         
-        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: All applicable events dispatched successfully`)
+        console.log(`🔥🔥🔥 [GlobalRefresh] MAJOR DEBUG: All events dispatched successfully`)
       }
       
       setLastUpdated(new Date())
