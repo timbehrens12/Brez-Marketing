@@ -4721,6 +4721,87 @@ Try creating at least one active campaign in Meta Ads Manager.
     // This ensures the effect only runs once when brandId is first available
   }, [brandId]);
   
+  // Add a new function to sync all Meta data from the beginning
+  const syncAllTimeMetaData = async () => {
+    if (!brandId) {
+      toast.error("No brand ID available for sync");
+      return;
+    }
+    
+    // Show confirmation dialog first since this is a heavy operation
+    const confirmed = window.confirm(
+      "This will sync ALL Meta data from the beginning of your account (up to 2 years back). " +
+      "This may take several minutes and use significant API quota. Continue?"
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+    
+    setIsLoadingAllMetaWidgets(true);
+    toast.loading("Syncing all Meta data from beginning...", { 
+      id: "all-time-sync-toast", 
+      duration: 60000 // 1 minute timeout
+    });
+    
+    try {
+      // Start from 2 years ago (Meta's typical maximum retention)
+      const startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 2);
+      const endDate = new Date();
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      console.log(`[MetaTab] Starting all-time sync from ${startDateStr} to ${endDateStr}`);
+      
+      // Call the insights sync API with the full date range
+      const response = await fetch('/api/meta/insights/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brandId,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          forceRefresh: true
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync all-time Meta data');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success(`All-time Meta data synced! Processed ${result.count || 0} records.`, { 
+          id: "all-time-sync-toast",
+          duration: 10000 
+        });
+        
+        // Trigger a refresh of the current view
+        await fetchAllMetricsDirectly();
+        
+        console.log(`[MetaTab] ✅ All-time sync completed successfully - synced ${result.count || 0} records`);
+      } else {
+        throw new Error(result.error || 'Failed to sync all-time Meta data');
+      }
+      
+    } catch (error) {
+      console.error('[MetaTab] Error syncing all-time Meta data:', error);
+      toast.error("Failed to sync all-time Meta data", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 10000,
+        id: "all-time-sync-toast"
+      });
+    } finally {
+      setIsLoadingAllMetaWidgets(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
@@ -4768,6 +4849,13 @@ Try creating at least one active campaign in Meta Ads Manager.
                             className="px-3 py-1 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded-md"
                           >
                             Sync Last 2 Days
+                          </button>
+                          
+                          <button
+                            onClick={syncAllTimeMetaData}
+                            className="px-3 py-1 text-xs bg-red-800 hover:bg-red-700 text-white rounded-md"
+                          >
+                            Sync All Time Data
                           </button>
                           
                           {debugMode && (

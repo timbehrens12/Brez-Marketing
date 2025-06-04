@@ -256,113 +256,6 @@ if (typeof window !== 'undefined') {
   window._metaFetchLock = window._metaFetchLock || false;
   window._lastManualRefresh = window._lastManualRefresh || 0;
   window._lastMetaRefresh = window._lastMetaRefresh || 0;
-  
-  // Add global debug function for syncing all Meta data from all time
-  (window as any).debugSyncAllMetaData = async (brandId?: string) => {
-    console.log("🔧 [DEBUG] Starting all-time Meta data sync...");
-    
-    if (!brandId) {
-      console.error("❌ [DEBUG] brandId is required. Usage: debugSyncAllMetaData('your-brand-id')");
-      return;
-    }
-    
-    try {
-      console.log(`🚀 [DEBUG] Syncing all Meta data for brand: ${brandId}`);
-      
-      // Step 1: Sync all historical insights data
-      const syncResponse = await fetch('/api/meta/insights/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          // Don't specify date range to sync all time
-          forceRefresh: true,
-          syncAllTime: true
-        })
-      });
-      
-      if (!syncResponse.ok) {
-        const errorData = await syncResponse.json();
-        throw new Error(errorData.error || 'Failed to sync Meta insights');
-      }
-      
-      const syncResult = await syncResponse.json();
-      console.log(`✅ [DEBUG] Meta insights synced - ${syncResult.count || 0} records processed`);
-      
-      // Step 2: Sync all campaigns
-      console.log("🚀 [DEBUG] Syncing all Meta campaigns...");
-      const campaignSyncResponse = await fetch('/api/meta/campaigns/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brandId,
-          forceRefresh: true,
-          syncAllTime: true
-        })
-      });
-      
-      if (!campaignSyncResponse.ok) {
-        const errorData = await campaignSyncResponse.json();
-        console.warn(`⚠️ [DEBUG] Campaign sync failed: ${errorData.error}`);
-      } else {
-        const campaignResult = await campaignSyncResponse.json();
-        console.log(`✅ [DEBUG] Meta campaigns synced - ${campaignResult.count || 0} campaigns processed`);
-      }
-      
-      // Step 3: Force refresh ad sets and budgets
-      console.log("🚀 [DEBUG] Refreshing Meta ad sets and budgets...");
-      const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${brandId}&forceRefresh=true&syncAllTime=true`);
-      
-      if (!budgetResponse.ok) {
-        console.warn(`⚠️ [DEBUG] Ad set budget refresh failed: ${budgetResponse.status} ${budgetResponse.statusText}`);
-      } else {
-        console.log("✅ [DEBUG] Meta ad sets and budgets refreshed");
-      }
-      
-      // Step 4: Trigger a full Meta API sync
-      console.log("🚀 [DEBUG] Triggering full Meta API sync...");
-      const apiSyncResponse = await fetch(`/api/meta/sync?brandId=${brandId}&syncAllTime=true`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!apiSyncResponse.ok) {
-        console.warn(`⚠️ [DEBUG] Meta API sync failed: ${apiSyncResponse.status} ${apiSyncResponse.statusText}`);
-      } else {
-        console.log("✅ [DEBUG] Meta API sync completed");
-      }
-      
-      console.log("🎉 [DEBUG] All-time Meta data sync completed successfully!");
-      console.log("💡 [DEBUG] Refresh the page to see updated data.");
-      
-      return {
-        success: true,
-        insightsCount: syncResult.count || 0,
-        message: "All-time Meta data sync completed"
-      };
-      
-    } catch (error) {
-      console.error("❌ [DEBUG] All-time Meta sync failed:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  };
-  
-  // Add helper function to get current brand ID from the page
-  (window as any).getCurrentBrandId = () => {
-    // This will be populated by the component
-    return (window as any)._currentBrandId || null;
-  };
-  
-  console.log("🔧 [DEBUG] Global Meta sync functions loaded:");
-  console.log("   - debugSyncAllMetaData(brandId) - Sync all Meta data from all time");
-  console.log("   - getCurrentBrandId() - Get current brand ID");
 }
 
 // Helper function to check if a fetch is in progress globally - COPIED FROM METATAB
@@ -1407,13 +1300,6 @@ export function HomeTab({
       console.log("[HomeTab] Meta connection lost, clearing unified loading state");
     }
   }, [metaConnection, brandId, dateRange?.from, dateRange?.to]);
-
-  // Set current brand ID for debug console access
-  useEffect(() => {
-    if (typeof window !== 'undefined' && brandId) {
-      (window as any)._currentBrandId = brandId;
-    }
-  }, [brandId]);
 
   // Initial data load and refresh logic for Meta & Shopify
   useEffect(() => {
