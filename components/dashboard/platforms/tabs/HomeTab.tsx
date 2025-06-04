@@ -1912,9 +1912,9 @@ export function HomeTab({
           <div key={widget.id} className="w-full">
             <MetricCard 
               title={widget.name}
-              value={metaMetrics.ctr}
+              value={metaMetrics.ctr / 100} // Convert percentage to decimal for proper formatting
               change={metaMetrics.ctrGrowth}
-              previousValue={metaMetrics.previousCtr}
+              previousValue={metaMetrics.previousCtr / 100} // Convert percentage to decimal for proper formatting
               valueFormat="percentage"
               decimals={2}
               hideGraph={true}
