@@ -8,7 +8,6 @@ declare global {
   interface Window {
     _metaFetchLock?: boolean
     _activeFetchIds?: Set<number | string>
-    _refreshMetaData?: () => Promise<boolean>
   }
 }
 
@@ -195,93 +194,64 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
         console.log(`[GlobalRefresh] 📱 Refreshing Meta platform`)
         
         const metaRefresh = async () => {
-          console.log(`[GlobalRefresh] 🔄 Starting Meta refresh using MetaTab's unified loading system`)
+          // Step 1: Fetch fresh data from Meta API and update database
+          const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Refresh-ID': refreshId
+            }
+          })
           
-          // Instead of duplicating the API calls here, use the MetaTab's unified refresh function
-          // This ensures the global refresh button uses the same coordinated loading approach
-          if (typeof window !== 'undefined' && window._refreshMetaData) {
-            console.log(`[GlobalRefresh] 🚀 Using MetaTab's refreshAllMetaData function for unified loading`)
-            
-            // Call the MetaTab's unified refresh function which handles:
-            // 1. Unified loading state coordination
-            // 2. Hard pull from Meta API
-            // 3. Campaign data refresh  
-            // 4. Ad set budget refresh
-            // 5. Frontend state updates with coordinated loading
-            try {
-              const success = await window._refreshMetaData()
-              if (success) {
-                console.log(`[GlobalRefresh] ✅ Meta unified refresh completed successfully`)
-              } else {
-                console.warn(`[GlobalRefresh] ⚠️ Meta unified refresh completed with warnings`)
-              }
-            } catch (error) {
-              console.error(`[GlobalRefresh] ❌ Meta unified refresh failed:`, error)
-              throw error
+          if (!syncResponse.ok) {
+            console.error(`[GlobalRefresh] Failed to sync Meta data from API: ${syncResponse.status}`)
+            throw new Error("Failed to refresh Meta data from API")
+          }
+          
+          console.log(`[GlobalRefresh] ✅ Meta API sync completed`)
+          
+          // Step 2: Refresh campaigns with latest data
+          await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
+            headers: {
+              'Cache-Control': 'no-cache',
+              'X-Refresh-ID': refreshId
             }
-          } else {
-            // Fallback to original approach if MetaTab's refresh function is not available
-            console.warn(`[GlobalRefresh] ⚠️ MetaTab's unified refresh not available, falling back to manual API calls`)
+          })
+          
+          console.log(`[GlobalRefresh] ✅ Meta campaign data refreshed`)
+          
+          // Step 3: Try to refresh ad sets data (but don't fail if endpoint doesn't exist)
+          try {
+            const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
+              method: 'GET',
+              headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
+            });
             
-            // Step 1: Fetch fresh data from Meta API and update database
-            const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-Refresh-ID': refreshId
-              }
-            })
-            
-            if (!syncResponse.ok) {
-              console.error(`[GlobalRefresh] Failed to sync Meta data from API: ${syncResponse.status}`)
-              throw new Error("Failed to refresh Meta data from API")
+            if (budgetResponse.ok) {
+              console.log(`[GlobalRefresh] ✅ Meta ad set budgets refreshed`)
+            } else {
+              console.warn(`[GlobalRefresh] ⚠️ Meta ad set budget refresh failed (${budgetResponse.status}), continuing`)
             }
-            
-            console.log(`[GlobalRefresh] ✅ Meta API sync completed`)
-            
-            // Step 2: Refresh campaigns with latest data
-            await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
+          } catch (budgetError) {
+            console.warn(`[GlobalRefresh] ⚠️ Meta ad set budget refresh error:`, budgetError, ', continuing')
+          }
+          
+          // Step 4: Refresh metrics for the dashboard
+          try {
+            const metricsResponse = await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true`, {
               headers: {
                 'Cache-Control': 'no-cache',
                 'X-Refresh-ID': refreshId
               }
             })
             
-            console.log(`[GlobalRefresh] ✅ Meta campaign data refreshed`)
-            
-            // Step 3: Try to refresh ad sets data (but don't fail if endpoint doesn't exist)
-            try {
-              const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
-                method: 'GET',
-                headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
-              });
-              
-              if (budgetResponse.ok) {
-                console.log(`[GlobalRefresh] ✅ Meta ad set budgets refreshed`)
-              } else {
-                console.warn(`[GlobalRefresh] ⚠️ Meta ad set budget refresh failed (${budgetResponse.status}), continuing`)
-              }
-            } catch (budgetError) {
-              console.warn(`[GlobalRefresh] ⚠️ Meta ad set budget refresh error:`, budgetError, ', continuing')
+            if (metricsResponse.ok) {
+              console.log(`[GlobalRefresh] ✅ Meta metrics refreshed`)
+            } else {
+              console.warn(`[GlobalRefresh] ⚠️ Meta metrics refresh failed (${metricsResponse.status})`)
             }
-            
-            // Step 4: Refresh metrics for the dashboard
-            try {
-              const metricsResponse = await fetch(`/api/metrics/meta?brandId=${triggerBrandId}&refresh=true&bypass_cache=true`, {
-                headers: {
-                  'Cache-Control': 'no-cache',
-                  'X-Refresh-ID': refreshId
-                }
-              })
-              
-              if (metricsResponse.ok) {
-                console.log(`[GlobalRefresh] ✅ Meta metrics refreshed`)
-              } else {
-                console.warn(`[GlobalRefresh] ⚠️ Meta metrics refresh failed (${metricsResponse.status})`)
-              }
-            } catch (metricsError) {
-              console.warn(`[GlobalRefresh] ⚠️ Meta metrics refresh error:`, metricsError)
-            }
+          } catch (metricsError) {
+            console.warn(`[GlobalRefresh] ⚠️ Meta metrics refresh error:`, metricsError)
           }
         }
         
