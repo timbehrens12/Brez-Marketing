@@ -1725,6 +1725,8 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, []);
 
   // Initial data load on component mount
+  // DISABLED: Replaced by consolidated fetching logic to prevent triple refresh
+  /*
   useEffect(() => {
     if (!brandId) return;
     
@@ -1891,7 +1893,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       window._blockMetaApiCalls = true; // Block API calls during unmount
     };
   }, [brandId, dateRange]);
-  
+  */
+
   // === REPLACE THE ENTIRE DATE RANGE EFFECT WITH THIS FIXED VERSION ===
   
   // Add a request ID counter to help track requests
@@ -4801,6 +4804,98 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsLoadingAllMetaWidgets(false);
     }
   };
+
+  // === CONSOLIDATED DATA FETCHING LOGIC ===
+  // Replace multiple useEffect hooks with a single coordinated data fetching system
+  
+  // Add a ref to prevent duplicate fetches
+  const isFetchingRef = useRef(false);
+  const lastFetchParamsRef = useRef<string>('');
+  
+  // Single useEffect to handle all data fetching scenarios
+  useEffect(() => {
+    // Early returns for invalid states
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log('[MetaTab] Skipping fetch: missing brandId or dateRange');
+      setLoading(false);
+      return;
+    }
+    
+    // Skip if already fetching to prevent duplicates
+    if (isFetchingRef.current) {
+      console.log('[MetaTab] Skipping fetch: already in progress');
+      return;
+    }
+    
+    // Create fetch params to detect if this is a duplicate request
+    const fetchParams = `${brandId}-${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
+    if (lastFetchParamsRef.current === fetchParams && initialLoadComplete.current) {
+      console.log('[MetaTab] Skipping fetch: same parameters as last request');
+      return;
+    }
+    
+    console.log(`[MetaTab] 🚀 Starting unified data fetch for: ${fetchParams}`);
+    
+    // Set fetching flag and update last fetch params
+    isFetchingRef.current = true;
+    lastFetchParamsRef.current = fetchParams;
+    
+    // Use the existing fetchAllMetricsDirectly function which handles everything
+    const performFetch = async () => {
+      try {
+        setLoading(true);
+        setIsLoadingAllMetaWidgets(true);
+        
+        // Call the consolidated fetch function
+        await fetchAllMetricsDirectly();
+        
+        // Mark initial load as complete
+        if (!initialLoadComplete.current) {
+          initialLoadComplete.current = true;
+        }
+        
+        console.log('[MetaTab] ✅ Unified data fetch completed successfully');
+        
+      } catch (error) {
+        console.error('[MetaTab] ❌ Error in unified data fetch:', error);
+        setError(error instanceof Error ? error.message : "Failed to load Meta data");
+      } finally {
+        setLoading(false);
+        setIsLoadingAllMetaWidgets(false);
+        isFetchingRef.current = false;
+      }
+    };
+    
+    performFetch();
+    
+    // Cleanup function
+    return () => {
+      // Don't reset flags in cleanup to avoid race conditions
+    };
+  }, [brandId, dateRange?.from, dateRange?.to]); // Only depend on essential params
+  
+  // Separate useEffect for handling manual refreshes (when user clicks refresh button)
+  useEffect(() => {
+    if (isRefreshingData && !isFetchingRef.current && initialLoadComplete.current) {
+      console.log('[MetaTab] 🔄 Handling manual refresh request');
+      
+      isFetchingRef.current = true;
+      
+      const performRefresh = async () => {
+        try {
+          // For manual refreshes, use the refresh function that forces fresh data
+          await refreshMetricsDirectly();
+          console.log('[MetaTab] ✅ Manual refresh completed');
+        } catch (error) {
+          console.error('[MetaTab] ❌ Error in manual refresh:', error);
+        } finally {
+          isFetchingRef.current = false;
+        }
+      };
+      
+      performRefresh();
+    }
+  }, [isRefreshingData]); // Only trigger on refresh flag changes
 
   return (
     <TooltipProvider>
