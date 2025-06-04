@@ -665,6 +665,11 @@ export function MetaTab({
     let isMounted = true;
     
     try {
+      // ADDED: Fetch campaigns first (or concurrently if refactored with Promise.all later)
+      // Forcing refresh for campaigns to align with fetchMetaData's intent.
+      logger.info("[MetaTab] fetchMetaData: Fetching campaigns as part of comprehensive data load.");
+      await fetchCampaigns(true); // Ensure campaigns are up-to-date
+
       // Format date range correctly to ensure proper filtering
       let fromDate = dateRange?.from;
       let toDate = dateRange?.to;
@@ -736,31 +741,6 @@ export function MetaTab({
         }
       }
       
-      // Prevent flash of old data by clearing metrics before API call for specific presets
-      // if (isYesterdayPreset || isToday) {                          <-- DELETE THIS LINE
-      //   // Reset metrics to prevent flash of old data when switching between presets
-      //   setMetricsData({                                          <-- DELETE THIS LINE
-      //     adSpend: 0,                                             <-- DELETE THIS LINE
-      //     adSpendGrowth: 0,                                       <-- DELETE THIS LINE
-      //     impressions: 0,                                         <-- DELETE THIS LINE
-      //     impressionGrowth: 0,                                    <-- DELETE THIS LINE
-      //     clicks: 0,                                              <-- DELETE THIS LINE
-      //     clickGrowth: 0,                                         <-- DELETE THIS LINE
-      //     conversions: 0,                                         <-- DELETE THIS LINE
-      //     conversionGrowth: 0,                                    <-- DELETE THIS LINE
-      //     ctr: 0,                                                 <-- DELETE THIS LINE
-      //     ctrGrowth: 0,                                           <-- DELETE THIS LINE
-      //     cpc: 0,                                                 <-- DELETE THIS LINE
-      //     costPerResult: 0,                                       <-- DELETE THIS LINE
-      //     cprGrowth: 0,                                           <-- DELETE THIS LINE
-      //     roas: 0,                                                <-- DELETE THIS LINE
-      //     roasGrowth: 0,                                          <-- DELETE THIS LINE
-      //     frequency: 0,                                           <-- DELETE THIS LINE
-      //     budget: 0,                                              <-- DELETE THIS LINE
-      //     reach: 0,                                               <-- DELETE THIS LINE
-      //     dailyData: []                                           <-- DELETE THIS LINE
-      //   });                                                       <-- DELETE THIS LINE
-      // }                                                            <-- DELETE THIS LINE
       
       console.log(`Fetching Meta data with params:`, Object.fromEntries(params.entries()));
       
@@ -3707,36 +3687,22 @@ Try creating at least one active campaign in Meta Ads Manager.
         }
 
         // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicate events
-        if (hasRecentlyRefreshed(2000)) {
-          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - recently refreshed");
+        // Increased timeout as fetchMetaData is now more comprehensive
+        if (hasRecentlyRefreshed(5000)) { 
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - recently refreshed (5s debounce)");
           return;
         }
 
-        // **COORDINATION CHECK**: Skip if there's already a fetch in progress
+        // **COORDINATION CHECK**: Skip if there's already a fetch in progress globally
+        // isMetaFetchInProgress() checks window._metaFetchLock and window._activeFetchIds
         if (isMetaFetchInProgress()) {
-          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - fetch already in progress");
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - another Meta fetch is already in progress globally.");
           return;
         }
         
-        // If forceRefresh is set to true in the event, force a full refresh
-        if (event.detail?.forceRefresh) {
-          console.log("Force refresh requested, fetching latest campaigns data");
-          
-          // Force a fetch from the API to get the most up-to-date data
-          fetchCampaigns(true); // Pass true to force refresh
-        }
-        
-        // Always refresh the metrics display
-        fetchAllMetricsDirectly();
-
-        // If the event indicates data was backfilled, also trigger a full data reload for the tab
-        if (event.detail?.backfilled === true) {
-          console.log("[MetaTab] Backfill event detected, forcing full data reload.");
-          // Ensure fetchMetaData is called to reload metrics for the current view
-          fetchMetaData(); 
-          // And ensure campaigns are also re-fetched with fresh data
-          fetchCampaigns(true);
-        }
+        logger.info("[MetaTab] metaDataRefreshed: Triggering fetchMetaData for a comprehensive refresh due to external event.");
+        toast.info("Updating Meta data based on external event...", { duration: 3000 });
+        fetchMetaData(); // This single call now handles campaigns and all metrics
       }
     };
 
@@ -3747,7 +3713,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     };
-  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly]);
+  }, [brandId, fetchMetaData]); // Simplified dependencies
 
   // Function to manually sync Meta insights data
   const syncMetaInsights = async () => {
@@ -3799,7 +3765,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         });
         
         // After successful sync, refresh the data
-        await fetchAllMetricsDirectly(); // This will manage its own unified loading
+        logger.info("[MetaTab] syncMetaInsights: Sync successful, triggering fetchMetaData to refresh display.");
+        await fetchMetaData(); // This will now manage unified loading for metrics and campaigns
         
         // Dispatch event to notify other widgets (reach, budget, etc.)
         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
