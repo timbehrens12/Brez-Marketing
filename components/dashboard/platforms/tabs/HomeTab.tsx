@@ -248,6 +248,7 @@ declare global {
     _lastManualRefresh?: number; // Timestamp of the last manual refresh
     _lastMetaRefresh?: number; // Timestamp of the last successful Meta refresh
     _refreshMetaData?: (triggerBrandId: string) => Promise<boolean>; // To expose HomeTab's Meta refresh function
+    _homeTabSyncMetaInsights?: () => Promise<void>; // To expose HomeTab's syncMetaInsights function
   }
 }
 
@@ -1445,10 +1446,17 @@ export function HomeTab({
         }
         return false;
       };
+      
+      // ALSO expose syncMetaInsights directly for global refresh button
+      window._homeTabSyncMetaInsights = async () => {
+        console.log(`[HomeTab] Global refresh button calling syncMetaInsights directly`);
+        await syncMetaInsights();
+      };
     }
     return () => {
       if (typeof window !== 'undefined') {
         delete window._refreshMetaData;
+        delete window._homeTabSyncMetaInsights;
       }
     };
   }, [brandId, metaConnection]);
