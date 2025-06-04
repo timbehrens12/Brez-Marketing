@@ -1882,6 +1882,18 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.log(`[MetaTab] 🚫 Date range effect: Skipping during initial load to prevent duplicates`);
       return;
     }
+
+    // **COORDINATION CHECK**: Skip if tab switch is in progress
+    if (window._metaTabSwitchInProgress) {
+      console.log(`[MetaTab] 🚫 Date range effect: Skipping during tab switch`);
+      return;
+    }
+
+    // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicates
+    if (hasRecentlyRefreshed(3000)) {
+      console.log(`[MetaTab] 🚫 Date range effect: Skipping - recently refreshed`);
+      return;
+    }
     
     // Extract stable date strings for comparison
     const newFrom = dateRange.from?.toISOString().split('T')[0];
@@ -1906,6 +1918,14 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.log(`[MetaTab] Date range truly unchanged (${newFrom} to ${newTo}), skipping`);
       return;
     }
+
+    // **COORDINATION CHECK**: Skip if both old values were undefined (initial mount scenario)
+    if (!oldFrom && !oldTo && newFrom && newTo) {
+      console.log(`[MetaTab] 🚫 Date range effect: Skipping initial date range assignment during mount`);
+      // Update the ref to track the new values without triggering a fetch
+      lastProcessedDateRange.current = { from: newFrom, to: newTo };
+      return;
+    }
     
     // Generate a unique request ID for this date change to track it in logs
     const currentRequestId = ++requestIdCounter.current;
@@ -1913,6 +1933,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     console.log(`[MetaTab] 🔄 Date range changed (requestId: ${currentRequestId})`);
     console.log(`[MetaTab] From: ${oldFrom || 'undefined'} → ${newFrom || 'undefined'}`);
     console.log(`[MetaTab] To: ${oldTo || 'undefined'} → ${newTo || 'undefined'}`);
+
+    // **COORDINATION CHECK**: Set the recently refreshed timestamp to coordinate with other useEffects
+    window._lastMetaTabRefresh = Date.now();
     
     // Set processing flag to block nested effect runs
     isProcessingDateChange.current = true;
