@@ -438,7 +438,9 @@ export function MetaTab({
   const isFetching = useRef<boolean>(false);
   const lastFetchedDates = useRef<{from?: string, to?: string}>({});
   const initialLoadComplete = useRef<boolean>(false);
-  const dateRangeRef = useRef(dateRange);
+  // dateRangeRef was: useRef(dateRange); 
+  // Let's define a new ref to store previous brandId and date strings for comparison
+  const prevFetchParamsRef = useRef<{ brandId?: string; from?: string; to?: string }>();
 
   // Add this state near the other state declarations
   const [showDebugControls, setShowDebugControls] = useState(false);
@@ -496,80 +498,43 @@ export function MetaTab({
 
   // Initialize metricsData using safeMetrics on mount and when metrics changes
   useEffect(() => {
-    if (!metrics || typeof metrics !== 'object') {
-      // Handle case when metrics is null or undefined
-      // Set default values but don't crash
-      try {
-        // Only set default metrics if we don't already have data
-        if (!metricsData.adSpend && !metricsData.clicks && !metricsData.impressions) {
-          setMetricsData(createDefaultMetricsData());
-        }
-      } catch (e) {
-        console.error("Error setting default metrics:", e);
+    if (!safeMetrics || typeof safeMetrics !== 'object') {
+      // If safeMetrics is not valid (e.g., initial undefined prop), set default or do nothing.
+      // This check prevents trying to operate on an invalid safeMetrics.
+      if (!metricsData.adSpend && !metricsData.clicks && !metricsData.impressions) {
+         setMetricsData(createDefaultMetricsData());
       }
       return;
     }
-    
-    // Set metrics from our sanitized object to ensure it's fully initialized
-    try {
-      // First check if safeMetrics exists and is an object
-      if (!safeMetrics || typeof safeMetrics !== 'object') {
-        console.error("safeMetrics is not a valid object");
-        return;
-      }
-      
-      // Create a local object starting with current values to prevent flickering
-      const safeData = {...metricsData};
-      
-      // Only update properties if they exist and are valid in safeMetrics
-      if (typeof safeMetrics.adSpend === 'number' && !isNaN(safeMetrics.adSpend)) 
-        safeData.adSpend = safeMetrics.adSpend;
-      if (typeof safeMetrics.adSpendGrowth === 'number' && !isNaN(safeMetrics.adSpendGrowth)) 
-        safeData.adSpendGrowth = safeMetrics.adSpendGrowth;
-      if (typeof safeMetrics.impressions === 'number' && !isNaN(safeMetrics.impressions)) 
-        safeData.impressions = safeMetrics.impressions;
-      if (typeof safeMetrics.impressionGrowth === 'number' && !isNaN(safeMetrics.impressionGrowth)) 
-        safeData.impressionGrowth = safeMetrics.impressionGrowth;
-      if (typeof safeMetrics.clicks === 'number' && !isNaN(safeMetrics.clicks)) 
-        safeData.clicks = safeMetrics.clicks;
-      if (typeof safeMetrics.clickGrowth === 'number' && !isNaN(safeMetrics.clickGrowth)) 
-        safeData.clickGrowth = safeMetrics.clickGrowth;
-      if (typeof safeMetrics.conversions === 'number' && !isNaN(safeMetrics.conversions)) 
-        safeData.conversions = safeMetrics.conversions;
-      if (typeof safeMetrics.conversionGrowth === 'number' && !isNaN(safeMetrics.conversionGrowth)) 
-        safeData.conversionGrowth = safeMetrics.conversionGrowth;
-      if (typeof safeMetrics.ctr === 'number' && !isNaN(safeMetrics.ctr)) 
-        safeData.ctr = safeMetrics.ctr;
-      if (typeof safeMetrics.ctrGrowth === 'number' && !isNaN(safeMetrics.ctrGrowth)) 
-        safeData.ctrGrowth = safeMetrics.ctrGrowth;
-      if (typeof safeMetrics.cpc === 'number' && !isNaN(safeMetrics.cpc)) 
-        safeData.cpc = safeMetrics.cpc;
-      if (typeof safeMetrics.cpcLink === 'number' && !isNaN(safeMetrics.cpcLink)) 
-        safeData.cpcLink = safeMetrics.cpcLink;
-      if (typeof safeMetrics.costPerResult === 'number' && !isNaN(safeMetrics.costPerResult)) 
-        safeData.costPerResult = safeMetrics.costPerResult;
-      if (typeof safeMetrics.cprGrowth === 'number' && !isNaN(safeMetrics.cprGrowth)) 
-        safeData.cprGrowth = safeMetrics.cprGrowth;
-      if (typeof safeMetrics.roas === 'number' && !isNaN(safeMetrics.roas)) 
-        safeData.roas = safeMetrics.roas;
-      if (typeof safeMetrics.roasGrowth === 'number' && !isNaN(safeMetrics.roasGrowth)) 
-        safeData.roasGrowth = safeMetrics.roasGrowth;
-      if (typeof safeMetrics.frequency === 'number' && !isNaN(safeMetrics.frequency)) 
-        safeData.frequency = safeMetrics.frequency;
-      if (typeof safeMetrics.budget === 'number' && !isNaN(safeMetrics.budget)) 
-        safeData.budget = safeMetrics.budget;
-      if (typeof safeMetrics.reach === 'number' && !isNaN(safeMetrics.reach)) 
-        safeData.reach = safeMetrics.reach;
-      if (Array.isArray(safeMetrics.dailyData) && safeMetrics.dailyData.length > 0) 
-        safeData.dailyData = safeMetrics.dailyData as DailyDataItem[];
-      
-      // Now update the state with our safe data object
-      setMetricsData(safeData);
-    } catch (error) {
-      console.error("Error updating metrics state:", error);
-      // On error, keep existing data instead of resetting to defaults
-    }
-  }, [metrics, safeMetrics]);
+
+    // Directly construct the new state from safeMetrics.
+    // This ensures that we are reacting to changes in the prop-derived safeMetrics.
+    const newMetricsState = {
+      adSpend: typeof safeMetrics.adSpend === 'number' && !isNaN(safeMetrics.adSpend) ? safeMetrics.adSpend : 0,
+      adSpendGrowth: typeof safeMetrics.adSpendGrowth === 'number' && !isNaN(safeMetrics.adSpendGrowth) ? safeMetrics.adSpendGrowth : 0,
+      impressions: typeof safeMetrics.impressions === 'number' && !isNaN(safeMetrics.impressions) ? safeMetrics.impressions : 0,
+      impressionGrowth: typeof safeMetrics.impressionGrowth === 'number' && !isNaN(safeMetrics.impressionGrowth) ? safeMetrics.impressionGrowth : 0,
+      clicks: typeof safeMetrics.clicks === 'number' && !isNaN(safeMetrics.clicks) ? safeMetrics.clicks : 0,
+      clickGrowth: typeof safeMetrics.clickGrowth === 'number' && !isNaN(safeMetrics.clickGrowth) ? safeMetrics.clickGrowth : 0,
+      conversions: typeof safeMetrics.conversions === 'number' && !isNaN(safeMetrics.conversions) ? safeMetrics.conversions : 0,
+      conversionGrowth: typeof safeMetrics.conversionGrowth === 'number' && !isNaN(safeMetrics.conversionGrowth) ? safeMetrics.conversionGrowth : 0,
+      ctr: typeof safeMetrics.ctr === 'number' && !isNaN(safeMetrics.ctr) ? safeMetrics.ctr : 0,
+      ctrGrowth: typeof safeMetrics.ctrGrowth === 'number' && !isNaN(safeMetrics.ctrGrowth) ? safeMetrics.ctrGrowth : 0,
+      cpc: typeof safeMetrics.cpc === 'number' && !isNaN(safeMetrics.cpc) ? safeMetrics.cpc : 0,
+      cpcLink: typeof safeMetrics.cpcLink === 'number' && !isNaN(safeMetrics.cpcLink) ? safeMetrics.cpcLink : 0,
+      costPerResult: typeof safeMetrics.costPerResult === 'number' && !isNaN(safeMetrics.costPerResult) ? safeMetrics.costPerResult : 0,
+      cprGrowth: typeof safeMetrics.cprGrowth === 'number' && !isNaN(safeMetrics.cprGrowth) ? safeMetrics.cprGrowth : 0,
+      roas: typeof safeMetrics.roas === 'number' && !isNaN(safeMetrics.roas) ? safeMetrics.roas : 0,
+      roasGrowth: typeof safeMetrics.roasGrowth === 'number' && !isNaN(safeMetrics.roasGrowth) ? safeMetrics.roasGrowth : 0,
+      frequency: typeof safeMetrics.frequency === 'number' && !isNaN(safeMetrics.frequency) ? safeMetrics.frequency : 0,
+      budget: typeof safeMetrics.budget === 'number' && !isNaN(safeMetrics.budget) ? safeMetrics.budget : 0,
+      reach: typeof safeMetrics.reach === 'number' && !isNaN(safeMetrics.reach) ? safeMetrics.reach : 0,
+      dailyData: Array.isArray(safeMetrics.dailyData) ? safeMetrics.dailyData : []
+    };
+
+    setMetricsData(newMetricsState);
+
+  }, [safeMetrics]); // Depend only on safeMetrics
 
   // Replace the above effect with a simpler one that only runs on mount to load campaigns
   useEffect(() => {
@@ -772,30 +737,30 @@ export function MetaTab({
       }
       
       // Prevent flash of old data by clearing metrics before API call for specific presets
-      if (isYesterdayPreset || isToday) {
-        // Reset metrics to prevent flash of old data when switching between presets
-        setMetricsData({
-          adSpend: 0,
-          adSpendGrowth: 0,
-          impressions: 0,
-          impressionGrowth: 0,
-          clicks: 0,
-          clickGrowth: 0,
-          conversions: 0,
-          conversionGrowth: 0,
-          ctr: 0,
-          ctrGrowth: 0,
-          cpc: 0,
-          costPerResult: 0,
-          cprGrowth: 0,
-          roas: 0,
-          roasGrowth: 0,
-          frequency: 0,
-          budget: 0,
-          reach: 0,
-          dailyData: []
-        });
-      }
+      // if (isYesterdayPreset || isToday) {                          <-- DELETE THIS LINE
+      //   // Reset metrics to prevent flash of old data when switching between presets
+      //   setMetricsData({                                          <-- DELETE THIS LINE
+      //     adSpend: 0,                                             <-- DELETE THIS LINE
+      //     adSpendGrowth: 0,                                       <-- DELETE THIS LINE
+      //     impressions: 0,                                         <-- DELETE THIS LINE
+      //     impressionGrowth: 0,                                    <-- DELETE THIS LINE
+      //     clicks: 0,                                              <-- DELETE THIS LINE
+      //     clickGrowth: 0,                                         <-- DELETE THIS LINE
+      //     conversions: 0,                                         <-- DELETE THIS LINE
+      //     conversionGrowth: 0,                                    <-- DELETE THIS LINE
+      //     ctr: 0,                                                 <-- DELETE THIS LINE
+      //     ctrGrowth: 0,                                           <-- DELETE THIS LINE
+      //     cpc: 0,                                                 <-- DELETE THIS LINE
+      //     costPerResult: 0,                                       <-- DELETE THIS LINE
+      //     cprGrowth: 0,                                           <-- DELETE THIS LINE
+      //     roas: 0,                                                <-- DELETE THIS LINE
+      //     roasGrowth: 0,                                          <-- DELETE THIS LINE
+      //     frequency: 0,                                           <-- DELETE THIS LINE
+      //     budget: 0,                                              <-- DELETE THIS LINE
+      //     reach: 0,                                               <-- DELETE THIS LINE
+      //     dailyData: []                                           <-- DELETE THIS LINE
+      //   });                                                       <-- DELETE THIS LINE
+      // }                                                            <-- DELETE THIS LINE
       
       console.log(`Fetching Meta data with params:`, Object.fromEntries(params.entries()));
       
@@ -1016,50 +981,73 @@ export function MetaTab({
 
   // Add a separate effect to manually load Meta data when this component mounts
   useEffect(() => {
-    // Skip if we don't have essential data
+    const currentFromISO = dateRange?.from?.toISOString();
+    const currentToISO = dateRange?.to?.toISOString();
+
+    const brandChanged = brandId !== prevFetchParamsRef.current?.brandId;
+    const datesChanged = currentFromISO !== prevFetchParamsRef.current?.from || currentToISO !== prevFetchParamsRef.current?.to;
+
     if (!brandId || window._disableAutoMetaFetch) {
       return;
     }
 
+    // Only run if brandId or actual dates have changed, or if it's the very first load attempt
+    if (!brandChanged && !datesChanged && initialLoadComplete.current) {
+      return;
+    }
+    
+    console.log(`[MetaTab] Mount/Update Effect: brandId or dateRange changed. Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}`);
+
     // **COORDINATION CHECK**: Skip if we recently refreshed or tab switch is in progress
     if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress) {
-      console.log("[MetaTab] ⚠️ Skipping mount refresh - recently refreshed or tab switch in progress");
+      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - recently refreshed or tab switch in progress");
+      if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
+        setIsLoadingAllMetaWidgets(false);
+      }
       return;
     }
 
     // **COORDINATION CHECK**: Skip if there's already a fetch in progress
     if (isMetaFetchInProgress()) {
-      console.log("[MetaTab] ⚠️ Skipping mount refresh - fetch already in progress");
+      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - fetch already in progress");
       return;
     }
 
-    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
-    console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
-    console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
-
-    // Clear any potential blocking flags
+    if (initialLoadComplete.current) {
+        console.log("[MetaTab] Change detected (brandId or dateRange), triggering data refresh.");
+    } else {
+        console.log("[MetaTab] Component mounted - triggering ONE-TIME initial data load.");
+    }
+    
     if (typeof window !== 'undefined') {
       window._blockMetaApiCalls = false;
       window._disableAutoMetaFetch = false;
     }
       
-    // Add a small delay to ensure we load after the initial render and avoid race conditions
-    const timeoutId = setTimeout(() => {
-      // Double-check that we still shouldn't skip (in case conditions changed during timeout)
+    const timeoutId = setTimeout(async () => {
       if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress || isMetaFetchInProgress()) {
-        console.log("[MetaTab] ⚠️ Skipping delayed mount refresh - conditions changed during timeout");
+        console.log("[MetaTab] ⚠️ Skipping delayed mount/update refresh - conditions changed during timeout");
+        if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
+            setIsLoadingAllMetaWidgets(false);
+        }
         return;
       }
 
-      console.log("[MetaTab] 🚀 Starting unified data fetch for:", `${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`);
-      
-      // Use the existing fetchMetaData function which is declared earlier
-      fetchMetaData();
+      console.log("[MetaTab] 🚀 Starting unified data fetch for:", `${brandId}-${currentFromISO}-${currentToISO}`);
+      setIsLoadingAllMetaWidgets(true); 
+      try {
+        await fetchMetaData(); 
+      } catch (e) {
+        console.error("[MetaTab] Error during fetchMetaData call from useEffect:", e);
+      } finally {
+        setIsLoadingAllMetaWidgets(false); 
+        initialLoadComplete.current = true; 
+        prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
+      }
     }, 100);
 
-    // Cleanup timeout on unmount
     return () => clearTimeout(timeoutId);
-  }, [brandId, dateRange]); // Keep dateRange dependency for genuine date changes
+  }, [brandId, dateRange?.from, dateRange?.to]);
 
   // Add a button to manually fetch data 
   const manuallyLoadData = () => {
@@ -3637,7 +3625,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, [isRefreshingData])
   
   // Manual refresh button handler
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
     if (window._lastManualRefresh && Date.now() - window._lastManualRefresh < META_GLOBAL_COOLDOWN) {
       toast(`Please wait ${Math.ceil((window._lastManualRefresh + META_GLOBAL_COOLDOWN - Date.now()) / 1000)} seconds before refreshing again.`);
       return;
@@ -3647,10 +3635,27 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // Clear existing request queue to prevent stale requests
     requestQueue.length = 0;
-    processingQueue = false;
+    // processingQueue = false; // This global might be better managed within processRequestQueue itself
     
-    // Continue with refresh but with controlled fetching
-    refreshAllMetaData(brandId);
+    console.log("[MetaTab] Manual refresh triggered. Fetching all data.");
+    setIsLoadingAllMetaWidgets(true);
+    setIsManuallyRefreshing(true); // Keep this if it drives other UI elements
+
+    try {
+      // It's assumed fetchMetaData will also fetch campaigns or that campaigns are fetched appropriately within it or by an effect triggered by its data.
+      // If fetchMetaData doesn't handle campaigns, fetchCampaigns(true) might be needed here too, but ideally fetchMetaData is comprehensive.
+      await fetchMetaData(); 
+      // Consider if fetchCampaigns(true) is also needed here, if not covered by fetchMetaData
+      // For now, assuming fetchMetaData is the primary data orchestrator for the tab.
+    } catch (error) {
+      console.error("[MetaTab] Error during manual refresh:", error);
+      // Error handling can be more specific if needed
+      toast.error("Refresh failed", { description: (error as Error).message });
+    } finally {
+      setIsLoadingAllMetaWidgets(false);
+      setIsManuallyRefreshing(false);
+      console.log("[MetaTab] Manual refresh complete.");
+    }
   };
 
   // Store a stable reference to the refresh function
