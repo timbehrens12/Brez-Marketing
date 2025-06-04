@@ -3768,15 +3768,9 @@ Try creating at least one active campaign in Meta Ads Manager.
         logger.info("[MetaTab] syncMetaInsights: Sync successful, triggering fetchMetaData to refresh display.");
         await fetchMetaData(); // This will now manage unified loading for metrics and campaigns
         
-        // Dispatch event to notify other widgets (reach, budget, etc.)
-        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            syncedRecords: result.count || 0
-          }
-        }));
+        // NOTE: Removed metaDataRefreshed event dispatch here to prevent double refresh
+        // since fetchMetaData() now handles comprehensive data loading including campaigns
+        // and the reach/budget widgets update through prop changes
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
       }
