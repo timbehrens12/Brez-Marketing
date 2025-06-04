@@ -1125,92 +1125,40 @@ export default function DashboardPage() {
 
   // Handle tab changes
   const handleTabChange = (tab: string) => {
-    const previousTab = activeTab;
+    console.log(`[Dashboard] Tab changed from ${activeTab} to ${tab} - triggering targeted refresh`);
+    
     setActiveTab(tab);
     
-    // When changing tabs, automatically exit edit mode
-    if (tab !== "site" && isEditMode) {
-      setIsEditMode(false);
+    // Set coordination flags when switching to Meta tab
+    if (tab === 'meta') {
+      // Set flag to indicate tab switch is in progress
+      window._metaTabSwitchInProgress = true;
+      console.log(`[Dashboard] Set _metaTabSwitchInProgress = true for Meta tab switch`);
       
-      // Show a toast to inform the user
-      toast({
-        title: "Edit mode disabled",
-        description: "Edit mode is only available on the Home tab",
-        variant: "default"
-      });
+      // Clear existing fetch locks to allow new refresh
+      window._metaFetchLock = false;
+      window._activeFetchIds?.clear();
+      console.log(`[Dashboard] Cleared fetch locks for Meta tab switch`);
     }
     
-    // IMPROVED: More targeted refresh logic to prevent overlapping fetches
-    if (previousTab !== tab && selectedBrandId) {
-      console.log(`[Dashboard] Tab changed from ${previousTab} to ${tab} - triggering targeted refresh`);
+    // Dispatch targeted event for the specific tab
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent(`${tab}-tab-activated`, {
+        detail: { 
+          brandId: selectedBrandId, 
+          previousTab: activeTab,
+          timestamp: Date.now()
+        }
+      });
+      window.dispatchEvent(event);
+      console.log(`[Dashboard] Dispatched ${tab}-tab-activated event`);
       
-      // Refresh when switching to Shopify tab
-      if (tab === "shopify" && activePlatforms.shopify) {
+      // Clear the tab switch flag after a short delay to allow the refresh to start
+      if (tab === 'meta') {
         setTimeout(() => {
-          const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
-          const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
-          
-          window.dispatchEvent(new CustomEvent('force-shopify-refresh', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              timestamp: Date.now(),
-              dateRange: {
-                from: formattedFromDate,
-                to: formattedToDate
-              },
-              forceFetch: true,
-              bypassCache: true,
-              reason: 'internal-tab-switch'
-            }
-          }));
-        }, 100);
-      }
-      
-      // FIXED: Use coordinated loading instead of generic page-refresh for Meta tab
-      if (tab === "meta" && activePlatforms.meta) {
-        // Instead of dispatching page-refresh which triggers multiple overlapping fetches,
-        // use a more targeted approach that works with the consolidated useEffect system
-        setTimeout(() => {
-          // First, set a flag to indicate this is a tab switch (not a regular refresh)
-          if (typeof window !== 'undefined') {
-            window._metaTabSwitchInProgress = true;
-            
-            // Clear any existing fetch locks to prevent deadlocks
-            window._metaFetchLock = false;
-            window._activeFetchIds?.clear();
-            
-            // Dispatch a more specific event that the MetaTab can handle without overlaps
-            window.dispatchEvent(new CustomEvent('meta-tab-activated', { 
-              detail: { 
-                brandId: selectedBrandId, 
-                timestamp: Date.now(), 
-                source: 'tab-switch',
-                dateRange: {
-                  from: dateRange.from?.toISOString(),
-                  to: dateRange.to?.toISOString()
-                }
-              }
-            }));
-            
-            // Clear the flag after a brief delay
-            setTimeout(() => {
-              window._metaTabSwitchInProgress = false;
-            }, 2000);
-          }
-        }, 100);
-      }
-      
-      // Refresh when switching to Home tab
-      if (tab === "site") {
-        setTimeout(() => {
-          // Trigger refresh for home tab widgets
-          window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              refreshType: 'tab-switch' 
-            } 
-          }));
-        }, 100);
+          window._metaTabSwitchInProgress = false;
+          console.log(`[Dashboard] Cleared _metaTabSwitchInProgress flag after Meta tab activation`);
+        }, 2000); // 2 second delay to allow refresh to complete
       }
     }
   };

@@ -120,6 +120,8 @@ declare global {
     _metaApiRequests?: number;
     _canMakeMetaApiRequest?: boolean;
     _metaTabSwitchInProgress?: boolean;
+    _lastMetaTabRefresh?: number; // Add timestamp of last refresh
+    _metaTabInitialLoading?: boolean; // Add flag for initial loading state
   }
 }
 
@@ -141,17 +143,16 @@ function isMetaFetchInProgress(): boolean {
 function acquireMetaFetchLock(fetchId: number | string): boolean {
   if (typeof window === 'undefined') return true;
   
-  // If a lock is already active, don't allow a new one
-  if (window._metaFetchLock === true) {
-    console.log(`[MetaTab] 🔒 Fetch lock active, rejecting fetchId: ${fetchId}`);
+  if (window._metaFetchLock === true && !window._activeFetchIds?.has(fetchId)) {
+    console.log(`[MetaTab] 🔒 Meta Fetch lock active by another process, rejecting new fetchId: ${fetchId}`);
     return false;
   }
   
-  // Set the lock and register the fetch ID
   window._metaFetchLock = true;
   window._activeFetchIds?.add(fetchId);
+  window._lastMetaTabRefresh = Date.now(); // Set timestamp when acquiring lock
   
-  console.log(`[MetaTab] 🔐 Acquired fetch lock for fetchId: ${fetchId}`);
+  console.log(`[MetaTab] 🔐 Acquired Meta fetch lock for fetchId: ${fetchId}. Active fetches: ${window._activeFetchIds?.size}`);
   return true;
 }
 
@@ -169,6 +170,18 @@ function releaseMetaFetchLock(fetchId: number | string): void {
   } else {
     console.log(`[MetaTab] 🔒 Lock maintained for ${window._activeFetchIds?.size} active fetches (ended: ${fetchId})`);
   }
+}
+
+// Add helper function after the acquireMetaFetchLock function (around line 158)
+function hasRecentlyRefreshed(minIntervalMs: number = 5000): boolean {
+  if (typeof window === 'undefined') return false;
+  const lastRefresh = window._lastMetaTabRefresh || 0;
+  const timeSinceLastRefresh = Date.now() - lastRefresh;
+  const hasRefreshed = timeSinceLastRefresh < minIntervalMs;
+  if (hasRefreshed) {
+    console.log(`[MetaTab] ⏰ Recently refreshed ${timeSinceLastRefresh}ms ago, skipping duplicate refresh`);
+  }
+  return hasRefreshed;
 }
 
 // Properly define the type for all metric state objects
@@ -1003,102 +1016,50 @@ export function MetaTab({
 
   // Add a separate effect to manually load Meta data when this component mounts
   useEffect(() => {
-    if (brandId && !window._disableAutoMetaFetch) {
-      console.log("Manually triggering Meta data load on component mount");
-      
-      // Add a small delay to ensure we load after the initial render
-      setTimeout(() => {
-        // Preload data with forced parameters to ensure it always loads on first try
-        const isYesterdayPreset = (dateRange as any)?._preset === 'yesterday' || 
-                               (dateRange?.from && dateRange?.to && 
-                                isSameDay(dateRange.from, dateRange.to) && 
-                                isYesterday(dateRange.from));
-                                
-        if (isYesterdayPreset) {
-          console.log("INITIAL LOAD: Yesterday preset detected, using direct data loading");
-          
-          // Use a more direct approach for yesterday data to avoid any caching issues
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          
-          const forcedParams = new URLSearchParams({
-            brandId: brandId,
-            from: yesterdayStr,
-            to: yesterdayStr,
-            preset: 'yesterday',
-            strict_date_range: 'true',
-            bypass_cache: 'true',
-            refresh: 'true',
-            force_load: 'true'
-          });
-          
-          console.log(`INITIAL LOAD: Force loading yesterday data with params: ${forcedParams.toString()}`);
-          
-          // Directly fetch the data
-          (async () => {
-            try {
-              const response = await fetch(`/api/metrics/meta?${forcedParams.toString()}`, {
-                cache: 'no-store',
-                headers: {
-                  'Cache-Control': 'no-cache, no-store, must-revalidate',
-                  'Pragma': 'no-cache'
-                }
-              });
-              
-              if (!response.ok) {
-                throw new Error(`Failed to fetch yesterday's data: ${response.status}`);
-              }
-              
-              const data = await response.json();
-              
-              console.log("INITIAL LOAD: Successfully loaded yesterday's data:", {
-                adSpend: data.adSpend,
-                impressions: data.impressions,
-                clicks: data.clicks,
-                dailyData: Array.isArray(data.dailyData) ? data.dailyData.length : 0
-              });
-              
-              // Immediately update the state with the fetched data
-              if (data) {
-                setMetricsData({
-                  adSpend: data.adSpend ?? 0,
-                  adSpendGrowth: data.adSpendGrowth ?? 0,
-                  impressions: data.impressions ?? 0,
-                  impressionGrowth: data.impressionGrowth ?? 0,
-                  clicks: data.clicks ?? 0,
-                  clickGrowth: data.clickGrowth ?? 0,
-                  conversions: data.conversions ?? 0,
-                  conversionGrowth: data.conversionGrowth ?? 0,
-                  ctr: data.ctr ?? 0,
-                  ctrGrowth: data.ctrGrowth ?? 0,
-                  cpc: data.cpc ?? 0,
-                  cpcLink: data.cpcLink ?? 0,
-                  costPerResult: data.costPerResult ?? 0,
-                  cprGrowth: data.cprGrowth ?? 0,
-                  roas: data.roas ?? 0,
-                  roasGrowth: data.roasGrowth ?? 0,
-                  frequency: data.frequency ?? 0,
-                  budget: data.budget ?? 0,
-                  reach: data.reach ?? 0,
-                  dailyData: Array.isArray(data.dailyData) ? data.dailyData : []
-                });
-                setLoading(false);
-                initialLoadComplete.current = true;
-              }
-            } catch (error) {
-              console.error("INITIAL LOAD: Error fetching yesterday's data:", error);
-              // Fall back to regular fetch
-              fetchMetaData();
-            }
-          })();
-        } else {
-          // For other date ranges, use the regular fetch
-          fetchMetaData();
-        }
-      }, 100); // Small delay to ensure DOM is ready
+    // Skip if we don't have essential data
+    if (!brandId || window._disableAutoMetaFetch) {
+      return;
     }
-  }, [brandId, dateRange]);
+
+    // **COORDINATION CHECK**: Skip if we recently refreshed or tab switch is in progress
+    if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress) {
+      console.log("[MetaTab] ⚠️ Skipping mount refresh - recently refreshed or tab switch in progress");
+      return;
+    }
+
+    // **COORDINATION CHECK**: Skip if there's already a fetch in progress
+    if (isMetaFetchInProgress()) {
+      console.log("[MetaTab] ⚠️ Skipping mount refresh - fetch already in progress");
+      return;
+    }
+
+    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
+    console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
+    console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
+
+    // Clear any potential blocking flags
+    if (typeof window !== 'undefined') {
+      window._blockMetaApiCalls = false;
+      window._disableAutoMetaFetch = false;
+    }
+      
+    // Add a small delay to ensure we load after the initial render and avoid race conditions
+    const timeoutId = setTimeout(() => {
+      // Double-check that we still shouldn't skip (in case conditions changed during timeout)
+      if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress || isMetaFetchInProgress()) {
+        console.log("[MetaTab] ⚠️ Skipping delayed mount refresh - conditions changed during timeout");
+        return;
+      }
+
+      console.log("[MetaTab] 🚀 Starting unified data fetch for:", `${brandId}-${dateRange?.from?.toISOString()}-${dateRange?.to?.toISOString()}`);
+      
+      // Use the existing fetchMetaData function which is declared earlier
+      fetchMetaData();
+    }, 100);
+
+    // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId);
+  }, [brandId, dateRange]); // Keep dateRange dependency for genuine date changes
 
   // Add a button to manually fetch data 
   const manuallyLoadData = () => {
@@ -1241,7 +1202,7 @@ export function MetaTab({
       setIsManuallyRefreshing(true);
       
       await Promise.all([
-        fetchAllMetricsDirectly(),
+        syncMetaInsights(),
         fetchCampaigns(true)
       ]);
       
@@ -3519,41 +3480,29 @@ Try creating at least one active campaign in Meta Ads Manager.
   const fetchAllMetricsDirectly = async () => {
     console.log("[MetaTab] Starting unified loading for all Meta widgets AND campaigns");
     
-    // Set flag to prevent feedback loops
-    isUnifiedLoadingActive.current = true;
-    
     // Set unified loading state to true for all widgets
     setIsLoadingAllMetaWidgets(true);
     
-    try {
-      // Fetch ALL data in parallel - metrics AND campaigns
-      await Promise.all([
-        fetchAdSpendDirectly(),
-        fetchRoasDirectly(),
-        fetchImpressionsDirectly(),
-        fetchClicksDirectly(),
-        fetchPurchaseValueDirectly(),
-        fetchResultsDirectly(),
-        fetchCostPerResultDirectly(),
-        fetchCostPerClickDirectly(),
-        fetchCtrDirectly(),
-        fetchReachDirectly(), // Ensure this is called
-        fetchLinkClicksDirectly(),
-        fetchBudgetDirectly(), // Ensure this is also called for consistency
-        fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
-      ]);
-      
-      // Update last refresh timestamp
-      window._lastMetaRefresh = Date.now();
-      
-    } catch (error) {
-      console.error("[MetaTab] Error during unified loading:", error);
-    } finally {
-      // Clear unified loading state when ALL data is loaded
-      setIsLoadingAllMetaWidgets(false);
-      isUnifiedLoadingActive.current = false;
-      console.log("[MetaTab] Unified loading completed - all Meta widgets AND campaigns loaded");
-    }
+    // Fetch ALL data in parallel - metrics AND campaigns
+    await Promise.all([
+      fetchAdSpendDirectly(),
+      fetchRoasDirectly(),
+      fetchImpressionsDirectly(),
+      fetchClicksDirectly(),
+      fetchPurchaseValueDirectly(),
+      fetchResultsDirectly(),
+      fetchCostPerResultDirectly(),
+      fetchCostPerClickDirectly(),
+      fetchCtrDirectly(),
+      fetchReachDirectly(), // Ensure this is called
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly(), // Ensure this is also called for consistency
+      fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
+    ]);
+    
+    // Clear unified loading state when ALL data is loaded
+    setIsLoadingAllMetaWidgets(false);
+    console.log("[MetaTab] Unified loading completed - all Meta widgets AND campaigns loaded");
   }
 
   // Update the useEffect to call the new fetch functions
@@ -3575,26 +3524,6 @@ Try creating at least one active campaign in Meta Ads Manager.
     console.log("Manually refreshing all metrics directly")
     await fetchAllMetricsDirectly()
   }
-
-  // Add a ref to track if we're currently in unified loading to prevent feedback loops
-  const isUnifiedLoadingActive = useRef(false);
-
-  // Helper function to check if we should respond to refresh events
-  const shouldRespondToRefreshEvent = (eventDetail: any) => {
-    // Don't respond to our own events during unified loading
-    if (isUnifiedLoadingActive.current && eventDetail?.source?.includes('MetaTab')) {
-      console.log("[MetaTab] Ignoring self-triggered refresh event during unified loading");
-      return false;
-    }
-    
-    // Don't respond if we just completed unified loading recently (within 2 seconds)
-    if (Date.now() - (window._lastMetaRefresh || 0) < 2000) {
-      console.log("[MetaTab] Ignoring refresh event - recently completed unified loading");
-      return false;
-    }
-    
-    return true;
-  };
 
   // Add a refresh timer state
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
@@ -3737,21 +3666,30 @@ Try creating at least one active campaign in Meta Ads Manager.
 
   // Add a listener for the metaDataRefreshed event from the dashboard
   useEffect(() => {
-    // Define the event handler with feedback loop prevention
+    // Define the event handler
     const handleMetaDataRefreshed = (event: CustomEvent) => {
-      console.log(`[MetaTab] Received metaDataRefreshed event`, event.detail);
-      
-      if (!shouldRespondToRefreshEvent(event.detail)) {
-        return;
-      }
-      
+      // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
+        console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
+
+        // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicate events
+        if (hasRecentlyRefreshed(2000)) {
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - recently refreshed");
+          return;
+        }
+
+        // **COORDINATION CHECK**: Skip if there's already a fetch in progress
+        if (isMetaFetchInProgress()) {
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - fetch already in progress");
+          return;
+        }
+        
+        // If forceRefresh is set to true in the event, force a full refresh
         if (event.detail?.forceRefresh) {
           console.log("Force refresh requested, fetching latest campaigns data");
-          fetchCampaigns(true);
-        } else {
-          console.log("Refresh requested, refreshing campaigns");
-          fetchCampaigns(false);
+          
+          // Force a fetch from the API to get the most up-to-date data
+          fetchCampaigns(true); // Pass true to force refresh
         }
         
         // Always refresh the metrics display
@@ -3760,7 +3698,9 @@ Try creating at least one active campaign in Meta Ads Manager.
         // If the event indicates data was backfilled, also trigger a full data reload for the tab
         if (event.detail?.backfilled === true) {
           console.log("[MetaTab] Backfill event detected, forcing full data reload.");
+          // Ensure fetchMetaData is called to reload metrics for the current view
           fetchMetaData(); 
+          // And ensure campaigns are also re-fetched with fresh data
           fetchCampaigns(true);
         }
       }
@@ -3773,7 +3713,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => {
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     };
-  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly, shouldRespondToRefreshEvent]);
+  }, [brandId, fetchCampaigns, fetchMetaData, fetchAllMetricsDirectly]); // Added fetchMetaData and fetchAllMetricsDirectly to dependencies
 
   // Function to manually sync Meta insights data
   const syncMetaInsights = async () => {
@@ -3833,8 +3773,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             brandId, 
             timestamp: Date.now(),
             forceRefresh: true,
-            syncedRecords: result.count || 0,
-            source: 'MetaTab-syncMetaInsights'
+            syncedRecords: result.count || 0
           }
         }));
       } else {
@@ -3982,8 +3921,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           brandId, 
           timestamp: Date.now(),
           forceRefresh: true,
-          backfilledDates: [yesterdayStr, todayStr],
-          source: 'MetaTab-syncLast2Days'
+          backfilledDates: [yesterdayStr, todayStr]
         }
       }));
 
@@ -4048,8 +3986,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           brandId, 
           timestamp: Date.now(),
           forceRefresh: true,
-          backfilledDates: [todayStr],
-          source: 'MetaTab-syncTodayData'
+          backfilledDates: [todayStr]
         }
       }));
 
@@ -4934,54 +4871,37 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [isRefreshingData]); // Only trigger on refresh flag changes
 
-  // Add a ref to track if we're currently in unified loading to prevent feedback loops
-  const isUnifiedLoadingActive = useRef(false);
-
-  // Helper function to check if we should respond to refresh events
-  const shouldRespondToRefreshEvent = (eventDetail: any) => {
-    // Don't respond to our own events during unified loading
-    if (isUnifiedLoadingActive.current && eventDetail?.source?.includes('MetaTab')) {
-      console.log("[MetaTab] Ignoring self-triggered refresh event during unified loading");
-      return false;
-    }
-    
-    // Don't respond if we just completed unified loading recently (within 2 seconds)
-    if (Date.now() - (window._lastMetaRefresh || 0) < 2000) {
-      console.log("[MetaTab] Ignoring refresh event - recently completed unified loading");
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Listen for global refresh events from other components
+  // Add a listener for the targeted meta-tab-activated event
   useEffect(() => {
-    const handleMetaDataRefreshed = (event: CustomEvent) => {
-      console.log(`[MetaTab] Received metaDataRefreshed event`, event.detail);
-      
-      if (!shouldRespondToRefreshEvent(event.detail)) {
-        return;
-      }
-      
+    const handleMetaTabActivated = (event: CustomEvent) => {
       if (event.detail?.brandId === brandId) {
-        if (event.detail?.forceRefresh) {
-          console.log("Force refresh requested, fetching latest campaigns data");
-          fetchCampaigns(true);
+        console.log("[MetaTab] Received meta-tab-activated event", event.detail);
+
+        // **COORDINATION CHECK**: Skip if there's already a fetch in progress
+        if (isMetaFetchInProgress()) {
+          console.log("[MetaTab] ⚠️ Skipping meta-tab-activated - fetch already in progress");
+          return;
+        }
+
+        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
+        
+        // Use the same sync function as the manual sync button for consistency
+        if (dateRange?.from && dateRange?.to) {
+          syncMetaInsights();
         } else {
-          console.log("Refresh requested, refreshing campaigns");
-          fetchCampaigns(false);
+          console.log("[MetaTab] Skipping sync - no date range available");
         }
       }
     };
 
     // Add the event listener
-    window.addEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+    window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
 
     // Cleanup on component unmount
     return () => {
-      window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
+      window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
     };
-  }, [brandId, shouldRespondToRefreshEvent]);
+  }, [brandId, dateRange, syncMetaInsights]);
 
   return (
     <TooltipProvider>
