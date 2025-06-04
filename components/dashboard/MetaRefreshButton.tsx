@@ -8,7 +8,7 @@ declare global {
   interface Window {
     _metaFetchLock?: boolean
     _activeFetchIds?: Set<number | string>
-    _refreshMetaData?: (triggerBrandId: string) => Promise<boolean>
+    _refreshMetaData?: () => Promise<boolean>
   }
 }
 
@@ -200,16 +200,16 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
           // Instead of duplicating the API calls here, use the MetaTab's unified refresh function
           // This ensures the global refresh button uses the same coordinated loading approach
           if (typeof window !== 'undefined' && window._refreshMetaData) {
-            console.log(`[GlobalRefresh] 🚀 Using unified Meta refresh function for coordinated loading`)
+            console.log(`[GlobalRefresh] 🚀 Using MetaTab's refreshAllMetaData function for unified loading`)
             
-            // Call the unified refresh function (either HomeTab's or MetaTab's) which handles:
+            // Call the MetaTab's unified refresh function which handles:
             // 1. Unified loading state coordination
             // 2. Hard pull from Meta API
             // 3. Campaign data refresh  
             // 4. Ad set budget refresh
             // 5. Frontend state updates with coordinated loading
             try {
-              const success = await window._refreshMetaData(triggerBrandId)
+              const success = await window._refreshMetaData()
               if (success) {
                 console.log(`[GlobalRefresh] ✅ Meta unified refresh completed successfully`)
               } else {
@@ -220,8 +220,8 @@ export function GlobalRefreshButton({ brandId, activePlatforms, onRefreshStart, 
               throw error
             }
           } else {
-            // Fallback to original approach if unified refresh function is not available
-            console.warn(`[GlobalRefresh] ⚠️ Unified Meta refresh not available, falling back to manual API calls`)
+            // Fallback to original approach if MetaTab's refresh function is not available
+            console.warn(`[GlobalRefresh] ⚠️ MetaTab's unified refresh not available, falling back to manual API calls`)
             
           // Step 1: Fetch fresh data from Meta API and update database
           const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {

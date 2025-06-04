@@ -1086,73 +1086,72 @@ export function HomeTab({
   const refreshAllMetaData = async (triggerBrandId: string): Promise<boolean> => {
     console.log(`[HomeTab] 🔄 Global refresh triggered for brandId: ${triggerBrandId}`);
     
-    // Skip if a fetch is already in progress
     if (isMetaFetchInProgress()) {
       console.log(`[HomeTab] ⚠️ Global refresh skipped - fetch already in progress`);
       return false;
     }
     
-    // Generate a unique request ID for this refresh  
     const refreshId = `global-refresh-${Date.now()}`;
     
-    // Acquire a global lock for this refresh operation
     if (!acquireMetaFetchLock(refreshId)) {
       console.log(`[HomeTab] ⛔ Failed to acquire global lock for refresh`);
       return false;
     }
 
-    // CRUCIAL: Set unified loading state for coordinated loading (like MetaTab and initial page load)
     setIsLoadingMetaData(true);
     setIsLoadingAllMetaWidgets(true); 
     setIsLoadingCampaigns(true);
     
-    // Add loading toast for visual feedback during hard refresh
     const loadingToastId = `meta-refresh-${refreshId}`;
-    toast.loading("Refreshing Meta data...", { id: loadingToastId, duration: 15000 });
+    toast.loading("Refreshing Meta data...", { id: loadingToastId, duration: 25000 }); // Increased duration
     
+    let syncSuccessful = true; // Track if critical syncs were okay
+
     try {
       console.log(`[HomeTab] 🚀 Starting global refresh with unified loading (${refreshId})`);
       
       // Step 1: Fetch fresh data from Meta API and update database
       console.log(`[HomeTab] 🚀 Global Step 1: Meta API sync (${refreshId})`);
-      const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Refresh-ID': refreshId
+      try {
+        const syncResponse = await fetch(`/api/meta/sync?brandId=${triggerBrandId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Refresh-ID': refreshId }
+        });
+        if (!syncResponse.ok) {
+          console.error(`[HomeTab] CRITICAL FAILURE: Meta API sync failed: ${syncResponse.status} (${refreshId})`);
+          toast.error("Meta API sync failed. Data might be stale.", { id: loadingToastId });
+          syncSuccessful = false; // Mark sync as failed
+        } else {
+          console.log(`[HomeTab] ✅ Global Step 1 completed: Meta API sync (${refreshId})`);
         }
-      });
-      
-      if (!syncResponse.ok) {
-        console.error(`[HomeTab] Failed to sync Meta data from API: ${syncResponse.status}`);
-        toast.error("Failed to refresh Meta data from API", { id: loadingToastId });
-        return false;
+      } catch (error) {
+        console.error(`[HomeTab] CRITICAL FAILURE: Meta API sync error:`, error, `(${refreshId})`);
+        toast.error("Meta API sync error. Data might be stale.", { id: loadingToastId });
+        syncSuccessful = false; // Mark sync as failed
       }
       
-      console.log(`[HomeTab] ✅ Global Step 1 completed: Meta API sync (${refreshId})`);
-      
-      // Step 2: Refresh campaigns with latest data
+      // Step 2: Refresh campaigns with latest data (proceed even if sync failed)
       console.log(`[HomeTab] 🚀 Global Step 2: Campaign refresh (${refreshId})`);
-      await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'X-Refresh-ID': refreshId
+      try {
+        const campaignResponse = await fetch(`/api/meta/campaigns?brandId=${triggerBrandId}&forceRefresh=true`, {
+          headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
+        });
+        if (!campaignResponse.ok) {
+          console.warn(`[HomeTab] ⚠️ Campaign refresh failed but continuing (${refreshId}): ${campaignResponse.status}`);
+        } else {
+          console.log(`[HomeTab] ✅ Global Step 2 completed: Campaign data refreshed (${refreshId})`);
         }
-      });
+      } catch (error) {
+         console.warn(`[HomeTab] ⚠️ Campaign refresh error but continuing (${refreshId}):`, error);
+      }
       
-      console.log(`[HomeTab] ✅ Global Step 2 completed: Campaign data refreshed (${refreshId})`);
-      
-      // Step 3: Refresh ad sets data
+      // Step 3: Refresh ad sets data (proceed even if sync/campaigns failed)
       console.log(`[HomeTab] 🚀 Global Step 3: Ad set budget refresh (${refreshId})`);
       try {
         const budgetResponse = await fetch(`/api/meta/campaign-budgets?brandId=${triggerBrandId}&forceRefresh=true`, {
           method: 'GET',
-          headers: { 
-            'Cache-Control': 'no-cache', 
-            'X-Refresh-ID': refreshId 
-          }
+          headers: { 'Cache-Control': 'no-cache', 'X-Refresh-ID': refreshId }
         });
-        
         if (budgetResponse.ok) {
           console.log(`[HomeTab] ✅ Global Step 3 completed: Ad set budgets refreshed (${refreshId})`);
         } else {
@@ -1162,49 +1161,48 @@ export function HomeTab({
         console.warn(`[HomeTab] ⚠️ Global Step 3 error: Ad set budget refresh failed (${refreshId}):`, budgetError);
       }
       
-      // Step 4: Fetch refreshed metrics for display (coordinated fetch)
-      console.log(`[HomeTab] 🚀 Global Step 4: Fetching refreshed metrics (${refreshId})`);
+      // Step 4: ALWAYS Fetch refreshed metrics for display from DB
+      console.log(`[HomeTab] 🚀 Global Step 4: Fetching refreshed metrics from DB (${refreshId})`);
+      let fetchMetricsSuccess = false;
+      try {
+        await Promise.all([
+          fetchMetaDataFromDatabase(refreshId).then(() => { fetchMetricsSuccess = true; }),
+          widgets.some(widget => widget.id === 'meta-campaigns') ? fetchCampaigns(true, true) : Promise.resolve()
+        ]);
+        console.log(`[HomeTab] ✅ Global Step 4 completed: Attempted to fetch metrics from DB (${refreshId})`);
+      } catch (fetchError) {
+        console.error(`[HomeTab] Error fetching metrics from DB (${refreshId}):`, fetchError);
+        toast.error("Failed to fetch updated metrics from database.", { id: loadingToastId });
+        // fetchMetricsSuccess remains false
+      }
       
-      // Fetch metrics and campaigns in parallel for consistent loading
-      await Promise.all([
-        fetchMetaDataFromDatabase(refreshId),
-        widgets.some(widget => widget.id === 'meta-campaigns') ? fetchCampaigns(true, true) : Promise.resolve()
-      ]);
-      
-      console.log(`[HomeTab] ✅ Global Step 4 completed: All metrics refreshed (${refreshId})`);
-      
-      // Dispatch event to notify other components
+      // Dispatch event regardless of sync success, so Reach/Budget widgets try to update from DB
       window.dispatchEvent(new CustomEvent('metaDataRefreshed', {
-        detail: {
-          brandId: triggerBrandId,
-          timestamp: Date.now(),
-          forceRefresh: true,
-          source: 'HomeTabGlobalRefresh',
-          refreshId
-        }
+        detail: { brandId: triggerBrandId, timestamp: Date.now(), forceRefresh: true, source: 'HomeTabGlobalRefresh', refreshId }
       }));
       
-      // Success notification
-      toast.success("Meta data refreshed successfully!", { id: loadingToastId });
+      if (syncSuccessful && fetchMetricsSuccess) {
+        toast.success("Meta data refreshed successfully!", { id: loadingToastId });
+      } else if (fetchMetricsSuccess) {
+        toast.warning("Meta data refreshed from local records, but API sync had issues.", { id: loadingToastId, duration: 10000 });
+      } else {
+        // This case means even fetching from DB failed.
+        toast.error("Failed to refresh Meta data. Please try again.", {id: loadingToastId });
+      }
+      
       window._lastMetaRefresh = Date.now();
+      console.log(`[HomeTab] ✅ Global refresh process completed (${refreshId}). Sync success: ${syncSuccessful}, Fetch metrics success: ${fetchMetricsSuccess}`);
+      return fetchMetricsSuccess; // Overall success depends on getting data into the UI
       
-      console.log(`[HomeTab] ✅ Global refresh completed successfully (${refreshId})`);
-      return true;
-      
-    } catch (error) {
-      console.error(`[HomeTab] Error during global refresh (${refreshId}):`, error);
-      toast.error("Failed to refresh Meta data", { 
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        id: loadingToastId 
-      });
+    } catch (error) { // Catch unexpected errors in the overall try block
+      console.error(`[HomeTab] UNEXPECTED Error during global refresh (${refreshId}):`, error);
+      toast.error("An unexpected error occurred during Meta refresh.", { id: loadingToastId });
       return false;
     } finally {
-      // CRUCIAL: Clear ALL loading states simultaneously for unified completion
       setIsLoadingMetaData(false);
       setIsLoadingAllMetaWidgets(false);
       setIsLoadingCampaigns(false);
       releaseMetaFetchLock(refreshId);
-      
       console.log(`[HomeTab] 🏁 Global refresh loading states cleared (${refreshId})`);
     }
   };
