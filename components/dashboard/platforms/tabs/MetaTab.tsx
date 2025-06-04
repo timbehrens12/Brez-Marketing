@@ -119,6 +119,7 @@ declare global {
     _lastMetaRefresh?: number;
     _metaApiRequests?: number;
     _canMakeMetaApiRequest?: boolean;
+    _metaTabSwitchInProgress?: boolean;
   }
 }
 

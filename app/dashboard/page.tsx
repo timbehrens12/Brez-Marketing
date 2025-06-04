@@ -106,6 +106,9 @@ declare global {
     _blockMetaApiCalls?: boolean;
     _disableAutoMetaFetch?: boolean;
     _initialLoadTimeoutId?: NodeJS.Timeout;
+    _metaTabSwitchInProgress?: boolean;
+    _metaFetchLock?: boolean;
+    _activeFetchIds?: Set<number | string>;
   }
 }
 
@@ -1137,10 +1140,9 @@ export default function DashboardPage() {
       });
     }
     
-    // Refresh data when switching between platform tabs (as requested by user)
-    // This keeps refresh when going from one tab to another within the page
+    // IMPROVED: More targeted refresh logic to prevent overlapping fetches
     if (previousTab !== tab && selectedBrandId) {
-      console.log(`[Dashboard] Tab changed from ${previousTab} to ${tab} - triggering refresh for internal tab navigation`);
+      console.log(`[Dashboard] Tab changed from ${previousTab} to ${tab} - triggering targeted refresh`);
       
       // Refresh when switching to Shopify tab
       if (tab === "shopify" && activePlatforms.shopify) {
@@ -1164,17 +1166,37 @@ export default function DashboardPage() {
         }, 100);
       }
       
-      // Refresh when switching to Meta tab
+      // FIXED: Use coordinated loading instead of generic page-refresh for Meta tab
       if (tab === "meta" && activePlatforms.meta) {
+        // Instead of dispatching page-refresh which triggers multiple overlapping fetches,
+        // use a more targeted approach that works with the consolidated useEffect system
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('page-refresh', { 
-            detail: { 
-              brandId: selectedBrandId, 
-              timestamp: Date.now(), 
-              forceRefresh: true,
-              source: 'internal-tab-switch'
-            }
-          }));
+          // First, set a flag to indicate this is a tab switch (not a regular refresh)
+          if (typeof window !== 'undefined') {
+            window._metaTabSwitchInProgress = true;
+            
+            // Clear any existing fetch locks to prevent deadlocks
+            window._metaFetchLock = false;
+            window._activeFetchIds?.clear();
+            
+            // Dispatch a more specific event that the MetaTab can handle without overlaps
+            window.dispatchEvent(new CustomEvent('meta-tab-activated', { 
+              detail: { 
+                brandId: selectedBrandId, 
+                timestamp: Date.now(), 
+                source: 'tab-switch',
+                dateRange: {
+                  from: dateRange.from?.toISOString(),
+                  to: dateRange.to?.toISOString()
+                }
+              }
+            }));
+            
+            // Clear the flag after a brief delay
+            setTimeout(() => {
+              window._metaTabSwitchInProgress = false;
+            }, 2000);
+          }
         }, 100);
       }
       
