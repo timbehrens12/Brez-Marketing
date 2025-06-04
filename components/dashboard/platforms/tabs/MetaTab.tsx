@@ -4340,7 +4340,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Expose the refresh function to the window for external access
     if (typeof window !== 'undefined') {
       // @ts-ignore - Add the refresh function to the window object
-      window._refreshMetaData = () => refreshAllMetaData(brandId);
+      window._refreshMetaData = (triggerBrandId: string) => refreshAllMetaData(triggerBrandId);
     }
     
     // Clean up the event listener when the component unmounts
