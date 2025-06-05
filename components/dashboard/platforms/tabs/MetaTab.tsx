@@ -4656,18 +4656,20 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSmartManualRefresh]);
           
-  // Add a specific effect to refresh data when the component is mounted/visited - SMART REFRESH ON MOUNT ONLY
+  // Auto-refresh effect for initial mount and navigation - like HomeTab
   useEffect(() => {
-    // Only run this effect once when the component first mounts with a brandId
-    if (!brandId) return;
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MetaTab] Skipping auto-refresh: Missing brandId or dateRange.");
+      return;
+    }
     
-    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
+    console.log("[MetaTab] Component mounted/navigated - triggering auto-refresh like HomeTab");
     
     // Clear any API blocking flags that might be set to ensure we can fetch data
     if (window._blockMetaApiCalls !== undefined) {
       window._blockMetaApiCalls = false;
       console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
-      }
+    }
     
     // Clear any auto-fetch blocking flags
     if (window._disableAutoMetaFetch !== undefined) {
@@ -4675,23 +4677,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
     }
     
-    // Execute the refresh with a small delay to ensure component is fully mounted
-    const timeoutId = setTimeout(() => {
-      if (!refreshCooldown) {
-        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
-        
-        // Call the EXACT same function that the sync button onClick uses
-        // This ensures 100% identical behavior and fetches fresh data from Meta API
-        syncMetaInsights();
-      }
-    }, 100);
+    // Use the same sync logic as HomeTab to ensure fresh data
+    console.log("[MetaTab] Calling syncMetaInsights for fresh data - same as HomeTab auto-refresh");
+    syncMetaInsights();
     
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-    
-    // IMPORTANT: Only depend on brandId, NOT on handleSmartManualRefresh or refreshCooldown
-    // This ensures the effect only runs once when brandId is first available
-  }, [brandId]);
+  }, [brandId, dateRange?.from, dateRange?.to]); // Depend on brandId and dateRange like HomeTab
   
   // Add a new function to sync all Meta data from the beginning
   const syncAllTimeMetaData = async () => {
@@ -4909,27 +4899,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
     };
   }, [brandId, dateRange, syncMetaInsights]);
-
-  // **NEW**: Add automatic data loading on mount and when dependencies change (like HomeTab)
-  useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[MetaTab] useEffect detected change in brandId or dateRange. Loading fresh Meta data.");
-      
-      // Check if already fetching to prevent duplicate calls
-      if (isMetaFetchInProgress()) {
-        console.log("[MetaTab] Skipping automatic refresh - fetch already in progress");
-        return;
-      }
-      
-      // Use the same sync function for consistency with manual refreshes
-      syncMetaInsights();
-    } else {
-      console.log("[MetaTab] Skipping data fetch in useEffect: Missing brandId or full dateRange.");
-      // Clear loading states when prerequisites aren't met
-      setIsLoadingAllMetaWidgets(false);
-      setLoading(false);
-    }
-  }, [brandId, dateRange?.from, dateRange?.to]); // Removed syncMetaInsights dependency to fix linter error
 
   return (
     <TooltipProvider>
