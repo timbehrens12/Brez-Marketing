@@ -2821,36 +2821,20 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
-        // Ensure we set 0 for any null/undefined/NaN values to prevent fake data display
-        const currentValue = (typeof data.value === 'number' && !isNaN(data.value)) ? data.value : 0;
-        const previousValue = (typeof prevData.value === 'number' && !isNaN(prevData.value)) ? prevData.value : 0;
-        
         setRoasData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue}`)
+        console.log(`ROAS data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching ROAS data:", data.error || prevData.error)
-        // On error, set explicit 0 values instead of keeping previous data
-        setRoasData({
-          value: 0,
-          previousValue: 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
+        setRoasData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error("Error in ROAS fetch:", error)
-      // On error, set explicit 0 values to prevent fake data display
-      setRoasData({
-        value: 0,
-        previousValue: 0,
-        isLoading: false,
-        lastUpdated: new Date()
-      })
+      setRoasData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3274,14 +3258,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       // END DETAILED LOGGING
       
       if (!data.error && !prevData.error) {
-        // Ensure we have valid numeric values, default to 0 to prevent fake data display
-        const currentCtrValue = (typeof data.value === 'number' && !isNaN(data.value)) ? data.value : 0;
-        const previousCtrValue = (typeof prevData.value === 'number' && !isNaN(prevData.value)) ? prevData.value : 0;
-        
         // Convert percentage values to decimals for proper formatting
         // API returns percentage values (e.g., 16.67), but MetricCard expects decimals (e.g., 0.1667)
-        const currentCtrDecimal = currentCtrValue / 100;
-        const previousCtrDecimal = previousCtrValue / 100;
+        const currentCtrDecimal = (data.value || 0) / 100;
+        const previousCtrDecimal = (prevData.value || 0) / 100;
         
         setCtrData({
           value: currentCtrDecimal,
@@ -3289,26 +3269,14 @@ Try creating at least one active campaign in Meta Ads Manager.
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`CTR data fetched directly: ${currentCtrValue}% (${currentCtrDecimal} decimal), Previous: ${previousCtrValue}% (${previousCtrDecimal} decimal)`)
+        console.log(`CTR data fetched directly: ${data.value}% (${currentCtrDecimal} decimal), Previous: ${prevData.value}% (${previousCtrDecimal} decimal)`)
       } else {
         console.error("Error fetching CTR data:", data.error || prevData.error)
-        // On error, set explicit 0 values instead of keeping previous data
-        setCtrData({
-          value: 0,
-          previousValue: 0,
-          isLoading: false,
-          lastUpdated: new Date()
-        })
+        setCtrData(prev => ({ ...prev, isLoading: false }))
       }
     } catch (error) {
       console.error("Error in CTR fetch:", error)
-      // On error, set explicit 0 values to prevent fake data display
-      setCtrData({
-        value: 0,
-        previousValue: 0,
-        isLoading: false,
-        lastUpdated: new Date()
-      })
+      setCtrData(prev => ({ ...prev, isLoading: false }))
     }
   }
   
@@ -3532,38 +3500,11 @@ Try creating at least one active campaign in Meta Ads Manager.
   useEffect(() => {
     if (dateRange && dateRange.from && dateRange.to && brandId) {
       console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
-      
-      // IMPORTANT: Reset all metric states to 0 when date range changes to prevent stale data
-      setRoasData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setCtrData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setAdSpendData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setImpressionsData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setClicksData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setPurchaseValueData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setResultsData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setCostPerResultData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setCostPerClickData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setReachData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setLinkClicksData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      setBudgetData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
-      
       setIsLoadingAllMetaWidgets(true);
       fetchAllMetricsDirectly() // This function will clear the loading state when complete
     } else {
-      // If no valid dateRange or brandId, clear loading state and reset all data to 0
+      // If no valid dateRange or brandId, clear loading state
       setIsLoadingAllMetaWidgets(false);
-      setRoasData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setCtrData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setAdSpendData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setImpressionsData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setClicksData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setPurchaseValueData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setResultsData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setCostPerResultData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setCostPerClickData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setReachData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setLinkClicksData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
-      setBudgetData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
     }
   }, [dateRange, brandId])
 
@@ -4632,28 +4573,16 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastNavigationRef.current = pathname;
   }, [pathname]);
 
-  // Page visibility detection effect - MODIFIED TO AUTO-REFRESH LIKE HOMETAB
+  // Page visibility detection effect (NO AUTO-REFRESH)
   useEffect(() => {
     const handleVisibilityChange = () => {
       const currentVisibility = document.visibilityState;
       
+      // Just log visibility changes, don't auto-refresh
       if (currentVisibility === 'visible' && lastVisibilityRef.current === 'hidden') {
-        console.log('[MetaTab] Page became visible - triggering auto-refresh like HomeTab');
-        
-        // Clear any potential blocking flags
-        if (typeof window !== 'undefined') {
-          window._blockMetaApiCalls = false;
-          window._disableAutoMetaFetch = false;
-          console.log("[MetaTab] Cleared blocking flags on visibility change");
-        }
-        
-        // Trigger refresh if we have brandId and dateRange (like HomeTab does)
-        if (brandId && dateRange?.from && dateRange?.to) {
-          console.log("[MetaTab] Auto-refreshing on visibility change like HomeTab");
-          syncMetaInsights();
-        }
+        console.log('[MetaTab] Page became visible - timer will continue showing time since last refresh');
       } else if (currentVisibility === 'hidden') {
-        console.log('[MetaTab] Page became hidden');
+        console.log('[MetaTab] Page became hidden - timer will continue in background');
       }
       
       lastVisibilityRef.current = currentVisibility;
@@ -4661,7 +4590,7 @@ Try creating at least one active campaign in Meta Ads Manager.
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [brandId, dateRange, syncMetaInsights]); // Added dependencies to enable refresh
+  }, []);
   
   // Focus detection (NO AUTO-REFRESH)
   useEffect(() => {
@@ -4727,8 +4656,42 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSmartManualRefresh]);
           
-  // REMOVED: This mount effect is now replaced by the main auto-refresh useEffect above
-  // The main useEffect handles all refresh scenarios including mount, brandId changes, and dateRange changes
+  // Add a specific effect to refresh data when the component is mounted/visited - SMART REFRESH ON MOUNT ONLY
+  useEffect(() => {
+    // Only run this effect once when the component first mounts with a brandId
+    if (!brandId) return;
+    
+    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
+    
+    // Clear any API blocking flags that might be set to ensure we can fetch data
+    if (window._blockMetaApiCalls !== undefined) {
+      window._blockMetaApiCalls = false;
+      console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
+      }
+    
+    // Clear any auto-fetch blocking flags
+    if (window._disableAutoMetaFetch !== undefined) {
+      window._disableAutoMetaFetch = false;
+      console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
+    }
+    
+    // Execute the refresh with a small delay to ensure component is fully mounted
+    const timeoutId = setTimeout(() => {
+      if (!refreshCooldown) {
+        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
+        
+        // Call the EXACT same function that the sync button onClick uses
+        // This ensures 100% identical behavior and fetches fresh data from Meta API
+        syncMetaInsights();
+      }
+    }, 100);
+    
+    // Cleanup timeout on unmount
+    return () => clearTimeout(timeoutId);
+    
+    // IMPORTANT: Only depend on brandId, NOT on handleSmartManualRefresh or refreshCooldown
+    // This ensures the effect only runs once when brandId is first available
+  }, [brandId]);
   
   // Add a new function to sync all Meta data from the beginning
   const syncAllTimeMetaData = async () => {
@@ -4816,8 +4779,9 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Add a ref to prevent duplicate fetches
   const isFetchingRef = useRef(false);
+  const lastFetchParamsRef = useRef<string>('');
   
-  // Single useEffect to handle all data fetching scenarios - MODIFIED TO AUTO-REFRESH LIKE HOMETAB
+  // Single useEffect to handle all data fetching scenarios
   useEffect(() => {
     // Early returns for invalid states
     if (!brandId || !dateRange?.from || !dateRange?.to) {
@@ -4832,29 +4796,37 @@ Try creating at least one active campaign in Meta Ads Manager.
       return;
     }
     
-    console.log(`[MetaTab] 🚀 Auto-refreshing Meta data (like HomeTab) for brandId: ${brandId}`);
+    // Create fetch params to detect if this is a duplicate request
+    const fetchParams = `${brandId}-${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
+    if (lastFetchParamsRef.current === fetchParams && initialLoadComplete.current) {
+      console.log('[MetaTab] Skipping fetch: same parameters as last request');
+      return;
+    }
     
-    // Set fetching flag
+    console.log(`[MetaTab] 🚀 Starting unified data fetch for: ${fetchParams}`);
+    
+    // Set fetching flag and update last fetch params
     isFetchingRef.current = true;
+    lastFetchParamsRef.current = fetchParams;
     
-    // Use syncMetaInsights for fresh data like HomeTab does
-    const performRefresh = async () => {
+    // Use the existing fetchAllMetricsDirectly function which handles everything
+    const performFetch = async () => {
       try {
         setLoading(true);
         setIsLoadingAllMetaWidgets(true);
         
-        // Use syncMetaInsights to get fresh data from Meta API and database
-        await syncMetaInsights();
+        // Call the consolidated fetch function
+        await fetchAllMetricsDirectly();
         
         // Mark initial load as complete
         if (!initialLoadComplete.current) {
           initialLoadComplete.current = true;
         }
         
-        console.log('[MetaTab] ✅ Auto-refresh completed successfully (like HomeTab)');
+        console.log('[MetaTab] ✅ Unified data fetch completed successfully');
         
       } catch (error) {
-        console.error('[MetaTab] ❌ Error in auto-refresh:', error);
+        console.error('[MetaTab] ❌ Error in unified data fetch:', error);
         setError(error instanceof Error ? error.message : "Failed to load Meta data");
       } finally {
         setLoading(false);
@@ -4863,13 +4835,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
     
-    performRefresh();
+    performFetch();
     
     // Cleanup function
     return () => {
       // Don't reset flags in cleanup to avoid race conditions
     };
-  }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]); // Added syncMetaInsights dependency
+  }, [brandId, dateRange?.from, dateRange?.to]); // Only depend on essential params
   
   // Separate useEffect for handling manual refreshes (when user clicks refresh button)
   useEffect(() => {
@@ -4897,19 +4869,8 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a ref to track tab-switch-initiated syncs
   const isTabSwitchSyncRef = useRef(false);
 
-  // Listen for global refresh events (like HomeTab does)
+  // Add a listener for the targeted meta-tab-activated event
   useEffect(() => {
-    const handleGlobalRefresh = (event: CustomEvent) => {
-      console.log("[MetaTab] Received global refresh event:", event.detail);
-      if (event.detail?.brandId === brandId) {
-        console.log("[MetaTab] Global refresh event matches current brandId. Triggering refresh like HomeTab.");
-        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-        syncMetaInsights();
-      } else {
-        console.log("[MetaTab] Global refresh event not for this brand, skipping.");
-      }
-    };
-
     const handleMetaTabActivated = (event: CustomEvent) => {
       if (event.detail?.brandId === brandId) {
         console.log("[MetaTab] Received meta-tab-activated event", event.detail);
@@ -4940,19 +4901,12 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
-      window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-      window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
-    }
+    // Add the event listener
+    window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
 
     // Cleanup on component unmount
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
-        window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-        window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
-      }
+      window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
     };
   }, [brandId, dateRange, syncMetaInsights]);
 
