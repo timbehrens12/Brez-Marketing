@@ -4573,16 +4573,28 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastNavigationRef.current = pathname;
   }, [pathname]);
 
-  // Page visibility detection effect (NO AUTO-REFRESH)
+  // Page visibility detection effect - MODIFIED TO AUTO-REFRESH LIKE HOMETAB
   useEffect(() => {
     const handleVisibilityChange = () => {
       const currentVisibility = document.visibilityState;
       
-      // Just log visibility changes, don't auto-refresh
       if (currentVisibility === 'visible' && lastVisibilityRef.current === 'hidden') {
-        console.log('[MetaTab] Page became visible - timer will continue showing time since last refresh');
+        console.log('[MetaTab] Page became visible - triggering auto-refresh like HomeTab');
+        
+        // Clear any potential blocking flags
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+          console.log("[MetaTab] Cleared blocking flags on visibility change");
+        }
+        
+        // Trigger refresh if we have brandId and dateRange (like HomeTab does)
+        if (brandId && dateRange?.from && dateRange?.to) {
+          console.log("[MetaTab] Auto-refreshing on visibility change like HomeTab");
+          syncMetaInsights();
+        }
       } else if (currentVisibility === 'hidden') {
-        console.log('[MetaTab] Page became hidden - timer will continue in background');
+        console.log('[MetaTab] Page became hidden');
       }
       
       lastVisibilityRef.current = currentVisibility;
@@ -4590,7 +4602,7 @@ Try creating at least one active campaign in Meta Ads Manager.
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [brandId, dateRange, syncMetaInsights]); // Added dependencies to enable refresh
   
   // Focus detection (NO AUTO-REFRESH)
   useEffect(() => {
@@ -4656,42 +4668,8 @@ Try creating at least one active campaign in Meta Ads Manager.
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSmartManualRefresh]);
           
-  // Add a specific effect to refresh data when the component is mounted/visited - SMART REFRESH ON MOUNT ONLY
-  useEffect(() => {
-    // Only run this effect once when the component first mounts with a brandId
-    if (!brandId) return;
-    
-    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
-    
-    // Clear any API blocking flags that might be set to ensure we can fetch data
-    if (window._blockMetaApiCalls !== undefined) {
-      window._blockMetaApiCalls = false;
-      console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
-      }
-    
-    // Clear any auto-fetch blocking flags
-    if (window._disableAutoMetaFetch !== undefined) {
-      window._disableAutoMetaFetch = false;
-      console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
-    }
-    
-    // Execute the refresh with a small delay to ensure component is fully mounted
-    const timeoutId = setTimeout(() => {
-      if (!refreshCooldown) {
-        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
-        
-        // Call the EXACT same function that the sync button onClick uses
-        // This ensures 100% identical behavior and fetches fresh data from Meta API
-        syncMetaInsights();
-      }
-    }, 100);
-    
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-    
-    // IMPORTANT: Only depend on brandId, NOT on handleSmartManualRefresh or refreshCooldown
-    // This ensures the effect only runs once when brandId is first available
-  }, [brandId]);
+  // REMOVED: This mount effect is now replaced by the main auto-refresh useEffect above
+  // The main useEffect handles all refresh scenarios including mount, brandId changes, and dateRange changes
   
   // Add a new function to sync all Meta data from the beginning
   const syncAllTimeMetaData = async () => {
@@ -4779,9 +4757,8 @@ Try creating at least one active campaign in Meta Ads Manager.
   
   // Add a ref to prevent duplicate fetches
   const isFetchingRef = useRef(false);
-  const lastFetchParamsRef = useRef<string>('');
   
-  // Single useEffect to handle all data fetching scenarios
+  // Single useEffect to handle all data fetching scenarios - MODIFIED TO AUTO-REFRESH LIKE HOMETAB
   useEffect(() => {
     // Early returns for invalid states
     if (!brandId || !dateRange?.from || !dateRange?.to) {
@@ -4796,37 +4773,29 @@ Try creating at least one active campaign in Meta Ads Manager.
       return;
     }
     
-    // Create fetch params to detect if this is a duplicate request
-    const fetchParams = `${brandId}-${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
-    if (lastFetchParamsRef.current === fetchParams && initialLoadComplete.current) {
-      console.log('[MetaTab] Skipping fetch: same parameters as last request');
-      return;
-    }
+    console.log(`[MetaTab] 🚀 Auto-refreshing Meta data (like HomeTab) for brandId: ${brandId}`);
     
-    console.log(`[MetaTab] 🚀 Starting unified data fetch for: ${fetchParams}`);
-    
-    // Set fetching flag and update last fetch params
+    // Set fetching flag
     isFetchingRef.current = true;
-    lastFetchParamsRef.current = fetchParams;
     
-    // Use the existing fetchAllMetricsDirectly function which handles everything
-    const performFetch = async () => {
+    // Use syncMetaInsights for fresh data like HomeTab does
+    const performRefresh = async () => {
       try {
         setLoading(true);
         setIsLoadingAllMetaWidgets(true);
         
-        // Call the consolidated fetch function
-        await fetchAllMetricsDirectly();
+        // Use syncMetaInsights to get fresh data from Meta API and database
+        await syncMetaInsights();
         
         // Mark initial load as complete
         if (!initialLoadComplete.current) {
           initialLoadComplete.current = true;
         }
         
-        console.log('[MetaTab] ✅ Unified data fetch completed successfully');
+        console.log('[MetaTab] ✅ Auto-refresh completed successfully (like HomeTab)');
         
       } catch (error) {
-        console.error('[MetaTab] ❌ Error in unified data fetch:', error);
+        console.error('[MetaTab] ❌ Error in auto-refresh:', error);
         setError(error instanceof Error ? error.message : "Failed to load Meta data");
       } finally {
         setLoading(false);
@@ -4835,13 +4804,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
     
-    performFetch();
+    performRefresh();
     
     // Cleanup function
     return () => {
       // Don't reset flags in cleanup to avoid race conditions
     };
-  }, [brandId, dateRange?.from, dateRange?.to]); // Only depend on essential params
+  }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]); // Added syncMetaInsights dependency
   
   // Separate useEffect for handling manual refreshes (when user clicks refresh button)
   useEffect(() => {
@@ -4869,8 +4838,19 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a ref to track tab-switch-initiated syncs
   const isTabSwitchSyncRef = useRef(false);
 
-  // Add a listener for the targeted meta-tab-activated event
+  // Listen for global refresh events (like HomeTab does)
   useEffect(() => {
+    const handleGlobalRefresh = (event: CustomEvent) => {
+      console.log("[MetaTab] Received global refresh event:", event.detail);
+      if (event.detail?.brandId === brandId) {
+        console.log("[MetaTab] Global refresh event matches current brandId. Triggering refresh like HomeTab.");
+        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+        syncMetaInsights();
+      } else {
+        console.log("[MetaTab] Global refresh event not for this brand, skipping.");
+      }
+    };
+
     const handleMetaTabActivated = (event: CustomEvent) => {
       if (event.detail?.brandId === brandId) {
         console.log("[MetaTab] Received meta-tab-activated event", event.detail);
@@ -4901,12 +4881,19 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
 
-    // Add the event listener
-    window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
+      window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
+    }
 
     // Cleanup on component unmount
     return () => {
-      window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
+        window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+        window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
+      }
     };
   }, [brandId, dateRange, syncMetaInsights]);
 
