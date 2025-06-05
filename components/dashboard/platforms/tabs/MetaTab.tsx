@@ -3764,13 +3764,25 @@ Try creating at least one active campaign in Meta Ads Manager.
           duration: 5000
         });
         
-        // After successful sync, refresh the data
-        logger.info("[MetaTab] syncMetaInsights: Sync successful, triggering fetchMetaData to refresh display.");
-        await fetchMetaData(); // This will now manage unified loading for metrics and campaigns
+        // After successful sync, refresh all the data using fetchAllMetricsDirectly like HomeTab
+        console.log("[MetaTab] ✅ Meta insights synced successfully - synced " + (result.count || 0) + " records from Meta");
         
-        // NOTE: Removed metaDataRefreshed event dispatch here to prevent double refresh
-        // since fetchMetaData() now handles comprehensive data loading including campaigns
-        // and the reach/budget widgets update through prop changes
+        // Fetch all metrics and campaigns in parallel to ensure consistent loading
+        await Promise.all([
+          fetchAllMetricsDirectly(),
+          fetchCampaigns(true)
+        ]);
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            forceRefresh: true,
+            syncedRecords: result.count || 0,
+            source: 'MetaTabSync'
+          }
+        }));
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
       }
@@ -3781,10 +3793,22 @@ Try creating at least one active campaign in Meta Ads Manager.
         duration: 5000
       });
     } finally {
-      // Clear unified loading state when sync is complete
+      // Clear ALL Meta widget loading states at the same time for consistent loading - like HomeTab
       setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false);
-      console.log("[MetaTab] Sync with unified loading completed");
+      
+      // Also clear individual metric loading states to ensure no widgets stay stuck in loading
+      setAdSpendData(prev => ({ ...prev, isLoading: false }));
+      setRoasData(prev => ({ ...prev, isLoading: false }));
+      setImpressionsData(prev => ({ ...prev, isLoading: false }));
+      setClicksData(prev => ({ ...prev, isLoading: false }));
+      setPurchaseValueData(prev => ({ ...prev, isLoading: false }));
+      setResultsData(prev => ({ ...prev, isLoading: false }));
+      setCostPerResultData(prev => ({ ...prev, isLoading: false }));
+      setCostPerClickData(prev => ({ ...prev, isLoading: false }));
+      setCtrData(prev => ({ ...prev, isLoading: false }));
+      
+      console.log("[MetaTab] ✅ FULL Meta sync completed successfully - all loading states cleared");
     }
   };
 
@@ -4370,49 +4394,56 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Store previous date range for comparison
   const prevDateRangeRef = useRef<{ from?: Date; to?: Date } | undefined>(undefined);
 
-  // Update the useEffect hook that handles date range changes
+  // Main data loading effect - like HomeTab's unified approach
   useEffect(() => {
+    console.log("[MetaTab] Mount/Update Effect: brandId or dateRange changed. Brand: " + (!!brandId) + ", Dates: " + (!!dateRange?.from && !!dateRange?.to) + ", InitialLoadDone: " + (!!initialDataLoad));
+    
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MetaTab] Skipping data load: Missing brandId or dateRange");
+      return;
+    }
+
+    // Determine if dates have actually changed
     const currentFrom = dateRange?.from?.toISOString();
     const currentTo = dateRange?.to?.toISOString();
     const previousFrom = prevDateRangeRef.current?.from?.toISOString();
     const previousTo = prevDateRangeRef.current?.to?.toISOString();
-
-    // Check if the dates have actually changed
     const datesChanged = currentFrom !== previousFrom || currentTo !== previousTo;
 
-    if (datesChanged) {
-      logger.debug('[MetaTab] Date range actually changed:', 
-        `(${previousFrom?.split('T')[0]} - ${previousTo?.split('T')[0]})`, '->',
-        `(${currentFrom?.split('T')[0]} - ${currentTo?.split('T')[0]})`);
-
-      // Store the new date range as the previous one for the next render
-      // Make sure to store a plain object or the relevant date parts if DateRange is complex
+    if (datesChanged || !prevDateRangeRef.current) {
+      console.log("[MetaTab] Change detected (brandId or dateRange), triggering data refresh.");
+      console.log("[MetaTab] 🔄 Date range changed (requestId: " + Date.now() + ")");
+      console.log("[MetaTab] From: " + (previousFrom?.split('T')[0] || 'none') + " → " + (currentFrom?.split('T')[0] || 'none'));
+      console.log("[MetaTab] To: " + (previousTo?.split('T')[0] || 'none') + " → " + (currentTo?.split('T')[0] || 'none'));
+      
+      // Store the new date range
       prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
 
-      // Fetch campaigns with the new date range (force refresh to get new data)
-      if (throttle('date-range-change-fetch', 2000)) {
-          fetchCampaigns(true);
-      } else {
-          logger.debug('[MetaTab] Throttled fetch due to rapid date change.')
-      }
+      console.log("Date range changed, fetching Meta data");
+      console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets");
+      console.log("[MetaTab] Starting unified loading for all Meta widgets AND campaigns");
 
+      // Set ALL Meta widget loading states to true for consistent loading - like HomeTab
+      setIsLoadingAllMetaWidgets(true);
+      
+      // Also set individual metric loading states 
+      setAdSpendData(prev => ({ ...prev, isLoading: true }));
+      setRoasData(prev => ({ ...prev, isLoading: true }));
+      setImpressionsData(prev => ({ ...prev, isLoading: true }));
+      setClicksData(prev => ({ ...prev, isLoading: true }));
+      setPurchaseValueData(prev => ({ ...prev, isLoading: true }));
+      setResultsData(prev => ({ ...prev, isLoading: true }));
+      setCostPerResultData(prev => ({ ...prev, isLoading: true }));
+      setCostPerClickData(prev => ({ ...prev, isLoading: true }));
+      setCtrData(prev => ({ ...prev, isLoading: true }));
+
+      // Use the database-based sync like HomeTab
+      syncMetaInsights();
     } else {
-      // Check if the dateRange object itself is undefined now when it wasn't before (or vice-versa)
-      const rangePresenceChanged = (!!dateRange !== !!prevDateRangeRef.current);
-      if (rangePresenceChanged) {
-        logger.debug('[MetaTab] Date range presence changed.');
-        prevDateRangeRef.current = dateRange ? { from: dateRange.from, to: dateRange.to } : undefined;
-        if (throttle('date-range-presence-change-fetch', 2000)) {
-           fetchCampaigns(true); // Fetch if range added/removed
-        } else {
-          logger.debug('[MetaTab] Throttled fetch due to rapid date presence change.')
-        }
-      } else {
-        logger.debug('[MetaTab] Date range object updated, but dates are the same. Skipping fetch.');
-      }
+      console.log("[MetaTab] Date range object updated, but dates are the same. Skipping fetch.");
     }
 
-  }, [dateRange, brandId, fetchCampaigns]);
+  }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]);
 
   // Remove or comment out the previous useEffect hook handling date range persistence/stabilization
   // as this new hook handles the core logic of fetching on change.
