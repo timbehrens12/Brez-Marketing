@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
 
-    console.log(`RESULTS SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`RESULTS SINGLE METRIC API (from meta_ad_insights): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
 
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
@@ -34,17 +34,16 @@ export async function GET(request: NextRequest) {
       console.log(`RESULTS SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
 
-    // Assuming 'conversions' column in meta_campaign_daily_stats represents 'results' for this widget.
-    // This might need adjustment if there is a more specific 'results' column or calculation.
+    // Query meta_ad_insights for actual results/conversions data
     const { data: dailyStats, error: dbError } = await supabase
-      .from('meta_campaign_daily_stats') 
-      .select('date, conversions') // Assuming 'conversions' count as results
+      .from('meta_ad_insights') 
+      .select('date, total_conversions')
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
     if (dbError) {
-      console.error(`RESULTS SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
+      console.error(`RESULTS SINGLE METRIC API: Error retrieving from meta_ad_insights:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
@@ -59,12 +58,12 @@ export async function GET(request: NextRequest) {
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_ad_insights' }
       })
     }
 
     const totalResults = filteredStats.reduce((sum, item) => {
-      const resultsVal = parseInt(item.conversions || '0') // Assuming 'conversions' is the count of results
+      const resultsVal = parseInt(item.total_conversions || '0')
       return sum + (isNaN(resultsVal) ? 0 : resultsVal)
     }, 0)
 
@@ -74,7 +73,7 @@ export async function GET(request: NextRequest) {
         from: fromDate,
         to: toDate,
         records: filteredStats.length,
-        source: 'meta_campaign_daily_stats'
+        source: 'meta_ad_insights'
       }
     }
     return NextResponse.json(result)
