@@ -4910,6 +4910,27 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [brandId, dateRange, syncMetaInsights]);
 
+  // **NEW**: Add automatic data loading on mount and when dependencies change (like HomeTab)
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to) {
+      console.log("[MetaTab] useEffect detected change in brandId or dateRange. Loading fresh Meta data.");
+      
+      // Check if already fetching to prevent duplicate calls
+      if (isMetaFetchInProgress()) {
+        console.log("[MetaTab] Skipping automatic refresh - fetch already in progress");
+        return;
+      }
+      
+      // Use the same sync function for consistency with manual refreshes
+      syncMetaInsights();
+    } else {
+      console.log("[MetaTab] Skipping data fetch in useEffect: Missing brandId or full dateRange.");
+      // Clear loading states when prerequisites aren't met
+      setIsLoadingAllMetaWidgets(false);
+      setLoading(false);
+    }
+  }, [brandId, dateRange?.from, dateRange?.to]); // Removed syncMetaInsights dependency to fix linter error
+
   return (
     <TooltipProvider>
       <div className="space-y-8">
