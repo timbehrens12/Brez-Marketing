@@ -2826,8 +2826,14 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       if (response.ok && prevResponse.ok) {
         // Properly handle zero values vs missing data
-        const currentValue = typeof data.value === 'number' ? data.value : 0;
-        const previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
+        let currentValue = typeof data.value === 'number' ? data.value : 0;
+        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
+        
+        // ROAS should be 0 if there's no spend or if value is very small (likely a calculation artifact)
+        // Also check if the returned value seems like a calculated fallback
+        if (currentValue === null || currentValue < 0.01) {
+          currentValue = 0;
+        }
         
         setRoasData({
           value: currentValue,
@@ -2835,7 +2841,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue}`)
+        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue} (Ad Spend: ${adSpendData.value})`)
       } else {
         console.error("Error fetching ROAS data:", data.error || prevData.error)
         setRoasData(prev => ({ ...prev, isLoading: false }))
@@ -3021,13 +3027,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
+        // Properly handle zero values vs missing data
+        let currentValue = typeof data.value === 'number' ? data.value : 0;
+        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
+        
+        // Purchase Value should be 0 if null or very small (likely calculation artifact)
+        if (currentValue === null || currentValue < 0.01) {
+          currentValue = 0;
+        }
+        
         setPurchaseValueData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Purchase Conversion Value data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Purchase Conversion Value data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value}, Results: ${resultsData.value})`)
       } else {
         console.error("Error fetching Purchase Conversion Value data:", data.error || prevData.error)
         setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
@@ -3082,13 +3097,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        // Properly handle zero values vs missing data
+        let currentValue = typeof data.value === 'number' ? data.value : 0;
+        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
+        
+        // Results should be 0 if null or negative (data quality issue)
+        if (currentValue === null || currentValue < 0) {
+          currentValue = 0;
+        }
+        
         setResultsData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Results data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Results data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value})`)
       } else {
         console.error("Error fetching Results data:", data.error || prevData.error)
         setResultsData(prev => ({ ...prev, isLoading: false }))
@@ -3143,13 +3167,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
+        // Properly handle zero values vs missing data
+        let currentValue = typeof data.value === 'number' ? data.value : 0;
+        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
+        
+        // Cost Per Result should be 0 if null or very small (likely calculation artifact)
+        if (currentValue === null || currentValue < 0.01) {
+          currentValue = 0;
+        }
+        
         setCostPerResultData({
-          value: data.value || 0,
-          previousValue: prevData.value || 0,
+          value: currentValue,
+          previousValue: previousValue,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Cost Per Result data fetched directly: ${data.value}, Previous: ${prevData.value}`)
+        console.log(`Cost Per Result data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value}, Results: ${resultsData.value})`)
       } else {
         console.error("Error fetching Cost Per Result data:", data.error || prevData.error)
         setCostPerResultData(prev => ({ ...prev, isLoading: false }))
