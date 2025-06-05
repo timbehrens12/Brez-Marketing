@@ -2760,17 +2760,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       // END DETAILED LOGGING
       
       if (response.ok && prevResponse.ok) {
-        // Properly handle zero values vs missing data
-        const currentValue = typeof data.value === 'number' ? data.value : 0;
-        const previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
         setAdSpendData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Ad Spend data fetched directly: ${currentValue}, Previous: ${previousValue}`)
+        console.log(`Ad Spend data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Ad Spend data:", data.error || prevData.error)
         setAdSpendData(prev => ({ ...prev, isLoading: false }))
@@ -2825,15 +2821,9 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
-        // Properly handle zero values vs missing data
-        let currentValue = typeof data.value === 'number' ? data.value : 0;
-        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
-        // ROAS should be 0 if there's no spend or if value is very small (likely a calculation artifact)
-        // Also check if the returned value seems like a calculated fallback
-        if (currentValue === null || currentValue < 0.01) {
-          currentValue = 0;
-        }
+        // Ensure we set 0 for any null/undefined/NaN values to prevent fake data display
+        const currentValue = (typeof data.value === 'number' && !isNaN(data.value)) ? data.value : 0;
+        const previousValue = (typeof prevData.value === 'number' && !isNaN(prevData.value)) ? prevData.value : 0;
         
         setRoasData({
           value: currentValue,
@@ -2841,14 +2831,26 @@ Try creating at least one active campaign in Meta Ads Manager.
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue} (Ad Spend: ${adSpendData.value})`)
+        console.log(`ROAS data fetched directly: ${currentValue}, Previous: ${previousValue}`)
       } else {
         console.error("Error fetching ROAS data:", data.error || prevData.error)
-        setRoasData(prev => ({ ...prev, isLoading: false }))
+        // On error, set explicit 0 values instead of keeping previous data
+        setRoasData({
+          value: 0,
+          previousValue: 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
       }
     } catch (error) {
       console.error("Error in ROAS fetch:", error)
-      setRoasData(prev => ({ ...prev, isLoading: false }))
+      // On error, set explicit 0 values to prevent fake data display
+      setRoasData({
+        value: 0,
+        previousValue: 0,
+        isLoading: false,
+        lastUpdated: new Date()
+      })
     }
   }
   
@@ -2896,17 +2898,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
-        // Properly handle zero values vs missing data
-        const currentValue = typeof data.value === 'number' ? data.value : 0;
-        const previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
         setImpressionsData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Impressions data fetched directly: ${currentValue}, Previous: ${previousValue}`)
+        console.log(`Impressions data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Impressions data:", data.error || prevData.error)
         setImpressionsData(prev => ({ ...prev, isLoading: false }))
@@ -2962,17 +2960,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
-        // Properly handle zero values vs missing data
-        const currentValue = typeof data.value === 'number' ? data.value : 0;
-        const previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
         setClicksData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Clicks data fetched directly: ${currentValue}, Previous: ${previousValue}`)
+        console.log(`Clicks data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Clicks data:", data.error || prevData.error)
         setClicksData(prev => ({ ...prev, isLoading: false }))
@@ -3027,22 +3021,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (response.ok && prevResponse.ok) {
-        // Properly handle zero values vs missing data
-        let currentValue = typeof data.value === 'number' ? data.value : 0;
-        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
-        // Purchase Value should be 0 if null or very small (likely calculation artifact)
-        if (currentValue === null || currentValue < 0.01) {
-          currentValue = 0;
-        }
-        
         setPurchaseValueData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Purchase Conversion Value data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value}, Results: ${resultsData.value})`)
+        console.log(`Purchase Conversion Value data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Purchase Conversion Value data:", data.error || prevData.error)
         setPurchaseValueData(prev => ({ ...prev, isLoading: false }))
@@ -3097,22 +3082,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        // Properly handle zero values vs missing data
-        let currentValue = typeof data.value === 'number' ? data.value : 0;
-        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
-        // Results should be 0 if null or negative (data quality issue)
-        if (currentValue === null || currentValue < 0) {
-          currentValue = 0;
-        }
-        
         setResultsData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Results data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value})`)
+        console.log(`Results data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Results data:", data.error || prevData.error)
         setResultsData(prev => ({ ...prev, isLoading: false }))
@@ -3167,22 +3143,13 @@ Try creating at least one active campaign in Meta Ads Manager.
       const prevData = await prevResponse.json()
       
       if (!data.error && !prevData.error) {
-        // Properly handle zero values vs missing data
-        let currentValue = typeof data.value === 'number' ? data.value : 0;
-        let previousValue = typeof prevData.value === 'number' ? prevData.value : 0;
-        
-        // Cost Per Result should be 0 if null or very small (likely calculation artifact)
-        if (currentValue === null || currentValue < 0.01) {
-          currentValue = 0;
-        }
-        
         setCostPerResultData({
-          value: currentValue,
-          previousValue: previousValue,
+          value: data.value || 0,
+          previousValue: prevData.value || 0,
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`Cost Per Result data fetched directly: ${currentValue}, Previous: ${previousValue} (Spend: ${adSpendData.value}, Results: ${resultsData.value})`)
+        console.log(`Cost Per Result data fetched directly: ${data.value}, Previous: ${prevData.value}`)
       } else {
         console.error("Error fetching Cost Per Result data:", data.error || prevData.error)
         setCostPerResultData(prev => ({ ...prev, isLoading: false }))
@@ -3307,10 +3274,14 @@ Try creating at least one active campaign in Meta Ads Manager.
       // END DETAILED LOGGING
       
       if (!data.error && !prevData.error) {
+        // Ensure we have valid numeric values, default to 0 to prevent fake data display
+        const currentCtrValue = (typeof data.value === 'number' && !isNaN(data.value)) ? data.value : 0;
+        const previousCtrValue = (typeof prevData.value === 'number' && !isNaN(prevData.value)) ? prevData.value : 0;
+        
         // Convert percentage values to decimals for proper formatting
         // API returns percentage values (e.g., 16.67), but MetricCard expects decimals (e.g., 0.1667)
-        const currentCtrDecimal = (data.value || 0) / 100;
-        const previousCtrDecimal = (prevData.value || 0) / 100;
+        const currentCtrDecimal = currentCtrValue / 100;
+        const previousCtrDecimal = previousCtrValue / 100;
         
         setCtrData({
           value: currentCtrDecimal,
@@ -3318,14 +3289,26 @@ Try creating at least one active campaign in Meta Ads Manager.
           isLoading: false,
           lastUpdated: new Date()
         })
-        console.log(`CTR data fetched directly: ${data.value}% (${currentCtrDecimal} decimal), Previous: ${prevData.value}% (${previousCtrDecimal} decimal)`)
+        console.log(`CTR data fetched directly: ${currentCtrValue}% (${currentCtrDecimal} decimal), Previous: ${previousCtrValue}% (${previousCtrDecimal} decimal)`)
       } else {
         console.error("Error fetching CTR data:", data.error || prevData.error)
-        setCtrData(prev => ({ ...prev, isLoading: false }))
+        // On error, set explicit 0 values instead of keeping previous data
+        setCtrData({
+          value: 0,
+          previousValue: 0,
+          isLoading: false,
+          lastUpdated: new Date()
+        })
       }
     } catch (error) {
       console.error("Error in CTR fetch:", error)
-      setCtrData(prev => ({ ...prev, isLoading: false }))
+      // On error, set explicit 0 values to prevent fake data display
+      setCtrData({
+        value: 0,
+        previousValue: 0,
+        isLoading: false,
+        lastUpdated: new Date()
+      })
     }
   }
   
@@ -3549,11 +3532,38 @@ Try creating at least one active campaign in Meta Ads Manager.
   useEffect(() => {
     if (dateRange && dateRange.from && dateRange.to && brandId) {
       console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
+      
+      // IMPORTANT: Reset all metric states to 0 when date range changes to prevent stale data
+      setRoasData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setCtrData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setAdSpendData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setImpressionsData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setClicksData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setPurchaseValueData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setResultsData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setCostPerResultData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setCostPerClickData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setReachData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setLinkClicksData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      setBudgetData({ value: 0, previousValue: 0, isLoading: true, lastUpdated: null });
+      
       setIsLoadingAllMetaWidgets(true);
       fetchAllMetricsDirectly() // This function will clear the loading state when complete
     } else {
-      // If no valid dateRange or brandId, clear loading state
+      // If no valid dateRange or brandId, clear loading state and reset all data to 0
       setIsLoadingAllMetaWidgets(false);
+      setRoasData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setCtrData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setAdSpendData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setImpressionsData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setClicksData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setPurchaseValueData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setResultsData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setCostPerResultData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setCostPerClickData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setReachData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setLinkClicksData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
+      setBudgetData({ value: 0, previousValue: 0, isLoading: false, lastUpdated: null });
     }
   }, [dateRange, brandId])
 
@@ -4887,18 +4897,6 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a ref to track tab-switch-initiated syncs
   const isTabSwitchSyncRef = useRef(false);
 
-  // Calculate percentage change function - SAME AS HOMETAB
-  const calculatePercentChange = (current: number, previous: number): number | null => {
-    if (previous === 0) {
-      // Return null when there's no previous data to compare against
-      return null; // This will display as "N/A" in the UI
-    }
-    if (current === previous) { // Handle cases where current and previous are the same
-      return 0;
-    }
-    return ((current - previous) / Math.abs(previous)) * 100;
-  };
-
   // Listen for global refresh events (like HomeTab does)
   useEffect(() => {
     const handleGlobalRefresh = (event: CustomEvent) => {
@@ -5098,7 +5096,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={adSpendData.value}
-            change={calculatePercentChange(adSpendData.value, adSpendData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
@@ -5109,8 +5106,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5121,7 +5116,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={roasData.value}
-            change={calculatePercentChange(roasData.value, roasData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="number"
@@ -5132,8 +5126,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueSuffix="x"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5144,7 +5136,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={impressionsData.value}
-            change={calculatePercentChange(impressionsData.value, impressionsData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="number"
@@ -5153,8 +5144,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           {/* Using TotalAdSetReachCard as the main Reach card - This card handles its own comparison if needed */}
@@ -5174,7 +5163,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={clicksData.value}
-            change={calculatePercentChange(clicksData.value, clicksData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="number"
@@ -5183,8 +5171,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5195,7 +5181,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={purchaseValueData.value}
-            change={calculatePercentChange(purchaseValueData.value, purchaseValueData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
@@ -5206,8 +5191,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5218,7 +5201,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={resultsData.value}
-            change={calculatePercentChange(resultsData.value, resultsData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="number"
@@ -5227,8 +5209,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5239,7 +5219,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerResultData.value}
-            change={calculatePercentChange(costPerResultData.value, costPerResultData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
@@ -5250,8 +5229,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValuePrefix="$"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5262,7 +5239,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={costPerClickData.value}
-            change={calculatePercentChange(costPerClickData.value, costPerClickData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="currency"
@@ -5275,8 +5251,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueDecimals={2}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5287,7 +5261,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={ctrData.value}
-            change={calculatePercentChange(ctrData.value, ctrData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="percentage"
@@ -5298,8 +5271,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueDecimals={2}
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <MetricCard
@@ -5310,7 +5281,6 @@ Try creating at least one active campaign in Meta Ads Manager.
               </div>
             }
             value={linkClicksData.value}
-            change={calculatePercentChange(linkClicksData.value, linkClicksData.previousValue)}
             data={[]}
             loading={isLoadingAllMetaWidgets}
             valueFormat="number"
@@ -5319,8 +5289,6 @@ Try creating at least one active campaign in Meta Ads Manager.
             previousValueFormat="number"
             showPreviousPeriod={true}
             previousPeriodLabel={getPreviousPeriodLabel()}
-            nullChangeText="N/A"
-            nullChangeTooltip="No previous data to compare"
           />
           
           <TotalBudgetMetricCard 
