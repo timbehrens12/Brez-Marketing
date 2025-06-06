@@ -636,11 +636,13 @@ export function MetaTab({
   };
 
     async function fetchMetaData() {
-    // Don't make API calls if the block flags are set
-    if (window._blockMetaApiCalls || window._disableAutoMetaFetch) {
-      console.log("Blocking Meta API call - auto fetch disabled or component unmounted");
-      return;
+    // Clear any blocking flags on manual data fetch to ensure it works
+    if (typeof window !== 'undefined') {
+      window._blockMetaApiCalls = false;
+      window._disableAutoMetaFetch = false;
     }
+    
+    console.log('[MetaTab] fetchMetaData called - cleared blocking flags');
     
     if (!brandId) return;
     
@@ -703,7 +705,9 @@ export function MetaTab({
         strict_date_range: 'true',  // Always enforce strict date handling
         bypass_cache: 'true',       // Always bypass cache for fresh data
         date_debug: 'true',         // Enable date debugging
-        refresh: 'true'             // Force refresh every time to prevent stale data
+        refresh: 'true',            // Force refresh every time to prevent stale data
+        force_load: 'true',         // Always force fresh data load
+        t: Date.now().toString()    // Cache busting timestamp
       });
       
       // Add extra cache busting specifically for "today" to ensure fresh data
@@ -806,10 +810,11 @@ export function MetaTab({
           
           response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
             signal,
-            cache: 'no-cache',
+            cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
+              'Pragma': 'no-cache',
+              'Expires': '0'
             }
           });
           
@@ -2038,6 +2043,61 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
   }, [dateRange, brandId, campaigns]);
+
+  // Add database-based sync function (similar to HomeTab approach)
+  const syncMetaDataDirectly = async () => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
+      return;
+    }
+    
+    console.log("[MetaTab] Syncing Meta data directly from database...");
+    
+    // Clear blocking flags first
+    if (typeof window !== 'undefined') {
+      window._blockMetaApiCalls = false;
+      window._disableAutoMetaFetch = false;
+    }
+    
+    // Set loading state
+    setLoading(true);
+    setIsDateChangeLoading(true);
+    
+    try {
+      // Format dates
+      const startDate = dateRange.from.toISOString().split('T')[0];
+      const endDate = dateRange.to.toISOString().split('T')[0];
+      
+      console.log(`[MetaTab] Syncing for date range: ${startDate} to ${endDate}`);
+      
+      // Force a fresh data fetch bypassing any caching
+      await fetchMetaData();
+      
+      console.log("[MetaTab] ✅ Meta data sync completed");
+      
+    } catch (error) {
+      console.error("[MetaTab] Error syncing Meta data:", error);
+      setError(error instanceof Error ? error.message : 'Failed to sync Meta data');
+    } finally {
+      setLoading(false);
+      setIsDateChangeLoading(false);
+    }
+  };
+
+  // Add initial mount effect to trigger data load (similar to HomeTab)
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to) {
+      console.log("[MetaTab] 🚀 Component mount or brand/date change detected - triggering data sync");
+      
+      // Use a small delay to let component stabilize
+      const timeoutId = setTimeout(() => {
+        syncMetaDataDirectly();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId, dateRange?.from, dateRange?.to]); // Trigger on brand or date changes
 
   // Add an effect to handle data refresh that maintains date ranges
 
