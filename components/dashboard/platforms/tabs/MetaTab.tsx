@@ -4069,15 +4069,15 @@ Try creating at least one active campaign in Meta Ads Manager.
         
         if (!initialLoadComplete.current) {
           console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
-          
-          // Use the same unified sync approach as HomeTab
-          syncMetaInsights().finally(() => {
+        
+        // Use the same unified sync approach as HomeTab
+        syncMetaInsights().finally(() => {
             // Mark initial load as complete and update params
-            initialLoadComplete.current = true;
+          initialLoadComplete.current = true;
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
-          });
-        } else {
-          console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
+        });
+      } else {
+        console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
           syncMetaInsights().finally(() => {
             // Update params after successful sync
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
@@ -4898,20 +4898,20 @@ Try creating at least one active campaign in Meta Ads Manager.
       const currentVisibility = document.visibilityState;
       
       if (currentVisibility === 'visible' && lastVisibilityRef.current === 'hidden') {
-        console.log('[MetaTab] Page became visible - triggering data refresh like HomeTab');
+        console.log('[MetaTab] Page became visible - auto-refresh disabled per user request');
         
-        // Clear any potential blocking flags from other tabs/components
+        // Clear any potential blocking flags from other tabs/components but don't auto-refresh
         if (typeof window !== 'undefined') {
           window._blockMetaApiCalls = false;
           window._disableAutoMetaFetch = false;
-          console.log("[MetaTab] Cleared blocking flags on visibility change");
+          console.log("[MetaTab] Cleared blocking flags on visibility change (no auto-refresh)");
         }
         
-        // Auto-refresh data when page becomes visible (same as HomeTab)
-        if (brandId && dateRange?.from && dateRange?.to) {
-          console.log("[MetaTab] Triggering syncMetaInsights on page visibility");
-          syncMetaInsights();
-        }
+        // REMOVED: Auto-refresh disabled per user request
+        // if (brandId && dateRange?.from && dateRange?.to) {
+        //   console.log("[MetaTab] Triggering syncMetaInsights on page visibility");
+        //   syncMetaInsights();
+        // }
       } else if (currentVisibility === 'hidden') {
         console.log('[MetaTab] Page became hidden');
       }
