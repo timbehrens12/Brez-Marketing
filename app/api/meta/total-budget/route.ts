@@ -38,27 +38,31 @@ export async function GET(req: NextRequest) {
           console.log(`[Total Meta Budget] Successfully fetched ${metaBudgetResult.budgets.length} campaign budgets from Meta API`);
           
           let totalBudget = 0;
-          let activeAdSetCount = 0; // Use a more descriptive name
+          let activeCampaignCount = 0;
           
           metaBudgetResult.budgets.forEach((campaign: any) => {
             if (!activeOnly || campaign.status === 'ACTIVE') {
-              // The budget could be on the campaign or summed from adsets
-              const budgetAmount = campaign.adset_budget_total || campaign.budget || 0;
-              totalBudget += typeof budgetAmount === 'string' ? parseFloat(budgetAmount) : budgetAmount;
+              const budgetValue = campaign.budget || 0;
+              const adsetBudgetValue = campaign.adset_budget_total || 0;
+
+              // Use adset_budget_total if available, otherwise use campaign budget
+              const effectiveBudget = adsetBudgetValue > 0 ? adsetBudgetValue : budgetValue;
               
-              // This is tricky - the API returns campaign budgets, so we're counting campaigns.
-              // Let's assume adSetCount is actually campaign count for this metric.
-              activeAdSetCount++;
+              totalBudget += typeof effectiveBudget === 'string' 
+                ? parseFloat(effectiveBudget) 
+                : effectiveBudget;
+
+              activeCampaignCount++;
             }
           });
           
-          console.log(`[Total Meta Budget] Meta API result - Total: $${totalBudget}, Active Campaigns: ${activeAdSetCount}`);
+          console.log(`[Total Meta Budget] Meta API result - Total: $${totalBudget}, Active Campaigns: ${activeCampaignCount}`);
           
           return NextResponse.json(
             { 
               success: true,
               totalBudget,
-              adSetCount: activeAdSetCount,
+              adSetCount: activeCampaignCount, // We are counting campaigns here
               timestamp: new Date().toISOString(),
               refreshMethod: 'meta-api'
             },
