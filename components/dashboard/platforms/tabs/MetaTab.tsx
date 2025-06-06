@@ -3823,6 +3823,10 @@ Try creating at least one active campaign in Meta Ads Manager.
         // Also refresh campaigns if needed
         await fetchCampaigns(true);
         
+        // Step 3: Check for data gaps and auto-backfill if needed (same as HomeTab)
+        console.log(`[MetaTab] 🚀 Step 3: Checking for data gaps and auto-backfilling if needed (refreshId: ${refreshId})`);
+        await detectAndBackfillDataGaps();
+        
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
         
@@ -3839,6 +3843,15 @@ Try creating at least one active campaign in Meta Ads Manager.
         }));
         
         console.log(`[MetaTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
+        
+        // Step 4: Auto-trigger gap detection (runs in background)
+        setTimeout(() => {
+          console.log(`[MetaTab] 🚀 Step 4: Auto-triggering gap detection after sync (refreshId: ${refreshId})`);
+          detectAndBackfillDataGaps().catch(error => {
+            console.error(`[MetaTab] Error during auto gap detection (refreshId: ${refreshId}):`, error);
+          });
+        }, 1500);
+        
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
       }
@@ -3857,6 +3870,95 @@ Try creating at least one active campaign in Meta Ads Manager.
       releaseMetaFetchLock(refreshId);
     }
   }, [brandId, dateRange, fetchMetaData, fetchCampaigns]);
+
+  // Smart data gap detection and auto-backfill (same as HomeTab/Dashboard)
+  const detectAndBackfillDataGaps = useCallback(async () => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MetaTab] Skipping gap detection - missing brandId or dateRange");
+      return;
+    }
+
+    try {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
+      // Check if we're looking at yesterday's data specifically
+      const isViewingYesterday = dateRange.from && dateRange.to &&
+        dateRange.from.toISOString().split('T')[0] === yesterdayStr &&
+        dateRange.to.toISOString().split('T')[0] === yesterdayStr;
+      
+      // Also check if yesterday is within the current date range
+      const isYesterdayInRange = dateRange.from && dateRange.to &&
+        dateRange.from <= yesterday && dateRange.to >= yesterday;
+      
+      if (isViewingYesterday || isYesterdayInRange) {
+        console.log(`[MetaTab] Checking for data gaps for yesterday (${yesterdayStr})`);
+        
+        // Check for data gaps using the same endpoint as the main dashboard
+        const gapResponse = await fetch(`/api/meta/check-gaps?brandId=${brandId}&date=${yesterdayStr}`);
+        
+        if (!gapResponse.ok) {
+          console.warn("[MetaTab] Failed to check for data gaps");
+          return;
+        }
+        
+        const gapData = await gapResponse.json();
+        
+        // If we have less than expected data volume for yesterday, auto-backfill
+        if (gapData.hasGap) {
+          console.log(`[MetaTab] Data gap detected for ${yesterdayStr}, triggering auto-backfill`);
+          
+          // Show a quick notification that we're fixing the data
+          toast.info("Completing yesterday's data...", {
+            description: "Auto-filling missing Meta data for better accuracy.",
+            duration: 3000,
+            id: "meta-backfill-toast"
+          });
+          
+          // Trigger backfill for yesterday
+          const backfillResponse = await fetch('/api/meta/backfill', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              brandId: brandId,
+              dateFrom: yesterdayStr,
+              dateTo: yesterdayStr
+            })
+          });
+          
+          if (backfillResponse.ok) {
+            const backfillData = await backfillResponse.json();
+            
+            if (backfillData.success && backfillData.count > 0) {
+              console.log(`[MetaTab] ✅ Auto-backfilled ${backfillData.count} records for ${yesterdayStr}`);
+              
+              toast.success(`Completed yesterday's data!`, {
+                description: `Added ${backfillData.count} missing records for better accuracy.`,
+                duration: 5000,
+                id: "meta-backfill-toast"
+              });
+              
+              // Refresh the data to show the newly backfilled information
+              setTimeout(() => {
+                console.log("[MetaTab] Refreshing data after auto-backfill");
+                fetchMetaData();
+              }, 1000);
+            } else {
+              console.log(`[MetaTab] No additional data found during backfill for ${yesterdayStr}`);
+            }
+          } else {
+            console.warn("[MetaTab] Failed to backfill data gap");
+          }
+        } else {
+          console.log(`[MetaTab] No data gaps detected for ${yesterdayStr}`);
+        }
+      }
+    } catch (error) {
+      console.error("[MetaTab] Error during gap detection and backfill:", error);
+    }
+  }, [brandId, dateRange, fetchMetaData]);
 
   // Main data loading useEffect (mirrors HomeTab approach exactly)
   useEffect(() => {
@@ -3893,6 +3995,19 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsLoadingAllMetaWidgets(false);
     }
   }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]);
+
+  // Auto-detect data gaps after data loads (same as HomeTab/Dashboard)
+  useEffect(() => {
+    if (brandId && !loading && !isLoadingAllMetaWidgets && initialLoadComplete.current) {
+      // Run gap detection after data has loaded
+      const timeoutId = setTimeout(() => {
+        console.log("[MetaTab] Running automatic gap detection after data load");
+        detectAndBackfillDataGaps();
+      }, 2000); // Wait 2 seconds after loading completes
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [brandId, loading, isLoadingAllMetaWidgets, detectAndBackfillDataGaps]);
 
   // Add debug mode state
   const [debugMode, setDebugMode] = useState(false);
