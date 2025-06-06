@@ -355,27 +355,81 @@ export async function GET(request: NextRequest) {
         let adsetBudgetTotal = 0;
         let adsetBudgetType = 'unknown';
         try {
-          const { data: adSets, error: adSetsError } = await supabase
-            .from('meta_adsets')
-            .select('budget, budget_type, status')
-            .eq('campaign_id', campaign.campaign_id)
-            .eq('brand_id', brandId);
+          if (forceRefresh) {
+            // Fetch fresh ad set data from Meta API
+            console.log(`[Meta Campaigns] Force refresh - fetching ad sets for campaign ${campaign.campaign_id} from Meta API`);
             
-          if (!adSetsError && adSets && adSets.length > 0) {
-            // Only count active ad sets
-            const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
-            
-            if (activeAdSets.length > 0) {
-              adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-                return sum + (parseFloat(adSet.budget) || 0);
-              }, 0);
+            // Get Meta connection details
+            const { data: connectionData, error: connectionError } = await supabase
+              .from('platform_connections')
+              .select('access_token')
+              .eq('brand_id', brandId)
+              .eq('platform', 'meta')
+              .single();
               
-              // If all ad sets have the same budget type, use that, otherwise 'mixed'
-              const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
-              const uniqueBudgetTypes = [...new Set(budgetTypes)];
-              adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
+            if (!connectionError && connectionData) {
+              try {
+                const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
+                const adSetsResponse = await fetch(adSetsUrl);
+                
+                if (adSetsResponse.ok) {
+                  const adSetsData = await adSetsResponse.json();
+                  
+                  if (adSetsData.data) {
+                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                    
+                    if (activeAdSets.length > 0) {
+                      adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
+                        // Ad sets have either daily_budget or lifetime_budget
+                        if (adSet.daily_budget) {
+                          const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents
+                          adsetBudgetType = 'daily';
+                          return sum + dailyBudget;
+                        } else if (adSet.lifetime_budget) {
+                          const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents
+                          adsetBudgetType = 'lifetime';
+                          return sum + lifetimeBudget;
+                        }
+                        return sum;
+                      }, 0);
+                      
+                      console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
+                    } else {
+                      console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has no active ad sets`);
+                    }
+                  }
+                }
+              } catch (apiError) {
+                console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
+                // Fall back to database query
+              }
+            }
+          }
+          
+          // If not force refresh or Meta API failed, fall back to database
+          if (!forceRefresh || adsetBudgetTotal === 0) {
+            const { data: adSets, error: adSetsError } = await supabase
+              .from('meta_adsets')
+              .select('budget, budget_type, status')
+              .eq('campaign_id', campaign.campaign_id)
+              .eq('brand_id', brandId);
               
-              console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
+            if (!adSetsError && adSets && adSets.length > 0) {
+              // Only count active ad sets
+              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+              
+              if (activeAdSets.length > 0) {
+                adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
+                  return sum + (parseFloat(adSet.budget) || 0);
+                }, 0);
+                
+                // If all ad sets have the same budget type, use that, otherwise 'mixed'
+                const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
+                const uniqueBudgetTypes = [...new Set(budgetTypes)];
+                adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
+                
+                console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
+              }
             }
           }
         } catch (error) {
@@ -656,38 +710,92 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // After fetching campaigns, aggregate ad set budgets for each campaign
-    const campaignsWithBudgets = await Promise.all(campaigns.map(async (campaign: any) => {
-      // Fetch ad sets to calculate campaign budget
-      let adsetBudgetTotal = 0;
-      let adsetBudgetType = 'unknown';
-      try {
-        const { data: adSets, error: adSetsError } = await supabase
-          .from('meta_adsets')
-          .select('budget, budget_type, status')
-          .eq('campaign_id', campaign.campaign_id)
-          .eq('brand_id', brandId);
-          
-        if (!adSetsError && adSets && adSets.length > 0) {
-          // Only count active ad sets
-          const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
-          
-          if (activeAdSets.length > 0) {
-            adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-              return sum + (parseFloat(adSet.budget) || 0);
-            }, 0);
-            
-            // If all ad sets have the same budget type, use that, otherwise 'mixed'
-            const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
-            const uniqueBudgetTypes = [...new Set(budgetTypes)];
-            adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
-            
-            console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
-          }
-        }
-      } catch (error) {
-        console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
-      }
+         // After fetching campaigns, aggregate ad set budgets for each campaign
+     const campaignsWithBudgets = await Promise.all(campaigns.map(async (campaign: any) => {
+       // Fetch ad sets to calculate campaign budget
+       let adsetBudgetTotal = 0;
+       let adsetBudgetType = 'unknown';
+       try {
+         if (forceRefresh) {
+           // Fetch fresh ad set data from Meta API
+           console.log(`[Meta Campaigns] Force refresh - fetching ad sets for campaign ${campaign.campaign_id} from Meta API`);
+           
+           // Get Meta connection details
+           const { data: connectionData, error: connectionError } = await supabase
+             .from('platform_connections')
+             .select('access_token')
+             .eq('brand_id', brandId)
+             .eq('platform', 'meta')
+             .single();
+             
+           if (!connectionError && connectionData) {
+             try {
+               const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
+               const adSetsResponse = await fetch(adSetsUrl);
+               
+               if (adSetsResponse.ok) {
+                 const adSetsData = await adSetsResponse.json();
+                 
+                 if (adSetsData.data) {
+                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                   
+                   if (activeAdSets.length > 0) {
+                     adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
+                       // Ad sets have either daily_budget or lifetime_budget
+                       if (adSet.daily_budget) {
+                         const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents
+                         adsetBudgetType = 'daily';
+                         return sum + dailyBudget;
+                       } else if (adSet.lifetime_budget) {
+                         const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents
+                         adsetBudgetType = 'lifetime';
+                         return sum + lifetimeBudget;
+                       }
+                       return sum;
+                     }, 0);
+                     
+                     console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
+                   } else {
+                     console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has no active ad sets`);
+                   }
+                 }
+               }
+             } catch (apiError) {
+               console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
+               // Fall back to database query
+             }
+           }
+         }
+         
+         // If not force refresh or Meta API failed, fall back to database
+         if (!forceRefresh || adsetBudgetTotal === 0) {
+           const { data: adSets, error: adSetsError } = await supabase
+             .from('meta_adsets')
+             .select('budget, budget_type, status')
+             .eq('campaign_id', campaign.campaign_id)
+             .eq('brand_id', brandId);
+             
+           if (!adSetsError && adSets && adSets.length > 0) {
+             // Only count active ad sets
+             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+             
+             if (activeAdSets.length > 0) {
+               adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
+                 return sum + (parseFloat(adSet.budget) || 0);
+               }, 0);
+               
+               // If all ad sets have the same budget type, use that, otherwise 'mixed'
+               const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
+               const uniqueBudgetTypes = [...new Set(budgetTypes)];
+               adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
+               
+               console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
+             }
+           }
+         }
+       } catch (error) {
+         console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
+       }
       
       return {
         ...campaign,
