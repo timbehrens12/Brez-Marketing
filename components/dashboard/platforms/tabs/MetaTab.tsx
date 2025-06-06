@@ -3752,7 +3752,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [brandId, fetchMetaData]); // Simplified dependencies
 
-  // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION
+  // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION WITH TODAY DETECTION
   const syncMetaInsights = useCallback(async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
       console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
@@ -3814,18 +3814,23 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (result.success) {
         console.log(`[MetaTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
         
-        // Step 2: Now fetch the refreshed data from database (like HomeTab)
+        // Step 2: Now fetch the refreshed data from database with TODAY DETECTION (like HomeTab)
         console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
         
-        // Fetch metrics data from database after sync
-        await fetchMetaData();
+        // Use database-based fetch with cache busting for today
+        await fetchMetaDataFromDatabase(refreshId);
         
         // Also refresh campaigns if needed
         await fetchCampaigns(true);
         
         // Step 3: Check for data gaps and auto-backfill if needed (same as HomeTab)
         console.log(`[MetaTab] 🚀 Step 3: Checking for data gaps and auto-backfilling if needed (refreshId: ${refreshId})`);
-        await detectAndBackfillDataGaps();
+        // Use setTimeout to call detectAndBackfillDataGaps after the current call stack
+        setTimeout(() => {
+          detectAndBackfillDataGaps().catch(error => {
+            console.error(`[MetaTab] Error during gap detection (refreshId: ${refreshId}):`, error);
+          });
+        }, 1000);
         
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
@@ -3844,14 +3849,6 @@ Try creating at least one active campaign in Meta Ads Manager.
         
         console.log(`[MetaTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
         
-        // Step 4: Auto-trigger gap detection (runs in background)
-        setTimeout(() => {
-          console.log(`[MetaTab] 🚀 Step 4: Auto-triggering gap detection after sync (refreshId: ${refreshId})`);
-          detectAndBackfillDataGaps().catch(error => {
-            console.error(`[MetaTab] Error during auto gap detection (refreshId: ${refreshId}):`, error);
-          });
-        }, 1500);
-        
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
       }
@@ -3869,7 +3866,86 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsManuallyRefreshing(false);
       releaseMetaFetchLock(refreshId);
     }
-  }, [brandId, dateRange, fetchMetaData, fetchCampaigns]);
+  }, [brandId, dateRange, fetchCampaigns, fetchMetaDataFromDatabase]);
+
+  // Add the missing fetchMetaDataFromDatabase function from HomeTab with TODAY DETECTION
+  const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MetaTab] Skipping Meta data fetch from database: Missing brandId, dateRange.");
+      return;
+    }
+
+    try {
+      console.log(`[MetaTab] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`);
+
+      // Current period params
+      const params = new URLSearchParams({ brandId: brandId });
+      if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
+      if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
+      
+      // Check if this is "today" date range to force fresh data - CRITICAL FOR TODAY DETECTION
+      const today = new Date();
+      const isToday = dateRange.from && dateRange.to && 
+        dateRange.from.toISOString().split('T')[0] === today.toISOString().split('T')[0] &&
+        dateRange.to.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+      
+      // Apply cache busting to ensure fresh data from database
+      params.append('bypass_cache', 'true');
+      params.append('force_load', 'true');
+      params.append('refresh', 'true');
+      
+      if (isToday) {
+        console.log(`[MetaTab] Today detected for Meta - forcing fresh data fetch (refreshId: ${refreshId})`);
+        params.append('t', Date.now().toString()); // Additional cache busting for today
+      }
+      
+      const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'X-Refresh-ID': refreshId || 'standalone'
+        }
+      });
+      
+      if (!currentResponse.ok) {
+        const errorData = await currentResponse.json().catch(() => ({ error: "Unknown error fetching current Meta data" }));
+        console.error(`[MetaTab] Failed to fetch current period Meta data from database (refreshId: ${refreshId}): ${currentResponse.status}`, errorData);
+        throw new Error(errorData.error || `Failed to fetch current period Meta data: ${currentResponse.status}`);
+      }
+      
+      const currentData = await currentResponse.json();
+      
+      console.log(`[MetaTab] Fetched Meta data from database for current period (refreshId: ${refreshId}):`, {
+        adSpend: currentData.adSpend,
+        impressions: currentData.impressions,
+        clicks: currentData.clicks,
+        conversions: currentData.conversions,
+        roas: currentData.roas,
+        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
+      });
+
+      // Update metrics state with database data - use the same structure as existing MetaTab
+      setMetricsData(prev => ({
+        ...prev,
+        adSpend: currentData.adSpend || 0,
+        impressions: currentData.impressions || 0,
+        clicks: currentData.clicks || 0,
+        conversions: currentData.conversions || 0,
+        roas: currentData.roas || 0,
+        ctr: currentData.ctr || 0,
+        cpc: currentData.cpc || 0,
+        costPerResult: currentData.costPerResult || 0,
+        dailyData: currentData.dailyData || []
+      }));
+      
+      console.log(`[MetaTab] ✅ Updated metricsData state from database (refreshId: ${refreshId})`);
+      
+    } catch (error) {
+      console.error(`[MetaTab] Error fetching Meta data from database (refreshId: ${refreshId}):`, error);
+      // Don't show toast error here as it's usually called after syncMetaInsights which shows its own errors
+    }
+  }, [brandId, dateRange]);
 
   // Smart data gap detection and auto-backfill (same as HomeTab/Dashboard)
   const detectAndBackfillDataGaps = useCallback(async () => {
@@ -3960,7 +4036,7 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }, [brandId, dateRange, fetchMetaData]);
 
-  // Main data loading useEffect (mirrors HomeTab approach exactly)
+  // Main data loading useEffect (mirrors HomeTab approach exactly with TODAY DETECTION)
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
       console.log("[MetaTab] useEffect detected change in brandId or dateRange. Triggering syncMetaInsights.");
@@ -3968,10 +4044,22 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Use the existing prevFetchParamsRef variable from earlier in the file
       const currentFromISO = dateRange.from.toISOString();
       const currentToISO = dateRange.to.toISOString();
+      const brandChanged = brandId !== prevFetchParamsRef.current?.brandId;
+      const datesChanged = currentFromISO !== prevFetchParamsRef.current?.from || currentToISO !== prevFetchParamsRef.current?.to;
       
-      // Only trigger if something actually changed
-      if (!initialLoadComplete.current) {
-        console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
+      // Check if this is "today" selection for special handling
+      const today = new Date();
+      const isToday = dateRange.from && dateRange.to && 
+        dateRange.from.toISOString().split('T')[0] === today.toISOString().split('T')[0] &&
+        dateRange.to.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+      
+      // CRITICAL: For "today", ALWAYS refresh even if dates haven't changed
+      // This ensures selecting "today" when already on today forces a refresh 
+      const shouldRefresh = brandChanged || datesChanged || !initialLoadComplete.current || 
+        (isToday && Date.now() - (window._lastMetaRefresh || 0) > 10000); // Refresh today if >10s since last
+      
+      if (shouldRefresh) {
+        console.log(`[MetaTab] Change detected: Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}, IsToday: ${isToday}`);
         
         // Clear blocking flags to ensure fetch works
         if (typeof window !== 'undefined') {
@@ -3979,14 +4067,24 @@ Try creating at least one active campaign in Meta Ads Manager.
           window._disableAutoMetaFetch = false;
         }
         
-        // Use the same unified sync approach as HomeTab
-        syncMetaInsights().finally(() => {
-          // Mark initial load as complete
-          initialLoadComplete.current = true;
-        });
+        if (!initialLoadComplete.current) {
+          console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
+          
+          // Use the same unified sync approach as HomeTab
+          syncMetaInsights().finally(() => {
+            // Mark initial load as complete and update params
+            initialLoadComplete.current = true;
+            prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
+          });
+        } else {
+          console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
+          syncMetaInsights().finally(() => {
+            // Update params after successful sync
+            prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
+          });
+        }
       } else {
-        console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
-        syncMetaInsights();
+        console.log("[MetaTab] No changes detected, skipping fetch");
       }
     } else {
       console.log("[MetaTab] Skipping data fetch: Missing brandId or full dateRange.");
