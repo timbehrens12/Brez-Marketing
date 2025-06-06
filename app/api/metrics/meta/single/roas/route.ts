@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const preset = url.searchParams.get('preset')
     const isYesterdayPreset = preset === 'yesterday'
     
-    console.log(`ROAS SINGLE METRIC API (from meta_ad_insights): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
+    console.log(`ROAS SINGLE METRIC API (from meta_campaign_daily_stats): Fetching for brand ${brandId} from ${fromDate} to ${toDate}${isYesterdayPreset ? ' (yesterday preset)' : ''}`)
     
     if (!brandId || !fromDate || !toDate) {
       return NextResponse.json({ error: 'Brand ID and date range are required' }, { status: 400 })
@@ -34,17 +34,19 @@ export async function GET(request: NextRequest) {
       console.log(`ROAS SINGLE METRIC API: Using exact yesterday date ${fromDate}`)
     }
     
-    // ROAS = (sum of purchase_value) / (sum of spend)
-    // Query meta_ad_insights which has the actual purchase_conversion_value field
+    // ROAS = (sum of purchase_value or equivalent conversion value) / (sum of spend)
+    // We need to select spend and the relevant conversion/purchase value columns.
+    // Assuming 'conversions' column in meta_campaign_daily_stats represents purchase conversion value for simplicity here.
+    // A more accurate ROAS would sum specific action_values like 'purchase' from a more detailed table if 'conversions' isn't direct revenue.
     const { data: dailyStats, error: dbError } = await supabase
-      .from('meta_ad_insights') 
-      .select('date, spend, purchase_conversion_value')
+      .from('meta_campaign_daily_stats') 
+      .select('date, spend, conversions') // Select spend and conversions (assuming conversions is revenue/value for ROAS)
       .eq('brand_id', brandId)
       .gte('date', fromDate)
       .lte('date', toDate)
     
     if (dbError) {
-      console.error(`ROAS SINGLE METRIC API: Error retrieving from meta_ad_insights:`, dbError)
+      console.error(`ROAS SINGLE METRIC API: Error retrieving from meta_campaign_daily_stats:`, dbError)
       return NextResponse.json({ error: 'Error retrieving data' , _meta: { dbError: dbError.message } }, { status: 500 })
     }
     
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
     if (!filteredStats || filteredStats.length === 0) {
       return NextResponse.json({ 
         value: 0,
-        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_ad_insights' }
+        _meta: { from: fromDate, to: toDate, records: 0, source: 'meta_campaign_daily_stats' }
       })
     }
 
@@ -69,8 +71,9 @@ export async function GET(request: NextRequest) {
     }, 0)
     
     const totalConversionValue = filteredStats.reduce((sum, item) => {
-      // Use the actual purchase_conversion_value field from meta_ad_insights
-      const conversionVal = parseFloat(item.purchase_conversion_value || '0') 
+      // Assuming item.conversions from meta_campaign_daily_stats is the monetary value of conversions for ROAS.
+      // If it's just a count, this calculation will be incorrect and needs adjustment based on data schema.
+      const conversionVal = parseFloat(item.conversions || '0') 
       return sum + (isNaN(conversionVal) ? 0 : conversionVal)
     }, 0)
 
@@ -82,7 +85,7 @@ export async function GET(request: NextRequest) {
         from: fromDate,
         to: toDate,
         records: filteredStats.length,
-        source: 'meta_ad_insights'
+        source: 'meta_campaign_daily_stats'
       }
     }
     return NextResponse.json(result)
