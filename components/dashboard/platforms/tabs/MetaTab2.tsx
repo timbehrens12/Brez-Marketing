@@ -878,23 +878,23 @@ export function MetaTab2({
         />
       </div>
 
-      {/* Third row of 3 - Budget, Reach, and Purchase Value */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Total Budget */}
-        <TotalBudgetMetricCard 
-          brandId={brandId}
-          isManuallyRefreshing={false}
-          disableAutoFetch={isLoadingAllMetaWidgets}
-          unifiedLoading={isLoadingAllMetaWidgets}
-        />
-
-        {/* Total Reach */}
-        <TotalAdSetReachCard 
-          brandId={brandId} 
-          dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-          isManuallyRefreshing={false}
-          disableAutoFetch={isLoadingAllMetaWidgets}
-          unifiedLoading={isLoadingAllMetaWidgets}
+      {/* Third row of 4 - Results, Purchase Value, and special widgets */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        {/* Results */}
+        <MetricCard 
+          title="Results"
+          value={metaMetrics.conversions}
+          change={metaMetrics.conversionGrowth}
+          valueFormat="number"
+          hideGraph={true}
+          showPreviousPeriod={true}
+          previousValue={metaMetrics.previousConversions}
+          previousValueFormat="number"
+          infoTooltip="Total number of results from your ads"
+          nullChangeText="N/A"
+          nullChangeTooltip="No data for previous period"
+          data={[]}
+          loading={isLoadingAllMetaWidgets}
         />
 
         {/* Purchase Value */}
@@ -915,7 +915,26 @@ export function MetaTab2({
           data={[]}
           loading={isLoadingAllMetaWidgets}
         />
+
+        {/* Total Budget */}
+        <TotalBudgetMetricCard 
+          brandId={brandId}
+          isManuallyRefreshing={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
+          unifiedLoading={isLoadingAllMetaWidgets}
+        />
+
+        {/* Total Reach */}
+        <TotalAdSetReachCard 
+          brandId={brandId} 
+          dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+          isManuallyRefreshing={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
+          unifiedLoading={isLoadingAllMetaWidgets}
+        />
       </div>
+
+
 
       {/* Campaign Performance Widget */}
       <CampaignWidget 
