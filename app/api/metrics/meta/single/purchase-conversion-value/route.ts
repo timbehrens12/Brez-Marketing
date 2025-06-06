@@ -73,12 +73,12 @@ export async function GET(request: NextRequest) {
 
     const result = {
       value: parseFloat(totalPurchaseValue.toFixed(2)),
-              _meta: {
-          from: fromDate,
-          to: toDate,
-          records: filteredStats.length,
+      _meta: {
+        from: fromDate,
+        to: toDate,
+        records: filteredStats.length,
           source: 'meta_ad_insights'
-        }
+      }
     }
     return NextResponse.json(result)
   } catch (error) {
