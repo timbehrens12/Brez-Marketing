@@ -145,7 +145,7 @@ function releaseMetaFetchLock(): void {
   window._metaFetchLock = false;
 }
 
-export function MetaTab({ brandId, dateRange }: MetaTabProps) {
+function MetaTabComponent({ brandId, dateRange }: MetaTabProps) {
   const [metricsData, setMetricsData] = useState<MetaMetrics | null>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -160,8 +160,7 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
     const fromNormalized = new Date(from.getFullYear(), from.getMonth(), from.getDate());
     const toNormalized = new Date(to.getFullYear(), to.getMonth(), to.getDate());
     
-    const isSingleDay = isSameDay(fromNormalized, toNormalized);
-    if (isSingleDay) {
+    if (isSameDay(fromNormalized, toNormalized)) {
       const prevDay = new Date(fromNormalized);
       prevDay.setDate(prevDay.getDate() - 1);
       const prevDayStr = toLocalISODateString(prevDay);
@@ -210,7 +209,11 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
       return;
     }
     
-    acquireMetaFetchLock();
+    if (!acquireMetaFetchLock()) {
+        if(isManualRefresh) toast.error("Could not start refresh, another one is in progress.");
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
     if (isManualRefresh) {
@@ -239,7 +242,8 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
 
       const calculateGrowth = (current: number, previous: number) => {
         if (previous === 0) return current > 0 ? Infinity : 0;
-        return ((current - previous) / previous) * 100;
+        if (current === previous) return 0;
+        return ((current - previous) / Math.abs(previous)) * 100;
       };
 
       setMetricsData({
@@ -277,7 +281,6 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
       
       if (isManualRefresh) {
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
-        window._lastMetaRefresh = Date.now();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
@@ -302,7 +305,11 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
       return;
     }
     
-    acquireMetaFetchLock();
+    if (!acquireMetaFetchLock()) {
+      toast.error("Could not start refresh, another one is in progress.");
+      return;
+    }
+    
     setIsLoading(true);
     toast.loading("Syncing with Meta API...", { id: "meta-sync-toast" });
 
@@ -325,7 +332,7 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
     }
   };
 
-  if (!initialLoadComplete.current && isLoading) {
+  if (isLoading && !initialLoadComplete.current) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -341,7 +348,7 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
         </CardHeader>
         <CardContent>
           <p>{error}</p>
-          <Button onClick={() => fetchAllMetaData(true)} className="mt-4">
+          <Button onClick={() => handleManualRefresh()} className="mt-4">
             Try Again
           </Button>
         </CardContent>
@@ -477,8 +484,16 @@ export function MetaTab({ brandId, dateRange }: MetaTabProps) {
   )
 }
 
-export default withErrorBoundary(MetaTab, {
+export const MetaTab = withErrorBoundary(MetaTabComponent, {
   onError: (error) => {
-    console.error("MetaTab error caught by boundary:", error)
-  }
-})
+    console.error("ErrorBoundary caught an error in MetaTab:", error);
+  },
+  fallback: (
+    <div className="p-4 bg-red-900/10 border border-red-800 rounded-lg">
+      <h2 className="text-xl font-bold text-red-400">Something went wrong</h2>
+      <p className="text-red-300 mt-2">There was an unexpected error in the Meta dashboard. Please try refreshing the page.</p>
+    </div>
+  )
+});
+
+export default MetaTab;
