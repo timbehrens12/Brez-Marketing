@@ -1004,13 +1004,26 @@ export function MetaTab({
     
     console.log(`[MetaTab] Mount/Update Effect: brandId or dateRange changed. Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}`);
 
-    // **COORDINATION CHECK**: Skip if we recently refreshed or tab switch is in progress
-    if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress) {
-      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - recently refreshed or tab switch in progress");
-      if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
-        setIsLoadingAllMetaWidgets(false);
-      }
+    // **CRITICAL FIX**: Allow refresh on tab switch! Only skip if fetch is already in progress
+    // Remove the hasRecentlyRefreshed check and tab switch blocking - we WANT to refresh on tab switches!
+    // This was preventing the Meta page from showing fresh data when switching to it
+    if (isMetaFetchInProgress()) {
+      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - fetch already in progress");
       return;
+    }
+    
+    // **TODAY DETECTION**: Force refresh when switching to today or when tab becomes active
+    const isToday = dateRange?.from && dateRange?.to && 
+      dateRange.from.toDateString() === new Date().toDateString() &&
+      dateRange.to.toDateString() === new Date().toDateString();
+    
+    if (isToday || window._metaTabSwitchInProgress) {
+      console.log(`[MetaTab] 🚀 FORCING refresh due to: ${isToday ? 'TODAY selected' : 'TAB SWITCH'}`);
+      // Clear any previous refresh timestamps to force fresh data
+      if (typeof window !== 'undefined') {
+        window._lastMetaRefresh = 0;
+        window._lastMetaTabRefresh = 0;
+      }
     }
 
     // **COORDINATION CHECK**: Skip if there's already a fetch in progress
@@ -1031,11 +1044,8 @@ export function MetaTab({
     }
       
     const timeoutId = setTimeout(async () => {
-      if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress || isMetaFetchInProgress()) {
-        console.log("[MetaTab] ⚠️ Skipping delayed mount/update refresh - conditions changed during timeout");
-        if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
-            setIsLoadingAllMetaWidgets(false);
-        }
+      if (isMetaFetchInProgress()) {
+        console.log("[MetaTab] ⚠️ Skipping delayed mount/update refresh - fetch in progress");
         return;
       }
 
@@ -3814,11 +3824,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (result.success) {
         console.log(`[MetaTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
         
-        // Step 2: Now fetch the refreshed data from database with TODAY DETECTION (like HomeTab)
+        // Step 2: Now fetch the refreshed data with TODAY DETECTION (like HomeTab)
         console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
         
-        // Use database-based fetch with cache busting for today
-        await fetchMetaDataFromDatabase(refreshId);
+        // Use the existing fetchMetaData function which already has today detection
+        await fetchMetaData();
         
         // Also refresh campaigns if needed
         await fetchCampaigns(true);
@@ -3866,7 +3876,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsManuallyRefreshing(false);
       releaseMetaFetchLock(refreshId);
     }
-  }, [brandId, dateRange, fetchCampaigns, fetchMetaDataFromDatabase]);
+  }, [brandId, dateRange, fetchCampaigns]);
 
   // Add the missing fetchMetaDataFromDatabase function from HomeTab with TODAY DETECTION
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
