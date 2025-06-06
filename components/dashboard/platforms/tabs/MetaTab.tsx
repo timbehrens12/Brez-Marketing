@@ -636,13 +636,11 @@ export function MetaTab({
   };
 
     async function fetchMetaData() {
-    // Clear any blocking flags on manual data fetch to ensure it works
-    if (typeof window !== 'undefined') {
-      window._blockMetaApiCalls = false;
-      window._disableAutoMetaFetch = false;
+    // Don't make API calls if the block flags are set
+    if (window._blockMetaApiCalls || window._disableAutoMetaFetch) {
+      console.log("Blocking Meta API call - auto fetch disabled or component unmounted");
+      return;
     }
-    
-    console.log('[MetaTab] fetchMetaData called - cleared blocking flags');
     
     if (!brandId) return;
     
@@ -705,9 +703,7 @@ export function MetaTab({
         strict_date_range: 'true',  // Always enforce strict date handling
         bypass_cache: 'true',       // Always bypass cache for fresh data
         date_debug: 'true',         // Enable date debugging
-        refresh: 'true',            // Force refresh every time to prevent stale data
-        force_load: 'true',         // Always force fresh data load
-        t: Date.now().toString()    // Cache busting timestamp
+        refresh: 'true'             // Force refresh every time to prevent stale data
       });
       
       // Add extra cache busting specifically for "today" to ensure fresh data
@@ -810,11 +806,10 @@ export function MetaTab({
           
           response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
             signal,
-            cache: 'no-store',
+            cache: 'no-cache',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
+              'Pragma': 'no-cache'
             }
           });
           
@@ -1010,13 +1005,14 @@ export function MetaTab({
     
     console.log(`[MetaTab] Mount/Update Effect: brandId or dateRange changed. Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}`);
 
-          // **COORDINATION CHECK**: Allow refresh on mount/date changes (removed throttling)
-      if (window._metaTabSwitchInProgress) {
-        console.log("[MetaTab] ⚠️ Skipping refresh - tab switch in progress");
-        return;
+    // **COORDINATION CHECK**: Skip if we recently refreshed or tab switch is in progress
+    if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress) {
+      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - recently refreshed or tab switch in progress");
+      if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
+        setIsLoadingAllMetaWidgets(false);
       }
-      
-      console.log("[MetaTab] 🚀 Proceeding with mount/update refresh");
+      return;
+    }
 
     // **COORDINATION CHECK**: Skip if there's already a fetch in progress
     if (isMetaFetchInProgress()) {
@@ -2042,91 +2038,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       }
     };
   }, [dateRange, brandId, campaigns]);
-
-  // Add database-based sync function (similar to HomeTab approach)
-  const syncMetaDataDirectly = async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
-      return;
-    }
-    
-    console.log("[MetaTab] Syncing Meta data directly from database...");
-    
-    // Clear blocking flags first
-    if (typeof window !== 'undefined') {
-      window._blockMetaApiCalls = false;
-      window._disableAutoMetaFetch = false;
-    }
-    
-    // Set loading state
-    setLoading(true);
-    setIsDateChangeLoading(true);
-    
-    try {
-      // Format dates
-      const startDate = dateRange.from.toISOString().split('T')[0];
-      const endDate = dateRange.to.toISOString().split('T')[0];
-      
-      console.log(`[MetaTab] Syncing for date range: ${startDate} to ${endDate}`);
-      
-      // Force a fresh data fetch bypassing any caching
-      await fetchMetaData();
-      
-      console.log("[MetaTab] ✅ Meta data sync completed");
-      
-    } catch (error) {
-      console.error("[MetaTab] Error syncing Meta data:", error);
-      setError(error instanceof Error ? error.message : 'Failed to sync Meta data');
-    } finally {
-      setLoading(false);
-      setIsDateChangeLoading(false);
-    }
-  };
-
-  // Add initial mount effect to trigger data load (similar to HomeTab)
-  useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[MetaTab] 🚀 Component mount or brand/date change detected - triggering immediate data sync");
-      
-      // Clear any blocking flags that might prevent refresh
-      if (typeof window !== 'undefined') {
-        window._blockMetaApiCalls = false;
-        window._disableAutoMetaFetch = false;
-        window._metaTabSwitchInProgress = false;
-      }
-      
-      // Trigger immediate sync without delay
-      syncMetaDataDirectly();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId, dateRange?.from, dateRange?.to]); // Trigger on brand or date changes
-
-  // Add specific effect to handle "today" selection for fresh data
-  useEffect(() => {
-    if (brandId && dateRange?.from && dateRange?.to) {
-      const today = new Date();
-      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
-      
-      if (isToday) {
-        console.log("[MetaTab] 🌟 TODAY detected - forcing fresh data refresh");
-        
-        // Clear all blocking flags
-        if (typeof window !== 'undefined') {
-          window._blockMetaApiCalls = false;
-          window._disableAutoMetaFetch = false;
-          window._metaTabSwitchInProgress = false;
-          window._lastMetaRefresh = 0; // Reset last refresh time
-        }
-        
-        // Force immediate refresh for today
-        const timeoutId = setTimeout(() => {
-          syncMetaDataDirectly();
-        }, 50);
-        
-        return () => clearTimeout(timeoutId);
-      }
-    }
-  }, [dateRange?.from, dateRange?.to, brandId]); // Specifically watch for date changes
 
   // Add an effect to handle data refresh that maintains date ranges
 

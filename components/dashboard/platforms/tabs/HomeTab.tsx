@@ -757,7 +757,7 @@ export function HomeTab({
       
       // Apply aggressive cache busting for hard refreshes, "today" date range, or if specified
       if (isHardRefresh || isToday) {
-        params.append('bypass_cache', 'true');
+      params.append('bypass_cache', 'true');
         params.append('force_load', 'true'); // Ensure backend re-fetches from DB
         params.append('refresh', 'true'); // Instructs backend to re-calculate/re-fetch if needed
         if (isToday) {
@@ -775,9 +775,9 @@ export function HomeTab({
       if (prevTo) prevParams.append('to', prevTo);
 
       if (isHardRefresh || isToday) {
-        prevParams.append('bypass_cache', 'true');
-        prevParams.append('force_load', 'true');
-        prevParams.append('refresh', 'true');
+      prevParams.append('bypass_cache', 'true');
+      prevParams.append('force_load', 'true');
+      prevParams.append('refresh', 'true');
         if (isToday) {
           prevParams.append('t', Date.now().toString()); // Additional cache busting for today
         }
