@@ -689,8 +689,14 @@ export function MetaTab({
                                isSameDay(fromDate, toDate) && 
                                isYesterday(fromDate));
       
-      const isToday = (dateRange as any)?._preset === 'today';
+      const today = new Date();
+      const isToday = (dateRange as any)?._preset === 'today' || 
+                     (fromDate && toDate && 
+                      isSameDay(fromDate, today) && 
+                      isSameDay(toDate, today));
       const isCustomRange = !isYesterdayPreset && !isToday;
+      
+      console.log(`[MetaTab] Date range detection: yesterday=${isYesterdayPreset}, today=${isToday}, custom=${isCustomRange}`);
 
       const params = new URLSearchParams({
         brandId: brandId as string,
@@ -705,6 +711,14 @@ export function MetaTab({
         params.append('force_load', 'true');
         params.append('t', Date.now().toString());
         console.log('[MetaTab] Today detected - adding extra cache busting parameters');
+      }
+      
+      // Also add cache busting for any single-day selection to ensure fresh data
+      const isSingleDay = fromDate && toDate && isSameDay(fromDate, toDate);
+      if (isSingleDay && !isYesterdayPreset && !isToday) {
+        params.append('force_load', 'true');
+        params.append('t', Date.now().toString());
+        console.log('[MetaTab] Single day selection detected - adding cache busting parameters');
       }
       
       // Handle special presets with explicit date determination
@@ -735,16 +749,22 @@ export function MetaTab({
         params.append('preset', 'today');
         console.log(`Using today preset with exact date: ${todayStr}`);
       }
-      else if (fromDate) {
-        // For normal date ranges
-        const formattedFromDate = new Date(fromDate);
-        formattedFromDate.setHours(0, 0, 0, 0);
-        params.append('from', formattedFromDate.toISOString().split('T')[0]);
-        
-        if (toDate) {
-          const formattedToDate = new Date(toDate);
-          formattedToDate.setHours(23, 59, 59, 999);
-          params.append('to', formattedToDate.toISOString().split('T')[0]);
+      else {
+        // For all other date ranges (including custom ranges and fallback)
+        if (fromDate) {
+          const formattedFromDate = new Date(fromDate);
+          formattedFromDate.setHours(0, 0, 0, 0);
+          params.append('from', formattedFromDate.toISOString().split('T')[0]);
+          
+          if (toDate) {
+            const formattedToDate = new Date(toDate);
+            formattedToDate.setHours(23, 59, 59, 999);
+            params.append('to', formattedToDate.toISOString().split('T')[0]);
+          }
+          
+          console.log(`[MetaTab] Using regular date range: ${formattedFromDate.toISOString().split('T')[0]} to ${toDate ? new Date(toDate).toISOString().split('T')[0] : 'undefined'}`);
+        } else {
+          console.error('[MetaTab] No fromDate available for date range, this should not happen');
         }
       }
       
@@ -1894,12 +1914,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       return;
     }
 
-    // **COORDINATION CHECK**: Skip if both old values were undefined (initial mount scenario)
+    // **COORDINATION CHECK**: For initial mount, allow data fetch to happen
     if (!oldFrom && !oldTo && newFrom && newTo) {
-      console.log(`[MetaTab] 🚫 Date range effect: Skipping initial date range assignment during mount`);
-      // Update the ref to track the new values without triggering a fetch
-      lastProcessedDateRange.current = { from: newFrom, to: newTo };
-      return;
+      console.log(`[MetaTab] 🚀 Date range effect: Initial mount detected - proceeding with data fetch`);
+      // Don't return here - let the data fetch proceed for initial mount
     }
     
     // Generate a unique request ID for this date change to track it in logs
