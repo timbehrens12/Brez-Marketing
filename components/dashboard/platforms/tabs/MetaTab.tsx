@@ -440,7 +440,6 @@ export function MetaTab({
   const initialLoadComplete = useRef<boolean>(false);
   // dateRangeRef was: useRef(dateRange); 
   // Let's define a new ref to store previous brandId and date strings for comparison
-  const prevFetchParamsRef = useRef<{ brandId?: string; from?: string; to?: string }>();
 
   // Add this state near the other state declarations
   const [showDebugControls, setShowDebugControls] = useState(false);
@@ -3753,33 +3752,49 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [brandId, fetchMetaData]); // Simplified dependencies
 
-  // Function to manually sync Meta insights data
-  const syncMetaInsights = async () => {
+  // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION
+  const syncMetaInsights = useCallback(async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
-      toast.error("Cannot sync data - missing brand ID or date range");
+      console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
       return;
     }
     
-    console.log("[MetaTab] Starting sync with unified loading for all Meta widgets");
+    const refreshId = `meta-tab-sync-${Date.now()}`;
     
-    toast.info("Syncing Meta insights data...", {
-      description: "This might take a moment depending on the date range.",
-      duration: 5000
-    });
+    // Use the same locking mechanism for consistency (like HomeTab)
+    if (isMetaFetchInProgress()) {
+      console.log(`[MetaTab] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`);
+      toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" });
+      return;
+    }
     
-    // Set unified loading state for all widgets during sync
+    if (!acquireMetaFetchLock(refreshId)) {
+      console.log(`[MetaTab] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`);
+      toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" });
+      return;
+    }
+    
+    console.log("[MetaTab] Syncing Meta insights data through database...");
+    
+    // Set ALL Meta widget loading states to true for consistent loading (like HomeTab)
+    setLoading(true);
     setIsLoadingAllMetaWidgets(true);
     setIsManuallyRefreshing(true);
+    
+    toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 });
     
     try {
       // Format dates in YYYY-MM-DD format
       const startDate = dateRange.from.toISOString().split('T')[0];
       const endDate = dateRange.to.toISOString().split('T')[0];
       
+      // Step 1: Sync fresh data from Meta API to database (like HomeTab)
+      console.log(`[MetaTab] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`);
       const response = await fetch('/api/meta/insights/sync', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Refresh-ID': refreshId
         },
         body: JSON.stringify({
           brandId,
@@ -3797,34 +3812,87 @@ Try creating at least one active campaign in Meta Ads Manager.
       const result = await response.json();
       
       if (result.success) {
-        toast.success("Meta insights synced successfully", {
-          description: `Synced ${result.count || 0} records from Meta.`,
-          duration: 5000
-        });
+        console.log(`[MetaTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
         
-        // After successful sync, refresh the data
-        logger.info("[MetaTab] syncMetaInsights: Sync successful, triggering fetchMetaData to refresh display.");
-        await fetchMetaData(); // This will now manage unified loading for metrics and campaigns
+        // Step 2: Now fetch the refreshed data from database (like HomeTab)
+        console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
         
-        // NOTE: Removed metaDataRefreshed event dispatch here to prevent double refresh
-        // since fetchMetaData() now handles comprehensive data loading including campaigns
-        // and the reach/budget widgets update through prop changes
+        // Fetch metrics data from database after sync
+        await fetchMetaData();
+        
+        // Also refresh campaigns if needed
+        await fetchCampaigns(true);
+        
+        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
+        window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
+        
+        // Dispatch event to notify other components (like HomeTab)
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            forceRefresh: true,
+            syncedRecords: result.count || 0,
+            source: 'MetaTabSync',
+            refreshId
+          }
+        }));
+        
+        console.log(`[MetaTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
       } else {
         throw new Error(result.error || 'Failed to sync Meta insights');
       }
     } catch (error) {
-      console.error('Error syncing Meta insights:', error);
+      console.error(`[MetaTab] Error syncing Meta insights (refreshId: ${refreshId}):`, error);
       toast.error("Failed to sync Meta insights", {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 5000
+        duration: 5000,
+        id: "meta-refresh-toast"
       });
     } finally {
-      // Clear unified loading state when sync is complete
+      // Clear ALL Meta widget loading states at the same time for consistent loading (like HomeTab)
+      setLoading(false);
       setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false);
-      console.log("[MetaTab] Sync with unified loading completed");
+      releaseMetaFetchLock(refreshId);
     }
-  };
+  }, [brandId, dateRange, fetchMetaData, fetchCampaigns]);
+
+  // Main data loading useEffect (mirrors HomeTab approach exactly)
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to) {
+      console.log("[MetaTab] useEffect detected change in brandId or dateRange. Triggering syncMetaInsights.");
+      
+      // Use the existing prevFetchParamsRef variable from earlier in the file
+      const currentFromISO = dateRange.from.toISOString();
+      const currentToISO = dateRange.to.toISOString();
+      
+      // Only trigger if something actually changed
+      if (!initialLoadComplete.current) {
+        console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
+        
+        // Clear blocking flags to ensure fetch works
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+        }
+        
+        // Use the same unified sync approach as HomeTab
+        syncMetaInsights().finally(() => {
+          // Mark initial load as complete
+          initialLoadComplete.current = true;
+        });
+      } else {
+        console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
+        syncMetaInsights();
+      }
+    } else {
+      console.log("[MetaTab] Skipping data fetch: Missing brandId or full dateRange.");
+      // Clear loading states when prerequisites aren't met
+      setLoading(false);
+      setIsLoadingAllMetaWidgets(false);
+    }
+  }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]);
 
   // Add debug mode state
   const [debugMode, setDebugMode] = useState(false);
@@ -4611,16 +4679,28 @@ Try creating at least one active campaign in Meta Ads Manager.
     lastNavigationRef.current = pathname;
   }, [pathname]);
 
-  // Page visibility detection effect (NO AUTO-REFRESH)
+  // Page visibility detection effect with auto-refresh (like HomeTab)
   useEffect(() => {
     const handleVisibilityChange = () => {
       const currentVisibility = document.visibilityState;
       
-      // Just log visibility changes, don't auto-refresh
       if (currentVisibility === 'visible' && lastVisibilityRef.current === 'hidden') {
-        console.log('[MetaTab] Page became visible - timer will continue showing time since last refresh');
+        console.log('[MetaTab] Page became visible - triggering data refresh like HomeTab');
+        
+        // Clear any potential blocking flags from other tabs/components
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+          console.log("[MetaTab] Cleared blocking flags on visibility change");
+        }
+        
+        // Auto-refresh data when page becomes visible (same as HomeTab)
+        if (brandId && dateRange?.from && dateRange?.to) {
+          console.log("[MetaTab] Triggering syncMetaInsights on page visibility");
+          syncMetaInsights();
+        }
       } else if (currentVisibility === 'hidden') {
-        console.log('[MetaTab] Page became hidden - timer will continue in background');
+        console.log('[MetaTab] Page became hidden');
       }
       
       lastVisibilityRef.current = currentVisibility;
@@ -4628,7 +4708,7 @@ Try creating at least one active campaign in Meta Ads Manager.
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [brandId, dateRange, syncMetaInsights]);
   
   // Focus detection (NO AUTO-REFRESH)
   useEffect(() => {
@@ -4778,74 +4858,49 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   };
 
-  // === CONSOLIDATED DATA FETCHING LOGIC ===
-  // Replace multiple useEffect hooks with a single coordinated data fetching system
+  // === UNIFIED DATA FETCHING LOGIC (SAME AS HOMETAB) ===
+  // Simple, working approach from HomeTab that handles all scenarios properly
   
-  // Add a ref to prevent duplicate fetches
-  const isFetchingRef = useRef(false);
-  const lastFetchParamsRef = useRef<string>('');
+  // Add a ref to track fetch parameters for comparison
+  const prevFetchParamsRef = useRef<{ brandId?: string; from?: string; to?: string }>();
   
-  // Single useEffect to handle all data fetching scenarios
+  // Main data loading useEffect (mirrors HomeTab approach)
   useEffect(() => {
-    // Early returns for invalid states
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.log('[MetaTab] Skipping fetch: missing brandId or dateRange');
-      setLoading(false);
-      return;
-    }
-    
-    // Skip if already fetching to prevent duplicates
-    if (isFetchingRef.current) {
-      console.log('[MetaTab] Skipping fetch: already in progress');
-      return;
-    }
-    
-    // Create fetch params to detect if this is a duplicate request
-    const fetchParams = `${brandId}-${dateRange.from.toISOString()}-${dateRange.to.toISOString()}`;
-    if (lastFetchParamsRef.current === fetchParams && initialLoadComplete.current) {
-      console.log('[MetaTab] Skipping fetch: same parameters as last request');
-      return;
-    }
-    
-    console.log(`[MetaTab] 🚀 Starting unified data fetch for: ${fetchParams}`);
-    
-    // Set fetching flag and update last fetch params
-    isFetchingRef.current = true;
-    lastFetchParamsRef.current = fetchParams;
-    
-    // Use the existing fetchAllMetricsDirectly function which handles everything
-    const performFetch = async () => {
-      try {
-        setLoading(true);
-        setIsLoadingAllMetaWidgets(true);
+    if (brandId && dateRange?.from && dateRange?.to) {
+      console.log("[MetaTab] useEffect detected change in brandId or dateRange. Triggering syncMetaInsights.");
+      
+      // Compare with previous parameters to avoid unnecessary fetches
+      const currentFromISO = dateRange.from.toISOString();
+      const currentToISO = dateRange.to.toISOString();
+      const brandChanged = brandId !== prevFetchParamsRef.current?.brandId;
+      const datesChanged = currentFromISO !== prevFetchParamsRef.current?.from || currentToISO !== prevFetchParamsRef.current?.to;
+      
+      // Only trigger if something actually changed
+      if (brandChanged || datesChanged || !initialLoadComplete.current) {
+        console.log(`[MetaTab] Change detected: Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}`);
         
-        // Call the consolidated fetch function
-        await fetchAllMetricsDirectly();
-        
-        // Mark initial load as complete
-        if (!initialLoadComplete.current) {
-          initialLoadComplete.current = true;
+        // Clear blocking flags to ensure fetch works
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
         }
         
-        console.log('[MetaTab] ✅ Unified data fetch completed successfully');
-        
-      } catch (error) {
-        console.error('[MetaTab] ❌ Error in unified data fetch:', error);
-        setError(error instanceof Error ? error.message : "Failed to load Meta data");
-      } finally {
-        setLoading(false);
-        setIsLoadingAllMetaWidgets(false);
-        isFetchingRef.current = false;
+        // Use the same unified sync approach as HomeTab
+        syncMetaInsights().finally(() => {
+          // Mark initial load as complete and update params
+          initialLoadComplete.current = true;
+          prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
+        });
+      } else {
+        console.log("[MetaTab] No changes detected, skipping fetch");
       }
-    };
-    
-    performFetch();
-    
-    // Cleanup function
-    return () => {
-      // Don't reset flags in cleanup to avoid race conditions
-    };
-  }, [brandId, dateRange?.from, dateRange?.to]); // Only depend on essential params
+    } else {
+      console.log("[MetaTab] Skipping data fetch: Missing brandId or full dateRange.");
+      // Clear loading states when prerequisites aren't met
+      setLoading(false);
+      setIsLoadingAllMetaWidgets(false);
+    }
+  }, [brandId, dateRange?.from, dateRange?.to, syncMetaInsights]);
   
   // Separate useEffect for handling manual refreshes (when user clicks refresh button)
   useEffect(() => {
