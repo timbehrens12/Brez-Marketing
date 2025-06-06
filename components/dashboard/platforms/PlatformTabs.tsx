@@ -2,7 +2,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
-import MetaTab from "./tabs/MetaTab"
+import { MetaTab } from "./tabs/MetaTab"
 import { HomeTab } from "./tabs/HomeTab"
 import type { Metrics } from "@/types/metrics"
 import { transformToMetaMetrics } from "@/lib/transforms"

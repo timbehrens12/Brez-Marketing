@@ -3528,10 +3528,21 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Set unified loading state to true for all widgets
     setIsLoadingAllMetaWidgets(true);
     
-    // Use the unified data fetching approach - no more individual fetch functions
+    // Fetch ALL data in parallel - metrics AND campaigns
     await Promise.all([
-      fetchMetaDataFromDatabase('fetchAllMetricsDirectly'), // Gets fresh data for overview widgets
-      fetchCampaigns(true) // Gets fresh data for special widgets
+      fetchAdSpendDirectly(),
+      fetchRoasDirectly(),
+      fetchImpressionsDirectly(),
+      fetchClicksDirectly(),
+      fetchPurchaseValueDirectly(),
+      fetchResultsDirectly(),
+      fetchCostPerResultDirectly(),
+      fetchCostPerClickDirectly(),
+      fetchCtrDirectly(),
+      fetchReachDirectly(), // Ensure this is called
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly(), // Ensure this is also called for consistency
+      fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
     ]);
     
     // Clear unified loading state when ALL data is loaded
@@ -3582,10 +3593,21 @@ Try creating at least one active campaign in Meta Ads Manager.
       // This prevents flickering by ensuring a consistent loading state is shown
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Use the unified data fetching approach - no more individual fetch functions
+      // Fetch ALL data in parallel - metrics AND campaigns
       await Promise.all([
-        fetchMetaDataFromDatabase('refreshAllMetricsDirectly'), // Gets fresh data for overview widgets
-        fetchCampaigns(true) // Gets fresh data for special widgets
+        fetchAdSpendDirectly(),
+        fetchRoasDirectly(),
+        fetchImpressionsDirectly(),
+        fetchClicksDirectly(),
+        fetchPurchaseValueDirectly(),
+        fetchResultsDirectly(),
+        fetchCostPerResultDirectly(),
+        fetchCostPerClickDirectly(),
+        fetchCtrDirectly(),
+        fetchReachDirectly(),
+        fetchLinkClicksDirectly(),
+        fetchBudgetDirectly(),
+        fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
       ])
       
       // Success toast is shown only here, not in individual fetch functions
@@ -3599,7 +3621,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsManuallyRefreshing(false)
       console.log("[MetaTab] Manual refresh with unified loading completed for all widgets AND campaigns");
     }
-  }, [dateRange, brandId, fetchMetaDataFromDatabase, fetchCampaigns]);
+  }, [dateRange, brandId, 
+     fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
+     fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
+     fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
+     fetchReachDirectly, fetchLinkClicksDirectly, fetchBudgetDirectly, fetchCampaigns]);
   
   // Setup auto-refresh on a 5-minute interval
   useEffect(() => {
@@ -3714,16 +3740,9 @@ Try creating at least one active campaign in Meta Ads Manager.
           return;
         }
         
-        logger.info("[MetaTab] metaDataRefreshed: Triggering comprehensive refresh for both campaigns and overview metrics due to external event.");
+        logger.info("[MetaTab] metaDataRefreshed: Triggering fetchMetaData for a comprehensive refresh due to external event.");
         toast.info("Updating Meta data based on external event...", { duration: 3000 });
-        
-        // Update BOTH campaign data (special widgets) AND overview metrics (main grid widgets)
-        Promise.all([
-          fetchMetaData(), // For campaigns (special widgets)
-          fetchMetaDataFromDatabase('tab-switch-refresh') // For overview metrics (main grid widgets)
-        ]).catch(error => {
-          console.error("[MetaTab] Error during metaDataRefreshed comprehensive refresh:", error);
-        });
+        fetchMetaData(); // This single call now handles campaigns and all metrics
       }
     };
 
@@ -3735,6 +3754,122 @@ Try creating at least one active campaign in Meta Ads Manager.
       window.removeEventListener('metaDataRefreshed', handleMetaDataRefreshed as EventListener);
     };
   }, [brandId, fetchMetaData]); // Simplified dependencies
+
+  // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION WITH TODAY DETECTION
+  const syncMetaInsights = useCallback(async () => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
+      return;
+    }
+    
+    const refreshId = `meta-tab-sync-${Date.now()}`;
+    
+    // Use the same locking mechanism for consistency (like HomeTab)
+    if (isMetaFetchInProgress()) {
+      console.log(`[MetaTab] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`);
+      toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" });
+      return;
+    }
+    
+    if (!acquireMetaFetchLock(refreshId)) {
+      console.log(`[MetaTab] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`);
+      toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" });
+      return;
+    }
+    
+    console.log("[MetaTab] Syncing Meta insights data through database...");
+    
+    // Set ALL Meta widget loading states to true for consistent loading (like HomeTab)
+    setLoading(true);
+    setIsLoadingAllMetaWidgets(true);
+    setIsManuallyRefreshing(true);
+    
+    toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 });
+    
+    try {
+      // Format dates in YYYY-MM-DD format
+      const startDate = dateRange.from.toISOString().split('T')[0];
+      const endDate = dateRange.to.toISOString().split('T')[0];
+      
+      // Step 1: Sync fresh data from Meta API to database (like HomeTab)
+      console.log(`[MetaTab] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`);
+      const response = await fetch('/api/meta/insights/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Refresh-ID': refreshId
+        },
+        body: JSON.stringify({
+          brandId,
+          startDate,
+          endDate,
+          forceRefresh: true
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to sync Meta insights');
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log(`[MetaTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
+        
+        // Step 2: Now fetch the refreshed data with TODAY DETECTION (like HomeTab)
+        console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
+        
+        // Use the existing fetchMetaData function which already has today detection
+        await fetchMetaData();
+        
+        // Also refresh campaigns if needed
+        await fetchCampaigns(true);
+        
+        // Step 3: Check for data gaps and auto-backfill if needed (same as HomeTab)
+        console.log(`[MetaTab] 🚀 Step 3: Checking for data gaps and auto-backfilling if needed (refreshId: ${refreshId})`);
+        // Use setTimeout to call detectAndBackfillDataGaps after the current call stack
+        setTimeout(() => {
+          detectAndBackfillDataGaps().catch(error => {
+            console.error(`[MetaTab] Error during gap detection (refreshId: ${refreshId}):`, error);
+          });
+        }, 1000);
+        
+        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
+        window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
+        
+        // Dispatch event to notify other components (like HomeTab)
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            forceRefresh: true,
+            syncedRecords: result.count || 0,
+            source: 'MetaTabSync',
+            refreshId
+          }
+        }));
+        
+        console.log(`[MetaTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
+        
+      } else {
+        throw new Error(result.error || 'Failed to sync Meta insights');
+      }
+    } catch (error) {
+      console.error(`[MetaTab] Error syncing Meta insights (refreshId: ${refreshId}):`, error);
+      toast.error("Failed to sync Meta insights", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 5000,
+        id: "meta-refresh-toast"
+      });
+    } finally {
+      // Clear ALL Meta widget loading states at the same time for consistent loading (like HomeTab)
+      setLoading(false);
+      setIsLoadingAllMetaWidgets(false);
+      setIsManuallyRefreshing(false);
+      releaseMetaFetchLock(refreshId);
+    }
+  }, [brandId, dateRange, fetchCampaigns]);
 
   // Add the missing fetchMetaDataFromDatabase function from HomeTab with TODAY DETECTION
   const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
@@ -3814,125 +3949,6 @@ Try creating at least one active campaign in Meta Ads Manager.
       // Don't show toast error here as it's usually called after syncMetaInsights which shows its own errors
     }
   }, [brandId, dateRange]);
-
-  // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION WITH TODAY DETECTION
-  const syncMetaInsights = useCallback(async () => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.error("[MetaTab] Cannot sync data - missing brand ID or date range");
-      return;
-    }
-    
-    const refreshId = `meta-tab-sync-${Date.now()}`;
-    
-    // Use the same locking mechanism for consistency (like HomeTab)
-    if (isMetaFetchInProgress()) {
-      console.log(`[MetaTab] ⚠️ Meta sync skipped - fetch already in progress for refreshId: ${refreshId}`);
-      toast.info("Meta data is already refreshing. Please wait.", { id: "meta-refresh-toast" });
-      return;
-    }
-    
-    if (!acquireMetaFetchLock(refreshId)) {
-      console.log(`[MetaTab] ⛔ Failed to acquire global lock for Meta sync refreshId: ${refreshId}`);
-      toast.error("Failed to initiate Meta data refresh. Please try again.", { id: "meta-refresh-toast" });
-      return;
-    }
-    
-    console.log("[MetaTab] Syncing Meta insights data through database...");
-    
-    // Set ALL Meta widget loading states to true for consistent loading (like HomeTab)
-    setLoading(true);
-    setIsLoadingAllMetaWidgets(true);
-    setIsManuallyRefreshing(true);
-    
-    toast.loading("Refreshing Meta data...", { id: "meta-refresh-toast", duration: 15000 });
-    
-    try {
-      // Format dates in YYYY-MM-DD format
-      const startDate = dateRange.from.toISOString().split('T')[0];
-      const endDate = dateRange.to.toISOString().split('T')[0];
-      
-      // Step 1: Sync fresh data from Meta API to database (like HomeTab)
-      console.log(`[MetaTab] 🚀 Step 1: Syncing Meta insights to database (refreshId: ${refreshId})`);
-      const response = await fetch('/api/meta/insights/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Refresh-ID': refreshId
-        },
-        body: JSON.stringify({
-          brandId,
-          startDate,
-          endDate,
-          forceRefresh: true
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to sync Meta insights');
-      }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log(`[MetaTab] ✅ Meta insights synced successfully - synced ${result.count || 0} records from Meta (refreshId: ${refreshId})`);
-        
-        // Step 2: Now fetch the refreshed data with TODAY DETECTION (like HomeTab)
-        console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
-        
-        // Fetch both campaign data AND overview metrics data from database to ensure all widgets sync
-        await Promise.all([
-          fetchMetaData(), // For campaigns (used by special widgets)
-          fetchMetaDataFromDatabase(refreshId), // For overview metrics (used by main grid widgets)
-          fetchCampaigns(true) // For campaign widget
-        ]);
-        
-        // Step 3: Check for data gaps and auto-backfill if needed (same as HomeTab)
-        console.log(`[MetaTab] 🚀 Step 3: Checking for data gaps and auto-backfilling if needed (refreshId: ${refreshId})`);
-        // Use setTimeout to call detectAndBackfillDataGaps after the current call stack
-        setTimeout(() => {
-          detectAndBackfillDataGaps().catch(error => {
-            console.error(`[MetaTab] Error during gap detection (refreshId: ${refreshId}):`, error);
-          });
-        }, 1000);
-        
-        toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
-        window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
-        
-        // Dispatch event to notify other components (like HomeTab)
-        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            syncedRecords: result.count || 0,
-            source: 'MetaTabSync',
-            refreshId
-          }
-        }));
-        
-        console.log(`[MetaTab] ✅ FULL Meta sync completed successfully (refreshId: ${refreshId})`);
-        
-      } else {
-        throw new Error(result.error || 'Failed to sync Meta insights');
-      }
-    } catch (error) {
-      console.error(`[MetaTab] Error syncing Meta insights (refreshId: ${refreshId}):`, error);
-      toast.error("Failed to sync Meta insights", {
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 5000,
-        id: "meta-refresh-toast"
-      });
-    } finally {
-      // Clear ALL Meta widget loading states at the same time for consistent loading (like HomeTab)
-      setLoading(false);
-      setIsLoadingAllMetaWidgets(false);
-      setIsManuallyRefreshing(false);
-      releaseMetaFetchLock(refreshId);
-    }
-  }, [brandId, dateRange, fetchCampaigns, fetchMetaDataFromDatabase]);
-
-
 
   // Smart data gap detection and auto-backfill (same as HomeTab/Dashboard)
   const detectAndBackfillDataGaps = useCallback(async () => {
