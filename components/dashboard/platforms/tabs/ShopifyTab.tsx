@@ -11,7 +11,7 @@ import type { DateRange } from "react-day-picker"
 import { Activity, ShoppingBag, Users, DollarSign, TrendingUp, Package, RefreshCcw, BarChart2, PercentIcon, UserCheck, ShoppingCart } from "lucide-react"
 import { PlatformConnection } from "@/types/platformConnection"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
-import { addDays, differenceInDays, subDays, startOfDay, endOfDay } from "date-fns"
+import { addDays, differenceInDays, subDays, startOfDay, endOfDay, isSameDay } from "date-fns"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useSupabase } from "@/lib/hooks/useSupabase"
 import { calculateMetrics } from "@/utils/metrics"
@@ -383,6 +383,14 @@ export function ShopifyTab({
       const formattedFromDate = format(dateRange.from, 'yyyy-MM-dd');
       const formattedToDate = format(dateRange.to, 'yyyy-MM-dd');
       
+      // Check if this is "today" date range to force fresh data
+      const today = new Date();
+      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+      
+      if (isToday) {
+        console.log('[ShopifyTab] Today date range detected - forcing immediate cache-busted refresh');
+      }
+      
       // Wait a moment to let other effects settle
       setTimeout(() => {
         // Dispatch force refresh event with formatted dates
@@ -395,7 +403,9 @@ export function ShopifyTab({
               to: formattedToDate
             },
             forceFetch: true,
-            bypassCache: true
+            bypassCache: true,
+            isToday: isToday,
+            reason: isToday ? 'today-refresh' : 'date-range-change'
           }
         }));
       }, 300);
@@ -440,7 +450,11 @@ export function ShopifyTab({
         const formattedFromDate = format(fromDate, 'yyyy-MM-dd');
         const formattedToDate = format(toDate, 'yyyy-MM-dd');
         
-        const fetchUrl = `/api/metrics?brandId=${brandId}&from=${formattedFromDate}&to=${formattedToDate}&platform=shopify&force=true&nocache=true&bypass_cache=true&t=${Date.now()}`;
+        // Check if this is "today" to add extra cache busting
+        const today = new Date();
+        const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+        
+        const fetchUrl = `/api/metrics?brandId=${brandId}&from=${formattedFromDate}&to=${formattedToDate}&platform=shopify&force=true&nocache=true&bypass_cache=true${isToday ? '&refresh=true&force_load=true' : ''}&t=${Date.now()}`;
         
         fetch(fetchUrl)
           .then(res => res.json())

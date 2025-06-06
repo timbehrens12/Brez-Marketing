@@ -700,6 +700,13 @@ export function MetaTab({
         refresh: 'true'             // Force refresh every time to prevent stale data
       });
       
+      // Add extra cache busting specifically for "today" to ensure fresh data
+      if (isToday) {
+        params.append('force_load', 'true');
+        params.append('t', Date.now().toString());
+        console.log('[MetaTab] Today detected - adding extra cache busting parameters');
+      }
+      
       // Handle special presets with explicit date determination
       if (isYesterdayPreset) {
         // For yesterday preset, use exact date match
@@ -2039,6 +2046,13 @@ Try creating at least one active campaign in Meta Ads Manager.
                                       (dateRange?.from && dateRange?.to && 
                                        isSameDay(dateRange.from, dateRange.to) && 
                                        isYesterday(dateRange.from));
+            
+            // Check if this is a today preset  
+            const today = new Date();
+            const isToday = (dateRange as any)?._preset === 'today' ||
+                           (dateRange?.from && dateRange?.to && 
+                            isSameDay(dateRange.from, today) && 
+                            isSameDay(dateRange.to, today));
                                        
             // CRITICAL: Create appropriate parameters based on date range type
             const forceParams = new URLSearchParams({
@@ -2047,6 +2061,13 @@ Try creating at least one active campaign in Meta Ads Manager.
               bypass_cache: 'true',
               strict_date_range: 'true'
             });
+            
+            // Add extra cache busting for today to ensure fresh data
+            if (isToday) {
+              forceParams.append('force_load', 'true');
+              forceParams.append('t', Date.now().toString());
+              console.log('META REFRESH: Today detected - adding extra cache busting parameters');
+            }
             
             // Special handling for yesterday preset to ensure exact date match
             if (isYesterdayPreset) {
@@ -2061,6 +2082,18 @@ Try creating at least one active campaign in Meta Ads Manager.
               forceParams.append('preset', 'yesterday');
               
               console.log(`META REFRESH: Using yesterday preset with exact same date for both: ${yesterdayStr}`);
+            }
+            // Special handling for today preset to ensure exact date match
+            else if (isToday) {
+              // Use exactly today's date for both from and to
+              const todayStr = today.toISOString().split('T')[0];
+              
+              // Set the same exact date for both parameters to ensure single-day data
+              forceParams.append('from', todayStr);
+              forceParams.append('to', todayStr);
+              forceParams.append('preset', 'today');
+              
+              console.log(`META REFRESH: Using today preset with exact same date for both: ${todayStr}`);
             }
             // Regular date range handling - ensure we respect the exact range
             else if (dateRange?.from) {

@@ -751,11 +751,19 @@ export function HomeTab({
       if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
       if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
       
-      // Apply aggressive cache busting for hard refreshes or if specified
-      if (isHardRefresh) {
-      params.append('bypass_cache', 'true');
+      // Check if this is "today" date range to force fresh data
+      const today = new Date();
+      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+      
+      // Apply aggressive cache busting for hard refreshes, "today" date range, or if specified
+      if (isHardRefresh || isToday) {
+        params.append('bypass_cache', 'true');
         params.append('force_load', 'true'); // Ensure backend re-fetches from DB
         params.append('refresh', 'true'); // Instructs backend to re-calculate/re-fetch if needed
+        if (isToday) {
+          console.log(`[HomeTab] Today detected for Meta - forcing fresh data fetch (refreshId: ${refreshId})`);
+          params.append('t', Date.now().toString()); // Additional cache busting for today
+        }
       }
       // params.append('debug', 'true'); // Optional: for more verbose logging from backend
       
@@ -766,17 +774,20 @@ export function HomeTab({
       if (prevFrom) prevParams.append('from', prevFrom);
       if (prevTo) prevParams.append('to', prevTo);
 
-      if (isHardRefresh) {
-      prevParams.append('bypass_cache', 'true');
-      prevParams.append('force_load', 'true');
-      prevParams.append('refresh', 'true');
+      if (isHardRefresh || isToday) {
+        prevParams.append('bypass_cache', 'true');
+        prevParams.append('force_load', 'true');
+        prevParams.append('refresh', 'true');
+        if (isToday) {
+          prevParams.append('t', Date.now().toString()); // Additional cache busting for today
+        }
       }
       // prevParams.append('debug', 'true');
       
       console.log(`[HomeTab] Fetching Meta data for previous period (refreshId: ${refreshId}): ${prevParams.toString()}`);
       
       const response = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-        cache: 'no-store', // Client-side cache instruction
+        cache: (isHardRefresh || isToday) ? 'no-store' : 'default', // Client-side cache instruction
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate', // HTTP cache instruction
           'Pragma': 'no-cache', // For older HTTP/1.0 caches
@@ -785,7 +796,7 @@ export function HomeTab({
       });
       
       const prevResponse = await fetch(`/api/metrics/meta?${prevParams.toString()}`, { 
-        cache: 'no-store',
+        cache: (isHardRefresh || isToday) ? 'no-store' : 'default',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
@@ -1272,14 +1283,33 @@ export function HomeTab({
         from: dateRange.from.toISOString().split('T')[0],
         to: dateRange.to.toISOString().split('T')[0]
       });
-      const response = await fetch(`/api/metrics/shopify?${params.toString()}`);
+
+      // Check if this is "today" date range to force fresh data
+      const today = new Date();
+      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+      
+      if (isToday) {
+        console.log("[HomeTab] Today detected for Shopify - forcing fresh data fetch");
+        params.append('bypass_cache', 'true');
+        params.append('force_load', 'true');
+        params.append('refresh', 'true');
+        params.append('t', Date.now().toString()); // Additional cache busting
+      }
+
+      const response = await fetch(`/api/metrics/shopify?${params.toString()}`, {
+        cache: isToday ? 'no-store' : 'default',
+        headers: isToday ? {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        } : {}
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch Shopify data: ${response.status}`);
       }
       const data = await response.json();
       // Assuming shopifyDaily data needs to be set here
       setShopifyDaily(data.dailyData || []); 
-      // console.log("[HomeTab] Shopify data fetched:", data);
+      console.log(`[HomeTab] Shopify data fetched${isToday ? ' (fresh for today)' : ''}:`, data);
     } catch (error) {
       console.error("[HomeTab] Error fetching Shopify data:", error);
     } finally {
