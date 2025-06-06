@@ -3467,17 +3467,44 @@ Try creating at least one active campaign in Meta Ads Manager.
     }
   }
   
-  // REMOVED: Original fetchAllMetricsDirectly that caused data conflicts
-  // Now using fetchMetaData as the single unified data source
+  // Fetch all metrics data directly
+  const fetchAllMetricsDirectly = async () => {
+    console.log("[MetaTab] Starting unified loading for all Meta widgets AND campaigns");
+    
+    // Set unified loading state to true for all widgets
+    setIsLoadingAllMetaWidgets(true);
+    
+    // Fetch ALL data in parallel - metrics AND campaigns
+    await Promise.all([
+      fetchAdSpendDirectly(),
+      fetchRoasDirectly(),
+      fetchImpressionsDirectly(),
+      fetchClicksDirectly(),
+      fetchPurchaseValueDirectly(),
+      fetchResultsDirectly(),
+      fetchCostPerResultDirectly(),
+      fetchCostPerClickDirectly(),
+      fetchCtrDirectly(),
+      fetchReachDirectly(), // Ensure this is called
+      fetchLinkClicksDirectly(),
+      fetchBudgetDirectly(), // Ensure this is also called for consistency
+      fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
+    ]);
+    
+    // Clear unified loading state when ALL data is loaded
+    setIsLoadingAllMetaWidgets(false);
+    console.log("[MetaTab] Unified loading completed - all Meta widgets AND campaigns loaded");
+  }
 
   // Update the useEffect to call the new fetch functions
-  // Main useEffect for data loading - USE ONLY fetchMetaData for unified data source
   useEffect(() => {
     if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("[MetaTab] Date range or brandId changed, starting unified data fetch")
-      
-      // ONLY use fetchMetaData - don't call fetchAllMetricsDirectly to prevent data conflicts
-      fetchMetaData()
+      console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
+      setIsLoadingAllMetaWidgets(true);
+      fetchAllMetricsDirectly() // This function will clear the loading state when complete
+    } else {
+      // If no valid dateRange or brandId, clear loading state
+      setIsLoadingAllMetaWidgets(false);
     }
   }, [dateRange, brandId])
 
@@ -3485,33 +3512,49 @@ Try creating at least one active campaign in Meta Ads Manager.
 
   // Update the manual refresh function
   const refreshMetricsDirectly = async () => {
-    console.log("Manually refreshing all metrics via fetchMetaData")
-    await fetchMetaData() // Use the same unified data source
+    console.log("Manually refreshing all metrics directly")
+    await fetchAllMetricsDirectly()
   }
 
   // Add a refresh timer state
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
   const [isManuallyRefreshing, setIsManuallyRefreshing] = useState(false)
 
-  // Function to refresh all metrics using unified data source
+  // Function to refresh all metrics directly
   const refreshAllMetricsDirectly = useCallback(async () => {
     if (!dateRange || !dateRange.from || !dateRange.to || !brandId) {
       console.log("Cannot refresh metrics: Missing date range or brand ID")
       return
     }
     
-    console.log("[MetaTab] Starting manual refresh with unified data source (fetchMetaData)");
+    console.log("[MetaTab] Starting manual refresh with unified loading for all Meta widgets AND campaigns");
     
+    // Set unified loading state for all widgets (replaces individual loading states)
+    setIsLoadingAllMetaWidgets(true);
     setIsManuallyRefreshing(true);
     
     try {
-      console.log("Refreshing all data via unified fetchMetaData call")
+      console.log("Refreshing all metrics and campaigns directly")
+      // 300ms artificial delay to ensure loading state is visible
+      // This prevents flickering by ensuring a consistent loading state is shown
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Use ONLY fetchMetaData to prevent data conflicts
-      await fetchMetaData()
-      
-      // Also fetch campaigns separately since they're needed for reach calculations
-      await fetchCampaigns(true)
+      // Fetch ALL data in parallel - metrics AND campaigns
+      await Promise.all([
+        fetchAdSpendDirectly(),
+        fetchRoasDirectly(),
+        fetchImpressionsDirectly(),
+        fetchClicksDirectly(),
+        fetchPurchaseValueDirectly(),
+        fetchResultsDirectly(),
+        fetchCostPerResultDirectly(),
+        fetchCostPerClickDirectly(),
+        fetchCtrDirectly(),
+        fetchReachDirectly(),
+        fetchLinkClicksDirectly(),
+        fetchBudgetDirectly(),
+        fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
+      ])
       
       // Success toast is shown only here, not in individual fetch functions
       toast.success("Metrics refreshed successfully")
@@ -3519,10 +3562,16 @@ Try creating at least one active campaign in Meta Ads Manager.
       console.error("Error refreshing metrics:", error)
       toast.error("Failed to refresh metrics")
     } finally {
+      // Clear unified loading state when refresh is complete
+      setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false)
-      console.log("[MetaTab] Manual refresh completed using unified data source");
+      console.log("[MetaTab] Manual refresh with unified loading completed for all widgets AND campaigns");
     }
-  }, [dateRange, brandId, fetchMetaData, fetchCampaigns]);
+  }, [dateRange, brandId, 
+     fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
+     fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
+     fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
+     fetchReachDirectly, fetchLinkClicksDirectly, fetchBudgetDirectly, fetchCampaigns]);
   
   // Setup auto-refresh on a 5-minute interval
   useEffect(() => {
@@ -3550,8 +3599,8 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Also refresh when isRefreshingData prop changes (to integrate with existing refresh mechanisms)
   useEffect(() => {
     if (isRefreshingData) {
-      console.log("Refreshing metrics due to parent component refresh trigger using unified data source")
-      refreshAllMetricsDirectly() // This now uses fetchMetaData internally
+      console.log("Refreshing metrics due to parent component refresh trigger")
+      refreshAllMetricsDirectly()
     }
   }, [isRefreshingData])
   
@@ -3566,23 +3615,26 @@ Try creating at least one active campaign in Meta Ads Manager.
     
     // Clear existing request queue to prevent stale requests
     requestQueue.length = 0;
+    // processingQueue = false; // This global might be better managed within processRequestQueue itself
     
-    console.log("[MetaTab] Manual refresh triggered using unified data source.");
-    setIsManuallyRefreshing(true);
+    console.log("[MetaTab] Manual refresh triggered. Fetching all data.");
+    setIsLoadingAllMetaWidgets(true);
+    setIsManuallyRefreshing(true); // Keep this if it drives other UI elements
 
     try {
-      // Use unified data source to prevent conflicts
+      // It's assumed fetchMetaData will also fetch campaigns or that campaigns are fetched appropriately within it or by an effect triggered by its data.
+      // If fetchMetaData doesn't handle campaigns, fetchCampaigns(true) might be needed here too, but ideally fetchMetaData is comprehensive.
       await fetchMetaData(); 
-      // Also fetch campaigns since they're needed for reach calculations
-      await fetchCampaigns(true);
-      
-      toast.success("Data refreshed successfully");
+      // Consider if fetchCampaigns(true) is also needed here, if not covered by fetchMetaData
+      // For now, assuming fetchMetaData is the primary data orchestrator for the tab.
     } catch (error) {
       console.error("[MetaTab] Error during manual refresh:", error);
+      // Error handling can be more specific if needed
       toast.error("Refresh failed", { description: (error as Error).message });
     } finally {
+      setIsLoadingAllMetaWidgets(false);
       setIsManuallyRefreshing(false);
-      console.log("[MetaTab] Manual refresh complete using unified data source.");
+      console.log("[MetaTab] Manual refresh complete.");
     }
   };
 
@@ -3597,21 +3649,12 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a separate effect for handling the isRefreshingData prop
   useEffect(() => {
     if (isRefreshingData && brandId) {
-      console.log("[MetaTab] Parent component triggered refresh via isRefreshingData prop");
+      console.log("[MetaTab] Parent component triggered refresh via isRefreshingData prop.");
       
-      setIsManuallyRefreshing(true);
-      
-      // Use unified data source to prevent conflicts
-      Promise.all([
-        fetchMetaData(), // Use unified data source
-        fetchCampaigns(true)
-      ])
-      .catch(error => {
+      // We can now just call fetchMetaData, which is our single source of truth for data fetching.
+      fetchMetaData().catch(error => {
         console.error("[MetaTab] Error during refresh triggered by parent:", error);
-      })
-      .finally(() => {
-        setIsManuallyRefreshing(false);
-        console.log("[MetaTab] Parent-triggered refresh completed using unified data source");
+        toast.error("Refresh failed", { description: (error as Error).message });
       });
     }
   }, [isRefreshingData, brandId]);
@@ -4449,9 +4492,9 @@ Try creating at least one active campaign in Meta Ads Manager.
     setRefreshCooldown(true);
 
     try {
-      // Trigger the same refresh as the manual button using unified data source
+      // Trigger the same refresh as the manual button
       await Promise.all([
-        fetchMetaData(), // Use unified data source
+        fetchAllMetricsDirectly(),
         fetchCampaigns(true)
       ]);
       
@@ -4475,7 +4518,7 @@ Try creating at least one active campaign in Meta Ads Manager.
         setRefreshCooldown(false);
       }, SMART_REFRESH_COOLDOWN);
     }
-  }, [refreshCooldown, isSmartRefreshing, brandId, fetchMetaData, fetchCampaigns]);
+  }, [refreshCooldown, isSmartRefreshing, brandId, fetchAllMetricsDirectly, fetchCampaigns]);
 
   // Enhanced manual refresh function
   const handleSmartManualRefresh = useCallback(async () => {
@@ -4698,8 +4741,8 @@ Try creating at least one active campaign in Meta Ads Manager.
           duration: 10000 
         });
         
-        // Trigger a refresh of the current view using unified data source
-        await fetchMetaData();
+        // Trigger a refresh of the current view
+        await fetchAllMetricsDirectly();
         
         console.log(`[MetaTab] ✅ All-time sync completed successfully - synced ${result.count || 0} records`);
       } else {
@@ -4759,8 +4802,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         setLoading(true);
         setIsLoadingAllMetaWidgets(true);
         
-        // Call the consolidated fetch function using unified data source
-        await refreshAllMetricsDirectly();
+        // Call the consolidated fetch function
+        await fetchAllMetricsDirectly();
         
         // Mark initial load as complete
         if (!initialLoadComplete.current) {
