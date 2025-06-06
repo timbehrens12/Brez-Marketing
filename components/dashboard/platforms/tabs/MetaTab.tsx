@@ -4644,41 +4644,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   }, [handleSmartManualRefresh]);
           
   // Add a specific effect to refresh data when the component is mounted/visited - SMART REFRESH ON MOUNT ONLY
-  useEffect(() => {
-    // Only run this effect once when the component first mounts with a brandId
-    if (!brandId) return;
-    
-    console.log("[MetaTab] Component mounted - triggering ONE-TIME refresh like manual button");
-    
-    // Clear any API blocking flags that might be set to ensure we can fetch data
-    if (window._blockMetaApiCalls !== undefined) {
-      window._blockMetaApiCalls = false;
-      console.log("[MetaTab] Cleared _blockMetaApiCalls flag on mount");
-      }
-    
-    // Clear any auto-fetch blocking flags
-    if (window._disableAutoMetaFetch !== undefined) {
-      window._disableAutoMetaFetch = false;
-      console.log("[MetaTab] Cleared _disableAutoMetaFetch flag on mount");
-    }
-    
-    // Execute the refresh with a small delay to ensure component is fully mounted
-    const timeoutId = setTimeout(() => {
-      if (!refreshCooldown) {
-        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
-        
-        // Call the EXACT same function that the sync button onClick uses
-        // This ensures 100% identical behavior and fetches fresh data from Meta API
-        syncMetaInsights();
-      }
-    }, 100);
-    
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-    
-    // IMPORTANT: Only depend on brandId, NOT on handleSmartManualRefresh or refreshCooldown
-    // This ensures the effect only runs once when brandId is first available
-  }, [brandId]);
+ 
   
   // Add a new function to sync all Meta data from the beginning
   const syncAllTimeMetaData = async () => {
