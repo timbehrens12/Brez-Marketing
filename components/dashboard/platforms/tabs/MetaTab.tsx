@@ -3740,9 +3740,16 @@ Try creating at least one active campaign in Meta Ads Manager.
           return;
         }
         
-        logger.info("[MetaTab] metaDataRefreshed: Triggering fetchMetaData for a comprehensive refresh due to external event.");
+        logger.info("[MetaTab] metaDataRefreshed: Triggering comprehensive refresh for both campaigns and overview metrics due to external event.");
         toast.info("Updating Meta data based on external event...", { duration: 3000 });
-        fetchMetaData(); // This single call now handles campaigns and all metrics
+        
+        // Update BOTH campaign data (special widgets) AND overview metrics (main grid widgets)
+        Promise.all([
+          fetchMetaData(), // For campaigns (special widgets)
+          fetchMetaDataFromDatabase('tab-switch-refresh') // For overview metrics (main grid widgets)
+        ]).catch(error => {
+          console.error("[MetaTab] Error during metaDataRefreshed comprehensive refresh:", error);
+        });
       }
     };
 
