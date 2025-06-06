@@ -712,8 +712,8 @@ export function MetaTab2({
         </Button>
       </div>
 
-      {/* Main metrics grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Main metrics grid - First row of 4 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {/* Ad Spend */}
         <MetricCard 
           title="Ad Spend"
@@ -791,7 +791,10 @@ export function MetaTab2({
           data={[]}
           loading={isLoadingAllMetaWidgets}
         />
+      </div>
 
+      {/* Second row of 4 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         {/* ROAS */}
         <MetricCard 
           title="ROAS"
@@ -873,6 +876,26 @@ export function MetaTab2({
           data={[]}
           loading={isLoadingAllMetaWidgets}
         />
+      </div>
+
+      {/* Third row of 3 - Budget, Reach, and Purchase Value */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Total Budget */}
+        <TotalBudgetMetricCard 
+          brandId={brandId}
+          isManuallyRefreshing={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
+          unifiedLoading={isLoadingAllMetaWidgets}
+        />
+
+        {/* Total Reach */}
+        <TotalAdSetReachCard 
+          brandId={brandId} 
+          dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
+          isManuallyRefreshing={false}
+          disableAutoFetch={isLoadingAllMetaWidgets}
+          unifiedLoading={isLoadingAllMetaWidgets}
+        />
 
         {/* Purchase Value */}
         <MetricCard 
@@ -891,23 +914,6 @@ export function MetaTab2({
           nullChangeTooltip="No data for previous period"
           data={[]}
           loading={isLoadingAllMetaWidgets}
-        />
-
-        {/* Total Reach */}
-        <TotalAdSetReachCard 
-          brandId={brandId} 
-          dateRange={dateRange.from && dateRange.to ? dateRange : undefined}
-          isManuallyRefreshing={false}
-          disableAutoFetch={isLoadingAllMetaWidgets}
-          unifiedLoading={isLoadingAllMetaWidgets}
-        />
-
-        {/* Total Budget */}
-        <TotalBudgetMetricCard 
-          brandId={brandId}
-          isManuallyRefreshing={false}
-          disableAutoFetch={isLoadingAllMetaWidgets}
-          unifiedLoading={isLoadingAllMetaWidgets}
         />
       </div>
 
