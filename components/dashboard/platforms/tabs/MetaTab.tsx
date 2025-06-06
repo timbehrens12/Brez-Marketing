@@ -3551,25 +3551,24 @@ Try creating at least one active campaign in Meta Ads Manager.
   }
 
   // Update the useEffect to call the new fetch functions
-  // DISABLED: Individual metric fetches are now handled by unified syncMetaInsights
-  // useEffect(() => {
-  //   if (dateRange && dateRange.from && dateRange.to && brandId) {
-  //     console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
-  //     setIsLoadingAllMetaWidgets(true);
-  //     fetchAllMetricsDirectly() // This function will clear the loading state when complete
-  //   } else {
-  //     // If no valid dateRange or brandId, clear loading state
-  //     setIsLoadingAllMetaWidgets(false);
-  //   }
-  // }, [dateRange, brandId])
+  useEffect(() => {
+    if (dateRange && dateRange.from && dateRange.to && brandId) {
+      console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
+      setIsLoadingAllMetaWidgets(true);
+      fetchAllMetricsDirectly() // This function will clear the loading state when complete
+    } else {
+      // If no valid dateRange or brandId, clear loading state
+      setIsLoadingAllMetaWidgets(false);
+    }
+  }, [dateRange, brandId])
 
   // Remove the duplicate initial load effect - the above effect handles it all
 
-  // DISABLED: Manual refresh now handled by unified loading
-  // const refreshMetricsDirectly = async () => {
-  //   console.log("Manually refreshing all metrics directly")
-  //   await fetchAllMetricsDirectly()
-  // }
+  // Update the manual refresh function
+  const refreshMetricsDirectly = async () => {
+    console.log("Manually refreshing all metrics directly")
+    await fetchAllMetricsDirectly()
+  }
 
   // Add a refresh timer state
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
@@ -3756,6 +3755,85 @@ Try creating at least one active campaign in Meta Ads Manager.
     };
   }, [brandId, fetchMetaData]); // Simplified dependencies
 
+  // Add the missing fetchMetaDataFromDatabase function from HomeTab with TODAY DETECTION
+  const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
+    if (!brandId || !dateRange?.from || !dateRange?.to) {
+      console.log("[MetaTab] Skipping Meta data fetch from database: Missing brandId, dateRange.");
+      return;
+    }
+
+    try {
+      console.log(`[MetaTab] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`);
+
+      // Current period params
+      const params = new URLSearchParams({ brandId: brandId });
+      if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
+      if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
+      
+      // Check if this is "today" date range to force fresh data - CRITICAL FOR TODAY DETECTION
+      const today = new Date();
+      const isToday = dateRange.from && dateRange.to && 
+        dateRange.from.toISOString().split('T')[0] === today.toISOString().split('T')[0] &&
+        dateRange.to.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+      
+      // Apply cache busting to ensure fresh data from database
+      params.append('bypass_cache', 'true');
+      params.append('force_load', 'true');
+      params.append('refresh', 'true');
+      
+      if (isToday) {
+        console.log(`[MetaTab] Today detected for Meta - forcing fresh data fetch (refreshId: ${refreshId})`);
+        params.append('t', Date.now().toString()); // Additional cache busting for today
+      }
+      
+      const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'X-Refresh-ID': refreshId || 'standalone'
+        }
+      });
+      
+      if (!currentResponse.ok) {
+        const errorData = await currentResponse.json().catch(() => ({ error: "Unknown error fetching current Meta data" }));
+        console.error(`[MetaTab] Failed to fetch current period Meta data from database (refreshId: ${refreshId}): ${currentResponse.status}`, errorData);
+        throw new Error(errorData.error || `Failed to fetch current period Meta data: ${currentResponse.status}`);
+      }
+      
+      const currentData = await currentResponse.json();
+      
+      console.log(`[MetaTab] Fetched Meta data from database for current period (refreshId: ${refreshId}):`, {
+        adSpend: currentData.adSpend,
+        impressions: currentData.impressions,
+        clicks: currentData.clicks,
+        conversions: currentData.conversions,
+        roas: currentData.roas,
+        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
+      });
+
+      // Update metrics state with database data - use the same structure as existing MetaTab
+      setMetricsData(prev => ({
+        ...prev,
+        adSpend: currentData.adSpend || 0,
+        impressions: currentData.impressions || 0,
+        clicks: currentData.clicks || 0,
+        conversions: currentData.conversions || 0,
+        roas: currentData.roas || 0,
+        ctr: currentData.ctr || 0,
+        cpc: currentData.cpc || 0,
+        costPerResult: currentData.costPerResult || 0,
+        dailyData: currentData.dailyData || []
+      }));
+      
+      console.log(`[MetaTab] ✅ Updated metricsData state from database (refreshId: ${refreshId})`);
+      
+    } catch (error) {
+      console.error(`[MetaTab] Error fetching Meta data from database (refreshId: ${refreshId}):`, error);
+      // Don't show toast error here as it's usually called after syncMetaInsights which shows its own errors
+    }
+  }, [brandId, dateRange]);
+
   // EXACT COPY OF WORKING HOMETAB SYNC FUNCTION WITH TODAY DETECTION
   const syncMetaInsights = useCallback(async () => {
     if (!brandId || !dateRange?.from || !dateRange?.to) {
@@ -3821,11 +3899,12 @@ Try creating at least one active campaign in Meta Ads Manager.
         // Step 2: Now fetch the refreshed data with TODAY DETECTION (like HomeTab)
         console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
         
-        // Use database fetch to get the fresh data that was just synced
-        await fetchMetaDataFromDatabase(refreshId);
-        
-        // Also refresh campaigns if needed
-        await fetchCampaigns(true);
+        // Fetch both campaign data AND overview metrics data from database to ensure all widgets sync
+        await Promise.all([
+          fetchMetaData(), // For campaigns (used by special widgets)
+          fetchMetaDataFromDatabase(refreshId), // For overview metrics (used by main grid widgets)
+          fetchCampaigns(true) // For campaign widget
+        ]);
         
         // Step 3: Check for data gaps and auto-backfill if needed (same as HomeTab)
         console.log(`[MetaTab] 🚀 Step 3: Checking for data gaps and auto-backfilling if needed (refreshId: ${refreshId})`);
@@ -3870,97 +3949,9 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsManuallyRefreshing(false);
       releaseMetaFetchLock(refreshId);
     }
-  }, [brandId, dateRange, fetchCampaigns]);
+  }, [brandId, dateRange, fetchCampaigns, fetchMetaDataFromDatabase]);
 
-  // Add the missing fetchMetaDataFromDatabase function from HomeTab with TODAY DETECTION
-  const fetchMetaDataFromDatabase = useCallback(async (refreshId?: string) => {
-    if (!brandId || !dateRange?.from || !dateRange?.to) {
-      console.log("[MetaTab] Skipping Meta data fetch from database: Missing brandId, dateRange.");
-      return;
-    }
 
-    try {
-      console.log(`[MetaTab] 🔄 Fetching Meta data from database (refreshId: ${refreshId || 'standalone'})`);
-
-      // Current period params
-      const params = new URLSearchParams({ brandId: brandId });
-      if (dateRange.from) params.append('from', dateRange.from.toISOString().split('T')[0]);
-      if (dateRange.to) params.append('to', dateRange.to.toISOString().split('T')[0]);
-      
-      // Check if this is "today" date range to force fresh data - CRITICAL FOR TODAY DETECTION
-      const today = new Date();
-      const isToday = dateRange.from && dateRange.to && 
-        dateRange.from.toISOString().split('T')[0] === today.toISOString().split('T')[0] &&
-        dateRange.to.toISOString().split('T')[0] === today.toISOString().split('T')[0];
-      
-      // Apply cache busting to ensure fresh data from database
-      params.append('bypass_cache', 'true');
-      params.append('force_load', 'true');
-      params.append('refresh', 'true');
-      
-      if (isToday) {
-        console.log(`[MetaTab] Today detected for Meta - forcing fresh data fetch (refreshId: ${refreshId})`);
-        params.append('t', Date.now().toString()); // Additional cache busting for today
-      }
-      
-      const currentResponse = await fetch(`/api/metrics/meta?${params.toString()}`, { 
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Refresh-ID': refreshId || 'standalone'
-        }
-      });
-      
-      if (!currentResponse.ok) {
-        const errorData = await currentResponse.json().catch(() => ({ error: "Unknown error fetching current Meta data" }));
-        console.error(`[MetaTab] Failed to fetch current period Meta data from database (refreshId: ${refreshId}): ${currentResponse.status}`, errorData);
-        throw new Error(errorData.error || `Failed to fetch current period Meta data: ${currentResponse.status}`);
-      }
-      
-      const currentData = await currentResponse.json();
-      
-      console.log(`[MetaTab] Fetched Meta data from database for current period (refreshId: ${refreshId}):`, {
-        adSpend: currentData.adSpend,
-        impressions: currentData.impressions,
-        clicks: currentData.clicks,
-        conversions: currentData.conversions,
-        roas: currentData.roas,
-        dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
-      });
-
-      // Update metrics state with database data - use all available metrics for comprehensive sync
-      setMetricsData(prev => ({
-        ...prev,
-        adSpend: currentData.adSpend || 0,
-        adSpendGrowth: currentData.adSpendGrowth || 0,
-        impressions: currentData.impressions || 0,
-        impressionGrowth: currentData.impressionGrowth || 0,
-        clicks: currentData.clicks || 0,
-        clickGrowth: currentData.clickGrowth || 0,
-        conversions: currentData.conversions || 0,
-        conversionGrowth: currentData.conversionGrowth || 0,
-        roas: currentData.roas || 0,
-        roasGrowth: currentData.roasGrowth || 0,
-        ctr: currentData.ctr || 0,
-        ctrGrowth: currentData.ctrGrowth || 0,
-        cpc: currentData.cpc || 0,
-        cpcLink: currentData.cpcLink || 0,
-        costPerResult: currentData.costPerResult || 0,
-        cprGrowth: currentData.cprGrowth || 0,
-        frequency: currentData.frequency || 0,
-        budget: currentData.budget || 0,
-        reach: currentData.reach || 0,
-        dailyData: currentData.dailyData || []
-      }));
-      
-      console.log(`[MetaTab] ✅ Updated metricsData state from database (refreshId: ${refreshId})`);
-      
-    } catch (error) {
-      console.error(`[MetaTab] Error fetching Meta data from database (refreshId: ${refreshId}):`, error);
-      // Don't show toast error here as it's usually called after syncMetaInsights which shows its own errors
-    }
-  }, [brandId, dateRange]);
 
   // Smart data gap detection and auto-backfill (same as HomeTab/Dashboard)
   const detectAndBackfillDataGaps = useCallback(async () => {
@@ -4085,15 +4076,14 @@ Try creating at least one active campaign in Meta Ads Manager.
         if (!initialLoadComplete.current) {
           console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
         
-          // Use the same unified sync approach as HomeTab - no individual metric fetches needed
-          syncMetaInsights().finally(() => {
+        // Use the same unified sync approach as HomeTab
+        syncMetaInsights().finally(() => {
             // Mark initial load as complete and update params
-            initialLoadComplete.current = true;
+          initialLoadComplete.current = true;
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
-          });
-        } else {
-          console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
-          // Use unified sync - no individual metric fetches needed
+        });
+      } else {
+        console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
           syncMetaInsights().finally(() => {
             // Update params after successful sync
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
@@ -5067,8 +5057,8 @@ Try creating at least one active campaign in Meta Ads Manager.
           duration: 10000 
         });
         
-        // DISABLED: Now handled by unified syncMetaInsights
-        // await fetchAllMetricsDirectly();
+        // Trigger a refresh of the current view
+        await fetchAllMetricsDirectly();
         
         console.log(`[MetaTab] ✅ All-time sync completed successfully - synced ${result.count || 0} records`);
       } else {
@@ -5140,8 +5130,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       const performRefresh = async () => {
         try {
-          // For manual refreshes, use the unified sync function that forces fresh data
-          await syncMetaInsights();
+          // For manual refreshes, use the refresh function that forces fresh data
+          await refreshMetricsDirectly();
           console.log('[MetaTab] ✅ Manual refresh completed');
         } catch (error) {
           console.error('[MetaTab] ❌ Error in manual refresh:', error);
