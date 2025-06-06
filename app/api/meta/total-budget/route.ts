@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs';
+import { fetchMetaCampaignBudgets } from '@/lib/services/meta-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,19 +21,73 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const brandId = searchParams.get('brandId');
     const activeOnly = searchParams.get('activeOnly') === 'true';
+    const forceRefresh = searchParams.get('forceRefresh') === 'true';
     
     if (!brandId) {
       return NextResponse.json({ error: 'Brand ID is required' }, { status: 400 });
     }
     
-    console.log(`[Total Meta Budget] Processing request for brandId=${brandId}, activeOnly=${activeOnly}`);
+    console.log(`[Total Meta Budget] Processing request for brandId=${brandId}, activeOnly=${activeOnly}, forceRefresh=${forceRefresh}`);
     
-    // Initialize Supabase client
+    // If forceRefresh is true, fetch fresh data from Meta API first
+    if (forceRefresh) {
+      console.log(`[Total Meta Budget] Force refresh requested, fetching fresh campaign data from Meta API`);
+      try {
+        const metaBudgetResult = await fetchMetaCampaignBudgets(brandId, true);
+        if (metaBudgetResult.success && metaBudgetResult.budgets) {
+          console.log(`[Total Meta Budget] Successfully fetched ${metaBudgetResult.budgets.length} campaign budgets from Meta API`);
+          
+          // Calculate total from Meta API budgets directly
+          let totalDailyBudget = 0;
+          let totalLifetimeBudget = 0;
+          let activeBudgetCount = 0;
+          
+          metaBudgetResult.budgets.forEach(budget => {
+            // Only count active campaigns if activeOnly is true
+            if (!activeOnly || budget.status === 'ACTIVE') {
+              activeBudgetCount++;
+              const budgetAmount = typeof budget.budget === 'string' ? parseFloat(budget.budget) : budget.budget;
+              if (budget.budget_type === 'daily') {
+                totalDailyBudget += budgetAmount || 0;
+              } else {
+                totalLifetimeBudget += budgetAmount || 0;
+              }
+            }
+          });
+          
+          const totalBudget = totalDailyBudget + totalLifetimeBudget;
+          console.log(`[Total Meta Budget] Meta API result - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalBudget}, Count: ${activeBudgetCount}`);
+          
+          return NextResponse.json(
+            { 
+              success: true,
+              totalDailyBudget,
+              totalLifetimeBudget,
+              totalBudget,
+              adSetCount: activeBudgetCount,
+              dailyBudgetAdSetCount: metaBudgetResult.budgets.filter(b => (!activeOnly || b.status === 'ACTIVE') && b.budget_type === 'daily').length,
+              lifetimeBudgetAdSetCount: metaBudgetResult.budgets.filter(b => (!activeOnly || b.status === 'ACTIVE') && b.budget_type === 'lifetime').length,
+              timestamp: new Date().toISOString(),
+              refreshMethod: 'meta-api'
+            },
+            { status: 200 }
+          );
+        } else {
+          console.warn(`[Total Meta Budget] Meta API fetch failed, falling back to database: ${metaBudgetResult.error}`);
+        }
+      } catch (metaError) {
+        console.error(`[Total Meta Budget] Error fetching from Meta API, falling back to database:`, metaError);
+      }
+    }
+
+    // Initialize Supabase client for database fallback
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     );
+    
+    console.log(`[Total Meta Budget] Fetching data from database (fallback or non-force refresh)`);
     
     let adSets = [];
     let adSetsError;
@@ -151,7 +206,8 @@ export async function GET(req: NextRequest) {
         adSetCount: adSets ? adSets.length : 0,
         dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
         lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        refreshMethod: 'database'
       },
       { status: 200 }
     );
