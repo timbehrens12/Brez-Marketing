@@ -1010,14 +1010,13 @@ export function MetaTab({
     
     console.log(`[MetaTab] Mount/Update Effect: brandId or dateRange changed. Brand: ${brandChanged}, Dates: ${datesChanged}, InitialLoadDone: ${initialLoadComplete.current}`);
 
-    // **COORDINATION CHECK**: Skip if we recently refreshed or tab switch is in progress
-    if (hasRecentlyRefreshed(3000) || window._metaTabSwitchInProgress) {
-      console.log("[MetaTab] ⚠️ Skipping mount/update refresh - recently refreshed or tab switch in progress");
-      if (!isMetaFetchInProgress() && !window._metaTabSwitchInProgress) {
-        setIsLoadingAllMetaWidgets(false);
+          // **COORDINATION CHECK**: Allow refresh on mount/date changes (removed throttling)
+      if (window._metaTabSwitchInProgress) {
+        console.log("[MetaTab] ⚠️ Skipping refresh - tab switch in progress");
+        return;
       }
-      return;
-    }
+      
+      console.log("[MetaTab] 🚀 Proceeding with mount/update refresh");
 
     // **COORDINATION CHECK**: Skip if there's already a fetch in progress
     if (isMetaFetchInProgress()) {
@@ -2087,17 +2086,47 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add initial mount effect to trigger data load (similar to HomeTab)
   useEffect(() => {
     if (brandId && dateRange?.from && dateRange?.to) {
-      console.log("[MetaTab] 🚀 Component mount or brand/date change detected - triggering data sync");
+      console.log("[MetaTab] 🚀 Component mount or brand/date change detected - triggering immediate data sync");
       
-      // Use a small delay to let component stabilize
-      const timeoutId = setTimeout(() => {
-        syncMetaDataDirectly();
-      }, 100);
+      // Clear any blocking flags that might prevent refresh
+      if (typeof window !== 'undefined') {
+        window._blockMetaApiCalls = false;
+        window._disableAutoMetaFetch = false;
+        window._metaTabSwitchInProgress = false;
+      }
       
-      return () => clearTimeout(timeoutId);
+      // Trigger immediate sync without delay
+      syncMetaDataDirectly();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandId, dateRange?.from, dateRange?.to]); // Trigger on brand or date changes
+
+  // Add specific effect to handle "today" selection for fresh data
+  useEffect(() => {
+    if (brandId && dateRange?.from && dateRange?.to) {
+      const today = new Date();
+      const isToday = isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today);
+      
+      if (isToday) {
+        console.log("[MetaTab] 🌟 TODAY detected - forcing fresh data refresh");
+        
+        // Clear all blocking flags
+        if (typeof window !== 'undefined') {
+          window._blockMetaApiCalls = false;
+          window._disableAutoMetaFetch = false;
+          window._metaTabSwitchInProgress = false;
+          window._lastMetaRefresh = 0; // Reset last refresh time
+        }
+        
+        // Force immediate refresh for today
+        const timeoutId = setTimeout(() => {
+          syncMetaDataDirectly();
+        }, 50);
+        
+        return () => clearTimeout(timeoutId);
+      }
+    }
+  }, [dateRange?.from, dateRange?.to, brandId]); // Specifically watch for date changes
 
   // Add an effect to handle data refresh that maintains date ranges
 
