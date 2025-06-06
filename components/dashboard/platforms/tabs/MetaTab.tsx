@@ -4822,46 +4822,7 @@ Try creating at least one active campaign in Meta Ads Manager.
   // Add a ref to track tab-switch-initiated syncs
   const isTabSwitchSyncRef = useRef(false);
 
-  // Add a listener for the targeted meta-tab-activated event
-  useEffect(() => {
-    const handleMetaTabActivated = (event: CustomEvent) => {
-      if (event.detail?.brandId === brandId) {
-        console.log("[MetaTab] Received meta-tab-activated event", event.detail);
-
-        // **COORDINATION CHECK**: Skip if there's already a fetch in progress
-        if (isMetaFetchInProgress()) {
-          console.log("[MetaTab] ⚠️ Skipping meta-tab-activated - fetch already in progress");
-          return;
-        }
-
-        console.log("[MetaTab] Calling syncMetaInsights - exact same as clicking sync button");
-        
-        // **NEW**: Set flag to indicate this is a tab-switch-initiated sync
-        isTabSwitchSyncRef.current = true;
-        
-        // Use the same sync function as the manual sync button for consistency
-        if (dateRange?.from && dateRange?.to) {
-          syncMetaInsights().finally(() => {
-            // Clear the flag after sync completes
-            setTimeout(() => {
-              isTabSwitchSyncRef.current = false;
-            }, 1000); // Wait 1 second before allowing metaDataRefreshed events again
-          });
-        } else {
-          console.log("[MetaTab] Skipping sync - no date range available");
-          isTabSwitchSyncRef.current = false;
-        }
-      }
-    };
-
-    // Add the event listener
-    window.addEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
-
-    // Cleanup on component unmount
-    return () => {
-      window.removeEventListener('meta-tab-activated', handleMetaTabActivated as EventListener);
-    };
-  }, [brandId, dateRange, syncMetaInsights]);
+  
 
   return (
     <TooltipProvider>
