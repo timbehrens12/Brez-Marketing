@@ -3551,24 +3551,25 @@ Try creating at least one active campaign in Meta Ads Manager.
   }
 
   // Update the useEffect to call the new fetch functions
-  useEffect(() => {
-    if (dateRange && dateRange.from && dateRange.to && brandId) {
-      console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
-      setIsLoadingAllMetaWidgets(true);
-      fetchAllMetricsDirectly() // This function will clear the loading state when complete
-    } else {
-      // If no valid dateRange or brandId, clear loading state
-      setIsLoadingAllMetaWidgets(false);
-    }
-  }, [dateRange, brandId])
+  // DISABLED: Individual metric fetches are now handled by unified syncMetaInsights
+  // useEffect(() => {
+  //   if (dateRange && dateRange.from && dateRange.to && brandId) {
+  //     console.log("[MetaTab] Date range or brandId changed, starting unified loading for all Meta widgets")
+  //     setIsLoadingAllMetaWidgets(true);
+  //     fetchAllMetricsDirectly() // This function will clear the loading state when complete
+  //   } else {
+  //     // If no valid dateRange or brandId, clear loading state
+  //     setIsLoadingAllMetaWidgets(false);
+  //   }
+  // }, [dateRange, brandId])
 
   // Remove the duplicate initial load effect - the above effect handles it all
 
-  // Update the manual refresh function
-  const refreshMetricsDirectly = async () => {
-    console.log("Manually refreshing all metrics directly")
-    await fetchAllMetricsDirectly()
-  }
+  // DISABLED: Manual refresh now handled by unified loading
+  // const refreshMetricsDirectly = async () => {
+  //   console.log("Manually refreshing all metrics directly")
+  //   await fetchAllMetricsDirectly()
+  // }
 
   // Add a refresh timer state
   const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
@@ -3820,8 +3821,8 @@ Try creating at least one active campaign in Meta Ads Manager.
         // Step 2: Now fetch the refreshed data with TODAY DETECTION (like HomeTab)
         console.log(`[MetaTab] 🚀 Step 2: Fetching all refreshed Meta data (refreshId: ${refreshId})`);
         
-        // Use the existing fetchMetaData function which already has today detection
-        await fetchMetaData();
+        // Use database fetch to get the fresh data that was just synced
+        await fetchMetaDataFromDatabase(refreshId);
         
         // Also refresh campaigns if needed
         await fetchCampaigns(true);
@@ -3928,17 +3929,28 @@ Try creating at least one active campaign in Meta Ads Manager.
         dailyData: Array.isArray(currentData.dailyData) ? currentData.dailyData.length : 0
       });
 
-      // Update metrics state with database data - use the same structure as existing MetaTab
+      // Update metrics state with database data - use all available metrics for comprehensive sync
       setMetricsData(prev => ({
         ...prev,
         adSpend: currentData.adSpend || 0,
+        adSpendGrowth: currentData.adSpendGrowth || 0,
         impressions: currentData.impressions || 0,
+        impressionGrowth: currentData.impressionGrowth || 0,
         clicks: currentData.clicks || 0,
+        clickGrowth: currentData.clickGrowth || 0,
         conversions: currentData.conversions || 0,
+        conversionGrowth: currentData.conversionGrowth || 0,
         roas: currentData.roas || 0,
+        roasGrowth: currentData.roasGrowth || 0,
         ctr: currentData.ctr || 0,
+        ctrGrowth: currentData.ctrGrowth || 0,
         cpc: currentData.cpc || 0,
+        cpcLink: currentData.cpcLink || 0,
         costPerResult: currentData.costPerResult || 0,
+        cprGrowth: currentData.cprGrowth || 0,
+        frequency: currentData.frequency || 0,
+        budget: currentData.budget || 0,
+        reach: currentData.reach || 0,
         dailyData: currentData.dailyData || []
       }));
       
@@ -4073,14 +4085,15 @@ Try creating at least one active campaign in Meta Ads Manager.
         if (!initialLoadComplete.current) {
           console.log(`[MetaTab] Initial load - triggering syncMetaInsights`);
         
-        // Use the same unified sync approach as HomeTab
-        syncMetaInsights().finally(() => {
+          // Use the same unified sync approach as HomeTab - no individual metric fetches needed
+          syncMetaInsights().finally(() => {
             // Mark initial load as complete and update params
-          initialLoadComplete.current = true;
+            initialLoadComplete.current = true;
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
-        });
-      } else {
-        console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
+          });
+        } else {
+          console.log("[MetaTab] Subsequent load - triggering syncMetaInsights");
+          // Use unified sync - no individual metric fetches needed
           syncMetaInsights().finally(() => {
             // Update params after successful sync
             prevFetchParamsRef.current = { brandId, from: currentFromISO, to: currentToISO };
@@ -5054,8 +5067,8 @@ Try creating at least one active campaign in Meta Ads Manager.
           duration: 10000 
         });
         
-        // Trigger a refresh of the current view
-        await fetchAllMetricsDirectly();
+        // DISABLED: Now handled by unified syncMetaInsights
+        // await fetchAllMetricsDirectly();
         
         console.log(`[MetaTab] ✅ All-time sync completed successfully - synced ${result.count || 0} records`);
       } else {
@@ -5127,8 +5140,8 @@ Try creating at least one active campaign in Meta Ads Manager.
       
       const performRefresh = async () => {
         try {
-          // For manual refreshes, use the refresh function that forces fresh data
-          await refreshMetricsDirectly();
+          // For manual refreshes, use the unified sync function that forces fresh data
+          await syncMetaInsights();
           console.log('[MetaTab] ✅ Manual refresh completed');
         } catch (error) {
           console.error('[MetaTab] ❌ Error in manual refresh:', error);
