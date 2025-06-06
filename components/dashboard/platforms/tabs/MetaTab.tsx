@@ -3528,21 +3528,10 @@ Try creating at least one active campaign in Meta Ads Manager.
     // Set unified loading state to true for all widgets
     setIsLoadingAllMetaWidgets(true);
     
-    // Fetch ALL data in parallel - metrics AND campaigns
+    // Use the unified data fetching approach - no more individual fetch functions
     await Promise.all([
-      fetchAdSpendDirectly(),
-      fetchRoasDirectly(),
-      fetchImpressionsDirectly(),
-      fetchClicksDirectly(),
-      fetchPurchaseValueDirectly(),
-      fetchResultsDirectly(),
-      fetchCostPerResultDirectly(),
-      fetchCostPerClickDirectly(),
-      fetchCtrDirectly(),
-      fetchReachDirectly(), // Ensure this is called
-      fetchLinkClicksDirectly(),
-      fetchBudgetDirectly(), // Ensure this is also called for consistency
-      fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
+      fetchMetaDataFromDatabase('fetchAllMetricsDirectly'), // Gets fresh data for overview widgets
+      fetchCampaigns(true) // Gets fresh data for special widgets
     ]);
     
     // Clear unified loading state when ALL data is loaded
@@ -3593,21 +3582,10 @@ Try creating at least one active campaign in Meta Ads Manager.
       // This prevents flickering by ensuring a consistent loading state is shown
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Fetch ALL data in parallel - metrics AND campaigns
+      // Use the unified data fetching approach - no more individual fetch functions
       await Promise.all([
-        fetchAdSpendDirectly(),
-        fetchRoasDirectly(),
-        fetchImpressionsDirectly(),
-        fetchClicksDirectly(),
-        fetchPurchaseValueDirectly(),
-        fetchResultsDirectly(),
-        fetchCostPerResultDirectly(),
-        fetchCostPerClickDirectly(),
-        fetchCtrDirectly(),
-        fetchReachDirectly(),
-        fetchLinkClicksDirectly(),
-        fetchBudgetDirectly(),
-        fetchCampaigns(true) // IMPORTANT: Include campaign fetching in unified loading
+        fetchMetaDataFromDatabase('refreshAllMetricsDirectly'), // Gets fresh data for overview widgets
+        fetchCampaigns(true) // Gets fresh data for special widgets
       ])
       
       // Success toast is shown only here, not in individual fetch functions
@@ -3621,11 +3599,7 @@ Try creating at least one active campaign in Meta Ads Manager.
       setIsManuallyRefreshing(false)
       console.log("[MetaTab] Manual refresh with unified loading completed for all widgets AND campaigns");
     }
-  }, [dateRange, brandId, 
-     fetchAdSpendDirectly, fetchRoasDirectly, fetchImpressionsDirectly, 
-     fetchClicksDirectly, fetchPurchaseValueDirectly, fetchResultsDirectly,
-     fetchCostPerResultDirectly, fetchCostPerClickDirectly, fetchCtrDirectly,
-     fetchReachDirectly, fetchLinkClicksDirectly, fetchBudgetDirectly, fetchCampaigns]);
+  }, [dateRange, brandId, fetchMetaDataFromDatabase, fetchCampaigns]);
   
   // Setup auto-refresh on a 5-minute interval
   useEffect(() => {
