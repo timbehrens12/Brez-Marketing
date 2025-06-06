@@ -1887,17 +1887,11 @@ Try creating at least one active campaign in Meta Ads Manager.
       return;
     }
 
-    // **COORDINATION CHECK**: Skip if tab switch is in progress
-    if (window._metaTabSwitchInProgress) {
-      console.log(`[MetaTab] 🚫 Date range effect: Skipping during tab switch`);
-      return;
-    }
+    // **CRITICAL FIX**: Removed tab switch blocking - we WANT to refresh when switching to Meta tab!
+    // This was preventing the Meta page from getting fresh data when switching to it
 
-    // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicates
-    if (hasRecentlyRefreshed(3000)) {
-      console.log(`[MetaTab] 🚫 Date range effect: Skipping - recently refreshed`);
-      return;
-    }
+    // **CRITICAL FIX**: Removed hasRecentlyRefreshed check - we WANT to refresh on tab switches and date changes!
+    // This was preventing the Meta page from getting fresh data when switching to it
     
     // Extract stable date strings for comparison
     const newFrom = dateRange.from?.toISOString().split('T')[0];
@@ -3733,12 +3727,8 @@ Try creating at least one active campaign in Meta Ads Manager.
           return;
         }
 
-        // **COORDINATION CHECK**: Skip if we recently refreshed to prevent duplicate events
-        // Increased timeout as fetchMetaData is now more comprehensive
-        if (hasRecentlyRefreshed(5000)) { 
-          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - recently refreshed (5s debounce)");
-          return;
-        }
+        // **CRITICAL FIX**: Removed hasRecentlyRefreshed check - we WANT to refresh on external Meta events!
+        // This was preventing the Meta page from responding to fresh data updates
 
         // **COORDINATION CHECK**: Skip if there's already a fetch in progress globally
         // isMetaFetchInProgress() checks window._metaFetchLock and window._activeFetchIds
