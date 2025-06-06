@@ -30,13 +30,29 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     return `${diffHour} hr ago`
   }
 
-  const fetchTotalBudget = useCallback(async () => {
+  const fetchTotalBudget = useCallback(async (forceRefresh = false) => {
     if (!brandId) return
     
     try {
-      setIsLoading(true)
-      console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true`)
-      const response = await fetch(`/api/meta/total-budget?brandId=${brandId}&activeOnly=true`)
+      // Only set loading if we're not in unified loading mode
+      if (!unifiedLoading) {
+        setIsLoading(true)
+      }
+      
+      console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true, forceRefresh=${forceRefresh}`)
+      
+      // Add cache busting for fresh data when refreshing
+      const url = forceRefresh 
+        ? `/api/meta/total-budget?brandId=${brandId}&activeOnly=true&forceRefresh=true&t=${Date.now()}`
+        : `/api/meta/total-budget?brandId=${brandId}&activeOnly=true`
+        
+      const response = await fetch(url, {
+        cache: forceRefresh ? 'no-store' : 'default',
+        headers: forceRefresh ? {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        } : {}
+      })
       
       if (!response.ok) {
         throw new Error('Failed to fetch total budget')
@@ -53,11 +69,15 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       }
     } catch (error) {
       console.error('Error fetching total budget:', error)
-      toast.error('Failed to fetch total budget')
+      if (!unifiedLoading) {
+        toast.error('Failed to fetch total budget')
+      }
     } finally {
-      setIsLoading(false)
+      if (!unifiedLoading) {
+        setIsLoading(false)
+      }
     }
-  }, [brandId])
+  }, [brandId, unifiedLoading])
   
   // Fetch on initial load and when isManuallyRefreshing changes
   useEffect(() => {
@@ -71,6 +91,18 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       fetchTotalBudget()
     }
   }, [brandId, fetchTotalBudget, isManuallyRefreshing, disableAutoFetch])
+
+  // Handle unified loading completion - fetch when unified loading finishes
+  useEffect(() => {
+    // When unified loading was true and now becomes false, fetch fresh data
+    if (unifiedLoading === false && disableAutoFetch && brandId) {
+      console.log("[TotalMetaBudget] Unified loading completed, fetching fresh budget data");
+      // Use a small delay to ensure other data fetches complete first
+      setTimeout(() => {
+        fetchTotalBudget(true); // Force refresh to get latest data
+      }, 500);
+    }
+  }, [unifiedLoading, disableAutoFetch, brandId, fetchTotalBudget])
   
   // Add a listener for the metaDataRefreshed event
   useEffect(() => {
@@ -79,7 +111,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       // Check if this event is for our brand
       if (event.detail?.brandId === brandId) {
         console.log("[TotalMetaBudget] Received metaDataRefreshed event, refreshing budget data")
-        fetchTotalBudget()
+        fetchTotalBudget(true) // Force refresh for event-based updates
       }
     }
     
@@ -87,7 +119,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       // Campaign status changed, refresh budget
       if (event.detail?.brandId === brandId) {
         console.log("[TotalMetaBudget] Received campaignStatusChanged event, refreshing budget data")
-        fetchTotalBudget()
+        fetchTotalBudget(true) // Force refresh for status changes
       }
     }
     
@@ -95,7 +127,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       // Ad set status changed, refresh budget
       if (event.detail?.brandId === brandId) {
         console.log("[TotalMetaBudget] Received adSetStatusChanged event, refreshing budget data")
-        fetchTotalBudget()
+        fetchTotalBudget(true) // Force refresh for status changes
       }
     }
 
