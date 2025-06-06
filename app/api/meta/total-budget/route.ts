@@ -37,36 +37,28 @@ export async function GET(req: NextRequest) {
         if (metaBudgetResult.success && metaBudgetResult.budgets) {
           console.log(`[Total Meta Budget] Successfully fetched ${metaBudgetResult.budgets.length} campaign budgets from Meta API`);
           
-          // Calculate total from Meta API budgets directly
-          let totalDailyBudget = 0;
-          let totalLifetimeBudget = 0;
-          let activeBudgetCount = 0;
+          let totalBudget = 0;
+          let activeAdSetCount = 0; // Use a more descriptive name
           
-          metaBudgetResult.budgets.forEach(budget => {
-            // Only count active campaigns if activeOnly is true
-            if (!activeOnly || budget.status === 'ACTIVE') {
-              activeBudgetCount++;
-              const budgetAmount = typeof budget.budget === 'string' ? parseFloat(budget.budget) : budget.budget;
-              if (budget.budget_type === 'daily') {
-                totalDailyBudget += budgetAmount || 0;
-              } else {
-                totalLifetimeBudget += budgetAmount || 0;
-              }
+          metaBudgetResult.budgets.forEach((campaign: any) => {
+            if (!activeOnly || campaign.status === 'ACTIVE') {
+              // The budget could be on the campaign or summed from adsets
+              const budgetAmount = campaign.adset_budget_total || campaign.budget || 0;
+              totalBudget += typeof budgetAmount === 'string' ? parseFloat(budgetAmount) : budgetAmount;
+              
+              // This is tricky - the API returns campaign budgets, so we're counting campaigns.
+              // Let's assume adSetCount is actually campaign count for this metric.
+              activeAdSetCount++;
             }
           });
           
-          const totalBudget = totalDailyBudget + totalLifetimeBudget;
-          console.log(`[Total Meta Budget] Meta API result - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalBudget}, Count: ${activeBudgetCount}`);
+          console.log(`[Total Meta Budget] Meta API result - Total: $${totalBudget}, Active Campaigns: ${activeAdSetCount}`);
           
           return NextResponse.json(
             { 
               success: true,
-              totalDailyBudget,
-              totalLifetimeBudget,
               totalBudget,
-              adSetCount: activeBudgetCount,
-              dailyBudgetAdSetCount: metaBudgetResult.budgets.filter(b => (!activeOnly || b.status === 'ACTIVE') && b.budget_type === 'daily').length,
-              lifetimeBudgetAdSetCount: metaBudgetResult.budgets.filter(b => (!activeOnly || b.status === 'ACTIVE') && b.budget_type === 'lifetime').length,
+              adSetCount: activeAdSetCount,
               timestamp: new Date().toISOString(),
               refreshMethod: 'meta-api'
             },
@@ -200,12 +192,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       { 
         success: true,
-        totalDailyBudget,
-        totalLifetimeBudget,
         totalBudget: totalDailyBudget + totalLifetimeBudget,
         adSetCount: adSets ? adSets.length : 0,
-        dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
-        lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
         timestamp: new Date().toISOString(),
         refreshMethod: 'database'
       },
