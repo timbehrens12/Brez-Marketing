@@ -3721,14 +3721,17 @@ Try creating at least one active campaign in Meta Ads Manager.
       if (event.detail?.brandId === brandId) {
         console.log("[MetaTab] Received metaDataRefreshed event", event.detail);
 
+        // **COORDINATION CHECK**: Skip if this event comes from MetaTabSync (our own syncMetaInsights)
+        if (event.detail?.source === 'MetaTabSync') {
+          console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - triggered by our own syncMetaInsights");
+          return;
+        }
+
         // **COORDINATION CHECK**: Skip if this is from a tab-switch-initiated sync
         if (isTabSwitchSyncRef.current) {
           console.log("[MetaTab] ⚠️ Skipping metaDataRefreshed event - triggered by tab switch sync");
           return;
         }
-
-        // **CRITICAL FIX**: Removed hasRecentlyRefreshed check - we WANT to refresh on external Meta events!
-        // This was preventing the Meta page from responding to fresh data updates
 
         // **COORDINATION CHECK**: Skip if there's already a fetch in progress globally
         // isMetaFetchInProgress() checks window._metaFetchLock and window._activeFetchIds
@@ -5339,6 +5342,7 @@ Try creating at least one active campaign in Meta Ads Manager.
             dateRange={dateRange}
             isManuallyRefreshing={isLoadingAllMetaWidgets}
             campaigns={campaigns} // Pass campaigns data
+            disableAutoFetch={isLoadingAllMetaWidgets}
             unifiedLoading={isLoadingAllMetaWidgets}
           />
           
@@ -5481,6 +5485,7 @@ Try creating at least one active campaign in Meta Ads Manager.
           <TotalBudgetMetricCard 
             brandId={brandId || ''} 
             isManuallyRefreshing={isLoadingAllMetaWidgets}
+            disableAutoFetch={isLoadingAllMetaWidgets}
             unifiedLoading={isLoadingAllMetaWidgets}
           />
         </div>
