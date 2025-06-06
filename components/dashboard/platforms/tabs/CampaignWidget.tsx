@@ -1555,7 +1555,7 @@ const CampaignWidget = ({
     }
     
     // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.campaign_id];
+    const currentBudgetData = currentBudgets[campaign.id];
     const budget = currentBudgetData?.budget || campaign.budget || 0;
     const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
     const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
@@ -2296,7 +2296,7 @@ const CampaignWidget = ({
                               <span className="text-xs text-gray-400 truncate max-w-xs" title={campaign.account_name}>
                                 {campaign.account_name}
                               </span>
-                              {currentBudgets[campaign.campaign_id]?.budget_source === 'api' && (
+                              {currentBudgets[campaign.id]?.budget_source === 'api' && (
                                 <Badge variant="outline" className="mt-1 text-xs text-white border-[#333]">Live Budget</Badge>
                               )}
                             </div>
