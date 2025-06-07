@@ -369,7 +369,8 @@ export async function GET(request: NextRequest) {
               
             if (!connectionError && connectionData) {
               try {
-                const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
+                const filtering = encodeURIComponent("[{'field':'status','operator':'IN','value':['ACTIVE']}]");
+                const adSetsUrl = `https://graph.facebook.com/v20.0/${campaign.campaign_id}/adsets?fields=name,status,daily_budget,lifetime_budget,bid_strategy,bid_amount,optimization_goal&filtering=${filtering}&access_token=${connectionData.access_token}&limit=100`;
                 const adSetsResponse = await fetch(adSetsUrl);
                 
                 if (adSetsResponse.ok) {
@@ -734,7 +735,8 @@ export async function GET(request: NextRequest) {
              
            if (!connectionError && connectionData) {
              try {
-               const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
+               const filtering = encodeURIComponent("[{'field':'status','operator':'IN','value':['ACTIVE']}]");
+               const adSetsUrl = `https://graph.facebook.com/v20.0/${campaign.campaign_id}/adsets?fields=name,status,daily_budget,lifetime_budget,bid_strategy,bid_amount,optimization_goal&filtering=${filtering}&access_token=${connectionData.access_token}&limit=100`;
                const adSetsResponse = await fetch(adSetsUrl);
                
                if (adSetsResponse.ok) {
@@ -810,7 +812,7 @@ export async function GET(request: NextRequest) {
         adset_budget_total: adsetBudgetTotal,
         budget: adsetBudgetTotal > 0 ? adsetBudgetTotal : campaign.budget,
         budget_type: adsetBudgetType !== 'unknown' ? adsetBudgetType : campaign.budget_type,
-        budget_source: adsetBudgetTotal > 0 ? 'adsets' : campaign.budget_source
+        budget_source: adsetBudgetType !== 'unknown' ? 'adsets' : campaign.budget_source
       };
     }));
     
