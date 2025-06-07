@@ -965,10 +965,22 @@ const CampaignWidget = ({
     const controller = createAbortController();
     
     try {
-      const response = await fetch(
-        `/api/meta/campaign-budgets?brandId=${brandId}${forceRefresh ? '&forceRefresh=true' : ''}`,
-        { signal: controller.signal }
-      );
+      // Add cache-busting parameters and headers for fresh data
+      const url = new URL(`/api/meta/campaign-budgets`, window.location.origin);
+      url.searchParams.set('brandId', brandId);
+      if (forceRefresh) {
+        url.searchParams.set('forceRefresh', 'true');
+        url.searchParams.set('_t', Date.now().toString());
+      }
+      
+      const response = await fetch(url.toString(), {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': forceRefresh ? 'no-cache, no-store, must-revalidate' : 'default',
+          'Pragma': forceRefresh ? 'no-cache' : 'default',
+          'Expires': forceRefresh ? '0' : 'default',
+        },
+      });
       
       if (!isMountedRef.current) return;
       
@@ -1100,6 +1112,20 @@ const CampaignWidget = ({
     
     logger.debug(`[CampaignWidget] Setting up refresh event listeners`);
     
+    // Handler for unified loading completion events (like TotalBudgetMetricCard)
+    const handleUnifiedLoadingCompletion = (event: Event) => {
+      if (!isMountedRef.current) return;
+      
+      logger.debug('[CampaignWidget] Received unified loading completion event, refreshing budgets');
+      
+      // Add delay to allow other widgets to complete first
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          fetchCurrentBudgets(true);
+        }
+      }, 500);
+    };
+    
     // Define the event handler function
     const handleRefresh = (event: Event) => {
       if (!isMountedRef.current || refreshing || refreshInProgressRef.current) {
@@ -1138,6 +1164,11 @@ const CampaignWidget = ({
         if (isMountedRef.current && typeof onRefresh === 'function') {
           onRefresh(forceRefresh);
           
+          // Also refresh campaign budgets with forceRefresh
+          if (forceRefresh) {
+            fetchCurrentBudgets(true);
+          }
+          
           // Clear refreshing state after minimum time
       setTimeout(() => {
             if (isMountedRef.current) {
@@ -1161,6 +1192,10 @@ const CampaignWidget = ({
     window.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     document.addEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
     
+    // Add listeners for unified loading completion events
+    window.addEventListener('unified-loading-completion', handleUnifiedLoadingCompletion);
+    document.addEventListener('unified-loading-completion', handleUnifiedLoadingCompletion);
+    
     // Return cleanup function
     return () => {
       window.removeEventListener('page-refresh', debouncedHandler as EventListener);
@@ -1170,8 +1205,12 @@ const CampaignWidget = ({
       document.removeEventListener('meta-refresh-all', debouncedHandler as EventListener);
       window.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
       document.removeEventListener('force-refresh-campaign-status', debouncedHandler as EventListener);
+      
+      // Cleanup unified loading completion listeners
+      window.removeEventListener('unified-loading-completion', handleUnifiedLoadingCompletion);
+      document.removeEventListener('unified-loading-completion', handleUnifiedLoadingCompletion);
     };
-  }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef]);
+      }, [brandId, onRefresh, refreshing, refreshInProgressRef, isMountedRef, fetchCurrentBudgets]);
   
   // Handle platform refresh event - fetch ad sets for currently loaded campaigns
   const handlePlatformRefresh = useCallback((event?: Event) => {
