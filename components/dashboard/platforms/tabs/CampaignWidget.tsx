@@ -371,26 +371,24 @@ const CampaignWidget = ({
   // Sync campaigns from props to localCampaigns
   useEffect(() => {
     // Always update localCampaigns when campaigns prop changes significantly
-    // Check if campaigns have actually changed (not just reference)
-    const hasSignificantChange = campaigns.some((campaign, index) => {
-      const localCampaign = localCampaigns[index];
-      if (!localCampaign) return true;
-      
-      // Check if budget data has changed
-      return (
-        campaign.campaign_id !== localCampaign.campaign_id ||
-        campaign.budget !== localCampaign.budget ||
-        campaign.adset_budget_total !== localCampaign.adset_budget_total ||
-        campaign.budget_type !== localCampaign.budget_type ||
-        campaign.budget_source !== localCampaign.budget_source ||
-        campaign.status !== localCampaign.status
-      );
-    });
+    // Don't compare with localCampaigns to avoid circular dependencies
+    console.log('[CampaignWidget] Campaigns prop updated, checking for changes...');
     
-    // Update if there's a significant change or if lengths differ
-    if (hasSignificantChange || campaigns.length !== localCampaigns.length) {
-      console.log('[CampaignWidget] Updating localCampaigns due to significant changes in campaigns prop');
-      setLocalCampaigns(campaigns);
+    // Always update if the campaigns have changed
+    setLocalCampaigns(campaigns);
+    
+    // Log what we're updating
+    if (campaigns.length > 0) {
+      const testCampaign = campaigns.find(c => c.campaign_id === '120218263352990058');
+      if (testCampaign) {
+        console.log('[CampaignWidget] Test campaign budget info:', {
+          campaign_id: testCampaign.campaign_id,
+          budget: testCampaign.budget,
+          adset_budget_total: testCampaign.adset_budget_total,
+          budget_type: testCampaign.budget_type,
+          budget_source: testCampaign.budget_source
+        });
+      }
     }
   }, [campaigns]);
   
