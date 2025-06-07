@@ -354,8 +354,6 @@ export async function GET(request: NextRequest) {
         // Fetch ad sets to calculate campaign budget
         let adsetBudgetTotal = 0;
         let adsetBudgetType = 'unknown';
-        let metaApiFetchSuccess = false; // Flag to track if the API call was successful
-
         try {
           if (forceRefresh) {
             // Fetch fresh ad set data from Meta API
@@ -375,7 +373,6 @@ export async function GET(request: NextRequest) {
                 const adSetsResponse = await fetch(adSetsUrl);
                 
                 if (adSetsResponse.ok) {
-                  metaApiFetchSuccess = true; // Mark API call as successful
                   const adSetsData = await adSetsResponse.json();
                   // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                   
@@ -413,9 +410,8 @@ export async function GET(request: NextRequest) {
             }
           }
           
-          // If Meta API was not attempted or it failed, fall back to database
-          if (!metaApiFetchSuccess) {
-            console.log(`[Meta Campaigns] Falling back to database for campaign ${campaign.campaign_id}`);
+          // If not force refresh or Meta API failed, fall back to database
+          if (!forceRefresh || adsetBudgetTotal === 0) {
             const { data: adSets, error: adSetsError } = await supabase
               .from('meta_adsets')
               .select('budget, budget_type, status')
@@ -723,8 +719,6 @@ export async function GET(request: NextRequest) {
        // Fetch ad sets to calculate campaign budget
        let adsetBudgetTotal = 0;
        let adsetBudgetType = 'unknown';
-       let metaApiFetchSuccess = false; // Flag to track if the API call was successful
-
        try {
          if (forceRefresh) {
            // Fetch fresh ad set data from Meta API
@@ -744,7 +738,6 @@ export async function GET(request: NextRequest) {
                const adSetsResponse = await fetch(adSetsUrl);
                
                if (adSetsResponse.ok) {
-                 metaApiFetchSuccess = true; // Mark API call as successful
                  const adSetsData = await adSetsResponse.json();
                  // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                  
@@ -782,9 +775,8 @@ export async function GET(request: NextRequest) {
            }
          }
          
-         // If Meta API was not attempted or it failed, fall back to database
-         if (!metaApiFetchSuccess) {
-            console.log(`[Meta Campaigns] Falling back to database for campaign ${campaign.campaign_id}`);
+         // If not force refresh or Meta API failed, fall back to database
+         if (!forceRefresh || adsetBudgetTotal === 0) {
            const { data: adSets, error: adSetsError } = await supabase
              .from('meta_adsets')
              .select('budget, budget_type, status')

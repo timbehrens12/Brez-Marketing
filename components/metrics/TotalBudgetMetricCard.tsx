@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { MetricCard } from './MetricCard'
@@ -16,6 +16,8 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
   const [totalBudget, setTotalBudget] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const hasInitialLoadRef = useRef(false)
 
   // Helper function to format time ago for last updated timestamp
   const formatTimeAgo = (date: Date): string => {
@@ -34,9 +36,14 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     if (!brandId) return
     
     try {
-      // Only set loading if we're not in unified loading mode
-      if (!unifiedLoading) {
-      setIsLoading(true)
+      // Set refreshing state if force refresh
+      if (forceRefresh) {
+        setIsRefreshing(true)
+      }
+      
+      // Only set loading if we're not in unified loading mode and this is the initial load
+      if (!unifiedLoading && !hasInitialLoadRef.current) {
+        setIsLoading(true)
       }
       
       console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true, forceRefresh=${forceRefresh}`)
@@ -64,18 +71,20 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       if (data.success) {
         setTotalBudget(data.totalBudget)
         setAdSetCount(data.adSetCount)
+        hasInitialLoadRef.current = true
       } else {
         throw new Error(data.error || 'Unknown error')
       }
     } catch (error) {
       console.error('Error fetching total budget:', error)
       if (!unifiedLoading) {
-      toast.error('Failed to fetch total budget')
+        toast.error('Failed to fetch total budget')
       }
     } finally {
       if (!unifiedLoading) {
-      setIsLoading(false)
+        setIsLoading(false)
       }
+      setIsRefreshing(false)
     }
   }, [brandId, unifiedLoading])
   
@@ -87,19 +96,11 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       return;
     }
     
-    if (brandId) {
-      fetchTotalBudget()
+    if (brandId && !hasInitialLoadRef.current) {
+      // Always force refresh on initial load to get fresh data
+      fetchTotalBudget(true)
     }
-  }, [brandId, fetchTotalBudget, isManuallyRefreshing, disableAutoFetch])
-
-  // Effect to clear budget when a new refresh cycle begins
-  useEffect(() => {
-    if (unifiedLoading) {
-      console.log("[TotalMetaBudget] Unified loading started, clearing stale budget data.");
-      setTotalBudget(null);
-      setAdSetCount(0);
-    }
-  }, [unifiedLoading]);
+  }, [brandId, fetchTotalBudget, disableAutoFetch])
 
   // Handle unified loading completion - fetch when unified loading finishes
   useEffect(() => {
@@ -164,7 +165,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       }
       value={totalBudget ?? 0}
       data={[]}
-      loading={isLoading || isManuallyRefreshing || unifiedLoading}
+      loading={isLoading || isManuallyRefreshing || unifiedLoading || isRefreshing}
       hideChange={true}
       valueFormat="currency"
       prefix="$"

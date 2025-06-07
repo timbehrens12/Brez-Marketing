@@ -370,16 +370,29 @@ const CampaignWidget = ({
   
   // Sync campaigns from props to localCampaigns
   useEffect(() => {
-    // Only update localCampaigns if not currently refreshing to prevent UI flickering
-    if (!refreshing) {
-      setLocalCampaigns(campaigns);
-    }
+    // Always update localCampaigns when campaigns prop changes significantly
+    // Check if campaigns have actually changed (not just reference)
+    const hasSignificantChange = campaigns.some((campaign, index) => {
+      const localCampaign = localCampaigns[index];
+      if (!localCampaign) return true;
+      
+      // Check if budget data has changed
+      return (
+        campaign.campaign_id !== localCampaign.campaign_id ||
+        campaign.budget !== localCampaign.budget ||
+        campaign.adset_budget_total !== localCampaign.adset_budget_total ||
+        campaign.budget_type !== localCampaign.budget_type ||
+        campaign.budget_source !== localCampaign.budget_source ||
+        campaign.status !== localCampaign.status
+      );
+    });
     
-    // Also update when isLoading changes from true to false (initial load complete)
-    if (!isLoading && campaigns.length > 0) {
+    // Update if there's a significant change or if lengths differ
+    if (hasSignificantChange || campaigns.length !== localCampaigns.length) {
+      console.log('[CampaignWidget] Updating localCampaigns due to significant changes in campaigns prop');
       setLocalCampaigns(campaigns);
     }
-  }, [campaigns, refreshing, isLoading]);
+  }, [campaigns]);
   
   // Clean up when component unmounts
   useEffect(() => {
@@ -1594,7 +1607,7 @@ const CampaignWidget = ({
     // If we're still loading or syncing, don't show $0.00 - this is key!
     if (isLoading || isSyncing || isLoadingBudgets) {
       console.log(`[CampaignWidget] Still loading/syncing, returning placeholder budget`);
-      return {
+    return {
         budget: 0,
         formatted_budget: '...', // Show loading indicator instead of $0.00
         budget_type: 'unknown',
