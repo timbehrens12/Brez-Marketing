@@ -92,6 +92,8 @@ export async function GET(req: NextRequest) {
                       }
                     });
                   }
+                } else {
+                  console.error(`[Total Meta Budget] Error fetching ad sets for campaign ${campaign.campaign_id}: ${adSetsResponse.status}`);
                 }
               } catch (error) {
                 console.error(`[Total Meta Budget] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
@@ -108,7 +110,7 @@ export async function GET(req: NextRequest) {
                 totalLifetimeBudget,
                 totalBudget,
                 adSetCount: activeAdSetCount,
-                dailyBudgetAdSetCount: totalDailyBudget > 0 ? activeAdSetCount : 0, // Simplified count
+                dailyBudgetAdSetCount: totalDailyBudget > 0 ? activeAdSetCount : 0,
                 lifetimeBudgetAdSetCount: totalLifetimeBudget > 0 ? activeAdSetCount : 0,
                 timestamp: new Date().toISOString(),
                 refreshMethod: 'meta-api'
@@ -170,63 +172,43 @@ export async function GET(req: NextRequest) {
         }
       }
       
-      // Try a two-step approach instead of a complex join that might not work properly
-      // First, get active ad sets
-      const { data: activeAdSets, error: adSetsError1 } = await supabase
-        .from('meta_adsets')
-        .select('*')
-        .eq('brand_id', brandId)
-        .eq('status', 'ACTIVE');
+      // Get active ad sets from active campaigns
+      if (activeCampaigns && activeCampaigns.length > 0) {
+        const activeCampaignIds = activeCampaigns.map(c => c.campaign_id);
         
-      if (adSetsError1) {
-        console.error('[Total Meta Budget] Error fetching active ad sets:', adSetsError1);
-        adSetsError = adSetsError1;
-      } else if (activeAdSets && activeAdSets.length > 0) {
-        console.log(`[Total Meta Budget] Found ${activeAdSets.length} active ad sets before campaign filter`);
-        
-        // Then, filter these ad sets to only include those in active campaigns
-        if (activeCampaigns && activeCampaigns.length > 0) {
-          const activeCampaignIds = activeCampaigns.map(c => c.campaign_id);
-          
-          adSets = activeAdSets.filter(adSet => 
-            activeCampaignIds.includes(adSet.campaign_id)
-          );
-          
-          console.log(`[Total Meta Budget] After filtering: ${adSets.length} ad sets in active campaigns`);
-          
-          if (adSets.length > 0) {
-            console.log('[Total Meta Budget] Ad sets in active campaigns:', 
-              adSets.map(a => `${a.adset_name} (budget: $${a.budget} ${a.budget_type}, campaign: ${a.campaign_id})`)
-            );
-          } else {
-            console.log('[Total Meta Budget] No ad sets found in active campaigns');
-          }
+        const { data: activeAdSets, error: adSetsError1 } = await supabase
+          .from('meta_adsets')
+          .select('*')
+          .eq('brand_id', brandId)
+          .eq('status', 'ACTIVE')
+          .in('campaign_id', activeCampaignIds);
+
+        if (adSetsError1) {
+          console.error('[Total Meta Budget] Error fetching active ad sets:', adSetsError1);
+          adSetsError = adSetsError1;
         } else {
-          console.log('[Total Meta Budget] No active campaigns found, so no ad sets will be included');
-          adSets = [];
+          adSets = activeAdSets || [];
+          console.log(`[Total Meta Budget] Found ${adSets.length} active ad sets in active campaigns`);
         }
       } else {
-        console.log('[Total Meta Budget] No active ad sets found');
+        console.log('[Total Meta Budget] No active campaigns found, returning empty ad sets');
         adSets = [];
       }
     } else {
-      // For non-activeOnly, use the original query
-      const { data, error } = await supabase
+      // For activeOnly=false, get all ad sets
+      console.log(`[Total Meta Budget] Fetching all ad sets`);
+      const { data: allAdSets, error: adSetsError2 } = await supabase
         .from('meta_adsets')
-        .select('budget, budget_type, status, adset_name, campaign_id')
-        .eq('brand_id', brandId)
-        .in('status', ['ACTIVE', 'PAUSED']);
-      
-      adSets = data || [];
-      adSetsError = error;
-    }
-    
-    if (adSetsError) {
-      console.error('Error fetching ad sets:', adSetsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch ad sets', details: adSetsError.message },
-        { status: 500 }
-      );
+        .select('*')
+        .eq('brand_id', brandId);
+
+      if (adSetsError2) {
+        console.error('[Total Meta Budget] Error fetching all ad sets:', adSetsError2);
+        adSetsError = adSetsError2;
+      } else {
+        adSets = allAdSets || [];
+        console.log(`[Total Meta Budget] Found ${adSets.length} total ad sets`);
+      }
     }
     
     // Calculate total daily budget
