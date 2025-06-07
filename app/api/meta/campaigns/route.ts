@@ -340,7 +340,7 @@ export async function GET(request: NextRequest) {
       }
       
       // Process campaigns with their aggregated stats
-      const campaigns = await Promise.all(relevantCampaigns.map(async (campaign: any) => {
+      let campaigns = await Promise.all(relevantCampaigns.map(async (campaign: any) => {
         const campaignStats = statsByCampaign[campaign.campaign_id] || [];
         
         // Aggregate metrics from daily campaign stats
@@ -395,98 +395,97 @@ export async function GET(request: NextRequest) {
                       }))
                     );
                     
-                    // Special debug logging for TEST campaign
-                    if (campaign.campaign_id === '120218263352990058') {
-                      console.log(`[META API DEBUG] TEST CAMPAIGN - Raw ad sets from Meta API:`, adSetsData.data);
-                      adSetsData.data.forEach((adSet: any, index: number) => {
-                        console.log(`[META API DEBUG] Ad Set ${index + 1}:`, {
-                          id: adSet.id,
-                          name: adSet.name,
-                          status: adSet.status,
-                          daily_budget_raw: adSet.daily_budget,
-                          daily_budget_dollars: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
-                          lifetime_budget_raw: adSet.lifetime_budget,
-                          lifetime_budget_dollars: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null,
-                          will_be_included: adSet.status === 'ACTIVE'
-                        });
-                      });
-                    }
-                    
-                    // Corrected filter: Only include ACTIVE ad sets for the campaign-level budget total
+                    // Filter for active ad sets only and calculate total budget
                     const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                    console.log(`[Meta Campaigns] Active ad sets for campaign ${campaign.campaign_id}:`, 
+                      activeAdSets.map((adSet: any) => ({
+                        id: adSet.id,
+                        name: adSet.name,
+                        status: adSet.status,
+                        daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
+                        lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
+                      }))
+                    );
                     
-                    console.log(`[Meta Campaigns] Active ad sets count for campaign ${campaign.campaign_id}: ${activeAdSets.length}`);
+                    adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
+                      const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
+                      const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
+                      return total + Math.max(dailyBudget, lifetimeBudget);
+                    }, 0);
                     
-                    // Special debug for TEST campaign
-                    if (campaign.campaign_id === '120218263352990058') {
-                      console.log(`[META API DEBUG] TEST CAMPAIGN - Active ad sets after filtering:`, activeAdSets);
-                    }
+                    // Determine budget type
+                    const hasDailyBudgets = activeAdSets.some((adSet: any) => adSet.daily_budget);
+                    const hasLifetimeBudgets = activeAdSets.some((adSet: any) => adSet.lifetime_budget);
+                    adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
                     
-                    if (activeAdSets.length > 0) {
-                      adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-                        // Ad sets have either daily_budget or lifetime_budget
-                        if (adSet.daily_budget) {
-                          const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents
-                          adsetBudgetType = 'daily';
-                          return sum + dailyBudget;
-                        } else if (adSet.lifetime_budget) {
-                          const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents
-                          adsetBudgetType = 'lifetime';
-                          return sum + lifetimeBudget;
-                        }
-                        return sum;
-                      }, 0);
-                      
-                      console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
-                    } else {
-                      console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has no active ad sets, setting budget to 0`);
-                      adsetBudgetTotal = 0;
-                    }
+                    console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Active adsets budget calculation:`, {
+                      activeAdSetsCount: activeAdSets.length,
+                      totalBudget: adsetBudgetTotal,
+                      budgetType: adsetBudgetType
+                    });
                     
-                    // Mark that we successfully fetched from Meta API
                     fetchedFromMetaAPI = true;
+                    
+                    // Update the campaign budget in database with fresh data
+                    const { error: updateError } = await supabase
+                      .from('meta_campaigns')
+                      .update({
+                        budget: adsetBudgetTotal,
+                        budget_type: adsetBudgetType,
+                        budget_source: 'adsets',
+                        last_refresh_date: new Date().toISOString()
+                      })
+                      .eq('campaign_id', campaign.campaign_id)
+                      .eq('brand_id', brandId);
+                      
+                    if (updateError) {
+                      console.error(`[Meta Campaigns] Error updating campaign ${campaign.campaign_id} budget in database:`, updateError);
+                    } else {
+                      console.log(`[Meta Campaigns] Successfully updated campaign ${campaign.campaign_id} budget to $${adsetBudgetTotal} in database`);
+                    }
                   }
+                } else {
+                  console.error(`[Meta Campaigns] Failed to fetch ad sets for campaign ${campaign.campaign_id}:`, adSetsResponse.status, adSetsResponse.statusText);
                 }
-              } catch (apiError) {
-                console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
-                // Fall back to database query
+              } catch (adSetError) {
+                console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, adSetError);
               }
             } else {
-              console.error(`[Meta Campaigns] Could not get Meta connection for brand ${brandId}:`, connectionError);
+              console.error(`[Meta Campaigns] No Meta connection found for brand ${brandId}:`, connectionError);
             }
           }
           
-          // Only use database fallback if we didn't successfully fetch from Meta API
+          // If we didn't successfully fetch from Meta API, fall back to database
           if (!fetchedFromMetaAPI) {
-            const { data: adSets, error: adSetsError } = await supabase
+            console.log(`[Meta Campaigns] Using database fallback for campaign ${campaign.campaign_id} budget`);
+            // Get budget from database
+            const { data: adSetsData, error: adSetsError } = await supabase
               .from('meta_adsets')
-              .select('budget, budget_type, status')
+              .select('*')
               .eq('campaign_id', campaign.campaign_id)
-              .eq('brand_id', brandId);
+              .eq('brand_id', brandId)
+              .eq('status', 'ACTIVE');
               
-            if (!adSetsError && adSets && adSets.length > 0) {
-              // Corrected filter: Only include ACTIVE ad sets for the Supabase cache update
-              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+            if (!adSetsError && adSetsData) {
+              adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
+                const dailyBudget = adSet.daily_budget || 0;
+                const lifetimeBudget = adSet.lifetime_budget || 0;
+                return total + Math.max(dailyBudget, lifetimeBudget);
+              }, 0);
               
-              if (activeAdSets.length > 0) {
-                adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-                  return sum + (parseFloat(adSet.budget) || 0);
-                }, 0);
-                
-                // If all ad sets have the same budget type, use that, otherwise 'mixed'
-                const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
-                const uniqueBudgetTypes = [...new Set(budgetTypes)];
-                adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
-                
-                console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
-              } else {
-                console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has no active ad sets, setting budget to 0`);
-                adsetBudgetTotal = 0;
-              }
+              const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
+              const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
+              adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
+              
+              console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
+                adSetsCount: adSetsData.length,
+                totalBudget: adsetBudgetTotal,
+                budgetType: adsetBudgetType
+              });
             }
           }
         } catch (error) {
-          console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
+          console.error(`[Meta Campaigns] Error calculating budget for campaign ${campaign.campaign_id}:`, error);
         }
         
         // Collect daily insights specific to this campaign for the response
@@ -682,28 +681,59 @@ export async function GET(request: NextRequest) {
       )
       
       if (testCampaign) {
-        console.log(`[Meta Campaigns API] TEST CAMPAIGN DETAILS:`)
-        console.log(`  ID: ${testCampaign.campaign_id}`)
-        console.log(`  Name: ${testCampaign.campaign_name}`)
-        console.log(`  Budget: $${testCampaign.budget}`)
-        console.log(`  Budget Type: ${testCampaign.budget_type}`)
-        console.log(`  Budget Source: ${testCampaign.budget_source}`)
-        console.log(`  Last Refresh: ${testCampaign.last_refresh_date}`)
+        console.log(`[Meta Campaigns API] TEST CAMPAIGN DETAILS:`);
+        console.log(`  ID: ${testCampaign.campaign_id}`);
+        console.log(`  Name: ${testCampaign.campaign_name}`);
+        console.log(`  Budget: $${testCampaign.budget}`);
+        console.log(`  Budget Type: ${testCampaign.budget_type}`);
+        console.log(`  Budget Source: ${testCampaign.budget_source}`);
+        console.log(`  Last Refresh: ${testCampaign.last_refresh_date}`);
       }
       
-      // Fix ALL campaigns with 'estimated' budget type 
-      for (const campaign of campaigns) {
-        if (campaign.budget_type === 'estimated') {
-          console.log(`[Meta Campaigns API] Found estimated budget campaign: ${campaign.campaign_id}`)
+      // If forceRefresh was used, re-query campaigns to get the updated budget values
+      if (forceRefresh) {
+        console.log(`[Meta Campaigns] Force refresh complete, re-querying campaigns from database to get updated budget values`);
+        
+        const { data: updatedCampaigns, error: updatedError } = await supabase
+          .from('meta_campaigns')
+          .select(`
+            campaign_id,
+            campaign_name,
+            status,
+            objective,
+            budget,
+            budget_type,
+            budget_source,
+            spend_cap,
+            account_id,
+            brand_id,
+            created_time,
+            updated_time,
+            last_refresh_date,
+            adset_budget_total
+          `)
+          .eq('brand_id', brandId)
+          .order('updated_time', { ascending: false });
           
-          // Also fix it in the campaigns array being returned to the client
-          campaign.budget_type = 'daily'
-          if (campaign.budget > 5) {
-            campaign.budget = 1.00
-          }
+        if (!updatedError && updatedCampaigns) {
+          campaigns = updatedCampaigns;
+          console.log(`[Meta Campaigns] Successfully re-queried ${campaigns.length} campaigns with updated budget data`);
           
-          if (!campaign.budget_source) {
-            campaign.budget_source = 'api_fix'
+          // Log updated test campaign data
+          const updatedTestCampaign = campaigns.find(c => 
+            c.campaign_id === '120218263352990058' || 
+            c.campaign_name.includes('TEST - DO NOT USE')
+          );
+          
+          if (updatedTestCampaign) {
+            console.log(`[Meta Campaigns API] UPDATED TEST CAMPAIGN DETAILS:`);
+            console.log(`  ID: ${updatedTestCampaign.campaign_id}`);
+            console.log(`  Name: ${updatedTestCampaign.campaign_name}`);
+            console.log(`  Budget: $${updatedTestCampaign.budget}`);
+            console.log(`  Adset Budget Total: $${updatedTestCampaign.adset_budget_total}`);
+            console.log(`  Budget Type: ${updatedTestCampaign.budget_type}`);
+            console.log(`  Budget Source: ${updatedTestCampaign.budget_source}`);
+            console.log(`  Last Refresh: ${updatedTestCampaign.last_refresh_date}`);
           }
         }
       }
@@ -778,98 +808,97 @@ export async function GET(request: NextRequest) {
                      }))
                    );
                    
-                   // Special debug logging for TEST campaign
-                   if (campaign.campaign_id === '120218263352990058') {
-                     console.log(`[META API DEBUG] TEST CAMPAIGN - Raw ad sets from Meta API:`, adSetsData.data);
-                     adSetsData.data.forEach((adSet: any, index: number) => {
-                       console.log(`[META API DEBUG] Ad Set ${index + 1}:`, {
-                         id: adSet.id,
-                         name: adSet.name,
-                         status: adSet.status,
-                         daily_budget_raw: adSet.daily_budget,
-                         daily_budget_dollars: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
-                         lifetime_budget_raw: adSet.lifetime_budget,
-                         lifetime_budget_dollars: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null,
-                         will_be_included: adSet.status === 'ACTIVE'
-                       });
-                     });
-                   }
-                   
-                   // Corrected filter: Only include ACTIVE ad sets for the campaign-level budget total
+                   // Filter for active ad sets only and calculate total budget
                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                   console.log(`[Meta Campaigns] Active ad sets for campaign ${campaign.campaign_id}:`, 
+                     activeAdSets.map((adSet: any) => ({
+                       id: adSet.id,
+                       name: adSet.name,
+                       status: adSet.status,
+                       daily_budget: adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : null,
+                       lifetime_budget: adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : null
+                     }))
+                   );
                    
-                   console.log(`[Meta Campaigns] Active ad sets count for campaign ${campaign.campaign_id}: ${activeAdSets.length}`);
+                   adsetBudgetTotal = activeAdSets.reduce((total: number, adSet: any) => {
+                     const dailyBudget = adSet.daily_budget ? parseInt(adSet.daily_budget) / 100 : 0;
+                     const lifetimeBudget = adSet.lifetime_budget ? parseInt(adSet.lifetime_budget) / 100 : 0;
+                     return total + Math.max(dailyBudget, lifetimeBudget);
+                   }, 0);
                    
-                   // Special debug for TEST campaign
-                   if (campaign.campaign_id === '120218263352990058') {
-                     console.log(`[META API DEBUG] TEST CAMPAIGN - Active ad sets after filtering:`, activeAdSets);
-                   }
+                   // Determine budget type
+                   const hasDailyBudgets = activeAdSets.some((adSet: any) => adSet.daily_budget);
+                   const hasLifetimeBudgets = activeAdSets.some((adSet: any) => adSet.lifetime_budget);
+                   adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
                    
-                   if (activeAdSets.length > 0) {
-                     adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-                       // Ad sets have either daily_budget or lifetime_budget
-                       if (adSet.daily_budget) {
-                         const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents
-                         adsetBudgetType = 'daily';
-                         return sum + dailyBudget;
-                       } else if (adSet.lifetime_budget) {
-                         const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents
-                         adsetBudgetType = 'lifetime';
-                         return sum + lifetimeBudget;
-                       }
-                       return sum;
-                     }, 0);
-                     
-                     console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
-                   } else {
-                     console.log(`[Meta Campaigns] Meta API - Campaign ${campaign.campaign_id} has no active ad sets, setting budget to 0`);
-                     adsetBudgetTotal = 0;
-                   }
+                   console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Active adsets budget calculation:`, {
+                     activeAdSetsCount: activeAdSets.length,
+                     totalBudget: adsetBudgetTotal,
+                     budgetType: adsetBudgetType
+                   });
                    
-                   // Mark that we successfully fetched from Meta API
                    fetchedFromMetaAPI = true;
+                   
+                   // Update the campaign budget in database with fresh data
+                   const { error: updateError } = await supabase
+                     .from('meta_campaigns')
+                     .update({
+                       budget: adsetBudgetTotal,
+                       budget_type: adsetBudgetType,
+                       budget_source: 'adsets',
+                       last_refresh_date: new Date().toISOString()
+                     })
+                     .eq('campaign_id', campaign.campaign_id)
+                     .eq('brand_id', brandId);
+                     
+                   if (updateError) {
+                     console.error(`[Meta Campaigns] Error updating campaign ${campaign.campaign_id} budget in database:`, updateError);
+                   } else {
+                     console.log(`[Meta Campaigns] Successfully updated campaign ${campaign.campaign_id} budget to $${adsetBudgetTotal} in database`);
+                   }
                  }
+               } else {
+                 console.error(`[Meta Campaigns] Failed to fetch ad sets for campaign ${campaign.campaign_id}:`, adSetsResponse.status, adSetsResponse.statusText);
                }
-             } catch (apiError) {
-               console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
-               // Fall back to database query
+             } catch (adSetError) {
+               console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, adSetError);
              }
            } else {
-             console.error(`[Meta Campaigns] Could not get Meta connection for brand ${brandId}:`, connectionError);
+             console.error(`[Meta Campaigns] No Meta connection found for brand ${brandId}:`, connectionError);
            }
          }
          
-         // Only use database fallback if we didn't successfully fetch from Meta API
+         // If we didn't successfully fetch from Meta API, fall back to database
          if (!fetchedFromMetaAPI) {
-           const { data: adSets, error: adSetsError } = await supabase
+           console.log(`[Meta Campaigns] Using database fallback for campaign ${campaign.campaign_id} budget`);
+           // Get budget from database
+           const { data: adSetsData, error: adSetsError } = await supabase
              .from('meta_adsets')
-             .select('budget, budget_type, status')
+             .select('*')
              .eq('campaign_id', campaign.campaign_id)
-             .eq('brand_id', brandId);
+             .eq('brand_id', brandId)
+             .eq('status', 'ACTIVE');
              
-           if (!adSetsError && adSets && adSets.length > 0) {
-             // Corrected filter: Only include ACTIVE ad sets for the Supabase cache update
-             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+           if (!adSetsError && adSetsData) {
+             adsetBudgetTotal = adSetsData.reduce((total: number, adSet: any) => {
+               const dailyBudget = adSet.daily_budget || 0;
+               const lifetimeBudget = adSet.lifetime_budget || 0;
+               return total + Math.max(dailyBudget, lifetimeBudget);
+             }, 0);
              
-             if (activeAdSets.length > 0) {
-               adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
-                 return sum + (parseFloat(adSet.budget) || 0);
-               }, 0);
-               
-               // If all ad sets have the same budget type, use that, otherwise 'mixed'
-               const budgetTypes = activeAdSets.map((adSet: any) => adSet.budget_type);
-               const uniqueBudgetTypes = [...new Set(budgetTypes)];
-               adsetBudgetType = uniqueBudgetTypes.length === 1 ? uniqueBudgetTypes[0] : 'mixed';
-               
-               console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has ${activeAdSets.length} active ad sets with total budget: $${adsetBudgetTotal} (${adsetBudgetType})`);
-             } else {
-               console.log(`[Meta Campaigns] Database - Campaign ${campaign.campaign_id} has no active ad sets, setting budget to 0`);
-               adsetBudgetTotal = 0;
-             }
+             const hasDailyBudgets = adSetsData.some((adSet: any) => adSet.daily_budget > 0);
+             const hasLifetimeBudgets = adSetsData.some((adSet: any) => adSet.lifetime_budget > 0);
+             adsetBudgetType = hasDailyBudgets ? 'daily' : hasLifetimeBudgets ? 'lifetime' : 'unknown';
+             
+             console.log(`[Meta Campaigns] Campaign ${campaign.campaign_id} - Database adsets budget:`, {
+               adSetsCount: adSetsData.length,
+               totalBudget: adsetBudgetTotal,
+               budgetType: adsetBudgetType
+             });
            }
          }
        } catch (error) {
-         console.error(`[Meta Campaigns] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
+         console.error(`[Meta Campaigns] Error calculating budget for campaign ${campaign.campaign_id}:`, error);
        }
       
       return {
