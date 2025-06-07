@@ -696,38 +696,16 @@ export function MetaTab2({
 
   return (
     <div className="space-y-6">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Image 
-            src="https://i.imgur.com/6hyyRrs.png"
-            alt="Meta Ads"
-            width={24}
-            height={24}
-            className="mr-2"
-          />
-          <h2 className="text-xl font-medium text-white">Meta Ads Overview</h2>
-        </div>
-        
-        <Button
-          onClick={syncMetaInsights}
-          disabled={isLoadingAllMetaWidgets}
-          variant="outline"
-          size="sm"
-          className="bg-[#111] border-[#333] hover:bg-[#222] text-white"
-        >
-          {isLoadingAllMetaWidgets ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh Data
-            </>
-          )}
-        </Button>
+      {/* Header */}
+      <div className="flex items-center mb-4">
+        <Image 
+          src="https://i.imgur.com/6hyyRrs.png"
+          alt="Meta Ads"
+          width={24}
+          height={24}
+          className="mr-2"
+        />
+        <h2 className="text-xl font-medium text-white">Meta Ads Overview</h2>
       </div>
 
       {/* Main metrics grid - First row of 4 */}
