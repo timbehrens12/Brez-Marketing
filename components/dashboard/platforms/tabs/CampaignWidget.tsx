@@ -1543,12 +1543,15 @@ const CampaignWidget = ({
     
     // If we have ad sets for this campaign (from expansion), use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
-      console.log(`[CampaignWidget] Using expanded ad sets budget: $${totalAdSetBudget}`);
+      const activeAndPausedAdSets = campaignAdSets.filter(adSet => ['ACTIVE', 'PAUSED'].includes(adSet.status));
+      const totalAdSetBudget = activeAndPausedAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      
+      console.log(`[CampaignWidget] Using expanded ad sets budget (active/paused only): $${totalAdSetBudget} from ${activeAndPausedAdSets.length} of ${campaignAdSets.length} ad sets.`);
+      
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: campaignAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        budget_type: activeAndPausedAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
         budget_source: 'adsets'
       };
     }

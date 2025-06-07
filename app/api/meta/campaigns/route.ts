@@ -374,6 +374,7 @@ export async function GET(request: NextRequest) {
                 
                 if (adSetsResponse.ok) {
                   const adSetsData = await adSetsResponse.json();
+                  console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                   
                   if (adSetsData.data) {
                     const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
@@ -403,6 +404,8 @@ export async function GET(request: NextRequest) {
                 console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
                 // Fall back to database query
               }
+            } else {
+              console.error(`[Meta Campaigns] Could not get Meta connection for brand ${brandId}:`, connectionError);
             }
           }
           
@@ -735,6 +738,7 @@ export async function GET(request: NextRequest) {
                
                if (adSetsResponse.ok) {
                  const adSetsData = await adSetsResponse.json();
+                 console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                  
                  if (adSetsData.data) {
                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
@@ -764,6 +768,8 @@ export async function GET(request: NextRequest) {
                console.error(`[Meta Campaigns] Error fetching ad sets from Meta API for campaign ${campaign.campaign_id}:`, apiError);
                // Fall back to database query
              }
+           } else {
+             console.error(`[Meta Campaigns] Could not get Meta connection for brand ${brandId}:`, connectionError);
            }
          }
          
