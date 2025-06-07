@@ -13,7 +13,7 @@ interface TotalBudgetMetricCardProps {
 }
 
 export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, disableAutoFetch = false, unifiedLoading = false }: TotalBudgetMetricCardProps) {
-  const [totalBudget, setTotalBudget] = useState(0)
+  const [totalBudget, setTotalBudget] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [adSetCount, setAdSetCount] = useState(0)
 
@@ -153,7 +153,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
             {adSetCount > 0 && <span className="text-xs text-gray-400 ml-1">({adSetCount} ad sets)</span>}
         </div>
       }
-      value={totalBudget}
+      value={totalBudget ?? 0}
       data={[]}
       loading={isLoading || isManuallyRefreshing || unifiedLoading}
       hideChange={true}

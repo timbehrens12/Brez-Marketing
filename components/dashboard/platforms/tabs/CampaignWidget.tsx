@@ -1531,11 +1531,20 @@ const CampaignWidget = ({
     budget_source: string;
   };
 
-  // Calculate campaign budget (keep existing)
-  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => { // Added : CampaignBudgetData return type
-    // If we have ad sets for this campaign, use their combined budget
+  // Calculate campaign budget - enhanced to work like TotalBudgetMetricCard
+  const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => {
+    console.log(`[CampaignWidget] Getting budget for campaign ${campaign.campaign_id}:`, {
+      campaign_budget: campaign.budget,
+      adset_budget_total: campaign.adset_budget_total,
+      budget_type: campaign.budget_type,
+      isLoading,
+      isSyncing
+    });
+    
+    // If we have ad sets for this campaign (from expansion), use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
+      const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      console.log(`[CampaignWidget] Using expanded ad sets budget: $${totalAdSetBudget}`);
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
@@ -1544,8 +1553,9 @@ const CampaignWidget = ({
       };
     }
     
-    // If campaign has adset_budget_total, use that
+    // If campaign has adset_budget_total (the preferred source), use that
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
+      console.log(`[CampaignWidget] Using adset_budget_total: $${campaign.adset_budget_total}`);
       return {
         budget: campaign.adset_budget_total,
         formatted_budget: formatCurrency(campaign.adset_budget_total),
@@ -1554,18 +1564,47 @@ const CampaignWidget = ({
       };
     }
     
-    // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.id];
-    const budget = currentBudgetData?.budget || campaign.budget || 0;
-    const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
-    const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
-    const budget_source = currentBudgetData?.budget_source || 'campaign';
+    // If campaign has a budget field that's greater than 0, use that
+    if (campaign.budget && campaign.budget > 0) {
+      console.log(`[CampaignWidget] Using campaign.budget: $${campaign.budget}`);
+      return {
+        budget: campaign.budget,
+        formatted_budget: formatCurrency(campaign.budget),
+        budget_type: campaign.budget_type || 'unknown',
+        budget_source: 'campaign'
+      };
+    }
     
+    // Check current budgets from API
+    const currentBudgetData = currentBudgets[campaign.id];
+    if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
+      console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
+      return {
+        budget: currentBudgetData.budget,
+        formatted_budget: currentBudgetData.formatted_budget || formatCurrency(currentBudgetData.budget),
+        budget_type: currentBudgetData.budget_type || 'unknown',
+        budget_source: 'api'
+      };
+    }
+    
+    // If we're still loading or syncing, don't show $0.00 - this is key!
+    if (isLoading || isSyncing || isLoadingBudgets) {
+      console.log(`[CampaignWidget] Still loading/syncing, returning placeholder budget`);
+      return {
+        budget: 0,
+        formatted_budget: '...', // Show loading indicator instead of $0.00
+        budget_type: 'unknown',
+        budget_source: 'loading'
+      };
+    }
+    
+    // Last resort - return 0 but only if we're not loading
+    console.log(`[CampaignWidget] No budget data found, returning $0.00`);
     return {
-      budget,
-      formatted_budget,
-      budget_type,
-      budget_source
+      budget: 0,
+      formatted_budget: formatCurrency(0),
+      budget_type: 'unknown',
+      budget_source: 'none'
     };
   };
 
@@ -2318,10 +2357,18 @@ const CampaignWidget = ({
                           </td>
                           <td className="p-3 text-right text-white">
                             <div className="font-medium">
-                              {formatBudgetWithType(
-                                getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget,
-                                getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null).budget_type
-                              )}
+                              {(() => {
+                                const budgetInfo = getCampaignBudget(campaign, expandedCampaign === campaign.campaign_id ? adSets : null);
+                                
+                                // Show loading skeleton if still loading or budget source is loading
+                                if (budgetInfo.budget_source === 'loading' || isLoading || isSyncing) {
+                                  return (
+                                    <div className="h-5 w-20 animate-pulse bg-gray-700/30 rounded"></div>
+                                  );
+                                }
+                                
+                                return formatBudgetWithType(budgetInfo.budget, budgetInfo.budget_type);
+                              })()}
                             </div>
                           </td>
                           {visibleMetrics.map(metricId => {
