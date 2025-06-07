@@ -365,7 +365,7 @@ export async function GET(request: NextRequest) {
               .from('platform_connections')
               .select('access_token')
               .eq('brand_id', brandId)
-              .eq('platform', 'meta')
+              .eq('platform_type', 'meta')
               .single();
               
             if (!connectionError && connectionData) {
