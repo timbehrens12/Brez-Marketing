@@ -1001,6 +1001,8 @@ const CampaignWidget = ({
         if (isMountedRef.current) {
           setCurrentBudgets(budgetMap);
           logger.debug(`[CampaignWidget] Loaded current budgets for ${Object.keys(budgetMap).length} campaigns via ${data.refreshMethod}`);
+          
+
         }
         
         // Show toast notification when budgets are updated and forceRefresh was requested
@@ -1572,6 +1574,7 @@ const CampaignWidget = ({
 
   // Calculate campaign budget (keep existing)
   const getCampaignBudget = (campaign: Campaign, campaignAdSets: AdSet[] | null = null): CampaignBudgetData => { // Added : CampaignBudgetData return type
+
     // If we have ad sets for this campaign, use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
       const totalAdSetBudget = campaignAdSets.reduce((sum, adSet) => sum + adSet.budget, 0);
@@ -1594,7 +1597,8 @@ const CampaignWidget = ({
     }
     
     // Otherwise use current budget from API or campaign budget as fallback
-    const currentBudgetData = currentBudgets[campaign.id];
+    // Use campaign.campaign_id (Meta API ID) for lookup, not campaign.id (database ID)
+    const currentBudgetData = currentBudgets[campaign.campaign_id];
     const budget = currentBudgetData?.budget || campaign.budget || 0;
     const formatted_budget = currentBudgetData?.formatted_budget || formatCurrency(budget);
     const budget_type = currentBudgetData?.budget_type || campaign.budget_type || 'unknown';
@@ -2335,7 +2339,7 @@ const CampaignWidget = ({
                               <span className="text-xs text-gray-400 truncate max-w-xs" title={campaign.account_name}>
                                 {campaign.account_name}
                               </span>
-                              {currentBudgets[campaign.id]?.budget_source === 'api' && (
+                              {currentBudgets[campaign.campaign_id]?.budget_source === 'api' && (
                                 <Badge variant="outline" className="mt-1 text-xs text-white border-[#333]">Live Budget</Badge>
                               )}
                             </div>
