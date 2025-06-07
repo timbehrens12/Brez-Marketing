@@ -354,6 +354,8 @@ export async function GET(request: NextRequest) {
         // Fetch ad sets to calculate campaign budget
         let adsetBudgetTotal = 0;
         let adsetBudgetType = 'unknown';
+        let metaApiFetchSuccess = false; // Flag to track if the API call was successful
+
         try {
           if (forceRefresh) {
             // Fetch fresh ad set data from Meta API
@@ -369,11 +371,11 @@ export async function GET(request: NextRequest) {
               
             if (!connectionError && connectionData) {
               try {
-                const filtering = encodeURIComponent("[{'field':'status','operator':'IN','value':['ACTIVE']}]");
-                const adSetsUrl = `https://graph.facebook.com/v20.0/${campaign.campaign_id}/adsets?fields=name,status,daily_budget,lifetime_budget,bid_strategy,bid_amount,optimization_goal&filtering=${filtering}&access_token=${connectionData.access_token}&limit=100`;
+                const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
                 const adSetsResponse = await fetch(adSetsUrl);
                 
                 if (adSetsResponse.ok) {
+                  metaApiFetchSuccess = true; // Mark API call as successful
                   const adSetsData = await adSetsResponse.json();
                   // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                   
@@ -411,8 +413,9 @@ export async function GET(request: NextRequest) {
             }
           }
           
-          // If not force refresh or Meta API failed, fall back to database
-          if (!forceRefresh || adsetBudgetTotal === 0) {
+          // If Meta API was not attempted or it failed, fall back to database
+          if (!metaApiFetchSuccess) {
+            console.log(`[Meta Campaigns] Falling back to database for campaign ${campaign.campaign_id}`);
             const { data: adSets, error: adSetsError } = await supabase
               .from('meta_adsets')
               .select('budget, budget_type, status')
@@ -720,6 +723,8 @@ export async function GET(request: NextRequest) {
        // Fetch ad sets to calculate campaign budget
        let adsetBudgetTotal = 0;
        let adsetBudgetType = 'unknown';
+       let metaApiFetchSuccess = false; // Flag to track if the API call was successful
+
        try {
          if (forceRefresh) {
            // Fetch fresh ad set data from Meta API
@@ -735,11 +740,11 @@ export async function GET(request: NextRequest) {
              
            if (!connectionError && connectionData) {
              try {
-               const filtering = encodeURIComponent("[{'field':'status','operator':'IN','value':['ACTIVE']}]");
-               const adSetsUrl = `https://graph.facebook.com/v20.0/${campaign.campaign_id}/adsets?fields=name,status,daily_budget,lifetime_budget,bid_strategy,bid_amount,optimization_goal&filtering=${filtering}&access_token=${connectionData.access_token}&limit=100`;
+               const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget&access_token=${connectionData.access_token}`;
                const adSetsResponse = await fetch(adSetsUrl);
                
                if (adSetsResponse.ok) {
+                 metaApiFetchSuccess = true; // Mark API call as successful
                  const adSetsData = await adSetsResponse.json();
                  // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                  
@@ -777,8 +782,9 @@ export async function GET(request: NextRequest) {
            }
          }
          
-         // If not force refresh or Meta API failed, fall back to database
-         if (!forceRefresh || adsetBudgetTotal === 0) {
+         // If Meta API was not attempted or it failed, fall back to database
+         if (!metaApiFetchSuccess) {
+            console.log(`[Meta Campaigns] Falling back to database for campaign ${campaign.campaign_id}`);
            const { data: adSets, error: adSetsError } = await supabase
              .from('meta_adsets')
              .select('budget, budget_type, status')
@@ -812,7 +818,7 @@ export async function GET(request: NextRequest) {
         adset_budget_total: adsetBudgetTotal,
         budget: adsetBudgetTotal > 0 ? adsetBudgetTotal : campaign.budget,
         budget_type: adsetBudgetType !== 'unknown' ? adsetBudgetType : campaign.budget_type,
-        budget_source: adsetBudgetType !== 'unknown' ? 'adsets' : campaign.budget_source
+        budget_source: adsetBudgetTotal > 0 ? 'adsets' : campaign.budget_source
       };
     }));
     

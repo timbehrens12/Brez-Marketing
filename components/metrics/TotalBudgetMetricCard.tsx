@@ -92,6 +92,15 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     }
   }, [brandId, fetchTotalBudget, isManuallyRefreshing, disableAutoFetch])
 
+  // Effect to clear budget when a new refresh cycle begins
+  useEffect(() => {
+    if (unifiedLoading) {
+      console.log("[TotalMetaBudget] Unified loading started, clearing stale budget data.");
+      setTotalBudget(null);
+      setAdSetCount(0);
+    }
+  }, [unifiedLoading]);
+
   // Handle unified loading completion - fetch when unified loading finishes
   useEffect(() => {
     // When unified loading was true and now becomes false, fetch fresh data
