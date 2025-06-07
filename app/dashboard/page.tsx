@@ -261,6 +261,97 @@ export default function DashboardPage() {
     }
   }, [supabase, setSelectedStore])
 
+  // NEW DAY DETECTION LOGIC - Handle overnight tab scenario
+  useEffect(() => {
+    // Function to detect if we've crossed into a new day
+    const checkForNewDay = () => {
+      const now = new Date();
+      const currentDateStr = format(now, 'yyyy-MM-dd');
+      
+      // Get the last known date from localStorage
+      const lastKnownDateKey = `lastKnownDate_${selectedBrandId}`;
+      const lastKnownDate = localStorage.getItem(lastKnownDateKey);
+      
+      // If this is the first time visiting or we have no stored date, just store current date
+      if (!lastKnownDate) {
+        localStorage.setItem(lastKnownDateKey, currentDateStr);
+        return;
+      }
+      
+      // If we've crossed into a new day
+      if (lastKnownDate !== currentDateStr) {
+        console.log(`[Dashboard] 🌅 NEW DAY DETECTED! Last known: ${lastKnownDate}, Current: ${currentDateStr}`);
+        
+        // Update the stored date
+        localStorage.setItem(lastKnownDateKey, currentDateStr);
+        
+        // Check if the current date range is showing yesterday's date
+        if (dateRange?.from && dateRange?.to) {
+          const selectedFromStr = format(dateRange.from, 'yyyy-MM-dd');
+          const selectedToStr = format(dateRange.to, 'yyyy-MM-dd');
+          
+          // If we're viewing yesterday's data and it's now a new day, we need to handle this
+          if (selectedFromStr === lastKnownDate && selectedToStr === lastKnownDate) {
+            console.log(`[Dashboard] 📅 Tab was left on yesterday (${lastKnownDate}), now it's ${currentDateStr}`);
+            console.log(`[Dashboard] 🔄 Performing new day transition with proper data backfill`);
+            
+            // Dispatch a custom event to notify all components about the new day transition
+            window.dispatchEvent(new CustomEvent('newDayDetected', { 
+              detail: { 
+                previousDate: lastKnownDate,
+                currentDate: currentDateStr,
+                brandId: selectedBrandId,
+                wasViewingPreviousDay: true,
+                timestamp: Date.now()
+              }
+            }));
+            
+            // Clear any cached Meta data to force fresh sync
+            if (window._metaTimeouts) {
+              window._metaTimeouts.forEach(timeout => clearTimeout(timeout));
+              window._metaTimeouts = [];
+            }
+            
+            // Reset Meta API flags to ensure fresh data fetch
+            window._blockMetaApiCalls = false;
+            window._disableAutoMetaFetch = false;
+            
+            // Force a complete data refresh for both yesterday and today
+            console.log(`[Dashboard] 💪 Forcing complete data refresh for date transition`);
+            setIsRefreshingData(true);
+            
+            // Trigger refresh with special flag for new day handling
+            setTimeout(() => {
+              fetchAllData(true); // Force full Meta resync
+            }, 500);
+          }
+        }
+      }
+    };
+    
+    // Check immediately on mount
+    if (selectedBrandId) {
+      checkForNewDay();
+    }
+    
+    // Set up an interval to check every minute for day changes
+    const dayCheckInterval = setInterval(checkForNewDay, 60000); // Check every minute
+    
+    // Also check when the page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && selectedBrandId) {
+        checkForNewDay();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(dayCheckInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [selectedBrandId, dateRange]); // Re-run when brand or date range changes
+
   // Load widget data when connections change
   useEffect(() => {
     async function loadWidgetData() {
@@ -352,6 +443,8 @@ export default function DashboardPage() {
       isMounted.current = false;
     };
   }, []);
+
+
 
   // Load metrics when brand or date range changes
   useEffect(() => {

@@ -11,6 +11,26 @@ import { createClient } from '@supabase/supabase-js'
  * which made it impossible to show proper date range metrics.
  */
 
+// Global flag to track new day detection events
+let isNewDayTransition = false;
+let newDayTransitionInfo: any = null;
+
+// Listen for new day detection events from the dashboard
+if (typeof window !== 'undefined') {
+  window.addEventListener('newDayDetected', (event: any) => {
+    console.log('[Meta Service] 🌅 New day detected event received:', event.detail);
+    isNewDayTransition = true;
+    newDayTransitionInfo = event.detail;
+    
+    // Clear the flag after 5 minutes to prevent it from affecting future syncs
+    setTimeout(() => {
+      isNewDayTransition = false;
+      newDayTransitionInfo = null;
+      console.log('[Meta Service] 🕒 New day transition flag cleared');
+    }, 5 * 60 * 1000);
+  });
+}
+
 // Helper function to delay execution (for rate limiting)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -121,6 +141,23 @@ export async function fetchMetaAdInsights(
   dryRun: boolean = false
 ) {
   console.log(`[Meta] Initiating sync for brand ${brandId} from ${startDate.toISOString()} to ${endDate.toISOString()}${dryRun ? ' (dry run)' : ''}`)
+  
+  // If this is a new day transition, handle it specially
+  if (isNewDayTransition && newDayTransitionInfo) {
+    console.log(`[Meta] 🌅 NEW DAY TRANSITION MODE ACTIVE for brand ${brandId}`);
+    console.log(`[Meta] Previous date: ${newDayTransitionInfo.previousDate}, Current date: ${newDayTransitionInfo.currentDate}`);
+    
+    // Extend the date range to include both the previous day and current day
+    // This ensures we properly sync and separate data for both days
+    const previousDate = new Date(newDayTransitionInfo.previousDate);
+    const currentDate = new Date(newDayTransitionInfo.currentDate);
+    
+    // Override the date range to fetch both days
+    startDate = new Date(Math.min(startDate.getTime(), previousDate.getTime()));
+    endDate = new Date(Math.max(endDate.getTime(), currentDate.getTime()));
+    
+    console.log(`[Meta] 📅 Extended sync range to cover transition: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+  }
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

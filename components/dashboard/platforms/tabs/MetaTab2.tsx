@@ -638,15 +638,33 @@ export function MetaTab2({
       }
     };
 
+    const handleNewDayDetected = (event: CustomEvent) => {
+      console.log("[MetaTab2] 🌅 New day detected event received:", event.detail);
+      if (event.detail?.brandId === brandId && metaConnection) {
+        console.log("[MetaTab2] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.");
+        toast.info("New day detected! Refreshing all Meta data...", { 
+          id: "meta-new-day-refresh-tab2",
+          duration: 8000 
+        });
+        
+        // Force a comprehensive sync to ensure proper data separation
+        syncMetaInsights();
+      } else {
+        console.log("[MetaTab2] New day event not for this brand or Meta not connected, skipping.");
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
     }
     
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+        window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
       }
     };
   }, [brandId, metaConnection]);
