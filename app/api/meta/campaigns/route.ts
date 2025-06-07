@@ -376,7 +376,7 @@ export async function GET(request: NextRequest) {
                   const adSetsData = await adSetsResponse.json();
                   
                   if (adSetsData.data) {
-                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
                     
                     if (activeAdSets.length > 0) {
                       adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -416,7 +416,7 @@ export async function GET(request: NextRequest) {
               
             if (!adSetsError && adSets && adSets.length > 0) {
               // Only count active ad sets
-              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
               
               if (activeAdSets.length > 0) {
                 adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -507,20 +507,6 @@ export async function GET(request: NextRequest) {
             console.log(`>>> [API Campaigns] Using calculated reach from daily stats for ${campaign.campaign_id}: ${finalReach} (from ${campaignStats.length} daily records)`);
         }
         
-        // Debug logging for specific campaign
-        if (campaign.campaign_id === '120218263352990058') {
-          console.log(`>>> [BUDGET DEBUG] Campaign 120218263352990058 budget calculation:`, {
-            originalCampaignBudget: campaign.budget,
-            originalBudgetType: campaign.budget_type,
-            originalBudgetSource: campaign.budget_source,
-            calculatedAdsetBudgetTotal: adsetBudgetTotal,
-            calculatedBudgetType: adsetBudgetType,
-            finalBudget: adsetBudgetTotal > 0 ? adsetBudgetTotal : campaign.budget,
-            finalBudgetType: adsetBudgetType !== 'unknown' ? adsetBudgetType : campaign.budget_type,
-            finalBudgetSource: adsetBudgetTotal > 0 ? 'adsets' : campaign.budget_source
-          });
-        }
-
         // Return campaign with aggregated performance metrics for the date range
         return {
           ...campaign, // Spread the original campaign data first
@@ -751,7 +737,7 @@ export async function GET(request: NextRequest) {
                  const adSetsData = await adSetsResponse.json();
                  
                  if (adSetsData.data) {
-                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
+                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
                    
                    if (activeAdSets.length > 0) {
                      adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -791,7 +777,7 @@ export async function GET(request: NextRequest) {
              
            if (!adSetsError && adSets && adSets.length > 0) {
              // Only count active ad sets
-             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
+             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
              
              if (activeAdSets.length > 0) {
                adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {

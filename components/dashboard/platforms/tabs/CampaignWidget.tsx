@@ -1537,12 +1537,8 @@ const CampaignWidget = ({
       campaign_budget: campaign.budget,
       adset_budget_total: campaign.adset_budget_total,
       budget_type: campaign.budget_type,
-      budget_source: campaign.budget_source,
       isLoading,
-      isSyncing,
-      currentBudgetData: currentBudgets[campaign.id],
-      campaign_id_for_lookup: campaign.id,
-      campaign_campaign_id: campaign.campaign_id
+      isSyncing
     });
     
     // If we have ad sets for this campaign (from expansion), use their combined budget
@@ -1579,8 +1575,8 @@ const CampaignWidget = ({
       };
     }
     
-    // Check current budgets from API - try both campaign.id and campaign.campaign_id as keys
-    const currentBudgetData = currentBudgets[campaign.id] || currentBudgets[campaign.campaign_id];
+    // Check current budgets from API
+    const currentBudgetData = currentBudgets[campaign.id];
     if (currentBudgetData?.budget && currentBudgetData.budget > 0) {
       console.log(`[CampaignWidget] Using currentBudgets API data: $${currentBudgetData.budget}`);
       return {
@@ -1602,18 +1598,13 @@ const CampaignWidget = ({
       };
     }
     
-    // Last resort: try to estimate from total budget API like TotalBudgetMetricCard
-    // This is a fallback when individual campaign budget data is not available
-    console.log(`[CampaignWidget] No budget data found for individual campaign, checking if this might be a budget API issue`);
-    
-    // If we have multiple campaigns and this one has no budget, try to show a proportional estimate
-    // But don't show confusing $0.00 values - show "..." to indicate data is not available
-    console.log(`[CampaignWidget] Returning placeholder for missing budget data`);
+    // Last resort - return 0 but only if we're not loading
+    console.log(`[CampaignWidget] No budget data found, returning $0.00`);
     return {
       budget: 0,
-      formatted_budget: '...', // Don't show $0.00, show that we're missing data
+      formatted_budget: formatCurrency(0),
       budget_type: 'unknown',
-      budget_source: 'unavailable'
+      budget_source: 'none'
     };
   };
 
@@ -2373,13 +2364,6 @@ const CampaignWidget = ({
                                 if (budgetInfo.budget_source === 'loading' || isLoading || isSyncing) {
                                   return (
                                     <div className="h-5 w-20 animate-pulse bg-gray-700/30 rounded"></div>
-                                  );
-                                }
-                                
-                                // Show placeholder for unavailable budget data
-                                if (budgetInfo.budget_source === 'unavailable') {
-                                  return (
-                                    <span className="text-gray-500 text-sm">...</span>
                                   );
                                 }
                                 
