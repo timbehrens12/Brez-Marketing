@@ -1543,20 +1543,21 @@ const CampaignWidget = ({
     
     // If we have ad sets for this campaign (from expansion), use their combined budget
     if (expandedCampaign === campaign.campaign_id && campaignAdSets && campaignAdSets.length > 0) {
-      const activeAndPausedAdSets = campaignAdSets.filter(adSet => ['ACTIVE', 'PAUSED'].includes(adSet.status));
-      const totalAdSetBudget = activeAndPausedAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
+      // Corrected filter: Only sum up ACTIVE ad sets for the expanded view
+      const activeAdSets = campaignAdSets.filter(adSet => adSet.status === 'ACTIVE');
+      const totalAdSetBudget = activeAdSets.reduce((sum, adSet) => sum + (adSet.budget || 0), 0);
       
-      console.log(`[CampaignWidget] Using expanded ad sets budget (active/paused only): $${totalAdSetBudget} from ${activeAndPausedAdSets.length} of ${campaignAdSets.length} ad sets.`);
+      console.log(`[CampaignWidget] Using expanded ad sets budget (ACTIVE only): $${totalAdSetBudget} from ${activeAdSets.length} of ${campaignAdSets.length} ad sets.`);
       
       return {
         budget: totalAdSetBudget,
         formatted_budget: formatCurrency(totalAdSetBudget),
-        budget_type: activeAndPausedAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
+        budget_type: activeAdSets.some(adSet => adSet.budget_type === 'daily') ? 'daily' : 'lifetime',
         budget_source: 'adsets'
       };
     }
     
-    // If campaign has adset_budget_total (the preferred source), use that
+    // If campaign has adset_budget_total (the preferred source from the campaigns API)
     if (campaign.adset_budget_total && campaign.adset_budget_total > 0) {
       console.log(`[CampaignWidget] Using adset_budget_total: $${campaign.adset_budget_total}`);
       return {

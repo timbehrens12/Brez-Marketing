@@ -374,10 +374,11 @@ export async function GET(request: NextRequest) {
                 
                 if (adSetsResponse.ok) {
                   const adSetsData = await adSetsResponse.json();
-                  console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
+                  // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                   
                   if (adSetsData.data) {
-                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
+                    // Corrected filter: Only include ACTIVE ad sets for the campaign-level budget total
+                    const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
                     
                     if (activeAdSets.length > 0) {
                       adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -418,8 +419,8 @@ export async function GET(request: NextRequest) {
               .eq('brand_id', brandId);
               
             if (!adSetsError && adSets && adSets.length > 0) {
-              // Only count active ad sets
-              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
+              // Corrected filter: Only include ACTIVE ad sets for the Supabase cache update
+              const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
               
               if (activeAdSets.length > 0) {
                 adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -738,10 +739,11 @@ export async function GET(request: NextRequest) {
                
                if (adSetsResponse.ok) {
                  const adSetsData = await adSetsResponse.json();
-                 console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
+                 // console.log(`[Meta Campaigns] RAW ad sets response for campaign ${campaign.campaign_id}:`, JSON.stringify(adSetsData, null, 2));
                  
                  if (adSetsData.data) {
-                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
+                   // Corrected filter: Only include ACTIVE ad sets for the campaign-level budget total
+                   const activeAdSets = adSetsData.data.filter((adSet: any) => adSet.status === 'ACTIVE');
                    
                    if (activeAdSets.length > 0) {
                      adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
@@ -782,8 +784,8 @@ export async function GET(request: NextRequest) {
              .eq('brand_id', brandId);
              
            if (!adSetsError && adSets && adSets.length > 0) {
-             // Only count active ad sets
-             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE' || adSet.status === 'PAUSED');
+             // Corrected filter: Only include ACTIVE ad sets for the Supabase cache update
+             const activeAdSets = adSets.filter((adSet: any) => adSet.status === 'ACTIVE');
              
              if (activeAdSets.length > 0) {
                adsetBudgetTotal = activeAdSets.reduce((sum: number, adSet: any) => {
