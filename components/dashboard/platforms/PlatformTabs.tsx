@@ -193,15 +193,15 @@ export function PlatformTabs({
       window._blockMetaApiCalls = false;
     }
     
-      // Update visibility state for all tabs
-  setTabVisibility({
-    site: value === "site",
-    shopify: value === "shopify",
-    meta: value === "meta",
+    // Update visibility state for all tabs
+    setTabVisibility({
+      site: value === "site",
+      shopify: value === "shopify",
+      meta: value === "meta",
     meta2: value === "meta2",
-    tiktok: value === "tiktok",
-    googleads: value === "googleads"
-  });
+      tiktok: value === "tiktok",
+      googleads: value === "googleads"
+    });
     
     // Notify parent of tab change
     if (onTabChange) {

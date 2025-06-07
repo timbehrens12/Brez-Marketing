@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
         );
       }
       
-      console.log(`[Total Meta Budget] Found ${activeCampaigns?.length || 0} active campaigns`);
+        console.log(`[Total Meta Budget] Found ${activeCampaigns?.length || 0} active campaigns`);
       console.log('[Total Meta Budget] Active campaigns:', activeCampaigns?.map(c => c.campaign_name));
       
       if (activeCampaigns && activeCampaigns.length > 0) {
@@ -179,9 +179,9 @@ export async function GET(req: NextRequest) {
         
         // Get ad sets that belong to active campaigns and are themselves active
         const { data: activeAdSetsData, error: adSetsError } = await supabase
-          .from('meta_adsets')
+        .from('meta_adsets')
           .select('adset_id, adset_name, campaign_id, status, budget, budget_type')
-          .eq('brand_id', brandId)
+        .eq('brand_id', brandId)
           .in('campaign_id', campaignIds)
           .eq('status', 'ACTIVE'); // Only get ACTIVE ad sets
         
@@ -205,15 +205,15 @@ export async function GET(req: NextRequest) {
         .from('meta_adsets')
         .select('adset_id, adset_name, campaign_id, status, budget, budget_type')
         .eq('brand_id', brandId);
-      
-      if (adSetsError) {
+    
+    if (adSetsError) {
         console.error('[Total Meta Budget] Error fetching all ad sets:', adSetsError);
-        return NextResponse.json(
-          { error: 'Failed to fetch ad sets', details: adSetsError.message },
-          { status: 500 }
-        );
-      }
-      
+      return NextResponse.json(
+        { error: 'Failed to fetch ad sets', details: adSetsError.message },
+        { status: 500 }
+      );
+    }
+    
       adSets = allAdSetsData;
       console.log(`[Total Meta Budget] Found ${adSets?.length || 0} total ad sets`);
     }
@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
     // Calculate budgets from database data
     if (adSets && adSets.length > 0) {
       adSets.forEach((adSet: any) => {
-        const budget = parseFloat(adSet.budget) || 0;
+          const budget = parseFloat(adSet.budget) || 0;
         console.log(`[Total Meta Budget] Processing DB ad set ${adSet.adset_name}: budget=$${budget}, type=${adSet.budget_type}`);
         
         if (adSet.budget_type === 'daily') {
@@ -235,13 +235,13 @@ export async function GET(req: NextRequest) {
     console.log(`[Total Meta Budget] Calculated budgets - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalDailyBudget + totalLifetimeBudget}, Count: ${adSets?.length || 0}`);
     
     const finalResult = {
-      success: true,
-      totalDailyBudget,
-      totalLifetimeBudget,
-      totalBudget: totalDailyBudget + totalLifetimeBudget,
-      adSetCount: adSets ? adSets.length : 0,
-      dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
-      lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
+        success: true,
+        totalDailyBudget,
+        totalLifetimeBudget,
+        totalBudget: totalDailyBudget + totalLifetimeBudget,
+        adSetCount: adSets ? adSets.length : 0,
+        dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
+        lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
       timestamp: new Date().toISOString(),
       refreshMethod: 'database'
     };
