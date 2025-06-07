@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
         if (campaignError) {
           console.error('[Total Meta Budget] Error fetching campaigns:', campaignError);
         } else if (campaigns && campaigns.length > 0) {
-          console.log(`[Total Meta Budget] Found ${campaigns.length} active campaigns, fetching ad sets from Meta API`);
+          console.log(`[Total Meta Budget] Found ${campaigns.length} active campaigns:`, campaigns.map(c => c.campaign_id));
+          console.log(`[Total Meta Budget] Fetching ad sets from Meta API`);
           
           // Get Meta connection details
           const { data: connectionData, error: connectionError } = await supabase
@@ -65,20 +66,25 @@ export async function GET(req: NextRequest) {
             let totalLifetimeBudget = 0;
             let activeAdSetCount = 0;
             
-            // Fetch ad sets for each campaign from Meta API
+                        // Fetch ad sets for each campaign from Meta API
             for (const campaign of campaigns) {
               try {
                 const adSetsUrl = `https://graph.facebook.com/v21.0/${campaign.campaign_id}/adsets?fields=id,name,status,daily_budget,lifetime_budget,budget_remaining&access_token=${connectionData.access_token}`;
+                console.log(`[Total Meta Budget] Fetching ad sets for campaign ${campaign.campaign_id}`);
                 const adSetsResponse = await fetch(adSetsUrl);
-                
+
                 if (adSetsResponse.ok) {
                   const adSetsData = await adSetsResponse.json();
-                  
+                  console.log(`[Total Meta Budget] Campaign ${campaign.campaign_id} ad sets response:`, JSON.stringify(adSetsData, null, 2));
+
                   if (adSetsData.data) {
+                    console.log(`[Total Meta Budget] Found ${adSetsData.data.length} ad sets for campaign ${campaign.campaign_id}`);
                     adSetsData.data.forEach((adSet: any) => {
+                      console.log(`[Total Meta Budget] Processing ad set ${adSet.name} (${adSet.id}): status=${adSet.status}, daily_budget=${adSet.daily_budget}, lifetime_budget=${adSet.lifetime_budget}`);
+                      
                       if (!activeOnly || adSet.status === 'ACTIVE') {
                         activeAdSetCount++;
-                        
+
                         // Ad sets have either daily_budget or lifetime_budget
                         if (adSet.daily_budget) {
                           const dailyBudget = parseInt(adSet.daily_budget) / 100; // Convert from cents
@@ -88,12 +94,20 @@ export async function GET(req: NextRequest) {
                           const lifetimeBudget = parseInt(adSet.lifetime_budget) / 100; // Convert from cents
                           totalLifetimeBudget += lifetimeBudget;
                           console.log(`[Total Meta Budget] Ad set ${adSet.name}: lifetime budget $${lifetimeBudget}`);
+                        } else {
+                          console.log(`[Total Meta Budget] Ad set ${adSet.name}: no budget found (daily_budget=${adSet.daily_budget}, lifetime_budget=${adSet.lifetime_budget})`);
                         }
+                      } else {
+                        console.log(`[Total Meta Budget] Skipping ad set ${adSet.name}: status=${adSet.status} (activeOnly=${activeOnly})`);
                       }
                     });
+                  } else {
+                    console.log(`[Total Meta Budget] No ad sets data for campaign ${campaign.campaign_id}`);
                   }
                 } else {
                   console.error(`[Total Meta Budget] Error fetching ad sets for campaign ${campaign.campaign_id}: ${adSetsResponse.status}`);
+                  const errorText = await adSetsResponse.text();
+                  console.error(`[Total Meta Budget] Error response:`, errorText);
                 }
               } catch (error) {
                 console.error(`[Total Meta Budget] Error fetching ad sets for campaign ${campaign.campaign_id}:`, error);
@@ -101,22 +115,21 @@ export async function GET(req: NextRequest) {
             }
             
             const totalBudget = totalDailyBudget + totalLifetimeBudget;
-            console.log(`[Total Meta Budget] Meta API result - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalBudget}, Active Ad Sets: ${activeAdSetCount}`);
-            
-            return NextResponse.json(
-              { 
-                success: true,
-                totalDailyBudget,
-                totalLifetimeBudget,
-                totalBudget,
-                adSetCount: activeAdSetCount,
-                dailyBudgetAdSetCount: totalDailyBudget > 0 ? activeAdSetCount : 0,
-                lifetimeBudgetAdSetCount: totalLifetimeBudget > 0 ? activeAdSetCount : 0,
-                timestamp: new Date().toISOString(),
-                refreshMethod: 'meta-api'
-              },
-              { status: 200 }
-            );
+                        const result = {
+              success: true,
+              totalDailyBudget,
+              totalLifetimeBudget,
+              totalBudget,
+              adSetCount: activeAdSetCount,
+              dailyBudgetAdSetCount: totalDailyBudget > 0 ? activeAdSetCount : 0,
+              lifetimeBudgetAdSetCount: totalLifetimeBudget > 0 ? activeAdSetCount : 0,
+              timestamp: new Date().toISOString(),
+              refreshMethod: 'meta-api'
+            };
+
+            console.log(`[Total Meta Budget] Meta API result:`, JSON.stringify(result, null, 2));
+
+            return NextResponse.json(result, { status: 200 });
           }
         } else {
           console.log('[Total Meta Budget] No active campaigns found');
@@ -235,22 +248,21 @@ export async function GET(req: NextRequest) {
         }, 0);
     }
     
-    console.log(`[Total Meta Budget] Calculated budgets - Daily: $${totalDailyBudget}, Lifetime: $${totalLifetimeBudget}, Total: $${totalDailyBudget + totalLifetimeBudget}, Count: ${adSets?.length || 0}`);
-    
-    return NextResponse.json(
-      { 
-        success: true,
-        totalDailyBudget,
-        totalLifetimeBudget,
-        totalBudget: totalDailyBudget + totalLifetimeBudget,
-        adSetCount: adSets ? adSets.length : 0,
-        dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
-        lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
-        timestamp: new Date().toISOString(),
-        refreshMethod: 'database'
-      },
-      { status: 200 }
-    );
+        const finalResult = {
+      success: true,
+      totalDailyBudget,
+      totalLifetimeBudget,
+      totalBudget: totalDailyBudget + totalLifetimeBudget,
+      adSetCount: adSets ? adSets.length : 0,
+      dailyBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'daily').length : 0,
+      lifetimeBudgetAdSetCount: adSets ? adSets.filter(adSet => adSet.budget_type === 'lifetime').length : 0,
+      timestamp: new Date().toISOString(),
+      refreshMethod: 'database'
+    };
+
+    console.log(`[Total Meta Budget] Database result:`, JSON.stringify(finalResult, null, 2));
+
+    return NextResponse.json(finalResult, { status: 200 });
   } catch (error: any) {
     console.error('Error in total budget endpoint:', error);
     
