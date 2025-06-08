@@ -689,13 +689,13 @@ export async function GET(request: NextRequest) {
         console.log(`  Budget Source: ${testCampaign.budget_source}`);
         console.log(`  Last Refresh: ${testCampaign.last_refresh_date}`);
       }
-      
+        
       // If forceRefresh was used, re-query campaigns to get the updated budget values
       if (forceRefresh) {
         console.log(`[Meta Campaigns] Force refresh complete, re-querying campaigns from database to get updated budget values`);
         
         const { data: updatedCampaigns, error: updatedError } = await supabase
-          .from('meta_campaigns')
+              .from('meta_campaigns')
           .select(`
             campaign_id,
             campaign_name,
@@ -712,7 +712,7 @@ export async function GET(request: NextRequest) {
             last_refresh_date,
             adset_budget_total
           `)
-          .eq('brand_id', brandId)
+              .eq('brand_id', brandId)
           .order('updated_time', { ascending: false });
           
         if (!updatedError && updatedCampaigns) {

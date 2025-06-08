@@ -375,7 +375,7 @@ const CampaignWidget = ({
     console.log('[CampaignWidget] Campaigns prop updated, checking for changes...');
     
     // Always update if the campaigns have changed
-    setLocalCampaigns(campaigns);
+      setLocalCampaigns(campaigns);
     
     // Log what we're updating
     if (campaigns.length > 0) {

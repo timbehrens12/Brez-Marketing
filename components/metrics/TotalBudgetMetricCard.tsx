@@ -43,7 +43,7 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
       
       // Only set loading if we're not in unified loading mode and this is the initial load
       if (!unifiedLoading && !hasInitialLoadRef.current) {
-        setIsLoading(true)
+      setIsLoading(true)
       }
       
       console.log(`[TotalMetaBudget] Fetching budget data for brand ${brandId} with activeOnly=true, forceRefresh=${forceRefresh}`)
@@ -78,11 +78,11 @@ export function TotalBudgetMetricCard({ brandId, isManuallyRefreshing = false, d
     } catch (error) {
       console.error('Error fetching total budget:', error)
       if (!unifiedLoading) {
-        toast.error('Failed to fetch total budget')
+      toast.error('Failed to fetch total budget')
       }
     } finally {
       if (!unifiedLoading) {
-        setIsLoading(false)
+      setIsLoading(false)
       }
       setIsRefreshing(false)
     }

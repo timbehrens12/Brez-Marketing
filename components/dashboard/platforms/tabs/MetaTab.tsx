@@ -8,7 +8,7 @@ import Image from "next/image"
 // This file can be deleted once MetaTab2 is fully integrated as the main Meta page
 
 export function MetaTab() {
-  return (
+    return (
     <Card className="bg-[#111] border-[#333] text-center py-10">
       <CardContent className="flex flex-col items-center">
         <Image 

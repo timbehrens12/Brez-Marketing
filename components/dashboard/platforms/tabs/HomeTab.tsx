@@ -1405,38 +1405,21 @@ export function HomeTab({
 
   // Listen for global refresh events (e.g., from MetaTab)
   useEffect(() => {
-    // Add a ref to track pending refresh and debounce mechanism
-    let pendingRefreshTimeout: NodeJS.Timeout | null = null;
-    let isRefreshInProgress = false;
-    
-    const debouncedSyncMetaInsights = async () => {
-      if (isRefreshInProgress) {
-        console.log("[HomeTab] Skipping duplicate refresh - already in progress");
-        return;
-      }
-      
-      isRefreshInProgress = true;
-      try {
-        await syncMetaInsights();
-      } finally {
-        isRefreshInProgress = false;
-      }
-    };
-
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta database sync.");
+        console.log("[HomeTab] Global refresh event matches current brandId.");
         
-        // Clear any pending timeout and set a new one to debounce multiple events
-        if (pendingRefreshTimeout) {
-          clearTimeout(pendingRefreshTimeout);
-        }
-        
-        pendingRefreshTimeout = setTimeout(() => {
+        // Check if this is from the global refresh button which already synced the API
+        if (event.detail?.source === 'global-refresh') {
+          console.log("[HomeTab] Event from global refresh button - fetching updated data from database");
+          // The global refresh already synced with Meta API, just fetch from database
+          fetchMetaDataFromDatabase(`home-meta-refresh-${Date.now()}`);
+        } else {
+          console.log("[HomeTab] Triggering Meta database sync.");
           toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-          debouncedSyncMetaInsights();
-        }, 100); // 100ms debounce
+          syncMetaInsights(); // Use database-based sync
+        }
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
@@ -1446,19 +1429,13 @@ export function HomeTab({
       console.log("[HomeTab] 🌅 New day detected event received:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[HomeTab] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.");
+        toast.info("New day detected! Refreshing all Meta data...", { 
+          id: "meta-new-day-refresh",
+          duration: 8000 
+        });
         
-        // Clear any pending timeout and set a new one
-        if (pendingRefreshTimeout) {
-          clearTimeout(pendingRefreshTimeout);
-        }
-        
-        pendingRefreshTimeout = setTimeout(() => {
-          toast.info("New day detected! Refreshing all Meta data...", { 
-            id: "meta-new-day-refresh",
-            duration: 8000 
-          });
-          debouncedSyncMetaInsights();
-        }, 100); // 100ms debounce
+        // Force a comprehensive sync to ensure proper data separation
+        syncMetaInsights();
       } else {
         console.log("[HomeTab] New day event not for this brand or Meta not connected, skipping.");
       }
@@ -1481,20 +1458,21 @@ export function HomeTab({
       if (platforms?.meta && validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
         console.log("[HomeTab] Refreshing Meta widgets due to global refresh");
         
-        // Clear any pending timeout and set a new one to debounce
-        if (pendingRefreshTimeout) {
-          clearTimeout(pendingRefreshTimeout);
+        // If global refresh already synced the API data, just fetch from database
+        if (source === 'global-refresh') {
+          console.log("[HomeTab] Global refresh detected - fetching updated data from database");
+          // Fetch the already-synced data from database instead of trying another sync
+          fetchMetaDataFromDatabase(`home-global-refresh-${Date.now()}`);
+        } else {
+          // For other sources, do a full sync
+          syncMetaInsights();
         }
         
-        pendingRefreshTimeout = setTimeout(() => {
-          debouncedSyncMetaInsights();
-          
-          // Also refresh campaigns if we have the campaigns widget
-          if (validWidgets.some(widget => widget.id === 'meta-campaigns')) {
-            console.log("[HomeTab] Refreshing Meta campaigns due to global refresh");
-            fetchCampaigns(true);
-          }
-        }, 100); // 100ms debounce
+        // Also refresh campaigns if we have the campaigns widget
+        if (validWidgets.some(widget => widget.id === 'meta-campaigns')) {
+          console.log("[HomeTab] Refreshing Meta campaigns due to global refresh");
+          fetchCampaigns(true);
+        }
       }
       
       // Refresh Shopify widgets if Shopify platform was refreshed
@@ -1514,11 +1492,6 @@ export function HomeTab({
     }
     
     return () => {
-      // Clear any pending timeout on cleanup
-      if (pendingRefreshTimeout) {
-        clearTimeout(pendingRefreshTimeout);
-      }
-      
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
