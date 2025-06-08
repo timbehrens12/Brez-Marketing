@@ -1405,12 +1405,38 @@ export function HomeTab({
 
   // Listen for global refresh events (e.g., from MetaTab)
   useEffect(() => {
+    // Add a ref to track pending refresh and debounce mechanism
+    let pendingRefreshTimeout: NodeJS.Timeout | null = null;
+    let isRefreshInProgress = false;
+    
+    const debouncedSyncMetaInsights = async () => {
+      if (isRefreshInProgress) {
+        console.log("[HomeTab] Skipping duplicate refresh - already in progress");
+        return;
+      }
+      
+      isRefreshInProgress = true;
+      try {
+        await syncMetaInsights();
+      } finally {
+        isRefreshInProgress = false;
+      }
+    };
+
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta database sync.");
-        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-        syncMetaInsights(); // Use database-based sync
+        
+        // Clear any pending timeout and set a new one to debounce multiple events
+        if (pendingRefreshTimeout) {
+          clearTimeout(pendingRefreshTimeout);
+        }
+        
+        pendingRefreshTimeout = setTimeout(() => {
+          toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+          debouncedSyncMetaInsights();
+        }, 100); // 100ms debounce
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
@@ -1420,13 +1446,19 @@ export function HomeTab({
       console.log("[HomeTab] 🌅 New day detected event received:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[HomeTab] 📅 New day transition detected for current brand. Triggering comprehensive Meta sync.");
-        toast.info("New day detected! Refreshing all Meta data...", { 
-          id: "meta-new-day-refresh",
-          duration: 8000 
-        });
         
-        // Force a comprehensive sync to ensure proper data separation
-        syncMetaInsights();
+        // Clear any pending timeout and set a new one
+        if (pendingRefreshTimeout) {
+          clearTimeout(pendingRefreshTimeout);
+        }
+        
+        pendingRefreshTimeout = setTimeout(() => {
+          toast.info("New day detected! Refreshing all Meta data...", { 
+            id: "meta-new-day-refresh",
+            duration: 8000 
+          });
+          debouncedSyncMetaInsights();
+        }, 100); // 100ms debounce
       } else {
         console.log("[HomeTab] New day event not for this brand or Meta not connected, skipping.");
       }
@@ -1448,13 +1480,21 @@ export function HomeTab({
       // Refresh Meta widgets if Meta platform was refreshed
       if (platforms?.meta && validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
         console.log("[HomeTab] Refreshing Meta widgets due to global refresh");
-        syncMetaInsights();
         
-        // Also refresh campaigns if we have the campaigns widget
-        if (validWidgets.some(widget => widget.id === 'meta-campaigns')) {
-          console.log("[HomeTab] Refreshing Meta campaigns due to global refresh");
-          fetchCampaigns(true);
+        // Clear any pending timeout and set a new one to debounce
+        if (pendingRefreshTimeout) {
+          clearTimeout(pendingRefreshTimeout);
         }
+        
+        pendingRefreshTimeout = setTimeout(() => {
+          debouncedSyncMetaInsights();
+          
+          // Also refresh campaigns if we have the campaigns widget
+          if (validWidgets.some(widget => widget.id === 'meta-campaigns')) {
+            console.log("[HomeTab] Refreshing Meta campaigns due to global refresh");
+            fetchCampaigns(true);
+          }
+        }, 100); // 100ms debounce
       }
       
       // Refresh Shopify widgets if Shopify platform was refreshed
@@ -1474,6 +1514,11 @@ export function HomeTab({
     }
     
     return () => {
+      // Clear any pending timeout on cleanup
+      if (pendingRefreshTimeout) {
+        clearTimeout(pendingRefreshTimeout);
+      }
+      
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
