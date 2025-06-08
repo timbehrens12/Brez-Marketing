@@ -1030,18 +1030,18 @@ export function HomeTab({
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
         
-                 // Dispatch event to notify other components
-         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-           detail: { 
-             brandId, 
-             timestamp: Date.now(),
-             forceRefresh: true,
-             syncedRecords: result.count || 0,
-             source: 'HomeTabSync',
-             refreshId
-           }
-         }));
-         
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+          detail: { 
+            brandId, 
+            timestamp: Date.now(),
+            forceRefresh: true,
+            syncedRecords: result.count || 0,
+            source: 'HomeTabSync',
+            refreshId
+          }
+        }));
+        
          // Also dispatch completion event for global refresh button
          window.dispatchEvent(new CustomEvent('data-refresh-complete', {
            detail: {

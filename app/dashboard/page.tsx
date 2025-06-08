@@ -1271,7 +1271,7 @@ export default function DashboardPage() {
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
       {/* Remove p-8 temporarily for diagnosis */}
       <div className="flex items-center justify-between mb-6 px-8 pt-8">
-                <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
           {selectedBrandId && (activePlatforms.meta || activePlatforms.shopify) && (
             <GlobalRefreshButton 
