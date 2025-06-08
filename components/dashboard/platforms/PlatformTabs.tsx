@@ -2,7 +2,6 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DateRange } from "react-day-picker"
 import { ShopifyTab } from "./tabs/ShopifyTab"
-import { MetaTab } from "./tabs/MetaTab"
 import { MetaTab2 } from "./tabs/MetaTab2"
 import { HomeTab } from "./tabs/HomeTab"
 import type { Metrics } from "@/types/metrics"
@@ -105,7 +104,6 @@ export function PlatformTabs({
     site: true,
     shopify: false,
     meta: false,
-    meta2: false,
     tiktok: false,
     googleads: false
   });
@@ -170,8 +168,8 @@ export function PlatformTabs({
   const handleValueChange = (value: string) => {
     setActiveTab(value);
     
-    // If we're leaving the Meta tab or Meta2 tab, set the global block flag to stop API calls temporarily
-    if ((activeTab === "meta" || activeTab === "meta2") && value !== "meta" && value !== "meta2") {
+    // If we're leaving the Meta tab, set the global block flag to stop API calls temporarily
+    if (activeTab === "meta" && value !== "meta") {
       console.log("[PlatformTabs] Leaving Meta tab, enabling temporary blocking during transition");
       
       if (window._blockMetaApiCalls !== undefined) {
@@ -187,8 +185,8 @@ export function PlatformTabs({
           }
       }
     
-    // If we're navigating TO the Meta tab or Meta2 tab, clear the block flag immediately
-    if ((value === "meta" || value === "meta2") && window._blockMetaApiCalls) {
+    // If we're navigating TO the Meta tab, clear the block flag immediately
+    if (value === "meta" && window._blockMetaApiCalls) {
       console.log("[PlatformTabs] Navigating to Meta tab, clearing API blocking flag");
       window._blockMetaApiCalls = false;
     }
@@ -198,7 +196,6 @@ export function PlatformTabs({
       site: value === "site",
       shopify: value === "shopify",
       meta: value === "meta",
-    meta2: value === "meta2",
       tiktok: value === "tiktok",
       googleads: value === "googleads"
     });
@@ -221,13 +218,11 @@ export function PlatformTabs({
     }
     
     return (
-      <MetaTab 
-        dateRange={dateRange}
-        metrics={safeMetrics}
-        isLoading={isLoading}
-        isRefreshingData={isRefreshingData}
-        initialDataLoad={initialDataLoad}
+      <MetaTab2 
         brandId={brandId}
+        brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
+        dateRange={dateRange}
+        connections={connections}
       />
     );
   }
@@ -357,46 +352,7 @@ export function PlatformTabs({
           </Tooltip>
         </TooltipProvider>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger 
-                value="meta2" 
-                disabled={!platforms.meta}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
-                  activeTab === "meta2" 
-                    ? "bg-gradient-to-b from-blue-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <div 
-                    className={`relative w-6 h-6 flex items-center justify-center z-10 ${
-                      activeTab === "meta2" 
-                        ? "text-blue-400" 
-                        : "text-gray-400 group-hover:text-gray-200"
-                    }`}
-                  >
-                    <Image 
-                      src="https://i.imgur.com/6hyyRrs.png" 
-                      alt="Meta 2" 
-                      width={24} 
-                      height={24} 
-                      className="object-contain drop-shadow-md"
-                    />
-                  </div>
-                  <span className="text-sm font-medium hidden sm:inline">Meta 2</span>
-                </div>
-                {activeTab === "meta2" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500/50 rounded-full"></div>
-                )}
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs">
-              <p>Meta Ads Analytics v2</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+
 
         <TooltipProvider>
           <Tooltip>
@@ -518,20 +474,7 @@ export function PlatformTabs({
         {renderMetaTabContent()}
       </TabsContent>
 
-      <TabsContent value="meta2" className="mt-8">
-        {tabVisibility.meta2 && platforms.meta ? (
-          <MetaTab2 
-            brandId={brandId}
-            brandName={brands.find(b => b.id === brandId)?.name || "Your Brand"}
-            dateRange={dateRange}
-            connections={connections}
-          />
-        ) : tabVisibility.meta2 ? (
-          <div className="text-center py-8 text-gray-400">
-            No active Meta connection found. Please connect your Meta Ads account.
-          </div>
-        ) : null}
-      </TabsContent>
+
 
       <TabsContent value="tiktok" className="mt-8">
         <div className="p-8 bg-[#1A1A1A] border border-[#333] rounded-lg text-center">
