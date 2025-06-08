@@ -657,9 +657,6 @@ export function MetaTab2({
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-      window.addEventListener('page-refresh', handleGlobalRefresh as EventListener);
-      window.addEventListener('refresh-metrics', handleGlobalRefresh as EventListener);
-      window.addEventListener('refresh-all-widgets', handleGlobalRefresh as EventListener);
       window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
     }
     
@@ -667,9 +664,6 @@ export function MetaTab2({
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-        window.removeEventListener('page-refresh', handleGlobalRefresh as EventListener);
-        window.removeEventListener('refresh-metrics', handleGlobalRefresh as EventListener);
-        window.removeEventListener('refresh-all-widgets', handleGlobalRefresh as EventListener);
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
       }
     };

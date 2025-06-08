@@ -1408,18 +1408,9 @@ export function HomeTab({
     const handleGlobalRefresh = (event: CustomEvent) => {
       console.log("[HomeTab] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
-        console.log("[HomeTab] Global refresh event matches current brandId.");
-        
-        // Check if this is from the global refresh button which already synced the API
-        if (event.detail?.source === 'global-refresh') {
-          console.log("[HomeTab] Event from global refresh button - fetching updated data from database");
-          // The global refresh already synced with Meta API, just fetch from database
-          fetchMetaDataFromDatabase(`home-meta-refresh-${Date.now()}`);
-        } else {
-          console.log("[HomeTab] Triggering Meta database sync.");
-          toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
-          syncMetaInsights(); // Use database-based sync
-        }
+        console.log("[HomeTab] Global refresh event matches current brandId. Triggering Meta database sync.");
+        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+        syncMetaInsights(); // Use database-based sync
       } else {
         console.log("[HomeTab] Global refresh event not for this brand or Meta not connected, skipping.");
       }
@@ -1441,53 +1432,9 @@ export function HomeTab({
       }
     };
 
-    // Handle comprehensive global refresh from GlobalRefreshButton
-    const handleGlobalWidgetRefresh = (event: CustomEvent) => {
-      console.log("[HomeTab] Received global widget refresh event:", event.detail);
-      
-      // Only process if this is for our brand
-      if (event.detail?.brandId !== brandId) {
-        console.log("[HomeTab] Ignoring global refresh for different brand");
-        return;
-      }
-      
-      const { platforms, source } = event.detail;
-      console.log(`[HomeTab] Processing global refresh from ${source} for platforms:`, platforms);
-      
-      // Refresh Meta widgets if Meta platform was refreshed
-      if (platforms?.meta && validWidgets.some(widget => widget.type === 'meta') && metaConnection) {
-        console.log("[HomeTab] Refreshing Meta widgets due to global refresh");
-        
-        // If global refresh already synced the API data, just fetch from database
-        if (source === 'global-refresh') {
-          console.log("[HomeTab] Global refresh detected - fetching updated data from database");
-          // Fetch the already-synced data from database instead of trying another sync
-          fetchMetaDataFromDatabase(`home-global-refresh-${Date.now()}`);
-        } else {
-          // For other sources, do a full sync
-          syncMetaInsights();
-        }
-        
-        // Also refresh campaigns if we have the campaigns widget
-        if (validWidgets.some(widget => widget.id === 'meta-campaigns')) {
-          console.log("[HomeTab] Refreshing Meta campaigns due to global refresh");
-          fetchCampaigns(true);
-        }
-      }
-      
-      // Refresh Shopify widgets if Shopify platform was refreshed
-      if (platforms?.shopify && validWidgets.some(widget => widget.type === 'shopify') && shopifyConnection) {
-        console.log("[HomeTab] Refreshing Shopify widgets due to global refresh");
-        fetchShopifyData();
-      }
-    };
-
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-      window.addEventListener('page-refresh', handleGlobalWidgetRefresh as EventListener);
-      window.addEventListener('refresh-metrics', handleGlobalWidgetRefresh as EventListener);
-      window.addEventListener('refresh-all-widgets', handleGlobalWidgetRefresh as EventListener);
       window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
     }
     
@@ -1495,13 +1442,10 @@ export function HomeTab({
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
-        window.removeEventListener('page-refresh', handleGlobalWidgetRefresh as EventListener);
-        window.removeEventListener('refresh-metrics', handleGlobalWidgetRefresh as EventListener);
-        window.removeEventListener('refresh-all-widgets', handleGlobalWidgetRefresh as EventListener);
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
       }
     };
-  }, [brandId, metaConnection, validWidgets, shopifyConnection, fetchCampaigns, fetchShopifyData]);
+  }, [brandId, metaConnection]);
 
   // Function to manually trigger a database-based refresh for Meta data from HomeTab UI (e.g., a button)
   const handleManualMetaRefresh = () => {

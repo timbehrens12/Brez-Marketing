@@ -34,7 +34,7 @@ import { useMetrics } from "@/lib/contexts/MetricsContext"
 import { addDays, startOfDay, endOfDay, format, isAfter, isBefore, parseISO, subDays } from "date-fns"
 import { useBrandStore } from "@/stores/brandStore"
 import { useConnectionStore } from "@/stores/connectionStore"
-import { GlobalRefreshButton } from "@/components/dashboard/MetaRefreshButton"
+
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { Info, LayoutGrid } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -795,7 +795,7 @@ export default function DashboardPage() {
         }))
         
         // Dispatch event to notify components of fresh data
-        window.dispatchEvent(new Event('refresh-metrics'));
+
         
         // Sync inventory data from Shopify
         try {
@@ -1195,8 +1195,7 @@ export default function DashboardPage() {
             ...data
           }));
           
-          // Broadcast the update to ensure all components refresh
-          window.dispatchEvent(new Event('refresh-metrics'));
+
           
 
         } catch (error) {
@@ -1262,44 +1261,10 @@ export default function DashboardPage() {
       }));
       console.log(`[Dashboard] Dispatched site-tab-activated event`);
       
-    } else {
-      // For other tabs, dispatch a generic event
-      window.dispatchEvent(new CustomEvent('page-refresh', {
-        detail: { brandId: selectedBrandId, timestamp: Date.now(), activeTab: tab }
-      }));
-      console.log(`[Dashboard] Dispatched page-refresh event for ${tab} tab`);
     }
   };
 
-  // Keep the force refresh event listener for manual refresh button
-  useEffect(() => {
-    const handleForceDashboardRefresh = (event: any) => {
-      console.log('[Dashboard] Received force-dashboard-refresh event from manual refresh button');
-      
-      // Only proceed if we have a selected brand and this is for our brand
-      if (!selectedBrandId || event.detail?.brandId !== selectedBrandId) return;
-      
-      // Check if this event requests bypassing throttling
-      if (event.detail?.bypassThrottling) {
-        console.log('[Dashboard] Manual refresh triggered - forcing immediate refresh');
-        
-        // Reset the last refresh timestamp to allow immediate refresh
-        lastHardRefreshRef.current = 0;
-        
-        // Force a full data refresh
-        fetchAllData(true);
-        
-        // Update the timestamp to the current time after starting the refresh
-        lastHardRefreshRef.current = Date.now();
-      }
-    };
-    
-    window.addEventListener('force-dashboard-refresh', handleForceDashboardRefresh);
-    
-    return () => {
-      window.removeEventListener('force-dashboard-refresh', handleForceDashboardRefresh);
-    };
-  }, [selectedBrandId, fetchAllData]);
+
 
   return (
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
@@ -1307,12 +1272,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6 px-8 pt-8">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-          {selectedBrandId && (activePlatforms.meta || activePlatforms.shopify) && (
-            <GlobalRefreshButton 
-              brandId={selectedBrandId} 
-              activePlatforms={activePlatforms}
-            />
-          )}
+
         </div>
         <div className="flex items-center gap-4">
           {/* Only show edit button on home tab */}
