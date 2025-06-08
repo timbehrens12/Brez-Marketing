@@ -1030,17 +1030,27 @@ export function HomeTab({
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now(); // Update timestamp of last successful refresh
         
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            syncedRecords: result.count || 0,
-            source: 'HomeTabSync',
-            refreshId
-          }
-        }));
+                 // Dispatch event to notify other components
+         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+           detail: { 
+             brandId, 
+             timestamp: Date.now(),
+             forceRefresh: true,
+             syncedRecords: result.count || 0,
+             source: 'HomeTabSync',
+             refreshId
+           }
+         }));
+         
+         // Also dispatch completion event for global refresh button
+         window.dispatchEvent(new CustomEvent('data-refresh-complete', {
+           detail: {
+             brandId,
+             platform: 'meta',
+             timestamp: Date.now(),
+             source: 'HomeTabSync'
+           }
+         }));
         
         // NEW: Trigger special widgets (Reach/Budget) to refresh after unified loading completes
         console.log("[HomeTab] Triggering special widgets refresh after unified loading completion");
@@ -1432,9 +1442,34 @@ export function HomeTab({
       }
     };
 
+    const handleGlobalRefreshAll = (event: CustomEvent) => {
+      console.log("[HomeTab] Received global-refresh-all event:", event.detail);
+      if (event.detail?.brandId === brandId && 
+          (event.detail?.currentTab === 'site' || event.detail?.platforms)) {
+        console.log("[HomeTab] Global refresh all - triggering all widget refreshes");
+        
+        // Refresh Meta widgets if Meta is connected
+        if (metaConnection && event.detail?.platforms?.meta) {
+          console.log("[HomeTab] Refreshing Meta widgets");
+          syncMetaInsights();
+          if (widgets.some(widget => widget.id === 'meta-campaigns')) {
+            fetchCampaigns(true);
+          }
+        }
+        
+        // Refresh Shopify widgets if Shopify is connected  
+        if (shopifyConnection && event.detail?.platforms?.shopify) {
+          console.log("[HomeTab] Refreshing Shopify widgets");
+          // Trigger any Shopify-specific refreshes needed
+        }
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      window.addEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener);
+      window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
       window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
     }
     
@@ -1442,6 +1477,8 @@ export function HomeTab({
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+        window.removeEventListener('refresh-all-widgets', handleGlobalRefreshAll as EventListener);
+        window.removeEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
       }
     };

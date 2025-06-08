@@ -537,17 +537,27 @@ export function MetaTab2({
         toast.success("Meta data refreshed!", { id: "meta-refresh-toast" });
         window._lastMetaRefresh = Date.now();
         
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
-          detail: { 
-            brandId, 
-            timestamp: Date.now(),
-            forceRefresh: true,
-            syncedRecords: result.count || 0,
-            source: 'MetaTab2Sync',
-            refreshId
-          }
-        }));
+                 // Dispatch event to notify other components
+         window.dispatchEvent(new CustomEvent('metaDataRefreshed', { 
+           detail: { 
+             brandId, 
+             timestamp: Date.now(),
+             forceRefresh: true,
+             syncedRecords: result.count || 0,
+             source: 'MetaTab2Sync',
+             refreshId
+           }
+         }));
+         
+         // Also dispatch completion event for global refresh button
+         window.dispatchEvent(new CustomEvent('data-refresh-complete', {
+           detail: {
+             brandId,
+             platform: 'meta',
+             timestamp: Date.now(),
+             source: 'MetaTab2Sync'
+           }
+         }));
         
         console.log(`[MetaTab2] ✅ FULL Meta sync completed successfully`);
       } else {
@@ -633,7 +643,15 @@ export function MetaTab2({
       console.log("[MetaTab2] Received global refresh event:", event.detail);
       if (event.detail?.brandId === brandId && metaConnection) {
         console.log("[MetaTab2] Global refresh event matches current brandId. Triggering Meta database sync.");
-        toast.info("Syncing with recent Meta updates...", { id: "meta-global-refresh-toast" });
+        syncMetaInsights();
+      }
+    };
+
+    const handleGlobalRefreshAll = (event: CustomEvent) => {
+      console.log("[MetaTab2] Received global-refresh-all event:", event.detail);
+      if (event.detail?.brandId === brandId && metaConnection && 
+          (event.detail?.currentTab === 'meta' || event.detail?.platforms?.meta)) {
+        console.log("[MetaTab2] Global refresh all - triggering Meta sync");
         syncMetaInsights();
       }
     };
@@ -657,6 +675,7 @@ export function MetaTab2({
     if (typeof window !== 'undefined') {
       window.addEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
       window.addEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+      window.addEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
       window.addEventListener('newDayDetected', handleNewDayDetected as EventListener);
     }
     
@@ -664,6 +683,7 @@ export function MetaTab2({
       if (typeof window !== 'undefined') {
         window.removeEventListener('metaDataRefreshed', handleGlobalRefresh as EventListener);
         window.removeEventListener('force-meta-refresh', handleGlobalRefresh as EventListener);
+        window.removeEventListener('global-refresh-all', handleGlobalRefreshAll as EventListener);
         window.removeEventListener('newDayDetected', handleNewDayDetected as EventListener);
       }
     };

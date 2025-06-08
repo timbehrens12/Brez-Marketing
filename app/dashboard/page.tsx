@@ -37,6 +37,7 @@ import { useConnectionStore } from "@/stores/connectionStore"
 
 import { useSupabase } from '@/lib/hooks/useSupabase'
 import { Info, LayoutGrid } from "lucide-react"
+import { GlobalRefreshButton } from "@/components/dashboard/GlobalRefreshButton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "@/components/ui/use-toast"
 import { GreetingWidget } from "@/components/dashboard/GreetingWidget"
@@ -1270,9 +1271,15 @@ export default function DashboardPage() {
     <div className="max-w-[1600px] mx-auto flex flex-col min-h-screen">
       {/* Remove p-8 temporarily for diagnosis */}
       <div className="flex items-center justify-between mb-6 px-8 pt-8">
-        <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
-
+          {selectedBrandId && (activePlatforms.meta || activePlatforms.shopify) && (
+            <GlobalRefreshButton 
+              brandId={selectedBrandId} 
+              activePlatforms={activePlatforms}
+              currentTab={activeTab}
+            />
+          )}
         </div>
         <div className="flex items-center gap-4">
           {/* Only show edit button on home tab */}
