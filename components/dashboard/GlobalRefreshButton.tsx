@@ -191,12 +191,12 @@ export function GlobalRefreshButton({ brandId, activePlatforms, currentTab = 'si
           ? `Data last updated ${timeAgoDisplay} (15+ min old) - consider refreshing`
           : `Data last updated ${timeAgoDisplay}. Refresh all widgets on this page.`
         }
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
           dataFreshness.status === 'very-stale' 
             ? 'bg-red-900/20 border-red-500/50 text-red-300 hover:bg-red-900/30' 
             : dataFreshness.status === 'stale'
             ? 'bg-orange-900/20 border-orange-500/50 text-orange-300 hover:bg-orange-900/30'
-            : 'bg-[#2A2A2A] hover:bg-[#333] border-[#444] text-gray-300 hover:text-white'
+            : 'bg-[#1A1A1A] hover:bg-[#222] border-[#333] text-gray-400 hover:text-white'
         }`}
       >
         {isRefreshing ? (

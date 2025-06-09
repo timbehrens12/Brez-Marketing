@@ -864,39 +864,27 @@ export function HomeTab({
       });
 
       setMetaMetrics(prev => {
-        // Calculate CTR manually if API returns 0 but we have impressions and clicks
-        const calculatedCtr = currentData.impressions > 0 
-          ? (currentData.clicks / currentData.impressions) * 100 
-          : (currentData.ctr || 0);
-        
-        const calculatedPrevCtr = previousData.impressions > 0 
-          ? (previousData.clicks / previousData.impressions) * 100 
-          : (previousData.ctr || 0);
-          
-        // Calculate ROAS manually if we have spend (revenue calculation would need to be added when available)
-        const calculatedRoas = currentData.roas || 0; // Keep API value for now since we don't have revenue data
-        const calculatedPrevRoas = previousData.roas || 0;
-
         const newMetrics = {
           ...prev,
-          adSpend: currentData.adSpend || 0,
-          impressions: currentData.impressions || 0,
-          clicks: currentData.clicks || 0,
-          conversions: currentData.conversions || 0,
-          roas: calculatedRoas,
-          ctr: calculatedCtr,
+        adSpend: currentData.adSpend || 0,
+        impressions: currentData.impressions || 0,
+        clicks: currentData.clicks || 0,
+          conversions: currentData.conversions || 0, // Assuming conversions is part of the API response
+        roas: currentData.roas || 0,
+          ctr: currentData.ctr || 0,
           cpc: currentData.cpc || 0,
           costPerResult: currentData.costPerResult || 0,
-          results: currentData.results || 0,
-          purchaseValue: currentData.purchaseValue || 0,
+          results: currentData.results || 0, // Assuming 'results' exists
+          purchaseValue: currentData.purchaseValue || 0, // Assuming 'purchaseValue' exists
 
-          previousAdSpend: previousData.adSpend || 0,
-          previousImpressions: previousData.impressions || 0,
-          previousClicks: previousData.clicks || 0,
-          previousConversions: previousData.conversions || 0,
-          previousRoas: calculatedPrevRoas,
-          previousCtr: calculatedPrevCtr,
+        previousAdSpend: previousData.adSpend || 0,
+        previousImpressions: previousData.impressions || 0,
+        previousClicks: previousData.clicks || 0,
+        previousConversions: previousData.conversions || 0,
+        previousRoas: previousData.roas || 0,
+          previousCtr: previousData.ctr || 0,
           previousCpc: previousData.cpc || 0,
+          // previousCostPerResult: previousData.costPerResult || 0, // Assuming this should be here
           previousResults: previousData.results || 0,
           previousPurchaseValue: previousData.purchaseValue || 0,
 
@@ -904,8 +892,8 @@ export function HomeTab({
           impressionGrowth: calculatePercentChange(currentData.impressions, previousData.impressions),
           clickGrowth: calculatePercentChange(currentData.clicks, previousData.clicks),
           conversionGrowth: calculatePercentChange(currentData.conversions, previousData.conversions),
-          roasGrowth: calculatePercentChange(calculatedRoas, calculatedPrevRoas),
-          ctrGrowth: calculatePercentChange(calculatedCtr, calculatedPrevCtr),
+          roasGrowth: calculatePercentChange(currentData.roas, previousData.roas),
+          ctrGrowth: calculatePercentChange(currentData.ctr, previousData.ctr),
           cpcGrowth: calculatePercentChange(currentData.cpc, previousData.cpc),
           cprGrowth: calculatePercentChange(currentData.costPerResult, previousData.costPerResult),
         };
@@ -1169,27 +1157,14 @@ export function HomeTab({
 
       // Update metaMetrics state with database data
       setMetaMetrics(prev => {
-        // Calculate CTR manually if API returns 0 but we have impressions and clicks
-        const calculatedCtr = currentData.impressions > 0 
-          ? (currentData.clicks / currentData.impressions) * 100 
-          : (currentData.ctr || 0);
-        
-        const calculatedPrevCtr = previousData.impressions > 0 
-          ? (previousData.clicks / previousData.impressions) * 100 
-          : (previousData.ctr || 0);
-          
-        // Calculate ROAS manually if we have spend (revenue calculation would need to be added when available)
-        const calculatedRoas = currentData.roas || 0; // Keep API value for now since we don't have revenue data
-        const calculatedPrevRoas = previousData.roas || 0;
-
         const newMetrics = {
           ...prev,
           adSpend: currentData.adSpend || 0,
           impressions: currentData.impressions || 0,
           clicks: currentData.clicks || 0,
           conversions: currentData.conversions || 0,
-          roas: calculatedRoas,
-          ctr: calculatedCtr,
+          roas: currentData.roas || 0,
+          ctr: currentData.ctr || 0,
           cpc: currentData.cpc || 0,
           costPerResult: currentData.costPerResult || 0,
           results: currentData.results || 0,
@@ -1199,8 +1174,8 @@ export function HomeTab({
           previousImpressions: previousData.impressions || 0,
           previousClicks: previousData.clicks || 0,
           previousConversions: previousData.conversions || 0,
-          previousRoas: calculatedPrevRoas,
-          previousCtr: calculatedPrevCtr,
+          previousRoas: previousData.roas || 0,
+          previousCtr: previousData.ctr || 0,
           previousCpc: previousData.cpc || 0,
           previousResults: previousData.results || 0,
           previousPurchaseValue: previousData.purchaseValue || 0,
@@ -1209,8 +1184,8 @@ export function HomeTab({
           impressionGrowth: calculatePercentChange(currentData.impressions, previousData.impressions),
           clickGrowth: calculatePercentChange(currentData.clicks, previousData.clicks),
           conversionGrowth: calculatePercentChange(currentData.conversions, previousData.conversions),
-          roasGrowth: calculatePercentChange(calculatedRoas, calculatedPrevRoas),
-          ctrGrowth: calculatePercentChange(calculatedCtr, calculatedPrevCtr),
+          roasGrowth: calculatePercentChange(currentData.roas, previousData.roas),
+          ctrGrowth: calculatePercentChange(currentData.ctr, previousData.ctr),
           cpcGrowth: calculatePercentChange(currentData.cpc, previousData.cpc),
           cprGrowth: calculatePercentChange(currentData.costPerResult, previousData.costPerResult),
         };

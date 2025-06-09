@@ -421,7 +421,7 @@ export function DateRangePicker({ dateRange, setDateRange }: DateRangePickerProp
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="w-[260px] justify-start text-left font-normal bg-[#1a1a1a] text-gray-300 border-[#333333] hover:bg-[#222222] hover:text-gray-100"
+            className="w-[260px] justify-start text-left font-normal bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
           >
             <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
             {dateRange?.from ? (

@@ -235,10 +235,10 @@ export function PlatformTabs({
             <TooltipTrigger asChild>
               <TabsTrigger 
                 value="site" 
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "site" 
                     ? "bg-gradient-to-b from-zinc-800/80 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                    : "hover:bg-zinc-800/20 hover:text-white"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -276,10 +276,10 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="shopify" 
                 disabled={!platforms.shopify}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "shopify" 
                     ? "bg-gradient-to-b from-green-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                    : "hover:bg-zinc-800/20 hover:text-white"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -317,10 +317,10 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="meta" 
                 disabled={!platforms.meta}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "meta" 
                     ? "bg-gradient-to-b from-gray-900/80 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                    : "hover:bg-zinc-800/20 hover:text-white"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -360,10 +360,10 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="tiktok" 
                 disabled={!platforms.tiktok}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "tiktok" 
                     ? "bg-gradient-to-b from-pink-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                    : "hover:bg-zinc-800/20 hover:text-white"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
@@ -401,10 +401,10 @@ export function PlatformTabs({
               <TabsTrigger 
                 value="googleads" 
                 disabled={!platforms.googleads}
-                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-300 transition-all duration-200 ease-out overflow-hidden ${
+                className={`relative group rounded-xl w-full sm:w-24 h-10 text-gray-400 transition-all duration-200 ease-out overflow-hidden ${
                   activeTab === "googleads" 
                     ? "bg-gradient-to-b from-indigo-950/40 to-zinc-900/90 text-white shadow-md" 
-                    : "hover:bg-zinc-800/20"
+                    : "hover:bg-zinc-800/20 hover:text-white"
                 }`}
               >
                 <div className="flex items-center justify-center gap-2">
