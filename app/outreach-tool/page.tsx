@@ -285,9 +285,9 @@ Would you be open to a 15-minute conversation this week to explore some quick wi
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">📧 AI Outreach Manager</h1>
+            <h1 className="text-3xl font-bold text-white">Outreach Management System</h1>
             <p className="text-gray-400 mt-2">
-              Create personalized outreach campaigns and manage follow-ups
+              AI-powered personalized communication and lead relationship management
             </p>
           </div>
           <div className="flex gap-3">
