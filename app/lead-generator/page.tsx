@@ -56,6 +56,7 @@ export default function LeadGeneratorPage() {
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
   const [averageScore, setAverageScore] = useState(0)
+  const [useAI, setUseAI] = useState(true)
 
   // Load data on component mount
   useEffect(() => {
@@ -144,7 +145,8 @@ export default function LeadGeneratorPage() {
     setIsGenerating(true)
     
     try {
-      const response = await fetch('/api/leads/generate', {
+      const apiEndpoint = useAI ? '/api/leads/generate-ai' : '/api/leads/generate'
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
