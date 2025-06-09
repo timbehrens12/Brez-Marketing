@@ -147,7 +147,7 @@ export default function LeadGeneratorPage() {
     setIsGenerating(true)
     
     try {
-      const apiEndpoint = useAI ? '/api/leads/generate-ai' : '/api/leads/generate'
+      const apiEndpoint = useAI ? '/api/leads/generate-ai' : '/api/leads/generate-real'
       
       // Add timeout to prevent hanging
       const controller = new AbortController()
