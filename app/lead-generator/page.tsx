@@ -151,18 +151,26 @@ export default function LeadGeneratorPage() {
     
     try {
       const apiEndpoint = useAI ? '/api/leads/generate-ai' : '/api/leads/generate'
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-            businessType,
-            niches: selectedNiches,
-            location,
-            brandId: selectedBrandId,
-            userId,
-            maxResults: 20
-          })
+        signal: controller.signal,
+        body: JSON.stringify({
+          businessType,
+          niches: selectedNiches,
+          location,
+          brandId: selectedBrandId,
+          userId,
+          maxResults: 20
+        })
       })
+      
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error('Failed to generate leads')
@@ -179,7 +187,18 @@ export default function LeadGeneratorPage() {
       }
     } catch (error) {
       console.error('Error generating leads:', error)
-      toast.error('Failed to generate leads. Please try again.')
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          toast.error('Request timed out. Please try again with fewer results or different criteria.')
+        } else if (error.message.includes('504') || error.message.includes('timeout')) {
+          toast.error('Service temporarily busy. Please try again in a moment.')
+        } else {
+          toast.error('Failed to generate leads. Please try again.')
+        }
+      } else {
+        toast.error('Failed to generate leads. Please try again.')
+      }
     } finally {
       setIsGenerating(false)
     }

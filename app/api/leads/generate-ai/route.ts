@@ -8,7 +8,8 @@ const supabase = createClient(
 )
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!
+  apiKey: process.env.OPENAI_API_KEY!,
+  timeout: 25000 // 25 second timeout
 })
 
 export async function POST(request: NextRequest) {
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
     }
 
+    // Limit maxResults to prevent timeout
+    const limitedResults = Math.min(maxResults, 8) // Max 8 leads to prevent timeout
+
     // Get niche details from database
     const { data: nicheData, error: nicheError } = await supabase
       .from('lead_niches')
@@ -34,13 +38,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid niche selection' }, { status: 400 })
     }
 
-    // Use OpenAI to generate realistic leads
-    const aiGeneratedLeads = await generateLeadsWithOpenAI(
-      businessType, 
-      nicheData, 
-      location, 
-      maxResults
-    )
+    // Use OpenAI to generate realistic leads with timeout
+    const aiGeneratedLeads = await Promise.race([
+      generateLeadsWithOpenAI(businessType, nicheData, location, limitedResults),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 25000)
+      )
+    ]) as any[]
     
     if (aiGeneratedLeads.length === 0) {
       return NextResponse.json({ 
@@ -79,6 +83,47 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('AI Lead generation error:', error)
+    
+    // If timeout or OpenAI error, try fallback generation
+    if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('OpenAI'))) {
+      try {
+        const { businessType, niches, location, brandId, userId, maxResults = 10 } = await request.json()
+        const limitedResults = Math.min(maxResults, 8)
+        
+        const { data: nicheData } = await supabase
+          .from('lead_niches')
+          .select('*')
+          .in('id', niches)
+        
+        const fallbackLeads = generateFallbackLeads(businessType, nicheData || [], location, limitedResults)
+        
+        const leadsToInsert = fallbackLeads.map((lead: any) => ({
+          ...lead,
+          user_id: userId,
+          brand_id: brandId,
+          business_type: businessType,
+          status: 'new',
+          priority: calculatePriority(lead.lead_score),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+
+        const { data: insertedLeads } = await supabase
+          .from('leads')
+          .insert(leadsToInsert)
+          .select()
+
+        return NextResponse.json({
+          success: true,
+          leads: insertedLeads || [],
+          message: `Generated ${(insertedLeads || []).length} sample businesses (AI temporarily unavailable)`,
+          generatedBy: 'Fallback Algorithm'
+        })
+      } catch (fallbackError) {
+        console.error('Fallback generation failed:', fallbackError)
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error during AI lead discovery' },
       { status: 500 }
@@ -95,68 +140,50 @@ async function generateLeadsWithOpenAI(
   const nicheNames = niches.map(n => n.name).join(', ')
   const locationStr = location.city ? `${location.city}, ${location.state || ''}` : 'United States'
   
-  const prompt = `Generate ${maxResults} realistic ${businessType} businesses for lead generation. 
+  // Simplified prompt to reduce response time
+  const prompt = `Generate ${maxResults} realistic ${businessType} businesses in ${locationStr} for industries: ${nicheNames}.
 
-Requirements:
-- Business Type: ${businessType}
-- Industries/Niches: ${nicheNames}
-- Location: ${locationStr}
-
-For each business, provide:
-1. Realistic business name (no generic names like "Business 1")
-2. Owner/founder name (realistic, diverse names)
-3. Professional email address
-4. Phone number (US format)
-5. Website URL
-6. Business address (realistic for the location)
-7. Social media handles (Instagram, Facebook, LinkedIn)
-8. Lead score (40-95 based on business potential)
-9. Estimated annual revenue
-10. 2-3 specific pain points this business likely faces
-11. AI insights about marketing opportunities
-12. Recent business activity or achievements
-
-Make these businesses feel completely real and researched. Use actual business naming conventions for the industry. Vary the company sizes, from small local shops to medium enterprises. Include specific details that show you understand each industry.
-
-Return ONLY a valid JSON array with this exact structure:
+Return ONLY valid JSON array:
 [
   {
-    "business_name": "string",
-    "owner_name": "string", 
-    "email": "string",
-    "phone": "string",
-    "website": "string",
-    "city": "string",
-    "state_province": "string",
-    "address": "string",
-    "instagram_handle": "string",
-    "facebook_page": "string", 
-    "linkedin_profile": "string",
-    "niche_name": "string",
-    "lead_score": number,
-    "estimated_revenue": number,
-    "ai_insights": "string",
-    "pain_points": ["string", "string"],
-    "recent_activity": "string",
+    "business_name": "realistic business name",
+    "owner_name": "owner full name", 
+    "email": "email@business.com",
+    "phone": "+1-555-123-4567",
+    "website": "https://website.com",
+    "city": "${location.city || 'New York'}",
+    "state_province": "${location.state || 'NY'}",
+    "address": "street address",
+    "instagram_handle": "@handle",
+    "facebook_page": "BusinessName", 
+    "linkedin_profile": "business-name",
+    "niche_name": "pick from: ${nicheNames}",
+    "lead_score": 75,
+    "estimated_revenue": 250000,
+    "ai_insights": "brief marketing opportunity",
+    "pain_points": ["issue 1", "issue 2"],
+    "recent_activity": "recent business news",
     "verification_status": "verified"
   }
-]`
+]
+
+Make businesses realistic but keep responses concise.`
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo", // Use faster model
       messages: [
         {
           role: "system",
-          content: "You are a professional business researcher and lead generation expert. Generate realistic, detailed business information that could actually exist. Be specific and authentic in your details."
+          content: "Generate realistic business data. Be concise but authentic. Return only valid JSON."
         },
         {
           role: "user", 
           content: prompt
         }
       ],
-      max_tokens: 4000,
-      temperature: 0.8
+      max_tokens: 2000, // Reduced tokens
+      temperature: 0.7
     })
 
     const aiResponse = response.choices[0]?.message?.content
@@ -194,14 +221,40 @@ Return ONLY a valid JSON array with this exact structure:
 
   } catch (error) {
     console.error('OpenAI API error:', error)
-    // Fallback to algorithmic generation if OpenAI fails
-    return generateFallbackLeads(businessType, niches, location, maxResults)
+    throw error // Re-throw to trigger fallback
   }
 }
 
 function generateFallbackLeads(businessType: string, niches: any[], location: any, maxResults: number) {
-  // Simple fallback if OpenAI fails
-  return []
+  // Generate sample leads when OpenAI is unavailable
+  const sampleBusinessNames = {
+    ecommerce: ['TrendCraft Co', 'DigitalDrop Store', 'EcoStyle Shop', 'TechHub Direct'],
+    'local-services': ['Premier Cleaners', 'Elite Fitness Studio', 'Comfort HVAC', 'Sparkle Dental']
+  }
+  
+  const names = sampleBusinessNames[businessType as keyof typeof sampleBusinessNames] || ['Sample Business']
+  const niche = niches[0]?.name || 'General'
+  
+  return Array.from({ length: Math.min(maxResults, 4) }, (_, i) => ({
+    business_name: `${names[i % names.length]} ${i + 1}`,
+    owner_name: `Business Owner ${i + 1}`,
+    email: `contact@business${i + 1}.com`,
+    phone: `+1-555-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+    website: `https://business${i + 1}.com`,
+    city: location.city || 'New York',
+    state_province: location.state || 'NY',
+    address: `${123 + i} Main Street`,
+    instagram_handle: `@business${i + 1}`,
+    facebook_page: `Business${i + 1}`,
+    linkedin_profile: `business-${i + 1}`,
+    niche_name: niche,
+    lead_score: Math.floor(Math.random() * 25) + 65, // 65-90
+    estimated_revenue: Math.floor(Math.random() * 500000) + 100000,
+    ai_insights: 'Sample business generated during high traffic',
+    pain_points: ['Customer acquisition', 'Digital marketing'],
+    recent_activity: 'Recently updated business profile',
+    verification_status: 'sample_data'
+  }))
 }
 
 function calculatePriority(leadScore: number): string {
