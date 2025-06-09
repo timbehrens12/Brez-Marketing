@@ -23,9 +23,8 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
         <PopoverTrigger asChild>
           <Button
             id="date"
-            variant="outline"
             className={cn(
-              "w-[300px] justify-start text-left font-normal text-gray-400 h-10 px-4 border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all",
+              "w-[300px] justify-start text-left font-normal text-gray-400 h-10 px-4 border border-[#333] bg-[#1A1A1A] hover:bg-[#222] hover:text-white transition-all inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
