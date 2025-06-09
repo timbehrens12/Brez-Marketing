@@ -1,33 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseServiceClient } from '@/lib/supabase/client'
 import OpenAI from 'openai'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = getSupabaseServiceClient()
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-  timeout: 25000 // 25 second timeout
-})
+let openai: OpenAI | null = null
+
+try {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+    timeout: 25000 // 25 second timeout
+  })
+  console.log('OpenAI client initialized successfully')
+} catch (error) {
+  console.error('Failed to initialize OpenAI client:', error)
+}
 
 export async function POST(request: NextRequest) {
   try {
     const { businessType, niches, location, brandId, userId, maxResults = 10 } = await request.json()
 
+    console.log('Lead generation request:', { businessType, niches: niches?.length, location, brandId, userId, maxResults })
+
     if (!userId || !brandId) {
+      console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY || !openai) {
+      console.error('OpenAI API key missing or client initialization failed')
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error('Supabase URL missing')
+      return NextResponse.json({ error: 'Database connection not configured' }, { status: 500 })
     }
 
     // Limit maxResults to prevent timeout
     const limitedResults = Math.min(maxResults, 8) // Max 8 leads to prevent timeout
 
     // Get niche details from database
+    console.log('Fetching niches for:', niches)
     const { data: nicheData, error: nicheError } = await supabase
       .from('lead_niches')
       .select('*')
@@ -37,6 +51,8 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching niches:', nicheError)
       return NextResponse.json({ error: 'Invalid niche selection' }, { status: 400 })
     }
+
+    console.log('Found niches:', nicheData?.length || 0)
 
     // Use OpenAI to generate realistic leads with timeout
     const aiGeneratedLeads = await Promise.race([
@@ -170,6 +186,12 @@ Return ONLY valid JSON array:
 Make businesses realistic but keep responses concise.`
 
   try {
+    console.log('Calling OpenAI with prompt length:', prompt.length)
+    
+    if (!openai) {
+      throw new Error('OpenAI client not initialized')
+    }
+    
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", // Use faster model
       messages: [
@@ -185,6 +207,8 @@ Make businesses realistic but keep responses concise.`
       max_tokens: 2000, // Reduced tokens
       temperature: 0.7
     })
+    
+    console.log('OpenAI response received, length:', response.choices[0]?.message?.content?.length || 0)
 
     const aiResponse = response.choices[0]?.message?.content
     if (!aiResponse) {

@@ -13,14 +13,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = getSupabaseClient()
 
 interface Lead {
   id: string
