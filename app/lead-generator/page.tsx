@@ -53,7 +53,7 @@ export default function LeadGeneratorPage() {
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
   const [averageScore, setAverageScore] = useState(0)
-  const [useAI, setUseAI] = useState(true)
+  // Always use real data - no more fake AI generation
 
   // Load data on component mount
   useEffect(() => {
@@ -147,7 +147,7 @@ export default function LeadGeneratorPage() {
     setIsGenerating(true)
     
     try {
-      const apiEndpoint = useAI ? '/api/leads/generate-ai' : '/api/leads/generate-real'
+      const apiEndpoint = '/api/leads/generate-real' // Always use real Google Places data
       
       // Add timeout to prevent hanging
       const controller = new AbortController()
@@ -417,21 +417,33 @@ export default function LeadGeneratorPage() {
 
 
 
+            {/* Real Business Data Notice */}
+            <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-green-400 font-medium">
+                <Search className="h-4 w-4" />
+                Real Business Data
+              </div>
+              <p className="text-sm text-gray-300 mt-1">
+                This system finds actual businesses using Google Places API with real phone numbers, addresses, and websites. 
+                Shows "N/A" for data that cannot be verified.
+              </p>
+            </div>
+
             {/* Generate Button */}
             <Button
               onClick={generateLeads}
               disabled={isGenerating || selectedNiches.length === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-green-600 hover:bg-green-700"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating Leads...
+                  Finding Real Businesses...
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4 mr-2" />
-                  Generate Leads
+                  Find Real Businesses
                 </>
               )}
             </Button>
