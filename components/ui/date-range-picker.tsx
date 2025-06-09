@@ -44,7 +44,7 @@ export function DateRangePicker({ value, onChange, className }: DateRangePickerP
           </Button>
         </PopoverTrigger>
         <PopoverContent 
-          className="w-auto p-0 bg-[#2A2A2A] data-[state=closed]:animate-none data-[state=open]:animate-none" 
+          className="w-auto p-0 bg-[#2A2A2A] data-[state=closed]:animate-none data-[state=open]:animate-none border-none" 
           align="start"
           forceMount
           sideOffset={5}
