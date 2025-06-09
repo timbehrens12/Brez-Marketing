@@ -178,7 +178,6 @@ Return ONLY valid JSON array:
     "estimated_revenue": 250000,
     "ai_insights": "brief marketing opportunity",
     "pain_points": ["issue 1", "issue 2"],
-    "recent_activity": "recent business news",
     "verification_status": "verified"
   }
 ]
@@ -233,13 +232,20 @@ Make businesses realistic but keep responses concise.`
       lead.email && 
       lead.lead_score >= 40 && 
       lead.lead_score <= 95
-    ).map((lead: any) => ({
-      ...lead,
-      lead_score: Math.min(95, Math.max(40, Math.round(lead.lead_score))),
-      estimated_revenue: Math.max(50000, Math.round(lead.estimated_revenue || 200000)),
-      pain_points: Array.isArray(lead.pain_points) ? lead.pain_points : [],
-      verification_status: 'ai_generated'
-    }))
+    ).map((lead: any) => {
+      const cleanedLead = {
+        ...lead,
+        lead_score: Math.min(95, Math.max(40, Math.round(lead.lead_score))),
+        estimated_revenue: Math.max(50000, Math.round(lead.estimated_revenue || 200000)),
+        pain_points: Array.isArray(lead.pain_points) ? lead.pain_points : [],
+        verification_status: 'ai_generated'
+      }
+      
+      // Remove any fields that don't exist in the database schema
+      delete cleanedLead.recent_activity
+      
+      return cleanedLead
+    })
 
     return validLeads
 
@@ -276,7 +282,6 @@ function generateFallbackLeads(businessType: string, niches: any[], location: an
     estimated_revenue: Math.floor(Math.random() * 500000) + 100000,
     ai_insights: 'Sample business generated during high traffic',
     pain_points: ['Customer acquisition', 'Digital marketing'],
-    recent_activity: 'Recently updated business profile',
     verification_status: 'sample_data'
   }))
 }
