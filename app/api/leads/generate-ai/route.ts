@@ -177,8 +177,7 @@ Return ONLY valid JSON array:
     "lead_score": 75,
     "estimated_revenue": 250000,
     "ai_insights": "brief marketing opportunity",
-    "pain_points": ["issue 1", "issue 2"],
-    "verification_status": "verified"
+    "pain_points": ["issue 1", "issue 2"]
   }
 ]
 
@@ -233,18 +232,25 @@ Make businesses realistic but keep responses concise.`
       lead.lead_score >= 40 && 
       lead.lead_score <= 95
     ).map((lead: any) => {
-      const cleanedLead = {
-        ...lead,
+      // Only include fields that we know exist in the database schema
+      return {
+        business_name: lead.business_name,
+        owner_name: lead.owner_name,
+        email: lead.email,
+        phone: lead.phone,
+        website: lead.website,
+        city: lead.city,
+        state_province: lead.state_province,
+        address: lead.address,
+        instagram_handle: lead.instagram_handle,
+        facebook_page: lead.facebook_page,
+        linkedin_profile: lead.linkedin_profile,
+        niche_name: lead.niche_name,
         lead_score: Math.min(95, Math.max(40, Math.round(lead.lead_score))),
         estimated_revenue: Math.max(50000, Math.round(lead.estimated_revenue || 200000)),
-        pain_points: Array.isArray(lead.pain_points) ? lead.pain_points : [],
-        verification_status: 'ai_generated'
+        ai_insights: lead.ai_insights,
+        pain_points: Array.isArray(lead.pain_points) ? lead.pain_points : []
       }
-      
-      // Remove any fields that don't exist in the database schema
-      delete cleanedLead.recent_activity
-      
-      return cleanedLead
     })
 
     return validLeads
@@ -281,8 +287,7 @@ function generateFallbackLeads(businessType: string, niches: any[], location: an
     lead_score: Math.floor(Math.random() * 25) + 65, // 65-90
     estimated_revenue: Math.floor(Math.random() * 500000) + 100000,
     ai_insights: 'Sample business generated during high traffic',
-    pain_points: ['Customer acquisition', 'Digital marketing'],
-    verification_status: 'sample_data'
+    pain_points: ['Customer acquisition', 'Digital marketing']
   }))
 }
 
