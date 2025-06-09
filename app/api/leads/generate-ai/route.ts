@@ -13,7 +13,7 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessType, niches, location, keywords, brandId, userId, maxResults = 10 } = await request.json()
+    const { businessType, niches, location, brandId, userId, maxResults = 10 } = await request.json()
 
     if (!userId || !brandId) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
@@ -39,7 +39,6 @@ export async function POST(request: NextRequest) {
       businessType, 
       nicheData, 
       location, 
-      keywords, 
       maxResults
     )
     
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store leads in database
-    const leadsToInsert = aiGeneratedLeads.map(lead => ({
+    const leadsToInsert = aiGeneratedLeads.map((lead: any) => ({
       ...lead,
       user_id: userId,
       brand_id: brandId,
@@ -91,7 +90,6 @@ async function generateLeadsWithOpenAI(
   businessType: string,
   niches: any[],
   location: any,
-  keywords: string,
   maxResults: number
 ) {
   const nicheNames = niches.map(n => n.name).join(', ')
@@ -103,7 +101,6 @@ Requirements:
 - Business Type: ${businessType}
 - Industries/Niches: ${nicheNames}
 - Location: ${locationStr}
-- Additional Keywords: ${keywords || 'N/A'}
 
 For each business, provide:
 1. Realistic business name (no generic names like "Business 1")

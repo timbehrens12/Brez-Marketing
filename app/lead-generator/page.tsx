@@ -130,6 +130,11 @@ export default function LeadGeneratorPage() {
   }
 
   const filteredNiches = niches.filter(niche => niche.category === businessType)
+  
+  // Reset selected niches when business type changes
+  useEffect(() => {
+    setSelectedNiches([])
+  }, [businessType])
 
   const generateLeads = async () => {
     if (!userId || !selectedBrandId) {
@@ -149,15 +154,14 @@ export default function LeadGeneratorPage() {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessType,
-          niches: selectedNiches,
-          location,
-          keywords,
-          brandId: selectedBrandId,
-          userId,
-          maxResults: 20
-        })
+                  body: JSON.stringify({
+            businessType,
+            niches: selectedNiches,
+            location,
+            brandId: selectedBrandId,
+            userId,
+            maxResults: 20
+          })
       })
 
       if (!response.ok) {
@@ -395,16 +399,7 @@ export default function LeadGeneratorPage() {
               </div>
             )}
 
-            {/* Additional Keywords */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-gray-400">Additional Keywords (Optional)</Label>
-              <Input
-                placeholder="Enter keywords to refine your search..."
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                className="bg-[#2A2A2A] border-[#444] text-gray-400"
-              />
-            </div>
+
 
             {/* Generate Button */}
             <Button
