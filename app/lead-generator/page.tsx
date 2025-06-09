@@ -1,39 +1,111 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { toast } from 'sonner'
 import { 
   Search, 
   Filter, 
-  MapPin, 
   Building2, 
   Globe, 
-  Phone, 
-  Mail, 
-  ExternalLink,
-  Download,
-  Plus,
-  Target,
-  Users,
-  DollarSign,
-  Star,
+  MapPin, 
+  Loader2,
   Send,
-  Loader2
+  Eye,
+  Plus,
+  X,
+  Settings
 } from "lucide-react"
-import { toast } from 'sonner'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
+// Niche categories based on user requirements
+const ONLINE_NICHES = [
+  'Apparel / Streetwear',
+  'Fitness & Activewear',
+  'Beauty & Skincare',
+  'Haircare',
+  'Pet Products',
+  'Home Decor / Aesthetic Goods',
+  'Jewelry & Accessories',
+  'Tech Accessories',
+  'Eco-Friendly Brands',
+  'Baby Products',
+  'Toys / Educational Kits',
+  'Outdoor & Survival Gear',
+  'Hobby & DIY Craft Kits',
+  'Kitchen Tools',
+  'Supplements / Wellness',
+  'Subscription Boxes',
+  'Digital Products / Online Courses',
+  'Niche SaaS Tools',
+  'Gaming Accessories',
+  'Electronics / Gadgets',
+  'Books / Publishing',
+  'Art Supplies',
+  'Photography Equipment'
+]
+
+const LOCAL_NICHES = [
+  'Roofing / HVAC / Plumbing',
+  'Pest Control',
+  'Landscaping',
+  'Gyms / Bootcamps / Trainers',
+  'Chiropractors / Physical Therapists',
+  'Dentists / Orthodontists',
+  'Hair Salons / Barbers / Spas',
+  'Med Spas / Massage Studios',
+  'House Cleaners',
+  'Tattoo Shops',
+  'Car Wash / Tint / Detail',
+  'General Contractors / Remodelers',
+  'Real Estate / Property Managers',
+  'Caterers / Meal Prep / Food Trucks',
+  'Bookkeepers / Accountants',
+  'Moving Companies / Event Planners',
+  'Auto Repair',
+  'Wedding Planners',
+  'Photography Studios',
+  'Legal Services',
+  'Insurance Agencies',
+  'Travel Agencies'
+]
+
+interface Lead {
+  id: string
+  business_name: string
+  business_type: string
+  niche: string
+  owner_name: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  social_media: any
+  location: any
+  business_info: any
+  lead_quality_score: number
+  contact_status: string
+  is_sent_to_outreach: boolean
+  created_at: string
+}
+
 interface SearchFilters {
-  businessType: 'online' | 'physical' | ''
-  niches: string[]
+  businessType: 'online' | 'local' | ''
+  selectedNiches: string[]
   location: {
     zipCode: string
     radius: number
@@ -41,96 +113,24 @@ interface SearchFilters {
     state: string
     country: string
   }
-  businessSize: string
-  revenueRange: string
-  industry: string
+  additionalFilters: {
+    minEmployees: number
+    maxEmployees: number
+    minRevenue: number
+    maxRevenue: number
+    hasWebsite: boolean
+    hasSocialMedia: boolean
+    hasContactInfo: boolean
+  }
 }
-
-interface GeneratedLead {
-  id: string
-  businessName: string
-  ownerName?: string
-  phoneNumber?: string
-  email?: string
-  websiteUrl?: string
-  socialMediaLinks: Record<string, string>
-  businessAddress?: string
-  city?: string
-  state?: string
-  zipCode?: string
-  industry?: string
-  businessDescription?: string
-  estimatedRevenue?: string
-  employeeCount?: string
-  confidenceScore: number
-  dataSources: string[]
-  sentToOutreach: boolean
-}
-
-interface SearchHistory {
-  id: string
-  searchName: string
-  businessType: string
-  niches: string[]
-  totalResults: number
-  status: string
-  createdAt: string
-}
-
-const BUSINESS_NICHES = {
-  online: [
-    'E-commerce',
-    'SaaS',
-    'Digital Marketing',
-    'Online Education',
-    'Fintech',
-    'Health Tech',
-    'Real Estate Tech',
-    'Food Delivery',
-    'Subscription Services',
-    'Marketplace',
-    'Content Creation',
-    'Gaming',
-    'Cryptocurrency',
-    'AI/ML Services'
-  ],
-  physical: [
-    'Restaurants',
-    'Retail Stores',
-    'Automotive',
-    'Healthcare',
-    'Fitness Centers',
-    'Beauty Salons',
-    'Real Estate',
-    'Legal Services',
-    'Accounting',
-    'Consulting',
-    'Construction',
-    'Manufacturing',
-    'Professional Services',
-    'Home Services'
-  ]
-}
-
-const INDUSTRIES = [
-  'Technology',
-  'Healthcare',
-  'Finance',
-  'Retail',
-  'Manufacturing',
-  'Real Estate',
-  'Education',
-  'Food & Beverage',
-  'Automotive',
-  'Professional Services',
-  'Entertainment',
-  'Non-profit'
-]
 
 export default function LeadGeneratorPage() {
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<Lead[]>([])
+  const [searchName, setSearchName] = useState('')
   const [filters, setFilters] = useState<SearchFilters>({
     businessType: '',
-    niches: [],
+    selectedNiches: [],
     location: {
       zipCode: '',
       radius: 25,
@@ -138,74 +138,87 @@ export default function LeadGeneratorPage() {
       state: '',
       country: 'US'
     },
-    businessSize: '',
-    revenueRange: '',
-    industry: ''
+    additionalFilters: {
+      minEmployees: 1,
+      maxEmployees: 500,
+      minRevenue: 0,
+      maxRevenue: 10000000,
+      hasWebsite: false,
+      hasSocialMedia: false,
+      hasContactInfo: true
+    }
   })
 
-  const [searchName, setSearchName] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchResults, setSearchResults] = useState<GeneratedLead[]>([])
-  const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([])
-  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
-  const [currentView, setCurrentView] = useState<'search' | 'results' | 'history'>('search')
+  const availableNiches = filters.businessType === 'online' ? ONLINE_NICHES : 
+                         filters.businessType === 'local' ? LOCAL_NICHES : []
 
-  // Load search history on component mount
-  useEffect(() => {
-    loadSearchHistory()
-  }, [])
-
-  const loadSearchHistory = async () => {
-    try {
-      const response = await fetch('/api/lead-generation/searches')
-      if (response.ok) {
-        const data = await response.json()
-        setSearchHistory(data)
-      }
-    } catch (error) {
-      console.error('Error loading search history:', error)
-    }
+  const handleNicheToggle = (niche: string) => {
+    setFilters(prev => ({
+      ...prev,
+      selectedNiches: prev.selectedNiches.includes(niche)
+        ? prev.selectedNiches.filter(n => n !== niche)
+        : [...prev.selectedNiches, niche]
+    }))
   }
 
-  const handleSearchSubmit = async () => {
+  const removeNiche = (niche: string) => {
+    setFilters(prev => ({
+      ...prev,
+      selectedNiches: prev.selectedNiches.filter(n => n !== niche)
+    }))
+  }
+
+  const validateSearchParams = () => {
     if (!searchName.trim()) {
       toast.error('Please enter a search name')
-      return
+      return false
     }
 
     if (!filters.businessType) {
       toast.error('Please select a business type')
-      return
+      return false
     }
 
-    if (filters.niches.length === 0) {
+    if (filters.selectedNiches.length === 0) {
       toast.error('Please select at least one niche')
-      return
+      return false
     }
+
+    if (filters.businessType === 'local') {
+      if (!filters.location.zipCode && !filters.location.city) {
+        toast.error('Please enter a location (zip code or city) for local business search')
+        return false
+      }
+    }
+
+    return true
+  }
+
+  const handleSearch = async () => {
+    if (!validateSearchParams()) return
 
     setIsSearching(true)
     
     try {
-      const response = await fetch('/api/lead-generation/search', {
+      const response = await fetch('/api/leads/search', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           searchName,
-          ...filters
+          filters
         })
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setSearchResults(data.leads || [])
-        setCurrentView('results')
-        toast.success(`Found ${data.leads?.length || 0} potential leads!`)
-        loadSearchHistory() // Refresh history
-      } else {
-        throw new Error('Search failed')
+      if (!response.ok) {
+        throw new Error('Failed to search for leads')
       }
+
+      const results = await response.json()
+      setSearchResults(results.leads)
+      
+      toast.success(`Found ${results.leads.length} potential leads!`)
     } catch (error) {
       console.error('Search error:', error)
       toast.error('Failed to search for leads. Please try again.')
@@ -214,500 +227,413 @@ export default function LeadGeneratorPage() {
     }
   }
 
-  const handleNicheToggle = (niche: string) => {
-    setFilters(prev => ({
-      ...prev,
-      niches: prev.niches.includes(niche)
-        ? prev.niches.filter(n => n !== niche)
-        : [...prev.niches, niche]
-    }))
-  }
-
-  const handleLeadSelect = (leadId: string) => {
-    setSelectedLeads(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(leadId)) {
-        newSet.delete(leadId)
-      } else {
-        newSet.add(leadId)
-      }
-      return newSet
-    })
-  }
-
-  const handleSendToOutreach = async () => {
-    if (selectedLeads.size === 0) {
-      toast.error('Please select leads to send to outreach')
-      return
-    }
-
+  const sendToOutreach = async (leadId: string) => {
     try {
-      const response = await fetch('/api/lead-generation/send-to-outreach', {
+      const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          leadIds: Array.from(selectedLeads)
-        })
+        body: JSON.stringify({ leadId })
       })
 
-      if (response.ok) {
-        toast.success(`${selectedLeads.size} leads sent to outreach manager!`)
-        setSelectedLeads(new Set())
-        // Update the leads to show they've been sent
-        setSearchResults(prev => 
-          prev.map(lead => 
-            selectedLeads.has(lead.id) 
-              ? { ...lead, sentToOutreach: true }
-              : lead
-          )
-        )
-      } else {
-        throw new Error('Failed to send leads')
+      if (!response.ok) {
+        throw new Error('Failed to send to outreach')
       }
+
+      // Update the lead in the current results
+      setSearchResults(prev => 
+        prev.map(lead => 
+          lead.id === leadId 
+            ? { ...lead, is_sent_to_outreach: true }
+            : lead
+        )
+      )
+
+      toast.success('Lead sent to outreach manager!')
     } catch (error) {
-      console.error('Error sending leads:', error)
-      toast.error('Failed to send leads to outreach')
+      console.error('Send to outreach error:', error)
+      toast.error('Failed to send lead to outreach. Please try again.')
     }
   }
 
-  const getConfidenceColor = (score: number) => {
-    if (score >= 0.8) return 'text-green-500'
-    if (score >= 0.6) return 'text-yellow-500'
-    return 'text-red-500'
+  const getQualityBadgeColor = (score: number) => {
+    if (score >= 80) return 'bg-green-600 text-white'
+    if (score >= 60) return 'bg-yellow-600 text-white'
+    if (score >= 40) return 'bg-orange-600 text-white'
+    return 'bg-red-600 text-white'
   }
 
-  const getConfidenceLabel = (score: number) => {
-    if (score >= 0.8) return 'High'
-    if (score >= 0.6) return 'Medium'
+  const getQualityLabel = (score: number) => {
+    if (score >= 80) return 'High'
+    if (score >= 60) return 'Good'
+    if (score >= 40) return 'Medium'
     return 'Low'
   }
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Lead Generator</h1>
-          <p className="text-gray-400">Find and connect with potential clients for your marketing agency</p>
+          <h1 className="text-3xl font-bold mb-2">Lead Generator</h1>
+          <p className="text-gray-400">Find and target potential clients for your marketing agency</p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Button
-            variant={currentView === 'search' ? 'default' : 'outline'}
-            onClick={() => setCurrentView('search')}
-            className={cn(
-              "px-6",
-              currentView === 'search' 
-                ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                : "bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
-            )}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            New Search
-          </Button>
-          <Button
-            variant={currentView === 'results' ? 'default' : 'outline'}
-            onClick={() => setCurrentView('results')}
-            disabled={searchResults.length === 0}
-            className={cn(
-              "px-6",
-              currentView === 'results' 
-                ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                : "bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
-            )}
-          >
-            <Target className="w-4 h-4 mr-2" />
-            Results ({searchResults.length})
-          </Button>
-          <Button
-            variant={currentView === 'history' ? 'default' : 'outline'}
-            onClick={() => setCurrentView('history')}
-            className={cn(
-              "px-6",
-              currentView === 'history' 
-                ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                : "bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
-            )}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Search History
-          </Button>
-        </div>
+        {/* Search Configuration */}
+        <Card className="bg-[#111] border-[#333] mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Filter className="h-5 w-5" />
+              Search Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Search Name */}
+            <div>
+              <Label htmlFor="searchName" className="text-gray-300">Search Name</Label>
+              <Input
+                id="searchName"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                placeholder="e.g., Local Fitness Studios - NYC"
+                className="bg-[#1A1A1A] border-[#333] text-white"
+              />
+            </div>
 
-        {/* Search Form */}
-        {currentView === 'search' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Search Configuration */}
-            <div className="lg:col-span-2">
-              <Card className="bg-[#111] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Search className="w-5 h-5 mr-2" />
-                    Search Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Search Name */}
+            {/* Business Type */}
+            <div>
+              <Label className="text-gray-300">Business Type</Label>
+              <div className="flex gap-4 mt-2">
+                <Button
+                  variant={filters.businessType === 'online' ? 'default' : 'outline'}
+                  onClick={() => setFilters(prev => ({ 
+                    ...prev, 
+                    businessType: 'online',
+                    selectedNiches: [] // Reset niches when switching type
+                  }))}
+                  className={cn(
+                    "flex items-center gap-2",
+                    filters.businessType === 'online' 
+                      ? "bg-blue-600 hover:bg-blue-700" 
+                      : "border-[#333] text-gray-400 hover:text-white hover:bg-[#222]"
+                  )}
+                >
+                  <Globe className="h-4 w-4" />
+                  Online Businesses
+                </Button>
+                <Button
+                  variant={filters.businessType === 'local' ? 'default' : 'outline'}
+                  onClick={() => setFilters(prev => ({ 
+                    ...prev, 
+                    businessType: 'local',
+                    selectedNiches: [] // Reset niches when switching type
+                  }))}
+                  className={cn(
+                    "flex items-center gap-2",
+                    filters.businessType === 'local' 
+                      ? "bg-blue-600 hover:bg-blue-700" 
+                      : "border-[#333] text-gray-400 hover:text-white hover:bg-[#222]"
+                  )}
+                >
+                  <Building2 className="h-4 w-4" />
+                  Local Businesses
+                </Button>
+              </div>
+            </div>
+
+            {/* Niches */}
+            {filters.businessType && (
+              <div>
+                <Label className="text-gray-300">Select Niches ({filters.selectedNiches.length} selected)</Label>
+                
+                {/* Selected Niches */}
+                {filters.selectedNiches.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 mb-4">
+                    {filters.selectedNiches.map(niche => (
+                      <Badge
+                        key={niche}
+                        variant="secondary"
+                        className="bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+                        onClick={() => removeNiche(niche)}
+                      >
+                        {niche}
+                        <X className="h-3 w-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Available Niches */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto border border-[#333] rounded-md p-3 bg-[#1A1A1A]">
+                  {availableNiches.map(niche => (
+                    <div key={niche} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={niche}
+                        checked={filters.selectedNiches.includes(niche)}
+                        onCheckedChange={() => handleNicheToggle(niche)}
+                        className="border-gray-600"
+                      />
+                      <Label
+                        htmlFor={niche}
+                        className="text-sm text-gray-300 cursor-pointer hover:text-white"
+                      >
+                        {niche}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Location Filters (for local businesses) */}
+            {filters.businessType === 'local' && (
+              <div>
+                <Label className="text-gray-300">Location Filters</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
                   <div>
-                    <Label className="text-gray-300">Search Name</Label>
+                    <Label htmlFor="zipCode" className="text-sm text-gray-400">Zip Code</Label>
                     <Input
-                      value={searchName}
-                      onChange={(e) => setSearchName(e.target.value)}
-                      placeholder="e.g., E-commerce stores in California"
+                      id="zipCode"
+                      value={filters.location.zipCode}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        location: { ...prev.location, zipCode: e.target.value }
+                      }))}
+                      placeholder="90210"
                       className="bg-[#1A1A1A] border-[#333] text-white"
                     />
                   </div>
-
-                  {/* Business Type */}
                   <div>
-                    <Label className="text-gray-300">Business Type</Label>
-                    <Select value={filters.businessType} onValueChange={(value: 'online' | 'physical') => 
-                      setFilters(prev => ({ ...prev, businessType: value, niches: [] }))
-                    }>
+                    <Label htmlFor="city" className="text-sm text-gray-400">City</Label>
+                    <Input
+                      id="city"
+                      value={filters.location.city}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        location: { ...prev.location, city: e.target.value }
+                      }))}
+                      placeholder="Los Angeles"
+                      className="bg-[#1A1A1A] border-[#333] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm text-gray-400">State</Label>
+                    <Input
+                      id="state"
+                      value={filters.location.state}
+                      onChange={(e) => setFilters(prev => ({
+                        ...prev,
+                        location: { ...prev.location, state: e.target.value }
+                      }))}
+                      placeholder="CA"
+                      className="bg-[#1A1A1A] border-[#333] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="radius" className="text-sm text-gray-400">Radius (miles)</Label>
+                    <Select
+                      value={filters.location.radius.toString()}
+                      onValueChange={(value) => setFilters(prev => ({
+                        ...prev,
+                        location: { ...prev.location, radius: parseInt(value) }
+                      }))}
+                    >
                       <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
-                        <SelectValue placeholder="Select business type" />
+                        <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        <SelectItem value="online">Online Businesses</SelectItem>
-                        <SelectItem value="physical">Physical Businesses</SelectItem>
+                      <SelectContent>
+                        <SelectItem value="5">5 miles</SelectItem>
+                        <SelectItem value="10">10 miles</SelectItem>
+                        <SelectItem value="25">25 miles</SelectItem>
+                        <SelectItem value="50">50 miles</SelectItem>
+                        <SelectItem value="100">100 miles</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Niches */}
-                  {filters.businessType && (
-                    <div>
-                      <Label className="text-gray-300">Business Niches</Label>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {BUSINESS_NICHES[filters.businessType].map((niche) => (
-                          <div key={niche} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={niche}
-                              checked={filters.niches.includes(niche)}
-                              onCheckedChange={() => handleNicheToggle(niche)}
-                              className="border-[#444] data-[state=checked]:bg-blue-600"
-                            />
-                            <Label htmlFor={niche} className="text-sm text-gray-300">
-                              {niche}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Location Filters (for physical businesses) */}
-                  {filters.businessType === 'physical' && (
-                    <div>
-                      <Label className="text-gray-300">Location</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                        <div>
-                          <Label className="text-sm text-gray-400">Zip Code</Label>
-                          <Input
-                            value={filters.location.zipCode}
-                            onChange={(e) => setFilters(prev => ({
-                              ...prev,
-                              location: { ...prev.location, zipCode: e.target.value }
-                            }))}
-                            placeholder="90210"
-                            className="bg-[#1A1A1A] border-[#333] text-white"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm text-gray-400">Radius (miles)</Label>
-                          <Select value={filters.location.radius.toString()} onValueChange={(value) =>
-                            setFilters(prev => ({
-                              ...prev,
-                              location: { ...prev.location, radius: parseInt(value) }
-                            }))
-                          }>
-                            <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                              <SelectItem value="5">5 miles</SelectItem>
-                              <SelectItem value="10">10 miles</SelectItem>
-                              <SelectItem value="25">25 miles</SelectItem>
-                              <SelectItem value="50">50 miles</SelectItem>
-                              <SelectItem value="100">100 miles</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Advanced Filters */}
-                  <div>
-                    <Label className="text-gray-300">Industry (Optional)</Label>
-                    <Select value={filters.industry} onValueChange={(value) =>
-                      setFilters(prev => ({ ...prev, industry: value }))
-                    }>
-                      <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
-                        <SelectValue placeholder="Any industry" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        {INDUSTRIES.map((industry) => (
-                          <SelectItem key={industry} value={industry}>
-                            {industry}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-gray-300">Business Size</Label>
-                      <Select value={filters.businessSize} onValueChange={(value) =>
-                        setFilters(prev => ({ ...prev, businessSize: value }))
-                      }>
-                        <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
-                          <SelectValue placeholder="Any size" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                          <SelectItem value="startup">Startup (1-10)</SelectItem>
-                          <SelectItem value="small">Small (11-50)</SelectItem>
-                          <SelectItem value="medium">Medium (51-200)</SelectItem>
-                          <SelectItem value="large">Large (200+)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-gray-300">Revenue Range</Label>
-                      <Select value={filters.revenueRange} onValueChange={(value) =>
-                        setFilters(prev => ({ ...prev, revenueRange: value }))
-                      }>
-                        <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-white">
-                          <SelectValue placeholder="Any revenue" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                          <SelectItem value="0-100k">$0 - $100k</SelectItem>
-                          <SelectItem value="100k-500k">$100k - $500k</SelectItem>
-                          <SelectItem value="500k-1m">$500k - $1M</SelectItem>
-                          <SelectItem value="1m-5m">$1M - $5M</SelectItem>
-                          <SelectItem value="5m+">$5M+</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Search Summary & Actions */}
-            <div>
-              <Card className="bg-[#111] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white">Search Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-sm text-gray-400">
-                    <p><strong>Type:</strong> {filters.businessType || 'Not selected'}</p>
-                    <p><strong>Niches:</strong> {filters.niches.length} selected</p>
-                    {filters.businessType === 'physical' && (
-                      <p><strong>Location:</strong> {filters.location.zipCode || 'Any'}</p>
-                    )}
-                  </div>
-                  
-                  <Separator className="bg-[#333]" />
-                  
-                  <Button 
-                    onClick={handleSearchSubmit}
-                    disabled={isSearching || !filters.businessType || filters.niches.length === 0}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="w-4 h-4 mr-2" />
-                        Start Search
-                      </>
-                    )}
-                  </Button>
-                  
-                  <p className="text-xs text-gray-500 text-center">
-                    AI-powered search will find businesses matching your criteria
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {/* Search Results */}
-        {currentView === 'results' && (
-          <div>
-            {/* Results Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-white">Search Results</h2>
-                <p className="text-gray-400">{searchResults.length} leads found</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSendToOutreach}
-                  disabled={selectedLeads.size === 0}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send to Outreach ({selectedLeads.size})
-                </Button>
-                <Button variant="outline" className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#222]">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
-                </Button>
-              </div>
-            </div>
-
-            {/* Results Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {searchResults.map((lead) => (
-                <Card key={lead.id} className="bg-[#111] border-[#333] hover:border-[#444] transition-colors">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={selectedLeads.has(lead.id)}
-                          onCheckedChange={() => handleLeadSelect(lead.id)}
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <div>
-                          <CardTitle className="text-sm text-white">{lead.businessName}</CardTitle>
-                          {lead.ownerName && (
-                            <p className="text-xs text-gray-400">{lead.ownerName}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Star className={cn("w-3 h-3", getConfidenceColor(lead.confidenceScore))} />
-                        <span className={cn("text-xs", getConfidenceColor(lead.confidenceScore))}>
-                          {getConfidenceLabel(lead.confidenceScore)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {/* Contact Info */}
-                    <div className="space-y-1">
-                      {lead.email && (
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Mail className="w-3 h-3 mr-2" />
-                          {lead.email}
-                        </div>
-                      )}
-                      {lead.phoneNumber && (
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Phone className="w-3 h-3 mr-2" />
-                          {lead.phoneNumber}
-                        </div>
-                      )}
-                      {lead.websiteUrl && (
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Globe className="w-3 h-3 mr-2" />
-                          <a href={lead.websiteUrl} target="_blank" rel="noopener noreferrer" className="hover:text-blue-400">
-                            Website
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Location */}
-                    {(lead.city || lead.state) && (
-                      <div className="flex items-center text-xs text-gray-400">
-                        <MapPin className="w-3 h-3 mr-2" />
-                        {[lead.city, lead.state].filter(Boolean).join(', ')}
-                      </div>
-                    )}
-
-                    {/* Industry & Size */}
-                    <div className="flex flex-wrap gap-1">
-                      {lead.industry && (
-                        <Badge variant="secondary" className="text-xs bg-[#222] text-gray-300">
-                          {lead.industry}
-                        </Badge>
-                      )}
-                      {lead.employeeCount && (
-                        <Badge variant="secondary" className="text-xs bg-[#222] text-gray-300">
-                          <Users className="w-2 h-2 mr-1" />
-                          {lead.employeeCount}
-                        </Badge>
-                      )}
-                      {lead.estimatedRevenue && (
-                        <Badge variant="secondary" className="text-xs bg-[#222] text-gray-300">
-                          <DollarSign className="w-2 h-2 mr-1" />
-                          {lead.estimatedRevenue}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {lead.businessDescription && (
-                      <p className="text-xs text-gray-400 line-clamp-2">
-                        {lead.businessDescription}
-                      </p>
-                    )}
-
-                    {/* Status */}
-                    {lead.sentToOutreach && (
-                      <Badge className="bg-green-600 text-white text-xs">
-                        Sent to Outreach
-                      </Badge>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {searchResults.length === 0 && (
-              <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-400 mb-2">No Results Found</h3>
-                <p className="text-gray-500">Try adjusting your search criteria and search again.</p>
+                </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Search History */}
-        {currentView === 'history' && (
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-6">Search History</h2>
-            <div className="space-y-4">
-              {searchHistory.map((search) => (
-                <Card key={search.id} className="bg-[#111] border-[#333]">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-white">{search.searchName}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-400 mt-1">
-                          <span>Type: {search.businessType}</span>
-                          <span>Niches: {search.niches.join(', ')}</span>
-                          <span>Results: {search.totalResults}</span>
-                          <span>Date: {new Date(search.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={search.status === 'completed' ? 'default' : 'secondary'}>
-                          {search.status}
-                        </Badge>
-                        <Button size="sm" variant="outline" className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#222]">
-                          View Results
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            {/* Additional Filters */}
+            <div>
+              <Label className="text-gray-300">Additional Filters</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hasWebsite"
+                    checked={filters.additionalFilters.hasWebsite}
+                    onCheckedChange={(checked) => setFilters(prev => ({
+                      ...prev,
+                      additionalFilters: { ...prev.additionalFilters, hasWebsite: checked as boolean }
+                    }))}
+                    className="border-gray-600"
+                  />
+                  <Label htmlFor="hasWebsite" className="text-sm text-gray-300">
+                    Must have website
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hasSocialMedia"
+                    checked={filters.additionalFilters.hasSocialMedia}
+                    onCheckedChange={(checked) => setFilters(prev => ({
+                      ...prev,
+                      additionalFilters: { ...prev.additionalFilters, hasSocialMedia: checked as boolean }
+                    }))}
+                    className="border-gray-600"
+                  />
+                  <Label htmlFor="hasSocialMedia" className="text-sm text-gray-300">
+                    Must have social media
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="hasContactInfo"
+                    checked={filters.additionalFilters.hasContactInfo}
+                    onCheckedChange={(checked) => setFilters(prev => ({
+                      ...prev,
+                      additionalFilters: { ...prev.additionalFilters, hasContactInfo: checked as boolean }
+                    }))}
+                    className="border-gray-600"
+                  />
+                  <Label htmlFor="hasContactInfo" className="text-sm text-gray-300">
+                    Must have contact info
+                  </Label>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <Separator className="bg-[#333]" />
+
+            {/* Search Button */}
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !filters.businessType || filters.selectedNiches.length === 0}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isSearching ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Searching for leads...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Search for Leads
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <Card className="bg-[#111] border-[#333]">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-white">
+                <span>Search Results ({searchResults.length} leads found)</span>
+                <Badge variant="secondary" className="bg-blue-600 text-white">
+                  {searchResults.filter(lead => !lead.is_sent_to_outreach).length} available
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#333]">
+                      <TableHead className="text-gray-300">Business</TableHead>
+                      <TableHead className="text-gray-300">Niche</TableHead>
+                      <TableHead className="text-gray-300">Owner</TableHead>
+                      <TableHead className="text-gray-300">Contact</TableHead>
+                      <TableHead className="text-gray-300">Location</TableHead>
+                      <TableHead className="text-gray-300">Quality</TableHead>
+                      <TableHead className="text-gray-300">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {searchResults.map((lead) => (
+                      <TableRow key={lead.id} className="border-[#333]">
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-white">{lead.business_name}</div>
+                            {lead.website && (
+                              <a 
+                                href={lead.website} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 text-sm"
+                              >
+                                {lead.website}
+                              </a>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="border-[#444] text-gray-300">
+                            {lead.niche}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {lead.owner_name || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            {lead.email && (
+                              <div className="text-sm text-gray-300">{lead.email}</div>
+                            )}
+                            {lead.phone && (
+                              <div className="text-sm text-gray-300">{lead.phone}</div>
+                            )}
+                            {!lead.email && !lead.phone && (
+                              <span className="text-gray-500">N/A</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {lead.location?.city || lead.location?.state ? 
+                            `${lead.location.city || ''} ${lead.location.state || ''}`.trim() : 
+                            'N/A'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getQualityBadgeColor(lead.lead_quality_score)}>
+                            {getQualityLabel(lead.lead_quality_score)} ({lead.lead_quality_score})
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {!lead.is_sent_to_outreach ? (
+                              <Button
+                                size="sm"
+                                onClick={() => sendToOutreach(lead.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                Send to Outreach
+                              </Button>
+                            ) : (
+                              <Badge className="bg-gray-600 text-white">
+                                Sent to Outreach
+                              </Badge>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-[#333] text-gray-400 hover:text-white hover:bg-[#222]"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
