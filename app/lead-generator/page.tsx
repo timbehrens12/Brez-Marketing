@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
@@ -352,18 +353,18 @@ export default function LeadGeneratorPage() {
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
               {businessType === 'local_service' ? (
-                // Categorized view for local services
-                <div className="space-y-4">
+                // Accordion view for local services
+                <Accordion type="multiple" className="w-full">
                   {Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
                     const categoryNiches = getNichesByGroup(groupName)
                     if (categoryNiches.length === 0) return null
                     
                     return (
-                      <div key={groupName} className="border border-[#333] rounded-lg bg-[#2A2A2A]">
-                        <div className="p-3 border-b border-[#333]">
-                          <h4 className="text-sm font-medium text-gray-300">{groupName}</h4>
-                        </div>
-                        <div className="p-3">
+                      <AccordionItem key={groupName} value={groupName} className="border-[#333]">
+                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                          {groupName} ({categoryNiches.length})
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {categoryNiches.map((niche: any) => (
                               <div key={niche.id} className="flex items-center space-x-2">
@@ -385,34 +386,43 @@ export default function LeadGeneratorPage() {
                               </div>
                             ))}
                           </div>
-                        </div>
-                      </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     )
                   })}
-                </div>
+                </Accordion>
               ) : (
-                // Original grid view for ecommerce
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-48 overflow-y-auto p-4 border border-[#333] rounded-lg bg-[#2A2A2A]">
-                  {filteredNiches.map((niche: any) => (
-                    <div key={niche.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={niche.id}
-                        checked={selectedNiches.includes(niche.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedNiches(prev => [...prev, niche.id])
-                          } else {
-                            setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                          }
-                        }}
-                        className="border-[#444] data-[state=checked]:bg-blue-600"
-                      />
-                      <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                        {niche.name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
+                // Accordion view for ecommerce as well
+                <Accordion type="multiple" className="w-full">
+                  <AccordionItem value="ecommerce" className="border-[#333]">
+                    <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                      eCommerce Categories ({filteredNiches.length})
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                        {filteredNiches.map((niche: any) => (
+                          <div key={niche.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={niche.id}
+                              checked={selectedNiches.includes(niche.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedNiches(prev => [...prev, niche.id])
+                                } else {
+                                  setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                }
+                              }}
+                              className="border-[#444] data-[state=checked]:bg-blue-600"
+                            />
+                            <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                              {niche.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               )}
             </div>
 
