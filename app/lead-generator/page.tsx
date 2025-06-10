@@ -30,6 +30,9 @@ interface Lead {
   state_province?: string
   business_type: 'ecommerce' | 'local_service'
   niche_name?: string
+  instagram_handle?: string
+  facebook_page?: string
+  linkedin_profile?: string
   created_at: string
 }
 
@@ -48,7 +51,6 @@ export default function LeadGeneratorPage() {
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
-  const [isEnrichingEmails, setIsEnrichingEmails] = useState(false)
 
   // Load data on component mount
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function LeadGeneratorPage() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, created_at')
+        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, created_at')
         .eq('user_id', userId)
         .eq('brand_id', selectedBrandId)
         .order('created_at', { ascending: false })
@@ -209,48 +211,6 @@ export default function LeadGeneratorPage() {
     setSelectedLeads([])
   }
 
-  const enrichEmails = async () => {
-    if (selectedLeads.length === 0) {
-      toast.error('Please select leads to enrich emails')
-      return
-    }
-    
-    setIsEnrichingEmails(true)
-    
-    try {
-      const response = await fetch('/api/leads/enrich-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ leadIds: selectedLeads }),
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        const successCount = data.results.filter((r: any) => r.success).length
-        
-        if (successCount > 0) {
-          toast.success(`Found emails for ${successCount} leads!`)
-          // Reload leads to show updated emails
-          await loadExistingLeads()
-          // Clear selection
-          setSelectedLeads([])
-        } else {
-          toast.error('No emails found on the selected websites')
-        }
-      } else {
-        toast.error(data.error || 'Failed to enrich emails')
-      }
-    } catch (error) {
-      console.error('Email enrichment error:', error)
-      toast.error('Error enriching emails')
-    } finally {
-      setIsEnrichingEmails(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -278,25 +238,6 @@ export default function LeadGeneratorPage() {
             >
               <Send className="h-4 w-4 mr-2" />
               Send to Outreach ({selectedLeads.length})
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-[#333] hover:bg-[#222] text-blue-400 hover:text-blue-300"
-              onClick={enrichEmails}
-              disabled={selectedLeads.length === 0 || isEnrichingEmails}
-            >
-              {isEnrichingEmails ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Finding Emails...
-                </>
-              ) : (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Enrich Emails ({selectedLeads.length})
-                </>
-              )}
             </Button>
           </div>
         </div>
@@ -532,6 +473,7 @@ export default function LeadGeneratorPage() {
                     <TableHead className="text-gray-400">Business</TableHead>
                     <TableHead className="text-gray-400">Email</TableHead>
                     <TableHead className="text-gray-400">Phone</TableHead>
+                    <TableHead className="text-gray-400">Social</TableHead>
                     <TableHead className="text-gray-400">Location</TableHead>
                     <TableHead className="text-gray-400">Niche</TableHead>
                     <TableHead className="text-gray-400">Actions</TableHead>
@@ -595,6 +537,25 @@ export default function LeadGeneratorPage() {
                         ) : (
                           <span className="text-gray-500">-</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {lead.instagram_handle && (
+                            <div className="flex items-center gap-1 text-xs text-gray-400">
+                              <Globe className="h-3 w-3" />
+                              @{lead.instagram_handle}
+                            </div>
+                          )}
+                          {lead.facebook_page && (
+                            <div className="flex items-center gap-1 text-xs text-gray-400">
+                              <Globe className="h-3 w-3" />
+                              FB: {lead.facebook_page.length > 15 ? lead.facebook_page.substring(0, 15) + '...' : lead.facebook_page}
+                            </div>
+                          )}
+                          {!lead.instagram_handle && !lead.facebook_page && (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-gray-400">

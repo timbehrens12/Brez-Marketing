@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabase/client'
+import OpenAI from 'openai'
 
 const supabase = getSupabaseServiceClient()
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +61,9 @@ export async function POST(request: NextRequest) {
         city: lead.city,
         state_province: lead.state_province,
         niche_name: lead.niche_name,
+        instagram_handle: lead.instagram_handle,
+        facebook_page: lead.facebook_page,
+        linkedin_profile: lead.linkedin_profile,
         user_id: userId,
         business_type: businessType,
         status: 'new',
@@ -83,8 +92,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       leads: insertedLeads,
-      message: `Found ${insertedLeads.length} real businesses in your area`,
-      generatedBy: 'Google Places API + Real Data'
+      message: `Found ${insertedLeads.length} real businesses with AI-enriched contact data`,
+      generatedBy: 'Google Places API + ChatGPT Website Enrichment'
     })
 
   } catch (error) {
@@ -176,23 +185,158 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     const city = location.city || (addressParts.length > 1 ? addressParts[addressParts.length - 3] : null)
     const state = location.state || (addressParts.length > 1 ? addressParts[addressParts.length - 2]?.split(' ')[0] : null)
     
-    // Note: owner_name and email would require additional APIs or web scraping
-    const owner_name = null // Would need LinkedIn/company database lookup
-    const email = null // Would need Hunter.io or similar email finder
+    // AI-powered website enrichment
+    let enrichedData = {
+      owner_name: null,
+      email: null,
+      instagram_handle: null,
+      facebook_page: null,
+      linkedin_profile: null
+    }
+    
+    if (website && process.env.OPENAI_API_KEY) {
+      console.log(`Enriching data for ${name} using website: ${website}`)
+      enrichedData = await enrichWithAI(name, website, location.city, location.state)
+    }
     
     return {
       business_name: name,
-      owner_name,
-      email,
+      owner_name: enrichedData.owner_name,
+      email: enrichedData.email,
       phone,
       website,
       city,
       state_province: state,
-      niche_name: niche.name
+      niche_name: niche.name,
+      instagram_handle: enrichedData.instagram_handle,
+      facebook_page: enrichedData.facebook_page,
+      linkedin_profile: enrichedData.linkedin_profile
     }
     
   } catch (error) {
     console.error('Error enriching business data:', error)
+    return null
+  }
+}
+
+async function enrichWithAI(businessName: string, websiteUrl: string, city: string, state: string) {
+  try {
+    // First, try to fetch the website content
+    const websiteContent = await scrapeWebsite(websiteUrl)
+    
+    if (!websiteContent) {
+      console.log(`Could not scrape content from ${websiteUrl}`)
+      return {
+        owner_name: null,
+        email: null,
+        instagram_handle: null,
+        facebook_page: null,
+        linkedin_profile: null
+      }
+    }
+
+    // Use ChatGPT to extract contact information
+    const prompt = `
+You are a data extraction specialist. I need you to analyze the following website content for a business and extract contact information.
+
+Business: ${businessName}
+Location: ${city}, ${state}
+Website URL: ${websiteUrl}
+
+Website Content:
+${websiteContent.substring(0, 4000)} // Limit content to avoid token limits
+
+Please extract the following information and return it in this EXACT JSON format:
+{
+  "owner_name": "Owner or contact person name (if found)",
+  "email": "Primary business email address (if found)",
+  "instagram_handle": "Instagram username without @ (if found)",
+  "facebook_page": "Facebook page name or URL (if found)",
+  "linkedin_profile": "LinkedIn profile or company page URL (if found)"
+}
+
+Rules:
+- Only extract information that is clearly visible on the website
+- For email, look for contact@, info@, sales@, or owner emails
+- For social media, look for handles, links, or mentions
+- If not found, return null for that field
+- Be conservative - only extract if you're confident it's correct
+- Return only the JSON object, no additional text
+`
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+      max_tokens: 500
+    })
+
+    const result = response.choices[0]?.message?.content?.trim()
+    
+    if (result) {
+      try {
+        const extractedData = JSON.parse(result)
+        console.log(`AI extracted data for ${businessName}:`, extractedData)
+        return extractedData
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError)
+      }
+    }
+
+  } catch (error) {
+    console.error('Error in AI enrichment:', error)
+  }
+
+  // Return null values if AI extraction fails
+  return {
+    owner_name: null,
+    email: null,
+    instagram_handle: null,
+    facebook_page: null,
+    linkedin_profile: null
+  }
+}
+
+async function scrapeWebsite(url: string): Promise<string | null> {
+  try {
+    // Clean up the URL
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url
+    }
+
+    // Create abort controller for timeout
+    const abortController = new AbortController()
+    const timeoutId = setTimeout(() => abortController.abort(), 10000) // 10 second timeout
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      signal: abortController.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      console.log(`Failed to fetch ${url}: ${response.status}`)
+      return null
+    }
+
+    const html = await response.text()
+    
+    // Basic HTML parsing to extract text content
+    // Remove script and style tags
+    const cleanHtml = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ') // Remove HTML tags
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+
+    return cleanHtml
+
+  } catch (error) {
+    console.error(`Error scraping ${url}:`, error)
     return null
   }
 }
