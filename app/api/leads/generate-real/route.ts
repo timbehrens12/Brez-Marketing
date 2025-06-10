@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId, maxResults })
 
-    if (!userId || !brandId) {
+    if (!userId) {
       console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
     }
