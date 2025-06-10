@@ -301,8 +301,8 @@ export default function LeadGeneratorPage() {
 
         {/* Main Content with Tabs */}
         <Card className="bg-[#1A1A1A] border-[#333]">
-          <CardHeader>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <CardHeader>
               <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
                 <TabsTrigger value="search" className="data-[state=active]:bg-[#333] text-gray-400">
                   <Search className="h-4 w-4 mr-2" />
@@ -313,10 +313,9 @@ export default function LeadGeneratorPage() {
                   Results ({leads.length})
                 </TabsTrigger>
               </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            <TabsContent value="search" className="space-y-6 mt-0">
+            </CardHeader>
+            <CardContent>
+              <TabsContent value="search" className="space-y-6 mt-0">
               {/* Business Type Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
@@ -677,6 +676,7 @@ export default function LeadGeneratorPage() {
               </div>
             </TabsContent>
           </CardContent>
+        </Tabs>
         </Card>
 
 
