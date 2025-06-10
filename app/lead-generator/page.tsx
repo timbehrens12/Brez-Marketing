@@ -125,8 +125,42 @@ export default function LeadGeneratorPage() {
     }
   }
 
+  // Filter niches by business type
   const filteredNiches = niches.filter(niche => niche.category === businessType)
   
+  // Group niches by categories for better UX
+  const nicheGroups = {
+    'Home Services': [
+      'Construction', 'Roofing', 'HVAC', 'Plumbing', 'Electrical Services', 
+      'Painting', 'Flooring', 'Windows & Doors', 'Fencing', 'Concrete & Masonry',
+      'Appliance Repair', 'Locksmith', 'Cleaning Services', 'Landscaping', 'Pool Services', 'Tree Services'
+    ],
+    'Health & Wellness': [
+      'General Dentistry', 'Orthodontics', 'Healthcare', 'Chiropractic', 
+      'Physical Therapy', 'Mental Health', 'Optometry', 'Med Spas', 'Massage Therapy'
+    ],
+    'Personal Services': [
+      'Beauty Salons', 'Tattoo Shops', 'Personal Training', 'Fitness Centers',
+      'Photography', 'Pet Services'
+    ],
+    'Vehicle Services': [
+      'Auto Services', 'Auto Repair', 'Towing Services'
+    ],
+    'Business Services': [
+      'Professional Services', 'Marketing Agency', 'Real Estate', 'Insurance', 
+      'Financial Services', 'Computer Repair'
+    ],
+    'Specialty Services': [
+      'Food Services', 'Wedding Services', 'Event Planning', 'Moving Services',
+      'Security Services', 'Pest Control', 'Senior Care', 'Child Care', 'Tutoring'
+    ]
+  }
+
+  const getNichesByGroup = (groupName: string) => {
+    const groupNiches = nicheGroups[groupName as keyof typeof nicheGroups] || []
+    return filteredNiches.filter(niche => groupNiches.includes(niche.name))
+  }
+
   // Reset selected niches when business type changes
   useEffect(() => {
     setSelectedNiches([])
@@ -316,31 +350,75 @@ export default function LeadGeneratorPage() {
             {/* Niche Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-48 overflow-y-auto p-4 border border-[#333] rounded-lg bg-[#2A2A2A]">
-                {filteredNiches.map((niche: any) => (
-                  <div key={niche.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={niche.id}
-                      checked={selectedNiches.includes(niche.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedNiches(prev => [...prev, niche.id])
-                        } else {
-                          setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                        }
-                      }}
-                    />
-                    <Label
-                      htmlFor={niche.id}
-                      className="text-sm cursor-pointer hover:text-blue-400 text-gray-400"
-                      title={niche.description}
-                    >
-                      {niche.name}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              {selectedNiches.length > 0 && (
+              
+              {businessType === 'local_service' ? (
+                // Categorized view for local services
+                <div className="space-y-4">
+                  {Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
+                    const categoryNiches = getNichesByGroup(groupName)
+                    if (categoryNiches.length === 0) return null
+                    
+                    return (
+                      <div key={groupName} className="border border-[#333] rounded-lg bg-[#2A2A2A]">
+                        <div className="p-3 border-b border-[#333]">
+                          <h4 className="text-sm font-medium text-gray-300">{groupName}</h4>
+                        </div>
+                        <div className="p-3">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {categoryNiches.map((niche: any) => (
+                              <div key={niche.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={niche.id}
+                                  checked={selectedNiches.includes(niche.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedNiches(prev => [...prev, niche.id])
+                                    } else {
+                                      setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                    }
+                                  }}
+                                  className="border-[#444] data-[state=checked]:bg-blue-600"
+                                />
+                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                  {niche.name}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                // Original grid view for ecommerce
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-48 overflow-y-auto p-4 border border-[#333] rounded-lg bg-[#2A2A2A]">
+                  {filteredNiches.map((niche: any) => (
+                    <div key={niche.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={niche.id}
+                        checked={selectedNiches.includes(niche.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedNiches(prev => [...prev, niche.id])
+                          } else {
+                            setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                          }
+                        }}
+                        className="border-[#444] data-[state=checked]:bg-blue-600"
+                      />
+                      <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                        {niche.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedNiches.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-400">Selected Niches ({selectedNiches.length})</Label>
                 <div className="flex flex-wrap gap-2">
                   {selectedNiches.map(nicheId => {
                     const niche = niches.find(n => n.id === nicheId)
@@ -351,8 +429,8 @@ export default function LeadGeneratorPage() {
                     ) : null
                   })}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Location Filter (for local services) */}
             {businessType === 'local_service' && (
@@ -476,7 +554,6 @@ export default function LeadGeneratorPage() {
                     <TableHead className="text-gray-400">Social</TableHead>
                     <TableHead className="text-gray-400">Location</TableHead>
                     <TableHead className="text-gray-400">Niche</TableHead>
-                    <TableHead className="text-gray-400">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -570,19 +647,6 @@ export default function LeadGeneratorPage() {
                         <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
                           {lead.niche_name || 'General'}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            // TODO: Open lead details modal
-                          }}
-                        >
-                          View
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
