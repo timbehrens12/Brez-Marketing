@@ -360,7 +360,7 @@ export default function LeadGeneratorPage() {
                     if (categoryNiches.length === 0) return null
                     
                     return (
-                      <AccordionItem key={groupName} value={groupName} className="border-[#333]">
+                      <AccordionItem key={groupName} value={groupName} className="border-none">
                         <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
                           {groupName} ({categoryNiches.length})
                         </AccordionTrigger>
@@ -394,7 +394,7 @@ export default function LeadGeneratorPage() {
               ) : (
                 // Accordion view for ecommerce as well
                 <Accordion type="multiple" className="w-full">
-                  <AccordionItem value="ecommerce" className="border-[#333]">
+                                     <AccordionItem value="ecommerce" className="border-none">
                     <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
                       eCommerce Categories ({filteredNiches.length})
                     </AccordionTrigger>
