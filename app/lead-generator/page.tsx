@@ -157,7 +157,7 @@ export default function LeadGeneratorPage() {
           businessType,
           niches: selectedNiches,
           location,
-          brandId: selectedBrandId || 'default', // Use 'default' if no brand selected
+          brandId: selectedBrandId || null, // Use null if no brand selected
           userId,
           maxResults: 20
         })

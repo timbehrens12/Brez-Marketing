@@ -45,22 +45,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Store leads in database
-    const leadsToInsert = realLeads.map((lead: any) => ({
-      business_name: lead.business_name,
-      owner_name: lead.owner_name,
-      email: lead.email,
-      phone: lead.phone,
-      website: lead.website,
-      city: lead.city,
-      state_province: lead.state_province,
-      niche_name: lead.niche_name,
-      user_id: userId,
-      brand_id: brandId,
-      business_type: businessType,
-      status: 'new',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }))
+    const leadsToInsert = realLeads.map((lead: any) => {
+      const baseData = {
+        business_name: lead.business_name,
+        owner_name: lead.owner_name,
+        email: lead.email,
+        phone: lead.phone,
+        website: lead.website,
+        city: lead.city,
+        state_province: lead.state_province,
+        niche_name: lead.niche_name,
+        user_id: userId,
+        business_type: businessType,
+        status: 'new',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // Only include brand_id if it's provided
+      if (brandId) {
+        return { ...baseData, brand_id: brandId }
+      }
+      
+      return baseData
+    })
 
     const { data: insertedLeads, error: insertError } = await supabase
       .from('leads')
