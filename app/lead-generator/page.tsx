@@ -48,6 +48,7 @@ export default function LeadGeneratorPage() {
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
+  const [isEnrichingEmails, setIsEnrichingEmails] = useState(false)
 
   // Load data on component mount
   useEffect(() => {
@@ -208,6 +209,48 @@ export default function LeadGeneratorPage() {
     setSelectedLeads([])
   }
 
+  const enrichEmails = async () => {
+    if (selectedLeads.length === 0) {
+      toast.error('Please select leads to enrich emails')
+      return
+    }
+    
+    setIsEnrichingEmails(true)
+    
+    try {
+      const response = await fetch('/api/leads/enrich-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ leadIds: selectedLeads }),
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        const successCount = data.results.filter((r: any) => r.success).length
+        
+        if (successCount > 0) {
+          toast.success(`Found emails for ${successCount} leads!`)
+          // Reload leads to show updated emails
+          await loadExistingLeads()
+          // Clear selection
+          setSelectedLeads([])
+        } else {
+          toast.error('No emails found on the selected websites')
+        }
+      } else {
+        toast.error(data.error || 'Failed to enrich emails')
+      }
+    } catch (error) {
+      console.error('Email enrichment error:', error)
+      toast.error('Error enriching emails')
+    } finally {
+      setIsEnrichingEmails(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -235,6 +278,25 @@ export default function LeadGeneratorPage() {
             >
               <Send className="h-4 w-4 mr-2" />
               Send to Outreach ({selectedLeads.length})
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-[#333] hover:bg-[#222] text-blue-400 hover:text-blue-300"
+              onClick={enrichEmails}
+              disabled={selectedLeads.length === 0 || isEnrichingEmails}
+            >
+              {isEnrichingEmails ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Finding Emails...
+                </>
+              ) : (
+                <>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Enrich Emails ({selectedLeads.length})
+                </>
+              )}
             </Button>
           </div>
         </div>
