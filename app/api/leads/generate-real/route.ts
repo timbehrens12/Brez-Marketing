@@ -246,7 +246,7 @@ Website URL: ${websiteUrl}
 Website Content:
 ${websiteContent.substring(0, 4000)} // Limit content to avoid token limits
 
-Please extract the following information and return it in this EXACT JSON format:
+Please extract the following information and return it as a valid JSON object only:
 {
   "owner_name": "Owner or contact person name (if found)",
   "email": "Primary business email address (if found)",
@@ -255,13 +255,13 @@ Please extract the following information and return it in this EXACT JSON format
   "linkedin_profile": "LinkedIn profile or company page URL (if found)"
 }
 
-Rules:
+IMPORTANT: 
+- Return ONLY the JSON object, no markdown formatting, no backticks, no additional text
 - Only extract information that is clearly visible on the website
 - For email, look for contact@, info@, sales@, or owner emails
 - For social media, look for handles, links, or mentions
 - If not found, return null for that field
 - Be conservative - only extract if you're confident it's correct
-- Return only the JSON object, no additional text
 `
 
     const response = await openai.chat.completions.create({
@@ -275,11 +275,20 @@ Rules:
     
     if (result) {
       try {
-        const extractedData = JSON.parse(result)
+        // Clean the response by removing markdown code blocks if present
+        let cleanedResult = result
+        if (result.includes('```json')) {
+          cleanedResult = result.replace(/```json\s*/g, '').replace(/```\s*$/g, '').trim()
+        } else if (result.includes('```')) {
+          cleanedResult = result.replace(/```\s*/g, '').trim()
+        }
+        
+        const extractedData = JSON.parse(cleanedResult)
         console.log(`AI extracted data for ${businessName}:`, extractedData)
         return extractedData
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError)
+        console.error('Raw response:', result)
       }
     }
 
@@ -310,7 +319,12 @@ async function scrapeWebsite(url: string): Promise<string | null> {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
       },
       signal: abortController.signal
     })
@@ -318,7 +332,13 @@ async function scrapeWebsite(url: string): Promise<string | null> {
     clearTimeout(timeoutId)
 
     if (!response.ok) {
-      console.log(`Failed to fetch ${url}: ${response.status}`)
+      if (response.status === 403) {
+        console.log(`Access forbidden for ${url} (403) - site may block crawlers`)
+      } else if (response.status === 404) {
+        console.log(`Page not found for ${url} (404)`)
+      } else {
+        console.log(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
+      }
       return null
     }
 
@@ -335,8 +355,12 @@ async function scrapeWebsite(url: string): Promise<string | null> {
 
     return cleanHtml
 
-  } catch (error) {
-    console.error(`Error scraping ${url}:`, error)
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.log(`Request timeout for ${url}`)
+    } else {
+      console.error(`Error scraping ${url}:`, error.message)
+    }
     return null
   }
 }
