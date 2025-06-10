@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp, Instagram, Facebook, Linkedin } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -52,6 +52,7 @@ export default function LeadGeneratorPage() {
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
+  const [activeTab, setActiveTab] = useState('search')
 
   // Load data on component mount
   useEffect(() => {
@@ -214,6 +215,7 @@ export default function LeadGeneratorPage() {
         if (selectedBrandId) {
           await loadStats() // Only refresh stats if brand is selected
         }
+        setActiveTab('results') // Switch to results tab
         toast.success(`Generated ${result.leads.length} new leads!`)
       } else {
         toast.error('No leads found for the specified criteria')
@@ -246,6 +248,32 @@ export default function LeadGeneratorPage() {
     setSelectedLeads([])
   }
 
+  const getSocialMediaLink = (platform: string, handle: string) => {
+    switch (platform) {
+      case 'instagram':
+        return `https://instagram.com/${handle.replace('@', '')}`
+      case 'facebook':
+        return `https://facebook.com/${handle}`
+      case 'linkedin':
+        return `https://linkedin.com/company/${handle}`
+      default:
+        return '#'
+    }
+  }
+
+  const getSocialMediaIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram':
+        return <Instagram className="h-4 w-4" />
+      case 'facebook':
+        return <Facebook className="h-4 w-4" />
+      case 'linkedin':
+        return <Linkedin className="h-4 w-4" />
+      default:
+        return <Globe className="h-4 w-4" />
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -266,32 +294,30 @@ export default function LeadGeneratorPage() {
               <Plus className="h-4 w-4 mr-2" />
               Add Manual Lead
             </Button>
-            <Button
-              onClick={sendToOutreach}
-              disabled={selectedLeads.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send to Outreach ({selectedLeads.length})
-            </Button>
           </div>
         </div>
 
 
 
-        {/* Lead Generation Form */}
+        {/* Main Content with Tabs */}
         <Card className="bg-[#1A1A1A] border-[#333]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-gray-400">
-              <Search className="h-5 w-5" />
-              Generate New Leads
-            </CardTitle>
-            <CardDescription>
-              Configure your lead search parameters to find the perfect prospects
-            </CardDescription>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
+                <TabsTrigger value="search" className="data-[state=active]:bg-[#333] text-gray-400">
+                  <Search className="h-4 w-4 mr-2" />
+                  Lead Search
+                </TabsTrigger>
+                <TabsTrigger value="results" className="data-[state=active]:bg-[#333] text-gray-400">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Results ({leads.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Business Type Selector */}
+          <CardContent>
+            <TabsContent value="search" className="space-y-6 mt-0">
+              {/* Business Type Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
               <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
@@ -466,163 +492,194 @@ export default function LeadGeneratorPage() {
                 </>
               )}
             </Button>
+            </TabsContent>
+
+            <TabsContent value="results" className="mt-0">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-400">Generated Leads ({leads.length})</h3>
+                    <p className="text-sm text-gray-500">Click on leads to select them for outreach</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filter
+                    </Button>
+                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button
+                      onClick={sendToOutreach}
+                      disabled={selectedLeads.length === 0}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send to Outreach ({selectedLeads.length})
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#333]">
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedLeads.length === leads.length && leads.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedLeads(leads.map(lead => lead.id))
+                              } else {
+                                setSelectedLeads([])
+                              }
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="text-gray-400">Business</TableHead>
+                        <TableHead className="text-gray-400">Email</TableHead>
+                        <TableHead className="text-gray-400">Phone</TableHead>
+                        <TableHead className="text-gray-400">Social</TableHead>
+                        <TableHead className="text-gray-400">Location</TableHead>
+                        <TableHead className="text-gray-400">Niche</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.map((lead) => (
+                        <TableRow
+                          key={lead.id}
+                          className="border-[#333] hover:bg-[#222]/50 cursor-pointer"
+                          onClick={() => {
+                            if (selectedLeads.includes(lead.id)) {
+                              setSelectedLeads(prev => prev.filter(id => id !== lead.id))
+                            } else {
+                              setSelectedLeads(prev => [...prev, lead.id])
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedLeads.includes(lead.id)}
+                              onChange={() => {}}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-gray-400">{lead.business_name}</div>
+                              {lead.owner_name && (
+                                <div className="text-sm text-gray-500">{lead.owner_name}</div>
+                              )}
+                              {lead.website && (
+                                <a
+                                  href={lead.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Website
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {lead.email ? (
+                              <div className="flex items-center gap-1 text-sm text-gray-400">
+                                <Mail className="h-3 w-3" />
+                                {lead.email}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {lead.phone ? (
+                              <div className="flex items-center gap-1 text-sm text-gray-400">
+                                <Phone className="h-3 w-3" />
+                                {lead.phone}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {lead.instagram_handle && (
+                                <a
+                                  href={getSocialMediaLink('instagram', lead.instagram_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-pink-400 hover:text-pink-300"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`@${lead.instagram_handle}`}
+                                >
+                                  {getSocialMediaIcon('instagram')}
+                                </a>
+                              )}
+                              {lead.facebook_page && (
+                                <a
+                                  href={getSocialMediaLink('facebook', lead.facebook_page)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`Facebook: ${lead.facebook_page}`}
+                                >
+                                  {getSocialMediaIcon('facebook')}
+                                </a>
+                              )}
+                              {lead.linkedin_profile && (
+                                <a
+                                  href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:text-blue-400"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`LinkedIn: ${lead.linkedin_profile}`}
+                                >
+                                  {getSocialMediaIcon('linkedin')}
+                                </a>
+                              )}
+                              {!lead.instagram_handle && !lead.facebook_page && !lead.linkedin_profile && (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-400">
+                              {lead.city && lead.state_province ? (
+                                <div>{lead.city}, {lead.state_province}</div>
+                              ) : lead.city ? (
+                                <div>{lead.city}</div>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
+                              {lead.niche_name || 'General'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {leads.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No leads generated yet</p>
+                      <p className="text-sm">Configure your search parameters and click "Generate Leads"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
           </CardContent>
         </Card>
 
-        {/* Leads Table */}
-        <Card className="bg-[#1A1A1A] border-[#333]">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-gray-400">Generated Leads ({leads.length})</CardTitle>
-                <CardDescription>
-                  Click on leads to select them for outreach
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-                <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-[#333]">
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedLeads.length === leads.length && leads.length > 0}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setSelectedLeads(leads.map(lead => lead.id))
-                          } else {
-                            setSelectedLeads([])
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead className="text-gray-400">Business</TableHead>
-                    <TableHead className="text-gray-400">Email</TableHead>
-                    <TableHead className="text-gray-400">Phone</TableHead>
-                    <TableHead className="text-gray-400">Social</TableHead>
-                    <TableHead className="text-gray-400">Location</TableHead>
-                    <TableHead className="text-gray-400">Niche</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leads.map((lead) => (
-                    <TableRow
-                      key={lead.id}
-                      className="border-[#333] hover:bg-[#222]/50 cursor-pointer"
-                      onClick={() => {
-                        if (selectedLeads.includes(lead.id)) {
-                          setSelectedLeads(prev => prev.filter(id => id !== lead.id))
-                        } else {
-                          setSelectedLeads(prev => [...prev, lead.id])
-                        }
-                      }}
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedLeads.includes(lead.id)}
-                          onChange={() => {}}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-400">{lead.business_name}</div>
-                          {lead.owner_name && (
-                            <div className="text-sm text-gray-500">{lead.owner_name}</div>
-                          )}
-                          {lead.website && (
-                            <a
-                              href={lead.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Website
-                            </a>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {lead.email ? (
-                          <div className="flex items-center gap-1 text-sm text-gray-400">
-                            <Mail className="h-3 w-3" />
-                            {lead.email}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {lead.phone ? (
-                          <div className="flex items-center gap-1 text-sm text-gray-400">
-                            <Phone className="h-3 w-3" />
-                            {lead.phone}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {lead.instagram_handle && (
-                            <div className="flex items-center gap-1 text-xs text-gray-400">
-                              <Globe className="h-3 w-3" />
-                              @{lead.instagram_handle}
-                            </div>
-                          )}
-                          {lead.facebook_page && (
-                            <div className="flex items-center gap-1 text-xs text-gray-400">
-                              <Globe className="h-3 w-3" />
-                              FB: {lead.facebook_page.length > 15 ? lead.facebook_page.substring(0, 15) + '...' : lead.facebook_page}
-                            </div>
-                          )}
-                          {!lead.instagram_handle && !lead.facebook_page && (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-400">
-                          {lead.city && lead.state_province ? (
-                            <div>{lead.city}, {lead.state_province}</div>
-                          ) : lead.city ? (
-                            <div>{lead.city}</div>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
-                          {lead.niche_name || 'General'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {leads.length === 0 && (
-                <div className="text-center py-12 text-gray-400">
-                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No leads generated yet</p>
-                  <p className="text-sm">Configure your search parameters and click "Generate Leads"</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
 
       {/* Manual Lead Add Dialog */}
