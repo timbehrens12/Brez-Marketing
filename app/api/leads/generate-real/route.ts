@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Found niches:', nicheData?.length || 0)
 
-    const limitedResults = Math.min(maxResults, 20) // Max 20 to stay within API limits
+    // Limit results to prevent timeouts - max 10 for AI enrichment
+    const limitedResults = Math.min(maxResults, 10)
     
     // Find real businesses using Google Places API
     const realLeads = await findRealBusinesses(nicheData, location, limitedResults)
@@ -131,14 +132,15 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
       
       console.log(`Found ${placesData.results?.length || 0} places for ${niche.name}`)
       
-      // Process each business found
-      for (const place of (placesData.results || []).slice(0, Math.ceil(maxResults / niches.length))) {
-        if (foundBusinesses.length >= maxResults) break
-        
-        // Get detailed place information
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,business_status,rating,user_ratings_total,opening_hours,geometry&key=${process.env.GOOGLE_PLACES_API_KEY}`
+      // Process businesses in parallel for faster processing
+      const placesToProcess = (placesData.results || []).slice(0, Math.ceil(maxResults / niches.length))
+      const businessPromises = placesToProcess.map(async (place: any) => {
+        if (foundBusinesses.length >= maxResults) return null
         
         try {
+          // Get detailed place information
+          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,business_status,rating,user_ratings_total,opening_hours,geometry&key=${process.env.GOOGLE_PLACES_API_KEY}`
+          
           const detailsResponse = await fetch(detailsUrl)
           const detailsData = await detailsResponse.json()
           
@@ -149,18 +151,27 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
             if (business.business_status === 'OPERATIONAL') {
               const lead = await enrichBusinessData(business, niche, location)
               if (lead) {
-                foundBusinesses.push(lead)
                 console.log(`Added real business: ${business.name}`)
+                return lead
               }
             }
           }
         } catch (detailError) {
           console.error('Error getting place details:', detailError)
-          continue
+          return null
         }
         
-        // Rate limiting - pause between requests
-        await new Promise(resolve => setTimeout(resolve, 100))
+        return null
+      })
+
+      // Wait for all businesses to be processed in parallel
+      const processedBusinesses = await Promise.all(businessPromises)
+      
+      // Add successful results to foundBusinesses
+      for (const business of processedBusinesses) {
+        if (business && foundBusinesses.length < maxResults) {
+          foundBusinesses.push(business)
+        }
       }
       
     } catch (error) {
@@ -185,7 +196,7 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     const city = location.city || (addressParts.length > 1 ? addressParts[addressParts.length - 3] : null)
     const state = location.state || (addressParts.length > 1 ? addressParts[addressParts.length - 2]?.split(' ')[0] : null)
     
-    // AI-powered website enrichment
+    // AI-powered website enrichment with timeout
     let enrichedData = {
       owner_name: null,
       email: null,
@@ -196,7 +207,17 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     
     if (website && process.env.OPENAI_API_KEY) {
       console.log(`Enriching data for ${name} using website: ${website}`)
-      enrichedData = await enrichWithAI(name, website, location.city, location.state)
+      try {
+        // Add timeout wrapper for AI enrichment (15 seconds max)
+        enrichedData = await Promise.race([
+          enrichWithAI(name, website, location.city, location.state),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('AI enrichment timeout')), 15000)
+          )
+        ]) as any
+      } catch (timeoutError) {
+        console.log(`AI enrichment timed out for ${name}, using basic data`)
+      }
     }
     
     return {
@@ -313,9 +334,9 @@ async function scrapeWebsite(url: string): Promise<string | null> {
       url = 'https://' + url
     }
 
-    // Create abort controller for timeout
+    // Create abort controller for timeout - reduced to 5 seconds for faster processing
     const abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController.abort(), 10000) // 10 second timeout
+    const timeoutId = setTimeout(() => abortController.abort(), 5000) // 5 second timeout
 
     const response = await fetch(url, {
       headers: {
