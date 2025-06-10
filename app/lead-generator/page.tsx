@@ -51,12 +51,19 @@ export default function LeadGeneratorPage() {
 
   // Load data on component mount
   useEffect(() => {
+    // Load niches immediately - doesn't require brand selection
+    loadNiches()
+    
     if (selectedBrandId && userId) {
-      loadNiches()
       loadExistingLeads()
       loadStats()
     }
   }, [selectedBrandId, userId])
+
+  // Also load niches on initial mount
+  useEffect(() => {
+    loadNiches()
+  }, [])
 
   const loadNiches = async () => {
     try {
@@ -365,12 +372,23 @@ export default function LeadGeneratorPage() {
                     onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
                     className="bg-[#2A2A2A] border-[#444] text-gray-400"
                   />
-                  <Input
-                    placeholder="Radius (miles)"
+                  <Select
                     value={location.radius}
-                    onChange={(e) => setLocation(prev => ({ ...prev, radius: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
+                    onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Search radius" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 miles</SelectItem>
+                      <SelectItem value="10">10 miles</SelectItem>
+                      <SelectItem value="15">15 miles</SelectItem>
+                      <SelectItem value="25">25 miles</SelectItem>
+                      <SelectItem value="50">50 miles</SelectItem>
+                      <SelectItem value="75">75 miles</SelectItem>
+                      <SelectItem value="100">100 miles</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
