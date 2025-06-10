@@ -28,12 +28,8 @@ interface Lead {
   website?: string
   city?: string
   state_province?: string
-  instagram_handle?: string
-  facebook_page?: string
   business_type: 'ecommerce' | 'local_service'
   niche_name?: string
-  lead_score: number
-  priority: string
   created_at: string
 }
 
@@ -52,8 +48,6 @@ export default function LeadGeneratorPage() {
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
-  const [averageScore, setAverageScore] = useState(0)
-  // Always use real data - no more fake AI generation
 
   // Load data on component mount
   useEffect(() => {
@@ -85,13 +79,13 @@ export default function LeadGeneratorPage() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('*')
+        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, created_at')
         .eq('user_id', userId)
         .eq('brand_id', selectedBrandId)
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      setLeads(data || [])
+      setLeads((data as Lead[]) || [])
     } catch (error) {
       console.error('Error loading leads:', error)
     }
@@ -103,7 +97,7 @@ export default function LeadGeneratorPage() {
     try {
       const { data: allLeads, error } = await supabase
         .from('leads')
-        .select('lead_score, created_at')
+        .select('created_at')
         .eq('user_id', userId)
         .eq('brand_id', selectedBrandId)
       
@@ -114,13 +108,8 @@ export default function LeadGeneratorPage() {
         new Date(lead.created_at).toDateString() === today
       ).length || 0
       
-      const avgScore = allLeads?.length > 0 
-        ? Math.round(allLeads.reduce((sum, lead) => sum + lead.lead_score, 0) / allLeads.length)
-        : 0
-      
       setTotalLeads(allLeads?.length || 0)
       setTodayLeads(todayCount)
-      setAverageScore(avgScore)
     } catch (error) {
       console.error('Error loading stats:', error)
     }
@@ -210,22 +199,6 @@ export default function LeadGeneratorPage() {
     setSelectedLeads([])
   }
 
-  const getLeadScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400'
-    if (score >= 60) return 'text-yellow-400'
-    if (score >= 40) return 'text-orange-400'
-    return 'text-red-400'
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500/20 text-red-300 border-red-500/50'
-      case 'medium': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50'
-      case 'low': return 'bg-green-500/20 text-green-300 border-green-500/50'
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/50'
-    }
-  }
-
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -258,7 +231,7 @@ export default function LeadGeneratorPage() {
         </div>
 
         {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Total Leads</CardTitle>
@@ -281,19 +254,6 @@ export default function LeadGeneratorPage() {
               <div className="flex items-center text-sm text-blue-400 mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 Today's activity
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Average Score</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{averageScore > 0 ? averageScore : '--'}</div>
-              <div className="flex items-center text-sm text-yellow-400 mt-1">
-                <Star className="h-3 w-3 mr-1" />
-                Lead quality
               </div>
             </CardContent>
           </Card>
@@ -415,8 +375,6 @@ export default function LeadGeneratorPage() {
               </div>
             )}
 
-
-
             {/* Real Business Data Notice */}
             <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-4">
               <div className="flex items-center gap-2 text-green-400 font-medium">
@@ -424,8 +382,8 @@ export default function LeadGeneratorPage() {
                 Real Business Data
               </div>
               <p className="text-sm text-gray-300 mt-1">
-                This system finds actual businesses using Google Places API with real phone numbers, addresses, and websites. 
-                Shows "N/A" for data that cannot be verified.
+                This system finds actual businesses using Google Places API with verified phone numbers, addresses, and websites.
+                Perfect for phone and email outreach to local businesses.
               </p>
             </div>
 
@@ -492,9 +450,6 @@ export default function LeadGeneratorPage() {
                     <TableHead className="text-gray-400">Business</TableHead>
                     <TableHead className="text-gray-400">Contact</TableHead>
                     <TableHead className="text-gray-400">Location</TableHead>
-                    <TableHead className="text-gray-400">Social</TableHead>
-                    <TableHead className="text-gray-400">Score</TableHead>
-                    <TableHead className="text-gray-400">Priority</TableHead>
                     <TableHead className="text-gray-400">Niche</TableHead>
                     <TableHead className="text-gray-400">Actions</TableHead>
                   </TableRow>
@@ -562,27 +517,6 @@ export default function LeadGeneratorPage() {
                             <div>{lead.city}</div>
                           ) : null}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {lead.instagram_handle && (
-                            <Badge variant="outline" className="text-xs text-gray-400 border-gray-600">IG</Badge>
-                          )}
-                          {lead.facebook_page && (
-                            <Badge variant="outline" className="text-xs text-gray-400 border-gray-600">FB</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className={`flex items-center gap-1 ${getLeadScoreColor(lead.lead_score)}`}>
-                          <Star className="h-3 w-3" />
-                          {lead.lead_score}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getPriorityColor(lead.priority)}>
-                          {lead.priority}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
