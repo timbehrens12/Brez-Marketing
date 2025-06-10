@@ -468,7 +468,8 @@ export default function LeadGeneratorPage() {
                       />
                     </TableHead>
                     <TableHead className="text-gray-400">Business</TableHead>
-                    <TableHead className="text-gray-400">Contact</TableHead>
+                    <TableHead className="text-gray-400">Email</TableHead>
+                    <TableHead className="text-gray-400">Phone</TableHead>
                     <TableHead className="text-gray-400">Location</TableHead>
                     <TableHead className="text-gray-400">Niche</TableHead>
                     <TableHead className="text-gray-400">Actions</TableHead>
@@ -514,20 +515,24 @@ export default function LeadGeneratorPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          {lead.email && (
-                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                              <Mail className="h-3 w-3" />
-                              {lead.email}
-                            </div>
-                          )}
-                          {lead.phone && (
-                            <div className="flex items-center gap-1 text-sm text-gray-400">
-                              <Phone className="h-3 w-3" />
-                              {lead.phone}
-                            </div>
-                          )}
-                        </div>
+                        {lead.email ? (
+                          <div className="flex items-center gap-1 text-sm text-gray-400">
+                            <Mail className="h-3 w-3" />
+                            {lead.email}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {lead.phone ? (
+                          <div className="flex items-center gap-1 text-sm text-gray-400">
+                            <Phone className="h-3 w-3" />
+                            {lead.phone}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-gray-400">
