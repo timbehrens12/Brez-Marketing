@@ -130,8 +130,8 @@ export default function LeadGeneratorPage() {
   }, [businessType])
 
   const generateLeads = async () => {
-    if (!userId || !selectedBrandId) {
-      toast.error('Please select a brand first')
+    if (!userId) {
+      toast.error('Please sign in first')
       return
     }
 
@@ -157,7 +157,7 @@ export default function LeadGeneratorPage() {
           businessType,
           niches: selectedNiches,
           location,
-          brandId: selectedBrandId,
+          brandId: selectedBrandId || 'default', // Use 'default' if no brand selected
           userId,
           maxResults: 20
         })
@@ -173,7 +173,9 @@ export default function LeadGeneratorPage() {
       
       if (result.leads && result.leads.length > 0) {
         setLeads(prev => [...result.leads, ...prev])
-        await loadStats() // Refresh stats
+        if (selectedBrandId) {
+          await loadStats() // Only refresh stats if brand is selected
+        }
         toast.success(`Generated ${result.leads.length} new leads!`)
       } else {
         toast.error('No leads found for the specified criteria')

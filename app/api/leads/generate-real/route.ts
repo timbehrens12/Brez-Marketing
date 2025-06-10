@@ -46,12 +46,18 @@ export async function POST(request: NextRequest) {
 
     // Store leads in database
     const leadsToInsert = realLeads.map((lead: any) => ({
-      ...lead,
+      business_name: lead.business_name,
+      owner_name: lead.owner_name,
+      email: lead.email,
+      phone: lead.phone,
+      website: lead.website,
+      city: lead.city,
+      state_province: lead.state_province,
+      niche_name: lead.niche_name,
       user_id: userId,
       brand_id: brandId,
       business_type: businessType,
       status: 'new',
-      priority: calculatePriority(lead.lead_score),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }))
@@ -151,46 +157,20 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
 
 async function enrichBusinessData(business: any, niche: any, location: any) {
   try {
-    // Extract real data or mark as N/A
+    // Extract real data from Google Places
     const name = business.name || 'N/A'
-    const address = business.formatted_address || 'N/A'
-    const phone = business.formatted_phone_number || 'N/A'
-    const website = business.website || 'N/A'
-    const rating = business.rating || 0
-    const reviewCount = business.user_ratings_total || 0
+    const phone = business.formatted_phone_number || null
+    const website = business.website || null
     
     // Parse address for city/state
+    const address = business.formatted_address || ''
     const addressParts = address.split(', ')
-    const city = location.city || (addressParts.length > 1 ? addressParts[addressParts.length - 3] : 'N/A')
-    const state = location.state || (addressParts.length > 1 ? addressParts[addressParts.length - 2]?.split(' ')[0] : 'N/A')
+    const city = location.city || (addressParts.length > 1 ? addressParts[addressParts.length - 3] : null)
+    const state = location.state || (addressParts.length > 1 ? addressParts[addressParts.length - 2]?.split(' ')[0] : null)
     
-    // Try to find business owner/contact email (this would require additional APIs)
-    const owner_name = 'N/A' // Would need LinkedIn/company database lookup
-    const email = 'N/A' // Would need Hunter.io or similar email finder
-    
-    // Social media handles (would need social media APIs or web scraping)
-    const instagram_handle = 'N/A'
-    const facebook_page = 'N/A'
-    const linkedin_profile = 'N/A'
-    
-    // Calculate lead score based on real factors
-    let lead_score = 50 // Base score
-    
-    // Scoring factors based on real data
-    if (website && website !== 'N/A') lead_score += 15 // Has website
-    if (phone && phone !== 'N/A') lead_score += 10 // Has phone
-    if (rating >= 4.0) lead_score += 10 // Good rating
-    if (reviewCount >= 10) lead_score += 5 // Has reviews
-    if (reviewCount >= 50) lead_score += 5 // Many reviews
-    if (business.opening_hours?.open_now) lead_score += 5 // Currently open
-    
-    // Estimate revenue based on review count and rating (rough estimate)
-    let estimated_revenue = 200000 // Base estimate
-    if (reviewCount > 100) estimated_revenue = 500000
-    if (reviewCount > 500) estimated_revenue = 1000000
-    if (rating >= 4.5 && reviewCount > 50) estimated_revenue *= 1.5
-    
-    const ai_insights = generateRealInsights(business, rating, reviewCount, website !== 'N/A')
+    // Note: owner_name and email would require additional APIs or web scraping
+    const owner_name = null // Would need LinkedIn/company database lookup
+    const email = null // Would need Hunter.io or similar email finder
     
     return {
       business_name: name,
@@ -200,15 +180,7 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       website,
       city,
       state_province: state,
-      address,
-      instagram_handle,
-      facebook_page,
-      linkedin_profile,
-      niche_name: niche.name,
-      lead_score: Math.min(95, Math.max(40, Math.round(lead_score))),
-      estimated_revenue,
-      ai_insights,
-      pain_points: getPainPointsByNiche(niche.name)
+      niche_name: niche.name
     }
     
   } catch (error) {
@@ -217,57 +189,4 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
   }
 }
 
-function generateRealInsights(business: any, rating: number, reviewCount: number, hasWebsite: boolean) {
-  const insights = []
-  
-  if (!hasWebsite) {
-    insights.push('No website - major digital presence opportunity')
-  }
-  
-  if (rating < 4.0) {
-    insights.push('Low rating - reputation management needed')
-  } else if (rating >= 4.5) {
-    insights.push('Excellent rating - leverage for marketing')
-  }
-  
-  if (reviewCount < 10) {
-    insights.push('Few reviews - review generation campaign needed')
-  } else if (reviewCount > 100) {
-    insights.push('Strong review presence - good social proof')
-  }
-  
-  if (business.opening_hours?.open_now === false) {
-    insights.push('Currently closed - check operating hours')
-  }
-  
-  return insights.length > 0 ? insights.join('. ') : 'Established local business with growth potential'
-}
-
-function getPainPointsByNiche(nicheName: string) {
-  const painPointMap: { [key: string]: string[] } = {
-    'HVAC': ['Seasonal demand fluctuations', 'Emergency service competition'],
-    'Plumbing': ['24/7 service expectations', 'Emergency response time pressure'],
-    'Electrician': ['Safety compliance requirements', 'Technology upgrade demands'],
-    'Auto Repair': ['Customer trust issues', 'Parts availability delays'],
-    'Restaurant': ['High staff turnover', 'Food cost inflation'],
-    'Fitness Studio': ['Member retention challenges', 'Equipment maintenance costs'],
-    'Hair Salon': ['Appointment scheduling complexity', 'Product inventory management'],
-    'Dentist': ['Insurance claim processing', 'Patient anxiety management'],
-    'Veterinarian': ['Emergency case load', 'Pet owner emotional stress'],
-    'Real Estate': ['Market volatility', 'Lead quality issues'],
-    'Legal Services': ['Client acquisition costs', 'Case load management'],
-    'Accounting': ['Tax season overload', 'Client data security'],
-    'Cleaning Services': ['Staff reliability', 'Equipment maintenance'],
-    'Landscaping': ['Weather dependency', 'Seasonal revenue drops'],
-    'Pet Grooming': ['Difficult animals', 'Appointment no-shows'],
-    'Photography': ['Seasonal booking patterns', 'Equipment investment costs']
-  }
-  
-  return painPointMap[nicheName] || ['Customer acquisition challenges', 'Digital marketing gaps']
-}
-
-function calculatePriority(leadScore: number): string {
-  if (leadScore >= 80) return 'high'
-  if (leadScore >= 65) return 'medium'  
-  return 'low'
-} 
+ 
