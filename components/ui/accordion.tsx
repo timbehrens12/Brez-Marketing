@@ -14,7 +14,10 @@ const AccordionItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AccordionPrimitive.Item
     ref={ref}
-    className={cn("border-b", className)}
+    className={cn(
+      "border-b border-[#333] bg-[#1A1A1A] rounded-lg mb-2 overflow-hidden",
+      className
+    )}
     {...props}
   />
 ))
@@ -28,13 +31,17 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180",
+        "flex flex-1 items-center justify-between py-4 px-4 font-medium transition-all",
+        "text-gray-400 hover:text-white hover:bg-[#222]",
+        "border border-[#333] bg-[#1A1A1A]",
+        "[&[data-state=open]>svg]:rotate-180 [&[data-state=open]]:text-white [&[data-state=open]]:bg-[#222]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400",
         className
       )}
       {...props}
     >
       {children}
-      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 text-gray-400" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ))
@@ -46,10 +53,15 @@ const AccordionContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    className={cn(
+      "overflow-hidden text-sm transition-all",
+      "data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
+      "bg-[#1A1A1A] border-x border-b border-[#333] text-gray-300",
+      className
+    )}
     {...props}
   >
-    <div className={cn("pb-4 pt-0", className)}>{children}</div>
+    <div className={cn("pb-4 pt-0 px-4", className)}>{children}</div>
   </AccordionPrimitive.Content>
 ))
 
