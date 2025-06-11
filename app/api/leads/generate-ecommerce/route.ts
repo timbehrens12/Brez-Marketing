@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const prompt = `You are a market research assistant helping identify business opportunities in ecommerce.
 
-Generate 10 example ecommerce business profiles for market research purposes in these categories: ${nicheNames.join(', ')}
+Generate 5 example ecommerce business profiles for market research purposes in these categories: ${nicheNames.join(', ')}
 
 Create realistic but fictional business profiles with these characteristics:
 - Small to medium-sized online businesses
@@ -39,10 +39,7 @@ For each profile, provide:
 - TikTok handle (if applicable)
 - Website URL (.com format)
 - Contact email
-- Estimated monthly revenue range
-- Estimated Instagram follower count (1k-50k range)
 - Primary category from the provided niches
-- Brief marketing opportunity note
 
 Return ONLY a valid JSON array with this exact structure:
 [
@@ -53,18 +50,17 @@ Return ONLY a valid JSON array with this exact structure:
     "tiktok_handle": "examplebusiness_official",
     "website": "https://examplebusiness.com",
     "email": "hello@examplebusiness.com",
-    "monthly_revenue_estimate": "$15k-35k",
-    "follower_count_instagram": 12500,
-    "niche_name": "Apparel",
-    "marketing_prospect_reason": "Active social presence with growth potential"
+    "niche_name": "Apparel"
   }
 ]`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 1000,
+    }, {
+      timeout: 15000, // 15 second timeout
     });
 
     const responseContent = completion.choices[0].message.content || '';
