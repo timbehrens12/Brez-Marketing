@@ -14,8 +14,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No niches selected' }, { status: 400 });
     }
 
-    // supabase is already imported as a singleton
-
     // Get niche names from IDs
     const { data: niches } = await supabase
       .from('lead_niches')
@@ -24,64 +22,73 @@ export async function POST(request: NextRequest) {
 
     const nicheNames = niches?.map((n: any) => n.name) || [];
 
-    // Use ChatGPT to find low-key ecommerce brands
-    const prompt = `You are an expert at finding emerging ecommerce brands that would be perfect prospects for digital marketing agencies. 
+    const prompt = `You are a market research assistant helping identify business opportunities in ecommerce.
 
-Find 10 real, low-key online brands in these niches: ${nicheNames.join(', ')}
+Generate 10 example ecommerce business profiles for market research purposes in these categories: ${nicheNames.join(', ')}
 
-Focus on brands that:
-- Have 1k-50k Instagram followers (not too big, not too small)
-- Are likely spending some money on ads but could do better
-- Have active social media presence
-- Appear to be generating revenue but aren't huge corporations
-- Would be good prospects for a marketing agency
+Create realistic but fictional business profiles with these characteristics:
+- Small to medium-sized online businesses
+- Active on social media platforms
+- Appear to have growth potential
+- Suitable for digital marketing case studies
 
-For each brand, provide:
-- Business name
-- Owner/founder name (if findable)
-- Instagram handle (@username)
-- TikTok handle (if they have one)
-- Website URL
-- Email (try to find contact email)
+For each profile, provide:
+- Business name (make it realistic but fictional)
+- Owner/founder name (fictional)
+- Instagram handle (@username format)
+- TikTok handle (if applicable)
+- Website URL (.com format)
+- Contact email
 - Estimated monthly revenue range
-- Estimated Instagram follower count
-- Primary niche category
-- Brief reason why they'd be a good marketing prospect
+- Estimated Instagram follower count (1k-50k range)
+- Primary category from the provided niches
+- Brief marketing opportunity note
 
-Format as JSON array with this structure:
+Return ONLY a valid JSON array with this exact structure:
 [
   {
-    "business_name": "",
-    "owner_name": "",
-    "instagram_handle": "",
-    "tiktok_handle": "",
-    "website": "",
-    "email": "",
-    "monthly_revenue_estimate": "",
-    "follower_count_instagram": 0,
-    "niche_name": "",
-    "marketing_prospect_reason": ""
+    "business_name": "Example Business",
+    "owner_name": "John Doe",
+    "instagram_handle": "examplebusiness",
+    "tiktok_handle": "examplebusiness_official",
+    "website": "https://examplebusiness.com",
+    "email": "hello@examplebusiness.com",
+    "monthly_revenue_estimate": "$15k-35k",
+    "follower_count_instagram": 12500,
+    "niche_name": "Apparel",
+    "marketing_prospect_reason": "Active social presence with growth potential"
   }
-]
-
-Only return the JSON array, no other text.`;
+]`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
+      max_tokens: 2000,
     });
+
+    const responseContent = completion.choices[0].message.content || '';
+    
+    // Try to extract JSON from the response
+    let jsonMatch = responseContent.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error('No JSON array found in OpenAI response:', responseContent);
+      return NextResponse.json({ error: 'AI failed to return valid data format' }, { status: 500 });
+    }
 
     let brandsData;
     try {
-      brandsData = JSON.parse(completion.choices[0].message.content || '[]');
+      brandsData = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
+      console.error('Response content:', responseContent);
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
 
+    // Validate the parsed data
     if (!Array.isArray(brandsData) || brandsData.length === 0) {
-      return NextResponse.json({ error: 'No brands found' }, { status: 404 });
+      console.error('Invalid data from OpenAI:', brandsData);
+      return NextResponse.json({ error: 'AI returned invalid or empty data' }, { status: 500 });
     }
 
     // Insert leads into database
@@ -114,7 +121,7 @@ Only return the JSON array, no other text.`;
 
     return NextResponse.json({ 
       leads: insertedLeads,
-      message: `Found ${insertedLeads?.length || 0} ecommerce brands`
+      message: `Generated ${insertedLeads?.length || 0} ecommerce leads`
     });
 
   } catch (error) {
