@@ -300,9 +300,9 @@ export default function LeadGeneratorPage() {
 
 
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333]">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -490,7 +490,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333]">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
