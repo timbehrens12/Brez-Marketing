@@ -8,10 +8,14 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { selectedNiches, brandId } = await request.json();
+    const { selectedNiches, brandId, userId } = await request.json();
 
     if (!selectedNiches || selectedNiches.length === 0) {
       return NextResponse.json({ error: 'No niches selected' }, { status: 400 });
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User authentication required' }, { status: 401 });
     }
 
     // Get niche names from IDs
@@ -89,6 +93,7 @@ Return ONLY a valid JSON array with this exact structure:
 
     // Insert leads into database
     const leadsToInsert = brandsData.map((brand: any) => ({
+      user_id: userId,
       brand_id: brandId,
       business_name: brand.business_name || 'Unknown Business',
       owner_name: brand.owner_name || null,

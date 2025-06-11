@@ -202,7 +202,8 @@ export default function LeadGeneratorPage() {
       const requestBody = businessType === 'ecommerce'
         ? {
             selectedNiches,
-            brandId: selectedBrandId || null
+            brandId: selectedBrandId || null,
+            userId
           }
         : {
             businessType,
