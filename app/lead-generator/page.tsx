@@ -477,7 +477,8 @@ export default function LeadGeneratorPage() {
             <Button
               onClick={generateLeads}
               disabled={isGenerating || selectedNiches.length === 0}
-              className="w-full bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#222] hover:text-white"
+              variant="outline"
+              className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
             >
               {isGenerating ? (
                 <>
