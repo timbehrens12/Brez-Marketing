@@ -34,6 +34,14 @@ interface Lead {
   instagram_handle?: string
   facebook_page?: string
   linkedin_profile?: string
+  tiktok_handle?: string
+  monthly_revenue_estimate?: string
+  follower_count_instagram?: number
+  follower_count_tiktok?: number
+  engagement_rate?: number
+  ad_spend_estimate?: string
+  shopify_detected?: boolean
+  marketing_prospect_reason?: string
   created_at: string
 }
 
@@ -182,24 +190,34 @@ export default function LeadGeneratorPage() {
     setIsGenerating(true)
     
     try {
-      const apiEndpoint = '/api/leads/generate-real' // Always use real Google Places data
+      // Use different API endpoints for ecommerce vs local service
+      const apiEndpoint = businessType === 'ecommerce' 
+        ? '/api/leads/generate-ecommerce'
+        : '/api/leads/generate-real'
       
       // Add timeout to prevent hanging
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
+      const requestBody = businessType === 'ecommerce'
+        ? {
+            selectedNiches,
+            brandId: selectedBrandId || null
+          }
+        : {
+            businessType,
+            niches: selectedNiches,
+            location,
+            brandId: selectedBrandId || null,
+            userId,
+            maxResults: 20
+          }
+      
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({
-          businessType,
-          niches: selectedNiches,
-          location,
-          brandId: selectedBrandId || null, // Use null if no brand selected
-          userId,
-          maxResults: 20
-        })
+        body: JSON.stringify(requestBody)
       })
       
       clearTimeout(timeoutId)
@@ -215,8 +233,8 @@ export default function LeadGeneratorPage() {
         if (selectedBrandId) {
           await loadStats() // Only refresh stats if brand is selected
         }
-        setActiveTab('results') // Switch to results tab
-        toast.success(`Generated ${result.leads.length} new leads!`)
+        const leadType = businessType === 'ecommerce' ? 'ecommerce brands' : 'local businesses'
+        toast.success(`Found ${result.leads.length} ${leadType}!`)
       } else {
         toast.error('No leads found for the specified criteria')
       }
@@ -535,10 +553,20 @@ export default function LeadGeneratorPage() {
                           />
                         </TableHead>
                         <TableHead className="text-gray-400">Business</TableHead>
-                        <TableHead className="text-gray-400">Email</TableHead>
-                        <TableHead className="text-gray-400">Phone</TableHead>
-                        <TableHead className="text-gray-400">Social</TableHead>
-                        <TableHead className="text-gray-400">Location</TableHead>
+                        <TableHead className="text-gray-400">Contact</TableHead>
+                        <TableHead className="text-gray-400">Social Media</TableHead>
+                        {businessType === 'ecommerce' ? (
+                          <>
+                            <TableHead className="text-gray-400">Revenue Est.</TableHead>
+                            <TableHead className="text-gray-400">Followers</TableHead>
+                            <TableHead className="text-gray-400">Platform</TableHead>
+                          </>
+                        ) : (
+                          <>
+                            <TableHead className="text-gray-400">Phone</TableHead>
+                            <TableHead className="text-gray-400">Location</TableHead>
+                          </>
+                        )}
                         <TableHead className="text-gray-400">Niche</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -582,24 +610,21 @@ export default function LeadGeneratorPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {lead.email ? (
-                              <div className="flex items-center gap-1 text-sm text-gray-400">
-                                <Mail className="h-3 w-3" />
-                                {lead.email}
-                              </div>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {lead.phone ? (
-                              <div className="flex items-center gap-1 text-sm text-gray-400">
-                                <Phone className="h-3 w-3" />
-                                {lead.phone}
-                              </div>
-                            ) : (
-                              <span className="text-gray-500">-</span>
-                            )}
+                            <div className="text-sm text-gray-400">
+                              {lead.email && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Mail className="h-3 w-3" />
+                                  {lead.email}
+                                </div>
+                              )}
+                              {lead.phone && (
+                                <div className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {lead.phone}
+                                </div>
+                              )}
+                              {!lead.email && !lead.phone && <span className="text-gray-500">-</span>}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -644,15 +669,54 @@ export default function LeadGeneratorPage() {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-400">
-                              {lead.city && lead.state_province ? (
-                                <div>{lead.city}, {lead.state_province}</div>
-                              ) : lead.city ? (
-                                <div>{lead.city}</div>
-                              ) : null}
-                            </div>
-                          </TableCell>
+                          {businessType === 'ecommerce' ? (
+                            <>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).monthly_revenue_estimate || 
+                                   <span className="text-gray-500">Estimating...</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).follower_count_instagram ? 
+                                    `${((lead as any).follower_count_instagram / 1000).toFixed(1)}k IG` : 
+                                    <span className="text-gray-500">Analyzing...</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).shopify_detected ? (
+                                    <span className="text-green-400">Shopify</span>
+                                  ) : (
+                                    <span className="text-gray-500">Custom</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell>
+                                {lead.phone ? (
+                                  <div className="flex items-center gap-1 text-sm text-gray-400">
+                                    <Phone className="h-3 w-3" />
+                                    {lead.phone}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {lead.city && lead.state_province ? (
+                                    <div>{lead.city}, {lead.state_province}</div>
+                                  ) : lead.city ? (
+                                    <div>{lead.city}</div>
+                                  ) : <span className="text-gray-500">-</span>}
+                                </div>
+                              </TableCell>
+                            </>
+                          )}
                           <TableCell>
                             <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
                               {lead.niche_name || 'General'}
