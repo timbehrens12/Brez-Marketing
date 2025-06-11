@@ -102,11 +102,9 @@ Return ONLY a valid JSON array with this exact structure:
       niche_name: brand.niche_name || nicheNames[0],
       instagram_handle: brand.instagram_handle?.replace('@', '') || null,
       tiktok_handle: brand.tiktok_handle?.replace('@', '') || null,
-      monthly_revenue_estimate: brand.monthly_revenue_estimate || null,
-      follower_count_instagram: brand.follower_count_instagram || null,
-      marketing_prospect_reason: brand.marketing_prospect_reason || null,
-      shopify_detected: brand.website?.includes('shopify') || brand.website?.includes('.myshopify.com') || false,
-      lead_score: Math.floor(Math.random() * 40) + 60, // 60-100 score for AI-found leads
+      status: 'new',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }));
 
     const { data: insertedLeads, error: insertError } = await supabase
