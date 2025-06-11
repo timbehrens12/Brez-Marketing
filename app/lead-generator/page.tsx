@@ -52,7 +52,7 @@ export default function LeadGeneratorPage() {
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
-  const [activeTab, setActiveTab] = useState('search')
+
 
   // Load data on component mount
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function LeadGeneratorPage() {
   }
 
   // Filter niches by business type
-  const filteredNiches = niches.filter(niche => niche.category === businessType)
+  const filteredNiches = niches.filter(niche => niche.business_type === businessType)
   
   // Group niches by categories for better UX
   const nicheGroups = {
@@ -215,7 +215,6 @@ export default function LeadGeneratorPage() {
         if (selectedBrandId) {
           await loadStats() // Only refresh stats if brand is selected
         }
-        setActiveTab('results') // Switch to results tab
         toast.success(`Generated ${result.leads.length} new leads!`)
       } else {
         toast.error('No leads found for the specified criteria')
@@ -299,23 +298,18 @@ export default function LeadGeneratorPage() {
 
 
 
-        {/* Main Content with Tabs */}
-        <Card className="bg-[#1A1A1A] border-[#333]">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <CardHeader>
-              <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                <TabsTrigger value="search" className="data-[state=active]:bg-[#333] text-gray-400">
-                  <Search className="h-4 w-4 mr-2" />
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Search Panel */}
+          <div className="lg:col-span-1">
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-gray-400 flex items-center gap-2">
+                  <Search className="h-5 w-5" />
                   Lead Search
-                </TabsTrigger>
-                <TabsTrigger value="results" className="data-[state=active]:bg-[#333] text-gray-400">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Results ({leads.length})
-                </TabsTrigger>
-              </TabsList>
-            </CardHeader>
-            <CardContent>
-              <TabsContent value="search" className="space-y-6 mt-0">
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
               {/* Business Type Selector */}
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
@@ -323,11 +317,11 @@ export default function LeadGeneratorPage() {
                 <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
                   <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400">
                     <Globe className="h-4 w-4 mr-2" />
-                    Online eCommerce
+                    eCommerce
                   </TabsTrigger>
                   <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
                     <MapPin className="h-4 w-4 mr-2" />
-                    Local / IRL Services
+                    Local Business
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -337,10 +331,10 @@ export default function LeadGeneratorPage() {
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
-              {businessType === 'local_service' ? (
-                // Accordion view for local services
-                <Accordion type="multiple" className="w-full">
-                  {Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
+              <Accordion type="multiple" className="w-full">
+                {businessType === 'local_service' ? (
+                  // Local services grouped by category
+                  Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
                     const categoryNiches = getNichesByGroup(groupName)
                     if (categoryNiches.length === 0) return null
                     
@@ -350,7 +344,7 @@ export default function LeadGeneratorPage() {
                           {groupName} ({categoryNiches.length})
                         </AccordionTrigger>
                         <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 gap-2">
                             {categoryNiches.map((niche: any) => (
                               <div key={niche.id} className="flex items-center space-x-2">
                                 <Checkbox
@@ -374,41 +368,46 @@ export default function LeadGeneratorPage() {
                         </AccordionContent>
                       </AccordionItem>
                     )
-                  })}
-                </Accordion>
-              ) : (
-                // Accordion view for ecommerce as well
-                <Accordion type="multiple" className="w-full">
-                                     <AccordionItem value="ecommerce" className="border-none">
-                    <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                      eCommerce Categories ({filteredNiches.length})
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                        {filteredNiches.map((niche: any) => (
-                          <div key={niche.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={niche.id}
-                              checked={selectedNiches.includes(niche.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedNiches(prev => [...prev, niche.id])
-                                } else {
-                                  setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                                }
-                              }}
-                              className="border-[#444] data-[state=checked]:bg-blue-600"
-                            />
-                            <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                              {niche.name}
-                            </label>
+                  })
+                ) : (
+                  // eCommerce niches grouped by category
+                  [...new Set(filteredNiches.map((niche: any) => niche.category))].map(category => {
+                    const categoryNiches = filteredNiches.filter((niche: any) => niche.category === category)
+                    if (categoryNiches.length === 0) return null
+                    
+                    return (
+                      <AccordionItem key={category} value={category} className="border-none">
+                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                          {category} ({categoryNiches.length})
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                            {categoryNiches.map((niche: any) => (
+                              <div key={niche.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={niche.id}
+                                  checked={selectedNiches.includes(niche.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedNiches(prev => [...prev, niche.id])
+                                    } else {
+                                      setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                    }
+                                  }}
+                                  className="border-[#444] data-[state=checked]:bg-blue-600"
+                                />
+                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                  {niche.name}
+                                </label>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    )
+                  })
+                )}
+              </Accordion>
             </div>
 
             {selectedNiches.length > 0 && (
@@ -473,29 +472,40 @@ export default function LeadGeneratorPage() {
 
 
 
-            {/* Generate Button */}
-            <Button
-              onClick={generateLeads}
-              disabled={isGenerating || selectedNiches.length === 0}
-              variant="outline"
-              className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Finding Real Businesses...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Find Real Businesses
-                </>
-              )}
-            </Button>
-            </TabsContent>
+                {/* Generate Button */}
+                <Button
+                  onClick={generateLeads}
+                  disabled={isGenerating || selectedNiches.length === 0}
+                  variant="outline"
+                  className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Finding Real Businesses...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Find Real Businesses
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
 
-            <TabsContent value="results" className="mt-0">
-              <div className="space-y-4">
+          {/* Results Panel */}
+          <div className="lg:col-span-2">
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-gray-400 flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Results ({leads.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium text-gray-400">Generated Leads ({leads.length})</h3>
@@ -674,12 +684,11 @@ export default function LeadGeneratorPage() {
                     </div>
                   )}
                 </div>
-              </div>
-            </TabsContent>
-          </CardContent>
-        </Tabs>
-        </Card>
-
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
       </div>
 
