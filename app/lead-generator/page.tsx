@@ -502,18 +502,18 @@ export default function LeadGeneratorPage() {
                     <p className="text-sm text-gray-500">Click on leads to select them for outreach</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
+                    <Button variant="outline" size="sm" className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white">
                       <Filter className="h-4 w-4 mr-2" />
                       Filter
                     </Button>
-                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
+                    <Button variant="outline" size="sm" className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white">
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </Button>
                     <Button
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
                     >
                       <Send className="h-4 w-4 mr-2" />
                       Send to Outreach ({selectedLeads.length})
