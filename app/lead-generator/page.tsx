@@ -79,9 +79,37 @@ export default function LeadGeneratorPage() {
         .order('name', { ascending: true })
       
       if (error) throw error
+      console.log('Loaded niches:', data)
       setNiches(data || [])
     } catch (error) {
       console.error('Error loading niches:', error)
+      // If database doesn't have niches, let's add some mock data for development
+      const mockNiches = [
+        // eCommerce niches
+        { id: 'fashion', name: 'Fashion', business_type: 'ecommerce', category: 'Fashion' },
+        { id: 'beauty', name: 'Beauty & Cosmetics', business_type: 'ecommerce', category: 'Beauty' },
+        { id: 'health', name: 'Health & Wellness', business_type: 'ecommerce', category: 'Health' },
+        { id: 'tech', name: 'Technology', business_type: 'ecommerce', category: 'Technology' },
+        { id: 'home', name: 'Home & Garden', business_type: 'ecommerce', category: 'Home' },
+        { id: 'sports', name: 'Sports & Fitness', business_type: 'ecommerce', category: 'Sports' },
+        { id: 'automotive', name: 'Automotive', business_type: 'ecommerce', category: 'Automotive' },
+        { id: 'pets', name: 'Pet Supplies', business_type: 'ecommerce', category: 'Pets' },
+        { id: 'baby', name: 'Baby & Kids', business_type: 'ecommerce', category: 'Baby' },
+        { id: 'books', name: 'Books & Education', business_type: 'ecommerce', category: 'Education' },
+        
+        // Local service niches
+        { id: 'roofing', name: 'Roofing', business_type: 'local_service', category: 'Home Services' },
+        { id: 'plumbing', name: 'Plumbing', business_type: 'local_service', category: 'Home Services' },
+        { id: 'hvac', name: 'HVAC', business_type: 'local_service', category: 'Home Services' },
+        { id: 'electrical', name: 'Electrical Services', business_type: 'local_service', category: 'Home Services' },
+        { id: 'landscaping', name: 'Landscaping', business_type: 'local_service', category: 'Home Services' },
+        { id: 'cleaning', name: 'Cleaning Services', business_type: 'local_service', category: 'Home Services' },
+        { id: 'dentistry', name: 'General Dentistry', business_type: 'local_service', category: 'Health & Wellness' },
+        { id: 'chiropractic', name: 'Chiropractic', business_type: 'local_service', category: 'Health & Wellness' },
+        { id: 'auto-repair', name: 'Auto Repair', business_type: 'local_service', category: 'Vehicle Services' },
+        { id: 'real-estate', name: 'Real Estate', business_type: 'local_service', category: 'Business Services' }
+      ]
+      setNiches(mockNiches)
     }
   }
 
@@ -129,6 +157,11 @@ export default function LeadGeneratorPage() {
 
   // Filter niches by business type
   const filteredNiches = niches.filter(niche => niche.business_type === businessType)
+  
+  // Debug logging
+  console.log('Business type:', businessType)
+  console.log('All niches:', niches)
+  console.log('Filtered niches:', filteredNiches)
   
   // Group niches by categories for better UX
   const nicheGroups = {
@@ -331,83 +364,90 @@ export default function LeadGeneratorPage() {
             <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
-              <Accordion type="multiple" className="w-full">
-                {businessType === 'local_service' ? (
-                  // Local services grouped by category
-                  Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
-                    const categoryNiches = getNichesByGroup(groupName)
-                    if (categoryNiches.length === 0) return null
-                    
-                    return (
-                      <AccordionItem key={groupName} value={groupName} className="border-none">
-                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                          {groupName} ({categoryNiches.length})
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                          <div className="grid grid-cols-2 gap-2">
-                            {categoryNiches.map((niche: any) => (
-                              <div key={niche.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={niche.id}
-                                  checked={selectedNiches.includes(niche.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedNiches(prev => [...prev, niche.id])
-                                    } else {
-                                      setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                                    }
-                                  }}
-                                  className="border-[#444] data-[state=checked]:bg-blue-600"
-                                />
-                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                                  {niche.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )
-                  })
-                ) : (
-                  // eCommerce niches grouped by category
-                  [...new Set(filteredNiches.map((niche: any) => niche.category))].map(category => {
-                    const categoryNiches = filteredNiches.filter((niche: any) => niche.category === category)
-                    if (categoryNiches.length === 0) return null
-                    
-                    return (
-                      <AccordionItem key={category} value={category} className="border-none">
-                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                          {category} ({categoryNiches.length})
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                            {categoryNiches.map((niche: any) => (
-                              <div key={niche.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={niche.id}
-                                  checked={selectedNiches.includes(niche.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedNiches(prev => [...prev, niche.id])
-                                    } else {
-                                      setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                                    }
-                                  }}
-                                  className="border-[#444] data-[state=checked]:bg-blue-600"
-                                />
-                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                                  {niche.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )
-                  })
-                )}
-              </Accordion>
+              {filteredNiches.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No niches available for {businessType === 'ecommerce' ? 'eCommerce' : 'Local Business'}</p>
+                  <p className="text-sm mt-1">Loading categories...</p>
+                </div>
+              ) : (
+                <Accordion type="multiple" className="w-full">
+                  {businessType === 'local_service' ? (
+                    // Local services grouped by category
+                    Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
+                      const categoryNiches = getNichesByGroup(groupName)
+                      if (categoryNiches.length === 0) return null
+                      
+                      return (
+                        <AccordionItem key={groupName} value={groupName} className="border-none">
+                          <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                            {groupName} ({categoryNiches.length})
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                            <div className="grid grid-cols-1 gap-2">
+                              {categoryNiches.map((niche: any) => (
+                                <div key={niche.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={niche.id}
+                                    checked={selectedNiches.includes(niche.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedNiches(prev => [...prev, niche.id])
+                                      } else {
+                                        setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                      }
+                                    }}
+                                    className="border-[#444] data-[state=checked]:bg-blue-600"
+                                  />
+                                  <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                    {niche.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )
+                    })
+                  ) : (
+                    // eCommerce niches grouped by category
+                    [...new Set(filteredNiches.map((niche: any) => niche.category))].map(category => {
+                      const categoryNiches = filteredNiches.filter((niche: any) => niche.category === category)
+                      if (categoryNiches.length === 0) return null
+                      
+                      return (
+                        <AccordionItem key={category} value={category} className="border-none">
+                          <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                            {category} ({categoryNiches.length})
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                              {categoryNiches.map((niche: any) => (
+                                <div key={niche.id} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={niche.id}
+                                    checked={selectedNiches.includes(niche.id)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedNiches(prev => [...prev, niche.id])
+                                      } else {
+                                        setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                      }
+                                    }}
+                                    className="border-[#444] data-[state=checked]:bg-blue-600"
+                                  />
+                                  <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                    {niche.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )
+                    })
+                  )}
+                </Accordion>
+              )}
             </div>
 
             {selectedNiches.length > 0 && (
