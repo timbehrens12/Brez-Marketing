@@ -352,46 +352,18 @@ export default function LeadGeneratorPage() {
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
               {businessType === 'ecommerce' ? (
-                // Coming Soon Overlay for eCommerce
-                <div className="relative">
-                  <div className="absolute inset-0 bg-[#1A1A1A]/90 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <div className="bg-orange-500/20 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <Sparkles className="h-8 w-8 text-orange-400" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-orange-400 mb-2">eCommerce Lead Generation</h3>
-                      <p className="text-gray-400 text-sm mb-4">
-                        We're perfecting our eCommerce lead discovery system.<br />
-                        Coming soon with advanced Shopify detection and social media analytics!
-                      </p>
-                      <Badge className="bg-orange-500/20 text-orange-400">Coming Soon</Badge>
+                // Coming Soon Message for eCommerce
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-8">
+                  <div className="text-center">
+                    <div className="bg-orange-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                      <Sparkles className="h-10 w-10 text-orange-400" />
                     </div>
-                  </div>
-                  {/* Blurred background content */}
-                  <div className="opacity-30 pointer-events-none">
-                    <Accordion type="multiple" className="w-full">
-                      <AccordionItem value="ecommerce" className="border-none">
-                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                          eCommerce Categories ({filteredNiches.length})
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                            {filteredNiches.map((niche: any) => (
-                              <div key={niche.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={niche.id}
-                                  disabled
-                                  className="border-[#444] data-[state=checked]:bg-blue-600"
-                                />
-                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                                  {niche.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                    <h3 className="text-xl font-semibold text-orange-400 mb-3">eCommerce Lead Generation</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                      We're perfecting our eCommerce lead discovery system with advanced Shopify detection, 
+                      social media analytics, and revenue estimation features.
+                    </p>
+                    <Badge className="bg-orange-500/20 text-orange-400 px-4 py-2">Coming Soon</Badge>
                   </div>
                 </div>
               ) : businessType === 'local_service' ? (
