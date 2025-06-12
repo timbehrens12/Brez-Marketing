@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Loader2, Send, MessageSquare, Phone, Mail, Calendar, 
-  CheckCircle, Clock, AlertCircle, Star, Filter, Download, 
+  CheckCircle, Clock, AlertCircle, Star, 
   Plus, Edit, Copy, Sparkles, Target, Users, BarChart3
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -204,7 +204,7 @@ Would you be open to a 15-minute conversation this week to explore some quick wi
 
       const template = templates[messageType]
       setGeneratedMessage(template.content)
-      if (template.subject) {
+      if ('subject' in template && template.subject) {
         setMessageSubject(template.subject)
       }
       
@@ -388,14 +388,6 @@ Would you be open to a 15-minute conversation this week to explore some quick wi
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
-                      <Filter className="h-4 w-4 mr-2" />
-                      Filter
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </Button>
                   </div>
                 </div>
               </CardHeader>

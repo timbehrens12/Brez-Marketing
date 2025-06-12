@@ -183,7 +183,7 @@ async function generateRealisticBusinesses(
       city: businessType === 'local_service' ? (location.city || generateRandomCity()) : null,
       state_province: businessType === 'local_service' ? (location.state || generateRandomState()) : null,
       instagram_handle: `@${domain}`,
-      facebook_page: businessName,
+      facebook_page: domain,
       linkedin_profile: `linkedin.com/company/${domain}`,
       niche_name: niche.name,
       lead_score: leadScore,
