@@ -34,10 +34,9 @@ interface Lead {
   instagram_handle?: string
   facebook_page?: string
   linkedin_profile?: string
-  tiktok_handle?: string
+  twitter_handle?: string
   monthly_revenue_estimate?: string
   follower_count_instagram?: number
-  follower_count_tiktok?: number
   engagement_rate?: number
   ad_spend_estimate?: string
   shopify_detected?: boolean
@@ -118,7 +117,7 @@ export default function LeadGeneratorPage() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, created_at')
+        .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, created_at')
         .eq('user_id', userId)
         .eq('brand_id', selectedBrandId)
         .order('created_at', { ascending: false })
@@ -459,6 +458,8 @@ export default function LeadGeneratorPage() {
         return `https://facebook.com/${page}`
       case 'linkedin':
         return `https://linkedin.com/company/${handle}`
+      case 'twitter':
+        return `https://twitter.com/${handle.replace('@', '')}`
       default:
         return '#'
     }
@@ -472,6 +473,8 @@ export default function LeadGeneratorPage() {
         return <Facebook className="h-4 w-4" />
       case 'linkedin':
         return <Linkedin className="h-4 w-4" />
+      case 'twitter':
+        return <ExternalLink className="h-4 w-4" />
       default:
         return <Globe className="h-4 w-4" />
     }
@@ -911,7 +914,19 @@ export default function LeadGeneratorPage() {
                                   {getSocialMediaIcon('linkedin')}
                                 </a>
                               )}
-                              {!lead.instagram_handle && !lead.facebook_page && !lead.linkedin_profile && (
+                              {lead.twitter_handle && (
+                                <a
+                                  href={getSocialMediaLink('twitter', lead.twitter_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-400 hover:text-white"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`Twitter: @${lead.twitter_handle}`}
+                                >
+                                  {getSocialMediaIcon('twitter')}
+                                </a>
+                              )}
+                              {!lead.instagram_handle && !lead.facebook_page && !lead.linkedin_profile && !lead.twitter_handle && (
                                 <span className="text-gray-500">-</span>
                               )}
                             </div>

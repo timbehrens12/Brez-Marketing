@@ -29,8 +29,7 @@ async function findSocialMediaProfiles(businessName: string, city?: string, stat
     instagram_handle: 'N/A',
     facebook_page: 'N/A',
     linkedin_profile: 'N/A',
-    twitter_handle: 'N/A',
-    tiktok_handle: 'N/A'
+    twitter_handle: 'N/A'
   }
 
   try {
@@ -70,6 +69,7 @@ async function searchWithSerpAPI(businessName: string, city?: string, state?: st
     `"${businessName}"${location} instagram`,
     `"${businessName}"${location} facebook`,
     `"${businessName}"${location} linkedin`,
+    `"${businessName}"${location} twitter`,
     `"${businessName}"${location} social media`
   ]
 
@@ -99,8 +99,7 @@ function extractSocialFromSearch(searchResults: any[]) {
     instagram_handle: 'N/A',
     facebook_page: 'N/A',
     linkedin_profile: 'N/A',
-    twitter_handle: 'N/A',
-    tiktok_handle: 'N/A'
+    twitter_handle: 'N/A'
   }
 
   for (const result of searchResults) {
@@ -138,14 +137,6 @@ function extractSocialFromSearch(searchResults: any[]) {
         profiles.twitter_handle = `@${match[1]}`
       }
     }
-
-    // TikTok
-    if (url.includes('tiktok.com/@')) {
-      const match = url.match(/tiktok\.com\/@([^/\?]+)/)
-      if (match && match[1]) {
-        profiles.tiktok_handle = `@${match[1]}`
-      }
-    }
   }
 
   return profiles
@@ -156,18 +147,22 @@ async function extractSocialFromWebsite(website: string) {
     instagram_handle: 'N/A',
     facebook_page: 'N/A',
     linkedin_profile: 'N/A',
-    twitter_handle: 'N/A',
-    tiktok_handle: 'N/A'
+    twitter_handle: 'N/A'
   }
 
   try {
-    // Fetch the website homepage
+    // Fetch the website homepage with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    
     const response = await fetch(website, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      timeout: 10000
+      signal: controller.signal
     })
+    
+    clearTimeout(timeoutId)
 
     if (!response.ok) return profiles
 
@@ -178,8 +173,7 @@ async function extractSocialFromWebsite(website: string) {
       instagram: /(?:href=["']|@)(https?:\/\/(?:www\.)?instagram\.com\/([^\/\s"']+))/gi,
       facebook: /(?:href=["']|@)(https?:\/\/(?:www\.)?facebook\.com\/([^\/\s"']+))/gi,
       linkedin: /(?:href=["']|@)(https?:\/\/(?:www\.)?linkedin\.com\/company\/([^\/\s"']+))/gi,
-      twitter: /(?:href=["']|@)(https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^\/\s"']+))/gi,
-      tiktok: /(?:href=["']|@)(https?:\/\/(?:www\.)?tiktok\.com\/@([^\/\s"']+))/gi
+      twitter: /(?:href=["']|@)(https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^\/\s"']+))/gi
     }
 
     // Extract Instagram
@@ -204,12 +198,6 @@ async function extractSocialFromWebsite(website: string) {
     match = socialPatterns.twitter.exec(html)
     if (match && match[2]) {
       profiles.twitter_handle = `@${match[2]}`
-    }
-
-    // Extract TikTok
-    match = socialPatterns.tiktok.exec(html)
-    if (match && match[2]) {
-      profiles.tiktok_handle = `@${match[2]}`
     }
 
     return profiles
@@ -244,7 +232,6 @@ function generateSocialPatterns(businessName: string) {
     instagram_handle: variations[0] ? `@${variations[0]}` : 'N/A',
     facebook_page: variations[0] || 'N/A',
     linkedin_profile: variations[0] ? `company/${variations[0]}` : 'N/A',
-    twitter_handle: variations[0] ? `@${variations[0]}` : 'N/A',
-    tiktok_handle: variations[0] ? `@${variations[0]}` : 'N/A'
+    twitter_handle: variations[0] ? `@${variations[0]}` : 'N/A'
   }
 } 

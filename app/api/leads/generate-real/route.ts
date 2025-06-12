@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         instagram_handle: lead.instagram_handle,
         facebook_page: lead.facebook_page,
         linkedin_profile: lead.linkedin_profile,
+        twitter_handle: lead.twitter_handle,
         user_id: userId,
         business_type: businessType,
         status: 'new',
@@ -206,7 +207,8 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       email: null,
       instagram_handle: null,
       facebook_page: null,
-      linkedin_profile: null
+      linkedin_profile: null,
+      twitter_handle: null
     }
     
     if (website && process.env.OPENAI_API_KEY) {
@@ -235,7 +237,8 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
       niche_name: niche.name,
       instagram_handle: enrichedData.instagram_handle,
       facebook_page: enrichedData.facebook_page,
-      linkedin_profile: enrichedData.linkedin_profile
+      linkedin_profile: enrichedData.linkedin_profile,
+      twitter_handle: enrichedData.twitter_handle
     }
     
   } catch (error) {
@@ -256,7 +259,8 @@ async function enrichWithAI(businessName: string, websiteUrl: string, city: stri
         email: null,
         instagram_handle: null,
         facebook_page: null,
-        linkedin_profile: null
+        linkedin_profile: null,
+        twitter_handle: null
       }
     }
 
@@ -277,7 +281,8 @@ Please extract the following information and return it as a valid JSON object on
   "email": "Primary business email address (if found)",
   "instagram_handle": "Instagram username without @ (if found)",
   "facebook_page": "Facebook page name or URL (if found)",
-  "linkedin_profile": "LinkedIn profile or company page URL (if found)"
+  "linkedin_profile": "LinkedIn profile or company page URL (if found)",
+  "twitter_handle": "Twitter/X username without @ (if found)"
 }
 
 IMPORTANT: 
@@ -327,7 +332,8 @@ IMPORTANT:
     email: null,
     instagram_handle: null,
     facebook_page: null,
-    linkedin_profile: null
+    linkedin_profile: null,
+    twitter_handle: null
   }
 }
 
