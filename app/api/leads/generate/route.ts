@@ -185,6 +185,7 @@ async function generateRealisticBusinesses(
       instagram_handle: `@${domain}`,
       facebook_page: domain,
       linkedin_profile: `linkedin.com/company/${domain}`,
+      twitter_handle: `@${domain}`,
       niche_name: niche.name,
       lead_score: leadScore,
       ai_insights: generateIntelligentInsights(businessName, industry, businessType, leadScore, niche),
