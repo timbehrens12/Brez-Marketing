@@ -446,12 +446,17 @@ export default function LeadGeneratorPage() {
       case 'instagram':
         return `https://instagram.com/${handle.replace('@', '')}`
       case 'facebook':
-        // Only generate a Facebook link if the handle is a valid company page
-        if (!handle || handle.includes('profile.php') || handle.match(/\/groups\//)) return undefined;
+        // Only generate a Facebook link if the handle is a valid username or page (not @, not malformed, not a profile/group)
+        if (!handle || handle.startsWith('@') || handle.includes('profile.php') || handle.match(/\/groups\//i)) return undefined;
         // Remove any URL prefix and trailing slashes
-        const page = handle.replace(/^https?:\/\/(www\.)?facebook\.com\//, '').replace(/\/$/, '');
-        if (!page || page === '' || page.match(/^profile/)) return undefined;
-        return `https://www.facebook.com/${page}`
+        let page = handle.replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '');
+        // Remove leading @ if present
+        page = page.replace(/^@/, '');
+        // Disallow empty, generic, or malformed pages
+        if (!page || page === '' || page.toLowerCase() === 'facebook-f' || page.match(/^profile/)) return undefined;
+        // Only allow valid Facebook page usernames (alphanumeric, dot, dash, min 5 chars)
+        if (!/^[a-zA-Z0-9\.\-]{5,}$/.test(page)) return undefined;
+        return `https://facebook.com/${page}`
       case 'linkedin':
         return `https://linkedin.com/company/${handle}`
       default:
@@ -678,7 +683,32 @@ export default function LeadGeneratorPage() {
             )}
 
             {/* Usage Stats */}
-            {/* Storage indicator removed */}
+            {businessType === 'local_service' && (
+              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-medium text-gray-400">Daily Usage</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{dailyGenerations}</div>
+                    <div className="text-xs text-gray-500">of {MAX_WEEKLY_GENERATIONS} generations</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-white">{selectedNiches.length}</div>
+                    <div className="text-xs text-gray-500">of {MAX_NICHES_PER_SEARCH} niches selected</div>
+                  </div>
+                </div>
+                <div className="w-full bg-[#1A1A1A] rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${(dailyGenerations / MAX_WEEKLY_GENERATIONS) * 100}%` }}
+                  />
+                </div>
+                {selectedNiches.length > MAX_NICHES_PER_SEARCH && (
+                  <div className="text-xs text-orange-400">
+                    ⚠️ Please select maximum {MAX_NICHES_PER_SEARCH} niches for optimal results
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Generate Button */}
             <Button
@@ -715,19 +745,6 @@ export default function LeadGeneratorPage() {
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-gray-400" />
                     <h2 className="text-lg font-semibold text-gray-400">Generated Leads ({leads.length})</h2>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="text-gray-500">Storage:</div>
-                    <div className="text-gray-400">{totalLeads}/{MAX_LEADS_STORAGE}</div>
-                    <div className="w-16 bg-[#2A2A2A] rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          totalLeads > MAX_LEADS_STORAGE * 0.8 ? 'bg-red-500' : 
-                          totalLeads > MAX_LEADS_STORAGE * 0.6 ? 'bg-orange-500' : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min((totalLeads / MAX_LEADS_STORAGE) * 100, 100)}%` }}
-                      />
-                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
