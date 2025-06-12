@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { selectedNiches, brandId, userId, maxResults } = await request.json();
+    const { selectedNiches, brandId, userId } = await request.json();
 
     if (!selectedNiches || selectedNiches.length === 0) {
       return NextResponse.json({ error: 'No niches selected' }, { status: 400 });
@@ -16,37 +16,6 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 });
-    }
-
-    // Calculate intelligent lead generation count
-    const baseLeadsPerNiche = 8
-    const calculatedMaxResults = maxResults || Math.min(selectedNiches.length * baseLeadsPerNiche, 60)
-    
-    // Check usage limits if brandId is provided
-    let usageResult = null
-    if (brandId) {
-      try {
-        const usageCheck = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/usage/check`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brandId,
-            leadsToGenerate: calculatedMaxResults
-          })
-        })
-
-        if (usageCheck.ok) {
-          usageResult = await usageCheck.json()
-          if (!usageResult.allowed) {
-            return NextResponse.json({ 
-              error: usageResult.message,
-              usage: usageResult
-            }, { status: 429 })
-          }
-        }
-      } catch (error) {
-        console.warn('Usage check failed, proceeding without tracking:', error)
-      }
     }
 
     // Get niche names from IDs
@@ -57,31 +26,26 @@ export async function POST(request: NextRequest) {
 
     const nicheNames = niches?.map((n: any) => n.name) || [];
 
-    // Calculate leads per niche batch to optimize generation
-    const leadsPerBatch = Math.ceil(calculatedMaxResults / selectedNiches.length)
-    const maxLeadsPerBatch = Math.min(leadsPerBatch, 15) // Cap per batch
-
-    // Optimized prompt for better lead generation
-    const prompt = `Generate ${maxLeadsPerBatch} realistic ecommerce business leads for: ${nicheNames.join(', ')}
+    // Shorter, more focused prompt to reduce processing time
+    const prompt = `Generate 3 realistic small business leads for: ${nicheNames.join(', ')}
 
 Requirements:
-- Small to medium ecommerce businesses (1K-50K social followers)
-- Need digital marketing services (email, social, ads)
-- Realistic business names and contact info
+- Small businesses (500-10K social followers)
+- Need digital marketing services
 - Use "N/A" for missing data (no fake info)
 
 JSON format:
 [
   {
-    "business_name": "realistic ecommerce business name",
-    "owner_name": "owner name or N/A",
+    "business_name": "realistic name",
+    "owner_name": "name or N/A",
     "instagram_handle": "handle or N/A",
     "facebook_page": "page or N/A",
     "linkedin_profile": "company/profile or N/A", 
     "twitter_handle": "handle or N/A",
-    "website": "ecommerce website url or N/A",
-    "email": "business email or N/A",
-    "phone": "business phone or N/A",
+    "website": "url or N/A",
+    "email": "email or N/A",
+    "phone": "phone or N/A",
     "location": "City, State or N/A",
     "niche_name": "${nicheNames[0]}"
   }
@@ -89,14 +53,14 @@ JSON format:
 
 Return only the JSON array:`;
 
-    // Use optimized model and timeout for production
+    // Use faster model and shorter timeout
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Fast and reliable
+      model: "gpt-3.5-turbo", // Faster than gpt-4o-mini
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.8, // Slightly more creative for diverse leads
-      max_tokens: Math.min(maxLeadsPerBatch * 120, 1200), // Scale tokens with lead count
+      temperature: 0.7,
+      max_tokens: 800, // Reduced from 1500
     }, {
-      timeout: 15000, // 15 second timeout for larger batches
+      timeout: 10000, // 10 second timeout
     });
 
     const responseContent = completion.choices[0].message.content || '';
@@ -144,18 +108,10 @@ Return only the JSON array:`;
     }
 
     // Validate and clean the data
-    const validLeads = brandsData
-      .filter(brand => brand && brand.business_name && brand.business_name !== 'N/A')
-      .slice(0, calculatedMaxResults); // Use calculated max results
+    const validLeads = brandsData.filter(brand => brand && brand.business_name).slice(0, 5); // Max 5 leads
 
     if (validLeads.length === 0) {
-      return NextResponse.json({ 
-        error: 'No valid leads generated. Please try different niches or check your AI configuration.',
-        debug: {
-          niches: nicheNames,
-          rawResponse: responseContent.substring(0, 200)
-        }
-      }, { status: 500 });
+      return NextResponse.json({ error: 'No valid leads generated' }, { status: 500 });
     }
 
     // Insert leads into database with proper N/A handling
@@ -195,14 +151,8 @@ Return only the JSON array:`;
     }
 
     return NextResponse.json({ 
-      success: true,
       leads: insertedLeads,
-      message: `Generated ${insertedLeads?.length || 0} high-quality ecommerce leads`,
-      usage: usageResult,
-      generated_count: insertedLeads?.length || 0,
-      niches_processed: selectedNiches.length,
-      generation_method: 'AI (GPT-3.5-turbo)',
-      leads_per_niche: Math.round((insertedLeads?.length || 0) / selectedNiches.length)
+      message: `Generated ${insertedLeads?.length || 0} high-quality leads`
     });
 
   } catch (error: any) {

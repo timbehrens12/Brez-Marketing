@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessType, niches, location, keywords, brandId, userId, maxResults } = await request.json()
+    const { businessType, niches, location, keywords, brandId, userId, maxResults = 10 } = await request.json()
 
     if (!userId || !brandId) {
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
@@ -16,33 +16,6 @@ export async function POST(request: NextRequest) {
 
     if (!niches || niches.length === 0) {
       return NextResponse.json({ error: 'At least one niche must be selected' }, { status: 400 })
-    }
-
-    // Calculate intelligent lead generation count based on niches
-    const baseLeadsPerNiche = 15
-    const calculatedMaxResults = maxResults || Math.min(niches.length * baseLeadsPerNiche, 100)
-    
-    // Check usage limits before generation
-    const usageCheck = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/usage/check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        brandId,
-        leadsToGenerate: calculatedMaxResults
-      })
-    })
-
-    if (!usageCheck.ok) {
-      return NextResponse.json({ error: 'Failed to verify usage limits' }, { status: 500 })
-    }
-
-    const usageResult = await usageCheck.json()
-
-    if (!usageResult.allowed) {
-      return NextResponse.json({ 
-        error: usageResult.message,
-        usage: usageResult
-      }, { status: 429 })
     }
 
     // Get niche details from database
@@ -57,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Discover businesses using intelligent algorithms
-    const discoveredLeads = await discoverBusinesses(businessType, nicheData, location, keywords, calculatedMaxResults)
+    const discoveredLeads = await discoverBusinesses(businessType, nicheData, location, keywords, maxResults)
     
     if (discoveredLeads.length === 0) {
       return NextResponse.json({ 
@@ -94,10 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       leads: insertedLeads,
-      message: `Successfully discovered ${insertedLeads.length} potential businesses`,
-      usage: usageResult,
-      generated_count: insertedLeads.length,
-      niches_processed: nicheData.length
+      message: `Successfully discovered ${insertedLeads.length} potential businesses`
     })
 
   } catch (error) {
