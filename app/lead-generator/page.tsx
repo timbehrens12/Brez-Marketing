@@ -69,7 +69,7 @@ export default function LeadGeneratorPage() {
   
   // Moderation limits
   const MAX_NICHES_PER_SEARCH = 3
-  const MAX_LEADS_PER_GENERATION = 25
+  const MAX_LEADS_PER_GENERATION = 50
   const MAX_WEEKLY_GENERATIONS = 5
   const MIN_TIME_BETWEEN_GENERATIONS = 30000 // 30 seconds
   const MAX_LEADS_STORAGE = 500 // Max leads to keep in database per user
@@ -446,8 +446,12 @@ export default function LeadGeneratorPage() {
       case 'instagram':
         return `https://instagram.com/${handle.replace('@', '')}`
       case 'facebook':
-        // Fix Facebook links to use proper format
-        return `https://facebook.com/${handle.replace(/^https?:\/\/(www\.)?facebook\.com\//, '')}`
+        // Only generate a Facebook link if the handle is a valid page (not a personal profile or restricted content)
+        if (!handle || handle.includes('profile.php') || handle.match(/\/groups\//)) return undefined;
+        // Remove any URL prefix and trailing slashes
+        const page = handle.replace(/^https?:\/\/(www\.)?facebook\.com\//, '').replace(/\/$/, '');
+        if (!page || page === '' || page.match(/^profile/)) return undefined;
+        return `https://facebook.com/${page}`
       case 'linkedin':
         return `https://linkedin.com/company/${handle}`
       default:
