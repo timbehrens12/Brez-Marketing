@@ -133,9 +133,13 @@ Return only the JSON array:`;
       updated_at: new Date().toISOString()
     }));
 
+    // Use upsert to handle potential duplicates
     const { data: insertedLeads, error: insertError } = await supabase
       .from('leads')
-      .insert(leadsToInsert)
+      .upsert(leadsToInsert, { 
+        onConflict: 'user_id,business_name,email',
+        ignoreDuplicates: false 
+      })
       .select();
 
     if (insertError) {

@@ -80,9 +80,13 @@ export async function POST(request: NextRequest) {
       return baseData
     })
 
+    // Use upsert to handle potential duplicates
     const { data: insertedLeads, error: insertError } = await supabase
       .from('leads')
-      .insert(leadsToInsert)
+      .upsert(leadsToInsert, { 
+        onConflict: 'user_id,business_name,email',
+        ignoreDuplicates: false 
+      })
       .select()
 
     if (insertError) {
