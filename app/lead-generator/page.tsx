@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, BarChart3, Users, Clock, CheckCircle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -73,6 +73,28 @@ export default function LeadGeneratorPage() {
   const MIN_TIME_BETWEEN_GENERATIONS = 30000 // 30 seconds
   const MAX_LEADS_STORAGE = 500 // Max leads to keep in database per user
 
+  // Usage tracking state
+  const [usage, setUsage] = useState({
+    current_usage: 0,
+    daily_limit: 100,
+    remaining: 100,
+    percentage_used: 0
+  })
+  const [isLoadingUsage, setIsLoadingUsage] = useState(false)
+  
+  // Filtering state
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState({
+    hasEmail: false,
+    hasPhone: false,
+    hasSocialMedia: false,
+    hasWebsite: false,
+    minLeadScore: 0,
+    businessType: 'all',
+    searchQuery: ''
+  })
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
+
   // Load data on component mount
   useEffect(() => {
     // Load niches immediately - doesn't require brand selection
@@ -81,8 +103,107 @@ export default function LeadGeneratorPage() {
     if (selectedBrandId && userId) {
       loadExistingLeads()
       loadStats()
+      loadUsage()
     }
   }, [selectedBrandId, userId])
+
+  // Load usage data from API
+  const loadUsage = async () => {
+    if (!userId || !selectedBrandId) return
+    
+    setIsLoadingUsage(true)
+    try {
+      const response = await fetch(`/api/usage/check?brandId=${selectedBrandId}`)
+      if (response.ok) {
+        const usageData = await response.json()
+        setUsage(usageData)
+      }
+    } catch (error) {
+      console.error('Error loading usage:', error)
+    } finally {
+      setIsLoadingUsage(false)
+    }
+  }
+
+  // Apply filters to leads
+  useEffect(() => {
+    let filtered = [...leads]
+
+    // Search query filter
+    if (filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase()
+      filtered = filtered.filter(lead => 
+        lead.business_name.toLowerCase().includes(query) ||
+        lead.owner_name?.toLowerCase().includes(query) ||
+        lead.email?.toLowerCase().includes(query) ||
+        lead.niche_name?.toLowerCase().includes(query) ||
+        lead.city?.toLowerCase().includes(query)
+      )
+    }
+
+    // Contact info filters
+    if (filters.hasEmail) {
+      filtered = filtered.filter(lead => lead.email && lead.email !== 'N/A')
+    }
+
+    if (filters.hasPhone) {
+      filtered = filtered.filter(lead => lead.phone && lead.phone !== 'N/A')
+    }
+
+    if (filters.hasWebsite) {
+      filtered = filtered.filter(lead => lead.website && lead.website !== 'N/A')
+    }
+
+    if (filters.hasSocialMedia) {
+      filtered = filtered.filter(lead => 
+        (lead.instagram_handle && lead.instagram_handle !== 'N/A') ||
+        (lead.facebook_page && lead.facebook_page !== 'N/A') ||
+        (lead.linkedin_profile && lead.linkedin_profile !== 'N/A') ||
+        (lead.twitter_handle && lead.twitter_handle !== 'N/A')
+      )
+    }
+
+    // Business type filter
+    if (filters.businessType !== 'all') {
+      filtered = filtered.filter(lead => lead.business_type === filters.businessType)
+    }
+
+    // Lead score filter (if available)
+    if (filters.minLeadScore > 0) {
+      filtered = filtered.filter(lead => {
+        // Assuming lead_score is calculated or available
+        return true // Placeholder - would need lead_score field
+      })
+    }
+
+    setFilteredLeads(filtered)
+  }, [leads, filters])
+
+  // Reset filters
+  const resetFilters = () => {
+    setFilters({
+      hasEmail: false,
+      hasPhone: false,
+      hasSocialMedia: false,
+      hasWebsite: false,
+      minLeadScore: 0,
+      businessType: 'all',
+      searchQuery: ''
+    })
+  }
+
+  // Get active filter count for display
+  const getActiveFilterCount = () => {
+    let count = 0
+    if (filters.hasEmail) count++
+    if (filters.hasPhone) count++
+    if (filters.hasSocialMedia) count++
+    if (filters.hasWebsite) count++
+    if (filters.businessType !== 'all') count++
+    if (filters.searchQuery.trim()) count++
+    if (filters.minLeadScore > 0) count++
+    return count
+  }
 
   // Auto-cleanup when approaching storage limit
   useEffect(() => {
@@ -264,12 +385,27 @@ export default function LeadGeneratorPage() {
       return
     }
 
+    if (!selectedBrandId) {
+      toast.error('Please select a brand first')
+      return
+    }
+
     if (selectedNiches.length === 0) {
       toast.error('Please select at least one niche')
       return
     }
 
-    // Check moderation limits
+    // Calculate smart lead generation count based on niches
+    const baseLeadsPerNiche = businessType === 'ecommerce' ? 12 : 15
+    const calculatedLeads = Math.min(selectedNiches.length * baseLeadsPerNiche, 100)
+
+    // Check usage limits first (production-ready)
+    if (usage.remaining < calculatedLeads) {
+      toast.error(`Insufficient usage remaining. You need ${calculatedLeads} leads but only have ${usage.remaining} remaining today.`)
+      return
+    }
+
+    // Check legacy moderation limits
     const { canGenerate, reason } = canGenerateLeads()
     if (!canGenerate) {
       toast.error(reason)
@@ -292,16 +428,17 @@ export default function LeadGeneratorPage() {
       const requestBody = businessType === 'ecommerce'
         ? {
             selectedNiches,
-            brandId: selectedBrandId || null,
-            userId
+            brandId: selectedBrandId,
+            userId,
+            maxResults: calculatedLeads
           }
         : {
             businessType,
             niches: selectedNiches,
             location,
-            brandId: selectedBrandId || null,
+            brandId: selectedBrandId,
             userId,
-            maxResults: Math.min(MAX_LEADS_PER_GENERATION, 20)
+            maxResults: calculatedLeads
           }
       
       const response = await fetch(apiEndpoint, {
@@ -321,13 +458,20 @@ export default function LeadGeneratorPage() {
       
       if (result.leads && result.leads.length > 0) {
         setLeads(prev => [...result.leads, ...prev])
-        if (selectedBrandId) {
-          await loadStats() // Only refresh stats if brand is selected
+        // Update usage tracking
+        if (result.usage) {
+          setUsage(result.usage)
+        } else {
+          // Fallback: reload usage if not provided
+          await loadUsage()
         }
+        await loadStats() // Refresh stats
+        
         const leadType = businessType === 'ecommerce' ? 'ecommerce brands' : 'local businesses'
-        toast.success(`Found ${result.leads.length} ${leadType}!`)
+        const generationMethod = result.generation_method || 'AI'
+        toast.success(`Generated ${result.leads.length} ${leadType} using ${generationMethod}! (${usage.remaining - result.leads.length} leads remaining today)`)
       } else {
-        toast.error('No leads found for the specified criteria')
+        toast.error('No leads found for the specified criteria. Try different niches or broader search terms.')
       }
     } catch (error) {
       console.error('Error generating leads:', error)
@@ -491,7 +635,35 @@ export default function LeadGeneratorPage() {
               AI-powered business prospect identification and qualification system
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-4">
+            {/* Usage Indicator */}
+            {selectedBrandId && (
+              <Card className="bg-[#1A1A1A] border-[#333] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-blue-400" />
+                    <div className="text-sm">
+                      <div className="text-white font-medium">
+                        {isLoadingUsage ? 'Loading...' : `${usage.current_usage}/${usage.daily_limit}`}
+                      </div>
+                      <div className="text-gray-400 text-xs">Daily Usage</div>
+                    </div>
+                  </div>
+                  <div className="w-20 bg-[#2A2A2A] rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        usage.percentage_used > 80 ? 'bg-red-500' :
+                        usage.percentage_used > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min(usage.percentage_used, 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    {usage.remaining} left
+                  </div>
+                </div>
+              </Card>
+            )}
             <Button
               onClick={() => setIsAddingManual(true)}
               variant="outline"
@@ -519,14 +691,15 @@ export default function LeadGeneratorPage() {
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
               <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
                 <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
+                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400">
                     <Globe className="h-4 w-4 mr-2" />
                     eCommerce
-                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                    <Badge className="ml-2 bg-green-500/20 text-green-400 text-xs">AI Powered</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
                     <MapPin className="h-4 w-4 mr-2" />
                     Local Services
+                    <Badge className="ml-2 bg-blue-500/20 text-blue-400 text-xs">Google Places</Badge>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -537,20 +710,37 @@ export default function LeadGeneratorPage() {
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
               {businessType === 'ecommerce' ? (
-                // Coming Soon Message for eCommerce
-                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-8">
-                  <div className="text-center">
-                    <div className="bg-orange-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-                      <Sparkles className="h-10 w-10 text-orange-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-orange-400 mb-3">eCommerce Lead Generation</h3>
-                    <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-                      We're perfecting our eCommerce lead discovery system with advanced Shopify detection, 
-                      social media analytics, and revenue estimation features.
-                    </p>
-                    <Badge className="bg-orange-500/20 text-orange-400 px-4 py-2">Coming Soon</Badge>
-                  </div>
-                </div>
+                // eCommerce niche selection
+                <Accordion type="multiple" className="w-full">
+                  <AccordionItem value="ecommerce" className="border-none">
+                    <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                      eCommerce Categories ({filteredNiches.length})
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                        {filteredNiches.map((niche: any) => (
+                          <div key={niche.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={niche.id}
+                              checked={selectedNiches.includes(niche.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedNiches(prev => [...prev, niche.id])
+                                } else {
+                                  setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                }
+                              }}
+                              className="border-[#444] data-[state=checked]:bg-blue-600"
+                            />
+                            <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                              {niche.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               ) : businessType === 'local_service' ? (
                 // Accordion view for local services
                 <Accordion type="multiple" className="w-full">
@@ -590,39 +780,7 @@ export default function LeadGeneratorPage() {
                     )
                   })}
                 </Accordion>
-              ) : (
-                // Accordion view for ecommerce as well
-                <Accordion type="multiple" className="w-full">
-                                     <AccordionItem value="ecommerce" className="border-none">
-                    <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                      eCommerce Categories ({filteredNiches.length})
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                        {filteredNiches.map((niche: any) => (
-                          <div key={niche.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={niche.id}
-                              checked={selectedNiches.includes(niche.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedNiches(prev => [...prev, niche.id])
-                                } else {
-                                  setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                                }
-                              }}
-                              className="border-[#444] data-[state=checked]:bg-blue-600"
-                            />
-                            <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                              {niche.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              )}
+              ) : null}
             </div>
 
             {selectedNiches.length > 0 && (
@@ -716,24 +874,19 @@ export default function LeadGeneratorPage() {
             {/* Generate Button */}
             <Button
               onClick={generateLeads}
-              disabled={isGenerating || selectedNiches.length === 0 || businessType === 'ecommerce'}
+              disabled={isGenerating || selectedNiches.length === 0}
               variant="outline"
               className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white disabled:opacity-50"
             >
-              {businessType === 'ecommerce' ? (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Coming Soon
-                </>
-              ) : isGenerating ? (
+              {isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Finding Real Businesses...
+                  {businessType === 'ecommerce' ? 'Generating AI Leads...' : 'Finding Real Businesses...'}
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4 mr-2" />
-                  Find Real Businesses
+                  {businessType === 'ecommerce' ? 'Generate AI Leads' : 'Find Real Businesses'}
                 </>
               )}
             </Button>
@@ -747,8 +900,24 @@ export default function LeadGeneratorPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-5 w-5 text-gray-400" />
-                    <h2 className="text-lg font-semibold text-gray-400">Generated Leads ({leads.length})</h2>
+                    <h2 className="text-lg font-semibold text-gray-400">
+                      Generated Leads ({filteredLeads.length}{leads.length !== filteredLeads.length ? ` of ${leads.length}` : ''})
+                    </h2>
                   </div>
+                  <Button
+                    onClick={() => setShowFilters(!showFilters)}
+                    variant="outline"
+                    size="sm"
+                    className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                    {getActiveFilterCount() > 0 && (
+                      <Badge className="ml-2 bg-blue-600 text-white text-xs">
+                        {getActiveFilterCount()}
+                      </Badge>
+                    )}
+                  </Button>
                 </div>
                 <div className="flex gap-2">
                     <Button
@@ -786,6 +955,126 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
+              
+              {/* Filtering Section */}
+              {showFilters && (
+                <div className="px-6 py-4 border-b border-[#333] bg-[#0F0F0F]">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Search Query */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-400">Search</Label>
+                      <Input
+                        placeholder="Search business, owner, email..."
+                        value={filters.searchQuery}
+                        onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+                        className="bg-[#2A2A2A] border-[#444] text-gray-400 h-8"
+                      />
+                    </div>
+
+                    {/* Contact Filters */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-400">Contact Info</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasEmail"
+                            checked={filters.hasEmail}
+                            onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasEmail: !!checked }))}
+                            className="border-[#444] data-[state=checked]:bg-green-600"
+                          />
+                          <label htmlFor="hasEmail" className="text-xs text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            Has Email
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasPhone"
+                            checked={filters.hasPhone}
+                            onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasPhone: !!checked }))}
+                            className="border-[#444] data-[state=checked]:bg-green-600"
+                          />
+                          <label htmlFor="hasPhone" className="text-xs text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            Has Phone
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Social Media & Website */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-400">Online Presence</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasSocialMedia"
+                            checked={filters.hasSocialMedia}
+                            onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasSocialMedia: !!checked }))}
+                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                          />
+                          <label htmlFor="hasSocialMedia" className="text-xs text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Has Social Media
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasWebsite"
+                            checked={filters.hasWebsite}
+                            onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasWebsite: !!checked }))}
+                            className="border-[#444] data-[state=checked]:bg-purple-600"
+                          />
+                          <label htmlFor="hasWebsite" className="text-xs text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Globe className="h-3 w-3" />
+                            Has Website
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Business Type Filter */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-400">Business Type</Label>
+                      <Select
+                        value={filters.businessType}
+                        onValueChange={(value) => setFilters(prev => ({ ...prev, businessType: value }))}
+                      >
+                        <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 h-8">
+                          <SelectValue placeholder="All Types" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="ecommerce">eCommerce</SelectItem>
+                          <SelectItem value="local_service">Local Service</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Filter Actions */}
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#333]">
+                    <div className="text-sm text-gray-400">
+                      Showing {filteredLeads.length} of {leads.length} leads
+                      {getActiveFilterCount() > 0 && (
+                        <span className="ml-2 text-blue-400">({getActiveFilterCount()} filters active)</span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={resetFilters}
+                        variant="outline"
+                        size="sm"
+                        className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                        disabled={getActiveFilterCount() === 0}
+                      >
+                        Reset Filters
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
@@ -793,10 +1082,10 @@ export default function LeadGeneratorPage() {
                       <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
-                            checked={selectedLeads.length === leads.length && leads.length > 0}
+                            checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedLeads(leads.map(lead => lead.id))
+                                setSelectedLeads(filteredLeads.map(lead => lead.id))
                               } else {
                                 setSelectedLeads([])
                               }
@@ -821,7 +1110,7 @@ export default function LeadGeneratorPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {leads.map((lead) => (
+                      {filteredLeads.map((lead) => (
                         <TableRow
                           key={lead.id}
                           className="border-[#333] hover:bg-[#222]/50 cursor-pointer"
@@ -979,13 +1268,27 @@ export default function LeadGeneratorPage() {
                     </TableBody>
                   </Table>
                   
-                  {leads.length === 0 && (
+                  {leads.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
                       <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>No leads generated yet</p>
                       <p className="text-sm">Configure your search parameters and click "Generate Leads"</p>
                     </div>
-                  )}
+                  ) : filteredLeads.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">
+                      <Filter className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No leads match your current filters</p>
+                      <p className="text-sm">Try adjusting your filters or clearing them to see more leads</p>
+                      <Button
+                        onClick={resetFilters}
+                        variant="outline"
+                        size="sm"
+                        className="mt-4 border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                      >
+                        Reset Filters
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
