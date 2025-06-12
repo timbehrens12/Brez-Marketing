@@ -61,6 +61,18 @@ export default function LeadGeneratorPage() {
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
   const [activeTab, setActiveTab] = useState('search')
+  
+  // Rate limiting and moderation states
+  const [dailyGenerations, setDailyGenerations] = useState(0)
+  const [lastGenerationTime, setLastGenerationTime] = useState<Date | null>(null)
+  const [isClearing, setIsClearing] = useState(false)
+  
+  // Moderation limits
+  const MAX_NICHES_PER_SEARCH = 3
+  const MAX_LEADS_PER_GENERATION = 15
+  const MAX_DAILY_GENERATIONS = 10
+  const MIN_TIME_BETWEEN_GENERATIONS = 30000 // 30 seconds
+  const MAX_LEADS_STORAGE = 500 // Max leads to keep in database per user
 
   // Load data on component mount
   useEffect(() => {
@@ -72,6 +84,13 @@ export default function LeadGeneratorPage() {
       loadStats()
     }
   }, [selectedBrandId, userId])
+
+  // Auto-cleanup when approaching storage limit
+  useEffect(() => {
+    if (totalLeads > 0) {
+      autoCleanupLeads()
+    }
+  }, [totalLeads])
 
   // Also load niches on initial mount
   useEffect(() => {
@@ -130,9 +149,65 @@ export default function LeadGeneratorPage() {
       
       setTotalLeads(allLeads?.length || 0)
       setTodayLeads(todayCount)
+      
+      // Load daily generation count from localStorage
+      const storedData = localStorage.getItem(`leadGen_${userId}_${today}`)
+      if (storedData) {
+        try {
+          const { count, lastTime } = JSON.parse(storedData)
+          setDailyGenerations(count || 0)
+          setLastGenerationTime(lastTime ? new Date(lastTime) : null)
+        } catch (error) {
+          console.error('Error parsing stored generation data:', error)
+        }
+      }
     } catch (error) {
       console.error('Error loading stats:', error)
     }
+  }
+
+  // Check if user can generate leads
+  const canGenerateLeads = () => {
+    const now = new Date()
+    
+    // Check daily limit
+    if (dailyGenerations >= MAX_DAILY_GENERATIONS) {
+      return { canGenerate: false, reason: `Daily limit reached (${MAX_DAILY_GENERATIONS} generations per day)` }
+    }
+    
+    // Check time between generations
+    if (lastGenerationTime && (now.getTime() - lastGenerationTime.getTime()) < MIN_TIME_BETWEEN_GENERATIONS) {
+      const remainingTime = Math.ceil((MIN_TIME_BETWEEN_GENERATIONS - (now.getTime() - lastGenerationTime.getTime())) / 1000)
+      return { canGenerate: false, reason: `Please wait ${remainingTime} seconds before generating again` }
+    }
+    
+    // Check niche selection limit
+    if (selectedNiches.length > MAX_NICHES_PER_SEARCH) {
+      return { canGenerate: false, reason: `Please select maximum ${MAX_NICHES_PER_SEARCH} niches for better results` }
+    }
+    
+    // Check if approaching storage limit
+    if (totalLeads >= MAX_LEADS_STORAGE) {
+      return { canGenerate: false, reason: `Storage limit reached (${MAX_LEADS_STORAGE} leads). Please clear some leads first.` }
+    }
+    
+    return { canGenerate: true, reason: '' }
+  }
+
+  // Update generation tracking
+  const updateGenerationTracking = () => {
+    const now = new Date()
+    const today = now.toDateString()
+    const newCount = dailyGenerations + 1
+    
+    setDailyGenerations(newCount)
+    setLastGenerationTime(now)
+    
+    // Store in localStorage
+    localStorage.setItem(`leadGen_${userId}_${today}`, JSON.stringify({
+      count: newCount,
+      lastTime: now.toISOString()
+    }))
   }
 
   // Filter niches by business type
@@ -187,7 +262,15 @@ export default function LeadGeneratorPage() {
       return
     }
 
+    // Check moderation limits
+    const { canGenerate, reason } = canGenerateLeads()
+    if (!canGenerate) {
+      toast.error(reason)
+      return
+    }
+
     setIsGenerating(true)
+    updateGenerationTracking()
     
     try {
       // Use different API endpoints for ecommerce vs local service
@@ -211,7 +294,7 @@ export default function LeadGeneratorPage() {
             location,
             brandId: selectedBrandId || null,
             userId,
-            maxResults: 20
+            maxResults: Math.min(MAX_LEADS_PER_GENERATION, 20)
           }
       
       const response = await fetch(apiEndpoint, {
@@ -265,6 +348,89 @@ export default function LeadGeneratorPage() {
     }
     toast.success(`Sent ${selectedLeads.length} leads to Outreach Manager!`)
     setSelectedLeads([])
+  }
+
+  // Clear all leads
+  const clearAllLeads = async () => {
+    if (!userId || !selectedBrandId) return
+    
+    setIsClearing(true)
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('user_id', userId)
+        .eq('brand_id', selectedBrandId)
+      
+      if (error) throw error
+      
+      setLeads([])
+      setSelectedLeads([])
+      await loadStats()
+      toast.success('All leads cleared successfully')
+    } catch (error) {
+      console.error('Error clearing leads:', error)
+      toast.error('Failed to clear leads')
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
+  // Delete selected leads
+  const deleteSelectedLeads = async () => {
+    if (selectedLeads.length === 0) {
+      toast.error('Please select leads to delete')
+      return
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', selectedLeads)
+        .eq('user_id', userId!)
+      
+      if (error) throw error
+      
+      setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
+      setSelectedLeads([])
+      await loadStats()
+      toast.success(`Deleted ${selectedLeads.length} leads`)
+    } catch (error) {
+      console.error('Error deleting leads:', error)
+      toast.error('Failed to delete leads')
+    }
+  }
+
+  // Auto-cleanup old leads when approaching limit
+  const autoCleanupLeads = async () => {
+    if (!userId || !selectedBrandId || totalLeads < MAX_LEADS_STORAGE * 0.9) return
+    
+    try {
+      // Delete oldest 20% of leads when approaching limit
+      const { data: oldLeads } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('brand_id', selectedBrandId)
+        .order('created_at', { ascending: true })
+        .limit(Math.floor(totalLeads * 0.2))
+      
+      if (oldLeads && oldLeads.length > 0) {
+        const { error } = await supabase
+          .from('leads')
+          .delete()
+          .in('id', oldLeads.map(lead => lead.id))
+        
+        if (!error) {
+          await loadExistingLeads()
+          await loadStats()
+          toast.success(`Auto-cleaned ${oldLeads.length} old leads to make room for new ones`)
+        }
+      }
+    } catch (error) {
+      console.error('Error auto-cleaning leads:', error)
+    }
   }
 
   const getSocialMediaLink = (platform: string, handle: string) => {
@@ -502,6 +668,34 @@ export default function LeadGeneratorPage() {
 
 
 
+            {/* Usage Stats */}
+            {businessType === 'local_service' && (
+              <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-medium text-gray-400">Daily Usage</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-2xl font-bold text-white">{dailyGenerations}</div>
+                    <div className="text-xs text-gray-500">of {MAX_DAILY_GENERATIONS} generations</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-white">{selectedNiches.length}</div>
+                    <div className="text-xs text-gray-500">of {MAX_NICHES_PER_SEARCH} niches selected</div>
+                  </div>
+                </div>
+                <div className="w-full bg-[#1A1A1A] rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${(dailyGenerations / MAX_DAILY_GENERATIONS) * 100}%` }}
+                  />
+                </div>
+                {selectedNiches.length > MAX_NICHES_PER_SEARCH && (
+                  <div className="text-xs text-orange-400">
+                    ⚠️ Please select maximum {MAX_NICHES_PER_SEARCH} niches for optimal results
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Generate Button */}
             <Button
               onClick={generateLeads}
@@ -533,9 +727,24 @@ export default function LeadGeneratorPage() {
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-gray-400" />
-                  <h2 className="text-lg font-semibold text-gray-400">Generated Leads ({leads.length})</h2>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                    <h2 className="text-lg font-semibold text-gray-400">Generated Leads ({leads.length})</h2>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="text-gray-500">Storage:</div>
+                    <div className="text-gray-400">{totalLeads}/{MAX_LEADS_STORAGE}</div>
+                    <div className="w-16 bg-[#2A2A2A] rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          totalLeads > MAX_LEADS_STORAGE * 0.8 ? 'bg-red-500' : 
+                          totalLeads > MAX_LEADS_STORAGE * 0.6 ? 'bg-orange-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min((totalLeads / MAX_LEADS_STORAGE) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white">
@@ -545,6 +754,30 @@ export default function LeadGeneratorPage() {
                     <Button variant="outline" size="sm" className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white">
                       <Download className="h-4 w-4 mr-2" />
                       Export
+                    </Button>
+                    <Button
+                      onClick={deleteSelectedLeads}
+                      disabled={selectedLeads.length === 0}
+                      variant="outline"
+                      size="sm"
+                      className="bg-red-900/20 text-red-400 border-red-800 hover:bg-red-900/40 hover:text-red-300 disabled:opacity-50"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Delete ({selectedLeads.length})
+                    </Button>
+                    <Button
+                      onClick={clearAllLeads}
+                      disabled={isClearing || leads.length === 0}
+                      variant="outline"
+                      size="sm"
+                      className="bg-orange-900/20 text-orange-400 border-orange-800 hover:bg-orange-900/40 hover:text-orange-300 disabled:opacity-50"
+                    >
+                      {isClearing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                      )}
+                      Clear All
                     </Button>
                     <Button
                       onClick={sendToOutreach}
