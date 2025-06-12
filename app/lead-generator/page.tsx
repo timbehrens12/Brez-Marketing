@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp, Instagram, Facebook, Linkedin } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Filter, Download, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -49,7 +49,7 @@ export default function LeadGeneratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
   
-  const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('ecommerce')
+  const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState({ country: '', state: '', city: '', radius: '' })
   const [keywords, setKeywords] = useState('')
@@ -125,7 +125,7 @@ export default function LeadGeneratorPage() {
       
       const today = new Date().toDateString()
       const todayCount = allLeads?.filter(lead => 
-        new Date(lead.created_at).toDateString() === today
+        new Date(lead.created_at as string).toDateString() === today
       ).length || 0
       
       setTotalLeads(allLeads?.length || 0)
@@ -334,9 +334,10 @@ export default function LeadGeneratorPage() {
               <Label className="text-sm font-medium text-gray-400">Business Type</Label>
               <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
                 <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400">
+                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
                     <Globe className="h-4 w-4 mr-2" />
                     eCommerce
+                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
                   </TabsTrigger>
                   <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
                     <MapPin className="h-4 w-4 mr-2" />
@@ -347,10 +348,53 @@ export default function LeadGeneratorPage() {
             </div>
 
             {/* Niche Selector */}
-            <div className="space-y-3">
+            <div className="space-y-3 relative">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
-              {businessType === 'local_service' ? (
+              {businessType === 'ecommerce' ? (
+                // Coming Soon Overlay for eCommerce
+                <div className="relative">
+                  <div className="absolute inset-0 bg-[#1A1A1A]/90 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+                    <div className="text-center p-6">
+                      <div className="bg-orange-500/20 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <Sparkles className="h-8 w-8 text-orange-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-orange-400 mb-2">eCommerce Lead Generation</h3>
+                      <p className="text-gray-400 text-sm mb-4">
+                        We're perfecting our eCommerce lead discovery system.<br />
+                        Coming soon with advanced Shopify detection and social media analytics!
+                      </p>
+                      <Badge className="bg-orange-500/20 text-orange-400">Coming Soon</Badge>
+                    </div>
+                  </div>
+                  {/* Blurred background content */}
+                  <div className="opacity-30 pointer-events-none">
+                    <Accordion type="multiple" className="w-full">
+                      <AccordionItem value="ecommerce" className="border-none">
+                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
+                          eCommerce Categories ({filteredNiches.length})
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
+                            {filteredNiches.map((niche: any) => (
+                              <div key={niche.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={niche.id}
+                                  disabled
+                                  className="border-[#444] data-[state=checked]:bg-blue-600"
+                                />
+                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                  {niche.name}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+                </div>
+              ) : businessType === 'local_service' ? (
                 // Accordion view for local services
                 <Accordion type="multiple" className="w-full">
                   {Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
@@ -489,11 +533,16 @@ export default function LeadGeneratorPage() {
             {/* Generate Button */}
             <Button
               onClick={generateLeads}
-              disabled={isGenerating || selectedNiches.length === 0}
+              disabled={isGenerating || selectedNiches.length === 0 || businessType === 'ecommerce'}
               variant="outline"
-              className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+              className="w-full border-[#333] hover:bg-[#222] text-gray-400 hover:text-white disabled:opacity-50"
             >
-              {isGenerating ? (
+              {businessType === 'ecommerce' ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Coming Soon
+                </>
+              ) : isGenerating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Finding Real Businesses...
