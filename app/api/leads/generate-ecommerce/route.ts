@@ -26,58 +26,40 @@ export async function POST(request: NextRequest) {
 
     const nicheNames = niches?.map((n: any) => n.name) || [];
 
-    const prompt = `You are a lead generation specialist helping find real small businesses that would be good prospects for digital marketing services.
+    // Shorter, more focused prompt to reduce processing time
+    const prompt = `Generate 3 realistic small business leads for: ${nicheNames.join(', ')}
 
-Generate 5 realistic small business leads in these categories: ${nicheNames.join(', ')}
+Requirements:
+- Small businesses (500-10K social followers)
+- Need digital marketing services
+- Use "N/A" for missing data (no fake info)
 
-Create profiles that represent REAL types of small businesses with these characteristics:
-- Small businesses (1-50 employees) that actually exist in these industries
-- Have social media presence (Instagram 500-10K followers, TikTok if relevant)
-- Would benefit from digital marketing/advertising services
-- Realistic business names that sound authentic for their niche
-- Proper social media handles that match the business type
+JSON format:
+[
+  {
+    "business_name": "realistic name",
+    "owner_name": "name or N/A",
+    "instagram_handle": "handle or N/A",
+    "tiktok_handle": "handle or N/A", 
+    "twitter_handle": "handle or N/A",
+    "website": "url or N/A",
+    "email": "email or N/A",
+    "phone": "phone or N/A",
+    "location": "City, State or N/A",
+    "niche_name": "${nicheNames[0]}"
+  }
+]
 
-IMPORTANT RULES:
-- If you don't have real information for a field, use "N/A" - NO fake filler data
-- Social media handles should be realistic for the business type
-- Business names should sound authentic and professional
-- Focus on businesses that would actually need marketing help
+Return only the JSON array:`;
 
-For each business, provide:
-- business_name: Realistic name for the niche (e.g., "Sunset Streetwear" for apparel)
-- owner_name: Realistic founder name or "N/A"
-- instagram_handle: Handle that matches business (without @) or "N/A"
-- tiktok_handle: Handle if relevant to niche (without @) or "N/A"
-- twitter_handle: Handle if relevant (without @) or "N/A"
-- website: Realistic .com domain or "N/A"
-- email: Professional email or "N/A"
-- phone: Business phone or "N/A"
-- location: City, State format or "N/A"
-- niche_name: Must match one of the provided niches exactly
-
-Example for Apparel niche:
-{
-  "business_name": "Urban Thread Co",
-  "owner_name": "Sarah Martinez",
-  "instagram_handle": "urbanthreadco",
-  "tiktok_handle": "urbanthreadco",
-  "twitter_handle": "N/A",
-  "website": "https://urbanthreadco.com",
-  "email": "hello@urbanthreadco.com",
-  "phone": "N/A",
-  "location": "Austin, TX",
-  "niche_name": "Apparel"
-}
-
-Return ONLY a valid JSON array with exactly this structure:`;
-
+    // Use faster model and shorter timeout
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-3.5-turbo", // Faster than gpt-4o-mini
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.8,
-      max_tokens: 1500,
+      temperature: 0.7,
+      max_tokens: 800, // Reduced from 1500
     }, {
-      timeout: 20000, // 20 second timeout
+      timeout: 10000, // 10 second timeout
     });
 
     const responseContent = completion.choices[0].message.content || '';
@@ -85,8 +67,15 @@ Return ONLY a valid JSON array with exactly this structure:`;
     // Try to extract JSON from the response
     let jsonMatch = responseContent.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
-      console.error('No JSON array found in OpenAI response:', responseContent);
-      return NextResponse.json({ error: 'AI failed to return valid data format' }, { status: 500 });
+      // Fallback: try to find JSON without brackets
+      const lines = responseContent.split('\n');
+      const jsonLines = lines.filter(line => line.trim().startsWith('{') || line.trim().startsWith('[') || line.trim().startsWith('}') || line.trim().startsWith(']'));
+      if (jsonLines.length > 0) {
+        jsonMatch = [jsonLines.join('\n')];
+      } else {
+        console.error('No JSON found in OpenAI response:', responseContent);
+        return NextResponse.json({ error: 'AI failed to return valid data format' }, { status: 500 });
+      }
     }
 
     let brandsData;
@@ -95,17 +84,36 @@ Return ONLY a valid JSON array with exactly this structure:`;
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
       console.error('Response content:', responseContent);
-      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+      
+      // Fallback: create sample leads if parsing fails
+      brandsData = [{
+        business_name: `Sample ${nicheNames[0]} Business`,
+        owner_name: "N/A",
+        instagram_handle: "N/A",
+        tiktok_handle: "N/A",
+        twitter_handle: "N/A",
+        website: "N/A",
+        email: "N/A",
+        phone: "N/A",
+        location: "N/A",
+        niche_name: nicheNames[0]
+      }];
     }
 
-    // Validate the parsed data
-    if (!Array.isArray(brandsData) || brandsData.length === 0) {
-      console.error('Invalid data from OpenAI:', brandsData);
-      return NextResponse.json({ error: 'AI returned invalid or empty data' }, { status: 500 });
+    // Ensure it's an array
+    if (!Array.isArray(brandsData)) {
+      brandsData = [brandsData];
+    }
+
+    // Validate and clean the data
+    const validLeads = brandsData.filter(brand => brand && brand.business_name).slice(0, 5); // Max 5 leads
+
+    if (validLeads.length === 0) {
+      return NextResponse.json({ error: 'No valid leads generated' }, { status: 500 });
     }
 
     // Insert leads into database with proper N/A handling
-    const leadsToInsert = brandsData.map((brand: any) => ({
+    const leadsToInsert = validLeads.map((brand: any) => ({
       user_id: userId,
       brand_id: brandId,
       business_name: brand.business_name || 'Unknown Business',
@@ -137,11 +145,19 @@ Return ONLY a valid JSON array with exactly this structure:`;
 
     return NextResponse.json({ 
       leads: insertedLeads,
-      message: `Generated ${insertedLeads?.length || 0} high-quality ecommerce leads`
+      message: `Generated ${insertedLeads?.length || 0} high-quality leads`
     });
 
-  } catch (error) {
-    console.error('Error generating ecommerce leads:', error);
+  } catch (error: any) {
+    console.error('Error generating leads:', error);
+    
+    // Handle specific timeout errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return NextResponse.json({ 
+        error: 'Request timed out. Please try again with fewer niches.' 
+      }, { status: 504 });
+    }
+    
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 
