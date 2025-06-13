@@ -306,16 +306,19 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
               }
             }
           }
-        } catch (detailError) {
-          console.error('Error getting place details:', detailError)
+        } catch (detailError: any) {
+          console.log(`Error getting place details for ${place.name || 'unknown business'}: ${detailError.message || 'Unknown error'}`)
           return null
         }
         
         return null
       })
 
-      // Wait for all businesses to be processed in parallel
-      const processedBusinesses = await Promise.all(businessPromises)
+      // Wait for all businesses to be processed in parallel - use allSettled to continue even if some fail
+      const processedBusinessResults = await Promise.allSettled(businessPromises)
+      const processedBusinesses = processedBusinessResults
+        .filter(result => result.status === 'fulfilled' && result.value !== null)
+        .map(result => (result as PromiseFulfilledResult<any>).value)
       
       // Add successful results to foundBusinesses
       for (const business of processedBusinesses) {
@@ -359,15 +362,15 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     if (website && process.env.OPENAI_API_KEY) {
       console.log(`Enriching data for ${name} using website: ${website}`)
       try {
-        // Add timeout wrapper for AI enrichment (15 seconds max)
+        // Add timeout wrapper for AI enrichment (10 seconds max for faster processing)
         enrichedData = await Promise.race([
           enrichWithAI(name, website, location.city, location.state),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI enrichment timeout')), 15000)
+            setTimeout(() => reject(new Error('AI enrichment timeout')), 10000)
           )
         ]) as any
-      } catch (timeoutError) {
-        console.log(`AI enrichment timed out for ${name}, using basic data`)
+      } catch (timeoutError: any) {
+        console.log(`AI enrichment failed for ${name}: ${timeoutError.message || 'Unknown error'}, using basic data`)
       }
     }
     
@@ -394,11 +397,11 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
 
 async function enrichWithAI(businessName: string, websiteUrl: string, city: string, state: string) {
   try {
-    // First, try to fetch the website content
+    // First, try to fetch the website content with additional error handling
     const websiteContent = await scrapeWebsite(websiteUrl)
     
     if (!websiteContent) {
-      console.log(`Could not scrape content from ${websiteUrl}`)
+      console.log(`Could not scrape content from ${websiteUrl}, using basic business data`)
       return {
         owner_name: null,
         email: null,
@@ -462,13 +465,18 @@ IMPORTANT:
         console.log(`AI extracted data for ${businessName}:`, extractedData)
         return extractedData
       } catch (parseError) {
-        console.error('Error parsing AI response:', parseError)
-        console.error('Raw response:', result)
+        console.log(`Error parsing AI response for ${businessName}, using basic data`)
       }
     }
 
-  } catch (error) {
-    console.error('Error in AI enrichment:', error)
+  } catch (error: any) {
+    if (error.code === 'insufficient_quota') {
+      console.log(`OpenAI quota exceeded, using basic data for ${businessName}`)
+    } else if (error.code === 'rate_limit_exceeded') {
+      console.log(`OpenAI rate limit exceeded, using basic data for ${businessName}`)
+    } else {
+      console.log(`Error in AI enrichment for ${businessName}: ${error.message || 'Unknown error'}`)
+    }
   }
 
   // Return null values if AI extraction fails
@@ -534,8 +542,14 @@ async function scrapeWebsite(url: string): Promise<string | null> {
   } catch (error: any) {
     if (error.name === 'AbortError') {
       console.log(`Request timeout for ${url}`)
+    } else if (error.code === 'ENOTFOUND') {
+      console.log(`Domain not found for ${url}`)
+    } else if (error.code === 'ECONNREFUSED') {
+      console.log(`Connection refused for ${url}`)
+    } else if (error.message?.includes('fetch failed')) {
+      console.log(`Fetch failed for ${url}: ${error.message}`)
     } else {
-      console.error(`Error scraping ${url}:`, error.message)
+      console.log(`Error scraping ${url}: ${error.message || 'Unknown error'}`)
     }
     return null
   }
