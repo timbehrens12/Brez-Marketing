@@ -70,8 +70,8 @@ export async function GET(request: NextRequest) {
       niche_category: usage.lead_niches?.category || 'Unknown',
       last_used_at: usage.last_used_at,
       leads_generated: usage.leads_generated,
-      cooldown_until: new Date(new Date(usage.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)),
-      cooldown_remaining_ms: Math.max(0, new Date(new Date(usage.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).getTime() - now.getTime())
+              cooldown_until: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0),
+              cooldown_remaining_ms: Math.max(0, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0).getTime() - now.getTime())
     }))
 
     return NextResponse.json({

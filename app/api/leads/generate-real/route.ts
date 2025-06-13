@@ -69,13 +69,20 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Check niche-specific cooldowns
+    // Check niche-specific cooldowns (cooldown until midnight)
+    const startOfToday = new Date(now)
+    startOfToday.setHours(0, 0, 0, 0)
+    
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+    
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
       .select('*')
       .eq('user_id', userId)
       .in('niche_id', niches)
-      .gte('last_used_at', new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString())
+      .gte('last_used_at', startOfToday.toISOString())
 
     if (nicheUsageError) {
       console.error('Error checking niche usage:', nicheUsageError)
@@ -95,11 +102,11 @@ export async function POST(request: NextRequest) {
       const cooldownNicheNames = cooldownNiches.map(n => nicheNameMap[n.niche_id] || 'Unknown')
 
       return NextResponse.json({ 
-        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again later or select different niches.`,
+        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again after midnight or select different niches.`,
         cooldownNiches: cooldownNiches.map(n => ({
           niche_id: n.niche_id,
           niche_name: nicheNameMap[n.niche_id],
-          cooldownUntil: new Date(new Date(n.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()
+          cooldownUntil: tomorrow.toISOString()
         }))
       }, { status: 429 })
     }

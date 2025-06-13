@@ -75,6 +75,7 @@ interface LeadFilters {
   hasTwitter: boolean
   hasLinkedin: boolean
   hasFacebook: boolean
+  selectedNicheFilter: string[]
 }
 
 export default function LeadGeneratorPage() {
@@ -109,7 +110,8 @@ export default function LeadGeneratorPage() {
     hasInstagram: false,
     hasTwitter: false,
     hasLinkedin: false,
-    hasFacebook: false
+    hasFacebook: false,
+    selectedNicheFilter: []
   })
 
   // Load data on component mount
@@ -183,6 +185,13 @@ export default function LeadGeneratorPage() {
     }
     if (filters.hasFacebook) {
       filtered = filtered.filter(lead => lead.facebook_page && lead.facebook_page !== 'N/A')
+    }
+    
+    // Apply niche filter
+    if (filters.selectedNicheFilter.length > 0) {
+      filtered = filtered.filter(lead => 
+        lead.niche_name && filters.selectedNicheFilter.includes(lead.niche_name)
+      )
     }
     
     setFilteredLeads(filtered)
@@ -639,7 +648,7 @@ export default function LeadGeneratorPage() {
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  <BarChart3 className="h-5 w-5 text-gray-400" />
                   Daily Usage & Limits
                 </CardTitle>
               </CardHeader>
@@ -663,7 +672,7 @@ export default function LeadGeneratorPage() {
                         <div 
                           className={`h-2 rounded-full transition-all duration-300 ${
                             usageData.remaining <= 0 ? 'bg-red-500' : 
-                            usageData.remaining <= 1 ? 'bg-white' : 'bg-blue-500'
+                            usageData.remaining <= 1 ? 'bg-white' : 'bg-gray-400'
                           }`}
                           style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
                         />
@@ -673,7 +682,7 @@ export default function LeadGeneratorPage() {
                     {/* Leads Generated Today */}
                     <div className="flex justify-between items-center py-2 border-t border-[#333]">
                       <span className="text-sm text-gray-400">Leads Generated Today</span>
-                      <span className="text-sm font-medium text-green-400">
+                      <span className="text-sm font-medium text-white">
                         {usageData.leadsGeneratedToday}
                       </span>
                     </div>
@@ -681,11 +690,11 @@ export default function LeadGeneratorPage() {
                     {/* System Limits */}
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#333]">
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-blue-400">{usageData.leadsPerNiche}</div>
+                        <div className="text-lg font-semibold text-white">{usageData.leadsPerNiche}</div>
                         <div className="text-xs text-gray-500">Leads per Niche</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-lg font-semibold text-purple-400">{usageData.maxNichesPerSearch}</div>
+                        <div className="text-lg font-semibold text-gray-300">{usageData.maxNichesPerSearch}</div>
                         <div className="text-xs text-gray-500">Max Niches</div>
                       </div>
                     </div>
@@ -693,25 +702,25 @@ export default function LeadGeneratorPage() {
                     {/* Reset Information */}
                     <div className="flex justify-between items-center py-2 border-t border-[#333]">
                       <span className="text-sm text-gray-400">Resets at Midnight</span>
-                      <span className="text-sm text-blue-400">
+                      <span className="text-sm text-white">
                         {getTimeUntilMidnight()}
                       </span>
                     </div>
 
                     {/* Niche Cooldowns */}
                     {usageData.nicheCooldowns && usageData.nicheCooldowns.length > 0 && (
-                      <div className="pt-3 border-t border-[#333]">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Clock className="h-4 w-4 text-orange-400" />
-                          <span className="text-sm font-medium text-orange-400">Niche Cooldowns</span>
-                        </div>
+                                              <div className="pt-3 border-t border-[#333]">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm font-medium text-gray-300">Niche Cooldowns</span>
+                          </div>
                         <div className="space-y-2 max-h-24 overflow-y-auto">
                           {usageData.nicheCooldowns.map((cooldown) => (
                             <div key={cooldown.niche_id} className="flex justify-between items-center text-xs">
                               <span className="text-gray-400 truncate max-w-[120px]">
                                 {cooldown.niche_name}
                               </span>
-                              <span className="text-orange-400 whitespace-nowrap">
+                              <span className="text-gray-300 whitespace-nowrap">
                                 {formatCooldownTime(cooldown.cooldown_remaining_ms)}
                               </span>
                             </div>
@@ -798,7 +807,7 @@ export default function LeadGeneratorPage() {
                                       setSelectedNiches(prev => prev.filter(id => id !== niche.id))
                                     }
                                   }}
-                                  className="border-[#444] data-[state=checked]:bg-blue-600 disabled:opacity-50"
+                                  className="border-[#444] data-[state=checked]:bg-gray-600 disabled:opacity-50"
                                 />
                                 <label 
                                   htmlFor={niche.id} 
@@ -808,7 +817,7 @@ export default function LeadGeneratorPage() {
                                 >
                                   {niche.name}
                                   {onCooldown && cooldownInfo && (
-                                    <span className="ml-1 text-xs text-orange-400">
+                                    <span className="ml-1 text-xs text-gray-400">
                                       ({formatCooldownTime(cooldownInfo.cooldown_remaining_ms)})
                                     </span>
                                   )}
@@ -821,7 +830,7 @@ export default function LeadGeneratorPage() {
                         {/* Show message if all niches in category are on cooldown */}
                         {getAvailableNiches().filter((n: any) => n.category === category).length === 0 && (
                           <div className="text-center py-4 text-gray-500 text-sm">
-                            <Clock className="h-4 w-4 mx-auto mb-2 text-orange-400" />
+                            <Clock className="h-4 w-4 mx-auto mb-2 text-gray-400" />
                             All niches in this category are on cooldown
                           </div>
                         )}
@@ -840,7 +849,7 @@ export default function LeadGeneratorPage() {
                   {selectedNiches.map(nicheId => {
                     const niche = niches.find(n => n.id === nicheId)
                     return niche ? (
-                      <Badge key={nicheId} variant="secondary" className="bg-blue-600/20 text-blue-300">
+                      <Badge key={nicheId} variant="secondary" className="bg-gray-600/20 text-gray-300">
                         {niche.name}
                       </Badge>
                     ) : null
@@ -918,7 +927,7 @@ export default function LeadGeneratorPage() {
                 className={`w-full ${
                   (usageData?.remaining ?? 0) <= 0 
                     ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-600 hover:bg-gray-700 text-white'
                 }`}
               >
                 {businessType === 'ecommerce' ? (
@@ -1026,7 +1035,7 @@ export default function LeadGeneratorPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
-                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasInstagram: false, hasTwitter: false, hasLinkedin: false, hasFacebook: false })}
+                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasInstagram: false, hasTwitter: false, hasLinkedin: false, hasFacebook: false, selectedNicheFilter: [] })}
                         variant="ghost"
                         size="sm"
                         className="text-gray-400 hover:text-white"
@@ -1134,7 +1143,7 @@ export default function LeadGeneratorPage() {
                           onCheckedChange={(checked) => 
                             setFilters(prev => ({ ...prev, hasFacebook: checked as boolean }))
                           }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
                         />
                         <label htmlFor="hasFacebook" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                           <Facebook className="h-3 w-3" />
@@ -1142,6 +1151,40 @@ export default function LeadGeneratorPage() {
                         </label>
                       </div>
                     </div>
+                    
+                    {/* Niche Filter */}
+                    {availableNichesInLeads.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-400">Filter by Niche</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+                          {availableNichesInLeads.map((nicheName) => (
+                            <div key={nicheName} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`niche-${nicheName}`}
+                                checked={filters.selectedNicheFilter.includes(nicheName)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFilters(prev => ({ 
+                                      ...prev, 
+                                      selectedNicheFilter: [...prev.selectedNicheFilter, nicheName] 
+                                    }))
+                                  } else {
+                                    setFilters(prev => ({ 
+                                      ...prev, 
+                                      selectedNicheFilter: prev.selectedNicheFilter.filter(n => n !== nicheName) 
+                                    }))
+                                  }
+                                }}
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
+                              />
+                              <label htmlFor={`niche-${nicheName}`} className="text-sm text-gray-400 cursor-pointer">
+                                {nicheName}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
