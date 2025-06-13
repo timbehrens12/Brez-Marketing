@@ -860,7 +860,7 @@ export default function LeadGeneratorPage() {
                       onClick={() => setShowFilters(!showFilters)}
                       variant="outline"
                       size="sm"
-                      className={`border-[#333] ${showFilters ? 'bg-[#222] text-white' : 'text-gray-400 hover:bg-[#222] hover:text-white'}`}
+                      className={`bg-[#1A1A1A] border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50 ${showFilters ? 'text-white' : 'text-gray-400'}`}
                     >
                       <Filter className="h-4 w-4 mr-2" />
                       Filters
@@ -878,7 +878,7 @@ export default function LeadGeneratorPage() {
                       disabled={selectedLeads.length === 0}
                       variant="outline"
                       size="sm"
-                      className="bg-red-900/20 text-red-400 border-red-800 hover:bg-red-900/40 hover:text-red-300 disabled:opacity-50"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
                     >
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Delete ({selectedLeads.length})
@@ -888,7 +888,7 @@ export default function LeadGeneratorPage() {
                       disabled={isClearing || leads.length === 0}
                       variant="outline"
                       size="sm"
-                      className="bg-orange-900/20 text-orange-400 border-orange-800 hover:bg-orange-900/40 hover:text-orange-300 disabled:opacity-50"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
                     >
                       {isClearing ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
