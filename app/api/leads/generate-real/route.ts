@@ -9,16 +9,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-// Usage limits
+// Updated usage limits
 const DAILY_GENERATION_LIMIT = 20 // 20 generations per day
-const LEADS_PER_GENERATION = 50 // 50 leads per generation
-const MAX_NICHES_PER_SEARCH = 10 // Allow up to 10 niches
+const LEADS_PER_NICHE = 25 // Fixed 25 leads per niche
+const MAX_NICHES_PER_SEARCH = 5 // Reduced to account for 25 leads per niche
+const NICHE_COOLDOWN_HOURS = 24 // 24 hour cooldown per niche
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessType, niches, location, brandId, userId, maxResults = LEADS_PER_GENERATION } = await request.json()
+    const { businessType, niches, location, brandId, userId } = await request.json()
 
-    console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId, maxResults })
+    console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId })
 
     if (!userId) {
       console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
@@ -28,14 +29,15 @@ export async function POST(request: NextRequest) {
     // Check niche limit
     if (niches.length > MAX_NICHES_PER_SEARCH) {
       return NextResponse.json({ 
-        error: `Too many niches selected. Maximum ${MAX_NICHES_PER_SEARCH} niches allowed per search.` 
+        error: `Too many niches selected. Maximum ${MAX_NICHES_PER_SEARCH} niches allowed per search (${LEADS_PER_NICHE} leads each).` 
       }, { status: 400 })
     }
 
-    // Check user's daily usage
-    const today = new Date().toISOString().split('T')[0]
+    // Get current date for midnight-based resets
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
     
-    // Get or create today's usage record
+    // Check user's daily usage
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
       .select('*')
@@ -51,13 +53,54 @@ export async function POST(request: NextRequest) {
     // Check if user has exceeded daily limit
     const currentUsage = usageData?.generation_count || 0
     if (currentUsage >= DAILY_GENERATION_LIMIT) {
+      // Calculate next midnight reset
+      const tomorrow = new Date(now)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      
       return NextResponse.json({ 
-        error: `Daily limit reached. You've used ${currentUsage} of ${DAILY_GENERATION_LIMIT} generations today.`,
+        error: `Daily limit reached. You've used ${currentUsage} of ${DAILY_GENERATION_LIMIT} generations today. Resets at midnight.`,
         usage: {
           used: currentUsage,
           limit: DAILY_GENERATION_LIMIT,
-          resetsAt: new Date(today + 'T00:00:00Z').getTime() + 24 * 60 * 60 * 1000
+          resetsAt: tomorrow.toISOString(),
+          resetsIn: tomorrow.getTime() - now.getTime()
         }
+      }, { status: 429 })
+    }
+
+    // Check niche-specific cooldowns
+    const { data: nicheUsageData, error: nicheUsageError } = await supabase
+      .from('user_niche_usage')
+      .select('*')
+      .eq('user_id', userId)
+      .in('niche_id', niches)
+      .gte('last_used_at', new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString())
+
+    if (nicheUsageError) {
+      console.error('Error checking niche usage:', nicheUsageError)
+      return NextResponse.json({ error: 'Failed to check niche cooldowns' }, { status: 500 })
+    }
+
+    // Check if any selected niches are on cooldown
+    const cooldownNiches = nicheUsageData || []
+    if (cooldownNiches.length > 0) {
+      // Get niche names for better error message
+      const { data: nicheNames } = await supabase
+        .from('lead_niches')
+        .select('id, name')
+        .in('id', cooldownNiches.map(n => n.niche_id))
+
+      const nicheNameMap = Object.fromEntries(nicheNames?.map(n => [n.id, n.name]) || [])
+      const cooldownNicheNames = cooldownNiches.map(n => nicheNameMap[n.niche_id] || 'Unknown')
+
+      return NextResponse.json({ 
+        error: `These niches are on cooldown: ${cooldownNicheNames.join(', ')}. Try again later or select different niches.`,
+        cooldownNiches: cooldownNiches.map(n => ({
+          niche_id: n.niche_id,
+          niche_name: nicheNameMap[n.niche_id],
+          cooldownUntil: new Date(new Date(n.last_used_at).getTime() + (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString()
+        }))
       }, { status: 429 })
     }
 
@@ -80,12 +123,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Found niches:', nicheData?.length || 0)
 
-    // Limit results based on selected niches
-    const resultsPerNiche = Math.ceil(LEADS_PER_GENERATION / niches.length)
-    const limitedResults = Math.min(maxResults, LEADS_PER_GENERATION)
+    // Calculate total leads that will be generated (25 per niche)
+    const totalLeadsToGenerate = niches.length * LEADS_PER_NICHE
     
     // Find real businesses using Google Places API
-    const realLeads = await findRealBusinesses(nicheData, location, limitedResults, resultsPerNiche)
+    const realLeads = await findRealBusinesses(nicheData, location, totalLeadsToGenerate, LEADS_PER_NICHE)
     
     if (realLeads.length === 0) {
       return NextResponse.json({ 
@@ -173,11 +215,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update niche-specific usage tracking
+    const nicheUsageUpdates = niches.map((nicheId: string) => ({
+      user_id: userId,
+      niche_id: nicheId,
+      last_used_at: new Date().toISOString(),
+      leads_generated: LEADS_PER_NICHE
+    }))
+
+    const { error: nicheUsageUpdateError } = await supabase
+      .from('user_niche_usage')
+      .upsert(nicheUsageUpdates, {
+        onConflict: 'user_id,niche_id'
+      })
+
+    if (nicheUsageUpdateError) {
+      console.error('Error updating niche usage:', nicheUsageUpdateError)
+    }
+
     return NextResponse.json({
       success: true,
       leads: insertedLeads,
-      message: `Found ${insertedLeads.length} real businesses with AI-enriched contact data`,
+      message: `Found ${insertedLeads.length} real businesses (${LEADS_PER_NICHE} per niche) with AI-enriched contact data`,
       generatedBy: 'Google Places API + ChatGPT Website Enrichment',
+      leadsPerNiche: LEADS_PER_NICHE,
       usage: {
         used: newGenerationCount,
         limit: DAILY_GENERATION_LIMIT,

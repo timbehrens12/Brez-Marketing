@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, Zap, Users } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, Zap, Users, BarChart3, AlertTriangle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -50,11 +50,21 @@ interface UsageData {
   limit: number
   remaining: number
   leadsGeneratedToday: number
-  maxLeadsPerGeneration: number
+  leadsPerNiche: number
   maxNichesPerSearch: number
   lastGenerationAt: string | null
   resetsAt: string
   resetsIn: number
+  nicheCooldowns: Array<{
+    niche_id: string
+    niche_name: string
+    niche_category: string
+    last_used_at: string
+    leads_generated: number
+    cooldown_until: string
+    cooldown_remaining_ms: number
+  }>
+  cooldownHours: number
 }
 
 interface LeadFilters {
@@ -405,6 +415,54 @@ export default function LeadGeneratorPage() {
     return `in ${minutes}m`
   }
 
+  const getTimeUntilMidnight = () => {
+    if (!usageData) return 'at midnight'
+    
+    const msUntilReset = usageData.resetsIn
+    const hours = Math.floor(msUntilReset / (1000 * 60 * 60))
+    const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours > 0) {
+      return `in ${hours}h ${minutes}m`
+    }
+    return `in ${minutes}m`
+  }
+
+  const isNicheOnCooldown = (nicheId: string) => {
+    if (!usageData?.nicheCooldowns) return false
+    return usageData.nicheCooldowns.some(cooldown => 
+      cooldown.niche_id === nicheId && cooldown.cooldown_remaining_ms > 0
+    )
+  }
+
+  const getNicheCooldownInfo = (nicheId: string) => {
+    if (!usageData?.nicheCooldowns) return null
+    return usageData.nicheCooldowns.find(cooldown => 
+      cooldown.niche_id === nicheId && cooldown.cooldown_remaining_ms > 0
+    )
+  }
+
+  const formatCooldownTime = (remainingMs: number) => {
+    const hours = Math.floor(remainingMs / (1000 * 60 * 60))
+    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    }
+    return `${minutes}m`
+  }
+
+  // Filter out niches on cooldown from available selections
+  const getAvailableNiches = () => {
+    if (!usageData?.nicheCooldowns) return filteredNiches
+    
+    const cooldownNicheIds = usageData.nicheCooldowns
+      .filter(cooldown => cooldown.cooldown_remaining_ms > 0)
+      .map(cooldown => cooldown.niche_id)
+    
+    return filteredNiches.filter((niche: any) => !cooldownNicheIds.includes(niche.id))
+  }
+
   const sendToOutreach = () => {
     if (selectedLeads.length === 0) {
       toast.error('Please select leads to send to outreach')
@@ -575,7 +633,7 @@ export default function LeadGeneratorPage() {
                     {usageData?.leadsGeneratedToday || 0}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Up to {usageData?.maxLeadsPerGeneration || 25} per search
+                    Up to {usageData?.leadsPerNiche || 25} per search
                   </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-400 opacity-50" />
@@ -645,7 +703,100 @@ export default function LeadGeneratorPage() {
               </Tabs>
             </div>
 
-            {/* Niche Selector */}
+            {/* Usage Statistics Panel */}
+            <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  Daily Usage & Limits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingUsage ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                    <span className="ml-2 text-gray-400">Loading usage data...</span>
+                  </div>
+                ) : usageData ? (
+                  <>
+                    {/* Generation Limit Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Generations Today</span>
+                        <span className="text-sm font-medium text-white">
+                          {usageData.used} / {usageData.limit}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-800 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            usageData.remaining <= 0 ? 'bg-red-500' : 
+                            usageData.remaining <= 3 ? 'bg-yellow-500' : 'bg-blue-500'
+                          }`}
+                          style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Leads Generated Today */}
+                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
+                      <span className="text-sm text-gray-400">Leads Generated Today</span>
+                      <span className="text-sm font-medium text-green-400">
+                        {usageData.leadsGeneratedToday}
+                      </span>
+                    </div>
+
+                    {/* System Limits */}
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#333]">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-blue-400">{usageData.leadsPerNiche}</div>
+                        <div className="text-xs text-gray-500">Leads per Niche</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-purple-400">{usageData.maxNichesPerSearch}</div>
+                        <div className="text-xs text-gray-500">Max Niches</div>
+                      </div>
+                    </div>
+
+                    {/* Reset Information */}
+                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
+                      <span className="text-sm text-gray-400">Resets at Midnight</span>
+                      <span className="text-sm text-blue-400">
+                        {getTimeUntilMidnight()}
+                      </span>
+                    </div>
+
+                    {/* Niche Cooldowns */}
+                    {usageData.nicheCooldowns && usageData.nicheCooldowns.length > 0 && (
+                      <div className="pt-3 border-t border-[#333]">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Clock className="h-4 w-4 text-orange-400" />
+                          <span className="text-sm font-medium text-orange-400">Niche Cooldowns</span>
+                        </div>
+                        <div className="space-y-2 max-h-24 overflow-y-auto">
+                          {usageData.nicheCooldowns.map((cooldown) => (
+                            <div key={cooldown.niche_id} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-400 truncate max-w-[120px]">
+                                {cooldown.niche_name}
+                              </span>
+                              <span className="text-orange-400 whitespace-nowrap">
+                                {formatCooldownTime(cooldown.cooldown_remaining_ms)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Unable to load usage data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Niche Selection */}
             <div className="space-y-3 relative">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
@@ -664,25 +815,32 @@ export default function LeadGeneratorPage() {
                     <Badge className="bg-orange-500/20 text-orange-400 px-4 py-2">Coming Soon</Badge>
                   </div>
                 </div>
-              ) : businessType === 'local_service' ? (
-                // Accordion view for local services
+              ) : (
                 <Accordion type="multiple" className="w-full">
-                  {Object.entries(nicheGroups).map(([groupName, groupNiches]) => {
-                    const categoryNiches = getNichesByGroup(groupName)
-                    if (categoryNiches.length === 0) return null
-                    
-                    return (
-                      <AccordionItem key={groupName} value={groupName} className="border-none">
-                        <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                          {groupName} ({categoryNiches.length})
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {categoryNiches.map((niche: any) => (
+                  {Object.entries(
+                    getAvailableNiches().reduce((groups: any, niche: any) => {
+                      const category = niche.category || 'other'
+                      if (!groups[category]) groups[category] = []
+                      groups[category].push(niche)
+                      return groups
+                    }, {})
+                  ).map(([category, categoryNiches]) => (
+                    <AccordionItem key={category} value={category} className="border-[#333]">
+                      <AccordionTrigger className="text-gray-400 hover:text-white capitalize">
+                        {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {(categoryNiches as any[]).map((niche: any) => {
+                            const onCooldown = isNicheOnCooldown(niche.id)
+                            const cooldownInfo = getNicheCooldownInfo(niche.id)
+                            
+                            return (
                               <div key={niche.id} className="flex items-center space-x-2">
                                 <Checkbox
                                   id={niche.id}
                                   checked={selectedNiches.includes(niche.id)}
+                                  disabled={onCooldown}
                                   onCheckedChange={(checked) => {
                                     if (checked) {
                                       setSelectedNiches(prev => [...prev, niche.id])
@@ -690,110 +848,47 @@ export default function LeadGeneratorPage() {
                                       setSelectedNiches(prev => prev.filter(id => id !== niche.id))
                                     }
                                   }}
-                                  className="border-[#444] data-[state=checked]:bg-blue-600"
+                                  className="border-[#444] data-[state=checked]:bg-blue-600 disabled:opacity-50"
                                 />
-                                <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
+                                <label 
+                                  htmlFor={niche.id} 
+                                  className={`text-sm cursor-pointer ${
+                                    onCooldown ? 'text-gray-600 line-through' : 'text-gray-400'
+                                  }`}
+                                >
                                   {niche.name}
+                                  {onCooldown && cooldownInfo && (
+                                    <span className="ml-1 text-xs text-orange-400">
+                                      ({formatCooldownTime(cooldownInfo.cooldown_remaining_ms)})
+                                    </span>
+                                  )}
                                 </label>
                               </div>
-                            ))}
+                            )
+                          })}
+                        </div>
+                        
+                        {/* Show message if all niches in category are on cooldown */}
+                        {getAvailableNiches().filter((n: any) => n.category === category).length === 0 && (
+                          <div className="text-center py-4 text-gray-500 text-sm">
+                            <Clock className="h-4 w-4 mx-auto mb-2 text-orange-400" />
+                            All niches in this category are on cooldown
                           </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )
-                  })}
-                </Accordion>
-              ) : (
-                // Accordion view for ecommerce as well
-                <Accordion type="multiple" className="w-full">
-                                     <AccordionItem value="ecommerce" className="border-none">
-                    <AccordionTrigger className="text-sm font-medium text-gray-300 hover:text-white bg-[#2A2A2A] px-4 py-3 rounded-lg hover:no-underline">
-                      eCommerce Categories ({filteredNiches.length})
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 py-3 bg-[#1A1A1A] rounded-b-lg">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
-                        {filteredNiches.map((niche: any) => (
-                          <div key={niche.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={niche.id}
-                              checked={selectedNiches.includes(niche.id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedNiches(prev => [...prev, niche.id])
-                                } else {
-                                  setSelectedNiches(prev => prev.filter(id => id !== niche.id))
-                                }
-                              }}
-                              className="border-[#444] data-[state=checked]:bg-blue-600"
-                            />
-                            <label htmlFor={niche.id} className="text-sm text-gray-400 cursor-pointer">
-                              {niche.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
                 </Accordion>
               )}
             </div>
 
-            {selectedNiches.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-400">Selected Niches ({selectedNiches.length})</Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedNiches.map(nicheId => {
-                    const niche = niches.find(n => n.id === nicheId)
-                    return niche ? (
-                      <Badge key={nicheId} variant="secondary" className="bg-blue-600/20 text-blue-300">
-                        {niche.name}
-                      </Badge>
-                    ) : null
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Location Filter (for local services) */}
-            {businessType === 'local_service' && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Input
-                    placeholder="Country"
-                    value={location.country}
-                    onChange={(e) => setLocation(prev => ({ ...prev, country: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="State/Province"
-                    value={location.state}
-                    onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="City"
-                    value={location.city}
-                    onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Select
-                    value={location.radius}
-                    onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
-                  >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Search radius" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 miles</SelectItem>
-                      <SelectItem value="10">10 miles</SelectItem>
-                      <SelectItem value="15">15 miles</SelectItem>
-                      <SelectItem value="25">25 miles</SelectItem>
-                      <SelectItem value="50">50 miles</SelectItem>
-                      <SelectItem value="75">75 miles</SelectItem>
-                      <SelectItem value="100">100 miles</SelectItem>
-                    </SelectContent>
-                  </Select>
+            {/* Show warning if trying to select too many niches */}
+            {selectedNiches.length > (usageData?.maxNichesPerSearch || 5) && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3">
+                <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                  <AlertTriangle className="h-4 w-4" />
+                  Too many niches selected. Maximum {usageData?.maxNichesPerSearch || 5} niches allowed 
+                  ({usageData?.leadsPerNiche || 25} leads each).
                 </div>
               </div>
             )}
@@ -802,7 +897,13 @@ export default function LeadGeneratorPage() {
             <div className="space-y-2">
               <Button
                 onClick={generateLeads}
-                disabled={isGenerating || selectedNiches.length === 0 || businessType === 'ecommerce' || (usageData?.remaining ?? 0) <= 0}
+                disabled={
+                  isGenerating || 
+                  selectedNiches.length === 0 || 
+                  selectedNiches.length > (usageData?.maxNichesPerSearch || 5) ||
+                  businessType === 'ecommerce' || 
+                  (usageData?.remaining ?? 0) <= 0
+                }
                 className={`w-full ${
                   (usageData?.remaining ?? 0) <= 0 
                     ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
@@ -834,10 +935,8 @@ export default function LeadGeneratorPage() {
               
               {selectedNiches.length > 0 && usageData && (
                 <div className="text-xs text-center text-gray-500">
-                  Will search for up to {Math.min(
-                    Math.ceil(usageData.maxLeadsPerGeneration / selectedNiches.length) * selectedNiches.length,
-                    usageData.maxLeadsPerGeneration
-                  )} businesses ({Math.ceil(usageData.maxLeadsPerGeneration / selectedNiches.length)} per niche)
+                  Will generate {selectedNiches.length * (usageData.leadsPerNiche || 25)} leads 
+                  ({usageData.leadsPerNiche || 25} per niche) from {selectedNiches.length} niches
                 </div>
               )}
             </div>
