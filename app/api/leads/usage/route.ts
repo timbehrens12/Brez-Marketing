@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
     tomorrow.setHours(0, 0, 0, 0)
 
     // Get niche usage data for cooldowns
+    const startOfToday = new Date(now)
+    startOfToday.setHours(0, 0, 0, 0)
+    
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
       .select(`
@@ -57,21 +60,21 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq('user_id', userId)
-      .gte('last_used_at', new Date(now.getTime() - (NICHE_COOLDOWN_HOURS * 60 * 60 * 1000)).toISOString())
+      .gte('last_used_at', startOfToday.toISOString())
 
     if (nicheUsageError) {
       console.error('Error fetching niche usage:', nicheUsageError)
     }
 
-    // Process niche cooldowns
+    // Process niche cooldowns - they reset at midnight
     const nicheCooldowns = (nicheUsageData || []).map((usage: any) => ({
       niche_id: usage.niche_id,
       niche_name: usage.lead_niches?.name || 'Unknown',
       niche_category: usage.lead_niches?.category || 'Unknown',
       last_used_at: usage.last_used_at,
       leads_generated: usage.leads_generated,
-              cooldown_until: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0),
-              cooldown_remaining_ms: Math.max(0, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0).getTime() - now.getTime())
+      cooldown_until: tomorrow.toISOString(),
+      cooldown_remaining_ms: Math.max(0, tomorrow.getTime() - now.getTime())
     }))
 
     return NextResponse.json({

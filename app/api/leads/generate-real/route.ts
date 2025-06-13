@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Get current date for midnight-based resets
     const now = new Date()
     const today = now.toISOString().split('T')[0]
-    
+
     // Check user's daily usage
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
