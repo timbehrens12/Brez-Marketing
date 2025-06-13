@@ -860,7 +860,7 @@ export default function LeadGeneratorPage() {
                       onClick={() => setShowFilters(!showFilters)}
                       variant="outline"
                       size="sm"
-                      className={`bg-[#1A1A1A] border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50 ${showFilters ? 'text-white' : 'text-gray-400'}`}
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                     >
                       <Filter className="h-4 w-4 mr-2" />
                       Filters
@@ -900,6 +900,7 @@ export default function LeadGeneratorPage() {
                     <Button
                       onClick={sendToOutreach}
                       disabled={selectedLeads.length === 0}
+                      variant="outline"
                       className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
                     >
                       <Send className="h-4 w-4 mr-2" />
