@@ -10,7 +10,7 @@ const openai = new OpenAI({
 })
 
 // Updated usage limits
-const DAILY_GENERATION_LIMIT = 20 // 20 generations per day
+const DAILY_GENERATION_LIMIT = 5 // 5 generations per day
 const LEADS_PER_NICHE = 25 // Fixed 25 leads per niche
 const MAX_NICHES_PER_SEARCH = 5 // Reduced to account for 25 leads per niche
 const NICHE_COOLDOWN_HOURS = 24 // 24 hour cooldown per niche

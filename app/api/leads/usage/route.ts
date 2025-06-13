@@ -4,7 +4,7 @@ import { getSupabaseServiceClient } from '@/lib/supabase/client'
 const supabase = getSupabaseServiceClient()
 
 // Usage limits (updated to match generate-real/route.ts)
-const DAILY_GENERATION_LIMIT = 20
+const DAILY_GENERATION_LIMIT = 5
 const LEADS_PER_NICHE = 25 // Fixed 25 leads per niche
 const MAX_NICHES_PER_SEARCH = 5 // Reduced to account for 25 leads per niche
 const NICHE_COOLDOWN_HOURS = 24

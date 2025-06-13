@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, Zap, Users, BarChart3, AlertTriangle } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -416,11 +416,14 @@ export default function LeadGeneratorPage() {
   }
 
   const getTimeUntilMidnight = () => {
-    if (!usageData) return 'at midnight'
+    const now = new Date()
+    const midnight = new Date(now)
+    midnight.setDate(midnight.getDate() + 1)
+    midnight.setHours(0, 0, 0, 0)
     
-    const msUntilReset = usageData.resetsIn
-    const hours = Math.floor(msUntilReset / (1000 * 60 * 60))
-    const minutes = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60))
+    const msUntilMidnight = midnight.getTime() - now.getTime()
+    const hours = Math.floor(msUntilMidnight / (1000 * 60 * 60))
+    const minutes = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60))
     
     if (hours > 0) {
       return `in ${hours}h ${minutes}m`
@@ -604,75 +607,7 @@ export default function LeadGeneratorPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Daily Usage</p>
-                  <p className="text-2xl font-bold text-white">
-                    {usageData?.used || 0} / {usageData?.limit || 10}
-                  </p>
-                  <Progress 
-                    value={(usageData?.used || 0) / (usageData?.limit || 1) * 100} 
-                    className="mt-2 h-1"
-                  />
-                </div>
-                <Zap className="h-8 w-8 text-blue-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Leads Today</p>
-                  <p className="text-2xl font-bold text-white">
-                    {usageData?.leadsGeneratedToday || 0}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Up to {usageData?.leadsPerNiche || 25} per search
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Total Leads</p>
-                  <p className="text-2xl font-bold text-white">{totalLeads}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {selectedBrandId ? 'For this brand' : 'Select a brand'}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-purple-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Resets In</p>
-                  <p className="text-2xl font-bold text-white">
-                    {usageData ? getTimeUntilReset() : '--'}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Daily limit refreshes
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-orange-400 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Main Content - Side by Side Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
@@ -685,25 +620,7 @@ export default function LeadGeneratorPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Business Type Selector */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-gray-400">Business Type</Label>
-              <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
-                <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
-                    <Globe className="h-4 w-4 mr-2" />
-                    eCommerce
-                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
-                  </TabsTrigger>
-                  <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Local Services
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-
-            {/* Usage Statistics Panel */}
+              {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
@@ -793,10 +710,28 @@ export default function LeadGeneratorPage() {
                     Unable to load usage data
                   </div>
                 )}
-              </CardContent>
-            </Card>
+                              </CardContent>
+              </Card>
 
-            {/* Niche Selection */}
+              {/* Business Type Selector */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-400">Business Type</Label>
+                <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
+                  <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
+                    <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
+                      <Globe className="h-4 w-4 mr-2" />
+                      eCommerce
+                      <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Local Services
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Niche Selection */}
             <div className="space-y-3 relative">
               <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
               
@@ -881,6 +816,67 @@ export default function LeadGeneratorPage() {
                 </Accordion>
               )}
             </div>
+
+            {/* Selected Niches Display */}
+            {selectedNiches.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-400">Selected Niches ({selectedNiches.length})</Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedNiches.map(nicheId => {
+                    const niche = niches.find(n => n.id === nicheId)
+                    return niche ? (
+                      <Badge key={nicheId} variant="secondary" className="bg-blue-600/20 text-blue-300">
+                        {niche.name}
+                      </Badge>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Location Filter (for local services) */}
+            {businessType === 'local_service' && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Input
+                    placeholder="Country"
+                    value={location.country}
+                    onChange={(e) => setLocation(prev => ({ ...prev, country: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
+                  <Input
+                    placeholder="State/Province"
+                    value={location.state}
+                    onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
+                  <Input
+                    placeholder="City"
+                    value={location.city}
+                    onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
+                  <Select
+                    value={location.radius}
+                    onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Search radius" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 miles</SelectItem>
+                      <SelectItem value="10">10 miles</SelectItem>
+                      <SelectItem value="15">15 miles</SelectItem>
+                      <SelectItem value="25">25 miles</SelectItem>
+                      <SelectItem value="50">50 miles</SelectItem>
+                      <SelectItem value="75">75 miles</SelectItem>
+                      <SelectItem value="100">100 miles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
 
             {/* Show warning if trying to select too many niches */}
             {selectedNiches.length > (usageData?.maxNichesPerSearch || 5) && (
