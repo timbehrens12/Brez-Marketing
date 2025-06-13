@@ -16,11 +16,9 @@ import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-
-const supabase = getSupabaseClient()
 
 interface Lead {
   id: string
@@ -82,6 +80,7 @@ interface LeadFilters {
 export default function LeadGeneratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
+  const { getSupabaseClient } = useAuthenticatedSupabase()
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -214,6 +213,7 @@ export default function LeadGeneratorPage() {
 
   const loadNiches = async () => {
     try {
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('lead_niches')
         .select('*')
@@ -231,6 +231,7 @@ export default function LeadGeneratorPage() {
     if (!userId) return
     
     try {
+      const supabase = await getSupabaseClient()
       let query = supabase
         .from('leads')
         .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, created_at')
@@ -256,6 +257,7 @@ export default function LeadGeneratorPage() {
     if (!userId) return
     
     try {
+      const supabase = await getSupabaseClient()
       let query = supabase
         .from('leads')
         .select('created_at')
@@ -272,7 +274,7 @@ export default function LeadGeneratorPage() {
       if (error) throw error
       
       const today = new Date().toDateString()
-      const todayCount = allLeads?.filter(lead => 
+      const todayCount = allLeads?.filter((lead: any) => 
         new Date(lead.created_at as string).toDateString() === today
       ).length || 0
       
@@ -520,6 +522,7 @@ export default function LeadGeneratorPage() {
     
     setIsClearing(true)
     try {
+      const supabase = await getSupabaseClient()
       let query = supabase
         .from('leads')
         .delete()
@@ -556,6 +559,7 @@ export default function LeadGeneratorPage() {
     }
     
     try {
+      const supabase = await getSupabaseClient()
       const { error } = await supabase
         .from('leads')
         .delete()
@@ -612,6 +616,7 @@ export default function LeadGeneratorPage() {
         updated_at: new Date().toISOString()
       }
 
+      const supabase = await getSupabaseClient()
       const { data: insertedLead, error } = await supabase
         .from('leads')
         .insert([leadToInsert])

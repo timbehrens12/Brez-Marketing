@@ -38,14 +38,24 @@ export async function GET(request: NextRequest) {
     const leadsGeneratedToday = usageData?.leads_generated || 0
     const lastGenerationAt = usageData?.last_generation_at || null
 
-    // Calculate when limit resets (midnight)
+    // Calculate when limit resets (midnight in local timezone)
     const tomorrow = new Date(now)
     tomorrow.setDate(tomorrow.getDate() + 1)
     tomorrow.setHours(0, 0, 0, 0)
+    tomorrow.setMilliseconds(0)
 
     // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
+    // Create start of today in the same way as generate-real route
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
+    startOfToday.setMilliseconds(0)
+    
+    console.log('Checking niche cooldowns:', {
+      userId,
+      startOfToday: startOfToday.toISOString(),
+      now: now.toISOString(),
+      tomorrow: tomorrow.toISOString()
+    })
     
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
@@ -66,10 +76,28 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching niche usage:', nicheUsageError)
     }
 
+    console.log('Found niche usage data:', nicheUsageData?.length || 0, 'entries')
+    
     // Process niche cooldowns - only niches used today are on cooldown until midnight
-    // Filter out any niche usage that might not have proper lead_niches data
     const nicheCooldowns = (nicheUsageData || [])
-      .filter((usage: any) => usage.lead_niches) // Only include if niche data exists
+      .filter((usage: any) => {
+        if (!usage.lead_niches) return false
+        
+        // Double-check that the usage is from today
+        const usageDate = new Date(usage.last_used_at)
+        const usageDay = usageDate.toISOString().split('T')[0]
+        const todayDay = now.toISOString().split('T')[0]
+        const isToday = usageDay === todayDay
+        
+        console.log(`Niche ${usage.lead_niches.name}:`, {
+          last_used_at: usage.last_used_at,
+          usageDay,
+          todayDay,
+          isToday
+        })
+        
+        return isToday
+      })
       .map((usage: any) => {
         const timeUntilMidnight = tomorrow.getTime() - now.getTime()
         
@@ -80,10 +108,11 @@ export async function GET(request: NextRequest) {
           last_used_at: usage.last_used_at,
           leads_generated: usage.leads_generated,
           cooldown_until: tomorrow.toISOString(),
-          cooldown_remaining_ms: Math.max(0, timeUntilMidnight)
+          cooldown_remaining_ms: timeUntilMidnight
         }
       })
-      .filter((cooldown: any) => cooldown.cooldown_remaining_ms > 0) // Only show active cooldowns
+
+    console.log('Processed cooldowns:', nicheCooldowns.length, 'active cooldowns')
 
     return NextResponse.json({
       usage: {
