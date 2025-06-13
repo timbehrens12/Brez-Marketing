@@ -648,7 +648,7 @@ export default function LeadGeneratorPage() {
                         <div 
                           className={`h-2 rounded-full transition-all duration-300 ${
                             usageData.remaining <= 0 ? 'bg-red-500' : 
-                            usageData.remaining <= 3 ? 'bg-yellow-500' : 'bg-blue-500'
+                            usageData.remaining <= 1 ? 'bg-white' : 'bg-blue-500'
                           }`}
                           style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
                         />
