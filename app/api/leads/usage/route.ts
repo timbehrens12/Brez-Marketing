@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     tomorrow.setDate(tomorrow.getDate() + 1)
     tomorrow.setHours(0, 0, 0, 0)
 
-    // Get niche usage data for cooldowns
+    // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
     
@@ -66,16 +66,24 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching niche usage:', nicheUsageError)
     }
 
-    // Process niche cooldowns - they reset at midnight
-    const nicheCooldowns = (nicheUsageData || []).map((usage: any) => ({
-      niche_id: usage.niche_id,
-      niche_name: usage.lead_niches?.name || 'Unknown',
-      niche_category: usage.lead_niches?.category || 'Unknown',
-      last_used_at: usage.last_used_at,
-      leads_generated: usage.leads_generated,
-      cooldown_until: tomorrow.toISOString(),
-      cooldown_remaining_ms: Math.max(0, tomorrow.getTime() - now.getTime())
-    }))
+    // Process niche cooldowns - only niches used today are on cooldown until midnight
+    // Filter out any niche usage that might not have proper lead_niches data
+    const nicheCooldowns = (nicheUsageData || [])
+      .filter((usage: any) => usage.lead_niches) // Only include if niche data exists
+      .map((usage: any) => {
+        const timeUntilMidnight = tomorrow.getTime() - now.getTime()
+        
+        return {
+          niche_id: usage.niche_id,
+          niche_name: usage.lead_niches.name || 'Unknown',
+          niche_category: usage.lead_niches.category || 'Unknown',
+          last_used_at: usage.last_used_at,
+          leads_generated: usage.leads_generated,
+          cooldown_until: tomorrow.toISOString(),
+          cooldown_remaining_ms: Math.max(0, timeUntilMidnight)
+        }
+      })
+      .filter((cooldown: any) => cooldown.cooldown_remaining_ms > 0) // Only show active cooldowns
 
     return NextResponse.json({
       usage: {

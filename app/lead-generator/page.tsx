@@ -104,10 +104,7 @@ export default function LeadGeneratorPage() {
     instagram_handle: '',
     facebook_page: '',
     linkedin_profile: '',
-    twitter_handle: '',
-    monthly_revenue_estimate: '',
-    ad_spend_estimate: '',
-    marketing_prospect_reason: ''
+    twitter_handle: ''
   })
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
@@ -609,9 +606,6 @@ export default function LeadGeneratorPage() {
         linkedin_profile: manualLeadData.linkedin_profile || null,
         twitter_handle: manualLeadData.twitter_handle ? 
           manualLeadData.twitter_handle.replace('@', '') : null,
-        monthly_revenue_estimate: manualLeadData.monthly_revenue_estimate || null,
-        ad_spend_estimate: manualLeadData.ad_spend_estimate || null,
-        marketing_prospect_reason: manualLeadData.marketing_prospect_reason || null,
         status: 'new',
         lead_score: 75, // Default score for manual leads
         created_at: new Date().toISOString(),
@@ -642,10 +636,7 @@ export default function LeadGeneratorPage() {
         instagram_handle: '',
         facebook_page: '',
         linkedin_profile: '',
-        twitter_handle: '',
-        monthly_revenue_estimate: '',
-        ad_spend_estimate: '',
-        marketing_prospect_reason: ''
+        twitter_handle: ''
       })
       
       setIsAddingManual(false)
@@ -1512,11 +1503,10 @@ export default function LeadGeneratorPage() {
           </DialogHeader>
           
           <Tabs defaultValue="basic" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4 bg-[#2A2A2A]">
+            <TabsList className="grid w-full grid-cols-3 bg-[#2A2A2A]">
               <TabsTrigger value="basic" className="text-gray-400">Basic Info</TabsTrigger>
               <TabsTrigger value="contact" className="text-gray-400">Contact</TabsTrigger>
               <TabsTrigger value="social" className="text-gray-400">Social Media</TabsTrigger>
-              <TabsTrigger value="business" className="text-gray-400">Business Details</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4">
@@ -1660,59 +1650,6 @@ export default function LeadGeneratorPage() {
                 </div>
               </div>
             </TabsContent>
-            
-            <TabsContent value="business" className="space-y-4">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-gray-400">Monthly Revenue Estimate</Label>
-                    <Select 
-                      value={manualLeadData.monthly_revenue_estimate} 
-                      onValueChange={(value) => setManualLeadData(prev => ({ ...prev, monthly_revenue_estimate: value }))}
-                    >
-                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                        <SelectValue placeholder="Select revenue range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="$0-$10K">$0 - $10K</SelectItem>
-                        <SelectItem value="$10K-$50K">$10K - $50K</SelectItem>
-                        <SelectItem value="$50K-$100K">$50K - $100K</SelectItem>
-                        <SelectItem value="$100K-$500K">$100K - $500K</SelectItem>
-                        <SelectItem value="$500K-$1M">$500K - $1M</SelectItem>
-                        <SelectItem value="$1M+">$1M+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-400">Ad Spend Estimate</Label>
-                    <Select 
-                      value={manualLeadData.ad_spend_estimate} 
-                      onValueChange={(value) => setManualLeadData(prev => ({ ...prev, ad_spend_estimate: value }))}
-                    >
-                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                        <SelectValue placeholder="Select ad spend range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="$0-$500">$0 - $500</SelectItem>
-                        <SelectItem value="$500-$2K">$500 - $2K</SelectItem>
-                        <SelectItem value="$2K-$5K">$2K - $5K</SelectItem>
-                        <SelectItem value="$5K-$10K">$5K - $10K</SelectItem>
-                        <SelectItem value="$10K+">$10K+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-gray-400">Marketing Prospect Reason</Label>
-                  <Textarea 
-                    value={manualLeadData.marketing_prospect_reason}
-                    onChange={(e) => setManualLeadData(prev => ({ ...prev, marketing_prospect_reason: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400 min-h-[100px]"
-                    placeholder="Why is this a good marketing prospect? What opportunities do you see?"
-                  />
-                </div>
-              </div>
-            </TabsContent>
           </Tabs>
           
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#333]">
@@ -1733,10 +1670,7 @@ export default function LeadGeneratorPage() {
                   instagram_handle: '',
                   facebook_page: '',
                   linkedin_profile: '',
-                  twitter_handle: '',
-                  monthly_revenue_estimate: '',
-                  ad_spend_estimate: '',
-                  marketing_prospect_reason: ''
+                  twitter_handle: ''
                 })
               }}
               className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
