@@ -156,6 +156,9 @@ export default function LeadGeneratorPage() {
     }
   }
 
+  // Get unique niches from current leads
+  const availableNichesInLeads = Array.from(new Set(leads.map(lead => lead.niche_name).filter(Boolean))).sort()
+
   const applyFilters = () => {
     let filtered = [...leads]
     
@@ -321,9 +324,9 @@ export default function LeadGeneratorPage() {
         ? '/api/leads/generate-ecommerce'
         : '/api/leads/generate-real'
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased for multiple niches
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout for multiple niches
       
       const requestBody = businessType === 'ecommerce'
         ? {
@@ -348,12 +351,24 @@ export default function LeadGeneratorPage() {
       
       clearTimeout(timeoutId)
 
-      const result = await response.json()
+      let result
+      try {
+        result = await response.json()
+      } catch (parseError) {
+        if (response.status === 504) {
+          toast.error('Request timed out. The server is busy processing leads. Please try again with fewer niches or wait a moment.')
+        } else {
+          toast.error('Server error. Please try again.')
+        }
+        return
+      }
       
       if (!response.ok) {
         if (response.status === 429) {
           // Rate limit error
           toast.error(result.error)
+        } else if (response.status === 504) {
+          toast.error('Request timed out. Please try again with fewer niches or wait a moment.')
         } else {
           throw new Error(result.error || 'Failed to generate leads')
         }

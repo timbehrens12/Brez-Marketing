@@ -11,8 +11,8 @@ const openai = new OpenAI({
 
 // Updated usage limits
 const DAILY_GENERATION_LIMIT = 5 // 5 generations per day
-const LEADS_PER_NICHE = 25 // Fixed 25 leads per niche
-const MAX_NICHES_PER_SEARCH = 5 // Reduced to account for 25 leads per niche
+const LEADS_PER_NICHE = 15 // Reduced from 25 to 15 for faster processing
+const MAX_NICHES_PER_SEARCH = 3 // Reduced from 5 to 3 for faster processing
 const NICHE_COOLDOWN_HOURS = 24 // 24 hour cooldown per niche
 
 export async function POST(request: NextRequest) {
@@ -362,11 +362,11 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
     if (website && process.env.OPENAI_API_KEY) {
       console.log(`Enriching data for ${name} using website: ${website}`)
       try {
-        // Add timeout wrapper for AI enrichment (10 seconds max for faster processing)
+        // Add timeout wrapper for AI enrichment (7 seconds max for faster processing)
         enrichedData = await Promise.race([
           enrichWithAI(name, website, location.city, location.state),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('AI enrichment timeout')), 10000)
+            setTimeout(() => reject(new Error('AI enrichment timeout')), 7000)
           )
         ]) as any
       } catch (timeoutError: any) {
@@ -497,9 +497,9 @@ async function scrapeWebsite(url: string): Promise<string | null> {
       url = 'https://' + url
     }
 
-    // Create abort controller for timeout - reduced to 5 seconds for faster processing
+    // Create abort controller for timeout - reduced to 3 seconds for faster processing
     const abortController = new AbortController()
-    const timeoutId = setTimeout(() => abortController.abort(), 5000) // 5 second timeout
+    const timeoutId = setTimeout(() => abortController.abort(), 3000) // 3 second timeout
 
     const response = await fetch(url, {
       headers: {
