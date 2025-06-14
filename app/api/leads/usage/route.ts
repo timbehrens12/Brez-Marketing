@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const today = now.toISOString().split('T')[0]
     
+    // Calculate time until midnight consistently
+    const nextMidnight = new Date(now)
+    nextMidnight.setHours(24, 0, 0, 0) // Sets to midnight of next day
+    
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+
     // Get today's usage
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
@@ -37,12 +45,6 @@ export async function GET(request: NextRequest) {
     const currentUsage = usageData?.generation_count || 0
     const leadsGeneratedToday = usageData?.leads_generated || 0
     const lastGenerationAt = usageData?.last_generation_at || null
-
-    // Calculate when limit resets (midnight in local timezone)
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-    tomorrow.setMilliseconds(0)
 
     // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
     const startOfToday = new Date(now)
@@ -83,20 +85,18 @@ export async function GET(request: NextRequest) {
         return isToday
       })
       .map((usage: any) => {
-        const timeUntilMidnight = tomorrow.getTime() - now.getTime()
+        const timeUntilMidnight = nextMidnight.getTime() - now.getTime()
         
         return {
           niche_id: usage.niche_id,
-          niche_name: usage.lead_niches.name || 'Unknown',
-          niche_category: usage.lead_niches.category || 'Unknown',
+          niche_name: usage.lead_niches.name,
+          niche_category: usage.lead_niches.category,
           last_used_at: usage.last_used_at,
           leads_generated: usage.leads_generated,
-          cooldown_until: tomorrow.toISOString(),
+          cooldown_until: nextMidnight.toISOString(),
           cooldown_remaining_ms: timeUntilMidnight
         }
-      })
-
-    console.log('Processed cooldowns:', nicheCooldowns.length, 'active cooldowns')
+      }).filter(cooldown => cooldown.cooldown_remaining_ms > 0)
 
     return NextResponse.json({
       usage: {
@@ -107,8 +107,8 @@ export async function GET(request: NextRequest) {
         leadsPerNiche: LEADS_PER_NICHE,
         maxNichesPerSearch: MAX_NICHES_PER_SEARCH,
         lastGenerationAt,
-        resetsAt: tomorrow.toISOString(),
-        resetsIn: tomorrow.getTime() - now.getTime(),
+        resetsAt: nextMidnight.toISOString(),
+        resetsIn: nextMidnight.getTime() - now.getTime(),
         nicheCooldowns,
         cooldownHours: NICHE_COOLDOWN_HOURS
       }
