@@ -492,16 +492,6 @@ export default function LeadGeneratorPage() {
     )
   }
 
-  const formatCooldownTime = (remainingMs: number) => {
-    const hours = Math.floor(remainingMs / (1000 * 60 * 60))
-    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60))
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-    return `${minutes}m`
-  }
-
   // Filter out niches on cooldown from available selections
   const getAvailableNiches = () => {
     if (!usageData?.nicheCooldowns) return filteredNiches
@@ -814,12 +804,10 @@ export default function LeadGeneratorPage() {
               </div>
                         <div className="space-y-2 max-h-24 overflow-y-auto">
                           {usageData.nicheCooldowns.map((cooldown) => (
-                            <div key={cooldown.niche_id} className="flex justify-between items-center text-xs">
-                              <span className="text-gray-400 truncate max-w-[120px]">
-                                {cooldown.niche_name}
-                              </span>
-                              <span className="text-gray-300 whitespace-nowrap">
-                                {formatCooldownTime(cooldown.cooldown_remaining_ms)}
+                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
+                              <span className="text-gray-400">{cooldown.niche_name}</span>
+                              <span className="text-orange-400 font-mono">
+                                {getTimeUntilMidnight()}
                               </span>
                             </div>
                           ))}
@@ -916,7 +904,7 @@ export default function LeadGeneratorPage() {
                                   {niche.name}
                                   {onCooldown && cooldownInfo && (
                                     <span className="ml-1 text-xs text-gray-400">
-                                      ({formatCooldownTime(cooldownInfo.cooldown_remaining_ms)})
+                                      ({getTimeUntilMidnight()})
                                     </span>
                                   )}
                                 </label>
