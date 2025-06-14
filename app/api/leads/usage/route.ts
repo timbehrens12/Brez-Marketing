@@ -45,17 +45,8 @@ export async function GET(request: NextRequest) {
     tomorrow.setMilliseconds(0)
 
     // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
-    // Create start of today in the same way as generate-real route
     const startOfToday = new Date(now)
     startOfToday.setHours(0, 0, 0, 0)
-    startOfToday.setMilliseconds(0)
-    
-    console.log('Checking niche cooldowns:', {
-      userId,
-      startOfToday: startOfToday.toISOString(),
-      now: now.toISOString(),
-      tomorrow: tomorrow.toISOString()
-    })
     
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
@@ -88,13 +79,6 @@ export async function GET(request: NextRequest) {
         const usageDay = usageDate.toISOString().split('T')[0]
         const todayDay = now.toISOString().split('T')[0]
         const isToday = usageDay === todayDay
-        
-        console.log(`Niche ${usage.lead_niches.name}:`, {
-          last_used_at: usage.last_used_at,
-          usageDay,
-          todayDay,
-          isToday
-        })
         
         return isToday
       })
