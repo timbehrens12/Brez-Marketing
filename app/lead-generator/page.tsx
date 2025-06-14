@@ -685,12 +685,6 @@ export default function LeadGeneratorPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Search className="h-5 w-5 text-gray-400" />
-                <h2 className="text-lg font-semibold text-gray-400">Lead Search</h2>
-              </div>
-            </CardHeader>
             <CardContent className="space-y-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
@@ -1041,7 +1035,8 @@ export default function LeadGeneratorPage() {
                     <Button
                       onClick={() => setIsAddingManual(true)}
                       variant="outline"
-                      className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Manual Lead
