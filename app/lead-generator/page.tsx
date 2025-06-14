@@ -246,7 +246,10 @@ export default function LeadGeneratorPage() {
       
       const { data, error } = await query
       
-      if (error) throw error
+      if (error) {
+        console.error('Error loading leads:', error)
+        throw error
+      }
       setLeads((data as Lead[]) || [])
     } catch (error) {
       console.error('Error loading leads:', error)
@@ -271,7 +274,10 @@ export default function LeadGeneratorPage() {
       
       const { data: allLeads, error } = await query
       
-      if (error) throw error
+      if (error) {
+        console.error('Error loading stats:', error)
+        throw error
+      }
       
       const today = new Date().toDateString()
       const todayCount = allLeads?.filter((lead: any) => 
