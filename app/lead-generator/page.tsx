@@ -156,8 +156,18 @@ export default function LeadGeneratorPage() {
   const loadUsageData = async () => {
     if (!userId) return
     
+    const localNow = new Date();
+    const localDate = [
+      localNow.getFullYear(),
+      ('0' + (localNow.getMonth() + 1)).slice(-2),
+      ('0' + localNow.getDate()).slice(-2)
+    ].join('-');
+    
+    const startOfToday = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 0, 0, 0, 0);
+    const localStartOfDayUTC = startOfToday.toISOString();
+
     try {
-      const response = await fetch(`/api/leads/usage?userId=${userId}`)
+      const response = await fetch(`/api/leads/usage?userId=${userId}&localDate=${localDate}&localStartOfDayUTC=${localStartOfDayUTC}`);
       const data = await response.json()
       
       if (response.ok) {

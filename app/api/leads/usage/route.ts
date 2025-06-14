@@ -13,20 +13,21 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
+    const localDate = searchParams.get('localDate')
+    const localStartOfDayUTC = searchParams.get('localStartOfDayUTC')
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 })
+    if (!userId || !localDate || !localStartOfDayUTC) {
+      return NextResponse.json({ error: 'User ID and client date information required' }, { status: 400 })
     }
 
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
     
-    // Get today's usage
+    // Get today's usage using the client's provided local date
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
       .select('*')
       .eq('user_id', userId)
-      .eq('date', today)
+      .eq('date', localDate) // Use client's local date
       .single()
 
     if (usageError && usageError.code !== 'PGRST116') { // PGRST116 = not found
@@ -38,15 +39,13 @@ export async function GET(request: NextRequest) {
     const leadsGeneratedToday = usageData?.leads_generated || 0
     const lastGenerationAt = usageData?.last_generation_at || null
 
-    // Calculate when limit resets (midnight in local timezone)
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-    tomorrow.setMilliseconds(0)
+    // Calculate when limit resets (midnight in user's local timezone)
+    const startOfUserDay = new Date(localStartOfDayUTC);
+    const tomorrow = new Date(startOfUserDay);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
-    const startOfToday = new Date(now)
-    startOfToday.setHours(0, 0, 0, 0)
+    // Get niche usage data for cooldowns - only show niches used since the start of the user's day
+    const startOfToday = new Date(localStartOfDayUTC);
     
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
@@ -73,8 +72,8 @@ export async function GET(request: NextRequest) {
     const nicheCooldowns = nicheUsageData
       ?.filter(usage => usage.lead_niches) // Filter out usage with no niche data
       .map(usage => {
-        // A niche used today is on cooldown until midnight.
-        // The `tomorrow` variable represents the start of the next day (midnight).
+        // A niche used today is on cooldown until midnight (user's timezone).
+        // The `tomorrow` variable represents the start of the user's next day (their local midnight).
         const cooldownUntil = tomorrow;
         
         // Fix type issue: Supabase might return a single object or an array for relationships
