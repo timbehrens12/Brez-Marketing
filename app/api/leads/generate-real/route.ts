@@ -27,8 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!localDate || !localStartOfDayUTC) {
-      console.error('Client date information missing from request');
-      return NextResponse.json({ error: 'Client date information required. Please refresh and try again.' }, { status: 400 });
+      return NextResponse.json({ error: 'Client date information required' }, { status: 400 })
     }
 
     // Check niche limit
@@ -38,10 +37,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Use client-provided date for midnight-based resets
+    // Get current date for midnight-based resets - use client's local date
     const now = new Date()
 
-    // Check user's daily usage
+    // Check user's daily usage using client's local date
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
       .select('*')
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Check if user has exceeded daily limit
     const currentUsage = usageData?.generation_count || 0
     if (currentUsage >= DAILY_GENERATION_LIMIT) {
-      // Calculate next midnight reset based on user's timezone
+      // Calculate next midnight reset using client's timezone
       const startOfUserDay = new Date(localStartOfDayUTC);
       const tomorrow = new Date(startOfUserDay);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -73,11 +72,12 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Check niche-specific cooldowns (cooldown until midnight in user's timezone)
+    // Check niche-specific cooldowns (cooldown until midnight) using client's timezone
     const startOfToday = new Date(localStartOfDayUTC);
     
-    const tomorrowForCooldown = new Date(localStartOfDayUTC)
-    tomorrowForCooldown.setDate(tomorrowForCooldown.getDate() + 1)
+    const startOfUserDay = new Date(localStartOfDayUTC);
+    const tomorrow = new Date(startOfUserDay);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         cooldownNiches: cooldownNiches.map(n => ({
           niche_id: n.niche_id,
           niche_name: nicheNameMap[n.niche_id],
-          cooldownUntil: tomorrowForCooldown.toISOString()
+          cooldownUntil: tomorrow.toISOString()
         }))
       }, { status: 429 })
     }
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
           last_generation_at: new Date().toISOString()
         })
         .eq('user_id', userId)
-        .eq('date', localDate) // Use client's local date
+        .eq('date', localDate)
 
       if (updateError) {
         console.error('Error updating usage:', updateError)
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
         .from('user_usage')
         .insert({
           user_id: userId,
-          date: localDate, // Use client's local date
+          date: localDate,
           generation_count: 1,
           leads_generated: insertedLeads.length,
           last_generation_at: new Date().toISOString()
