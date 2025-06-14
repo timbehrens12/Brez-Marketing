@@ -109,7 +109,6 @@ export default function LeadGeneratorPage() {
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
   const [activeTab, setActiveTab] = useState('search')
-  const [isClearing, setIsClearing] = useState(false)
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   
@@ -537,41 +536,6 @@ export default function LeadGeneratorPage() {
     setSelectedLeads([])
   }
 
-  // Clear all leads
-  const clearAllLeads = async () => {
-    if (!userId) return
-    
-    setIsClearing(true)
-    try {
-      const supabase = await getSupabaseClient()
-      let query = supabase
-        .from('leads')
-        .delete()
-        .eq('user_id', userId)
-      
-      if (selectedBrandId) {
-        query = query.eq('brand_id', selectedBrandId)
-      } else {
-        query = query.is('brand_id', null)
-      }
-      
-      const { error } = await query
-      
-      if (error) throw error
-      
-      setLeads([])
-      setSelectedLeads([])
-      setFilteredLeads([])
-      await loadStats()
-      toast.success('All leads cleared successfully')
-    } catch (error) {
-      console.error('Error clearing leads:', error)
-      toast.error('Failed to clear leads')
-    } finally {
-      setIsClearing(false)
-    }
-  }
-
   // Delete selected leads
   const deleteSelectedLeads = async () => {
     if (selectedLeads.length === 0) {
@@ -717,35 +681,6 @@ export default function LeadGeneratorPage() {
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Lead Discovery Platform</h1>
-            <p className="text-gray-400 mt-2">
-              Find real businesses with verified contact information from Google Places
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={loadUsageData}
-              variant="outline"
-              size="sm"
-              className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingUsage ? 'animate-spin' : ''}`} />
-              Refresh Usage
-            </Button>
-            <Button
-              onClick={() => setIsAddingManual(true)}
-              variant="outline"
-              className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Manual Lead
-            </Button>
-          </div>
-        </div>
-
         {/* Main Content - Side by Side Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
@@ -1104,6 +1039,14 @@ export default function LeadGeneratorPage() {
                 </div>
                 <div className="flex gap-2">
                     <Button
+                      onClick={() => setIsAddingManual(true)}
+                      variant="outline"
+                      className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Manual Lead
+                    </Button>
+                    <Button
                       onClick={deleteSelectedLeads}
                       disabled={selectedLeads.length === 0}
                       variant="outline"
@@ -1112,20 +1055,6 @@ export default function LeadGeneratorPage() {
                     >
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Delete ({selectedLeads.length})
-                    </Button>
-                    <Button
-                      onClick={clearAllLeads}
-                      disabled={isClearing || leads.length === 0}
-                      variant="outline"
-                      size="sm"
-                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
-                    >
-                      {isClearing ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <TrendingUp className="h-4 w-4 mr-2" />
-                      )}
-                      Clear All
                     </Button>
                     <Button
                       onClick={sendToOutreach}
