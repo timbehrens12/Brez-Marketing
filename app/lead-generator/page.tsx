@@ -343,56 +343,56 @@ export default function LeadGeneratorPage() {
   }, [businessType])
 
   const generateLeads = async () => {
-    if (!userId) {
-      toast.error('Please sign in first')
-      return
+    if (!selectedBrandId) {
+      toast.error("Please select a brand before generating leads.");
+      return;
     }
 
     if (selectedNiches.length === 0) {
-      toast.error('Please select at least one niche')
-      return
+      toast.error("Please select at least one niche.");
+      return;
     }
-
-    if (!usageData || usageData.remaining <= 0) {
-      toast.error(`Daily limit reached. Resets ${getTimeUntilReset()}`)
-      return
-    }
-
-    setIsGenerating(true)
     
+    // Check for cooldowns
+    const cooledDownNiches = getAvailableNiches();
+    const isAnyNicheOnCooldown = selectedNiches.some(nicheId => 
+      !cooledDownNiches.some(availableNiche => availableNiche.id === nicheId)
+    );
+
+    if (isAnyNicheOnCooldown) {
+      toast.error("One or more selected niches are on cooldown.");
+      return;
+    }
+    
+    setIsGenerating(true)
+    toast.loading('Generating new leads...', { id: 'generating-toast' })
+
+    const localNow = new Date();
+    const localDate = [
+      localNow.getFullYear(),
+      ('0' + (localNow.getMonth() + 1)).slice(-2),
+      ('0' + localNow.getDate()).slice(-2)
+    ].join('-');
+    
+    const startOfToday = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 0, 0, 0, 0);
+    const localStartOfDayUTC = startOfToday.toISOString();
+
     try {
-      // Use different API endpoints for ecommerce vs local service
-      const apiEndpoint = businessType === 'ecommerce' 
-        ? '/api/leads/generate-ecommerce'
-        : '/api/leads/generate-real'
-      
-      // Add timeout to prevent hanging - increased for multiple niches
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout for multiple niches
-      
-      const requestBody = businessType === 'ecommerce'
-        ? {
-            selectedNiches,
-            brandId: selectedBrandId || null,
-            userId
-          }
-        : {
-            businessType,
-            niches: selectedNiches,
-            location,
-            brandId: selectedBrandId || null,
-            userId
-          }
-      
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch('/api/leads/generate-real', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          userId,
+          brandId: selectedBrandId,
+          businessType,
+          niches: selectedNiches,
+          location: location.city && location.state ? location : null,
+          keywords,
+          localDate,
+          localStartOfDayUTC,
+        })
       })
       
-      clearTimeout(timeoutId)
-
       let result
       try {
         result = await response.json()

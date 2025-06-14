@@ -17,13 +17,18 @@ const NICHE_COOLDOWN_HOURS = 24 // 24 hour cooldown per niche
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessType, niches, location, brandId, userId } = await request.json()
+    const { businessType, niches, location, brandId, userId, localDate, localStartOfDayUTC } = await request.json()
 
     console.log('Real lead generation request:', { businessType, niches: niches?.length, location, brandId, userId })
 
     if (!userId) {
       console.error('Authentication failed:', { userId: !!userId, brandId: !!brandId })
       return NextResponse.json({ error: 'User authentication required' }, { status: 401 })
+    }
+
+    if (!localDate || !localStartOfDayUTC) {
+      console.error('Client date information missing from request');
+      return NextResponse.json({ error: 'Client date information required. Please refresh and try again.' }, { status: 400 });
     }
 
     // Check niche limit
@@ -33,16 +38,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Get current date for midnight-based resets
+    // Use client-provided date for midnight-based resets
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
 
     // Check user's daily usage
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
       .select('*')
       .eq('user_id', userId)
-      .eq('date', today)
+      .eq('date', localDate) // Use client's local date
       .single()
 
     if (usageError && usageError.code !== 'PGRST116') { // PGRST116 = not found
@@ -53,10 +57,10 @@ export async function POST(request: NextRequest) {
     // Check if user has exceeded daily limit
     const currentUsage = usageData?.generation_count || 0
     if (currentUsage >= DAILY_GENERATION_LIMIT) {
-      // Calculate next midnight reset
-      const tomorrow = new Date(now)
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      tomorrow.setHours(0, 0, 0, 0)
+      // Calculate next midnight reset based on user's timezone
+      const startOfUserDay = new Date(localStartOfDayUTC);
+      const tomorrow = new Date(startOfUserDay);
+      tomorrow.setDate(tomorrow.getDate() + 1);
       
       return NextResponse.json({ 
         error: `Daily limit reached. You've used ${currentUsage} of ${DAILY_GENERATION_LIMIT} generations today. Resets at midnight.`,
@@ -69,13 +73,11 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Check niche-specific cooldowns (cooldown until midnight)
-    const startOfToday = new Date(now)
-    startOfToday.setHours(0, 0, 0, 0)
+    // Check niche-specific cooldowns (cooldown until midnight in user's timezone)
+    const startOfToday = new Date(localStartOfDayUTC);
     
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
+    const tomorrowForCooldown = new Date(localStartOfDayUTC)
+    tomorrowForCooldown.setDate(tomorrowForCooldown.getDate() + 1)
     
     const { data: nicheUsageData, error: nicheUsageError } = await supabase
       .from('user_niche_usage')
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
         cooldownNiches: cooldownNiches.map(n => ({
           niche_id: n.niche_id,
           niche_name: nicheNameMap[n.niche_id],
-          cooldownUntil: tomorrow.toISOString()
+          cooldownUntil: tomorrowForCooldown.toISOString()
         }))
       }, { status: 429 })
     }
@@ -200,7 +202,7 @@ export async function POST(request: NextRequest) {
           last_generation_at: new Date().toISOString()
         })
         .eq('user_id', userId)
-        .eq('date', today)
+        .eq('date', localDate) // Use client's local date
 
       if (updateError) {
         console.error('Error updating usage:', updateError)
@@ -211,7 +213,7 @@ export async function POST(request: NextRequest) {
         .from('user_usage')
         .insert({
           user_id: userId,
-          date: today,
+          date: localDate, // Use client's local date
           generation_count: 1,
           leads_generated: insertedLeads.length,
           last_generation_at: new Date().toISOString()
