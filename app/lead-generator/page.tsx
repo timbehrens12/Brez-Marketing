@@ -806,7 +806,7 @@ export default function LeadGeneratorPage() {
                           {usageData.nicheCooldowns.map((cooldown) => (
                             <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
                               <span className="text-gray-400">{cooldown.niche_name}</span>
-                              <span className="text-orange-400 font-mono">
+                              <span className="text-gray-300">
                                 {getTimeUntilMidnight()}
                               </span>
                             </div>
