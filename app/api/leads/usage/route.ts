@@ -21,14 +21,6 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const today = now.toISOString().split('T')[0]
     
-    // Calculate time until midnight consistently
-    const nextMidnight = new Date(now)
-    nextMidnight.setHours(24, 0, 0, 0) // Sets to midnight of next day
-    
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-
     // Get today's usage
     const { data: usageData, error: usageError } = await supabase
       .from('user_usage')
@@ -45,6 +37,12 @@ export async function GET(request: NextRequest) {
     const currentUsage = usageData?.generation_count || 0
     const leadsGeneratedToday = usageData?.leads_generated || 0
     const lastGenerationAt = usageData?.last_generation_at || null
+
+    // Calculate when limit resets (midnight in local timezone)
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+    tomorrow.setMilliseconds(0)
 
     // Get niche usage data for cooldowns - only show niches used today (which are on cooldown until midnight)
     const startOfToday = new Date(now)
@@ -71,32 +69,33 @@ export async function GET(request: NextRequest) {
 
     console.log('Found niche usage data:', nicheUsageData?.length || 0, 'entries')
     
-    // Process niche cooldowns - only niches used today are on cooldown until midnight
-    const nicheCooldowns = (nicheUsageData || [])
-      .filter((usage: any) => {
-        if (!usage.lead_niches) return false
+    // Process niche cooldowns
+    const nicheCooldowns = nicheUsageData
+      ?.filter(usage => usage.lead_niches) // Filter out usage with no niche data
+      .map(usage => {
+        // A niche used today is on cooldown until midnight.
+        // The `tomorrow` variable represents the start of the next day (midnight).
+        const cooldownUntil = tomorrow;
         
-        // Double-check that the usage is from today
-        const usageDate = new Date(usage.last_used_at)
-        const usageDay = usageDate.toISOString().split('T')[0]
-        const todayDay = now.toISOString().split('T')[0]
-        const isToday = usageDay === todayDay
-        
-        return isToday
-      })
-      .map((usage: any) => {
-        const timeUntilMidnight = nextMidnight.getTime() - now.getTime()
-        
+        // Fix type issue: Supabase might return a single object or an array for relationships
+        const nicheInfo = Array.isArray(usage.lead_niches) ? usage.lead_niches[0] : usage.lead_niches;
+
+        const cooldownRemainingMs = Math.max(0, cooldownUntil.getTime() - now.getTime())
+
         return {
           niche_id: usage.niche_id,
-          niche_name: usage.lead_niches.name,
-          niche_category: usage.lead_niches.category,
+          niche_name: nicheInfo.name,
+          niche_category: nicheInfo.category,
           last_used_at: usage.last_used_at,
           leads_generated: usage.leads_generated,
-          cooldown_until: nextMidnight.toISOString(),
-          cooldown_remaining_ms: timeUntilMidnight
+          cooldown_until: cooldownUntil.toISOString(),
+          cooldown_remaining_ms: cooldownRemainingMs
         }
-      }).filter(cooldown => cooldown.cooldown_remaining_ms > 0)
+      })
+      // Any niche returned by the query was used today, so it is on cooldown until midnight.
+      ?? []
+
+    console.log('Processed cooldowns:', nicheCooldowns.length, 'active cooldowns')
 
     return NextResponse.json({
       usage: {
@@ -107,8 +106,8 @@ export async function GET(request: NextRequest) {
         leadsPerNiche: LEADS_PER_NICHE,
         maxNichesPerSearch: MAX_NICHES_PER_SEARCH,
         lastGenerationAt,
-        resetsAt: nextMidnight.toISOString(),
-        resetsIn: nextMidnight.getTime() - now.getTime(),
+        resetsAt: tomorrow.toISOString(),
+        resetsIn: tomorrow.getTime() - now.getTime(),
         nicheCooldowns,
         cooldownHours: NICHE_COOLDOWN_HOURS
       }
