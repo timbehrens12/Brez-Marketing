@@ -19,8 +19,6 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import { CountrySelect, StateSelect, CitySelect } from 'react-country-state-city'
-import 'react-country-state-city/dist/react-country-state-city.css'
 
 interface Lead {
   id: string
@@ -86,14 +84,7 @@ export default function LeadGeneratorPage() {
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
-  const [location, setLocation] = useState({ 
-    country: '', 
-    countryId: 0,
-    state: '', 
-    stateId: 0,
-    city: '', 
-    radius: '' 
-  })
+  const [location, setLocation] = useState({ country: '', state: '', city: '', radius: '' })
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -688,70 +679,6 @@ export default function LeadGeneratorPage() {
   }
 
   return (
-    <>
-      <style jsx global>{`
-        /* Custom styles for react-country-state-city dropdowns */
-        .country-select-wrapper .css-13cymwt-control,
-        .state-select-wrapper .css-13cymwt-control,
-        .city-select-wrapper .css-13cymwt-control,
-        .country-select-wrapper .css-t3ipsp-control,
-        .state-select-wrapper .css-t3ipsp-control,
-        .city-select-wrapper .css-t3ipsp-control {
-          background-color: #2a2a2a !important;
-          border-color: #444 !important;
-          min-height: 40px;
-          box-shadow: none !important;
-        }
-        
-        .country-select-wrapper .css-1n6sfyn-MenuList,
-        .state-select-wrapper .css-1n6sfyn-MenuList,
-        .city-select-wrapper .css-1n6sfyn-MenuList {
-          background-color: #1a1a1a !important;
-          max-height: 200px !important;
-        }
-        
-        .country-select-wrapper .css-d7l1ni-option,
-        .state-select-wrapper .css-d7l1ni-option,
-        .city-select-wrapper .css-d7l1ni-option {
-          background-color: #1a1a1a !important;
-          color: #9ca3af !important;
-        }
-        
-        .country-select-wrapper .css-tr4s17-option,
-        .state-select-wrapper .css-tr4s17-option,
-        .city-select-wrapper .css-tr4s17-option,
-        .country-select-wrapper .css-nfzzg9-option,
-        .state-select-wrapper .css-nfzzg9-option,
-        .city-select-wrapper .css-nfzzg9-option {
-          background-color: #333 !important;
-          color: white !important;
-        }
-        
-        .country-select-wrapper .css-1dimb5e-singleValue,
-        .state-select-wrapper .css-1dimb5e-singleValue,
-        .city-select-wrapper .css-1dimb5e-singleValue {
-          color: #9ca3af !important;
-        }
-        
-        .country-select-wrapper .css-1dimb5e-placeholder,
-        .state-select-wrapper .css-1dimb5e-placeholder,
-        .city-select-wrapper .css-1dimb5e-placeholder {
-          color: #6b7280 !important;
-        }
-        
-        .country-select-wrapper input,
-        .state-select-wrapper input,
-        .city-select-wrapper input {
-          color: #9ca3af !important;
-        }
-        
-        /* React Select specific overrides */
-        .country-select-wrapper > div,
-        .state-select-wrapper > div,
-        .city-select-wrapper > div {
-          font-size: 14px;
-        }
-      `}</style>
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
@@ -976,51 +903,24 @@ export default function LeadGeneratorPage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="country-select-wrapper">
-                    <CountrySelect
-                      onChange={(e: any) => {
-                        setLocation({
-                          country: e.name,
-                          countryId: e.id,
-                          state: '',
-                          stateId: 0,
-                          city: '',
-                          radius: location.radius
-                        })
-                      }}
-                      placeHolder="Select Country"
-                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                    />
-                  </div>
-                  <div className="state-select-wrapper">
-                    <StateSelect
-                      countryid={location.countryId}
-                      onChange={(e: any) => {
-                        setLocation(prev => ({ 
-                          ...prev, 
-                          state: e.name,
-                          stateId: e.id,
-                          city: ''
-                        }))
-                      }}
-                      placeHolder="Select State"
-                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                    />
-                  </div>
-                  <div className="city-select-wrapper">
-                    <CitySelect
-                      countryid={location.countryId}
-                      stateid={location.stateId}
-                      onChange={(e: any) => {
-                        setLocation(prev => ({ 
-                          ...prev, 
-                          city: e.name 
-                        }))
-                      }}
-                      placeHolder="Select City"
-                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                    />
-                  </div>
+                  <Input
+                    placeholder="Country"
+                    value={location.country}
+                    onChange={(e) => setLocation(prev => ({ ...prev, country: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
+                  <Input
+                    placeholder="State/Province"
+                    value={location.state}
+                    onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
+                  <Input
+                    placeholder="City"
+                    value={location.city}
+                    onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                  />
                   <Select
                     value={location.radius}
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
@@ -1737,6 +1637,5 @@ export default function LeadGeneratorPage() {
         </DialogContent>
       </Dialog>
     </div>
-    </>
   )
 } 
