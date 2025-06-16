@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Found niche usage data:', nicheUsageData?.length || 0, 'entries')
-    
+
     // Process niche cooldowns
     const nicheCooldowns = nicheUsageData
       ?.filter(usage => usage.lead_niches) // Filter out usage with no niche data
@@ -82,11 +82,11 @@ export async function GET(request: NextRequest) {
         const cooldownRemainingMs = Math.max(0, cooldownUntil.getTime() - now.getTime())
 
         return {
-          niche_id: usage.niche_id,
+      niche_id: usage.niche_id,
           niche_name: nicheInfo.name,
           niche_category: nicheInfo.category,
-          last_used_at: usage.last_used_at,
-          leads_generated: usage.leads_generated,
+      last_used_at: usage.last_used_at,
+      leads_generated: usage.leads_generated,
           cooldown_until: cooldownUntil.toISOString(),
           cooldown_remaining_ms: cooldownRemainingMs
         }

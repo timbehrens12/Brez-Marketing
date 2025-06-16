@@ -139,33 +139,3 @@ div[data-radix-popper-content-wrapper] > * {
 .rdp-day_range_middle {
   background-color: #1a1a1a !important;
 }
-
-/* Custom styles for react-country-state-city */
-.select-box {
-    background-color: #2A2A2A !important;
-    border: 1px solid #444 !important;
-    color: #A0A0A0 !important;
-    border-radius: 0.375rem !important;
-    padding: 0.5rem 0.75rem !important;
-    width: 100% !important;
-}
-
-.select-box:focus {
-    outline: none !important;
-    border-color: #555 !important;
-}
-
-.select-box-options-container {
-    background-color: #1A1A1A !important;
-    border: 1px solid #444 !important;
-    color: #A0A0A0 !important;
-    z-index: 50 !important;
-}
-
-.select-box-option:hover {
-    background-color: #333 !important;
-}
-
-.select-box-option {
-    color: #A0A0A0 !important;
-}
