@@ -19,6 +19,30 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
+import {
+  CountrySelect,
+  StateSelect,
+  CitySelect,
+} from "react-country-state-city";
+import "react-country-state-city/dist/react-country-state-city.css";
+
+// Type definitions for react-country-state-city
+interface Country {
+  id: number;
+  name: string;
+  iso2: string;
+}
+
+interface State {
+  id: number;
+  name: string;
+  iso2: string;
+}
+
+interface City {
+  id: number;
+  name: string;
+}
 
 interface Lead {
   id: string
@@ -84,7 +108,12 @@ export default function LeadGeneratorPage() {
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
-  const [location, setLocation] = useState({ country: '', state: '', city: '', radius: '' })
+  const [location, setLocation] = useState({ 
+    country: { id: 0, name: '', iso2: '' }, 
+    state: { id: 0, name: '', iso2: '' }, 
+    city: { id: 0, name: '' }, 
+    radius: '' 
+  })
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -391,7 +420,12 @@ export default function LeadGeneratorPage() {
         : {
             businessType,
             niches: selectedNiches,
-            location,
+            location: {
+              country: location.country.name,
+              state: location.state.name,
+              city: location.city.name,
+              radius: location.radius
+            },
             brandId: selectedBrandId || null,
             userId,
             localDate,
@@ -903,24 +937,51 @@ export default function LeadGeneratorPage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Input
-                    placeholder="Country"
-                    value={location.country}
-                    onChange={(e) => setLocation(prev => ({ ...prev, country: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="State/Province"
-                    value={location.state}
-                    onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="City"
-                    value={location.city}
-                    onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
+                  <div className="relative">
+                    <CountrySelect
+                      onChange={(country) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          country: country,
+                          state: { id: 0, name: '', iso2: '' },
+                          city: { id: 0, name: '' }
+                        }))
+                      }}
+                      placeHolder="Select Country"
+                      containerClassName="w-full"
+                      inputClassName="w-full bg-[#2A2A2A] border-[#444] text-gray-400 rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <StateSelect
+                      countryid={location.country.id}
+                      onChange={(state) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          state: state,
+                          city: { id: 0, name: '' }
+                        }))
+                      }}
+                      placeHolder="Select State/Province"
+                      containerClassName="w-full"
+                      inputClassName="w-full bg-[#2A2A2A] border-[#444] text-gray-400 rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <CitySelect
+                      countryid={location.country.id}
+                      stateid={location.state.id}
+                      onChange={(city) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          city: city
+                        }))
+                      }}
+                      placeHolder="Select City"
+                      containerClassName="w-full"
+                      inputClassName="w-full bg-[#2A2A2A] border-[#444] text-gray-400 rounded-md px-3 py-2 h-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                   <Select
                     value={location.radius}
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
