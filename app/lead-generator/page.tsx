@@ -19,18 +19,13 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import {
-  CountrySelect,
-  StateSelect,
-  CitySelect,
-} from "react-country-state-city";
-import "react-country-state-city/dist/react-country-state-city.css";
+import { Country, State, City } from 'country-state-city';
 
-// Simple types for location data
+// Location data interface
 interface LocationData {
-  country: any;
-  state: any;
-  city: any;
+  country: string;
+  state: string;
+  city: string;
   radius: string;
 }
 
@@ -99,11 +94,15 @@ export default function LeadGeneratorPage() {
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState<LocationData>({ 
-    country: null, 
-    state: null, 
-    city: null, 
+    country: '', 
+    state: '', 
+    city: '', 
     radius: '' 
   })
+  
+  // Get available data based on selections
+  const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
+  const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -411,9 +410,9 @@ export default function LeadGeneratorPage() {
             businessType,
             niches: selectedNiches,
             location: {
-              country: location.country?.name || '',
-              state: location.state?.name || '',
-              city: location.city?.name || '',
+              country: location.country,
+              state: location.state,
+              city: location.city,
               radius: location.radius
             },
             brandId: selectedBrandId || null,
@@ -927,42 +926,67 @@ export default function LeadGeneratorPage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <CountrySelect
-                    onChange={(country: any) => {
-                      setLocation(prev => ({ 
-                        ...prev, 
-                        country: country,
-                        state: null,
-                        city: null
-                      }))
-                    }}
-                    placeHolder="Select Country"
-                    containerClassName="w-full"
-                  />
-                  <StateSelect
-                    countryid={location.country?.id || 0}
-                    onChange={(state: any) => {
-                      setLocation(prev => ({ 
-                        ...prev, 
-                        state: state,
-                        city: null
-                      }))
-                    }}
-                    placeHolder="Select State/Province"
-                    containerClassName="w-full"
-                  />
-                  <CitySelect
-                    countryid={location.country?.id || 0}
-                    stateid={location.state?.id || 0}
-                    onChange={(city: any) => {
-                      setLocation(prev => ({ 
-                        ...prev, 
-                        city: city
-                      }))
-                    }}
-                    placeHolder="Select City"
-                    containerClassName="w-full"
-                  />
+                  <Select
+                    value={location.country}
+                    onValueChange={(value) => setLocation(prev => ({ 
+                      ...prev, 
+                      country: value,
+                      state: '',
+                      city: ''
+                    }))}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Select Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Country.getAllCountries().map((country) => (
+                        <SelectItem key={country.isoCode} value={country.isoCode}>
+                          {country.flag} {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select
+                    value={location.state}
+                    onValueChange={(value) => setLocation(prev => ({ 
+                      ...prev, 
+                      state: value,
+                      city: ''
+                    }))}
+                    disabled={!location.country}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Select State/Province" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableStates.map((state) => (
+                        <SelectItem key={state.isoCode} value={state.isoCode}>
+                          {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select
+                    value={location.city}
+                    onValueChange={(value) => setLocation(prev => ({ 
+                      ...prev, 
+                      city: value
+                    }))}
+                    disabled={!location.state}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Select City" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCities.map((city) => (
+                        <SelectItem key={city.name} value={city.name}>
+                          {city.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Select
                     value={location.radius}
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
