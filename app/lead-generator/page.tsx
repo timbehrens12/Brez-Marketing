@@ -19,6 +19,12 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
+import {
+  CitySelect,
+  CountrySelect,
+  StateSelect,
+} from "react-country-state-city";
+import "react-country-state-city/dist/react-country-state-city.css";
 
 interface Lead {
   id: string
@@ -85,6 +91,8 @@ export default function LeadGeneratorPage() {
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState({ country: '', state: '', city: '', radius: '' })
+  const [countryid, setCountryid] = useState(0);
+  const [stateid, setstateid] = useState(0);
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -881,6 +889,45 @@ export default function LeadGeneratorPage() {
               )}
             </div>
 
+            {/* Location Targeting */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
+              <div className="space-y-3">
+                <CountrySelect
+                  onChange={(e: any) => {
+                    setCountryid(e.id);
+                    setLocation(prev => ({ ...prev, country: e.name, state: '', city: '' }))
+                  }}
+                  placeHolder="Select Country"
+                />
+                <StateSelect
+                  countryid={countryid}
+                  onChange={(e: any) => {
+                    setstateid(e.id);
+                    setLocation(prev => ({ ...prev, state: e.name, city: '' }))
+                  }}
+                  placeHolder="Select State"
+                />
+                <CitySelect
+                  countryid={countryid}
+                  stateid={stateid}
+                  onChange={(e: any) => {
+                    setLocation(prev => ({ ...prev, city: e.name }))
+                  }}
+                  placeHolder="Select City"
+                />
+              </div>
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search radius"
+                  value={location.radius}
+                  onChange={(e) => setLocation(prev => ({ ...prev, radius: e.target.value }))}
+                  className="bg-[#2A2A2A] border-[#444] text-white"
+                />
+              </div>
+            </div>
+
             {/* Selected Niches Display */}
             {selectedNiches.length > 0 && (
               <div className="space-y-2">
@@ -888,67 +935,12 @@ export default function LeadGeneratorPage() {
                 <div className="flex flex-wrap gap-2">
                   {selectedNiches.map(nicheId => {
                     const niche = niches.find(n => n.id === nicheId)
-                    return niche ? (
-                      <Badge key={nicheId} variant="secondary" className="bg-gray-600/20 text-gray-300">
-                        {niche.name}
+                    return (
+                      <Badge key={nicheId} variant="secondary" className="bg-gray-700 text-gray-300">
+                        {niche?.name || 'Loading...'}
                       </Badge>
-                    ) : null
+                    )
                   })}
-                </div>
-              </div>
-            )}
-
-            {/* Location Filter (for local services) */}
-            {businessType === 'local_service' && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Input
-                    placeholder="Country"
-                    value={location.country}
-                    onChange={(e) => setLocation(prev => ({ ...prev, country: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="State/Province"
-                    value={location.state}
-                    onChange={(e) => setLocation(prev => ({ ...prev, state: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Input
-                    placeholder="City"
-                    value={location.city}
-                    onChange={(e) => setLocation(prev => ({ ...prev, city: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                  />
-                  <Select
-                    value={location.radius}
-                    onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
-                  >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Search radius" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 miles</SelectItem>
-                      <SelectItem value="10">10 miles</SelectItem>
-                      <SelectItem value="15">15 miles</SelectItem>
-                      <SelectItem value="25">25 miles</SelectItem>
-                      <SelectItem value="50">50 miles</SelectItem>
-                      <SelectItem value="75">75 miles</SelectItem>
-                      <SelectItem value="100">100 miles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* Show warning if trying to select too many niches */}
-            {selectedNiches.length > (usageData?.maxNichesPerSearch || 5) && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3">
-                <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                  <AlertTriangle className="h-4 w-4" />
-                  Too many niches selected. Maximum {usageData?.maxNichesPerSearch || 5} niches allowed 
-                  ({usageData?.leadsPerNiche || 25} leads each).
                 </div>
               </div>
             )}
