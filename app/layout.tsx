@@ -13,7 +13,6 @@ import { BrandProvider } from '@/lib/context/BrandContext'
 import { ClerkProvider } from '@clerk/nextjs'
 import { MetricsProvider } from '@/lib/contexts/MetricsContext'
 import { NotificationProvider } from '@/contexts/NotificationContext'
-import MantineProvider from '@/components/providers/MantineProvider'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -135,13 +134,12 @@ export default function RootLayout({
       </head>
       <body className={cn("h-screen overflow-hidden bg-[#0A0A0A] font-sans antialiased text-white", inter.className)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <MantineProvider>
-            <ClerkProvider>
-              <BrandProvider>
-                <MetricsProvider>
-                  <NotificationProvider>
-                    <WidgetProvider>
-                      <AuthProvider>
+          <ClerkProvider>
+            <BrandProvider>
+              <MetricsProvider>
+                <NotificationProvider>
+                  <WidgetProvider>
+                    <AuthProvider>
                       <div className="flex h-screen overflow-hidden fixed inset-0">
                         <Sidebar className="w-64 flex-shrink-0 h-screen sticky top-0" />
                         <main className="flex-1 overflow-y-auto h-screen flex flex-col">
@@ -151,13 +149,12 @@ export default function RootLayout({
                           <Footer />
                         </main>
                       </div>
-                      </AuthProvider>
-                    </WidgetProvider>
-                  </NotificationProvider>
-                </MetricsProvider>
-              </BrandProvider>
-            </ClerkProvider>
-          </MantineProvider>
+                    </AuthProvider>
+                  </WidgetProvider>
+                </NotificationProvider>
+              </MetricsProvider>
+            </BrandProvider>
+          </ClerkProvider>
           <Toaster />
         </ThemeProvider>
       </body>

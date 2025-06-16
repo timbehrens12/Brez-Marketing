@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
@@ -19,10 +19,8 @@ import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
 import { useAuth } from '@clerk/nextjs'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import ManualLeadForm from '@/components/ManualLeadForm'
+import { CountrySelect, StateSelect, CitySelect } from 'react-country-state-city'
+import 'react-country-state-city/dist/react-country-state-city.css'
 
 interface Lead {
   id: string
@@ -81,37 +79,6 @@ interface LeadFilters {
   selectedNicheFilter: string[]
 }
 
-// Zod schema for form validation
-const leadSchema = z.object({
-  // Basic Info
-  business_name: z.string().min(1, "Business name is required"),
-  owner_name: z.string().min(1, "Owner name is required"),
-  location: z.string().min(1, "Location is required"),
-  
-  // Contact
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  
-  // Social Media
-  facebook: z.string().optional(),
-  instagram: z.string().optional(),
-  twitter: z.string().optional(),
-  linkedin: z.string().optional(),
-  tiktok: z.string().optional(),
-  youtube: z.string().optional(),
-});
-
-type LeadFormData = z.infer<typeof leadSchema>;
-
-interface NicheCooldown {
-  niche: string;
-  used_today: number;
-  daily_limit: number;
-  cooldown_remaining_ms: number;
-  cooldown_end_time: string;
-}
-
 export default function LeadGeneratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
@@ -120,6 +87,8 @@ export default function LeadGeneratorPage() {
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
   const [location, setLocation] = useState({ country: '', state: '', city: '', radius: '' })
+  const [countryId, setCountryId] = useState(0)
+  const [stateId, setStateId] = useState(0)
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -132,6 +101,7 @@ export default function LeadGeneratorPage() {
     email: '',
     phone: '',
     website: '',
+    country: '',
     city: '',
     state_province: '',
     niche_id: '',
@@ -140,6 +110,8 @@ export default function LeadGeneratorPage() {
     linkedin_profile: '',
     twitter_handle: ''
   })
+  const [manualCountryId, setManualCountryId] = useState(0)
+  const [manualStateId, setManualStateId] = useState(0)
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
@@ -160,28 +132,6 @@ export default function LeadGeneratorPage() {
     hasLinkedin: false,
     hasFacebook: false,
     selectedNicheFilter: []
-  })
-
-  const [nicherCooldowns, setNicheCooldowns] = useState<NicheCooldown[]>([])
-  const [isLoadingCooldowns, setIsLoadingCooldowns] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { control, handleSubmit, reset, formState: { errors, isValid }, watch } = useForm<LeadFormData>({
-    resolver: zodResolver(leadSchema),
-    mode: 'onChange',
-    defaultValues: {
-      business_name: '',
-      owner_name: '',
-      location: '',
-      phone: '',
-      email: '',
-      website: '',
-      facebook: '',
-      instagram: '',
-      twitter: '',
-      linkedin: '',
-      tiktok: '',
-      youtube: '',
-    }
   })
 
   // Load data on component mount
@@ -641,6 +591,7 @@ export default function LeadGeneratorPage() {
         email: manualLeadData.email,
         phone: manualLeadData.phone || null,
         website: manualLeadData.website || null,
+        country: manualLeadData.country || null,
         city: manualLeadData.city || null,
         state_province: manualLeadData.state_province || null,
         business_type: businessType,
@@ -677,6 +628,7 @@ export default function LeadGeneratorPage() {
         email: '',
         phone: '',
         website: '',
+        country: '',
         city: '',
         state_province: '',
         niche_id: '',
@@ -685,6 +637,8 @@ export default function LeadGeneratorPage() {
         linkedin_profile: '',
         twitter_handle: ''
       })
+      setManualCountryId(0)
+      setManualStateId(0)
       
       setIsAddingManual(false)
       await loadStats()
@@ -735,194 +689,985 @@ export default function LeadGeneratorPage() {
     }
   }
 
-  // Helper function to clean social media handles
-  const cleanSocialHandle = (url: string, platform: string): string => {
-    if (!url) return '';
-    
-    let handle = url.trim();
-    
-    // Remove protocol and common prefixes
-    handle = handle.replace(/^https?:\/\//i, '');
-    handle = handle.replace(/^www\./i, '');
-    
-    // Platform-specific cleaning
-    const platformDomains: { [key: string]: string[] } = {
-      facebook: ['facebook.com/', 'fb.com/', 'm.facebook.com/'],
-      instagram: ['instagram.com/', 'instagr.am/'],
-      twitter: ['twitter.com/', 'x.com/'],
-      linkedin: ['linkedin.com/in/', 'linkedin.com/company/', 'linkedin.com/pub/'],
-      tiktok: ['tiktok.com/@', 'tiktok.com/'],
-      youtube: ['youtube.com/channel/', 'youtube.com/user/', 'youtube.com/c/', 'youtu.be/']
-    };
-    
-    if (platformDomains[platform]) {
-      for (const domain of platformDomains[platform]) {
-        if (handle.toLowerCase().startsWith(domain)) {
-          handle = handle.substring(domain.length);
-          break;
-        }
-      }
-    }
-    
-    // Remove @ symbol if it's the first character
-    if (handle.startsWith('@')) {
-      handle = handle.substring(1);
-    }
-    
-    // Remove trailing slashes and query parameters
-    handle = handle.replace(/[\/\?#].*$/, '');
-    
-    return handle;
-  };
-
-  // Fetch niche cooldowns
-  const fetchNicheCooldowns = async () => {
-    try {
-      setIsLoadingCooldowns(true);
-      const response = await fetch('/api/leads/usage');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Cooldown data received:', data);
-      
-      if (data.success && Array.isArray(data.niche_cooldowns)) {
-        const activeCooldowns = data.niche_cooldowns.filter((item: NicheCooldown) => 
-          item.cooldown_remaining_ms > 0
-        );
-        console.log('Active cooldowns:', activeCooldowns);
-        setNicheCooldowns(activeCooldowns);
-      } else {
-        console.error('Invalid cooldown data format:', data);
-        setNicheCooldowns([]);
-      }
-    } catch (error) {
-      console.error('Error fetching niche cooldowns:', error);
-      toast.error('Failed to load niche cooldowns');
-      setNicheCooldowns([]);
-    } finally {
-      setIsLoadingCooldowns(false);
-    }
-  };
-
-  const handleFormSuccess = () => {
-    setIsAddingManual(false);
-    toast.success('Lead added successfully!');
-  };
-
-  useEffect(() => {
-    fetchNicheCooldowns();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchNicheCooldowns, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Lead Generator</h1>
-          <p className="text-muted-foreground">Generate and manage your business leads</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={fetchNicheCooldowns} variant="outline">
-            Refresh Cooldowns
-          </Button>
-          <Dialog open={isAddingManual} onOpenChange={setIsAddingManual}>
-            <DialogTrigger asChild>
-              <Button>Add Lead Manually</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Lead</DialogTitle>
-              </DialogHeader>
-              <ManualLeadForm 
-                onSuccess={handleFormSuccess}
-                onCancel={() => setIsAddingManual(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Niche Cooldowns */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Niche Cooldowns</CardTitle>
-          <CardDescription>
-            Current active cooldowns for different business niches
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingCooldowns ? (
-            <p>Loading cooldowns...</p>
-          ) : nicherCooldowns.length === 0 ? (
-            <p className="text-muted-foreground">No active cooldowns - all niches are available!</p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {nicherCooldowns.map((cooldown, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium capitalize">{cooldown.niche}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {cooldown.used_today}/{cooldown.daily_limit} used today
-                    </p>
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="w-full space-y-6">
+        {/* Main Content - Side by Side Layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* Lead Search Panel */}
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
+            <CardContent className="space-y-6 pt-6">
+              {/* Usage Statistics Panel */}
+            <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-gray-400" />
+                  Daily Usage & Limits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingUsage ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                    <span className="ml-2 text-gray-400">Loading usage data...</span>
                   </div>
-                  <Badge variant="secondary">
-                    {Math.ceil(cooldown.cooldown_remaining_ms / (1000 * 60 * 60))}h remaining
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ) : usageData ? (
+                  <>
+                    {/* Generation Limit Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-400">Generations Today</span>
+                        <span className="text-sm font-medium text-white">
+                          {usageData.used} / {usageData.limit}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-800 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            usageData.remaining <= 0 ? 'bg-red-500' : 
+                            usageData.remaining <= 1 ? 'bg-white' : 'bg-gray-400'
+                          }`}
+                          style={{ width: `${Math.min((usageData.used / usageData.limit) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
 
-      {/* Lead Generation Tools */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lead Generation Tools</CardTitle>
-          <CardDescription>
-            Use these tools to generate leads automatically or manually
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2">Automated Lead Generation</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Generate leads automatically using AI and web scraping
-              </p>
-              <Button disabled className="w-full">
-                Coming Soon
-              </Button>
+                    {/* Leads Generated Today */}
+                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
+                      <span className="text-sm text-gray-400">Leads Generated Today</span>
+                      <span className="text-sm font-medium text-white">
+                        {usageData.leadsGeneratedToday}
+                      </span>
+                    </div>
+
+                    {/* System Limits */}
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#333]">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-white">{usageData.leadsPerNiche}</div>
+                        <div className="text-xs text-gray-500">Leads per Niche</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-300">{usageData.maxNichesPerSearch}</div>
+                        <div className="text-xs text-gray-500">Max Niches</div>
+                      </div>
+                    </div>
+
+                    {/* Reset Information */}
+                    <div className="flex justify-between items-center py-2 border-t border-[#333]">
+                      <span className="text-sm text-gray-400">Resets at Midnight</span>
+                      <span className="text-sm text-white">
+                        {getTimeUntilMidnight()}
+                      </span>
+                    </div>
+
+                    {/* Niche Cooldowns */}
+                    {usageData.nicheCooldowns && usageData.nicheCooldowns.length > 0 && (
+                      <div className="pt-3 border-t border-[#333]">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-300">Niche Cooldowns</span>
+                        </div>
+                        <div className="space-y-2 max-h-24 overflow-y-auto">
+                          {usageData.nicheCooldowns.map((cooldown) => (
+                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
+                              <span className="text-gray-400">{cooldown.niche_name}</span>
+                              <span className="text-gray-300">
+                                {getTimeUntilMidnight()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Unable to load usage data
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+              {/* Business Type Selector */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-400">Business Type</Label>
+              <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
+                <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
+                  <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Local Services
+                  </TabsTrigger>
+                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative">
+                    <Globe className="h-4 w-4 mr-2" />
+                    eCommerce
+                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            <div className="p-4 border rounded-lg">
-              <h3 className="font-semibold mb-2">Manual Lead Entry</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Add leads manually with our comprehensive form
-              </p>
-              <Dialog open={isAddingManual} onOpenChange={setIsAddingManual}>
-                <DialogTrigger asChild>
-                  <Button className="w-full">Add Lead</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add New Lead</DialogTitle>
-                  </DialogHeader>
-                  <ManualLeadForm 
-                    onSuccess={handleFormSuccess}
-                    onCancel={() => setIsAddingManual(false)}
+
+              {/* Niche Selection */}
+            <div className="space-y-3 relative">
+              <Label className="text-sm font-medium text-gray-400">Target Niches</Label>
+              
+              {businessType === 'ecommerce' ? (
+                // Coming Soon Message for eCommerce
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-8">
+                  <div className="text-center">
+                    <div className="bg-orange-500/20 rounded-full p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                      <Sparkles className="h-10 w-10 text-orange-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-orange-400 mb-3">eCommerce Lead Generation</h3>
+                    <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                      We're perfecting our eCommerce lead discovery system with advanced Shopify detection, 
+                      social media analytics, and revenue estimation features.
+                    </p>
+                    <Badge className="bg-orange-500/20 text-orange-400 px-4 py-2">Coming Soon</Badge>
+                  </div>
+                </div>
+              ) : (
+                <Accordion type="multiple" className="w-full">
+                  {Object.entries(
+                    getAvailableNiches().reduce((groups: any, niche: any) => {
+                      const category = niche.category || 'other'
+                      if (!groups[category]) groups[category] = []
+                      groups[category].push(niche)
+                      return groups
+                    }, {})
+                  ).map(([category, categoryNiches]) => (
+                    <AccordionItem key={category} value={category} className="border-[#333]">
+                      <AccordionTrigger className="text-gray-400 hover:text-white capitalize">
+                        {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
+                        </AccordionTrigger>
+                      <AccordionContent className="pb-4">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {(categoryNiches as any[]).map((niche: any) => {
+                            const onCooldown = isNicheOnCooldown(niche.id)
+                            const cooldownInfo = getNicheCooldownInfo(niche.id)
+                            
+                            return (
+                              <div key={niche.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={niche.id}
+                                  checked={selectedNiches.includes(niche.id)}
+                                  disabled={onCooldown}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedNiches(prev => [...prev, niche.id])
+                                    } else {
+                                      setSelectedNiches(prev => prev.filter(id => id !== niche.id))
+                                    }
+                                  }}
+                                  className="border-[#444] data-[state=checked]:bg-gray-600 disabled:opacity-50"
+                                />
+                                <label 
+                                  htmlFor={niche.id} 
+                                  className={`text-sm cursor-pointer ${
+                                    onCooldown ? 'text-gray-600 line-through' : 'text-gray-400'
+                                  }`}
+                                >
+                                  {niche.name}
+                                  {onCooldown && cooldownInfo && (
+                                    <span className="ml-1 text-xs text-gray-400">
+                                      ({getTimeUntilMidnight()})
+                                    </span>
+                                  )}
+                                </label>
+                              </div>
+                    )
+                  })}
+                          </div>
+                        
+                        {/* Show message if all niches in category are on cooldown */}
+                        {getAvailableNiches().filter((n: any) => n.category === category).length === 0 && (
+                          <div className="text-center py-4 text-gray-500 text-sm">
+                            <Clock className="h-4 w-4 mx-auto mb-2 text-gray-400" />
+                            All niches in this category are on cooldown
+                      </div>
+                        )}
+                    </AccordionContent>
+                  </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
+            </div>
+
+            {/* Selected Niches Display */}
+            {selectedNiches.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-400">Selected Niches ({selectedNiches.length})</Label>
+                <div className="flex flex-wrap gap-2">
+                  {selectedNiches.map(nicheId => {
+                    const niche = niches.find(n => n.id === nicheId)
+                    return niche ? (
+                      <Badge key={nicheId} variant="secondary" className="bg-gray-600/20 text-gray-300">
+                        {niche.name}
+                      </Badge>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Location Filter (for local services) */}
+            {businessType === 'local_service' && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <CountrySelect
+                    onChange={(e: any) => {
+                      setCountryId(e.id)
+                      setLocation(prev => ({ ...prev, country: e.name }))
+                    }}
+                    placeHolder="Country"
                   />
-                </DialogContent>
-              </Dialog>
+                  <StateSelect
+                    countryid={countryId}
+                    onChange={(e: any) => {
+                      setStateId(e.id)
+                      setLocation(prev => ({ ...prev, state: e.name }))
+                    }}
+                    placeHolder="State"
+                  />
+                  <CitySelect
+                    countryid={countryId}
+                    stateid={stateId}
+                    onChange={(e: any) => {
+                      setLocation(prev => ({ ...prev, city: e.name }))
+                    }}
+                    placeHolder="City"
+                  />
+                  <Select
+                    value={location.radius}
+                    onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Search radius" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 miles</SelectItem>
+                      <SelectItem value="10">10 miles</SelectItem>
+                      <SelectItem value="15">15 miles</SelectItem>
+                      <SelectItem value="25">25 miles</SelectItem>
+                      <SelectItem value="50">50 miles</SelectItem>
+                      <SelectItem value="75">75 miles</SelectItem>
+                      <SelectItem value="100">100 miles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Show warning if trying to select too many niches */}
+            {selectedNiches.length > (usageData?.maxNichesPerSearch || 5) && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-3">
+                <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                  <AlertTriangle className="h-4 w-4" />
+                  Too many niches selected. Maximum {usageData?.maxNichesPerSearch || 5} niches allowed 
+                  ({usageData?.leadsPerNiche || 25} leads each).
+                </div>
+              </div>
+            )}
+
+            {/* Generate Button */}
+            <div className="space-y-2">
+              <Button
+                onClick={generateLeads}
+                disabled={
+                  isGenerating || 
+                  selectedNiches.length === 0 || 
+                  selectedNiches.length > (usageData?.maxNichesPerSearch || 5) ||
+                  businessType === 'ecommerce' || 
+                  (usageData?.remaining ?? 0) <= 0
+                }
+                className={`w-full ${
+                  (usageData?.remaining ?? 0) <= 0 
+                    ? 'bg-gray-800 text-gray-400 cursor-not-allowed' 
+                    : 'bg-gray-600 hover:bg-gray-700 text-white'
+                }`}
+              >
+                {businessType === 'ecommerce' ? (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Coming Soon
+                  </>
+                ) : isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Finding Real Businesses...
+                  </>
+                ) : (usageData?.remaining ?? 0) <= 0 ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Daily Limit Reached
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Find Real Businesses
+                  </>
+                )}
+              </Button>
+              
+              {selectedNiches.length > 0 && usageData && (
+                <div className="text-xs text-center text-gray-500">
+                  Will generate {selectedNiches.length * (usageData.leadsPerNiche || 25)} leads 
+                  ({usageData.leadsPerNiche || 25} per niche) from {selectedNiches.length} niches
+                </div>
+              )}
             </div>
+            </CardContent>
+          </Card>
+
+          {/* Generated Leads Panel */}
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                    <h2 className="text-lg font-semibold text-gray-400">
+                      Generated Leads ({filteredLeads.length}{leads.length !== filteredLeads.length && ` of ${leads.length}`})
+                    </h2>
+                  </div>
+                  {leads.length > 0 && (
+                    <Button
+                      onClick={() => setShowFilters(!showFilters)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
+                      {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasInstagram || filters.hasTwitter || filters.hasLinkedin || filters.hasFacebook) && (
+                        <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
+                          Active
+                        </Badge>
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                      onClick={() => setIsAddingManual(true)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Manual Lead
+                    </Button>
+                    <Button
+                      onClick={deleteSelectedLeads}
+                      disabled={selectedLeads.length === 0}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Delete ({selectedLeads.length})
+                    </Button>
+                    <Button
+                      onClick={sendToOutreach}
+                      disabled={selectedLeads.length === 0}
+                      variant="outline"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white disabled:opacity-50"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send to Outreach ({selectedLeads.length})
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Filter Panel */}
+                {showFilters && (
+                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
+                      <Button
+                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasInstagram: false, hasTwitter: false, hasLinkedin: false, hasFacebook: false, selectedNicheFilter: [] })}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Clear
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasPhone"
+                          checked={filters.hasPhone}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Has Phone
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasEmail"
+                          checked={filters.hasEmail}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          Has Email
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasWebsite"
+                          checked={filters.hasWebsite}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          Has Website
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasInstagram"
+                          checked={filters.hasInstagram}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasInstagram: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasInstagram" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Instagram className="h-3 w-3" />
+                          Has Instagram
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasTwitter"
+                          checked={filters.hasTwitter}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasTwitter: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasTwitter" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" />
+                          Has Twitter
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasLinkedin"
+                          checked={filters.hasLinkedin}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasLinkedin: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-blue-600"
+                        />
+                        <label htmlFor="hasLinkedin" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Linkedin className="h-3 w-3" />
+                          Has LinkedIn
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasFacebook"
+                          checked={filters.hasFacebook}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasFacebook: checked as boolean }))
+                          }
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="hasFacebook" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Facebook className="h-3 w-3" />
+                          Has Facebook
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Niche Filter */}
+                    {availableNichesInLeads.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-400">Filter by Niche</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+                          {availableNichesInLeads.map((nicheName) => (
+                            <div key={nicheName} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`niche-${nicheName}`}
+                                checked={filters.selectedNicheFilter.includes(nicheName)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFilters(prev => ({ 
+                                      ...prev, 
+                                      selectedNicheFilter: [...prev.selectedNicheFilter, nicheName] 
+                                    }))
+                                  } else {
+                                    setFilters(prev => ({ 
+                                      ...prev, 
+                                      selectedNicheFilter: prev.selectedNicheFilter.filter(n => n !== nicheName) 
+                                    }))
+                                  }
+                                }}
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
+                              />
+                              <label htmlFor={`niche-${nicheName}`} className="text-sm text-gray-400 cursor-pointer">
+                                {nicheName}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#333]">
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedLeads(filteredLeads.map(lead => lead.id))
+                              } else {
+                                setSelectedLeads([])
+                              }
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="text-gray-400">Business</TableHead>
+                        <TableHead className="text-gray-400">Contact</TableHead>
+                        <TableHead className="text-gray-400">Social Media</TableHead>
+                        {businessType === 'ecommerce' ? (
+                          <>
+                            <TableHead className="text-gray-400">Revenue Est.</TableHead>
+                            <TableHead className="text-gray-400">Followers</TableHead>
+                            <TableHead className="text-gray-400">Platform</TableHead>
+                          </>
+                        ) : (
+                          <>
+                            <TableHead className="text-gray-400">Location</TableHead>
+                          </>
+                        )}
+                        <TableHead className="text-gray-400">Niche</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLeads.map((lead) => (
+                        <TableRow
+                          key={lead.id}
+                          className="border-[#333] hover:bg-[#222]/50 cursor-pointer"
+                          onClick={() => {
+                            if (selectedLeads.includes(lead.id)) {
+                              setSelectedLeads(prev => prev.filter(id => id !== lead.id))
+                            } else {
+                              setSelectedLeads(prev => [...prev, lead.id])
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedLeads.includes(lead.id)}
+                              onChange={() => {}}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-gray-400">{lead.business_name}</div>
+                              {lead.owner_name && (
+                                <div className="text-sm text-gray-500">{lead.owner_name}</div>
+                              )}
+                              {lead.website && (
+                                <a
+                                  href={lead.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Website
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-400">
+                              {lead.email && (
+                                <div className="flex items-center gap-1 mb-1">
+                                  <Mail className="h-3 w-3" />
+                                  {lead.email}
+                                </div>
+                              )}
+                              {lead.phone && (
+                                <div className="flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {lead.phone}
+                                </div>
+                              )}
+                              {!lead.email && !lead.phone && <span className="text-gray-500">-</span>}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {lead.instagram_handle && (
+                                <a
+                                  href={getSocialMediaLink('instagram', lead.instagram_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-pink-400 hover:text-pink-300"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`@${lead.instagram_handle}`}
+                                >
+                                  {getSocialMediaIcon('instagram')}
+                                </a>
+                              )}
+                              {lead.facebook_page && (
+                                <a
+                                  href={getSocialMediaLink('facebook', lead.facebook_page)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`Facebook: ${lead.facebook_page}`}
+                                >
+                                  {getSocialMediaIcon('facebook')}
+                                </a>
+                              )}
+                              {lead.linkedin_profile && (
+                                <a
+                                  href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:text-blue-400"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`LinkedIn: ${lead.linkedin_profile}`}
+                                >
+                                  {getSocialMediaIcon('linkedin')}
+                                </a>
+                              )}
+                              {lead.twitter_handle && (
+                                <a
+                                  href={getSocialMediaLink('twitter', lead.twitter_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-400 hover:text-white"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={`Twitter: @${lead.twitter_handle}`}
+                                >
+                                  {getSocialMediaIcon('twitter')}
+                                </a>
+                              )}
+                              {!lead.instagram_handle && !lead.facebook_page && !lead.linkedin_profile && !lead.twitter_handle && (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          {businessType === 'ecommerce' ? (
+                            <>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).monthly_revenue_estimate || 
+                                   <span className="text-gray-500">Estimating...</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).follower_count_instagram ? 
+                                    `${((lead as any).follower_count_instagram / 1000).toFixed(1)}k IG` : 
+                                    <span className="text-gray-500">Analyzing...</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {(lead as any).shopify_detected ? (
+                                    <span className="text-green-400">Shopify</span>
+                                  ) : (
+                                    <span className="text-gray-500">Custom</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell>
+                                <div className="text-sm text-gray-400">
+                                  {lead.city && lead.state_province ? (
+                                    <div>{lead.city}, {lead.state_province}</div>
+                                  ) : lead.city ? (
+                                    <div>{lead.city}</div>
+                                  ) : <span className="text-gray-500">-</span>}
+                                </div>
+                              </TableCell>
+                            </>
+                          )}
+                          <TableCell>
+                            <Badge variant="secondary" className="bg-gray-600/20 text-gray-300">
+                              {lead.niche_name || 'General'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  {filteredLeads.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      {leads.length === 0 ? (
+                        <>
+                          <p>No leads generated yet</p>
+                          <p className="text-sm">Configure your search parameters and click "Find Real Businesses"</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>No leads match your filters</p>
+                          <p className="text-sm">Try adjusting your filter criteria</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+      {/* Enhanced Manual Lead Add Dialog */}
+      <Dialog open={isAddingManual} onOpenChange={setIsAddingManual}>
+        <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-gray-400 flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Add Manual Lead
+            </DialogTitle>
+            <DialogDescription>
+              Manually add a comprehensive lead with all business details
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-3 bg-[#2A2A2A]">
+              <TabsTrigger value="basic" className="text-gray-400">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact" className="text-gray-400">Contact</TabsTrigger>
+              <TabsTrigger value="social" className="text-gray-400">Social Media</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="basic" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Business Name *</Label>
+                  <Input 
+                    value={manualLeadData.business_name}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, business_name: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="Enter business name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Owner Name</Label>
+                  <Input 
+                    value={manualLeadData.owner_name}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, owner_name: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="Enter owner/contact name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Country</Label>
+                  <CountrySelect
+                    onChange={(e: any) => {
+                      setManualLeadData(prev => ({...prev, country: e.name, state_province: '', city: ''}))
+                      setManualCountryId(e.id)
+                      setManualStateId(0)
+                    }}
+                    placeHolder="Select Country"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">State/Province</Label>
+                  <StateSelect
+                    countryid={manualCountryId}
+                    onChange={(e: any) => {
+                      setManualLeadData(prev => ({...prev, state_province: e.name, city: ''}))
+                      setManualStateId(e.id)
+                    }}
+                    placeHolder="Select State"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">City</Label>
+                  <CitySelect
+                    countryid={manualCountryId}
+                    stateid={manualStateId}
+                    onChange={(e: any) => {
+                      setManualLeadData(prev => ({...prev, city: e.name}))
+                    }}
+                    placeHolder="Select City"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label className="text-gray-400">Niche</Label>
+                  <Select 
+                    value={manualLeadData.niche_id} 
+                    onValueChange={(value) => setManualLeadData(prev => ({ ...prev, niche_id: value }))}
+                  >
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                      <SelectValue placeholder="Select niche category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {niches.map((niche: any) => (
+                        <SelectItem key={niche.id} value={niche.id}>
+                          {niche.name} ({niche.category})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="contact" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Email *</Label>
+                  <Input 
+                    type="email"
+                    value={manualLeadData.email}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, email: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Phone</Label>
+                  <Input 
+                    value={manualLeadData.phone}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label className="text-gray-400">Website</Label>
+                  <Input 
+                    value={manualLeadData.website}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, website: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="social" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-400 flex items-center gap-2">
+                    <Instagram className="h-4 w-4" />
+                    Instagram Handle
+                  </Label>
+                  <Input 
+                    value={manualLeadData.instagram_handle}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, instagram_handle: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="@username or username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400 flex items-center gap-2">
+                    <Facebook className="h-4 w-4" />
+                    Facebook Page
+                  </Label>
+                  <Input 
+                    value={manualLeadData.facebook_page}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, facebook_page: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="Page name or URL"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400 flex items-center gap-2">
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn Profile
+                  </Label>
+                  <Input 
+                    value={manualLeadData.linkedin_profile}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, linkedin_profile: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="linkedin.com/company/name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-400">Twitter Handle</Label>
+                  <Input 
+                    value={manualLeadData.twitter_handle}
+                    onChange={(e) => setManualLeadData(prev => ({ ...prev, twitter_handle: e.target.value }))}
+                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    placeholder="@username or username"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#333]">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddingManual(false)
+                // Reset form when canceling
+                setManualLeadData({
+                  business_name: '',
+                  owner_name: '',
+                  email: '',
+                  phone: '',
+                  website: '',
+                  city: '',
+                  country: '',
+                  state_province: '',
+                  niche_id: '',
+                  instagram_handle: '',
+                  facebook_page: '',
+                  linkedin_profile: '',
+                  twitter_handle: ''
+                })
+              }}
+              className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={addManualLead}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={!manualLeadData.business_name || !manualLeadData.email}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Lead
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
+  )
 } 
