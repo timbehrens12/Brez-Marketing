@@ -685,10 +685,10 @@ export default function LeadGeneratorPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
-              <CardHeader className="pt-6 pb-3">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-gray-400" />
                   Daily Usage & Limits
