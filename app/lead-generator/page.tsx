@@ -941,7 +941,7 @@ export default function LeadGeneratorPage() {
                     <SelectContent>
                       {Country.getAllCountries().map((country) => (
                         <SelectItem key={country.isoCode} value={country.isoCode}>
-                          {country.flag} {country.name}
+                          {country.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
