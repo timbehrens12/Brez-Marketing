@@ -688,7 +688,7 @@ export default function LeadGeneratorPage() {
             <CardContent className="space-y-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
-              <CardHeader className="pb-3">
+              <CardHeader className="pt-6 pb-3">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-gray-400" />
                   Daily Usage & Limits
