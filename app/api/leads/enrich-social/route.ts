@@ -118,7 +118,17 @@ function extractSocialFromSearch(searchResults: any[]) {
     if (url.includes('facebook.com/') && !url.includes('/posts/') && !url.includes('/photos/') && !url.includes('/groups/')) {
       const match = url.match(/facebook\.com\/([^/\?#]+)/)
       if (match && match[1] && match[1] !== 'pages' && !match[1].includes('profile.php')) {
-        profiles.facebook_page = match[1]
+        // Filter out generic Facebook placeholders and invalid handles
+        const invalidHandles = [
+          'Facebook-f', 'facebook-f', 'Facebook', 'facebook', 
+          'pages', 'home', 'login', 'sharer', 'dialog', 'tr', 'plugins', 'help'
+        ];
+        
+        if (!invalidHandles.includes(match[1]) && 
+            !match[1].toLowerCase().includes('facebook-f') && 
+            match[1].length >= 3) {
+          profiles.facebook_page = match[1]
+        }
       }
     }
 
@@ -185,7 +195,17 @@ async function extractSocialFromWebsite(website: string) {
     // Extract Facebook
     match = socialPatterns.facebook.exec(html)
     if (match && match[2] && match[2] !== 'pages' && !match[2].includes('profile.php')) {
-      profiles.facebook_page = match[2]
+      // Filter out generic Facebook placeholders
+      const invalidHandles = [
+        'Facebook-f', 'facebook-f', 'Facebook', 'facebook', 
+        'pages', 'home', 'login', 'sharer', 'dialog', 'tr', 'plugins', 'help'
+      ];
+      
+      if (!invalidHandles.includes(match[2]) && 
+          !match[2].toLowerCase().includes('facebook-f') && 
+          match[2].length >= 3) {
+        profiles.facebook_page = match[2]
+      }
     }
 
     // Extract LinkedIn

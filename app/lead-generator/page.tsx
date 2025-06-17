@@ -683,8 +683,19 @@ export default function LeadGeneratorPage() {
         // Remove @ if present
         fbPage = fbPage.replace(/^@/, '');
         
-        // Skip obviously invalid handles
-        if (!fbPage || fbPage === '' || fbPage.includes('profile.php') || fbPage.includes('/groups/')) {
+        // Skip obviously invalid handles and generic Facebook placeholders
+        const invalidHandles = [
+          'Facebook-f', 'facebook-f', 'Facebook', 'facebook', 
+          'pages', 'profile.php', 'groups', 'home', 'login',
+          'sharer', 'dialog', 'tr', 'plugins', 'help'
+        ];
+        
+        if (!fbPage || fbPage === '' || 
+            fbPage.includes('profile.php') || 
+            fbPage.includes('/groups/') ||
+            invalidHandles.includes(fbPage) ||
+            fbPage.toLowerCase().includes('facebook-f') ||
+            fbPage.length < 3) {
           return undefined;
         }
         
