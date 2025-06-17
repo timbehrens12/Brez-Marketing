@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Edit } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -153,6 +153,7 @@ export default function LeadGeneratorPage() {
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([])
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
   const [isAddingManual, setIsAddingManual] = useState(false)
+  const [editingLead, setEditingLead] = useState<Lead | null>(null)
   const [manualLeadData, setManualLeadData] = useState({
     business_name: '',
     owner_name: '',
@@ -700,41 +701,105 @@ export default function LeadGeneratorPage() {
       }
 
       const supabase = await getSupabaseClient()
-      const { data: insertedLead, error } = await supabase
-        .from('leads')
-        .insert([leadToInsert])
-        .select()
-        .single()
 
-      if (error) throw error
+      if (editingLead) {
+        // Update existing lead
+        const { error } = await supabase
+          .from('leads')
+          .update({
+            business_name: manualLeadData.business_name,
+            owner_name: manualLeadData.owner_name || null,
+            email: manualLeadData.email,
+            phone: manualLeadData.phone || null,
+            website: manualLeadData.website || null,
+            city: manualLeadData.city || null,
+            state_province: manualLeadData.state_province || null,
+            niche_name: manualLeadData.niche_id ? 
+              niches.find(n => n.id === manualLeadData.niche_id)?.name || null : null,
+            instagram_handle: manualLeadData.instagram_handle ? 
+              manualLeadData.instagram_handle.replace('@', '') : null,
+            facebook_page: manualLeadData.facebook_page || null,
+            linkedin_profile: manualLeadData.linkedin_profile || null,
+            twitter_handle: manualLeadData.twitter_handle ? 
+              manualLeadData.twitter_handle.replace('@', '') : null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingLead.id)
+          .eq('user_id', userId)
 
-      // Reload leads to get fresh data instead of trying to add to local state
+        if (error) throw error
+        toast.success('Lead updated successfully!')
+      } else {
+        // Insert new lead
+        const { data: insertedLead, error } = await supabase
+          .from('leads')
+          .insert([leadToInsert])
+          .select()
+          .single()
+
+        if (error) throw error
+        toast.success('Lead added successfully!')
+      }
+
+      // Reload leads to get fresh data
       await loadExistingLeads()
       
       // Reset form
-      setManualLeadData({
-        business_name: '',
-        owner_name: '',
-        email: '',
-        phone: '',
-        website: '',
-        city: '',
-        state_province: '',
-        country: '',
-        niche_id: '',
-        instagram_handle: '',
-        facebook_page: '',
-        linkedin_profile: '',
-        twitter_handle: ''
-      })
+      resetManualLeadForm()
       
       setIsAddingManual(false)
+      setEditingLead(null)
       await loadStats()
-      toast.success('Lead added successfully!')
     } catch (error) {
-      console.error('Error adding manual lead:', error)
-      toast.error('Failed to add lead')
+      console.error('Error saving lead:', error)
+      toast.error('Failed to save lead')
     }
+  }
+
+  // Reset manual lead form
+  const resetManualLeadForm = () => {
+    setManualLeadData({
+      business_name: '',
+      owner_name: '',
+      email: '',
+      phone: '',
+      website: '',
+      city: '',
+      state_province: '',
+      country: '',
+      niche_id: '',
+      instagram_handle: '',
+      facebook_page: '',
+      linkedin_profile: '',
+      twitter_handle: ''
+    })
+  }
+
+  // Handle edit lead
+  const handleEditLead = (lead: Lead) => {
+    setEditingLead(lead)
+    
+    // Find the niche ID from the niche name
+    const selectedNiche = niches.find(n => n.name === lead.niche_name)
+    
+    // Pre-fill the form with existing lead data
+    setManualLeadData({
+      business_name: lead.business_name || '',
+      owner_name: lead.owner_name || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
+      website: lead.website || '',
+      city: lead.city || '',
+      state_province: lead.state_province || '',
+      country: '', // We'll need to determine this from the state/city
+      niche_id: selectedNiche?.id || '',
+      instagram_handle: lead.instagram_handle || '',
+      facebook_page: lead.facebook_page || '',
+      linkedin_profile: lead.linkedin_profile || '',
+      twitter_handle: lead.twitter_handle || ''
+    })
+    
+    setIsAddingManual(true)
   }
 
   // Fix website URL formatting
@@ -1518,6 +1583,7 @@ export default function LeadGeneratorPage() {
                           </>
                         )}
                         <TableHead className="text-gray-400">Niche</TableHead>
+                        <TableHead className="text-gray-400">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1674,6 +1740,21 @@ export default function LeadGeneratorPage() {
                               {lead.niche_name || 'General'}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="p-1 h-8 w-8 text-gray-400 hover:text-white hover:bg-[#222]"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditLead(lead)
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -1707,18 +1788,18 @@ export default function LeadGeneratorPage() {
           <DialogHeader>
             <DialogTitle className="text-gray-400 flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Add Manual Lead
+              {editingLead ? 'Edit Lead' : 'Add Manual Lead'}
             </DialogTitle>
             <DialogDescription>
-              Manually add a comprehensive lead with all business details
+              {editingLead ? 'Edit and update lead information' : 'Manually add a comprehensive lead with all business details'}
             </DialogDescription>
           </DialogHeader>
           
           <Tabs defaultValue="basic" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3 bg-[#2A2A2A]">
-              <TabsTrigger value="basic" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Basic Info</TabsTrigger>
-              <TabsTrigger value="contact" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Contact</TabsTrigger>
-              <TabsTrigger value="social" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Social Media</TabsTrigger>
+              <TabsTrigger value="basic" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Contact</TabsTrigger>
+              <TabsTrigger value="social" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Social Media</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4">
@@ -1856,44 +1937,61 @@ export default function LeadGeneratorPage() {
             </div>
                 <div className="space-y-2 col-span-2">
               <Label className="text-gray-400">Local Service Category</Label>
-              <Accordion type="single" collapsible className="w-full">
-                {Object.entries(
-                  niches.reduce((groups: any, niche: any) => {
-                    const category = niche.category || 'other'
-                    if (!groups[category]) groups[category] = []
-                    groups[category].push(niche)
-                    return groups
-                  }, {})
-                ).map(([category, categoryNiches]) => (
-                  <AccordionItem key={category} value={category} className="border-[#333]">
-                    <AccordionTrigger className="text-gray-400 hover:text-white capitalize text-sm">
-                      {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4">
-                      <div className="grid grid-cols-2 gap-2">
-                        {(categoryNiches as any[]).map((niche: any) => (
-                          <div key={niche.id} className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id={`manual-${niche.id}`}
-                              name="manual-niche"
-                              checked={manualLeadData.niche_id === niche.id}
-                              onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
-                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
-                            />
-                            <label 
-                              htmlFor={`manual-${niche.id}`} 
-                              className="text-sm text-gray-400 cursor-pointer"
-                            >
-                              {niche.name}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              {businessType === 'ecommerce' ? (
+                // Coming Soon Message for eCommerce categories in manual lead form
+                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
+                  <div className="text-center">
+                    <div className="bg-orange-500/20 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <Sparkles className="h-8 w-8 text-orange-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-orange-400 mb-2">eCommerce Categories</h3>
+                    <p className="text-gray-400 text-sm mb-4 max-w-sm mx-auto">
+                      eCommerce category selection is coming soon with advanced niche targeting.
+                    </p>
+                    <Badge className="bg-orange-500/20 text-orange-400 px-3 py-1">Coming Soon</Badge>
+                  </div>
+                </div>
+              ) : (
+                <Accordion type="single" collapsible className="w-full">
+                  {Object.entries(
+                    niches.reduce((groups: any, niche: any) => {
+                      const category = niche.category || 'other'
+                      if (!groups[category]) groups[category] = []
+                      groups[category].push(niche)
+                      return groups
+                    }, {})
+                  ).map(([category, categoryNiches]) => (
+                    <AccordionItem key={category} value={category} className="border-[#333]">
+                      <AccordionTrigger className="text-gray-400 hover:text-white capitalize text-sm">
+                        {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
+                      </AccordionTrigger>
+
+                      <AccordionContent className="pb-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          {(categoryNiches as any[]).map((niche: any) => (
+                            <div key={niche.id} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`manual-${niche.id}`}
+                                name="manual-niche"
+                                checked={manualLeadData.niche_id === niche.id}
+                                onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
+                                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                              />
+                              <label 
+                                htmlFor={`manual-${niche.id}`} 
+                                className="text-sm text-gray-400 cursor-pointer"
+                              >
+                                {niche.name}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
             </div>
           </div>
             </TabsContent>
@@ -1987,22 +2085,8 @@ export default function LeadGeneratorPage() {
               variant="outline"
               onClick={() => {
                 setIsAddingManual(false)
-                // Reset form when canceling
-                setManualLeadData({
-                  business_name: '',
-                  owner_name: '',
-                  email: '',
-                  phone: '',
-                  website: '',
-                  city: '',
-                  state_province: '',
-                  country: '',
-                  niche_id: '',
-                  instagram_handle: '',
-                  facebook_page: '',
-                  linkedin_profile: '',
-                  twitter_handle: ''
-                })
+                setEditingLead(null)
+                resetManualLeadForm()
               }}
               className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
             >
@@ -2014,7 +2098,7 @@ export default function LeadGeneratorPage() {
               disabled={!manualLeadData.business_name || !manualLeadData.email}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Lead
+              {editingLead ? 'Update Lead' : 'Add Lead'}
             </Button>
           </div>
         </DialogContent>

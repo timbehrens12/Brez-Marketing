@@ -127,7 +127,7 @@ function extractSocialFromSearch(searchResults: any[]) {
         if (!invalidHandles.includes(match[1]) && 
             !match[1].toLowerCase().includes('facebook-f') && 
             match[1].length >= 3) {
-          profiles.facebook_page = match[1]
+        profiles.facebook_page = match[1]
         }
       }
     }
@@ -204,7 +204,7 @@ async function extractSocialFromWebsite(website: string) {
       if (!invalidHandles.includes(match[2]) && 
           !match[2].toLowerCase().includes('facebook-f') && 
           match[2].length >= 3) {
-        profiles.facebook_page = match[2]
+      profiles.facebook_page = match[2]
       }
     }
 
