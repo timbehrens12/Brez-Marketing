@@ -140,6 +140,18 @@ export default function OutreachToolPage() {
 
 
 
+  const filteredLeads = leads.filter(lead => {
+    const matchesSearch = !searchTerm || 
+      lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter
+    const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter
+    
+    return matchesSearch && matchesStatus && matchesPriority
+  })
+
   const pendingTasks = tasks.filter(task => task.status === 'pending').slice(0, 5)
   const todayTasks = tasks.filter(task => task.due_date === new Date().toISOString().split('T')[0])
 
@@ -327,8 +339,9 @@ export default function OutreachToolPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-[#2A2A2A]">
+          <TabsList className="grid w-full grid-cols-5 bg-[#2A2A2A]">
             <TabsTrigger value="dashboard" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Dashboard</TabsTrigger>
+            <TabsTrigger value="leads" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Leads</TabsTrigger>
             <TabsTrigger value="messages" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Messages</TabsTrigger>
             <TabsTrigger value="tasks" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Tasks</TabsTrigger>
             <TabsTrigger value="analytics" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Analytics</TabsTrigger>
@@ -410,6 +423,249 @@ export default function OutreachToolPage() {
           </TabsContent>
 
 
+
+          <TabsContent value="leads" className="space-y-6">
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search leads by name, email, or business..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-200"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2A2A2A] border-[#444]">
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="contacted">Contacted</SelectItem>
+                  <SelectItem value="responded">Responded</SelectItem>
+                  <SelectItem value="qualified">Qualified</SelectItem>
+                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                  <SelectItem value="negotiating">Negotiating</SelectItem>
+                  <SelectItem value="signed">Signed</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="unresponsive">Unresponsive</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
+                  <SelectValue placeholder="Filter by priority" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2A2A2A] border-[#444]">
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="medium">Medium Priority</SelectItem>
+                  <SelectItem value="low">Low Priority</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Leads Table */}
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Imported Leads ({filteredLeads.length})
+                  </span>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="bg-[#333] hover:bg-[#444] text-gray-200">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {filteredLeads.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg mb-2">No leads imported yet</p>
+                    <p className="text-sm text-gray-500 mb-4">Import leads from Lead Generator to start your outreach</p>
+                    <Button 
+                      onClick={() => window.open('/lead-generator', '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Go to Lead Generator
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-[#333]">
+                          <TableHead className="text-gray-400">Business Details</TableHead>
+                          <TableHead className="text-gray-400">Contact Info</TableHead>
+                          <TableHead className="text-gray-400">Social Media</TableHead>
+                          <TableHead className="text-gray-400">Status</TableHead>
+                          <TableHead className="text-gray-400">Priority</TableHead>
+                          <TableHead className="text-gray-400">Score</TableHead>
+                          <TableHead className="text-gray-400">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLeads.map((lead) => (
+                          <TableRow key={lead.id} className="border-[#333] hover:bg-[#2A2A2A]">
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-white">{lead.business_name}</p>
+                                <p className="text-sm text-gray-400">{lead.niche_name}</p>
+                                {lead.city && lead.state_province && (
+                                  <p className="text-xs text-gray-500">{lead.city}, {lead.state_province}</p>
+                                )}
+                                {lead.website && (
+                                  <a 
+                                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 mt-1"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    Website
+                                  </a>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <p className="text-white font-medium">{lead.owner_name || 'Unknown'}</p>
+                                {lead.email && (
+                                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                                    📧 {lead.email}
+                                  </p>
+                                )}
+                                {lead.phone && (
+                                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                                    📞 {lead.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                {lead.instagram_handle && (
+                                  <a 
+                                    href={`https://instagram.com/${lead.instagram_handle.replace('@', '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-pink-400 hover:text-pink-300 text-xs flex items-center gap-1"
+                                  >
+                                    📷 @{lead.instagram_handle.replace('@', '')}
+                                  </a>
+                                )}
+                                {lead.facebook_page && (
+                                  <a 
+                                    href={lead.facebook_page}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                                  >
+                                    📘 Facebook
+                                  </a>
+                                )}
+                                {lead.linkedin_profile && (
+                                  <a 
+                                    href={lead.linkedin_profile}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 hover:text-blue-400 text-xs flex items-center gap-1"
+                                  >
+                                    💼 LinkedIn
+                                  </a>
+                                )}
+                                {lead.twitter_handle && (
+                                  <a 
+                                    href={`https://twitter.com/${lead.twitter_handle.replace('@', '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                                  >
+                                    🐦 @{lead.twitter_handle.replace('@', '')}
+                                  </a>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={lead.status}
+                                onValueChange={(value) => updateLeadStatus(lead.id, value)}
+                              >
+                                <SelectTrigger className="w-32 h-8 bg-[#2A2A2A] border-[#444]">
+                                  <Badge className={`${getStatusBadgeColor(lead.status)} text-white text-xs`}>
+                                    {lead.status.replace('_', ' ')}
+                                  </Badge>
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#2A2A2A] border-[#444]">
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="contacted">Contacted</SelectItem>
+                                  <SelectItem value="responded">Responded</SelectItem>
+                                  <SelectItem value="qualified">Qualified</SelectItem>
+                                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                                  <SelectItem value="negotiating">Negotiating</SelectItem>
+                                  <SelectItem value="signed">Signed</SelectItem>
+                                  <SelectItem value="rejected">Rejected</SelectItem>
+                                  <SelectItem value="unresponsive">Unresponsive</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${getPriorityBadgeColor(lead.priority)} text-white`}>
+                                {lead.priority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-12 h-2 bg-[#333] rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-red-500 to-green-500 rounded-full"
+                                    style={{ width: `${lead.lead_score}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm text-gray-400">{lead.lead_score}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      className="h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700"
+                                      onClick={() => setSelectedLead(lead)}
+                                    >
+                                      <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl">
+                                    <AIMessageGenerator lead={lead} onGenerate={generateAIMessage} />
+                                  </DialogContent>
+                                </Dialog>
+                                
+                                <Button 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 bg-[#333] hover:bg-[#444]"
+                                  onClick={() => setSelectedLead(lead)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
             <Card className="bg-[#1A1A1A] border-[#333]">
