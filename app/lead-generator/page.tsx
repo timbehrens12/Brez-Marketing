@@ -1789,17 +1789,17 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                                                             <Button
-                                 size="sm"
-                                 variant="ghost"
-                                 className="p-1 h-8 w-8 text-gray-500 hover:text-gray-300 hover:bg-[#2A2A2A]"
-                                 onClick={(e) => {
-                                   e.stopPropagation()
-                                   handleEditLead(lead)
-                                 }}
-                               >
-                                 <Edit className="h-3 w-3" />
-                               </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="p-1 h-8 w-8 text-gray-400 hover:text-white hover:bg-[#222]"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditLead(lead)
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1844,12 +1844,30 @@ export default function LeadGeneratorPage() {
           
           <Tabs defaultValue="basic" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3 bg-[#2A2A2A]">
-              <TabsTrigger value="basic" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Basic Info</TabsTrigger>
-              <TabsTrigger value="contact" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Contact</TabsTrigger>
-              <TabsTrigger value="social" className="text-gray-400 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-emerald-600 data-[state=active]:text-white">Social Media</TabsTrigger>
+              <TabsTrigger value="basic" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Contact</TabsTrigger>
+              <TabsTrigger value="social" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Social Media</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4">
+              {/* Business Type Selection */}
+              <div className="space-y-3 mb-6">
+                <Label className="text-sm font-medium text-gray-400">Business Type</Label>
+                <Tabs value="local_service" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
+                    <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Local Services
+                    </TabsTrigger>
+                    <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed opacity-60" disabled>
+                      <Globe className="h-4 w-4 mr-2" />
+                      eCommerce
+                      <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-gray-400">Business Name *</Label>
@@ -1869,25 +1887,6 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter owner/contact name"
                   />
             </div>
-            
-            {/* Business Type Selection */}
-            <div className="space-y-2 col-span-2">
-              <Label className="text-gray-400">Business Type</Label>
-              <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
-                <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
-                  <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Local Services
-                  </TabsTrigger>
-                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed" disabled>
-                    <Globe className="h-4 w-4 mr-2" />
-                    eCommerce
-                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
             {/* Location Dropdowns */}
             <div className="space-y-2">
               <Label className="text-gray-400">Country</Label>
@@ -2002,62 +2001,46 @@ export default function LeadGeneratorPage() {
               </Select>
             </div>
                 <div className="space-y-2 col-span-2">
-              <Label className="text-gray-400">Service Category</Label>
-              {businessType === 'ecommerce' ? (
-                // Coming Soon Message for eCommerce categories in manual lead form
-                <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
-                  <div className="text-center">
-                    <div className="bg-orange-500/20 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <Sparkles className="h-8 w-8 text-orange-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-orange-400 mb-2">eCommerce Categories</h3>
-                    <p className="text-gray-400 text-sm mb-4 max-w-sm mx-auto">
-                      eCommerce category selection is coming soon with advanced niche targeting.
-                    </p>
-                    <Badge className="bg-orange-500/20 text-orange-400 px-3 py-1">Coming Soon</Badge>
-                  </div>
-                </div>
-              ) : (
-                <Accordion type="single" collapsible className="w-full">
-                  {Object.entries(
-                    niches.reduce((groups: any, niche: any) => {
-                      const category = niche.category || 'other'
-                      if (!groups[category]) groups[category] = []
-                      groups[category].push(niche)
-                      return groups
-                    }, {})
-                  ).map(([category, categoryNiches]) => (
-                    <AccordionItem key={category} value={category} className="border-[#333]">
-                      <AccordionTrigger className="text-gray-400 hover:text-white capitalize text-sm">
-                        {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
-                      </AccordionTrigger>
+              <Label className="text-gray-400">Local Service Category</Label>
+              <Accordion type="single" collapsible className="w-full">
+                {Object.entries(
+                  niches.filter(niche => niche.category === 'local_service').reduce((groups: any, niche: any) => {
+                    const category = niche.category || 'other'
+                    if (!groups[category]) groups[category] = []
+                    groups[category].push(niche)
+                    return groups
+                  }, {})
+                ).map(([category, categoryNiches]) => (
+                  <AccordionItem key={category} value={category} className="border-[#333]">
+                    <AccordionTrigger className="text-gray-400 hover:text-white capitalize text-sm">
+                      {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
+                    </AccordionTrigger>
 
-                      <AccordionContent className="pb-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          {(categoryNiches as any[]).map((niche: any) => (
-                            <div key={niche.id} className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id={`manual-${niche.id}`}
-                                name="manual-niche"
-                                checked={manualLeadData.niche_id === niche.id}
-                                onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
-                                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
-                              />
-                              <label 
-                                htmlFor={`manual-${niche.id}`} 
-                                className="text-sm text-gray-400 cursor-pointer"
-                              >
-                                {niche.name}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              )}
+                    <AccordionContent className="pb-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {(categoryNiches as any[]).map((niche: any) => (
+                          <div key={niche.id} className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id={`manual-${niche.id}`}
+                              name="manual-niche"
+                              checked={manualLeadData.niche_id === niche.id}
+                              onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
+                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <label 
+                              htmlFor={`manual-${niche.id}`} 
+                              className="text-sm text-gray-400 cursor-pointer"
+                            >
+                              {niche.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           </div>
             </TabsContent>
@@ -2160,7 +2143,7 @@ export default function LeadGeneratorPage() {
             </Button>
             <Button
               onClick={addManualLead}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#444] hover:bg-[#555] text-gray-200"
               disabled={!manualLeadData.business_name || !manualLeadData.email}
             >
               <Plus className="h-4 w-4 mr-2" />
