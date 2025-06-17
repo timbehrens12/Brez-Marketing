@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
     
     // Get leads with outreach-specific data and calculate lead scores
+    // Only show leads that have been imported to outreach
     const { data: leads, error } = await supabase
       .from('leads')
       .select(`
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
           ai_generated
         )
       `)
+      .eq('imported_to_outreach', true) // Only show leads imported to outreach
       .order('created_at', { ascending: false })
 
     if (error) {

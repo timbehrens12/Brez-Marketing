@@ -15,8 +15,8 @@ import { Progress } from '@/components/ui/progress'
 import { 
   Loader2, Send, MessageSquare, Phone, Mail, Calendar, 
   CheckCircle, Clock, AlertCircle, Star, 
-  Plus, Edit, Copy, Sparkles, Target, Users, BarChart3, MessageCircle, Bell, RefreshCw,
-  Search, Download, Upload, Eye, Filter, TrendingUp, AlertTriangle, Trash2, Archive, ExternalLink
+      Plus, Edit, Copy, Sparkles, Target, Users, BarChart3, MessageCircle, Bell, RefreshCw,
+    Search, Download, Upload, Eye, Filter, TrendingUp, AlertTriangle, Trash2, Archive, ExternalLink
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -138,17 +138,7 @@ export default function OutreachToolPage() {
     }
   }
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = !searchTerm || 
-      lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter
-    const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority
-  })
+
 
   const pendingTasks = tasks.filter(task => task.status === 'pending').slice(0, 5)
   const todayTasks = tasks.filter(task => task.due_date === new Date().toISOString().split('T')[0])
@@ -264,7 +254,7 @@ export default function OutreachToolPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Outreach Management</h1>
-              <p className="text-gray-400">Manage your lead outreach with AI-powered messaging and automated follow-ups</p>
+              <p className="text-gray-400">Manage leads imported from Lead Generator with AI-powered messaging and automated follow-ups</p>
             </div>
             <div className="flex gap-3">
               <Button 
@@ -274,9 +264,12 @@ export default function OutreachToolPage() {
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => window.open('/lead-generator', '_blank')}
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Import Leads
+                Go to Lead Generator
               </Button>
             </div>
           </div>
@@ -334,9 +327,8 @@ export default function OutreachToolPage() {
         </div>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-[#2A2A2A]">
+          <TabsList className="grid w-full grid-cols-4 bg-[#2A2A2A]">
             <TabsTrigger value="dashboard" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Dashboard</TabsTrigger>
-            <TabsTrigger value="leads" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Leads</TabsTrigger>
             <TabsTrigger value="messages" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Messages</TabsTrigger>
             <TabsTrigger value="tasks" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Tasks</TabsTrigger>
             <TabsTrigger value="analytics" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Analytics</TabsTrigger>
@@ -417,178 +409,7 @@ export default function OutreachToolPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="leads" className="space-y-6">
-            {/* Search and Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search leads by name, email, or business..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-200"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#2A2A2A] border-[#444]">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="responded">Responded</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-                  <SelectItem value="negotiating">Negotiating</SelectItem>
-                  <SelectItem value="signed">Signed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="unresponsive">Unresponsive</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
-                  <SelectValue placeholder="Filter by priority" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#2A2A2A] border-[#444]">
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="high">High Priority</SelectItem>
-                  <SelectItem value="medium">Medium Priority</SelectItem>
-                  <SelectItem value="low">Low Priority</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
-            {/* Leads Table */}
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Leads ({filteredLeads.length})
-                  </span>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#333] hover:bg-[#444] text-gray-200">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
-                    </Button>
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Import
-                    </Button>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-[#333]">
-                        <TableHead className="text-gray-400">Business</TableHead>
-                        <TableHead className="text-gray-400">Contact</TableHead>
-                        <TableHead className="text-gray-400">Status</TableHead>
-                        <TableHead className="text-gray-400">Priority</TableHead>
-                        <TableHead className="text-gray-400">Score</TableHead>
-                        <TableHead className="text-gray-400">Last Contact</TableHead>
-                        <TableHead className="text-gray-400">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredLeads.map((lead) => (
-                        <TableRow key={lead.id} className="border-[#333] hover:bg-[#2A2A2A]">
-                          <TableCell>
-                            <div>
-                              <p className="font-medium text-white">{lead.business_name}</p>
-                              <p className="text-sm text-gray-400">{lead.niche_name}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="text-white">{lead.owner_name || 'Unknown'}</p>
-                              <p className="text-sm text-gray-400">{lead.email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={lead.status}
-                              onValueChange={(value) => updateLeadStatus(lead.id, value)}
-                            >
-                              <SelectTrigger className="w-32 h-8 bg-[#2A2A2A] border-[#444]">
-                                <Badge className={`${getStatusBadgeColor(lead.status)} text-white text-xs`}>
-                                  {lead.status.replace('_', ' ')}
-                                </Badge>
-                              </SelectTrigger>
-                              <SelectContent className="bg-[#2A2A2A] border-[#444]">
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="responded">Responded</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-                                <SelectItem value="negotiating">Negotiating</SelectItem>
-                                <SelectItem value="signed">Signed</SelectItem>
-                                <SelectItem value="rejected">Rejected</SelectItem>
-                                <SelectItem value="unresponsive">Unresponsive</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${getPriorityBadgeColor(lead.priority)} text-white`}>
-                              {lead.priority}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 h-2 bg-[#333] rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-red-500 to-green-500 rounded-full"
-                                  style={{ width: `${lead.lead_score}%` }}
-                                />
-                              </div>
-                              <span className="text-sm text-gray-400">{lead.lead_score}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="text-sm text-gray-400">
-                              {lead.last_contacted_at 
-                                ? new Date(lead.last_contacted_at).toLocaleDateString()
-                                : 'Never'
-                              }
-                            </p>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    size="sm" 
-                                    className="h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700"
-                                    onClick={() => setSelectedLead(lead)}
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl">
-                                  <AIMessageGenerator lead={lead} onGenerate={generateAIMessage} />
-                                </DialogContent>
-                              </Dialog>
-                              
-                              <Button 
-                                size="sm" 
-                                className="h-8 w-8 p-0 bg-[#333] hover:bg-[#444]"
-                                onClick={() => setSelectedLead(lead)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
             <Card className="bg-[#1A1A1A] border-[#333]">
@@ -600,42 +421,86 @@ export default function OutreachToolPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div key={message.id} className="border border-[#333] rounded-lg p-4 bg-[#2A2A2A]">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <Badge className="bg-blue-600 text-white">
-                            {message.message_type.replace('_', ' ')}
-                          </Badge>
-                          <Badge className={`${getStatusBadgeColor(message.status)} text-white`}>
-                            {message.status}
-                          </Badge>
-                          {message.ai_generated && (
-                            <Badge className="bg-purple-600 text-white">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              AI Generated
+                  {messages.map((message) => {
+                    const lead = leads.find(l => l.id === message.lead_id)
+                    return (
+                      <div key={message.id} className="border border-[#333] rounded-lg p-4 bg-[#2A2A2A]">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="text-white font-medium">
+                              {lead?.business_name || 'Unknown Business'}
+                            </div>
+                            <Badge className="bg-blue-600 text-white">
+                              {message.message_type.replace('_', ' ')}
                             </Badge>
+                            <Badge className={`${getStatusBadgeColor(message.status)} text-white`}>
+                              {message.status}
+                            </Badge>
+                            {message.ai_generated && (
+                              <Badge className="bg-purple-600 text-white">
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                AI Generated
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm text-gray-400">
+                              {new Date(message.created_at).toLocaleDateString()}
+                            </span>
+                            {lead && (
+                              <p className="text-xs text-gray-500">
+                                {lead.owner_name || 'Unknown Contact'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {message.subject && (
+                          <h4 className="font-medium text-white mb-2">{message.subject}</h4>
+                        )}
+                        
+                        <p className="text-gray-300 mb-3">{message.content}</p>
+                        
+                        {message.response_content && (
+                          <div className="bg-[#1A1A1A] p-3 rounded border-l-4 border-green-500">
+                            <p className="text-sm text-gray-400 mb-1">Response:</p>
+                            <p className="text-gray-300">{message.response_content}</p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#444]">
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              className="h-8 px-3 bg-blue-600 hover:bg-blue-700"
+                              onClick={() => generateAIMessage(lead!, message.message_type)}
+                              disabled={!lead}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Generate Follow-up
+                            </Button>
+                          </div>
+                          {lead && (
+                            <div className="flex items-center gap-2">
+                              <Badge className={`${getPriorityBadgeColor(lead.priority)} text-white text-xs`}>
+                                {lead.priority} priority
+                              </Badge>
+                              <Badge className={`${getStatusBadgeColor(lead.status)} text-white text-xs`}>
+                                {lead.status.replace('_', ' ')}
+                              </Badge>
+                            </div>
                           )}
                         </div>
-                        <span className="text-sm text-gray-400">
-                          {new Date(message.created_at).toLocaleDateString()}
-                        </span>
                       </div>
-                      
-                      {message.subject && (
-                        <h4 className="font-medium text-white mb-2">{message.subject}</h4>
-                      )}
-                      
-                      <p className="text-gray-300 mb-3">{message.content}</p>
-                      
-                      {message.response_content && (
-                        <div className="bg-[#1A1A1A] p-3 rounded border-l-4 border-green-500">
-                          <p className="text-sm text-gray-400 mb-1">Response:</p>
-                          <p className="text-gray-300">{message.response_content}</p>
-                        </div>
-                      )}
+                    )
+                  })}
+                  {messages.length === 0 && (
+                    <div className="text-center py-8">
+                      <MessageCircle className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400">No outreach messages yet</p>
+                      <p className="text-sm text-gray-500 mt-2">Import leads from Lead Generator to start messaging</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -339,6 +339,7 @@ export default function LeadGeneratorPage() {
         .from('leads')
         .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, created_at')
         .eq('user_id', userId)
+        .eq('imported_to_outreach', false) // Only show leads not sent to outreach
         .order('created_at', { ascending: false })
       
       if (selectedBrandId) {
@@ -368,6 +369,7 @@ export default function LeadGeneratorPage() {
         .from('leads')
         .select('created_at')
         .eq('user_id', userId)
+        .eq('imported_to_outreach', false) // Only count leads not sent to outreach
       
       if (selectedBrandId) {
         query = query.eq('brand_id', selectedBrandId)
@@ -647,7 +649,10 @@ export default function LeadGeneratorPage() {
 
       if (data.success) {
         toast.success(`Successfully sent ${data.imported_count} leads to Outreach Manager!`)
+        // Remove the sent leads from the current leads list
+        setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
         setSelectedLeads([])
+        await loadStats() // Refresh stats
         // Optionally redirect to outreach page
         // window.open('/outreach-tool', '_blank')
       } else {

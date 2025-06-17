@@ -5,21 +5,24 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
     
-    // Get all leads with their outreach data
+    // Get all leads with their outreach data (only those imported to outreach)
     const { data: leads, error: leadsError } = await supabase
       .from('leads')
       .select(`
         id,
         status,
         created_at,
+        niche_name,
         outreach_messages (
           id,
+          message_type,
           status,
           created_at,
           sent_at,
           replied_at
         )
       `)
+      .eq('imported_to_outreach', true) // Only analyze leads in outreach system
 
     if (leadsError) {
       console.error('Error fetching leads for analytics:', leadsError)
