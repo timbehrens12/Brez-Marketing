@@ -938,9 +938,9 @@ export default function LeadGeneratorPage() {
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
                       <SelectValue placeholder="Country" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       {Country.getAllCountries().map((country) => (
-                        <SelectItem key={country.isoCode} value={country.isoCode}>
+                        <SelectItem key={country.isoCode} value={country.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                           {country.name}
                         </SelectItem>
                       ))}
@@ -959,9 +959,9 @@ export default function LeadGeneratorPage() {
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
                       <SelectValue placeholder={!location.country ? "Country First" : "State"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       {availableStates.map((state) => (
-                        <SelectItem key={state.isoCode} value={state.isoCode}>
+                        <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                           {state.name}
                         </SelectItem>
                       ))}
@@ -979,9 +979,9 @@ export default function LeadGeneratorPage() {
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
                       <SelectValue placeholder={!location.state ? "State First" : "City"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       {availableCities.map((city) => (
-                        <SelectItem key={city.name} value={city.name}>
+                        <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                           {city.name}
                         </SelectItem>
                       ))}
@@ -994,14 +994,14 @@ export default function LeadGeneratorPage() {
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
                       <SelectValue placeholder="Radius" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5 miles</SelectItem>
-                      <SelectItem value="10">10 miles</SelectItem>
-                      <SelectItem value="15">15 miles</SelectItem>
-                      <SelectItem value="25">25 miles</SelectItem>
-                      <SelectItem value="50">50 miles</SelectItem>
-                      <SelectItem value="75">75 miles</SelectItem>
-                      <SelectItem value="100">100 miles</SelectItem>
+                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                      <SelectItem value="5" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">5 miles</SelectItem>
+                      <SelectItem value="10" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">10 miles</SelectItem>
+                      <SelectItem value="15" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">15 miles</SelectItem>
+                      <SelectItem value="25" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">25 miles</SelectItem>
+                      <SelectItem value="50" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">50 miles</SelectItem>
+                      <SelectItem value="75" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">75 miles</SelectItem>
+                      <SelectItem value="100" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">100 miles</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
