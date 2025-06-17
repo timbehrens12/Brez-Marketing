@@ -990,9 +990,10 @@ export default function LeadGeneratorPage() {
                   <Select
                     value={location.radius}
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
+                    disabled={!location.city}
                   >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Radius" />
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
+                      <SelectValue placeholder={!location.city ? "City First" : "Radius"} />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       <SelectItem value="5" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">5 miles</SelectItem>
