@@ -626,13 +626,37 @@ export default function LeadGeneratorPage() {
     return filteredNiches.filter((niche: any) => !cooldownNicheIds.includes(niche.id))
   }
 
-  const sendToOutreach = () => {
+  const sendToOutreach = async () => {
     if (selectedLeads.length === 0) {
       toast.error('Please select leads to send to outreach')
       return
     }
-    toast.success(`Sent ${selectedLeads.length} leads to Outreach Manager!`)
-    setSelectedLeads([])
+
+    try {
+      const response = await fetch('/api/leads/outreach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadIds: selectedLeads
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(`Successfully sent ${data.imported_count} leads to Outreach Manager!`)
+        setSelectedLeads([])
+        // Optionally redirect to outreach page
+        // window.open('/outreach-tool', '_blank')
+      } else {
+        toast.error(data.error || 'Failed to send leads to outreach')
+      }
+    } catch (error) {
+      console.error('Error sending leads to outreach:', error)
+      toast.error('Failed to send leads to outreach')
+    }
   }
 
   // Delete selected leads

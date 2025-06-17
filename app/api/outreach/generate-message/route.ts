@@ -1,192 +1,241 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { auth } from '@clerk/nextjs'
-import OpenAI from 'openai'
+import { createClient } from '@/lib/supabase/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { lead_id, message_type, lead_data } = await request.json()
+    
+    if (!lead_id || !message_type || !lead_data) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    const body = await req.json()
-    const { leadId, messageType, customInstructions } = body
-
-    // Get lead details from database
-    const { data: lead, error: leadError } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('id', leadId)
-      .eq('user_id', userId)
-      .single()
-
-    if (leadError || !lead) {
-      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
-    }
-
-    // Generate personalized message using OpenAI
-    const prompt = generateMessagePrompt(lead, messageType, customInstructions)
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert marketing copywriter specializing in outbound sales and lead generation. Create personalized, engaging messages that focus on the prospect's specific pain points and how Facebook/Instagram advertising can solve their problems. Keep the tone professional but friendly, and always include a clear call-to-action."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000
-    })
-
-    const generatedContent = completion.choices[0].message.content
-
-    // Parse the response to extract subject and message content
-    let subject = ''
-    let messageContent = generatedContent || ''
-
-    if (messageType === 'email' && generatedContent) {
-      const lines = generatedContent.split('\n')
-      const subjectLine = lines.find(line => line.toLowerCase().includes('subject:'))
-      if (subjectLine) {
-        subject = subjectLine.replace(/subject:\s*/i, '').trim()
-        messageContent = generatedContent.replace(subjectLine, '').trim()
-      }
-    }
-
+    const supabase = createClient()
+    
+    // Generate personalized message using AI
+    const aiMessage = await generatePersonalizedMessage(lead_data, message_type)
+    
     // Save the generated message to database
-    const { data: message, error: messageError } = await supabase
+    const { data: message, error } = await supabase
       .from('outreach_messages')
       .insert({
-        user_id: userId,
-        brand_id: lead.brand_id,
-        lead_id: leadId,
-        message_type: messageType,
-        subject: subject || undefined,
-        message_content: messageContent,
-        personalization_data: {
-          business_name: lead.business_name,
-          owner_name: lead.owner_name,
-          niche_name: lead.niche_name,
-          city: lead.city,
-          pain_points: lead.pain_points,
-          ai_insights: lead.ai_insights
-        },
-        status: 'draft',
+        lead_id,
+        message_type,
+        subject: aiMessage.subject,
+        content: aiMessage.content,
+        status: 'generated',
+        ai_generated: true,
         created_at: new Date().toISOString()
       })
       .select()
       .single()
 
-    if (messageError) {
-      console.error('Error saving message:', messageError)
+    if (error) {
+      console.error('Error saving message:', error)
+      return NextResponse.json(
+        { error: 'Failed to save message' },
+        { status: 500 }
+      )
     }
 
+    // Update lead status to contacted if it's new
+    if (lead_data.status === 'new') {
+      await supabase
+        .from('leads')
+        .update({ 
+          status: 'contacted',
+          last_contacted_at: new Date().toISOString()
+        })
+        .eq('id', lead_id)
+    }
+
+    // Create automated follow-up task
+    await createFollowUpTask(supabase, lead_id, lead_data.business_name)
+
     return NextResponse.json({
-      subject,
-      message_content: messageContent,
-      message_id: message?.id,
-      lead_info: {
-        business_name: lead.business_name,
-        owner_name: lead.owner_name,
-        niche_name: lead.niche_name
-      }
+      success: true,
+      message: message,
+      ai_content: aiMessage
     })
 
   } catch (error) {
-    console.error('Message generation error:', error)
+    console.error('Error generating message:', error)
     return NextResponse.json(
-      { error: 'Failed to generate message' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
-function generateMessagePrompt(lead: any, messageType: string, customInstructions?: string) {
-  const baseContext = `
-Lead Information:
-- Business Name: ${lead.business_name}
-- Owner Name: ${lead.owner_name || 'Business Owner'}
-- Niche: ${lead.niche_name}
-- Business Type: ${lead.business_type}
-- Location: ${lead.city ? `${lead.city}, ${lead.state_province}` : 'Online'}
-- Website: ${lead.website || 'Not available'}
-- Lead Score: ${lead.lead_score}/100
-- Pain Points: ${Array.isArray(lead.pain_points) ? lead.pain_points.join(', ') : 'General marketing challenges'}
-- AI Insights: ${lead.ai_insights || 'Potential for growth with targeted advertising'}
-- Estimated Revenue: $${lead.estimated_revenue || '100,000-500,000'}
-`
+async function generatePersonalizedMessage(lead: any, messageType: string) {
+  const businessName = lead.business_name || 'your business'
+  const ownerName = lead.owner_name || 'there'
+  const industry = lead.niche_name || 'your industry'
+  const location = lead.city && lead.state_province 
+    ? `${lead.city}, ${lead.state_province}` 
+    : 'your area'
+
+  // Custom value propositions about the ERT dashboard
+  const valueProps = [
+    "exclusive access to our custom ERT dashboard that no other ad manager has",
+    "AI-powered optimization features that automatically improve your ad performance",
+    "proprietary analytics that give you a competitive edge over your competitors",
+    "real-time insights that help you make data-driven decisions faster than ever",
+    "automated optimization algorithms that work 24/7 to maximize your ROI"
+  ]
+
+  const industrySpecificBenefits = {
+    'restaurants': 'drive more foot traffic and increase table bookings',
+    'fitness': 'attract more gym members and personal training clients',
+    'beauty': 'book more appointments and increase client retention',
+    'automotive': 'generate more leads for car sales and service appointments',
+    'real estate': 'find more qualified buyers and sellers in your market',
+    'healthcare': 'attract more patients and improve your practice visibility',
+    'legal': 'generate more qualified leads for your legal services',
+    'home improvement': 'get more project inquiries and estimate requests',
+    'retail': 'increase online sales and drive more store visits',
+    'default': 'generate more qualified leads and increase your revenue'
+  }
+
+  const benefit = industrySpecificBenefits[industry.toLowerCase() as keyof typeof industrySpecificBenefits] 
+    || industrySpecificBenefits.default
 
   const templates = {
-    email: `${baseContext}
+    email: {
+      subject: `Exclusive AI Dashboard Access for ${businessName} - 3x Better Results Than Traditional Ad Managers`,
+      content: `Hi ${ownerName},
 
-Create a personalized cold email for this prospect. The email should:
-1. Start with "Subject: [compelling subject line]"
-2. Address them by name and mention their business specifically
-3. Reference their niche and location if relevant
-4. Highlight 2-3 specific pain points they likely face
-5. Explain how Facebook/Instagram ads can solve these problems
-6. Include social proof or results from similar businesses
-7. End with a soft call-to-action for a brief call
-8. Keep it under 200 words
-9. Use a professional but friendly tone
-10. Include a P.S. with a specific benefit or quick win
+I noticed ${businessName} is doing great work in the ${industry} space in ${location}, and I wanted to reach out with something exclusive.
 
-${customInstructions ? `Additional instructions: ${customInstructions}` : ''}`,
+We've developed a custom ERT dashboard with AI optimization features that's currently only available to a select group of businesses. What makes this different from working with traditional ad managers is that you get:
 
-    sms: `${baseContext}
+• ${valueProps[0]}
+• ${valueProps[1]} 
+• ${valueProps[2]}
 
-Create a personalized SMS message for this prospect. The message should:
-1. Be under 160 characters
-2. Mention their business name
-3. Reference their niche
-4. Include a specific benefit (like "30-50% revenue increase")
-5. End with a question to encourage response
-6. Be casual but professional
+This means you can ${benefit} while your competitors are still using outdated methods.
 
-${customInstructions ? `Additional instructions: ${customInstructions}` : ''}`,
+The results speak for themselves - our clients typically see 3x better performance compared to other ad management services because of our proprietary AI technology.
 
-    linkedin: `${baseContext}
+Since you're in ${industry}, I think ${businessName} would be a perfect fit for this exclusive program.
 
-Create a personalized LinkedIn connection request message or follow-up message. The message should:
-1. Reference their business and niche specifically
-2. Mention a specific achievement or what impressed you about their business
-3. Briefly explain your expertise with similar businesses
-4. Include a soft call-to-action
-5. Keep it under 300 characters for connection requests, or under 500 words for follow-up
-6. Be professional and relationship-focused
+Would you be interested in a quick 15-minute call to see how this could work for your business?
 
-${customInstructions ? `Additional instructions: ${customInstructions}` : ''}`,
+Best regards,
+[Your Name]
 
-    call_script: `${baseContext}
+P.S. - This dashboard access is limited and we're only onboarding a few businesses per month. If you're interested, I'd recommend we connect soon.`
+    },
 
-Create a personalized cold call script for this prospect. The script should include:
-1. **Opening**: Natural introduction with reason for calling
-2. **Permission**: Ask if it's a good time to talk
-3. **Purpose**: Briefly explain why you're calling
-4. **Value Proposition**: Specific benefits for their business type/niche
-5. **Discovery Questions**: 2-3 questions about their current marketing
-6. **Objection Handling**: Common responses and how to address them
-7. **Close**: Clear next step (usually scheduling a meeting)
-8. Include natural conversation flow and transition phrases
-9. Reference their specific business details throughout
+    linkedin_dm: {
+      subject: `AI Dashboard Access for ${businessName}`,
+      content: `Hi ${ownerName},
 
-${customInstructions ? `Additional instructions: ${customInstructions}` : ''}`
+Saw your work with ${businessName} in ${industry} - impressive stuff!
+
+Quick question: Are you getting the ad performance data you need to stay ahead of your competition?
+
+We've built an exclusive ERT dashboard with AI optimization that's giving businesses like yours a major competitive advantage. Our clients typically outperform traditional ad managers by 3x because of our proprietary technology.
+
+Since you're in ${industry}, I think this could really help ${businessName} ${benefit}.
+
+Open to a quick chat about how this works?
+
+Best,
+[Your Name]`
+    },
+
+    instagram_dm: {
+      subject: '',
+      content: `Hey ${ownerName}! 👋
+
+Love what you're doing with ${businessName}! 
+
+Quick question - are you getting the ad insights you need to crush your competition in ${industry}?
+
+We've got an exclusive AI dashboard that's helping businesses like yours ${benefit} with way better results than traditional ad managers.
+
+Our secret? Proprietary AI optimization that works 24/7 📊✨
+
+Interested in seeing how this could work for ${businessName}? 
+
+Would love to share more! 🚀`
+    },
+
+    facebook_dm: {
+      subject: '',
+      content: `Hi ${ownerName},
+
+I came across ${businessName} and was impressed by what you're doing in ${industry}!
+
+I wanted to reach out because we have an exclusive AI-powered dashboard that's helping businesses like yours get significantly better ad results than traditional ad management.
+
+What makes it special:
+✅ ${valueProps[0]}
+✅ ${valueProps[1]}
+✅ Real competitive advantage over other businesses
+
+Perfect for helping ${businessName} ${benefit}.
+
+Would you be open to a quick conversation about how this works?
+
+Thanks!
+[Your Name]`
+    },
+
+    cold_call_script: {
+      subject: `Cold Call Script for ${businessName}`,
+      content: `[COLD CALL SCRIPT]
+
+Opening:
+"Hi ${ownerName}, this is [Your Name]. I'm calling about an exclusive opportunity for ${businessName}. Do you have just 2 minutes?"
+
+[If yes, continue:]
+
+Hook:
+"I noticed you're doing great work in ${industry} in ${location}. The reason I'm calling is we've developed something that's giving businesses like yours a major competitive advantage over traditional ad managers."
+
+Value Proposition:
+"It's an exclusive ERT dashboard with AI optimization features that automatically improves your ad performance 24/7. Our clients typically see 3x better results because they have access to proprietary technology that no other ad manager has."
+
+Industry Specific:
+"For businesses in ${industry}, this typically means you can ${benefit} while your competitors are still using outdated methods."
+
+Call to Action:
+"I'd love to show you exactly how this works for ${businessName}. Are you available for a quick 15-minute call this week to see if this makes sense for you?"
+
+Objection Handling:
+- "We already have an ad manager" → "That's great! This actually enhances what they're doing with AI technology they don't have access to."
+- "Not interested" → "I understand. Just to clarify - this isn't traditional ad management. It's exclusive AI technology. Can I send you a quick 2-minute video showing the difference?"
+- "Call back later" → "Sure, when would be a better time? This opportunity is limited and I want to make sure ${businessName} doesn't miss out."
+
+Closing:
+"Perfect! I'll send you a calendar link and a brief overview of how this works. Looking forward to showing you how ${businessName} can get ahead of the competition."`
+    }
   }
 
   return templates[messageType as keyof typeof templates] || templates.email
+}
+
+async function createFollowUpTask(supabase: any, leadId: string, businessName: string) {
+  // Create automated follow-up task for 3 days later
+  const followUpDate = new Date()
+  followUpDate.setDate(followUpDate.getDate() + 3)
+
+  await supabase
+    .from('tasks')
+    .insert({
+      title: `Follow up with ${businessName}`,
+      description: `Check if they've responded to the initial outreach message. If no response, send follow-up message.`,
+      task_type: 'follow_up',
+      priority: 'medium',
+      status: 'pending',
+      lead_id: leadId,
+      due_date: followUpDate.toISOString().split('T')[0],
+      ai_generated: true,
+      ai_reasoning: 'Automated follow-up task created after initial outreach to maintain engagement',
+      created_at: new Date().toISOString()
+    })
 } 
