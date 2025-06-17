@@ -936,7 +936,7 @@ export default function LeadGeneratorPage() {
                     }))}
                   >
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Select Country" />
+                      <SelectValue placeholder="Country" />
                     </SelectTrigger>
                     <SelectContent>
                       {Country.getAllCountries().map((country) => (
@@ -957,7 +957,7 @@ export default function LeadGeneratorPage() {
                     disabled={!location.country}
                   >
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
-                      <SelectValue placeholder={!location.country ? "Select Country First" : "Select State/Province"} />
+                      <SelectValue placeholder={!location.country ? "Country First" : "State"} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableStates.map((state) => (
@@ -977,7 +977,7 @@ export default function LeadGeneratorPage() {
                     disabled={!location.state}
                   >
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
-                      <SelectValue placeholder={!location.state ? "Select State First" : "Select City"} />
+                      <SelectValue placeholder={!location.state ? "State First" : "City"} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableCities.map((city) => (
@@ -992,7 +992,7 @@ export default function LeadGeneratorPage() {
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
                   >
                     <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Search radius" />
+                      <SelectValue placeholder="Radius" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="5">5 miles</SelectItem>
