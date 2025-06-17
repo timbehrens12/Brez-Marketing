@@ -956,8 +956,8 @@ export default function LeadGeneratorPage() {
                     }))}
                     disabled={!location.country}
                   >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Select State/Province" />
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
+                      <SelectValue placeholder={!location.country ? "Select Country First" : "Select State/Province"} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableStates.map((state) => (
@@ -976,8 +976,8 @@ export default function LeadGeneratorPage() {
                     }))}
                     disabled={!location.state}
                   >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Select City" />
+                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
+                      <SelectValue placeholder={!location.state ? "Select State First" : "Select City"} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableCities.map((city) => (
