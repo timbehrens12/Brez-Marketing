@@ -1011,10 +1011,10 @@ export default function LeadGeneratorPage() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
                 {selectedNiches.length === 0 && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-3">
-                    <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                  <div className="bg-gray-500/10 border border-gray-500/20 rounded-lg p-3 mb-3">
+                    <div className="flex items-center gap-2 text-gray-400 text-sm">
                       <AlertTriangle className="h-4 w-4" />
-                      Please select at least one niche before choosing location
+                      Please select at least one local service before choosing location
                     </div>
                   </div>
                 )}
@@ -1034,10 +1034,10 @@ export default function LeadGeneratorPage() {
                       disabled={selectedNiches.length === 0}
                     >
                       <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
-                        <SelectValue placeholder={selectedNiches.length === 0 ? "Select Niche First" : "Country"} />
+                        <SelectValue placeholder={selectedNiches.length === 0 ? "Select Local Service First" : "Country"} />
                       </SelectTrigger>
                       <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
+                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
                           <Input
                             placeholder="Search countries..."
                             value={countrySearch}
@@ -1069,19 +1069,19 @@ export default function LeadGeneratorPage() {
                     >
                       <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
                         <SelectValue placeholder={
-                          selectedNiches.length === 0 ? "Select Niche First" : 
+                          selectedNiches.length === 0 ? "Select Local Service First" : 
                           !location.country ? "Country First" : "State"
                         } />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
-                          <Input
-                            placeholder="Search states..."
-                            value={stateSearch}
-                            onChange={(e) => setStateSearch(e.target.value)}
-                            className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
-                          />
-                        </div>
+                                              <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                          <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                            <Input
+                              placeholder="Search states..."
+                              value={stateSearch}
+                              onChange={(e) => setStateSearch(e.target.value)}
+                              className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                            />
+                          </div>
                         {getFilteredStates().map((state) => (
                           <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                             {state.name}
@@ -1105,19 +1105,19 @@ export default function LeadGeneratorPage() {
                     >
                       <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
                         <SelectValue placeholder={
-                          selectedNiches.length === 0 ? "Select Niche First" : 
+                          selectedNiches.length === 0 ? "Select Local Service First" : 
                           !location.state ? "State First" : "City"
                         } />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
-                          <Input
-                            placeholder="Search cities..."
-                            value={citySearch}
-                            onChange={(e) => setCitySearch(e.target.value)}
-                            className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
-                          />
-                        </div>
+                                              <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                          <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                            <Input
+                              placeholder="Search cities..."
+                              value={citySearch}
+                              onChange={(e) => setCitySearch(e.target.value)}
+                              className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                            />
+                          </div>
                         {getFilteredCities().map((city) => (
                           <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                             {city.name}
@@ -1134,7 +1134,7 @@ export default function LeadGeneratorPage() {
                   >
                     <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
                       <SelectValue placeholder={
-                        selectedNiches.length === 0 ? "Select Niche First" : 
+                        selectedNiches.length === 0 ? "Select Local Service First" : 
                         !location.city ? "City First" : "Radius"
                       } />
                     </SelectTrigger>
