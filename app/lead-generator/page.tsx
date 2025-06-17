@@ -1042,6 +1042,9 @@ export default function LeadGeneratorPage() {
                             placeholder="Search countries..."
                             value={countrySearch}
                             onChange={(e) => setCountrySearch(e.target.value)}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            onFocus={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                             className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                           />
                         </div>
@@ -1079,6 +1082,9 @@ export default function LeadGeneratorPage() {
                               placeholder="Search states..."
                               value={stateSearch}
                               onChange={(e) => setStateSearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                               className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                             />
                           </div>
@@ -1115,6 +1121,9 @@ export default function LeadGeneratorPage() {
                               placeholder="Search cities..."
                               value={citySearch}
                               onChange={(e) => setCitySearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                               className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
                             />
                           </div>
