@@ -782,6 +782,53 @@ export default function LeadGeneratorPage() {
     // Find the niche ID from the niche name
     const selectedNiche = niches.find(n => n.name === lead.niche_name)
     
+    // Try to find country and state ISO codes from the stored city/state names
+    let countryCode = ''
+    let stateCode = ''
+    let cityName = lead.city || ''
+    
+    if (lead.state_province && lead.city) {
+      // First try to find by state name (most common case for US)
+      const countries = Country.getAllCountries()
+      
+      for (const country of countries) {
+        const states = State.getStatesOfCountry(country.isoCode)
+        
+        // Try to match state by name or abbreviation
+        const matchedState = states.find(state => 
+          state.name.toLowerCase() === lead.state_province?.toLowerCase() ||
+          state.isoCode.toLowerCase() === lead.state_province?.toLowerCase()
+        )
+        
+        if (matchedState) {
+          // Found the state, now check if the city exists in this state
+          const cities = City.getCitiesOfState(country.isoCode, matchedState.isoCode)
+          const matchedCity = cities.find(city => 
+            city.name.toLowerCase() === lead.city?.toLowerCase()
+          )
+          
+          if (matchedCity) {
+            countryCode = country.isoCode
+            stateCode = matchedState.isoCode
+            cityName = matchedCity.name
+            break
+          }
+        }
+      }
+      
+      // If we couldn't find a match, default to US if the state looks like a US state
+      if (!countryCode && lead.state_province && lead.state_province.length === 2) {
+        countryCode = 'US'
+        const usStates = State.getStatesOfCountry('US')
+        const usState = usStates.find(state => 
+          state.isoCode.toLowerCase() === lead.state_province?.toLowerCase()
+        )
+        if (usState) {
+          stateCode = usState.isoCode
+        }
+      }
+    }
+    
     // Pre-fill the form with existing lead data
     setManualLeadData({
       business_name: lead.business_name || '',
@@ -789,9 +836,9 @@ export default function LeadGeneratorPage() {
       email: lead.email || '',
       phone: lead.phone || '',
       website: lead.website || '',
-      city: lead.city || '',
-      state_province: lead.state_province || '',
-      country: '', // We'll need to determine this from the state/city
+      city: cityName,
+      state_province: stateCode,
+      country: countryCode,
       niche_id: selectedNiche?.id || '',
       instagram_handle: lead.instagram_handle || '',
       facebook_page: lead.facebook_page || '',
