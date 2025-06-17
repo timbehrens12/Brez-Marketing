@@ -100,9 +100,53 @@ export default function LeadGeneratorPage() {
     radius: '' 
   })
   
+  // Search states for dropdowns
+  const [countrySearch, setCountrySearch] = useState('')
+  const [stateSearch, setStateSearch] = useState('')
+  const [citySearch, setCitySearch] = useState('')
+  
   // Get available data based on selections
   const availableStates = location.country ? State.getStatesOfCountry(location.country) : []
   const availableCities = location.country && location.state ? City.getCitiesOfState(location.country, location.state) : []
+  
+  // Get filtered countries with US at top
+  const getAllCountriesWithUSFirst = () => {
+    const countries = Country.getAllCountries()
+    const usCountry = countries.find(country => country.isoCode === 'US')
+    const otherCountries = countries.filter(country => country.isoCode !== 'US')
+    
+    let filteredCountries = usCountry ? [usCountry, ...otherCountries] : countries
+    
+    if (countrySearch) {
+      filteredCountries = filteredCountries.filter(country => 
+        country.name.toLowerCase().includes(countrySearch.toLowerCase())
+      )
+    }
+    
+    return filteredCountries
+  }
+  
+  // Get filtered states
+  const getFilteredStates = () => {
+    let states = availableStates
+    if (stateSearch) {
+      states = states.filter(state => 
+        state.name.toLowerCase().includes(stateSearch.toLowerCase())
+      )
+    }
+    return states
+  }
+  
+  // Get filtered cities
+  const getFilteredCities = () => {
+    let cities = availableCities
+    if (citySearch) {
+      cities = cities.filter(city => 
+        city.name.toLowerCase().includes(citySearch.toLowerCase())
+      )
+    }
+    return cities
+  }
   const [keywords, setKeywords] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
@@ -966,75 +1010,133 @@ export default function LeadGeneratorPage() {
             {businessType === 'local_service' && (
               <div className="space-y-3">
                 <Label className="text-sm font-medium text-gray-400">Location Targeting</Label>
+                {selectedNiches.length === 0 && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-3">
+                    <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                      <AlertTriangle className="h-4 w-4" />
+                      Please select at least one niche before choosing location
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Select
-                    value={location.country}
-                    onValueChange={(value) => setLocation(prev => ({ 
-                      ...prev, 
-                      country: value,
-                      state: '',
-                      city: ''
-                    }))}
-                  >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Country" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                      {Country.getAllCountries().map((country) => (
-                        <SelectItem key={country.isoCode} value={country.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
-                          {country.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Select
+                      value={location.country}
+                      onValueChange={(value) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          country: value,
+                          state: '',
+                          city: ''
+                        }))
+                        setCountrySearch('')
+                      }}
+                      disabled={selectedNiches.length === 0}
+                    >
+                      <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                        <SelectValue placeholder={selectedNiches.length === 0 ? "Select Niche First" : "Country"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
+                          <Input
+                            placeholder="Search countries..."
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                          />
+                        </div>
+                        {getAllCountriesWithUSFirst().map((country) => (
+                          <SelectItem key={country.isoCode} value={country.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
-                  <Select
-                    value={location.state}
-                    onValueChange={(value) => setLocation(prev => ({ 
-                      ...prev, 
-                      state: value,
-                      city: ''
-                    }))}
-                    disabled={!location.country}
-                  >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
-                      <SelectValue placeholder={!location.country ? "Country First" : "State"} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                      {availableStates.map((state) => (
-                        <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
-                          {state.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Select
+                      value={location.state}
+                      onValueChange={(value) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          state: value,
+                          city: ''
+                        }))
+                        setStateSearch('')
+                      }}
+                      disabled={selectedNiches.length === 0 || !location.country}
+                    >
+                      <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                        <SelectValue placeholder={
+                          selectedNiches.length === 0 ? "Select Niche First" : 
+                          !location.country ? "Country First" : "State"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
+                          <Input
+                            placeholder="Search states..."
+                            value={stateSearch}
+                            onChange={(e) => setStateSearch(e.target.value)}
+                            className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                          />
+                        </div>
+                        {getFilteredStates().map((state) => (
+                          <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                            {state.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
-                  <Select
-                    value={location.city}
-                    onValueChange={(value) => setLocation(prev => ({ 
-                      ...prev, 
-                      city: value
-                    }))}
-                    disabled={!location.state}
-                  >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
-                      <SelectValue placeholder={!location.state ? "State First" : "City"} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                      {availableCities.map((city) => (
-                        <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
-                          {city.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <Select
+                      value={location.city}
+                      onValueChange={(value) => {
+                        setLocation(prev => ({ 
+                          ...prev, 
+                          city: value
+                        }))
+                        setCitySearch('')
+                      }}
+                      disabled={selectedNiches.length === 0 || !location.state}
+                    >
+                      <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                        <SelectValue placeholder={
+                          selectedNiches.length === 0 ? "Select Niche First" : 
+                          !location.state ? "State First" : "City"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333]">
+                          <Input
+                            placeholder="Search cities..."
+                            value={citySearch}
+                            onChange={(e) => setCitySearch(e.target.value)}
+                            className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                          />
+                        </div>
+                        {getFilteredCities().map((city) => (
+                          <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                            {city.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <Select
                     value={location.radius}
                     onValueChange={(value) => setLocation(prev => ({ ...prev, radius: value }))}
-                    disabled={!location.city}
+                    disabled={selectedNiches.length === 0 || !location.city}
                   >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400 disabled:opacity-50">
-                      <SelectValue placeholder={!location.city ? "City First" : "Radius"} />
+                    <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                      <SelectValue placeholder={
+                        selectedNiches.length === 0 ? "Select Niche First" : 
+                        !location.city ? "City First" : "Radius"
+                      } />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       <SelectItem value="5" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">5 miles</SelectItem>
