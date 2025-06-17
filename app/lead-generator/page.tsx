@@ -339,7 +339,6 @@ export default function LeadGeneratorPage() {
         .from('leads')
         .select('id, business_name, owner_name, phone, email, website, city, state_province, business_type, niche_name, instagram_handle, facebook_page, linkedin_profile, twitter_handle, created_at')
         .eq('user_id', userId)
-        .eq('imported_to_outreach', false) // Only show leads not sent to outreach
         .order('created_at', { ascending: false })
       
       if (selectedBrandId) {
@@ -369,7 +368,6 @@ export default function LeadGeneratorPage() {
         .from('leads')
         .select('created_at')
         .eq('user_id', userId)
-        .eq('imported_to_outreach', false) // Only count leads not sent to outreach
       
       if (selectedBrandId) {
         query = query.eq('brand_id', selectedBrandId)
@@ -635,31 +633,26 @@ export default function LeadGeneratorPage() {
     }
 
     try {
-      const response = await fetch('/api/leads/outreach', {
+      const response = await fetch('/api/leads/send-to-outreach', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          leadIds: selectedLeads
-        })
+        body: JSON.stringify({ leadIds: selectedLeads })
       })
 
-      const data = await response.json()
-
-      if (data.success) {
-        toast.success(`Successfully sent ${data.imported_count} leads to Outreach Manager!`)
-        // Remove the sent leads from the current leads list
-        setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
-        setSelectedLeads([])
-        await loadStats() // Refresh stats
-        // Optionally redirect to outreach page
-        // window.open('/outreach-tool', '_blank')
-      } else {
-        toast.error(data.error || 'Failed to send leads to outreach')
+      if (!response.ok) {
+        throw new Error('Failed to send leads to outreach')
       }
+
+      const data = await response.json()
+      toast.success(`${data.message}! Created ${data.tasksCreated} follow-up tasks.`)
+      setSelectedLeads([])
+      
+      // Optionally refresh the leads list to update their status
+      await loadExistingLeads()
     } catch (error) {
-      console.error('Error sending leads to outreach:', error)
+      console.error('Error sending to outreach:', error)
       toast.error('Failed to send leads to outreach')
     }
   }

@@ -9,16 +9,22 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Loader2, Send, MessageSquare, Phone, Mail, Calendar, 
-  CheckCircle, Clock, AlertCircle, Star, 
-      Plus, Edit, Copy, Sparkles, Target, Users, BarChart3, MessageCircle, Bell, RefreshCw,
-    Search, Download, Upload, Eye, Filter, TrendingUp, AlertTriangle, Trash2, Archive, ExternalLink
+  CheckCircle, Clock, AlertCircle, Star, TrendingUp,
+  Plus, Edit, Copy, Sparkles, Target, Users, BarChart3,
+  Building2, ExternalLink, Linkedin, Twitter, Instagram,
+  Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
+  ArrowUpRight, ArrowDownRight, AlertTriangle
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
+import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
+import { useBrandContext } from '@/lib/context/BrandContext'
+import { useAuth } from '@clerk/nextjs'
 
 interface Lead {
   id: string
@@ -29,178 +35,196 @@ interface Lead {
   website?: string
   city?: string
   state_province?: string
-  country?: string
+  business_type?: string
   niche_name?: string
-  status: 'new' | 'contacted' | 'responded' | 'qualified' | 'proposal_sent' | 'negotiating' | 'signed' | 'rejected' | 'unresponsive'
-  priority: 'low' | 'medium' | 'high'
-  lead_score: number
-  last_contacted_at?: string
-  created_at: string
   instagram_handle?: string
   facebook_page?: string
   linkedin_profile?: string
   twitter_handle?: string
-  estimated_revenue?: string
-  notes?: string
+  lead_score?: number
+  created_at?: string
+}
+
+interface OutreachCampaign {
+  id: string
+  lead_id: string
+  lead?: Lead
+  status: 'new' | 'contacted' | 'responded' | 'interested' | 'negotiating' | 'signed' | 'lost'
+  last_contact_date?: string
+  next_follow_up_date?: string
+  notes?: string | null
+  deal_value?: number
+  created_at: string
+  updated_at: string
 }
 
 interface OutreachMessage {
   id: string
-  lead_id: string
-  message_type: 'email' | 'linkedin_dm' | 'instagram_dm' | 'facebook_dm' | 'cold_call_script'
+  campaign_id: string
+  message_type: 'email' | 'sms' | 'linkedin' | 'call' | 'other'
   subject?: string
   content: string
-  status: 'generated' | 'reviewed' | 'sent' | 'delivered' | 'opened' | 'replied' | 'bounced'
-  ai_generated: boolean
+  direction: 'outbound' | 'inbound'
+  status: 'draft' | 'sent' | 'delivered' | 'read' | 'replied' | 'bounced'
   sent_at?: string
-  opened_at?: string
-  replied_at?: string
-  response_content?: string
-  response_sentiment?: 'positive' | 'negative' | 'neutral'
+  read_at?: string
   created_at: string
 }
 
-interface Task {
+interface OutreachTask {
   id: string
+  campaign_id?: string
+  campaign?: OutreachCampaign
   title: string
   description?: string
-  task_type: 'outreach' | 'follow_up' | 'lead_research' | 'campaign_review' | 'custom'
+  task_type: 'follow_up' | 'call' | 'research' | 'meeting' | 'proposal' | 'other'
   priority: 'low' | 'medium' | 'high'
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'snoozed'
-  lead_id?: string
-  due_date?: string
-  ai_generated: boolean
-  ai_reasoning?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  due_date: string
+  completed_at?: string
   created_at: string
+  updated_at: string
 }
 
 export default function OutreachToolPage() {
-  const [activeTab, setActiveTab] = useState('dashboard')
-  const [leads, setLeads] = useState<Lead[]>([])
+  const { getSupabaseClient } = useAuthenticatedSupabase()
+  const { selectedBrandId } = useBrandContext()
+  const { userId } = useAuth()
+
+  const [activeTab, setActiveTab] = useState('pipeline')
+  const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
+  const [tasks, setTasks] = useState<OutreachTask[]>([])
   const [messages, setMessages] = useState<OutreachMessage[]>([])
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [selectedCampaign, setSelectedCampaign] = useState<OutreachCampaign | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
-  const [messageType, setMessageType] = useState<'email' | 'sms' | 'linkedin' | 'call_script'>('email')
+  const [messageType, setMessageType] = useState<'email' | 'sms' | 'linkedin' | 'call'>('email')
   const [generatedMessage, setGeneratedMessage] = useState('')
   const [messageSubject, setMessageSubject] = useState('')
-  const [isAddingTask, setIsAddingTask] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedLeads, setSelectedLeads] = useState<string[]>([])
-
-  // Analytics state
-  const [analytics, setAnalytics] = useState({
-    total_leads: 0,
-    contacted_leads: 0,
-    responded_leads: 0,
-    signed_leads: 0,
-    response_rate: 0,
-    conversion_rate: 0,
-    avg_response_time: 0
+  const [selectedTasks, setSelectedTasks] = useState<string[]>([])
+  const [isCreatingTask, setIsCreatingTask] = useState(false)
+  const [newTaskData, setNewTaskData] = useState({
+    title: '',
+    description: '',
+    task_type: 'follow_up',
+    priority: 'medium',
+    due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    campaign_id: ''
   })
 
-  useEffect(() => {
-    fetchOutreachData()
-  }, [])
+  // Calculate statistics
+  const stats = {
+    totalCampaigns: campaigns.length,
+    newLeads: campaigns.filter(c => c.status === 'new').length,
+    inProgress: campaigns.filter(c => ['contacted', 'responded', 'interested', 'negotiating'].includes(c.status)).length,
+    signed: campaigns.filter(c => c.status === 'signed').length,
+    lost: campaigns.filter(c => c.status === 'lost').length,
+    totalValue: campaigns.filter(c => c.status === 'signed').reduce((sum, c) => sum + (c.deal_value || 0), 0),
+    conversionRate: campaigns.length > 0 ? (campaigns.filter(c => c.status === 'signed').length / campaigns.length * 100).toFixed(1) : '0',
+    avgDealSize: campaigns.filter(c => c.status === 'signed' && c.deal_value).length > 0 
+      ? campaigns.filter(c => c.status === 'signed').reduce((sum, c) => sum + (c.deal_value || 0), 0) / campaigns.filter(c => c.status === 'signed' && c.deal_value).length
+      : 0
+  }
 
-  const fetchOutreachData = async () => {
+  useEffect(() => {
+    if (userId) {
+      loadCampaigns()
+      loadTasks()
+    }
+  }, [userId, selectedBrandId])
+
+  const loadCampaigns = async () => {
+    if (!userId) return
+
     try {
       setIsLoading(true)
+      const supabase = await getSupabaseClient()
       
-      // Fetch leads with outreach status
-      const leadsResponse = await fetch('/api/leads/outreach')
-      const leadsData = await leadsResponse.json()
-      
-      // Fetch tasks
-      const tasksResponse = await fetch('/api/tasks')
-      const tasksData = await tasksResponse.json()
-      
-      // Fetch messages
-      const messagesResponse = await fetch('/api/outreach/messages')
-      const messagesData = await messagesResponse.json()
-      
-      // Fetch analytics
-      const analyticsResponse = await fetch('/api/outreach/analytics')
-      const analyticsData = await analyticsResponse.json()
-      
-      setLeads(leadsData)
-      setTasks(tasksData)
-      setMessages(messagesData)
-      setAnalytics(analyticsData)
+      let query = supabase
+        .from('outreach_campaigns')
+        .select(`
+          *,
+          lead:leads(*)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (selectedBrandId) {
+        query = query.eq('brand_id', selectedBrandId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+      setCampaigns(data || [])
     } catch (error) {
-      console.error('Error fetching outreach data:', error)
-      toast.error('Failed to load outreach data')
+      console.error('Error loading campaigns:', error)
+      toast.error('Failed to load campaigns')
     } finally {
       setIsLoading(false)
     }
   }
 
+  const loadTasks = async () => {
+    if (!userId) return
 
-
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = !searchTerm || 
-      lead.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter
-    const matchesPriority = priorityFilter === 'all' || lead.priority === priorityFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority
-  })
-
-  const pendingTasks = tasks.filter(task => task.status === 'pending').slice(0, 5)
-  const todayTasks = tasks.filter(task => task.due_date === new Date().toISOString().split('T')[0])
-
-  const getStatusBadgeColor = (status: string) => {
-    const colors = {
-      'new': 'bg-blue-500',
-      'contacted': 'bg-yellow-500', 
-      'responded': 'bg-green-500',
-      'qualified': 'bg-purple-500',
-      'proposal_sent': 'bg-orange-500',
-      'negotiating': 'bg-indigo-500',
-      'signed': 'bg-emerald-500',
-      'rejected': 'bg-red-500',
-      'unresponsive': 'bg-gray-500'
-    }
-    return colors[status as keyof typeof colors] || 'bg-gray-500'
-  }
-
-  const getPriorityBadgeColor = (priority: string) => {
-    const colors = {
-      'low': 'bg-gray-500',
-      'medium': 'bg-yellow-500',
-      'high': 'bg-red-500'
-    }
-    return colors[priority as keyof typeof colors] || 'bg-gray-500'
-  }
-
-  const generateAIMessage = async (lead: Lead, messageType: string) => {
     try {
-      setIsGeneratingMessage(true)
+      const supabase = await getSupabaseClient()
       
+      const { data, error } = await supabase
+        .from('outreach_tasks')
+        .select(`
+          *,
+          campaign:outreach_campaigns(
+            *,
+            lead:leads(*)
+          )
+        `)
+        .eq('user_id', userId)
+        .order('due_date', { ascending: true })
+
+      if (error) throw error
+      setTasks(data || [])
+    } catch (error) {
+      console.error('Error loading tasks:', error)
+      toast.error('Failed to load tasks')
+    }
+  }
+
+  const generatePersonalizedMessage = async () => {
+    if (!selectedCampaign || !selectedCampaign.lead) {
+      toast.error('Please select a lead first')
+      return
+    }
+
+    setIsGeneratingMessage(true)
+    
+    try {
       const response = await fetch('/api/outreach/generate-message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          lead_id: lead.id,
-          message_type: messageType,
-          lead_data: lead
+          lead: selectedCampaign.lead,
+          messageType,
+          brandInfo: { name: 'Your Business' } // You can get this from user profile
         })
       })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        toast.success('AI message generated successfully!')
-        fetchOutreachData() // Refresh data
-      } else {
-        toast.error(data.error || 'Failed to generate message')
+
+      if (!response.ok) {
+        throw new Error('Failed to generate message')
       }
+
+      const data = await response.json()
+      setGeneratedMessage(data.content)
+      if (data.subject) {
+        setMessageSubject(data.subject)
+      }
+      
+      toast.success('Personalized message generated!')
     } catch (error) {
       console.error('Error generating message:', error)
       toast.error('Failed to generate message')
@@ -209,320 +233,431 @@ export default function OutreachToolPage() {
     }
   }
 
-  const updateLeadStatus = async (leadId: string, newStatus: string) => {
+  const sendMessage = async () => {
+    if (!selectedCampaign || !generatedMessage) {
+      toast.error('Please select a lead and generate a message first')
+      return
+    }
+
     try {
-      const response = await fetch(`/api/leads/${leadId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      })
+      const supabase = await getSupabaseClient()
       
-      if (response.ok) {
-        setLeads(leads.map(lead => 
-          lead.id === leadId ? { ...lead, status: newStatus as any } : lead
-        ))
-        toast.success('Lead status updated!')
-      }
+      // Save message to database
+      const { data: message, error } = await supabase
+        .from('outreach_messages')
+        .insert({
+          campaign_id: selectedCampaign.id,
+          message_type: messageType,
+          subject: messageSubject || undefined,
+          content: generatedMessage,
+          direction: 'outbound',
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update campaign status and last contact date
+      const { error: updateError } = await supabase
+        .from('outreach_campaigns')
+        .update({
+          status: selectedCampaign.status === 'new' ? 'contacted' : selectedCampaign.status,
+          last_contact_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedCampaign.id)
+
+      if (updateError) throw updateError
+
+      // Create follow-up task
+      const followUpDate = new Date()
+      followUpDate.setDate(followUpDate.getDate() + 3) // Follow up in 3 days
+      
+      const { error: taskError } = await supabase
+        .from('outreach_tasks')
+        .insert({
+          campaign_id: selectedCampaign.id,
+          user_id: userId,
+          title: `Follow up with ${selectedCampaign.lead?.business_name}`,
+          description: `Check if they received and read the ${messageType}`,
+          task_type: 'follow_up',
+          priority: 'medium',
+          status: 'pending',
+          due_date: followUpDate.toISOString()
+        })
+
+      if (taskError) console.error('Error creating follow-up task:', taskError)
+
+      toast.success(`${messageType} sent successfully!`)
+      
+      // Refresh data
+      await loadCampaigns()
+      await loadTasks()
+      
+      // Clear form
+      setGeneratedMessage('')
+      setMessageSubject('')
+      setSelectedCampaign(null)
     } catch (error) {
-      console.error('Error updating status:', error)
-      toast.error('Failed to update status')
+      console.error('Error sending message:', error)
+      toast.error('Failed to send message')
     }
   }
 
-  const markTaskComplete = async (taskId: string) => {
+  const updateCampaignStatus = async (campaignId: string, newStatus: string, notes?: string | null, dealValue?: number) => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}/complete`, {
-        method: 'PATCH'
-      })
+      const supabase = await getSupabaseClient()
       
-      if (response.ok) {
-        setTasks(tasks.map(task => 
-          task.id === taskId ? { ...task, status: 'completed' } : task
-        ))
-        toast.success('Task completed!')
+      const updateData: any = {
+        status: newStatus,
+        updated_at: new Date().toISOString()
       }
+      
+      if (notes !== undefined) updateData.notes = notes === null ? null : notes
+      if (dealValue !== undefined) updateData.deal_value = dealValue
+      
+      const { error } = await supabase
+        .from('outreach_campaigns')
+        .update(updateData)
+        .eq('id', campaignId)
+        .eq('user_id', userId!)
+
+      if (error) throw error
+
+      toast.success('Campaign status updated')
+      await loadCampaigns()
+    } catch (error) {
+      console.error('Error updating campaign:', error)
+      toast.error('Failed to update campaign')
+    }
+  }
+
+  const completeTask = async (taskId: string) => {
+    try {
+      const supabase = await getSupabaseClient()
+      
+      const { error } = await supabase
+        .from('outreach_tasks')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId)
+        .eq('user_id', userId!)
+
+      if (error) throw error
+
+      toast.success('Task completed!')
+      await loadTasks()
     } catch (error) {
       console.error('Error completing task:', error)
       toast.error('Failed to complete task')
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-400">Loading outreach data...</p>
-        </div>
-      </div>
-    )
+  const createTask = async () => {
+    if (!userId || !newTaskData.title) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    try {
+      setIsCreatingTask(true)
+      const supabase = await getSupabaseClient()
+      
+      const { error } = await supabase
+        .from('outreach_tasks')
+        .insert({
+          ...newTaskData,
+          user_id: userId,
+          status: 'pending',
+          due_date: new Date(newTaskData.due_date).toISOString()
+        })
+
+      if (error) throw error
+
+      toast.success('Task created successfully!')
+      await loadTasks()
+      
+      // Reset form
+      setNewTaskData({
+        title: '',
+        description: '',
+        task_type: 'follow_up',
+        priority: 'medium',
+        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        campaign_id: ''
+      })
+    } catch (error) {
+      console.error('Error creating task:', error)
+      toast.error('Failed to create task')
+    } finally {
+      setIsCreatingTask(false)
+    }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new': return 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+      case 'contacted': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50'
+      case 'responded': return 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+      case 'interested': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50'
+      case 'negotiating': return 'bg-orange-500/20 text-orange-300 border-orange-500/50'
+      case 'signed': return 'bg-green-500/20 text-green-300 border-green-500/50'
+      case 'lost': return 'bg-red-500/20 text-red-300 border-red-500/50'
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/50'
+    }
+  }
+
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high': return <AlertCircle className="h-4 w-4 text-red-400" />
+      case 'medium': return <Clock className="h-4 w-4 text-yellow-400" />
+      case 'low': return <CheckCircle className="h-4 w-4 text-green-400" />
+      default: return <Clock className="h-4 w-4 text-gray-400" />
+    }
+  }
+
+  const getSocialMediaIcon = (platform: string) => {
+    switch (platform) {
+      case 'instagram': return <Instagram className="h-4 w-4" />
+      case 'facebook': return <Facebook className="h-4 w-4" />
+      case 'linkedin': return <Linkedin className="h-4 w-4" />
+      case 'twitter': return <Twitter className="h-4 w-4" />
+      default: return null
+    }
+  }
+
+  const getSocialMediaLink = (platform: string, handle: string) => {
+    if (!handle) return null
+    
+    switch (platform) {
+      case 'instagram': return `https://instagram.com/${handle.replace('@', '')}`
+      case 'twitter': return `https://twitter.com/${handle.replace('@', '')}`
+      case 'linkedin': return handle.includes('linkedin.com') ? handle : `https://linkedin.com/in/${handle}`
+      case 'facebook': return handle.includes('facebook.com') ? handle : `https://facebook.com/${handle}`
+      default: return null
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const getDaysSinceContact = (date?: string) => {
+    if (!date) return null
+    const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
+    return days
+  }
+
+  const filteredCampaigns = campaigns.filter(campaign => 
+    statusFilter === 'all' || campaign.status === statusFilter
+  )
+
+  // Get overdue and upcoming tasks
+  const overdueTasks = tasks.filter(task => 
+    task.status === 'pending' && new Date(task.due_date) < new Date()
+  )
+  
+  const todayTasks = tasks.filter(task => {
+    const taskDate = new Date(task.due_date).toDateString()
+    const today = new Date().toDateString()
+    return task.status === 'pending' && taskDate === today
+  })
+
+  const upcomingTasks = tasks.filter(task => 
+    task.status === 'pending' && new Date(task.due_date) > new Date()
+  ).slice(0, 5)
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-100">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Outreach Management</h1>
-              <p className="text-gray-400">Manage leads imported from Lead Generator with AI-powered messaging and automated follow-ups</p>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                onClick={() => fetchOutreachData()}
-                className="bg-[#333] hover:bg-[#444] text-gray-200"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => window.open('/lead-generator', '_blank')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Go to Lead Generator
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white">Outreach CRM</h1>
+            <p className="text-gray-400 mt-2">
+              AI-powered lead management and personalized outreach campaigns
+            </p>
           </div>
-
-          {/* Analytics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Total Leads</p>
-                    <p className="text-2xl font-bold text-white">{analytics.total_leads}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Response Rate</p>
-                    <p className="text-2xl font-bold text-white">{analytics.response_rate}%</p>
-                  </div>
-                  <MessageCircle className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Conversion Rate</p>
-                    <p className="text-2xl font-bold text-white">{analytics.conversion_rate}%</p>
-                  </div>
-                  <Target className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">Signed Deals</p>
-                    <p className="text-2xl font-bold text-white">{analytics.signed_leads}</p>
-                  </div>
-                  <CheckCircle className="h-8 w-8 text-emerald-500" />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setActiveTab('compose')}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Compose Message
+            </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-[#2A2A2A]">
-            <TabsTrigger value="dashboard" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Dashboard</TabsTrigger>
-            <TabsTrigger value="leads" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Leads</TabsTrigger>
-            <TabsTrigger value="messages" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Messages</TabsTrigger>
-            <TabsTrigger value="tasks" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Tasks</TabsTrigger>
-            <TabsTrigger value="analytics" className="text-gray-400 data-[state=active]:bg-[#333] data-[state=active]:text-gray-200">Analytics</TabsTrigger>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Active Campaigns</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats.inProgress}</div>
+              <div className="flex items-center text-sm text-blue-400 mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                {stats.newLeads} new this week
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Conversion Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats.conversionRate}%</div>
+              <div className="flex items-center text-sm text-green-400 mt-1">
+                <ArrowUpRight className="h-3 w-3 mr-1" />
+                {stats.signed} deals closed
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Pipeline Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{formatCurrency(stats.totalValue)}</div>
+              <div className="flex items-center text-sm text-yellow-400 mt-1">
+                <DollarSign className="h-3 w-3 mr-1" />
+                {formatCurrency(stats.avgDealSize)} avg deal
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Tasks Due</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {overdueTasks.length + todayTasks.length}
+              </div>
+              <div className="flex items-center text-sm text-orange-400 mt-1">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {overdueTasks.length} overdue
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4 bg-[#2A2A2A]">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#333] text-gray-400 data-[state=active]:text-gray-200">
+              Pipeline
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-[#333] text-gray-400 data-[state=active]:text-gray-200">
+              Tasks
+            </TabsTrigger>
+            <TabsTrigger value="compose" className="data-[state=active]:bg-[#333] text-gray-400 data-[state=active]:text-gray-200">
+              Compose
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#333] text-gray-400 data-[state=active]:text-gray-200">
+              Analytics
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Priority Tasks */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-orange-500" />
-                    Priority Tasks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {pendingTasks.length === 0 ? (
-                    <p className="text-gray-400 text-sm">No pending tasks</p>
-                  ) : (
-                    pendingTasks.map(task => (
-                      <div key={task.id} className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-white">{task.title}</p>
-                          <p className="text-xs text-gray-400">{task.description}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => markTaskComplete(task.id)}
-                          className="bg-green-600 hover:bg-green-700 h-8 w-8 p-0"
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Recent Activity */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-blue-500" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {/* Activity items would go here */}
-                    <p className="text-gray-400 text-sm">Activity feed coming soon...</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-purple-500" />
-                    Quick Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Today's Tasks</span>
-                    <span className="text-white font-medium">{todayTasks.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Messages Sent</span>
-                    <span className="text-white font-medium">{messages.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Avg Response Time</span>
-                    <span className="text-white font-medium">{analytics.avg_response_time}h</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-
-
-          <TabsContent value="leads" className="space-y-6">
-            {/* Search and Filters */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search leads by name, email, or business..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-200"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#2A2A2A] border-[#444]">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="responded">Responded</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
-                  <SelectItem value="negotiating">Negotiating</SelectItem>
-                  <SelectItem value="signed">Signed</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="unresponsive">Unresponsive</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-48 bg-[#2A2A2A] border-[#444] text-gray-200">
-                  <SelectValue placeholder="Filter by priority" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#2A2A2A] border-[#444]">
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="high">High Priority</SelectItem>
-                  <SelectItem value="medium">Medium Priority</SelectItem>
-                  <SelectItem value="low">Low Priority</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Leads Table */}
+          {/* Pipeline Tab */}
+          <TabsContent value="pipeline" className="space-y-6">
             <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
-                <CardTitle className="text-white flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Imported Leads ({filteredLeads.length})
-                  </span>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="bg-[#333] hover:bg-[#444] text-gray-200">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-gray-400" />
+                      <h2 className="text-lg font-semibold text-gray-400">
+                        Lead Pipeline ({filteredCampaigns.length})
+                      </h2>
+                    </div>
+                    <Button
+                      onClick={() => setShowFilters(!showFilters)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                    >
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filters
                     </Button>
                   </div>
-                </CardTitle>
+                  <Button
+                    onClick={loadCampaigns}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent className="p-0">
-                {filteredLeads.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg mb-2">No leads imported yet</p>
-                    <p className="text-sm text-gray-500 mb-4">Import leads from Lead Generator to start your outreach</p>
-                    <Button 
-                      onClick={() => window.open('/lead-generator', '_blank')}
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Go to Lead Generator
-                    </Button>
+              <CardContent>
+                {/* Filter Panel */}
+                {showFilters && (
+                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Label className="text-sm font-medium text-gray-400">Status Filter</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-48 bg-[#1A1A1A] border-[#333] text-gray-400">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="responded">Responded</SelectItem>
+                          <SelectItem value="interested">Interested</SelectItem>
+                          <SelectItem value="negotiating">Negotiating</SelectItem>
+                          <SelectItem value="signed">Signed</SelectItem>
+                          <SelectItem value="lost">Lost</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="border-[#333]">
-                          <TableHead className="text-gray-400">Business Details</TableHead>
+                          <TableHead className="text-gray-400">Business</TableHead>
                           <TableHead className="text-gray-400">Contact Info</TableHead>
-                          <TableHead className="text-gray-400">Social Media</TableHead>
                           <TableHead className="text-gray-400">Status</TableHead>
-                          <TableHead className="text-gray-400">Priority</TableHead>
-                          <TableHead className="text-gray-400">Score</TableHead>
+                          <TableHead className="text-gray-400">Last Contact</TableHead>
+                          <TableHead className="text-gray-400">Deal Value</TableHead>
+                          <TableHead className="text-gray-400">Social</TableHead>
                           <TableHead className="text-gray-400">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredLeads.map((lead) => (
-                          <TableRow key={lead.id} className="border-[#333] hover:bg-[#2A2A2A]">
+                        {filteredCampaigns.map((campaign) => (
+                          <TableRow key={campaign.id} className="border-[#333] hover:bg-[#222]/50">
                             <TableCell>
                               <div>
-                                <p className="font-medium text-white">{lead.business_name}</p>
-                                <p className="text-sm text-gray-400">{lead.niche_name}</p>
-                                {lead.city && lead.state_province && (
-                                  <p className="text-xs text-gray-500">{lead.city}, {lead.state_province}</p>
-                                )}
-                                {lead.website && (
-                                  <a 
-                                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                                <div className="font-medium text-gray-400">{campaign.lead?.business_name}</div>
+                                <div className="text-sm text-gray-500">{campaign.lead?.niche_name}</div>
+                                {campaign.lead?.website && (
+                                  <a
+                                    href={campaign.lead.website.startsWith('http') ? campaign.lead.website : `https://${campaign.lead.website}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 mt-1"
@@ -534,126 +669,150 @@ export default function OutreachToolPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <p className="text-white font-medium">{lead.owner_name || 'Unknown'}</p>
-                                {lead.email && (
-                                  <p className="text-sm text-gray-400 flex items-center gap-1">
-                                    📧 {lead.email}
-                                  </p>
+                              <div className="space-y-1 text-sm">
+                                {campaign.lead?.owner_name && (
+                                  <div className="text-gray-400">{campaign.lead.owner_name}</div>
                                 )}
-                                {lead.phone && (
-                                  <p className="text-sm text-gray-400 flex items-center gap-1">
-                                    📞 {lead.phone}
-                                  </p>
+                                {campaign.lead?.email && (
+                                  <div className="flex items-center gap-1 text-gray-500">
+                                    <Mail className="h-3 w-3" />
+                                    {campaign.lead.email}
+                                  </div>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-1">
-                                {lead.instagram_handle && (
-                                  <a 
-                                    href={`https://instagram.com/${lead.instagram_handle.replace('@', '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-pink-400 hover:text-pink-300 text-xs flex items-center gap-1"
-                                  >
-                                    📷 @{lead.instagram_handle.replace('@', '')}
-                                  </a>
-                                )}
-                                {lead.facebook_page && (
-                                  <a 
-                                    href={lead.facebook_page}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
-                                  >
-                                    📘 Facebook
-                                  </a>
-                                )}
-                                {lead.linkedin_profile && (
-                                  <a 
-                                    href={lead.linkedin_profile}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-500 hover:text-blue-400 text-xs flex items-center gap-1"
-                                  >
-                                    💼 LinkedIn
-                                  </a>
-                                )}
-                                {lead.twitter_handle && (
-                                  <a 
-                                    href={`https://twitter.com/${lead.twitter_handle.replace('@', '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
-                                  >
-                                    🐦 @{lead.twitter_handle.replace('@', '')}
-                                  </a>
+                                {campaign.lead?.phone && (
+                                  <div className="flex items-center gap-1 text-gray-500">
+                                    <Phone className="h-3 w-3" />
+                                    {campaign.lead.phone}
+                                  </div>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <Select
-                                value={lead.status}
-                                onValueChange={(value) => updateLeadStatus(lead.id, value)}
+                                value={campaign.status}
+                                onValueChange={(value) => updateCampaignStatus(campaign.id, value)}
                               >
-                                <SelectTrigger className="w-32 h-8 bg-[#2A2A2A] border-[#444]">
-                                  <Badge className={`${getStatusBadgeColor(lead.status)} text-white text-xs`}>
-                                    {lead.status.replace('_', ' ')}
-                                  </Badge>
+                                <SelectTrigger className={`w-32 h-8 ${getStatusColor(campaign.status)} bg-transparent border`}>
+                                  <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#2A2A2A] border-[#444]">
+                                <SelectContent className="bg-[#1A1A1A] border-[#333]">
                                   <SelectItem value="new">New</SelectItem>
                                   <SelectItem value="contacted">Contacted</SelectItem>
                                   <SelectItem value="responded">Responded</SelectItem>
-                                  <SelectItem value="qualified">Qualified</SelectItem>
-                                  <SelectItem value="proposal_sent">Proposal Sent</SelectItem>
+                                  <SelectItem value="interested">Interested</SelectItem>
                                   <SelectItem value="negotiating">Negotiating</SelectItem>
                                   <SelectItem value="signed">Signed</SelectItem>
-                                  <SelectItem value="rejected">Rejected</SelectItem>
-                                  <SelectItem value="unresponsive">Unresponsive</SelectItem>
+                                  <SelectItem value="lost">Lost</SelectItem>
                                 </SelectContent>
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Badge className={`${getPriorityBadgeColor(lead.priority)} text-white`}>
-                                {lead.priority}
-                              </Badge>
+                              {campaign.last_contact_date ? (
+                                <div className="text-sm">
+                                  <div className="text-gray-400">
+                                    {getDaysSinceContact(campaign.last_contact_date)} days ago
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {new Date(campaign.last_contact_date).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500">Never contacted</span>
+                              )}
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-12 h-2 bg-[#333] rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-gradient-to-r from-red-500 to-green-500 rounded-full"
-                                    style={{ width: `${lead.lead_score}%` }}
-                                  />
+                              {campaign.status === 'signed' && campaign.deal_value ? (
+                                <div className="text-green-400 font-medium">
+                                  {formatCurrency(campaign.deal_value)}
                                 </div>
-                                <span className="text-sm text-gray-400">{lead.lead_score}</span>
+                              ) : campaign.status === 'negotiating' ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs text-gray-400 hover:text-white"
+                                  onClick={() => {
+                                    const value = prompt('Enter deal value:')
+                                    if (value && !isNaN(Number(value))) {
+                                      updateCampaignStatus(campaign.id, campaign.status, undefined, Number(value))
+                                    }
+                                  }}
+                                >
+                                  Set value
+                                </Button>
+                              ) : (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                {campaign.lead?.instagram_handle && (
+                                  <a
+                                    href={getSocialMediaLink('instagram', campaign.lead.instagram_handle)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-pink-400 hover:text-pink-300"
+                                  >
+                                    {getSocialMediaIcon('instagram')}
+                                  </a>
+                                )}
+                                {campaign.lead?.facebook_page && (
+                                  <a
+                                    href={getSocialMediaLink('facebook', campaign.lead.facebook_page)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300"
+                                  >
+                                    {getSocialMediaIcon('facebook')}
+                                  </a>
+                                )}
+                                {campaign.lead?.linkedin_profile && (
+                                  <a
+                                    href={getSocialMediaLink('linkedin', campaign.lead.linkedin_profile)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 hover:text-blue-400"
+                                  >
+                                    {getSocialMediaIcon('linkedin')}
+                                  </a>
+                                )}
+                                {campaign.lead?.twitter_handle && (
+                                  <a
+                                    href={getSocialMediaLink('twitter', campaign.lead.twitter_handle)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gray-400 hover:text-white"
+                                  >
+                                    {getSocialMediaIcon('twitter')}
+                                  </a>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="flex gap-1">
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      className="h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700"
-                                      onClick={() => setSelectedLead(lead)}
-                                    >
-                                      <MessageSquare className="h-4 w-4" />
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl">
-                                    <AIMessageGenerator lead={lead} onGenerate={generateAIMessage} />
-                                  </DialogContent>
-                                </Dialog>
-                                
-                                <Button 
-                                  size="sm" 
-                                  className="h-8 w-8 p-0 bg-[#333] hover:bg-[#444]"
-                                  onClick={() => setSelectedLead(lead)}
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 text-xs border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                                  onClick={() => {
+                                    setSelectedCampaign(campaign)
+                                    setActiveTab('compose')
+                                  }}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  Message
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 text-xs text-gray-400 hover:text-white"
+                                  onClick={() => {
+                                    const notes = prompt('Add notes:', campaign.notes || '')
+                                    if (notes !== null) {
+                                      updateCampaignStatus(campaign.id, campaign.status, notes || undefined)
+                                    }
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3" />
                                 </Button>
                               </div>
                             </TableCell>
@@ -663,295 +822,577 @@ export default function OutreachToolPage() {
                     </Table>
                   </div>
                 )}
+
+                {filteredCampaigns.length === 0 && !isLoading && (
+                  <div className="text-center py-12 text-gray-400">
+                    <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No campaigns found</p>
+                    <p className="text-sm">Send leads from the Lead Generator to start outreach</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="messages" className="space-y-6">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  Outreach Messages
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {messages.map((message) => {
-                    const lead = leads.find(l => l.id === message.lead_id)
-                    return (
-                      <div key={message.id} className="border border-[#333] rounded-lg p-4 bg-[#2A2A2A]">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="text-white font-medium">
-                              {lead?.business_name || 'Unknown Business'}
-                            </div>
-                            <Badge className="bg-blue-600 text-white">
-                              {message.message_type.replace('_', ' ')}
-                            </Badge>
-                            <Badge className={`${getStatusBadgeColor(message.status)} text-white`}>
-                              {message.status}
-                            </Badge>
-                            {message.ai_generated && (
-                              <Badge className="bg-purple-600 text-white">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                AI Generated
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm text-gray-400">
-                              {new Date(message.created_at).toLocaleDateString()}
-                            </span>
-                            {lead && (
-                              <p className="text-xs text-gray-500">
-                                {lead.owner_name || 'Unknown Contact'}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {message.subject && (
-                          <h4 className="font-medium text-white mb-2">{message.subject}</h4>
-                        )}
-                        
-                        <p className="text-gray-300 mb-3">{message.content}</p>
-                        
-                        {message.response_content && (
-                          <div className="bg-[#1A1A1A] p-3 rounded border-l-4 border-green-500">
-                            <p className="text-sm text-gray-400 mb-1">Response:</p>
-                            <p className="text-gray-300">{message.response_content}</p>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#444]">
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              className="h-8 px-3 bg-blue-600 hover:bg-blue-700"
-                              onClick={() => generateAIMessage(lead!, message.message_type)}
-                              disabled={!lead}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              Generate Follow-up
-                            </Button>
-                          </div>
-                          {lead && (
-                            <div className="flex items-center gap-2">
-                              <Badge className={`${getPriorityBadgeColor(lead.priority)} text-white text-xs`}>
-                                {lead.priority} priority
-                              </Badge>
-                              <Badge className={`${getStatusBadgeColor(lead.status)} text-white text-xs`}>
-                                {lead.status.replace('_', ' ')}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                  {messages.length === 0 && (
-                    <div className="text-center py-8">
-                      <MessageCircle className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-400">No outreach messages yet</p>
-                      <p className="text-sm text-gray-500 mt-2">Import leads from Lead Generator to start messaging</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
+          {/* Tasks Tab */}
           <TabsContent value="tasks" className="space-y-6">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
-                  Outreach Tasks & To-Do List
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {tasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-4 p-4 bg-[#2A2A2A] rounded-lg">
-                      <Button
-                        size="sm"
-                        onClick={() => markTaskComplete(task.id)}
-                        className={`h-8 w-8 p-0 ${
-                          task.status === 'completed' 
-                            ? 'bg-green-600 hover:bg-green-700' 
-                            : 'bg-[#444] hover:bg-[#555]'
-                        }`}
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-white">{task.title}</h4>
-                          <Badge className={`${getPriorityBadgeColor(task.priority)} text-white text-xs`}>
-                            {task.priority}
-                          </Badge>
-                          {task.ai_generated && (
-                            <Badge className="bg-purple-600 text-white text-xs">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              AI Suggested
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-400">{task.description}</p>
-                        {task.ai_reasoning && (
-                          <p className="text-xs text-purple-400 mt-1">AI Reasoning: {task.ai_reasoning}</p>
-                        )}
-                      </div>
-                      
-                      <div className="text-right">
-                        <p className="text-sm text-gray-400">
-                          {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Overdue Tasks */}
               <Card className="bg-[#1A1A1A] border-[#333]">
                 <CardHeader>
-                  <CardTitle className="text-white">Conversion Funnel</CardTitle>
+                  <CardTitle className="text-gray-400 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-400" />
+                    Overdue ({overdueTasks.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {overdueTasks.map((task) => (
+                        <div key={task.id} className="p-3 bg-[#2A2A2A] rounded-lg border border-red-500/30">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-300">{task.title}</h4>
+                              {task.description && (
+                                <p className="text-xs text-gray-500 mt-1">{task.description}</p>
+                              )}
+                              {task.campaign?.lead && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {task.campaign.lead.business_name}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs bg-red-500/20 text-red-300 border-red-500/50">
+                                  {Math.abs(getDaysSinceContact(task.due_date) || 0)} days overdue
+                                </Badge>
+                                {getPriorityIcon(task.priority)}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => completeTask(task.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {overdueTasks.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">No overdue tasks</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Today's Tasks */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-gray-400 flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-yellow-400" />
+                    Today ({todayTasks.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {todayTasks.map((task) => (
+                        <div key={task.id} className="p-3 bg-[#2A2A2A] rounded-lg border border-yellow-500/30">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-300">{task.title}</h4>
+                              {task.description && (
+                                <p className="text-xs text-gray-500 mt-1">{task.description}</p>
+                              )}
+                              {task.campaign?.lead && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {task.campaign.lead.business_name}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-300 border-yellow-500/50">
+                                  Due today
+                                </Badge>
+                                {getPriorityIcon(task.priority)}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => completeTask(task.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {todayTasks.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">No tasks due today</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Upcoming Tasks */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-gray-400 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-400" />
+                    Upcoming
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    <div className="space-y-3">
+                      {upcomingTasks.map((task) => (
+                        <div key={task.id} className="p-3 bg-[#2A2A2A] rounded-lg border border-[#444]">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-300">{task.title}</h4>
+                              {task.description && (
+                                <p className="text-xs text-gray-500 mt-1">{task.description}</p>
+                              )}
+                              {task.campaign?.lead && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {task.campaign.lead.business_name}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs bg-[#333] text-gray-400 border-[#444]">
+                                  {new Date(task.due_date).toLocaleDateString()}
+                                </Badge>
+                                {getPriorityIcon(task.priority)}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              onClick={() => completeTask(task.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {upcomingTasks.length === 0 && (
+                        <p className="text-center text-gray-500 py-8">No upcoming tasks</p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Create Task */}
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-gray-400">Create New Task</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Title *</Label>
+                    <Input
+                      value={newTaskData.title}
+                      onChange={(e) => setNewTaskData(prev => ({ ...prev, title: e.target.value }))}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                      placeholder="Task title"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Type</Label>
+                    <Select
+                      value={newTaskData.task_type}
+                      onValueChange={(value) => setNewTaskData(prev => ({ ...prev, task_type: value }))}
+                    >
+                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <SelectItem value="follow_up">Follow Up</SelectItem>
+                        <SelectItem value="call">Call</SelectItem>
+                        <SelectItem value="research">Research</SelectItem>
+                        <SelectItem value="meeting">Meeting</SelectItem>
+                        <SelectItem value="proposal">Proposal</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Priority</Label>
+                    <Select
+                      value={newTaskData.priority}
+                      onValueChange={(value) => setNewTaskData(prev => ({ ...prev, priority: value }))}
+                    >
+                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Due Date</Label>
+                    <Input
+                      type="date"
+                      value={newTaskData.due_date}
+                      onChange={(e) => setNewTaskData(prev => ({ ...prev, due_date: e.target.value }))}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-gray-400">Campaign (Optional)</Label>
+                    <Select
+                      value={newTaskData.campaign_id}
+                      onValueChange={(value) => setNewTaskData(prev => ({ ...prev, campaign_id: value }))}
+                    >
+                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                        <SelectValue placeholder="Select a campaign" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <SelectItem value="">No campaign</SelectItem>
+                        {campaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id}>
+                            {campaign.lead?.business_name} - {campaign.status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 md:col-span-2 lg:col-span-4">
+                    <Label className="text-gray-400">Description</Label>
+                    <Textarea
+                      value={newTaskData.description}
+                      onChange={(e) => setNewTaskData(prev => ({ ...prev, description: e.target.value }))}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-400"
+                      placeholder="Task description (optional)"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="md:col-span-2 lg:col-span-4">
+                    <Button
+                      onClick={createTask}
+                      className="bg-[#444] hover:bg-[#555] text-gray-200"
+                      disabled={isCreatingTask || !newTaskData.title}
+                    >
+                      {isCreatingTask ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
+                      Create Task
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Compose Tab */}
+          <TabsContent value="compose" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Lead Selection & Message Type */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-gray-400">
+                    <Sparkles className="h-5 w-5" />
+                    AI Message Generator
+                  </CardTitle>
+                  <CardDescription>
+                    Create personalized outreach messages that highlight your AI-powered marketing dashboard
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Select Lead</Label>
+                    <Select
+                      value={selectedCampaign?.id || ''}
+                      onValueChange={(value) => {
+                        const campaign = campaigns.find(c => c.id === value)
+                        setSelectedCampaign(campaign || null)
+                      }}
+                    >
+                      <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
+                        <SelectValue placeholder="Choose a lead to message" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        {campaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id}>
+                            {campaign.lead?.business_name} - {campaign.lead?.owner_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Message Type</Label>
+                    <Tabs value={messageType} onValueChange={(value: any) => setMessageType(value)}>
+                      <TabsList className="grid w-full grid-cols-4 bg-[#2A2A2A]">
+                        <TabsTrigger value="email" className="data-[state=active]:bg-[#333] text-gray-400">
+                          <Mail className="h-4 w-4" />
+                        </TabsTrigger>
+                        <TabsTrigger value="linkedin" className="data-[state=active]:bg-[#333] text-gray-400">
+                          <Linkedin className="h-4 w-4" />
+                        </TabsTrigger>
+                        <TabsTrigger value="sms" className="data-[state=active]:bg-[#333] text-gray-400">
+                          <MessageSquare className="h-4 w-4" />
+                        </TabsTrigger>
+                        <TabsTrigger value="call" className="data-[state=active]:bg-[#333] text-gray-400">
+                          <Phone className="h-4 w-4" />
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  <Button
+                    onClick={generatePersonalizedMessage}
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                    disabled={!selectedCampaign || isGeneratingMessage}
+                  >
+                    {isGeneratingMessage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate AI Message
+                      </>
+                    )}
+                  </Button>
+
+                  {selectedCampaign && (
+                    <div className="p-4 bg-[#2A2A2A] rounded-lg space-y-2">
+                      <div className="text-sm">
+                        <span className="text-gray-500">Business:</span>
+                        <span className="text-gray-300 ml-2">{selectedCampaign.lead?.business_name}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">Contact:</span>
+                        <span className="text-gray-300 ml-2">{selectedCampaign.lead?.owner_name || 'Unknown'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">Industry:</span>
+                        <span className="text-gray-300 ml-2">{selectedCampaign.lead?.niche_name || 'General'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">Status:</span>
+                        <Badge variant="outline" className={`ml-2 ${getStatusColor(selectedCampaign.status)}`}>
+                          {selectedCampaign.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Message Preview & Edit */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-gray-400">Message Preview</CardTitle>
+                  <CardDescription>
+                    Review and customize your message before sending
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {messageType === 'email' && (
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Subject Line</Label>
+                      <Input
+                        value={messageSubject}
+                        onChange={(e) => setMessageSubject(e.target.value)}
+                        className="bg-[#2A2A2A] border-[#444] text-gray-300"
+                        placeholder="Email subject"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">Message Content</Label>
+                    <Textarea
+                      value={generatedMessage}
+                      onChange={(e) => setGeneratedMessage(e.target.value)}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300"
+                      placeholder="Your personalized message will appear here..."
+                      rows={messageType === 'sms' ? 4 : 12}
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={sendMessage}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                      disabled={!generatedMessage || !selectedCampaign}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Message
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedMessage)
+                        toast.success('Message copied to clipboard!')
+                      }}
+                      className="border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                      disabled={!generatedMessage}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Conversion Funnel */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-gray-400">Conversion Funnel</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Total Leads</span>
-                      <span className="text-white font-medium">{analytics.total_leads}</span>
+                    {[
+                      { stage: 'New Leads', count: stats.totalCampaigns, color: 'bg-blue-500' },
+                      { stage: 'Contacted', count: campaigns.filter(c => c.status !== 'new').length, color: 'bg-yellow-500' },
+                      { stage: 'Responded', count: campaigns.filter(c => ['responded', 'interested', 'negotiating', 'signed'].includes(c.status)).length, color: 'bg-purple-500' },
+                      { stage: 'Interested', count: campaigns.filter(c => ['interested', 'negotiating', 'signed'].includes(c.status)).length, color: 'bg-indigo-500' },
+                      { stage: 'Negotiating', count: campaigns.filter(c => ['negotiating', 'signed'].includes(c.status)).length, color: 'bg-orange-500' },
+                      { stage: 'Signed', count: stats.signed, color: 'bg-green-500' },
+                    ].map((stage, index) => (
+                      <div key={stage.stage} className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-400">{stage.stage}</span>
+                          <span className="text-gray-300">{stage.count}</span>
+                        </div>
+                        <div className="w-full bg-[#2A2A2A] rounded-full h-2">
+                          <div
+                            className={`${stage.color} h-2 rounded-full transition-all`}
+                            style={{ width: `${stats.totalCampaigns > 0 ? (stage.count / stats.totalCampaigns * 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Performance Metrics */}
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-gray-400">Performance Metrics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-500">Response Rate</p>
+                        <p className="text-xl font-bold text-white">
+                          {campaigns.length > 0 
+                            ? Math.round((campaigns.filter(c => ['responded', 'interested', 'negotiating', 'signed'].includes(c.status)).length / campaigns.filter(c => c.status !== 'new').length) * 100) || 0
+                            : 0}%
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-green-400" />
                     </div>
-                    <Progress value={(analytics.contacted_leads / analytics.total_leads) * 100} className="h-2" />
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Contacted</span>
-                      <span className="text-white font-medium">{analytics.contacted_leads}</span>
+                    <div className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-500">Avg Days to Close</p>
+                        <p className="text-xl font-bold text-white">
+                          {campaigns.filter(c => c.status === 'signed' && c.created_at).length > 0
+                            ? Math.round(
+                                campaigns
+                                  .filter(c => c.status === 'signed' && c.created_at)
+                                  .reduce((sum, c) => {
+                                    const days = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                                    return sum + days
+                                  }, 0) / campaigns.filter(c => c.status === 'signed').length
+                              )
+                            : 0}
+                        </p>
+                      </div>
+                      <Calendar className="h-8 w-8 text-blue-400" />
                     </div>
-                    <Progress value={(analytics.responded_leads / analytics.total_leads) * 100} className="h-2" />
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Responded</span>
-                      <span className="text-white font-medium">{analytics.responded_leads}</span>
-                    </div>
-                    <Progress value={(analytics.signed_leads / analytics.total_leads) * 100} className="h-2" />
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400">Signed</span>
-                      <span className="text-white font-medium">{analytics.signed_leads}</span>
+                    <div className="flex items-center justify-between p-3 bg-[#2A2A2A] rounded-lg">
+                      <div>
+                        <p className="text-sm text-gray-500">Win Rate</p>
+                        <p className="text-xl font-bold text-white">
+                          {campaigns.filter(c => ['signed', 'lost'].includes(c.status)).length > 0
+                            ? Math.round((stats.signed / campaigns.filter(c => ['signed', 'lost'].includes(c.status)).length) * 100)
+                            : 0}%
+                        </p>
+                      </div>
+                      <Target className="h-8 w-8 text-yellow-400" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-[#1A1A1A] border-[#333]">
+              {/* Revenue by Status */}
+              <Card className="bg-[#1A1A1A] border-[#333] md:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-white">Performance Metrics</CardTitle>
+                  <CardTitle className="text-gray-400">Pipeline by Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-6">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-green-500">{analytics.response_rate}%</p>
-                      <p className="text-gray-400">Response Rate</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-blue-500">{analytics.conversion_rate}%</p>
-                      <p className="text-gray-400">Conversion Rate</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-3xl font-bold text-purple-500">{analytics.avg_response_time}h</p>
-                      <p className="text-gray-400">Avg Response Time</p>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-[#333]">
+                          <TableHead className="text-gray-400">Status</TableHead>
+                          <TableHead className="text-gray-400 text-center">Count</TableHead>
+                          <TableHead className="text-gray-400 text-right">Total Value</TableHead>
+                          <TableHead className="text-gray-400 text-right">Avg Value</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {['new', 'contacted', 'responded', 'interested', 'negotiating', 'signed', 'lost'].map(status => {
+                          const statusCampaigns = campaigns.filter(c => c.status === status)
+                          const totalValue = statusCampaigns.reduce((sum, c) => sum + (c.deal_value || 0), 0)
+                          const avgValue = statusCampaigns.filter(c => c.deal_value).length > 0
+                            ? totalValue / statusCampaigns.filter(c => c.deal_value).length
+                            : 0
+
+                          return (
+                            <TableRow key={status} className="border-[#333]">
+                              <TableCell>
+                                <Badge variant="outline" className={getStatusColor(status)}>
+                                  {status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center text-gray-400">
+                                {statusCampaigns.length}
+                              </TableCell>
+                              <TableCell className="text-right text-gray-400">
+                                {formatCurrency(totalValue)}
+                              </TableCell>
+                              <TableCell className="text-right text-gray-400">
+                                {formatCurrency(avgValue)}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
-  )
-}
-
-// AI Message Generator Component
-function AIMessageGenerator({ lead, onGenerate }: { lead: Lead, onGenerate: (lead: Lead, messageType: string) => void }) {
-  const [messageType, setMessageType] = useState('email')
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  return (
-    <div className="space-y-6">
-      <DialogHeader>
-        <DialogTitle className="text-white flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-purple-500" />
-          Generate AI Outreach Message
-        </DialogTitle>
-        <DialogDescription className="text-gray-400">
-          Generate a personalized outreach message for {lead.business_name} using AI
-        </DialogDescription>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="text-gray-400 mb-2 block">Message Type</Label>
-          <Select value={messageType} onValueChange={setMessageType}>
-            <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-200">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-[#2A2A2A] border-[#444]">
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="linkedin_dm">LinkedIn DM</SelectItem>
-              <SelectItem value="instagram_dm">Instagram DM</SelectItem>
-              <SelectItem value="facebook_dm">Facebook DM</SelectItem>
-              <SelectItem value="cold_call_script">Cold Call Script</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="bg-[#2A2A2A] p-4 rounded-lg">
-          <h4 className="text-white font-medium mb-2">Lead Information</h4>
-          <div className="text-sm text-gray-400 space-y-1">
-            <p><strong>Business:</strong> {lead.business_name}</p>
-            <p><strong>Industry:</strong> {lead.niche_name}</p>
-            <p><strong>Location:</strong> {lead.city}, {lead.state_province}</p>
-            {lead.website && <p><strong>Website:</strong> {lead.website}</p>}
-          </div>
-        </div>
-
-        <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/30">
-          <h4 className="text-blue-400 font-medium mb-2">AI will include:</h4>
-          <ul className="text-sm text-blue-300 space-y-1">
-            <li>• Custom ERT dashboard access (exclusive)</li>
-            <li>• AI optimization features for better ad results</li>
-            <li>• Competitive advantage over other ad managers</li>
-            <li>• Personalized based on their industry and location</li>
-            <li>• Professional tone with compelling value proposition</li>
-          </ul>
-        </div>
-
-        <Button 
-          onClick={() => onGenerate(lead, messageType)}
-          disabled={isGenerating}
-          className="w-full bg-purple-600 hover:bg-purple-700"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4 mr-2" />
-              Generate AI Message
-            </>
-          )}
-        </Button>
       </div>
     </div>
   )
