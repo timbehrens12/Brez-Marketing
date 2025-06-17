@@ -1789,17 +1789,17 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="p-1 h-8 w-8 text-gray-400 hover:text-white hover:bg-[#222]"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleEditLead(lead)
-                                }}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
+                                                             <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="p-1 h-8 w-8 text-gray-500 hover:text-gray-300 hover:bg-[#2A2A2A]"
+                                 onClick={(e) => {
+                                   e.stopPropagation()
+                                   handleEditLead(lead)
+                                 }}
+                               >
+                                 <Edit className="h-3 w-3" />
+                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1869,6 +1869,25 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter owner/contact name"
                   />
             </div>
+            
+            {/* Business Type Selection */}
+            <div className="space-y-2 col-span-2">
+              <Label className="text-gray-400">Business Type</Label>
+              <Tabs value={businessType} onValueChange={(value) => setBusinessType(value as any)}>
+                <TabsList className="grid w-full grid-cols-2 bg-[#2A2A2A]">
+                  <TabsTrigger value="local_service" className="data-[state=active]:bg-[#333] text-gray-400">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Local Services
+                  </TabsTrigger>
+                  <TabsTrigger value="ecommerce" className="data-[state=active]:bg-[#333] text-gray-400 relative cursor-not-allowed" disabled>
+                    <Globe className="h-4 w-4 mr-2" />
+                    eCommerce
+                    <Badge className="ml-2 bg-orange-500/20 text-orange-400 text-xs">Coming Soon</Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
             {/* Location Dropdowns */}
             <div className="space-y-2">
               <Label className="text-gray-400">Country</Label>
@@ -1983,7 +2002,7 @@ export default function LeadGeneratorPage() {
               </Select>
             </div>
                 <div className="space-y-2 col-span-2">
-              <Label className="text-gray-400">Local Service Category</Label>
+              <Label className="text-gray-400">Service Category</Label>
               {businessType === 'ecommerce' ? (
                 // Coming Soon Message for eCommerce categories in manual lead form
                 <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
