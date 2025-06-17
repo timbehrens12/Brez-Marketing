@@ -161,12 +161,43 @@ export default function LeadGeneratorPage() {
     website: '',
     city: '',
     state_province: '',
+    country: '',
     niche_id: '',
     instagram_handle: '',
     facebook_page: '',
     linkedin_profile: '',
     twitter_handle: ''
   })
+  
+  // Search states for manual lead dropdowns
+  const [manualCountrySearch, setManualCountrySearch] = useState('')
+  const [manualStateSearch, setManualStateSearch] = useState('')
+  const [manualCitySearch, setManualCitySearch] = useState('')
+  
+  // Get manual lead location data
+  const manualAvailableStates = manualLeadData.country ? State.getStatesOfCountry(manualLeadData.country) : []
+  const manualAvailableCities = manualLeadData.country && manualLeadData.state_province ? City.getCitiesOfState(manualLeadData.country, manualLeadData.state_province) : []
+  
+  // Get filtered data for manual lead dropdowns
+  const getManualFilteredStates = () => {
+    let states = manualAvailableStates
+    if (manualStateSearch) {
+      states = states.filter(state => 
+        state.name.toLowerCase().includes(manualStateSearch.toLowerCase())
+      )
+    }
+    return states
+  }
+  
+  const getManualFilteredCities = () => {
+    let cities = manualAvailableCities
+    if (manualCitySearch) {
+      cities = cities.filter(city => 
+        city.name.toLowerCase().includes(manualCitySearch.toLowerCase())
+      )
+    }
+    return cities
+  }
   const [niches, setNiches] = useState<any[]>([])
   const [totalLeads, setTotalLeads] = useState(0)
   const [todayLeads, setTodayLeads] = useState(0)
@@ -689,6 +720,7 @@ export default function LeadGeneratorPage() {
         website: '',
         city: '',
         state_province: '',
+        country: '',
         niche_id: '',
         instagram_handle: '',
         facebook_page: '',
@@ -703,6 +735,19 @@ export default function LeadGeneratorPage() {
       console.error('Error adding manual lead:', error)
       toast.error('Failed to add lead')
     }
+  }
+
+  // Fix website URL formatting
+  const formatWebsiteUrl = (url: string) => {
+    if (!url) return ''
+    
+    // If URL already has protocol, return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+    
+    // Add https:// if missing
+    return `https://${url}`
   }
 
   const getSocialMediaLink = (platform: string, handle: string) => {
@@ -1502,7 +1547,7 @@ export default function LeadGeneratorPage() {
                               )}
                               {lead.website && (
                                 <a
-                                  href={lead.website}
+                                  href={formatWebsiteUrl(lead.website)}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
@@ -1671,9 +1716,9 @@ export default function LeadGeneratorPage() {
           
           <Tabs defaultValue="basic" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3 bg-[#2A2A2A]">
-              <TabsTrigger value="basic" className="text-gray-400">Basic Info</TabsTrigger>
-              <TabsTrigger value="contact" className="text-gray-400">Contact</TabsTrigger>
-              <TabsTrigger value="social" className="text-gray-400">Social Media</TabsTrigger>
+              <TabsTrigger value="basic" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Basic Info</TabsTrigger>
+              <TabsTrigger value="contact" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Contact</TabsTrigger>
+              <TabsTrigger value="social" className="text-gray-400 data-[state=active]:bg-[#1A1A1A] data-[state=active]:text-white data-[state=active]:border-blue-500 data-[state=active]:border-b-2">Social Media</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4">
@@ -1696,41 +1741,159 @@ export default function LeadGeneratorPage() {
                     placeholder="Enter owner/contact name"
                   />
             </div>
+            {/* Location Dropdowns */}
             <div className="space-y-2">
-                  <Label className="text-gray-400">City</Label>
-                  <Input 
-                    value={manualLeadData.city}
-                    onChange={(e) => setManualLeadData(prev => ({ ...prev, city: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                    placeholder="Enter city"
-                  />
+              <Label className="text-gray-400">Country</Label>
+              <Select
+                value={manualLeadData.country}
+                onValueChange={(value) => {
+                  setManualLeadData(prev => ({ 
+                    ...prev, 
+                    country: value,
+                    state_province: '',
+                    city: ''
+                  }))
+                  setManualCountrySearch('')
+                }}
+              >
+                <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#2A2A2A]">
+                  <SelectValue placeholder="Country" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                  <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                    <Input
+                      placeholder="Search countries..."
+                      value={manualCountrySearch}
+                      onChange={(e) => setManualCountrySearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                    />
+                  </div>
+                  {getAllCountriesWithUSFirst().filter(country => 
+                    !manualCountrySearch || country.name.toLowerCase().includes(manualCountrySearch.toLowerCase())
+                  ).map((country) => (
+                    <SelectItem key={country.isoCode} value={country.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-                  <Label className="text-gray-400">State/Province</Label>
-                  <Input 
-                    value={manualLeadData.state_province}
-                    onChange={(e) => setManualLeadData(prev => ({ ...prev, state_province: e.target.value }))}
-                    className="bg-[#2A2A2A] border-[#444] text-gray-400"
-                    placeholder="Enter state or province"
-                  />
+              <Label className="text-gray-400">State/Province</Label>
+              <Select
+                value={manualLeadData.state_province}
+                onValueChange={(value) => {
+                  setManualLeadData(prev => ({ 
+                    ...prev, 
+                    state_province: value,
+                    city: ''
+                  }))
+                  setManualStateSearch('')
+                }}
+                disabled={!manualLeadData.country}
+              >
+                <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                  <SelectValue placeholder={!manualLeadData.country ? "Country First" : "State"} />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                  <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                    <Input
+                      placeholder="Search states..."
+                      value={manualStateSearch}
+                      onChange={(e) => setManualStateSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                    />
+                  </div>
+                  {getManualFilteredStates().map((state) => (
+                    <SelectItem key={state.isoCode} value={state.isoCode} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                      {state.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-400">City</Label>
+              <Select
+                value={manualLeadData.city}
+                onValueChange={(value) => {
+                  setManualLeadData(prev => ({ 
+                    ...prev, 
+                    city: value
+                  }))
+                  setManualCitySearch('')
+                }}
+                disabled={!manualLeadData.state_province}
+              >
+                <SelectTrigger className="bg-[#1A1A1A] border-[#333] text-gray-400 disabled:opacity-50 hover:bg-[#2A2A2A]">
+                  <SelectValue placeholder={!manualLeadData.state_province ? "State First" : "City"} />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                  <div className="sticky top-0 p-2 bg-[#1A1A1A] border-b border-[#333] z-50">
+                    <Input
+                      placeholder="Search cities..."
+                      value={manualCitySearch}
+                      onChange={(e) => setManualCitySearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      onFocus={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-[#2A2A2A] border-[#444] text-gray-300 text-sm"
+                    />
+                  </div>
+                  {getManualFilteredCities().map((city) => (
+                    <SelectItem key={city.name} value={city.name} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
                 <div className="space-y-2 col-span-2">
-              <Label className="text-gray-400">Niche</Label>
-                  <Select 
-                    value={manualLeadData.niche_id} 
-                    onValueChange={(value) => setManualLeadData(prev => ({ ...prev, niche_id: value }))}
-                  >
-                <SelectTrigger className="bg-[#2A2A2A] border-[#444] text-gray-400">
-                      <SelectValue placeholder="Select niche category" />
-                </SelectTrigger>
-                                  <SelectContent>
-                      {niches.map((niche: any) => (
-                        <SelectItem key={niche.id} value={niche.id}>
-                          {niche.name} ({niche.category})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-              </Select>
+              <Label className="text-gray-400">Local Service Category</Label>
+              <Accordion type="single" collapsible className="w-full">
+                {Object.entries(
+                  niches.reduce((groups: any, niche: any) => {
+                    const category = niche.category || 'other'
+                    if (!groups[category]) groups[category] = []
+                    groups[category].push(niche)
+                    return groups
+                  }, {})
+                ).map(([category, categoryNiches]) => (
+                  <AccordionItem key={category} value={category} className="border-[#333]">
+                    <AccordionTrigger className="text-gray-400 hover:text-white capitalize text-sm">
+                      {category.replace('_', ' ')} ({(categoryNiches as any[]).length})
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {(categoryNiches as any[]).map((niche: any) => (
+                          <div key={niche.id} className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              id={`manual-${niche.id}`}
+                              name="manual-niche"
+                              checked={manualLeadData.niche_id === niche.id}
+                              onChange={() => setManualLeadData(prev => ({ ...prev, niche_id: niche.id }))}
+                              className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <label 
+                              htmlFor={`manual-${niche.id}`} 
+                              className="text-sm text-gray-400 cursor-pointer"
+                            >
+                              {niche.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           </div>
             </TabsContent>
@@ -1833,6 +1996,7 @@ export default function LeadGeneratorPage() {
                   website: '',
                   city: '',
                   state_province: '',
+                  country: '',
                   niche_id: '',
                   instagram_handle: '',
                   facebook_page: '',
