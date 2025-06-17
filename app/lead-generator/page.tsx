@@ -662,27 +662,57 @@ export default function LeadGeneratorPage() {
   }
 
   const getSocialMediaLink = (platform: string, handle: string) => {
+    if (!handle || handle === 'N/A' || handle.includes('(estimated)')) return undefined;
+    
     switch (platform) {
       case 'instagram':
-        return `https://instagram.com/${handle.replace('@', '')}`
+        const igHandle = handle.replace('@', '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/$/, '');
+        return `https://instagram.com/${igHandle}`;
+        
       case 'facebook':
-        // Only generate a Facebook link if the handle is a valid username or page (not @, not malformed, not a profile/group)
-        if (!handle || handle.startsWith('@') || handle.includes('profile.php') || handle.match(/\/groups\//i)) return undefined;
-        // Remove any URL prefix and trailing slashes
-        let page = handle.replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '');
-        // Remove leading @ if present
-        page = page.replace(/^@/, '');
-        // Disallow empty, generic, or malformed pages
-        if (!page || page === '' || page.toLowerCase() === 'facebook-f' || page.match(/^profile/)) return undefined;
-        // Only allow valid Facebook page usernames (alphanumeric, dot, dash, min 5 chars)
-        if (!/^[a-zA-Z0-9\.\-]{5,}$/.test(page)) return undefined;
-        return `https://facebook.com/${page}`
+        // Handle various Facebook URL formats
+        let fbPage = handle;
+        
+        // If it's already a full URL, extract the page name
+        if (fbPage.includes('facebook.com/')) {
+          fbPage = fbPage.replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/$/, '');
+          // Remove query parameters
+          fbPage = fbPage.split('?')[0];
+        }
+        
+        // Remove @ if present
+        fbPage = fbPage.replace(/^@/, '');
+        
+        // Skip obviously invalid handles
+        if (!fbPage || fbPage === '' || fbPage.includes('profile.php') || fbPage.includes('/groups/')) {
+          return undefined;
+        }
+        
+        return `https://facebook.com/${fbPage}`;
+        
       case 'linkedin':
-        return `https://linkedin.com/company/${handle}`
+        let linkedinHandle = handle;
+        
+        // If it's already a full URL, use it
+        if (linkedinHandle.includes('linkedin.com/')) {
+          return linkedinHandle.startsWith('http') ? linkedinHandle : `https://${linkedinHandle}`;
+        }
+        
+        // If it starts with 'company/', use as is
+        if (linkedinHandle.startsWith('company/')) {
+          return `https://linkedin.com/${linkedinHandle}`;
+        }
+        
+        // Otherwise assume it's a company name
+        return `https://linkedin.com/company/${linkedinHandle}`;
+        
       case 'twitter':
-        return `https://twitter.com/${handle.replace('@', '')}`
+        const twitterHandle = handle.replace('@', '').replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//i, '').replace(/\/$/, '');
+        // Use X.com as it's the current platform
+        return `https://x.com/${twitterHandle}`;
+        
       default:
-        return '#'
+        return '#';
     }
   }
 
@@ -1393,7 +1423,7 @@ export default function LeadGeneratorPage() {
                                   {getSocialMediaIcon('instagram')}
                                 </a>
                               )}
-                              {lead.facebook_page && (
+                              {lead.facebook_page && getSocialMediaLink('facebook', lead.facebook_page) && (
                                 <a
                                   href={getSocialMediaLink('facebook', lead.facebook_page)}
                                   target="_blank"

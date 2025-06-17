@@ -115,9 +115,9 @@ function extractSocialFromSearch(searchResults: any[]) {
     }
 
     // Facebook
-    if (url.includes('facebook.com/') && !url.includes('/posts/') && !url.includes('/photos/')) {
-      const match = url.match(/facebook\.com\/([^/\?]+)/)
-      if (match && match[1] && match[1] !== 'pages') {
+    if (url.includes('facebook.com/') && !url.includes('/posts/') && !url.includes('/photos/') && !url.includes('/groups/')) {
+      const match = url.match(/facebook\.com\/([^/\?#]+)/)
+      if (match && match[1] && match[1] !== 'pages' && !match[1].includes('profile.php')) {
         profiles.facebook_page = match[1]
       }
     }
@@ -132,8 +132,8 @@ function extractSocialFromSearch(searchResults: any[]) {
 
     // Twitter/X
     if (url.includes('twitter.com/') || url.includes('x.com/')) {
-      const match = url.match(/(?:twitter|x)\.com\/([^/\?]+)/)
-      if (match && match[1] && !match[1].includes('status')) {
+      const match = url.match(/(?:twitter|x)\.com\/([^/\?#]+)/)
+      if (match && match[1] && !match[1].includes('status') && !match[1].includes('intent') && match[1] !== 'home') {
         profiles.twitter_handle = `@${match[1]}`
       }
     }
@@ -170,10 +170,10 @@ async function extractSocialFromWebsite(website: string) {
 
     // Look for social media links in the HTML
     const socialPatterns = {
-      instagram: /(?:href=["']|@)(https?:\/\/(?:www\.)?instagram\.com\/([^\/\s"']+))/gi,
-      facebook: /(?:href=["']|@)(https?:\/\/(?:www\.)?facebook\.com\/([^\/\s"']+))/gi,
-      linkedin: /(?:href=["']|@)(https?:\/\/(?:www\.)?linkedin\.com\/company\/([^\/\s"']+))/gi,
-      twitter: /(?:href=["']|@)(https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^\/\s"']+))/gi
+      instagram: /(?:href=["']|@)(https?:\/\/(?:www\.)?instagram\.com\/([^\/\s"'?#]+))/gi,
+      facebook: /(?:href=["']|@)(https?:\/\/(?:www\.)?facebook\.com\/([^\/\s"'?#]+))/gi,
+      linkedin: /(?:href=["']|@)(https?:\/\/(?:www\.)?linkedin\.com\/(?:company\/)?([^\/\s"'?#]+))/gi,
+      twitter: /(?:href=["']|@)(https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^\/\s"'?#]+))/gi
     }
 
     // Extract Instagram
@@ -184,19 +184,20 @@ async function extractSocialFromWebsite(website: string) {
 
     // Extract Facebook
     match = socialPatterns.facebook.exec(html)
-    if (match && match[2] && match[2] !== 'pages') {
+    if (match && match[2] && match[2] !== 'pages' && !match[2].includes('profile.php')) {
       profiles.facebook_page = match[2]
     }
 
     // Extract LinkedIn
     match = socialPatterns.linkedin.exec(html)
     if (match && match[2]) {
-      profiles.linkedin_profile = `company/${match[2]}`
+      // If the URL already contains 'company/', use as is, otherwise add it
+      profiles.linkedin_profile = match[2].startsWith('company/') ? match[2] : `company/${match[2]}`
     }
 
     // Extract Twitter
     match = socialPatterns.twitter.exec(html)
-    if (match && match[2]) {
+    if (match && match[2] && !match[2].includes('status') && !match[2].includes('intent') && match[2] !== 'home') {
       profiles.twitter_handle = `@${match[2]}`
     }
 
