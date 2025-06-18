@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -93,12 +93,6 @@ export default function LeadGeneratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
   const { getSupabaseClient } = useAuthenticatedSupabase()
-  
-  // Refs for component tracking
-  const cardRef = useRef<HTMLDivElement>(null)
-  const headerRef = useRef<HTMLDivElement>(null)
-  const filtersRef = useRef<HTMLDivElement>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -236,22 +230,17 @@ export default function LeadGeneratorPage() {
 
   // Load data on component mount
   useEffect(() => {
-    loadExistingLeads()
-    loadUsageData()
+    // Load niches immediately - doesn't require brand selection
     loadNiches()
-    loadStats()
     
-    // Set up periodic refresh
-    const interval = setInterval(() => {
+    if (userId) {
       loadUsageData()
-      loadStats()
-    }, 60000) // Refresh every minute
-    
-    return () => clearInterval(interval)
-  }, [selectedBrandId, userId])
+      // Refresh usage data every 30 seconds
+      const interval = setInterval(loadUsageData, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [userId])
   
-
-
   useEffect(() => {
     if (userId) {
       loadExistingLeads()
@@ -688,7 +677,7 @@ export default function LeadGeneratorPage() {
       
       // Remove sent leads from the current page
       setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
-      setSelectedLeads([])
+    setSelectedLeads([])
       
       // Update stats
       await loadStats()
@@ -794,13 +783,13 @@ export default function LeadGeneratorPage() {
         toast.success('Lead updated successfully!')
       } else {
         // Insert new lead
-        const { data: insertedLead, error } = await supabase
-          .from('leads')
-          .insert([leadToInsert])
-          .select()
-          .single()
+      const { data: insertedLead, error } = await supabase
+        .from('leads')
+        .insert([leadToInsert])
+        .select()
+        .single()
 
-        if (error) throw error
+      if (error) throw error
         toast.success('Lead added successfully!')
       }
 
@@ -821,21 +810,21 @@ export default function LeadGeneratorPage() {
 
   // Reset manual lead form
   const resetManualLeadForm = () => {
-    setManualLeadData({
-      business_name: '',
-      owner_name: '',
-      email: '',
-      phone: '',
-      website: '',
-      city: '',
-      state_province: '',
-      country: '',
-      niche_id: '',
-      instagram_handle: '',
-      facebook_page: '',
-      linkedin_profile: '',
-      twitter_handle: ''
-    })
+      setManualLeadData({
+        business_name: '',
+        owner_name: '',
+        email: '',
+        phone: '',
+        website: '',
+        city: '',
+        state_province: '',
+        country: '',
+        niche_id: '',
+        instagram_handle: '',
+        facebook_page: '',
+        linkedin_profile: '',
+        twitter_handle: ''
+      })
   }
 
   // Handle edit lead
@@ -1448,8 +1437,8 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card ref={cardRef} className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col">
-            <CardHeader ref={headerRef}>
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -1509,9 +1498,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col flex-1 overflow-hidden">
+              <CardContent className="flex flex-col h-full">
                 {/* Search Bar */}
-                <div ref={searchRef} className="mb-4">
+                <div className="mb-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -1526,7 +1515,7 @@ export default function LeadGeneratorPage() {
 
                 {/* Filter Panel */}
                 {showFilters && (
-                  <div ref={filtersRef} className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
+                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
@@ -1542,57 +1531,57 @@ export default function LeadGeneratorPage() {
                     
                     <div className="space-y-4">
                       {/* Basic Filters */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="hasPhone"
-                            checked={filters.hasPhone}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
-                            }
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasPhone"
+                          checked={filters.hasPhone}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
+                          }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
-                          />
-                          <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            Has Phone
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="hasEmail"
-                            checked={filters.hasEmail}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
-                            }
+                        />
+                        <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Has Phone
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasEmail"
+                          checked={filters.hasEmail}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
+                          }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
-                          />
-                          <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            Has Email
-                          </label>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="hasWebsite"
-                            checked={filters.hasWebsite}
-                            onCheckedChange={(checked) => 
-                              setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
-                            }
+                        />
+                        <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          Has Email
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasWebsite"
+                          checked={filters.hasWebsite}
+                          onCheckedChange={(checked) => 
+                            setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
+                          }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
-                          />
-                          <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                            <Globe className="h-3 w-3" />
-                            Has Website
-                          </label>
-                        </div>
+                        />
+                        <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Globe className="h-3 w-3" />
+                          Has Website
+                        </label>
+                      </div>
 
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
                             id="hasSocials"
                             checked={filters.hasSocials}
-                            onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) => 
                               setFilters(prev => ({ ...prev, hasSocials: checked as boolean }))
                             }
                             className="border-[#444] data-[state=checked]:bg-gray-600"
@@ -1618,68 +1607,68 @@ export default function LeadGeneratorPage() {
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, instagram: checked as boolean }
                                   }))
-                                }
+                          }
                                 className="border-[#444] data-[state=checked]:bg-gray-600"
-                              />
+                        />
                               <label htmlFor="socialInstagram" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
-                                <Instagram className="h-3 w-3" />
+                          <Instagram className="h-3 w-3" />
                                 Instagram
-                              </label>
-                            </div>
+                        </label>
+                      </div>
 
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
                                 id="socialFacebook"
                                 checked={filters.socialPlatforms.facebook}
-                                onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) => 
                                   setFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, facebook: checked as boolean }
                                   }))
-                                }
+                          }
                                 className="border-[#444] data-[state=checked]:bg-gray-600"
-                              />
+                        />
                               <label htmlFor="socialFacebook" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
                                 <Facebook className="h-3 w-3" />
                                 Facebook
-                              </label>
-                            </div>
+                        </label>
+                      </div>
 
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
                                 id="socialLinkedin"
                                 checked={filters.socialPlatforms.linkedin}
-                                onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) => 
                                   setFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, linkedin: checked as boolean }
                                   }))
-                                }
+                          }
                                 className="border-[#444] data-[state=checked]:bg-gray-600"
-                              />
+                        />
                               <label htmlFor="socialLinkedin" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
-                                <Linkedin className="h-3 w-3" />
+                          <Linkedin className="h-3 w-3" />
                                 LinkedIn
-                              </label>
-                            </div>
+                        </label>
+                      </div>
 
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
                                 id="socialTwitter"
                                 checked={filters.socialPlatforms.twitter}
-                                onCheckedChange={(checked) => 
+                          onCheckedChange={(checked) => 
                                   setFilters(prev => ({ 
                                     ...prev, 
                                     socialPlatforms: { ...prev.socialPlatforms, twitter: checked as boolean }
                                   }))
-                                }
-                                className="border-[#444] data-[state=checked]:bg-gray-600"
-                              />
+                          }
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
                               <label htmlFor="socialTwitter" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
                                 <ExternalLink className="h-3 w-3" />
                                 X/Twitter
-                              </label>
-                            </div>
+                        </label>
+                      </div>
                           </div>
                         </div>
                       )}
@@ -1721,12 +1710,10 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                {/* Scrollable Table Container */}
-                <div className="flex-1 overflow-hidden rounded-lg border border-[#333] bg-[#1A1A1A] max-h-[60vh]">
-                  <div className="h-full overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-track-[#2A2A2A] scrollbar-thumb-[#444] hover:scrollbar-thumb-[#555]">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10 border-b border-[#333]">
-                        <TableRow className="border-[#333]">
+                <div className="overflow-x-auto flex-1 overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
+                      <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
                             checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
@@ -1932,26 +1919,25 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                      </TableBody>
-                    </Table>
-                    
-                    {filteredLeads.length === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        {leads.length === 0 ? (
-                          <>
-                            <p>No leads generated yet</p>
-                            <p className="text-sm">Configure your search parameters and click "Find Real Businesses"</p>
-                          </>
-                        ) : (
-                          <>
-                            <p>No leads match your filters</p>
-                            <p className="text-sm">Try adjusting your filter criteria</p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    </TableBody>
+                  </Table>
+                  
+                  {filteredLeads.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      {leads.length === 0 ? (
+                        <>
+                          <p>No leads generated yet</p>
+                          <p className="text-sm">Configure your search parameters and click "Find Real Businesses"</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>No leads match your filters</p>
+                          <p className="text-sm">Try adjusting your filter criteria</p>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
