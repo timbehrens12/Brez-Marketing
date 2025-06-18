@@ -1078,11 +1078,11 @@ export default function LeadGeneratorPage() {
                             <Clock className="h-4 w-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-300">Niche Cooldowns</span>
               </div>
-                        <div className="space-y-2 max-h-24 overflow-y-auto">
+                        <div className="space-y-2 max-h-24 overflow-y-auto pr-2">
                           {usageData.nicheCooldowns.map((cooldown) => (
-                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
+                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm pr-2">
                               <span className="text-gray-400">{cooldown.niche_name}</span>
-                              <span className="text-gray-300">
+                              <span className="text-gray-300 ml-3">
                                 {getTimeUntilMidnight()}
                               </span>
                             </div>
@@ -1710,9 +1710,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
