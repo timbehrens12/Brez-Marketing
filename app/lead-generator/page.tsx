@@ -1004,7 +1004,7 @@ export default function LeadGeneratorPage() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
             <CardContent className="space-y-6 pt-6">
@@ -1437,7 +1437,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col h-[80vh]">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -1498,7 +1498,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 flex flex-col">
                 {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
@@ -1710,7 +1710,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto max-h-[70vh] min-h-[400px] overflow-y-auto border border-[#333] rounded-md">
+                <div className="overflow-x-auto flex-1 overflow-y-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
