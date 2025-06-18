@@ -279,24 +279,28 @@ export default function OutreachToolPage() {
   }
 
   if (isLoading) {
-    return (
+  return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Loading outreach data...</span>
-        </div>
-      </div>
+          </div>
+          </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto p-6">
-
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="w-full space-y-6">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Outreach Center</h1>
+          <p className="text-gray-400">Manage your lead outreach campaigns with AI-powered messaging</p>
+        </div>
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Total Leads</CardTitle>
             </CardHeader>
@@ -304,25 +308,25 @@ export default function OutreachToolPage() {
               <div className="text-2xl font-bold text-white">{stats.totalLeads}</div>
               <div className="flex items-center text-sm text-gray-400 mt-1">
                 <Users className="h-3 w-3 mr-1" />
-                {stats.newLeads} pending
+                {stats.newLeads} new
               </div>
             </CardContent>
           </Card>
-
-          <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">In Progress</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-400">Active Campaigns</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.inProgress}</div>
+              <div className="text-2xl font-bold text-white">{stats.activeCampaigns}</div>
               <div className="flex items-center text-sm text-gray-400 mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                contacted + responded
+                {stats.inProgress} in progress
               </div>
             </CardContent>
           </Card>
-
-          <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Conversion Rate</CardTitle>
             </CardHeader>
@@ -330,66 +334,66 @@ export default function OutreachToolPage() {
               <div className="text-2xl font-bold text-white">{stats.conversionRate}%</div>
               <div className="flex items-center text-sm text-gray-400 mt-1">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
-                {stats.signed} closed
+                {stats.signed} signed
               </div>
             </CardContent>
           </Card>
-
-          <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+          
+          <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Active Campaigns</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-400">Total Campaigns</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.activeCampaigns}</div>
+              <div className="text-2xl font-bold text-white">{stats.totalCampaigns}</div>
               <div className="flex items-center text-sm text-gray-400 mt-1">
                 <BarChart3 className="h-3 w-3 mr-1" />
-                running
+                All time
               </div>
             </CardContent>
           </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
-            <TabsTrigger value="pipeline" className="data-[state=active]:bg-gray-800/50 data-[state=active]:text-white">
+          <TabsList className="bg-[#2A2A2A] border-none">
+            <TabsTrigger value="pipeline" className="data-[state=active]:bg-[#333] data-[state=active]:text-white text-gray-400">
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="compose" className="data-[state=active]:bg-gray-800/50 data-[state=active]:text-white">
+            <TabsTrigger value="compose" className="data-[state=active]:bg-[#333] data-[state=active]:text-white text-gray-400">
               Compose Message
             </TabsTrigger>
-            <TabsTrigger value="tasks" className="data-[state=active]:bg-gray-800/50 data-[state=active]:text-white">
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-[#333] data-[state=active]:text-white text-gray-400">
               Tasks
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pipeline" className="space-y-6">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Lead Pipeline</CardTitle>
-                    <CardDescription>Track and manage your outreach leads</CardDescription>
+                    <CardTitle className="text-white">Lead Pipeline</CardTitle>
+                    <CardDescription className="text-gray-400">Track and manage your outreach leads</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40 bg-gray-800/50 border-gray-700/50">
+                      <SelectTrigger className="w-40 bg-[#2A2A2A] border-[#333] text-gray-400">
                         <SelectValue placeholder="Filter by status" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900/90 border-gray-700/50 backdrop-blur-sm">
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="contacted">Contacted</SelectItem>
-                        <SelectItem value="responded">Responded</SelectItem>
-                        <SelectItem value="qualified">Qualified</SelectItem>
-                        <SelectItem value="signed">Signed</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                        <SelectItem value="all" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">All Statuses</SelectItem>
+                        <SelectItem value="pending" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Pending</SelectItem>
+                        <SelectItem value="contacted" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Contacted</SelectItem>
+                        <SelectItem value="responded" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Responded</SelectItem>
+                        <SelectItem value="qualified" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Qualified</SelectItem>
+                        <SelectItem value="signed" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Signed</SelectItem>
+                        <SelectItem value="rejected" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Rejected</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button 
                       onClick={() => { loadCampaignLeads(); loadCampaigns(); }}
                       variant="outline" 
                       size="sm"
-                      className="border-gray-700/50 hover:bg-gray-800/50"
+                      className="border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                     >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
@@ -401,12 +405,12 @@ export default function OutreachToolPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-[#333] hover:bg-transparent">
-                        <TableHead>Business</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Last Contact</TableHead>
-                        <TableHead>Social Media</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead className="text-gray-400">Business</TableHead>
+                        <TableHead className="text-gray-400">Contact</TableHead>
+                        <TableHead className="text-gray-400">Status</TableHead>
+                        <TableHead className="text-gray-400">Last Contact</TableHead>
+                        <TableHead className="text-gray-400">Social Media</TableHead>
+                        <TableHead className="text-gray-400">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -414,14 +418,14 @@ export default function OutreachToolPage() {
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
                           <TableCell>
                             <div>
-                              <div className="font-medium text-gray-400">{campaignLead.lead?.business_name}</div>
-                              <div className="text-sm text-gray-500">{campaignLead.lead?.niche_name}</div>
+                              <div className="font-medium text-white">{campaignLead.lead?.business_name}</div>
+                              <div className="text-sm text-gray-400">{campaignLead.lead?.niche_name}</div>
                               {campaignLead.lead?.website && (
                                 <a
                                   href={campaignLead.lead.website.startsWith('http') ? campaignLead.lead.website : `https://${campaignLead.lead.website}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 mt-1"
+                                  className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1 mt-1"
                                 >
                                   <ExternalLink className="h-3 w-3" />
                                   Visit Website
@@ -432,16 +436,16 @@ export default function OutreachToolPage() {
                           <TableCell>
                             <div className="space-y-1 text-sm">
                               {campaignLead.lead?.owner_name && (
-                                <div className="text-gray-400">{campaignLead.lead.owner_name}</div>
+                                <div className="text-gray-300">{campaignLead.lead.owner_name}</div>
                               )}
                               {campaignLead.lead?.email && (
-                                <div className="flex items-center gap-1 text-gray-500">
+                                <div className="flex items-center gap-1 text-gray-400">
                                   <Mail className="h-3 w-3" />
                                   {campaignLead.lead.email}
                                 </div>
                               )}
                               {campaignLead.lead?.phone && (
-                                <div className="flex items-center gap-1 text-gray-500">
+                                <div className="flex items-center gap-1 text-gray-400">
                                   <Phone className="h-3 w-3" />
                                   {campaignLead.lead.phone}
                                 </div>
@@ -457,12 +461,12 @@ export default function OutreachToolPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="responded">Responded</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="signed">Signed</SelectItem>
-                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="pending" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Pending</SelectItem>
+                                <SelectItem value="contacted" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Contacted</SelectItem>
+                                <SelectItem value="responded" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Responded</SelectItem>
+                                <SelectItem value="qualified" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Qualified</SelectItem>
+                                <SelectItem value="signed" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Signed</SelectItem>
+                                <SelectItem value="rejected" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Rejected</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
@@ -472,13 +476,13 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-2">
                               {campaignLead.lead?.instagram_handle && (
                                 <a
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-pink-400 hover:text-pink-300"
+                                  className="text-gray-400 hover:text-gray-300"
                                 >
                                   {getSocialMediaIcon('instagram')}
                                 </a>
@@ -488,7 +492,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300"
+                                  className="text-gray-400 hover:text-gray-300"
                                 >
                                   {getSocialMediaIcon('facebook')}
                                 </a>
@@ -498,7 +502,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300"
+                                  className="text-gray-400 hover:text-gray-300"
                                 >
                                   {getSocialMediaIcon('linkedin')}
                                 </a>
@@ -508,7 +512,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300"
+                                  className="text-gray-400 hover:text-gray-300"
                                 >
                                   {getSocialMediaIcon('twitter')}
                                 </a>
@@ -519,7 +523,7 @@ export default function OutreachToolPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 text-xs border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
+                              className="h-8 text-xs border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                               onClick={() => {
                                 setSelectedCampaignLead(campaignLead)
                                 setActiveTab('compose')
@@ -539,10 +543,10 @@ export default function OutreachToolPage() {
           </TabsContent>
 
           <TabsContent value="compose" className="space-y-6">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
-                <CardTitle>Compose Message</CardTitle>
-                <CardDescription>Generate AI-powered personalized messages for your leads</CardDescription>
+                <CardTitle className="text-white">Compose Message</CardTitle>
+                <CardDescription className="text-gray-400">Generate AI-powered personalized messages for your leads</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -556,12 +560,12 @@ export default function OutreachToolPage() {
                           setSelectedCampaignLead(campaignLead || null)
                         }}
                       >
-                        <SelectTrigger className="bg-gray-800/50 border-gray-700/50">
+                        <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
                           <SelectValue placeholder="Choose a lead to message" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-900/90 border-gray-700/50 backdrop-blur-sm">
+                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
                           {campaignLeads.map((campaignLead) => (
-                            <SelectItem key={campaignLead.id} value={campaignLead.id}>
+                            <SelectItem key={campaignLead.id} value={campaignLead.id} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                               {campaignLead.lead?.business_name} - {campaignLead.lead?.owner_name}
                             </SelectItem>
                           ))}
@@ -572,21 +576,21 @@ export default function OutreachToolPage() {
                     <div>
                       <Label className="text-gray-400">Message Type</Label>
                       <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
-                        <SelectTrigger className="bg-gray-800/50 border-gray-700/50">
+                        <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-900/90 border-gray-700/50 backdrop-blur-sm">
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="linkedin">LinkedIn Message</SelectItem>
-                          <SelectItem value="sms">SMS</SelectItem>
-                          <SelectItem value="call">Call Script</SelectItem>
+                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                          <SelectItem value="email" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Email</SelectItem>
+                          <SelectItem value="linkedin" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">LinkedIn Message</SelectItem>
+                          <SelectItem value="sms" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">SMS</SelectItem>
+                          <SelectItem value="call" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Call Script</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <Button
                       onClick={generatePersonalizedMessage}
-                      className="w-full bg-gray-700 hover:bg-gray-600 text-white"
+                      className="w-full bg-[#444] hover:bg-[#555] text-white"
                       disabled={!selectedCampaignLead || isGeneratingMessage}
                     >
                       {isGeneratingMessage ? (
@@ -602,22 +606,22 @@ export default function OutreachToolPage() {
                       )}
                     </Button>
 
-                                          {selectedCampaignLead && (
-                        <div className="p-4 bg-gray-800/50 rounded-lg space-y-2">
+                    {selectedCampaignLead && (
+                      <div className="p-4 bg-[#2A2A2A] rounded-lg space-y-2">
                         <div className="text-sm">
-                          <span className="text-gray-500">Business:</span>
+                          <span className="text-gray-400">Business:</span>
                           <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.business_name}</span>
                         </div>
                         <div className="text-sm">
-                          <span className="text-gray-500">Contact:</span>
+                          <span className="text-gray-400">Contact:</span>
                           <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.owner_name || 'Unknown'}</span>
                         </div>
                         <div className="text-sm">
-                          <span className="text-gray-500">Industry:</span>
+                          <span className="text-gray-400">Industry:</span>
                           <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.niche_name || 'General'}</span>
                         </div>
                         <div className="text-sm">
-                          <span className="text-gray-500">Status:</span>
+                          <span className="text-gray-400">Status:</span>
                           <Badge variant="outline" className={`ml-2 ${getStatusColor(selectedCampaignLead.status)}`}>
                             {selectedCampaignLead.status}
                           </Badge>
@@ -634,7 +638,7 @@ export default function OutreachToolPage() {
                           value={messageSubject}
                           onChange={(e) => setMessageSubject(e.target.value)}
                           placeholder="Email subject..."
-                          className="bg-gray-800/50 border-gray-700/50"
+                          className="bg-[#2A2A2A] border-[#333] text-gray-300"
                         />
                       </div>
                     )}
@@ -645,7 +649,7 @@ export default function OutreachToolPage() {
                         value={generatedMessage}
                         onChange={(e) => setGeneratedMessage(e.target.value)}
                         placeholder="Your personalized message will appear here..."
-                        className="min-h-[300px] bg-gray-800/50 border-gray-700/50"
+                        className="min-h-[300px] bg-[#2A2A2A] border-[#333] text-gray-300"
                       />
                     </div>
 
@@ -653,7 +657,7 @@ export default function OutreachToolPage() {
                       <Button
                         onClick={() => navigator.clipboard.writeText(generatedMessage)}
                         variant="outline"
-                        className="flex-1 border-[#333] hover:bg-[#222]"
+                        className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                         disabled={!generatedMessage}
                       >
                         <Copy className="h-4 w-4 mr-2" />
@@ -661,7 +665,7 @@ export default function OutreachToolPage() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1 border-[#333] hover:bg-[#222]"
+                        className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                         disabled={!generatedMessage || !selectedCampaignLead}
                       >
                         <Send className="h-4 w-4 mr-2" />
@@ -675,10 +679,10 @@ export default function OutreachToolPage() {
           </TabsContent>
 
           <TabsContent value="tasks" className="space-y-6">
-            <Card className="bg-gray-900/50 border-gray-800/50 backdrop-blur-sm">
+            <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
-                <CardTitle>Action Items</CardTitle>
-                <CardDescription>Smart recommendations to keep your outreach momentum going</CardDescription>
+                <CardTitle className="text-white">Action Items</CardTitle>
+                <CardDescription className="text-gray-400">Smart recommendations to keep your outreach momentum going</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Update Status - Pending leads sitting too long */}
@@ -686,12 +690,12 @@ export default function OutreachToolPage() {
                   cl.status === 'pending' && 
                   new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
                 ).length > 0 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
+                  <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-gray-300 mt-0.5" />
+                      <AlertTriangle className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Update Lead Status</h3>
-                        <p className="text-sm text-gray-300 mb-3">
+                        <h3 className="font-medium text-gray-300">Update Lead Status</h3>
+                        <p className="text-sm text-gray-400 mb-3">
                           You have {campaignLeads.filter(cl => 
                             cl.status === 'pending' && 
                             new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
@@ -702,32 +706,32 @@ export default function OutreachToolPage() {
                             cl.status === 'pending' && 
                             new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
                           ).slice(0, 3).map(cl => (
-                                                         <div key={cl.id} className="flex items-center justify-between bg-gray-800/50 p-2 rounded">
-                               <div className="flex-1">
-                                 <span className="text-sm text-gray-200">{cl.lead?.business_name}</span>
-                                 <div className="text-xs text-gray-400">
-                                   Added {Math.floor((Date.now() - new Date(cl.added_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
-                                 </div>
-                               </div>
-                               <div className="flex gap-1">
-                                 <Button 
-                                   size="sm" 
-                                   variant="outline" 
-                                   className="border-gray-600 text-gray-300 hover:bg-gray-700/50 text-xs px-2"
-                                   onClick={() => updateCampaignLeadStatus(cl.id, 'contacted')}
-                                 >
-                                   Mark Contacted
-                                 </Button>
-                                 <Button 
-                                   size="sm" 
-                                   variant="outline" 
-                                   className="border-gray-600 text-gray-300 hover:bg-gray-700/50 text-xs px-2"
-                                   onClick={() => updateCampaignLeadStatus(cl.id, 'rejected')}
-                                 >
-                                   Not Interested
-                                 </Button>
-                               </div>
-                             </div>
+                            <div key={cl.id} className="flex items-center justify-between bg-[#333] p-2 rounded">
+                              <div className="flex-1">
+                                <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
+                                <div className="text-xs text-gray-400">
+                                  Added {Math.floor((Date.now() - new Date(cl.added_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-[#444] text-gray-300 hover:bg-[#444] text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'contacted')}
+                                >
+                                  Mark Contacted
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-[#444] text-gray-300 hover:bg-[#444] text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'rejected')}
+                                >
+                                  Not Interested
+                                </Button>
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -741,13 +745,17 @@ export default function OutreachToolPage() {
                   cl.last_contacted_at && 
                   new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
                 ).length > 0 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
+                  <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-gray-300 mt-0.5" />
+                      <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Stale Contacted Leads</h3>
-                        <p className="text-sm text-gray-300 mb-3">
-                          These leads have been "contacted" for 5+ days. Did they respond? Update their status!
+                        <h3 className="font-medium text-gray-300">Stale Contacted Leads</h3>
+                        <p className="text-sm text-gray-400 mb-3">
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                          ).length} leads have been contacted but no follow-up in 5+ days. Consider reaching out again or updating status.
                         </p>
                         <div className="space-y-2">
                           {campaignLeads.filter(cl => 
@@ -755,26 +763,18 @@ export default function OutreachToolPage() {
                             cl.last_contacted_at && 
                             new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
                           ).slice(0, 3).map(cl => (
-                            <div key={cl.id} className="flex items-center justify-between bg-gray-800/50 p-2 rounded">
+                            <div key={cl.id} className="flex items-center justify-between bg-[#333] p-2 rounded">
                               <div className="flex-1">
-                                <span className="text-sm text-gray-200">{cl.lead?.business_name}</span>
+                                <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
                                 <div className="text-xs text-gray-400">
-                                  Contacted {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                  Last contact {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
                                 </div>
                               </div>
                               <div className="flex gap-1">
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="border-gray-600 text-gray-300 hover:bg-gray-700/50 text-xs px-2"
-                                  onClick={() => updateCampaignLeadStatus(cl.id, 'responded')}
-                                >
-                                  They Responded
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-gray-600 text-gray-300 hover:bg-gray-700/50 text-xs px-2"
+                                  className="border-[#444] text-gray-300 hover:bg-[#444] text-xs px-2"
                                   onClick={() => {
                                     setSelectedCampaignLead(cl)
                                     setActiveTab('compose')
@@ -785,10 +785,10 @@ export default function OutreachToolPage() {
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="border-gray-600 text-gray-300 hover:bg-gray-700/50 text-xs px-2"
+                                  className="border-[#444] text-gray-300 hover:bg-[#444] text-xs px-2"
                                   onClick={() => updateCampaignLeadStatus(cl.id, 'rejected')}
                                 >
-                                  No Response
+                                  Not Interested
                                 </Button>
                               </div>
                             </div>
@@ -799,46 +799,29 @@ export default function OutreachToolPage() {
                   </div>
                 )}
 
-                {/* Follow-up Tasks */}
+                {/* Success Stories - Recent Signed Leads */}
                 {campaignLeads.filter(cl => 
-                  cl.status === 'contacted' && 
-                  cl.last_contacted_at && 
-                  new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) &&
-                  new Date(cl.last_contacted_at) >= new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                  cl.status === 'signed' && 
+                  new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                 ).length > 0 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
+                  <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-gray-300 mt-0.5" />
+                      <Star className="h-5 w-5 text-gray-400 mt-0.5" />
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Follow-up Required</h3>
-                        <p className="text-sm text-gray-300 mb-3">
-                          You have {campaignLeads.filter(cl => 
-                            cl.status === 'contacted' && 
-                            cl.last_contacted_at && 
-                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) &&
-                            new Date(cl.last_contacted_at) >= new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-                          ).length} leads that need follow-up (contacted 3+ days ago)
+                        <h3 className="font-medium text-gray-300">Recent Wins</h3>
+                        <p className="text-sm text-gray-400 mb-3">
+                          Congratulations! You've signed {campaignLeads.filter(cl => 
+                            cl.status === 'signed' && 
+                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                          ).length} new leads this week!
                         </p>
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           {campaignLeads.filter(cl => 
-                            cl.status === 'contacted' && 
-                            cl.last_contacted_at && 
-                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) &&
-                            new Date(cl.last_contacted_at) >= new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                            cl.status === 'signed' && 
+                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                           ).slice(0, 3).map(cl => (
-                            <div key={cl.id} className="flex items-center justify-between bg-gray-800/50 p-2 rounded">
-                              <span className="text-sm text-gray-200">{cl.lead?.business_name}</span>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
-                                onClick={() => {
-                                  setSelectedCampaignLead(cl)
-                                  setActiveTab('compose')
-                                }}
-                              >
-                                Follow Up
-                              </Button>
+                            <div key={cl.id} className="text-sm text-gray-300">
+                              ✓ {cl.lead?.business_name}
                             </div>
                           ))}
                         </div>
@@ -847,137 +830,20 @@ export default function OutreachToolPage() {
                   </div>
                 )}
 
-                {/* Need More Leads */}
-                {campaignLeads.filter(cl => cl.status === 'pending').length < 5 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Users className="h-5 w-5 text-gray-300 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Generate More Leads</h3>
-                        <p className="text-sm text-gray-300 mb-3">
-                          You only have {campaignLeads.filter(cl => cl.status === 'pending').length} pending leads. 
-                          Keep your pipeline full by generating more leads.
-                        </p>
-                        <Button 
-                          className="bg-gray-700 hover:bg-gray-600 text-white"
-                          onClick={() => window.open('/lead-generator', '_blank')}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Generate More Leads
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Responded Leads Need Attention */}
-                {campaignLeads.filter(cl => cl.status === 'responded').length > 0 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <MessageSquare className="h-5 w-5 text-gray-300 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Hot Leads Responded!</h3>
-                        <p className="text-sm text-gray-300 mb-3">
-                          {campaignLeads.filter(cl => cl.status === 'responded').length} leads have responded. 
-                          Move them to qualified or schedule calls.
-                        </p>
-                        <div className="space-y-2">
-                          {campaignLeads.filter(cl => cl.status === 'responded').slice(0, 3).map(cl => (
-                            <div key={cl.id} className="flex items-center justify-between bg-gray-800/50 p-2 rounded">
-                              <span className="text-sm text-gray-200">{cl.lead?.business_name}</span>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
-                                onClick={() => updateCampaignLeadStatus(cl.id, 'qualified')}
-                              >
-                                Mark Qualified
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Daily Outreach Goal */}
-                {(() => {
-                  const today = new Date().toDateString()
-                  const todayContacted = campaignLeads.filter(cl => 
+                {/* No Action Items */}
+                {campaignLeads.filter(cl => 
+                    cl.status === 'pending' && 
+                    new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+                  ).length === 0 && 
+                  campaignLeads.filter(cl => 
+                    cl.status === 'contacted' && 
                     cl.last_contacted_at && 
-                    new Date(cl.last_contacted_at).toDateString() === today
-                  ).length
-                  const dailyGoal = 5
-                  
-                  return todayContacted < dailyGoal && (
-                    <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Target className="h-5 w-5 text-gray-300 mt-0.5" />
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-200">Daily Outreach Goal</h3>
-                          <p className="text-sm text-gray-300 mb-3">
-                            You've contacted {todayContacted} leads today. Goal: {dailyGoal} leads per day.
-                          </p>
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="flex-1 bg-gray-700/50 rounded-full h-2">
-                              <div 
-                                className="bg-gray-400 h-2 rounded-full transition-all" 
-                                style={{ width: `${Math.min((todayContacted / dailyGoal) * 100, 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-sm text-gray-400">{todayContacted}/{dailyGoal}</span>
-                          </div>
-                          <Button 
-                            variant="outline"
-                            className="border-gray-600 text-gray-300 hover:bg-gray-700/50"
-                            onClick={() => setActiveTab('pipeline')}
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Start Outreach
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Success Celebration */}
-                {campaignLeads.filter(cl => cl.status === 'signed').length > 0 && (
-                  <div className="p-4 bg-gray-800/30 border border-gray-700/30 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <TrendingUp className="h-5 w-5 text-gray-300 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-200">Deals Closed!</h3>
-                        <p className="text-sm text-gray-300 mb-3">
-                          Great work! You've closed {campaignLeads.filter(cl => cl.status === 'signed').length} deals. 
-                          Keep up the momentum!
-                        </p>
-                        <Button 
-                          className="bg-gray-700 hover:bg-gray-600 text-white"
-                          onClick={() => window.open('/lead-generator', '_blank')}
-                        >
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Generate More Leads
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* No Tasks - All Good */}
-                {campaignLeads.length === 0 && (
-                  <div className="p-8 text-center">
-                    <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-400 mb-2">No Leads Yet</h3>
-                    <p className="text-gray-500 mb-4">Start by generating some leads to begin your outreach.</p>
-                    <Button 
-                      className="bg-gray-700 hover:bg-gray-600 text-white"
-                      onClick={() => window.open('/lead-generator', '_blank')}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Generate Your First Leads
-                    </Button>
+                    new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                  ).length === 0 && (
+                  <div className="p-8 text-center text-gray-400">
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-500" />
+                    <h3 className="text-lg font-medium text-gray-300 mb-2">All Caught Up!</h3>
+                    <p className="text-sm">No urgent action items right now. Keep up the great work!</p>
                   </div>
                 )}
               </CardContent>
