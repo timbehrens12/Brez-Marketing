@@ -141,7 +141,22 @@ export default function OutreachToolPage() {
     try {
       const supabase = await getSupabaseClient()
       
-      // Get campaign leads with full lead and campaign data
+      // First get campaigns for this user
+      const { data: userCampaigns, error: campaignsError } = await supabase
+        .from('outreach_campaigns')
+        .select('id')
+        .eq('user_id', userId)
+
+      if (campaignsError) throw campaignsError
+
+      if (!userCampaigns || userCampaigns.length === 0) {
+        setCampaignLeads([])
+        return
+      }
+
+      const campaignIds = userCampaigns.map(c => c.id)
+
+      // Then get campaign leads for those campaigns with lead data
       const { data, error } = await supabase
         .from('outreach_campaign_leads')
         .select(`
@@ -149,16 +164,12 @@ export default function OutreachToolPage() {
           lead:leads(*),
           campaign:outreach_campaigns(*)
         `)
+        .in('campaign_id', campaignIds)
         .order('added_at', { ascending: false })
 
       if (error) throw error
       
-      // Filter by user_id since we can't use nested filters directly
-      const userCampaignLeads = (data || []).filter(cl => 
-        cl.campaign && cl.campaign.user_id === userId
-      )
-      
-      setCampaignLeads(userCampaignLeads)
+      setCampaignLeads(data || [])
     } catch (error) {
       console.error('Error loading campaign leads:', error)
       toast.error('Failed to load campaign leads')
