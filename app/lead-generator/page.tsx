@@ -1710,7 +1710,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-track-[#1A1A1A] scrollbar-thumb-[#444]">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
@@ -1921,6 +1921,9 @@ export default function LeadGeneratorPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  
+                  {/* Padding to ensure last row is fully visible */}
+                  <div className="h-4"></div>
                   
                   {filteredLeads.length === 0 && (
                     <div className="text-center py-12 text-gray-400">
