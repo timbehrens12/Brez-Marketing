@@ -1004,7 +1004,7 @@ export default function LeadGeneratorPage() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-16">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
             <CardContent className="space-y-6 pt-6">
@@ -1078,7 +1078,7 @@ export default function LeadGeneratorPage() {
                             <Clock className="h-4 w-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-300">Niche Cooldowns</span>
               </div>
-                        <div className="space-y-2 max-h-24 overflow-y-auto">
+                        <div className="space-y-2 max-h-24 overflow-y-auto pr-3">
                           {usageData.nicheCooldowns.map((cooldown) => (
                             <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
                               <span className="text-gray-400">{cooldown.niche_name}</span>
@@ -1437,7 +1437,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 xl:ml-16">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
