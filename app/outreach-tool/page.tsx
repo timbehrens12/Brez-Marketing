@@ -357,8 +357,8 @@ export default function OutreachToolPage() {
             <TabsTrigger value="compose" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
               Compose Message
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
-              Campaigns
+            <TabsTrigger value="tasks" className="data-[state=active]:bg-[#333] data-[state=active]:text-white">
+              Tasks
             </TabsTrigger>
           </TabsList>
 
@@ -674,59 +674,310 @@ export default function OutreachToolPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="campaigns" className="space-y-6">
+          <TabsContent value="tasks" className="space-y-6">
             <Card className="bg-[#1A1A1A] border-[#333]">
               <CardHeader>
-                <CardTitle>Campaign Overview</CardTitle>
-                <CardDescription>Manage your outreach campaigns</CardDescription>
+                <CardTitle>Action Items</CardTitle>
+                <CardDescription>Smart recommendations to keep your outreach momentum going</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border border-[#333]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-[#333] hover:bg-transparent">
-                        <TableHead>Campaign Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Leads</TableHead>
-                        <TableHead>Created</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {campaigns.map((campaign) => (
-                        <TableRow key={campaign.id} className="border-[#333] hover:bg-[#2A2A2A]">
-                          <TableCell>
-                            <div>
-                              <div className="font-medium text-gray-400">{campaign.name}</div>
-                              <div className="text-sm text-gray-500">{campaign.description}</div>
+              <CardContent className="space-y-4">
+                {/* Update Status - Pending leads sitting too long */}
+                {campaignLeads.filter(cl => 
+                  cl.status === 'pending' && 
+                  new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+                ).length > 0 && (
+                  <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-orange-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-orange-400">Update Lead Status</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          You have {campaignLeads.filter(cl => 
+                            cl.status === 'pending' && 
+                            new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+                          ).length} leads sitting in "pending" for 2+ days. Time to reach out or update their status!
+                        </p>
+                        <div className="space-y-2">
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'pending' && 
+                            new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+                          ).slice(0, 3).map(cl => (
+                            <div key={cl.id} className="flex items-center justify-between bg-[#2A2A2A] p-2 rounded">
+                              <div className="flex-1">
+                                <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
+                                <div className="text-xs text-gray-500">
+                                  Added {Math.floor((Date.now() - new Date(cl.added_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10 text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'contacted')}
+                                >
+                                  Mark Contacted
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'rejected')}
+                                >
+                                  Not Interested
+                                </Button>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="border-[#333]">
-                              {campaign.campaign_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={getStatusColor(campaign.status)}>
-                              {campaign.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <div className="text-gray-400">{campaignLeads.filter(cl => cl.campaign_id === campaign.id).length} leads</div>
-                              <div className="text-xs text-gray-500">Max: {campaign.max_leads}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Check on Contacted Leads - sitting too long without follow-up */}
+                {campaignLeads.filter(cl => 
+                  cl.status === 'contacted' && 
+                  cl.last_contacted_at && 
+                  new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                ).length > 0 && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-red-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-red-400">Stale Contacted Leads</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          These leads have been "contacted" for 5+ days. Did they respond? Update their status!
+                        </p>
+                        <div className="space-y-2">
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                          ).slice(0, 3).map(cl => (
+                            <div key={cl.id} className="flex items-center justify-between bg-[#2A2A2A] p-2 rounded">
+                              <div className="flex-1">
+                                <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
+                                <div className="text-xs text-gray-500">
+                                  Contacted {Math.floor((Date.now() - new Date(cl.last_contacted_at!).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-green-500/50 text-green-400 hover:bg-green-500/10 text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'responded')}
+                                >
+                                  They Responded
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 text-xs px-2"
+                                  onClick={() => {
+                                    setSelectedCampaignLead(cl)
+                                    setActiveTab('compose')
+                                  }}
+                                >
+                                  Follow Up
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs px-2"
+                                  onClick={() => updateCampaignLeadStatus(cl.id, 'rejected')}
+                                >
+                                  No Response
+                                </Button>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-400">
-                              {new Date(campaign.created_at).toLocaleDateString()}
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Follow-up Tasks */}
+                {campaignLeads.filter(cl => 
+                  cl.status === 'contacted' && 
+                  cl.last_contacted_at && 
+                  new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) &&
+                  new Date(cl.last_contacted_at) >= new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+                ).length > 0 && (
+                  <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Clock className="h-5 w-5 text-yellow-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-yellow-400">Follow-up Required</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          You have {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                          ).length} leads that need follow-up (contacted 3+ days ago)
+                        </p>
+                        <div className="space-y-2">
+                          {campaignLeads.filter(cl => 
+                            cl.status === 'contacted' && 
+                            cl.last_contacted_at && 
+                            new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+                          ).slice(0, 3).map(cl => (
+                            <div key={cl.id} className="flex items-center justify-between bg-[#2A2A2A] p-2 rounded">
+                              <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+                                onClick={() => {
+                                  setSelectedCampaignLead(cl)
+                                  setActiveTab('compose')
+                                }}
+                              >
+                                Follow Up
+                              </Button>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Need More Leads */}
+                {campaignLeads.filter(cl => cl.status === 'pending').length < 5 && (
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-blue-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-blue-400">Generate More Leads</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          You only have {campaignLeads.filter(cl => cl.status === 'pending').length} pending leads. 
+                          Keep your pipeline full by generating more leads.
+                        </p>
+                        <Button 
+                          className="bg-blue-600 hover:bg-blue-700"
+                          onClick={() => window.open('/lead-generator', '_blank')}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Generate More Leads
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Responded Leads Need Attention */}
+                {campaignLeads.filter(cl => cl.status === 'responded').length > 0 && (
+                  <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <MessageSquare className="h-5 w-5 text-green-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-green-400">Hot Leads Responded!</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          {campaignLeads.filter(cl => cl.status === 'responded').length} leads have responded. 
+                          Move them to qualified or schedule calls.
+                        </p>
+                        <div className="space-y-2">
+                          {campaignLeads.filter(cl => cl.status === 'responded').slice(0, 3).map(cl => (
+                            <div key={cl.id} className="flex items-center justify-between bg-[#2A2A2A] p-2 rounded">
+                              <span className="text-sm text-gray-300">{cl.lead?.business_name}</span>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                                onClick={() => updateCampaignLeadStatus(cl.id, 'qualified')}
+                              >
+                                Mark Qualified
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Daily Outreach Goal */}
+                {(() => {
+                  const today = new Date().toDateString()
+                  const todayContacted = campaignLeads.filter(cl => 
+                    cl.last_contacted_at && 
+                    new Date(cl.last_contacted_at).toDateString() === today
+                  ).length
+                  const dailyGoal = 5
+                  
+                  return todayContacted < dailyGoal && (
+                    <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Target className="h-5 w-5 text-purple-400 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="font-medium text-purple-400">Daily Outreach Goal</h3>
+                          <p className="text-sm text-gray-300 mb-3">
+                            You've contacted {todayContacted} leads today. Goal: {dailyGoal} leads per day.
+                          </p>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="flex-1 bg-[#2A2A2A] rounded-full h-2">
+                              <div 
+                                className="bg-purple-500 h-2 rounded-full transition-all" 
+                                style={{ width: `${Math.min((todayContacted / dailyGoal) * 100, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-gray-400">{todayContacted}/{dailyGoal}</span>
+                          </div>
+                          <Button 
+                            variant="outline"
+                            className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                            onClick={() => setActiveTab('pipeline')}
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Start Outreach
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Success Celebration */}
+                {campaignLeads.filter(cl => cl.status === 'signed').length > 0 && (
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <TrendingUp className="h-5 w-5 text-emerald-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-emerald-400">🎉 Deals Closed!</h3>
+                        <p className="text-sm text-gray-300 mb-3">
+                          Awesome! You've closed {campaignLeads.filter(cl => cl.status === 'signed').length} deals. 
+                          Keep up the momentum!
+                        </p>
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => window.open('/lead-generator', '_blank')}
+                        >
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Generate More Leads
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No Tasks - All Good */}
+                {campaignLeads.length === 0 && (
+                  <div className="p-8 text-center">
+                    <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-400 mb-2">No Leads Yet</h3>
+                    <p className="text-gray-500 mb-4">Start by generating some leads to begin your outreach.</p>
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => window.open('/lead-generator', '_blank')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Generate Your First Leads
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
