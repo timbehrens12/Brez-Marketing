@@ -470,14 +470,15 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex flex-wrap gap-1.5 max-w-[120px]">
+                            <div className="flex items-center relative max-w-[100px]">
                               {campaignLead.lead?.instagram_handle && (
                                 <a
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1 rounded transition-colors"
+                                  className="relative z-10 text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
                                   title={`Instagram: ${campaignLead.lead.instagram_handle}`}
+                                  style={{ marginLeft: '0px' }}
                                 >
                                   {getSocialMediaIcon('instagram')}
                                 </a>
@@ -487,8 +488,9 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1 rounded transition-colors"
+                                  className="relative z-10 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
                                   title={`Facebook: ${campaignLead.lead.facebook_page}`}
+                                  style={{ marginLeft: campaignLead.lead?.instagram_handle ? '-8px' : '0px' }}
                                 >
                                   {getSocialMediaIcon('facebook')}
                                 </a>
@@ -498,8 +500,9 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1 rounded transition-colors"
+                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
                                   title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
+                                  style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page) ? '-8px' : '0px' }}
                                 >
                                   {getSocialMediaIcon('linkedin')}
                                 </a>
@@ -509,8 +512,9 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-white hover:bg-gray-400/10 p-1 rounded transition-colors"
+                                  className="relative z-10 text-gray-400 hover:text-white hover:bg-gray-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
                                   title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
+                                  style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page || campaignLead.lead?.linkedin_profile) ? '-8px' : '0px' }}
                                 >
                                   {getSocialMediaIcon('twitter')}
                                 </a>
