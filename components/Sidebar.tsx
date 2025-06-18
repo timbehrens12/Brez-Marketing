@@ -14,9 +14,9 @@ const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Brand Report", href: "/brand-report", icon: FileBarChart },
   { name: "Marketing Assistant", href: "/marketing-assistant", icon: BrainCircuit },
+  { name: "Lead Generator", href: "/lead-generator", icon: Zap },
   { name: "Outreach Tool", href: "/outreach-tool", icon: Send },
   { name: "Ad Creative Studio", href: "/ad-creative-studio", icon: Palette },
-  { name: "Lead Generator", href: "/lead-generator", icon: Zap },
   { name: "Site Optimizer", href: "/site-optimizer", icon: Globe },
   { name: "Settings", href: "/settings", icon: Settings },
 ]

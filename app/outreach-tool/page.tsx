@@ -503,7 +503,7 @@ export default function OutreachToolPage() {
                                 <div className="flex items-center gap-1 text-gray-400">
                                   <Phone className="h-3 w-3" />
                                   {campaignLead.lead.phone}
-                                </div>
+                            </div>
                               )}
                             </div>
                           </TableCell>
@@ -624,15 +624,15 @@ export default function OutreachToolPage() {
 
           {/* Right Sidebar - Action Items Widget */}
           <div className="space-y-6">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
+              <Card className="bg-[#1A1A1A] border-[#333]">
+                <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Clock className="h-5 w-5 text-gray-400" />
                   Action Items
-                </CardTitle>
+                  </CardTitle>
                 <CardDescription className="text-gray-400">Priority tasks to keep momentum</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </CardHeader>
+                <CardContent className="space-y-4">
                 {/* Update Status - Pending leads sitting too long */}
                 {campaignLeads.filter(cl => 
                   cl.status === 'pending' && 
@@ -802,59 +802,59 @@ export default function OutreachToolPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-4">
                 <div>
-                  <Label className="text-gray-400">Select Lead</Label>
-                  <Select
+                    <Label className="text-gray-400">Select Lead</Label>
+                    <Select
                     value={selectedCampaignLead?.id || ''}
-                    onValueChange={(value) => {
+                      onValueChange={(value) => {
                       const campaignLead = campaignLeads.find(cl => cl.id === value)
                       setSelectedCampaignLead(campaignLead || null)
-                    }}
-                  >
+                      }}
+                    >
                     <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
-                      <SelectValue placeholder="Choose a lead to message" />
-                    </SelectTrigger>
+                        <SelectValue placeholder="Choose a lead to message" />
+                      </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       {campaignLeads.map((campaignLead) => (
                         <SelectItem key={campaignLead.id} value={campaignLead.id} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
                           {campaignLead.lead?.business_name} - {campaignLead.lead?.owner_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                 <div>
-                  <Label className="text-gray-400">Message Type</Label>
+                    <Label className="text-gray-400">Message Type</Label>
                   <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
                     <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
-                      <SelectValue />
-                    </SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                     <SelectContent className="bg-[#1A1A1A] border-[#333]">
                       <SelectItem value="email" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Email</SelectItem>
                       <SelectItem value="linkedin" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">LinkedIn Message</SelectItem>
                       <SelectItem value="sms" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">SMS</SelectItem>
                       <SelectItem value="call" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Call Script</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <Button
-                  onClick={generatePersonalizedMessage}
+                  <Button
+                    onClick={generatePersonalizedMessage}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                   disabled={!selectedCampaignLead || isGeneratingMessage}
-                >
-                  {isGeneratingMessage ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
+                  >
+                    {isGeneratingMessage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
                       Generate AI Message
-                    </>
-                  )}
-                </Button>
+                      </>
+                    )}
+                  </Button>
 
                 {selectedCampaignLead && (
                   <div className="p-4 bg-[#2A2A2A] rounded-lg space-y-2">
@@ -881,30 +881,30 @@ export default function OutreachToolPage() {
               </div>
 
               <div className="space-y-4">
-                {messageType === 'email' && (
+                  {messageType === 'email' && (
                   <div>
-                    <Label className="text-gray-400">Subject Line</Label>
-                    <Input
-                      value={messageSubject}
-                      onChange={(e) => setMessageSubject(e.target.value)}
-                      placeholder="Email subject..."
+                      <Label className="text-gray-400">Subject Line</Label>
+                      <Input
+                        value={messageSubject}
+                        onChange={(e) => setMessageSubject(e.target.value)}
+                        placeholder="Email subject..."
                       className="bg-[#2A2A2A] border-[#333] text-gray-300"
-                    />
-                  </div>
-                )}
+                      />
+                    </div>
+                  )}
 
                 <div>
-                  <Label className="text-gray-400">Message Content</Label>
-                  <Textarea
-                    value={generatedMessage}
-                    onChange={(e) => setGeneratedMessage(e.target.value)}
-                    placeholder="Your personalized message will appear here..."
+                    <Label className="text-gray-400">Message Content</Label>
+                    <Textarea
+                      value={generatedMessage}
+                      onChange={(e) => setGeneratedMessage(e.target.value)}
+                      placeholder="Your personalized message will appear here..."
                     className="min-h-[300px] bg-[#2A2A2A] border-[#333] text-gray-300"
-                  />
-                </div>
+                    />
+                  </div>
 
-                <div className="flex gap-2">
-                  <Button
+                  <div className="flex gap-2">
+                    <Button
                     onClick={() => navigator.clipboard.writeText(generatedMessage)}
                     variant="outline"
                     className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
@@ -917,12 +917,12 @@ export default function OutreachToolPage() {
                     variant="outline"
                     className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                     disabled={!generatedMessage || !selectedCampaignLead}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Message
-                  </Button>
-                </div>
-              </div>
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Message
+                    </Button>
+                    </div>
+                  </div>
             </div>
           </DialogContent>
         </Dialog>
