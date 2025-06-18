@@ -1437,7 +1437,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 xl:ml-8">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
