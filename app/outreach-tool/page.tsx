@@ -254,7 +254,13 @@ export default function OutreachToolPage() {
       case 'instagram': return <Instagram className="h-4 w-4" />
       case 'facebook': return <Facebook className="h-4 w-4" />
       case 'linkedin': return <Linkedin className="h-4 w-4" />
-      case 'twitter': return <Twitter className="h-4 w-4" />
+      case 'twitter': 
+        // Modern X logo using SVG
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        )
       default: return null
     }
   }
@@ -476,7 +482,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
                                   title={`Instagram: ${campaignLead.lead.instagram_handle}`}
                                   style={{ marginLeft: '0px' }}
                                 >
@@ -488,7 +494,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
                                   title={`Facebook: ${campaignLead.lead.facebook_page}`}
                                   style={{ marginLeft: campaignLead.lead?.instagram_handle ? '-8px' : '0px' }}
                                 >
@@ -500,7 +506,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
                                   title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
                                   style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page) ? '-8px' : '0px' }}
                                 >
@@ -512,7 +518,7 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-gray-400 hover:text-white hover:bg-gray-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                   title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
                                   style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page || campaignLead.lead?.linkedin_profile) ? '-8px' : '0px' }}
                                 >

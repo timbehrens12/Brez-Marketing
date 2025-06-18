@@ -959,7 +959,12 @@ export default function LeadGeneratorPage() {
       case 'linkedin':
         return <Linkedin className="h-4 w-4" />
       case 'twitter':
-        return <ExternalLink className="h-4 w-4" />
+        // Modern X logo using SVG
+        return (
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        )
       default:
         return <Globe className="h-4 w-4" />
     }
@@ -1718,7 +1723,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('instagram', lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`Instagram: ${lead.instagram_handle}`}
                                   style={{ marginLeft: '0px' }}
@@ -1731,7 +1736,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('facebook', lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`Facebook: ${lead.facebook_page}`}
                                   style={{ marginLeft: lead.instagram_handle ? '-8px' : '0px' }}
@@ -1744,7 +1749,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`LinkedIn: ${lead.linkedin_profile}`}
                                   style={{ marginLeft: (lead.instagram_handle || lead.facebook_page) ? '-8px' : '0px' }}
@@ -1757,7 +1762,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('twitter', lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="relative z-10 text-gray-400 hover:text-white hover:bg-gray-400/10 p-1.5 rounded-full transition-colors bg-white border-2 border-white hover:z-20"
+                                  className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`X/Twitter: ${lead.twitter_handle}`}
                                   style={{ marginLeft: (lead.instagram_handle || lead.facebook_page || lead.linkedin_profile) ? '-8px' : '0px' }}
