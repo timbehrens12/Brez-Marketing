@@ -94,12 +94,11 @@ export default function LeadGeneratorPage() {
   const { userId } = useAuth()
   const { getSupabaseClient } = useAuthenticatedSupabase()
   
-  // Refs for dynamic height calculation
+  // Refs for component tracking
   const cardRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
   const filtersRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLDivElement>(null)
-  const [tableHeight, setTableHeight] = useState<number>(400)
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -251,32 +250,7 @@ export default function LeadGeneratorPage() {
     return () => clearInterval(interval)
   }, [selectedBrandId, userId])
   
-  // Dynamic height calculation
-  useEffect(() => {
-    const calculateTableHeight = () => {
-      if (cardRef.current && headerRef.current) {
-        const cardRect = cardRef.current.getBoundingClientRect()
-        const headerHeight = headerRef.current.offsetHeight
-        const searchHeight = searchRef.current?.offsetHeight || 0
-        const filtersHeight = showFilters ? (filtersRef.current?.offsetHeight || 0) : 0
-        const padding = 48 // Card padding
-        const availableHeight = cardRect.height - headerHeight - searchHeight - filtersHeight - padding
-        const minHeight = Math.max(300, availableHeight)
-        setTableHeight(minHeight)
-      }
-    }
-    
-    // Delay calculation to ensure DOM updates are complete
-    const timer = setTimeout(calculateTableHeight, 100)
-    
-    // Recalculate on window resize
-    window.addEventListener('resize', calculateTableHeight)
-    
-    return () => {
-      clearTimeout(timer)
-      window.removeEventListener('resize', calculateTableHeight)
-    }
-  }, [showFilters, leads.length, filteredLeads.length, location.country, location.state])
+
 
   useEffect(() => {
     if (userId) {
@@ -1474,7 +1448,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card ref={cardRef} className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col h-[600px]">
+          <Card ref={cardRef} className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col">
             <CardHeader ref={headerRef}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -1748,10 +1722,7 @@ export default function LeadGeneratorPage() {
                 )}
                 
                 {/* Scrollable Table Container */}
-                <div 
-                  className="flex-1 overflow-hidden rounded-lg border border-[#333] bg-[#1A1A1A]"
-                  style={{ height: `${tableHeight}px` }}
-                >
+                <div className="flex-1 overflow-hidden rounded-lg border border-[#333] bg-[#1A1A1A] max-h-[60vh]">
                   <div className="h-full overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-track-[#2A2A2A] scrollbar-thumb-[#444] hover:scrollbar-thumb-[#555]">
                     <Table>
                       <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10 border-b border-[#333]">
