@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Edit } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -79,10 +79,13 @@ interface LeadFilters {
   hasPhone: boolean
   hasEmail: boolean
   hasWebsite: boolean
-  hasInstagram: boolean
-  hasTwitter: boolean
-  hasLinkedin: boolean
-  hasFacebook: boolean
+  hasSocials: boolean
+  socialPlatforms: {
+    instagram: boolean
+    facebook: boolean
+    linkedin: boolean
+    twitter: boolean
+  }
   selectedNicheFilter: string[]
 }
 
@@ -214,10 +217,13 @@ export default function LeadGeneratorPage() {
     hasPhone: false,
     hasEmail: false,
     hasWebsite: false,
-    hasInstagram: false,
-    hasTwitter: false,
-    hasLinkedin: false,
-    hasFacebook: false,
+    hasSocials: false,
+    socialPlatforms: {
+      instagram: false,
+      facebook: false,
+      linkedin: false,
+      twitter: false
+    },
     selectedNicheFilter: []
   })
 
@@ -291,17 +297,29 @@ export default function LeadGeneratorPage() {
     if (filters.hasWebsite) {
       filtered = filtered.filter(lead => lead.website && lead.website !== 'N/A')
     }
-    if (filters.hasInstagram) {
+    
+    // Apply social media filters
+    if (filters.hasSocials) {
+      filtered = filtered.filter(lead => 
+        (lead.instagram_handle && lead.instagram_handle !== 'N/A') ||
+        (lead.facebook_page && lead.facebook_page !== 'N/A') ||
+        (lead.linkedin_profile && lead.linkedin_profile !== 'N/A') ||
+        (lead.twitter_handle && lead.twitter_handle !== 'N/A')
+      )
+    }
+    
+    // Apply specific social platform filters
+    if (filters.socialPlatforms.instagram) {
       filtered = filtered.filter(lead => lead.instagram_handle && lead.instagram_handle !== 'N/A')
     }
-    if (filters.hasTwitter) {
-      filtered = filtered.filter(lead => lead.twitter_handle && lead.twitter_handle !== 'N/A')
+    if (filters.socialPlatforms.facebook) {
+      filtered = filtered.filter(lead => lead.facebook_page && lead.facebook_page !== 'N/A')
     }
-    if (filters.hasLinkedin) {
+    if (filters.socialPlatforms.linkedin) {
       filtered = filtered.filter(lead => lead.linkedin_profile && lead.linkedin_profile !== 'N/A')
     }
-    if (filters.hasFacebook) {
-      filtered = filtered.filter(lead => lead.facebook_page && lead.facebook_page !== 'N/A')
+    if (filters.socialPlatforms.twitter) {
+      filtered = filtered.filter(lead => lead.twitter_handle && lead.twitter_handle !== 'N/A')
     }
     
     // Apply niche filter
@@ -1426,7 +1444,9 @@ export default function LeadGeneratorPage() {
                     >
                       <Filter className="h-4 w-4 mr-2" />
                       Filters
-                      {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasInstagram || filters.hasTwitter || filters.hasLinkedin || filters.hasFacebook) && (
+                      {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials || 
+                        filters.socialPlatforms.instagram || filters.socialPlatforms.facebook || 
+                        filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter) && (
                         <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
                           Active
                         </Badge>
@@ -1473,7 +1493,7 @@ export default function LeadGeneratorPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
-                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasInstagram: false, hasTwitter: false, hasLinkedin: false, hasFacebook: false, selectedNicheFilter: [] })}
+                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasSocials: false, socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false }, selectedNicheFilter: [] })}
                         variant="ghost"
                         size="sm"
                         className="text-gray-400 hover:text-white"
@@ -1483,111 +1503,149 @@ export default function LeadGeneratorPage() {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasPhone"
-                          checked={filters.hasPhone}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          Has Phone
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasEmail"
-                          checked={filters.hasEmail}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          Has Email
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasWebsite"
-                          checked={filters.hasWebsite}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Globe className="h-3 w-3" />
-                          Has Website
-                        </label>
+                    <div className="space-y-4">
+                      {/* Basic Filters */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasPhone"
+                            checked={filters.hasPhone}
+                            onCheckedChange={(checked) => 
+                              setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
+                            }
+                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                          />
+                          <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            Has Phone
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasEmail"
+                            checked={filters.hasEmail}
+                            onCheckedChange={(checked) => 
+                              setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
+                            }
+                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                          />
+                          <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            Has Email
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasWebsite"
+                            checked={filters.hasWebsite}
+                            onCheckedChange={(checked) => 
+                              setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
+                            }
+                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                          />
+                          <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Globe className="h-3 w-3" />
+                            Has Website
+                          </label>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="hasSocials"
+                            checked={filters.hasSocials}
+                            onCheckedChange={(checked) => 
+                              setFilters(prev => ({ ...prev, hasSocials: checked as boolean }))
+                            }
+                            className="border-[#444] data-[state=checked]:bg-purple-600"
+                          />
+                          <label htmlFor="hasSocials" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                            <Share2 className="h-3 w-3" />
+                            Has Socials
+                          </label>
+                        </div>
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasInstagram"
-                          checked={filters.hasInstagram}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasInstagram: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasInstagram" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Instagram className="h-3 w-3" />
-                          Has Instagram
-                        </label>
-                      </div>
+                      {/* Social Media Sub-filters */}
+                      {filters.hasSocials && (
+                        <div className="ml-6 p-3 bg-[#333]/30 rounded-lg border border-[#555]">
+                          <Label className="text-xs font-medium text-gray-500 mb-2 block">Social Platform Filters</Label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="socialInstagram"
+                                checked={filters.socialPlatforms.instagram}
+                                onCheckedChange={(checked) => 
+                                  setFilters(prev => ({ 
+                                    ...prev, 
+                                    socialPlatforms: { ...prev.socialPlatforms, instagram: checked as boolean }
+                                  }))
+                                }
+                                className="border-[#444] data-[state=checked]:bg-pink-600"
+                              />
+                              <label htmlFor="socialInstagram" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
+                                <Instagram className="h-3 w-3" />
+                                Instagram
+                              </label>
+                            </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasTwitter"
-                          checked={filters.hasTwitter}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasTwitter: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasTwitter" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3" />
-                          Has Twitter
-                        </label>
-                      </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="socialFacebook"
+                                checked={filters.socialPlatforms.facebook}
+                                onCheckedChange={(checked) => 
+                                  setFilters(prev => ({ 
+                                    ...prev, 
+                                    socialPlatforms: { ...prev.socialPlatforms, facebook: checked as boolean }
+                                  }))
+                                }
+                                className="border-[#444] data-[state=checked]:bg-blue-600"
+                              />
+                              <label htmlFor="socialFacebook" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
+                                <Facebook className="h-3 w-3" />
+                                Facebook
+                              </label>
+                            </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasLinkedin"
-                          checked={filters.hasLinkedin}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasLinkedin: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-blue-600"
-                        />
-                        <label htmlFor="hasLinkedin" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Linkedin className="h-3 w-3" />
-                          Has LinkedIn
-                        </label>
-                      </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="socialLinkedin"
+                                checked={filters.socialPlatforms.linkedin}
+                                onCheckedChange={(checked) => 
+                                  setFilters(prev => ({ 
+                                    ...prev, 
+                                    socialPlatforms: { ...prev.socialPlatforms, linkedin: checked as boolean }
+                                  }))
+                                }
+                                className="border-[#444] data-[state=checked]:bg-blue-700"
+                              />
+                              <label htmlFor="socialLinkedin" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
+                                <Linkedin className="h-3 w-3" />
+                                LinkedIn
+                              </label>
+                            </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="hasFacebook"
-                          checked={filters.hasFacebook}
-                          onCheckedChange={(checked) => 
-                            setFilters(prev => ({ ...prev, hasFacebook: checked as boolean }))
-                          }
-                          className="border-[#444] data-[state=checked]:bg-gray-600"
-                        />
-                        <label htmlFor="hasFacebook" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
-                          <Facebook className="h-3 w-3" />
-                          Has Facebook
-                        </label>
-                      </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="socialTwitter"
+                                checked={filters.socialPlatforms.twitter}
+                                onCheckedChange={(checked) => 
+                                  setFilters(prev => ({ 
+                                    ...prev, 
+                                    socialPlatforms: { ...prev.socialPlatforms, twitter: checked as boolean }
+                                  }))
+                                }
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
+                              />
+                              <label htmlFor="socialTwitter" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
+                                <ExternalLink className="h-3 w-3" />
+                                X/Twitter
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Niche Filter */}
@@ -1682,9 +1740,6 @@ export default function LeadGeneratorPage() {
                           <TableCell>
                             <div>
                               <div className="font-medium text-gray-400">{lead.business_name}</div>
-                              {lead.owner_name && (
-                                <div className="text-sm text-gray-500">{lead.owner_name}</div>
-                              )}
                               {lead.website && (
                                 <a
                                   href={formatWebsiteUrl(lead.website)}
@@ -1701,6 +1756,9 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm text-gray-400">
+                              {lead.owner_name && (
+                                <div className="font-medium text-gray-300 mb-1">{lead.owner_name}</div>
+                              )}
                               {lead.email && (
                                 <div className="flex items-center gap-1 mb-1">
                                   <Mail className="h-3 w-3" />
@@ -1713,7 +1771,7 @@ export default function LeadGeneratorPage() {
                                   {lead.phone}
                                 </div>
                               )}
-                              {!lead.email && !lead.phone && <span className="text-gray-500">-</span>}
+                              {!lead.owner_name && !lead.email && !lead.phone && <span className="text-gray-500">-</span>}
                             </div>
                           </TableCell>
                           <TableCell>
