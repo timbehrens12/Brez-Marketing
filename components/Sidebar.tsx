@@ -15,51 +15,51 @@ const navItems = [
     name: "Dashboard", 
     href: "/dashboard", 
     icon: LayoutDashboard,
-    description: "View your marketing overview"
+    description: "Marketing overview"
   },
   { 
     name: "Brand Report", 
     href: "/brand-report", 
     icon: FileBarChart,
-    description: "Comprehensive brand analytics"
+    description: "Brand analytics"
   },
   { 
     name: "Marketing Assistant", 
     href: "/marketing-assistant", 
     icon: BrainCircuit,
-    description: "AI-powered marketing insights"
+    description: "AI marketing insights"
   },
   { 
     name: "Lead Generator", 
     href: "/lead-generator", 
     icon: Zap,
-    description: "Find and qualify new leads"
+    description: "Find and qualify leads"
   },
   { 
     name: "Outreach Tool", 
     href: "/outreach-tool", 
     icon: Send,
-    description: "Manage your lead outreach"
+    description: "Manage lead outreach"
   },
   { 
     name: "Ad Creative Studio", 
     href: "/ad-creative-studio", 
     icon: Palette,
-    description: "Create compelling ad content",
+    description: "Create ad content",
     comingSoon: true
   },
   { 
     name: "Site Optimizer", 
     href: "/site-optimizer", 
     icon: Globe,
-    description: "Optimize your website performance",
+    description: "Optimize website",
     comingSoon: true
   },
   { 
     name: "Settings", 
     href: "/settings", 
     icon: Settings,
-    description: "Configure your account"
+    description: "Account settings"
   },
 ]
 
