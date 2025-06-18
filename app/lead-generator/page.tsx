@@ -1437,7 +1437,7 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 h-[80vh] flex flex-col">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -1498,7 +1498,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col h-full">
+              <CardContent className="flex-grow flex flex-col">
                 {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
@@ -1710,7 +1710,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="flex-1 overflow-x-auto overflow-y-auto border border-[#333] rounded-md">
+                <div className="flex-grow overflow-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
