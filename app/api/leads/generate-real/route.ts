@@ -346,7 +346,7 @@ async function findRealBusinesses(niches: any[], location: any, maxResults: numb
           } else if (detailError.message?.includes('fetch failed')) {
             console.log(`Network error for ${place.name || 'unknown business'}: ${detailError.message}`)
           } else {
-            console.log(`Error getting place details for ${place.name || 'unknown business'}: ${detailError.message || 'Unknown error'}`)
+          console.log(`Error getting place details for ${place.name || 'unknown business'}: ${detailError.message || 'Unknown error'}`)
           }
           return null
         }
@@ -441,7 +441,7 @@ async function enrichBusinessData(business: any, niche: any, location: any) {
           console.log(`Network error during enrichment for ${name}, using basic data`)
         } else {
           console.log(`AI enrichment failed for ${name}: ${enrichmentError.message || 'Unknown error'}, using basic data`)
-        }
+      }
         
         // Reset to default values on any error
         enrichedData = {
