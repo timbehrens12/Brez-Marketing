@@ -18,7 +18,7 @@ import {
   Plus, Edit, Copy, Sparkles, Target, Users, BarChart3,
   Building2, ExternalLink, Linkedin, Twitter, Instagram,
   Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
-  ArrowUpRight, ArrowDownRight, AlertTriangle
+  ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
@@ -85,6 +85,7 @@ export default function OutreachToolPage() {
   const [generatedMessage, setGeneratedMessage] = useState('')
   const [messageSubject, setMessageSubject] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [showMessageComposer, setShowMessageComposer] = useState(false)
 
   // Calculate statistics based on campaign leads
@@ -234,6 +235,30 @@ export default function OutreachToolPage() {
     } catch (error) {
       console.error('Error updating status:', error)
       toast.error('Failed to update status')
+    }
+  }
+
+  const deleteCampaignLead = async (campaignLeadId: string) => {
+    if (!confirm('Are you sure you want to remove this lead from outreach?')) {
+      return
+    }
+
+    try {
+      const supabase = await getSupabaseClient()
+      
+      const { error } = await supabase
+        .from('outreach_campaign_leads')
+        .delete()
+        .eq('id', campaignLeadId)
+
+      if (error) throw error
+      
+      // Remove from local state
+      setCampaignLeads(prev => prev.filter(cl => cl.id !== campaignLeadId))
+      toast.success('Lead removed from outreach!')
+    } catch (error) {
+      console.error('Error deleting campaign lead:', error)
+      toast.error('Failed to remove lead')
     }
   }
 
@@ -401,6 +426,20 @@ export default function OutreachToolPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Search Bar */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search by business name or owner..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-300 placeholder-gray-500 focus:border-gray-300"
+                    />
+                  </div>
+                </div>
+
                 <div className="rounded-md border border-[#333] max-h-[500px] overflow-y-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A]">
@@ -414,7 +453,23 @@ export default function OutreachToolPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(statusFilter === 'all' ? campaignLeads : campaignLeads.filter(cl => cl.status === statusFilter)).map((campaignLead) => (
+                      {campaignLeads
+                        .filter(cl => {
+                          // Apply status filter
+                          if (statusFilter !== 'all' && cl.status !== statusFilter) return false
+                          
+                          // Apply search filter
+                          if (searchQuery.trim()) {
+                            const query = searchQuery.toLowerCase()
+                            return (
+                              (cl.lead?.business_name && cl.lead.business_name.toLowerCase().includes(query)) ||
+                              (cl.lead?.owner_name && cl.lead.owner_name.toLowerCase().includes(query))
+                            )
+                          }
+                          
+                          return true
+                        })
+                        .map((campaignLead) => (
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
                           <TableCell>
                             <div>
@@ -531,18 +586,32 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                              onClick={() => {
-                                setSelectedCampaignLead(campaignLead)
-                                setShowMessageComposer(true)
-                              }}
-                            >
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              Message
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
+                                onClick={() => {
+                                  setSelectedCampaignLead(campaignLead)
+                                  setShowMessageComposer(true)
+                                }}
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                Message
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0 border-[#333] hover:bg-red-900/20 text-gray-400 hover:text-red-400 hover:border-red-500/50"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteCampaignLead(campaignLead.id)
+                                }}
+                                title="Remove from outreach"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

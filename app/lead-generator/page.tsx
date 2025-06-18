@@ -208,6 +208,7 @@ export default function LeadGeneratorPage() {
   const [activeTab, setActiveTab] = useState('search')
   const [isLoadingUsage, setIsLoadingUsage] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   
   // Usage data from API
   const [usageData, setUsageData] = useState<UsageData | null>(null)
@@ -247,10 +248,10 @@ export default function LeadGeneratorPage() {
     }
   }, [selectedBrandId, userId])
 
-  // Apply filters whenever leads or filters change
+  // Apply filters whenever leads, filters, or search query change
   useEffect(() => {
     applyFilters()
-  }, [leads, filters])
+  }, [leads, filters, searchQuery])
 
   const loadUsageData = async () => {
     if (!userId) return
@@ -286,6 +287,14 @@ export default function LeadGeneratorPage() {
 
   const applyFilters = () => {
     let filtered = [...leads]
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(lead => 
+        lead.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (lead.owner_name && lead.owner_name.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
     
     // Apply has filters
     if (filters.hasPhone) {
@@ -665,10 +674,13 @@ export default function LeadGeneratorPage() {
 
       const data = await response.json()
       toast.success(`${data.message}! Created ${data.tasksCreated} follow-up tasks.`)
+      
+      // Remove sent leads from the current page
+      setLeads(prev => prev.filter(lead => !selectedLeads.includes(lead.id)))
       setSelectedLeads([])
       
-      // Optionally refresh the leads list to update their status
-      await loadExistingLeads()
+      // Update stats
+      await loadStats()
     } catch (error) {
       console.error('Error sending to outreach:', error)
       toast.error('Failed to send leads to outreach')
@@ -1487,6 +1499,20 @@ export default function LeadGeneratorPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Search Bar */}
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search by business name or owner..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-300 placeholder-gray-500 focus:border-gray-300"
+                    />
+                  </div>
+                </div>
+
                 {/* Filter Panel */}
                 {showFilters && (
                   <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
@@ -1513,7 +1539,7 @@ export default function LeadGeneratorPage() {
                             onCheckedChange={(checked) => 
                               setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))
                             }
-                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
                           <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                             <Phone className="h-3 w-3" />
@@ -1528,7 +1554,7 @@ export default function LeadGeneratorPage() {
                             onCheckedChange={(checked) => 
                               setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))
                             }
-                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
                           <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                             <Mail className="h-3 w-3" />
@@ -1543,7 +1569,7 @@ export default function LeadGeneratorPage() {
                             onCheckedChange={(checked) => 
                               setFilters(prev => ({ ...prev, hasWebsite: checked as boolean }))
                             }
-                            className="border-[#444] data-[state=checked]:bg-blue-600"
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
                           <label htmlFor="hasWebsite" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                             <Globe className="h-3 w-3" />
@@ -1558,7 +1584,7 @@ export default function LeadGeneratorPage() {
                             onCheckedChange={(checked) => 
                               setFilters(prev => ({ ...prev, hasSocials: checked as boolean }))
                             }
-                            className="border-[#444] data-[state=checked]:bg-purple-600"
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
                           />
                           <label htmlFor="hasSocials" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
                             <Share2 className="h-3 w-3" />
@@ -1582,7 +1608,7 @@ export default function LeadGeneratorPage() {
                                     socialPlatforms: { ...prev.socialPlatforms, instagram: checked as boolean }
                                   }))
                                 }
-                                className="border-[#444] data-[state=checked]:bg-pink-600"
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
                               />
                               <label htmlFor="socialInstagram" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
                                 <Instagram className="h-3 w-3" />
@@ -1600,7 +1626,7 @@ export default function LeadGeneratorPage() {
                                     socialPlatforms: { ...prev.socialPlatforms, facebook: checked as boolean }
                                   }))
                                 }
-                                className="border-[#444] data-[state=checked]:bg-blue-600"
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
                               />
                               <label htmlFor="socialFacebook" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
                                 <Facebook className="h-3 w-3" />
@@ -1618,7 +1644,7 @@ export default function LeadGeneratorPage() {
                                     socialPlatforms: { ...prev.socialPlatforms, linkedin: checked as boolean }
                                   }))
                                 }
-                                className="border-[#444] data-[state=checked]:bg-blue-700"
+                                className="border-[#444] data-[state=checked]:bg-gray-600"
                               />
                               <label htmlFor="socialLinkedin" className="text-xs text-gray-500 cursor-pointer flex items-center gap-1">
                                 <Linkedin className="h-3 w-3" />
