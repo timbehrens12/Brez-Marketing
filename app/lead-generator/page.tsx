@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -93,6 +93,13 @@ export default function LeadGeneratorPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
   const { getSupabaseClient } = useAuthenticatedSupabase()
+  
+  // Refs for dynamic height calculation
+  const cardRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
+  const filtersRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const [tableHeight, setTableHeight] = useState<number>(400)
   
   const [businessType, setBusinessType] = useState<'ecommerce' | 'local_service'>('local_service')
   const [selectedNiches, setSelectedNiches] = useState<string[]>([])
@@ -230,17 +237,47 @@ export default function LeadGeneratorPage() {
 
   // Load data on component mount
   useEffect(() => {
-    // Load niches immediately - doesn't require brand selection
+    loadExistingLeads()
+    loadUsageData()
     loadNiches()
+    loadStats()
     
-    if (userId) {
+    // Set up periodic refresh
+    const interval = setInterval(() => {
       loadUsageData()
-      // Refresh usage data every 30 seconds
-      const interval = setInterval(loadUsageData, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [userId])
+      loadStats()
+    }, 60000) // Refresh every minute
+    
+    return () => clearInterval(interval)
+  }, [selectedBrandId, userId])
   
+  // Dynamic height calculation
+  useEffect(() => {
+    const calculateTableHeight = () => {
+      if (cardRef.current && headerRef.current) {
+        const cardRect = cardRef.current.getBoundingClientRect()
+        const headerHeight = headerRef.current.offsetHeight
+        const searchHeight = searchRef.current?.offsetHeight || 0
+        const filtersHeight = showFilters ? (filtersRef.current?.offsetHeight || 0) : 0
+        const padding = 48 // Card padding
+        const availableHeight = cardRect.height - headerHeight - searchHeight - filtersHeight - padding
+        const minHeight = Math.max(300, availableHeight)
+        setTableHeight(minHeight)
+      }
+    }
+    
+    // Delay calculation to ensure DOM updates are complete
+    const timer = setTimeout(calculateTableHeight, 100)
+    
+    // Recalculate on window resize
+    window.addEventListener('resize', calculateTableHeight)
+    
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', calculateTableHeight)
+    }
+  }, [showFilters, leads.length, filteredLeads.length, location.country, location.state])
+
   useEffect(() => {
     if (userId) {
       loadExistingLeads()
@@ -1004,7 +1041,7 @@ export default function LeadGeneratorPage() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 h-[calc(100vh-8rem)]">
           {/* Lead Search Panel */}
           <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
             <CardContent className="space-y-6 pt-6">
@@ -1437,8 +1474,8 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
-            <CardHeader>
+          <Card ref={cardRef} className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col h-[600px]">
+            <CardHeader ref={headerRef}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -1498,9 +1535,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col flex-1 overflow-hidden">
                 {/* Search Bar */}
-                <div className="mb-4">
+                <div ref={searchRef} className="mb-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -1515,7 +1552,7 @@ export default function LeadGeneratorPage() {
 
                 {/* Filter Panel */}
                 {showFilters && (
-                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
+                  <div ref={filtersRef} className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
@@ -1710,10 +1747,15 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-track-[#1A1A1A] scrollbar-thumb-[#444]">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
-                      <TableRow className="border-[#333]">
+                {/* Scrollable Table Container */}
+                <div 
+                  className="flex-1 overflow-hidden rounded-lg border border-[#333] bg-[#1A1A1A]"
+                  style={{ height: `${tableHeight}px` }}
+                >
+                  <div className="h-full overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-track-[#2A2A2A] scrollbar-thumb-[#444] hover:scrollbar-thumb-[#555]">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10 border-b border-[#333]">
+                        <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
                             checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
@@ -1919,28 +1961,26 @@ export default function LeadGeneratorPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                    </TableBody>
-                  </Table>
-                  
-                  {/* Padding to ensure last row is fully visible */}
-                  <div className="h-4"></div>
-                  
-                  {filteredLeads.length === 0 && (
-                    <div className="text-center py-12 text-gray-400">
-                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      {leads.length === 0 ? (
-                        <>
-                          <p>No leads generated yet</p>
-                          <p className="text-sm">Configure your search parameters and click "Find Real Businesses"</p>
-                        </>
-                      ) : (
-                        <>
-                          <p>No leads match your filters</p>
-                          <p className="text-sm">Try adjusting your filter criteria</p>
-                        </>
-                      )}
-                    </div>
-                  )}
+                      </TableBody>
+                    </Table>
+                    
+                    {filteredLeads.length === 0 && (
+                      <div className="text-center py-12 text-gray-400">
+                        <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        {leads.length === 0 ? (
+                          <>
+                            <p>No leads generated yet</p>
+                            <p className="text-sm">Configure your search parameters and click "Find Real Businesses"</p>
+                          </>
+                        ) : (
+                          <>
+                            <p>No leads match your filters</p>
+                            <p className="text-sm">Try adjusting your filter criteria</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
