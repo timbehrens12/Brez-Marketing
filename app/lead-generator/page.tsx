@@ -1004,9 +1004,9 @@ export default function LeadGeneratorPage() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="w-full space-y-6">
         {/* Main Content - Side by Side Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 h-[calc(100vh-8rem)]">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           {/* Lead Search Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2 overflow-y-auto">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-2">
             <CardContent className="space-y-6 pt-6">
               {/* Usage Statistics Panel */}
             <Card className="mb-6 bg-[#1A1A1A] border-[#333]">
@@ -1078,11 +1078,11 @@ export default function LeadGeneratorPage() {
                             <Clock className="h-4 w-4 text-gray-400" />
                             <span className="text-sm font-medium text-gray-300">Niche Cooldowns</span>
               </div>
-                        <div className="space-y-2 max-h-24 overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-24 overflow-y-auto">
                           {usageData.nicheCooldowns.map((cooldown) => (
-                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm pr-2">
+                            <div key={cooldown.niche_id} className="flex justify-between items-center text-sm">
                               <span className="text-gray-400">{cooldown.niche_name}</span>
-                              <span className="text-gray-300 ml-3">
+                              <span className="text-gray-300">
                                 {getTimeUntilMidnight()}
                               </span>
                             </div>
@@ -1437,8 +1437,8 @@ export default function LeadGeneratorPage() {
           </Card>
 
           {/* Generated Leads Panel */}
-          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3 flex flex-col h-full">
-            <CardHeader className="flex-shrink-0">
+          <Card className="bg-[#1A1A1A] border-[#333] xl:col-span-3">
+            <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -1498,9 +1498,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col flex-1 overflow-hidden">
+              <CardContent>
                 {/* Search Bar */}
-                <div className="mb-4 flex-shrink-0">
+                <div className="mb-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
@@ -1515,7 +1515,7 @@ export default function LeadGeneratorPage() {
 
                 {/* Filter Panel */}
                 {showFilters && (
-                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4 flex-shrink-0">
+                  <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
@@ -1710,10 +1710,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <div className="h-full overflow-x-auto overflow-y-auto">
+                <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
+                    <TableHeader>
                       <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
@@ -1939,8 +1938,7 @@ export default function LeadGeneratorPage() {
                       )}
                     </div>
                   )}
-                    </div>
-                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
