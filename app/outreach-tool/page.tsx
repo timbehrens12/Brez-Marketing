@@ -470,13 +470,14 @@ export default function OutreachToolPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap gap-1.5 max-w-[120px]">
                               {campaignLead.lead?.instagram_handle && (
                                 <a
                                   href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-gray-300"
+                                  className="text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1 rounded transition-colors"
+                                  title={`Instagram: ${campaignLead.lead.instagram_handle}`}
                                 >
                                   {getSocialMediaIcon('instagram')}
                                 </a>
@@ -486,7 +487,8 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-gray-300"
+                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1 rounded transition-colors"
+                                  title={`Facebook: ${campaignLead.lead.facebook_page}`}
                                 >
                                   {getSocialMediaIcon('facebook')}
                                 </a>
@@ -496,7 +498,8 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-gray-300"
+                                  className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1 rounded transition-colors"
+                                  title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
                                 >
                                   {getSocialMediaIcon('linkedin')}
                                 </a>
@@ -506,10 +509,14 @@ export default function OutreachToolPage() {
                                   href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-gray-300"
+                                  className="text-gray-400 hover:text-white hover:bg-gray-400/10 p-1 rounded transition-colors"
+                                  title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
                                 >
                                   {getSocialMediaIcon('twitter')}
                                 </a>
+                              )}
+                              {!campaignLead.lead?.instagram_handle && !campaignLead.lead?.facebook_page && !campaignLead.lead?.linkedin_profile && !campaignLead.lead?.twitter_handle && (
+                                <span className="text-gray-500 text-sm">No socials</span>
                               )}
                             </div>
                           </TableCell>

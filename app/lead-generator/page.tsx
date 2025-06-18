@@ -1591,17 +1591,17 @@ export default function LeadGeneratorPage() {
                         <Label className="text-sm font-medium text-gray-400">Filter by Niche</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                           {availableNichesInLeads.map((nicheName) => (
-                            <div key={nicheName} className="flex items-center space-x-2">
+                            <div key={nicheName || 'unknown'} className="flex items-center space-x-2">
                               <Checkbox
-                                id={`niche-${nicheName}`}
-                                checked={filters.selectedNicheFilter.includes(nicheName)}
+                                id={`niche-${nicheName || 'unknown'}`}
+                                checked={nicheName ? filters.selectedNicheFilter.includes(nicheName) : false}
                                 onCheckedChange={(checked) => {
-                                  if (checked) {
+                                  if (checked && nicheName) {
                                     setFilters(prev => ({ 
                                       ...prev, 
                                       selectedNicheFilter: [...prev.selectedNicheFilter, nicheName] 
                                     }))
-                                  } else {
+                                  } else if (nicheName) {
                                     setFilters(prev => ({ 
                                       ...prev, 
                                       selectedNicheFilter: prev.selectedNicheFilter.filter(n => n !== nicheName) 
@@ -1610,8 +1610,8 @@ export default function LeadGeneratorPage() {
                                 }}
                                 className="border-[#444] data-[state=checked]:bg-gray-600"
                               />
-                              <label htmlFor={`niche-${nicheName}`} className="text-sm text-gray-400 cursor-pointer">
-                                {nicheName}
+                              <label htmlFor={`niche-${nicheName || 'unknown'}`} className="text-sm text-gray-400 cursor-pointer">
+                                {nicheName || 'Unknown'}
                               </label>
                             </div>
                           ))}
@@ -1712,15 +1712,15 @@ export default function LeadGeneratorPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-1.5 max-w-[120px]">
                               {lead.instagram_handle && (
                                 <a
                                   href={getSocialMediaLink('instagram', lead.instagram_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-pink-400 hover:text-pink-300"
+                                  className="text-pink-400 hover:text-pink-300 hover:bg-pink-400/10 p-1 rounded transition-colors"
                                   onClick={(e) => e.stopPropagation()}
-                                  title={`@${lead.instagram_handle}`}
+                                  title={`Instagram: ${lead.instagram_handle}`}
                                 >
                                   {getSocialMediaIcon('instagram')}
                                 </a>
@@ -1730,7 +1730,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('facebook', lead.facebook_page)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300"
+                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 p-1 rounded transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`Facebook: ${lead.facebook_page}`}
                                 >
@@ -1742,7 +1742,7 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('linkedin', lead.linkedin_profile)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-500 hover:text-blue-400"
+                                  className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 p-1 rounded transition-colors"
                                   onClick={(e) => e.stopPropagation()}
                                   title={`LinkedIn: ${lead.linkedin_profile}`}
                                 >
@@ -1754,15 +1754,15 @@ export default function LeadGeneratorPage() {
                                   href={getSocialMediaLink('twitter', lead.twitter_handle)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-gray-400 hover:text-white"
+                                  className="text-gray-400 hover:text-white hover:bg-gray-400/10 p-1 rounded transition-colors"
                                   onClick={(e) => e.stopPropagation()}
-                                  title={`Twitter: @${lead.twitter_handle}`}
+                                  title={`X/Twitter: ${lead.twitter_handle}`}
                                 >
                                   {getSocialMediaIcon('twitter')}
                                 </a>
                               )}
                               {!lead.instagram_handle && !lead.facebook_page && !lead.linkedin_profile && !lead.twitter_handle && (
-                                <span className="text-gray-500">-</span>
+                                <span className="text-gray-500 text-sm">No socials found</span>
                               )}
                             </div>
                           </TableCell>

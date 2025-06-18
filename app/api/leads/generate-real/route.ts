@@ -504,7 +504,7 @@ async function enrichWithAI(businessName: string, websiteUrl: string, city: stri
 
     // Use ChatGPT to extract contact information
     const prompt = `
-You are a data extraction specialist. I need you to analyze the following website content for a business and extract contact information.
+You are a professional data extraction specialist. I need you to thoroughly analyze the following website content for a business and extract ALL available contact information and social media profiles.
 
 Business: ${businessName}
 Location: ${city}, ${state}
@@ -513,23 +513,37 @@ Website URL: ${websiteUrl}
 Website Content:
 ${websiteContent.substring(0, 4000)} // Limit content to avoid token limits
 
+CRITICAL INSTRUCTIONS:
+1. Look for ALL social media platforms mentioned or linked on the website
+2. Extract actual URLs, usernames, handles, and page names
+3. Check footer links, header menus, contact pages, and social media sections
+4. Look for social media icons, "Follow us" sections, and embedded social feeds
+5. Extract the exact URLs or handles as they appear on the website
+
 Please extract the following information and return it as a valid JSON object only:
 {
   "owner_name": "Owner or contact person name (if found)",
   "email": "Primary business email address (if found)",
-  "instagram_handle": "Instagram username without @ (if found)",
-  "facebook_page": "Facebook page name or URL (if found)",
-  "linkedin_profile": "LinkedIn profile or company page URL (if found)",
-  "twitter_handle": "Twitter/X username without @ (if found)"
+  "instagram_handle": "Instagram username or full URL (if found)",
+  "facebook_page": "Facebook page name or full URL (if found)",
+  "linkedin_profile": "LinkedIn company page URL or company name (if found)",
+  "twitter_handle": "Twitter/X username or full URL (if found)"
 }
+
+SOCIAL MEDIA EXTRACTION GUIDELINES:
+- Instagram: Look for @username, instagram.com/username, or Instagram links
+- Facebook: Look for facebook.com/pagename, Facebook links, or page names
+- LinkedIn: Look for linkedin.com/company/name, LinkedIn company pages, or business profiles
+- Twitter/X: Look for @username, twitter.com/username, x.com/username, or Twitter links
 
 IMPORTANT: 
 - Return ONLY the JSON object, no markdown formatting, no backticks, no additional text
-- Only extract information that is clearly visible on the website
-- For email, look for contact@, info@, sales@, or owner emails
-- For social media, look for handles, links, or mentions
+- Extract information exactly as it appears on the website
+- For social media, include the full URL if available, otherwise just the username/handle
+- For LinkedIn, make sure to extract the company page URL, not personal profiles
 - If not found, return null for that field
-- Be conservative - only extract if you're confident it's correct
+- Be thorough - check all sections of the website content for social media mentions
+- Look for variations like "Follow us on", "Connect with us", social media icons, etc.
 `
 
     const response = await openai.chat.completions.create({
@@ -553,7 +567,19 @@ IMPORTANT:
         
         const extractedData = JSON.parse(cleanedResult)
         console.log(`AI extracted data for ${businessName}:`, extractedData)
-        return extractedData
+        
+        // Process and validate social media URLs
+        const processedData = {
+          owner_name: extractedData.owner_name,
+          email: extractedData.email,
+          instagram_handle: processSocialMediaUrl('instagram', extractedData.instagram_handle, businessName),
+          facebook_page: processSocialMediaUrl('facebook', extractedData.facebook_page, businessName),
+          linkedin_profile: processSocialMediaUrl('linkedin', extractedData.linkedin_profile, businessName),
+          twitter_handle: processSocialMediaUrl('twitter', extractedData.twitter_handle, businessName)
+        }
+        
+        console.log(`Processed social media data for ${businessName}:`, processedData)
+        return processedData
       } catch (parseError) {
         console.log(`Error parsing AI response for ${businessName}, using basic data`)
       }
@@ -624,14 +650,37 @@ async function scrapeWebsite(url: string): Promise<string | null> {
 
     const html = await response.text()
     
-    // Basic HTML parsing to extract text content
-    // Remove script and style tags
-    const cleanHtml = html
+    // Enhanced HTML parsing to preserve social media links and structure
+    let cleanHtml = html
+      // Remove script and style tags but preserve their content structure
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    
+    // Extract and preserve social media links before removing HTML tags
+    const socialMediaLinks: string[] = []
+    const socialMediaPatterns = [
+      /href=["']([^"']*(?:instagram|facebook|linkedin|twitter|x)\.com[^"']*)/gi,
+      /(?:instagram|facebook|linkedin|twitter|x)\.com\/[\w\-\.]+/gi,
+      /@[\w\-\.]+/g // Handles like @username
+    ]
+    
+    socialMediaPatterns.forEach(pattern => {
+      let match
+      while ((match = pattern.exec(html)) !== null) {
+        socialMediaLinks.push(match[1] || match[0])
+      }
+    })
+    
+    // Remove HTML tags but preserve text content and structure
+    cleanHtml = cleanHtml
       .replace(/<[^>]+>/g, ' ') // Remove HTML tags
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim()
+    
+    // Append extracted social media links to the content for AI processing
+    if (socialMediaLinks.length > 0) {
+      cleanHtml += '\n\nSocial Media Links Found: ' + socialMediaLinks.join(', ')
+    }
 
     return cleanHtml
 
@@ -653,4 +702,97 @@ async function scrapeWebsite(url: string): Promise<string | null> {
     }
     return null
   }
+}
+
+function processSocialMediaUrl(platform: string, rawUrl: string | null, businessName: string): string | null {
+  if (!rawUrl || rawUrl === 'null' || rawUrl.toLowerCase() === 'n/a') return null
+  
+  // Clean up the URL
+  let url = rawUrl.trim()
+  
+  // Remove quotes and extra characters
+  url = url.replace(/['"]/g, '')
+  
+  switch (platform) {
+    case 'instagram':
+      // Handle Instagram URLs and usernames
+      if (url.includes('instagram.com/')) {
+        // Extract username from full URL
+        const match = url.match(/instagram\.com\/([^\/\?\s]+)/)
+        if (match && match[1] && match[1] !== 'p' && match[1] !== 'reel' && match[1] !== 'stories') {
+          return `https://instagram.com/${match[1]}`
+        }
+      } else if (url.startsWith('@')) {
+        // Handle @username format
+        const username = url.substring(1)
+        return `https://instagram.com/${username}`
+      } else if (!url.includes('/') && url.length > 0) {
+        // Handle plain username
+        return `https://instagram.com/${url}`
+      }
+      break
+      
+    case 'facebook':
+      // Handle Facebook URLs and page names
+      if (url.includes('facebook.com/')) {
+        // Extract page name from full URL
+        const match = url.match(/facebook\.com\/([^\/\?\s]+)/)
+        if (match && match[1]) {
+          const pageName = match[1]
+          // Filter out invalid Facebook handles
+          const invalidHandles = ['pages', 'profile.php', 'groups', 'home', 'login', 'sharer', 'dialog', 'tr', 'plugins', 'help', 'facebook-f']
+          if (!invalidHandles.includes(pageName.toLowerCase()) && pageName.length >= 3) {
+            return `https://facebook.com/${pageName}`
+          }
+        }
+      } else if (!url.includes('/') && url.length >= 3) {
+        // Handle plain page name
+        const invalidHandles = ['facebook-f', 'facebook', 'pages']
+        if (!invalidHandles.includes(url.toLowerCase())) {
+          return `https://facebook.com/${url}`
+        }
+      }
+      break
+      
+    case 'linkedin':
+      // Handle LinkedIn URLs and company names
+      if (url.includes('linkedin.com/')) {
+        // Make sure it's a company page, not a personal profile
+        if (url.includes('/company/')) {
+          return url.startsWith('http') ? url : `https://${url}`
+        } else if (url.includes('/in/')) {
+          // Convert personal profile to company search - this is a fallback
+          console.log(`Found personal LinkedIn profile for ${businessName}, skipping: ${url}`)
+          return null
+        }
+      } else if (url.includes('company/')) {
+        // Handle company/name format
+        return `https://linkedin.com/${url}`
+      } else if (!url.includes('/') && url.length > 0) {
+        // Handle plain company name
+        return `https://linkedin.com/company/${url}`
+      }
+      break
+      
+    case 'twitter':
+      // Handle Twitter/X URLs and usernames
+      if (url.includes('twitter.com/') || url.includes('x.com/')) {
+        // Extract username from full URL
+        const match = url.match(/(?:twitter|x)\.com\/([^\/\?\s]+)/)
+        if (match && match[1] && match[1] !== 'intent' && match[1] !== 'home' && !match[1].includes('status')) {
+          return `https://x.com/${match[1]}`
+        }
+      } else if (url.startsWith('@')) {
+        // Handle @username format
+        const username = url.substring(1)
+        return `https://x.com/${username}`
+      } else if (!url.includes('/') && url.length > 0) {
+        // Handle plain username
+        return `https://x.com/${url}`
+      }
+      break
+  }
+  
+  console.log(`Could not process ${platform} URL for ${businessName}: ${rawUrl}`)
+  return null
 }
