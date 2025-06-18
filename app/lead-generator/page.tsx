@@ -1710,7 +1710,7 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto max-h-[calc(100vh-200px)] min-h-[650px] overflow-y-auto border border-[#333] rounded-md">
+                <div className="overflow-x-auto max-h-[calc(100vh-200px)] min-h-[750px] overflow-y-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
