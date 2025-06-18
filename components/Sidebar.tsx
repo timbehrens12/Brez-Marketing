@@ -11,14 +11,56 @@ import BrandSelector from "@/components/BrandSelector"
 import { useBrandContext } from "@/lib/context/BrandContext"
 
 const navItems = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Brand Report", href: "/brand-report", icon: FileBarChart },
-  { name: "Marketing Assistant", href: "/marketing-assistant", icon: BrainCircuit },
-  { name: "Lead Generator", href: "/lead-generator", icon: Zap },
-  { name: "Outreach Tool", href: "/outreach-tool", icon: Send },
-  { name: "Ad Creative Studio", href: "/ad-creative-studio", icon: Palette },
-  { name: "Site Optimizer", href: "/site-optimizer", icon: Globe },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { 
+    name: "Dashboard", 
+    href: "/dashboard", 
+    icon: LayoutDashboard,
+    description: "View your marketing overview"
+  },
+  { 
+    name: "Brand Report", 
+    href: "/brand-report", 
+    icon: FileBarChart,
+    description: "Comprehensive brand analytics"
+  },
+  { 
+    name: "Marketing Assistant", 
+    href: "/marketing-assistant", 
+    icon: BrainCircuit,
+    description: "AI-powered marketing insights"
+  },
+  { 
+    name: "Lead Generator", 
+    href: "/lead-generator", 
+    icon: Zap,
+    description: "Find and qualify new leads"
+  },
+  { 
+    name: "Outreach Tool", 
+    href: "/outreach-tool", 
+    icon: Send,
+    description: "Manage your lead outreach"
+  },
+  { 
+    name: "Ad Creative Studio", 
+    href: "/ad-creative-studio", 
+    icon: Palette,
+    description: "Create compelling ad content",
+    comingSoon: true
+  },
+  { 
+    name: "Site Optimizer", 
+    href: "/site-optimizer", 
+    icon: Globe,
+    description: "Optimize your website performance",
+    comingSoon: true
+  },
+  { 
+    name: "Settings", 
+    href: "/settings", 
+    icon: Settings,
+    description: "Configure your account"
+  },
 ]
 
 interface SidebarProps {
@@ -108,26 +150,41 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
       
       <div className="px-6 flex-1">
-        <nav className="space-y-0.5">
+        <nav className="space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const isComingSoon = item.comingSoon;
             return (
             <Link
               key={item.name}
-              href={item.href}
+              href={isComingSoon ? "#" : item.href}
               className={cn(
-                  "relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  "relative flex items-center px-4 py-4 rounded-lg transition-colors group",
                   isActive
                   ? "bg-[#2A2A2A] text-white" 
-                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]"
+                  : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
+                  isComingSoon && "cursor-not-allowed opacity-60"
               )}
+              onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
             >
                 {/* Add the white indicator lip for active items */}
                 {isActive && (
-                  <div className="absolute left-0 inset-y-2 w-0.5 bg-white rounded-full"></div>
+                  <div className="absolute left-0 inset-y-3 w-1 bg-white rounded-full"></div>
                 )}
-                <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{item.name}</span>
+                <div className="flex items-start space-x-4 w-full">
+                  <item.icon className="h-6 w-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-base font-medium truncate">{item.name}</p>
+                      {isComingSoon && (
+                        <span className="ml-2 px-2 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
+                          Soon
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-0.5 truncate">{item.description}</p>
+                  </div>
+                </div>
             </Link>
             )
           })}
