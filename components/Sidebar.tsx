@@ -159,7 +159,7 @@ export function Sidebar({ className }: SidebarProps) {
               key={item.name}
               href={isComingSoon ? "#" : item.href}
               className={cn(
-                  "relative flex items-center px-4 py-4 rounded-lg transition-colors group",
+                  "relative flex items-center px-3 py-3 rounded-lg transition-colors group",
                   isActive
                   ? "bg-[#2A2A2A] text-white" 
                   : "text-gray-400 hover:text-white hover:bg-[#2A2A2A]",
@@ -171,18 +171,18 @@ export function Sidebar({ className }: SidebarProps) {
                 {isActive && (
                   <div className="absolute left-0 inset-y-3 w-1 bg-white rounded-full"></div>
                 )}
-                <div className="flex items-start space-x-4 w-full">
-                  <item.icon className="h-6 w-6 flex-shrink-0 mt-0.5" />
+                <div className="flex items-start space-x-3 w-full">
+                  <item.icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-base font-medium truncate">{item.name}</p>
+                      <p className="text-sm font-medium truncate">{item.name}</p>
                       {isComingSoon && (
-                        <span className="ml-2 px-2 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
+                        <span className="ml-2 px-1.5 py-0.5 text-xs font-medium bg-gray-700 text-gray-300 rounded-full">
                           Soon
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5 truncate">{item.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{item.description}</p>
                   </div>
                 </div>
             </Link>
