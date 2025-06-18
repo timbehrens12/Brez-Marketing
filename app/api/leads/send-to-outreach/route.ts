@@ -28,31 +28,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Leads not found' }, { status: 404 });
     }
 
-    // Create outreach campaigns for each lead
-    const campaignsToInsert = leads.map(lead => ({
+    // Get the brand_id from the first lead (assuming all leads are for the same brand)
+    const brandId = leads[0].brand_id;
+
+    // Create a single outreach campaign for these leads
+    const campaignName = `Outreach Campaign - ${new Date().toLocaleDateString()}`;
+    const { data: campaign, error: campaignError } = await supabase
+      .from('outreach_campaigns')
+      .insert({
+        user_id: userId,
+        brand_id: brandId,
+        name: campaignName,
+        description: `Automated outreach campaign for ${leads.length} leads`,
+        campaign_type: 'lead_generation',
+        status: 'active',
+        max_leads: leads.length,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (campaignError || !campaign) {
+      console.error('Error creating campaign:', campaignError);
+      return NextResponse.json({ error: 'Failed to create outreach campaign' }, { status: 500 });
+    }
+
+    // Link leads to the campaign through the junction table
+    const campaignLeadsToInsert = leads.map(lead => ({
+      campaign_id: campaign.id,
       lead_id: lead.id,
-      user_id: userId,
-      brand_id: lead.brand_id,
-      status: 'new',
+      status: 'pending',
+      added_at: new Date().toISOString(),
+      next_follow_up_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
 
-    const { data: campaigns, error: campaignsError } = await supabase
-      .from('outreach_campaigns')
-      .insert(campaignsToInsert)
-      .select();
+    const { error: campaignLeadsError } = await supabase
+      .from('outreach_campaign_leads')
+      .insert(campaignLeadsToInsert);
 
-    if (campaignsError) {
-      console.error('Error creating campaigns:', campaignsError);
-      return NextResponse.json({ error: 'Failed to create outreach campaigns' }, { status: 500 });
+    if (campaignLeadsError) {
+      console.error('Error linking leads to campaign:', campaignLeadsError);
+      return NextResponse.json({ error: 'Failed to link leads to campaign' }, { status: 500 });
     }
 
     // Update leads to mark them as being in outreach
     const { error: updateError } = await supabase
       .from('leads')
       .update({ 
-        outreach_status: 'active',
+        outreach_status: 'contacted',
+        last_contacted_at: new Date().toISOString(),
+        next_follow_up_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date().toISOString()
       })
       .in('id', leadIds)
@@ -64,24 +92,24 @@ export async function POST(request: NextRequest) {
 
     // Create initial follow-up tasks for high-priority leads
     const highPriorityLeads = leads.filter(lead => lead.lead_score >= 80);
-    const tasksToInsert = campaigns
-      .filter(campaign => highPriorityLeads.some(lead => lead.id === campaign.lead_id))
-      .map(campaign => ({
-        campaign_id: campaign.id,
-        user_id: userId,
-        title: `Initial outreach to ${leads.find(l => l.id === campaign.lead_id)?.business_name}`,
-        description: `Send personalized introduction message to establish contact`,
-        task_type: 'follow_up',
-        priority: 'high',
-        status: 'pending',
-        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Due in 24 hours
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
+    const tasksToInsert = highPriorityLeads.map(lead => ({
+      user_id: userId,
+      brand_id: brandId,
+      campaign_id: campaign.id,
+      lead_id: lead.id,
+      title: `Initial outreach to ${lead.business_name}`,
+      description: `Send personalized introduction message to establish contact with ${lead.business_name}`,
+      task_type: 'outreach',
+      priority: 'high',
+      status: 'pending',
+      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Due in 24 hours
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
 
     if (tasksToInsert.length > 0) {
       const { error: tasksError } = await supabase
-        .from('outreach_tasks')
+        .from('tasks')
         .insert(tasksToInsert);
 
       if (tasksError) {
@@ -91,8 +119,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully sent ${campaigns.length} leads to outreach`,
-      campaignsCreated: campaigns.length,
+      message: `Successfully sent ${leads.length} leads to outreach campaign "${campaignName}"`,
+      campaign: {
+        id: campaign.id,
+        name: campaign.name,
+        leadsCount: leads.length
+      },
+      leadsProcessed: leads.length,
       tasksCreated: tasksToInsert.length
     });
 

@@ -247,11 +247,11 @@ export default function OutreachToolPage() {
         .from('outreach_messages')
         .insert({
           campaign_id: selectedCampaign.id,
-          message_type: messageType,
+      message_type: messageType,
           subject: messageSubject || undefined,
           content: generatedMessage,
           direction: 'outbound',
-          status: 'sent',
+      status: 'sent',
           sent_at: new Date().toISOString()
         })
         .select()
@@ -295,10 +295,10 @@ export default function OutreachToolPage() {
       // Refresh data
       await loadCampaigns()
       await loadTasks()
-      
-      // Clear form
-      setGeneratedMessage('')
-      setMessageSubject('')
+
+    // Clear form
+    setGeneratedMessage('')
+    setMessageSubject('')
       setSelectedCampaign(null)
     } catch (error) {
       console.error('Error sending message:', error)
@@ -350,7 +350,7 @@ export default function OutreachToolPage() {
 
       if (error) throw error
 
-      toast.success('Task completed!')
+    toast.success('Task completed!')
       await loadTasks()
     } catch (error) {
       console.error('Error completing task:', error)
@@ -584,7 +584,7 @@ export default function OutreachToolPage() {
                       <h2 className="text-lg font-semibold text-gray-400">
                         Lead Pipeline ({filteredCampaigns.length})
                       </h2>
-                    </div>
+                  </div>
                     <Button
                       onClick={() => setShowFilters(!showFilters)}
                       variant="outline"
@@ -635,24 +635,24 @@ export default function OutreachToolPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-[#333]">
-                          <TableHead className="text-gray-400">Business</TableHead>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#333]">
+                        <TableHead className="text-gray-400">Business</TableHead>
                           <TableHead className="text-gray-400">Contact Info</TableHead>
-                          <TableHead className="text-gray-400">Status</TableHead>
-                          <TableHead className="text-gray-400">Last Contact</TableHead>
+                        <TableHead className="text-gray-400">Status</TableHead>
+                        <TableHead className="text-gray-400">Last Contact</TableHead>
                           <TableHead className="text-gray-400">Deal Value</TableHead>
                           <TableHead className="text-gray-400">Social</TableHead>
-                          <TableHead className="text-gray-400">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
+                        <TableHead className="text-gray-400">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {filteredCampaigns.map((campaign) => (
                           <TableRow key={campaign.id} className="border-[#333] hover:bg-[#222]/50">
-                            <TableCell>
-                              <div>
+                          <TableCell>
+                            <div>
                                 <div className="font-medium text-gray-400">{campaign.lead?.business_name}</div>
                                 <div className="text-sm text-gray-500">{campaign.lead?.niche_name}</div>
                                 {campaign.lead?.website && (
@@ -666,9 +666,9 @@ export default function OutreachToolPage() {
                                     Website
                                   </a>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                            </div>
+                          </TableCell>
+                          <TableCell>
                               <div className="space-y-1 text-sm">
                                 {campaign.lead?.owner_name && (
                                   <div className="text-gray-400">{campaign.lead.owner_name}</div>
@@ -685,9 +685,9 @@ export default function OutreachToolPage() {
                                     {campaign.lead.phone}
                                   </div>
                                 )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                            </div>
+                          </TableCell>
+                          <TableCell>
                               <Select
                                 value={campaign.status}
                                 onValueChange={(value) => updateCampaignStatus(campaign.id, value)}
@@ -705,8 +705,8 @@ export default function OutreachToolPage() {
                                   <SelectItem value="lost">Lost</SelectItem>
                                 </SelectContent>
                               </Select>
-                            </TableCell>
-                            <TableCell>
+                          </TableCell>
+                          <TableCell>
                               {campaign.last_contact_date ? (
                                 <div className="text-sm">
                                   <div className="text-gray-400">
@@ -719,12 +719,12 @@ export default function OutreachToolPage() {
                               ) : (
                                 <span className="text-gray-500">Never contacted</span>
                               )}
-                            </TableCell>
-                            <TableCell>
+                          </TableCell>
+                          <TableCell>
                               {campaign.status === 'signed' && campaign.deal_value ? (
                                 <div className="text-green-400 font-medium">
                                   {formatCurrency(campaign.deal_value)}
-                                </div>
+                            </div>
                               ) : campaign.status === 'negotiating' ? (
                                 <Button
                                   size="sm"
@@ -742,8 +742,8 @@ export default function OutreachToolPage() {
                               ) : (
                                 <span className="text-gray-500">-</span>
                               )}
-                            </TableCell>
-                            <TableCell>
+                          </TableCell>
+                          <TableCell>
                               <div className="flex gap-2">
                                 {campaign.lead?.instagram_handle && (
                                   <a
@@ -786,21 +786,21 @@ export default function OutreachToolPage() {
                                   </a>
                                 )}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
                                   className="h-8 text-xs border-[#333] hover:bg-[#222] text-gray-400 hover:text-white"
-                                  onClick={() => {
+                                onClick={() => {
                                     setSelectedCampaign(campaign)
-                                    setActiveTab('compose')
-                                  }}
-                                >
-                                  <MessageSquare className="h-3 w-3 mr-1" />
-                                  Message
-                                </Button>
+                                  setActiveTab('compose')
+                                }}
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                Message
+                              </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -814,12 +814,12 @@ export default function OutreachToolPage() {
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                   </div>
                 )}
 
@@ -1258,12 +1258,12 @@ export default function OutreachToolPage() {
           <TabsContent value="analytics" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Conversion Funnel */}
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
+            <Card className="bg-[#1A1A1A] border-[#333]">
+              <CardHeader>
                   <CardTitle className="text-gray-400">Conversion Funnel</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                     {[
                       { stage: 'New Leads', count: stats.totalCampaigns, color: 'bg-blue-500' },
                       { stage: 'Contacted', count: campaigns.filter(c => c.status !== 'new').length, color: 'bg-yellow-500' },
@@ -1282,12 +1282,12 @@ export default function OutreachToolPage() {
                             className={`${stage.color} h-2 rounded-full transition-all`}
                             style={{ width: `${stats.totalCampaigns > 0 ? (stage.count / stats.totalCampaigns * 100) : 0}%` }}
                           />
-                        </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
               {/* Performance Metrics */}
               <Card className="bg-[#1A1A1A] border-[#333]">
@@ -1304,7 +1304,7 @@ export default function OutreachToolPage() {
                             ? Math.round((campaigns.filter(c => ['responded', 'interested', 'negotiating', 'signed'].includes(c.status)).length / campaigns.filter(c => c.status !== 'new').length) * 100) || 0
                             : 0}%
                         </p>
-                      </div>
+                    </div>
                       <TrendingUp className="h-8 w-8 text-green-400" />
                     </div>
                     
