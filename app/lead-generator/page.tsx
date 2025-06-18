@@ -1710,9 +1710,9 @@ export default function LeadGeneratorPage() {
                   </div>
                 )}
                 
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto border border-[#333] rounded-md">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333]">
                         <TableHead className="w-12">
                           <Checkbox
