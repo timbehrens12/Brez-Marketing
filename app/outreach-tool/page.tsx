@@ -111,6 +111,8 @@ export default function OutreachToolPage() {
   const [showMessageComposer, setShowMessageComposer] = useState(false)
   const [showOutreachOptions, setShowOutreachOptions] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([])
+  const [isSelectAll, setIsSelectAll] = useState(false)
   
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
@@ -298,6 +300,52 @@ export default function OutreachToolPage() {
     } catch (error) {
       console.error('Error deleting campaign lead:', error)
       toast.error('Failed to remove lead')
+    }
+  }
+
+  const deleteBulkCampaignLeads = async () => {
+    if (selectedLeads.length === 0) return
+    
+    if (!confirm(`Are you sure you want to remove ${selectedLeads.length} leads from outreach?`)) {
+      return
+    }
+
+    try {
+      const supabase = await getSupabaseClient()
+      
+      const { error } = await supabase
+        .from('outreach_campaign_leads')
+        .delete()
+        .in('id', selectedLeads)
+
+      if (error) throw error
+      
+      setCampaignLeads(prev => prev.filter(cl => !selectedLeads.includes(cl.id)))
+      setSelectedLeads([])
+      setIsSelectAll(false)
+      toast.success(`${selectedLeads.length} leads removed from outreach!`)
+    } catch (error) {
+      console.error('Error deleting campaign leads:', error)
+      toast.error('Failed to remove leads')
+    }
+  }
+
+  const handleSelectLead = (leadId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedLeads(prev => [...prev, leadId])
+    } else {
+      setSelectedLeads(prev => prev.filter(id => id !== leadId))
+      setIsSelectAll(false)
+    }
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedLeads(filteredLeads.map(cl => cl.id))
+      setIsSelectAll(true)
+    } else {
+      setSelectedLeads([])
+      setIsSelectAll(false)
     }
   }
 
@@ -753,11 +801,53 @@ export default function OutreachToolPage() {
                   </div>
                 )}
 
+                {/* Bulk Actions Bar */}
+                {selectedLeads.length > 0 && (
+                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-300 text-sm font-medium">
+                          {selectedLeads.length} lead{selectedLeads.length > 1 ? 's' : ''} selected
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => {
+                            setSelectedLeads([])
+                            setIsSelectAll(false)
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                        >
+                          Clear Selection
+                        </Button>
+                        <Button
+                          onClick={deleteBulkCampaignLeads}
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-900/20 border-red-500/50 text-red-300 hover:bg-red-900/30 hover:text-red-200"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remove Selected
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Enhanced Lead Table */}
                 <div className="overflow-x-auto flex-1 overflow-y-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333] hover:bg-transparent">
+                        <TableHead className="w-12 text-gray-400">
+                          <Checkbox
+                            checked={isSelectAll && filteredLeads.length > 0}
+                            onCheckedChange={handleSelectAll}
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
+                          />
+                        </TableHead>
                         <TableHead className="text-gray-400">Business</TableHead>
                         <TableHead className="text-gray-400">Owner</TableHead>
                         <TableHead className="text-gray-400">Status</TableHead>
@@ -773,6 +863,13 @@ export default function OutreachToolPage() {
                         
                             return (
                         <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
+                          <TableCell className="w-12">
+                            <Checkbox
+                              checked={selectedLeads.includes(campaignLead.id)}
+                              onCheckedChange={(checked) => handleSelectLead(campaignLead.id, checked as boolean)}
+                              className="border-[#444] data-[state=checked]:bg-gray-600"
+                            />
+                          </TableCell>
                           <TableCell>
                             <div>
                               <div className="font-medium text-white">{campaignLead.lead?.business_name}</div>
