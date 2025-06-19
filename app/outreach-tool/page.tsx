@@ -348,7 +348,7 @@ export default function OutreachToolPage() {
         return <Facebook className="h-4 w-4" />
       case 'linkedin':
         return <Linkedin className="h-4 w-4" />
-      case 'twitter':
+      case 'twitter': 
         // Modern X logo using SVG
         return (
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -426,11 +426,7 @@ export default function OutreachToolPage() {
   return (
     <div className="h-screen bg-black text-white p-6 overflow-hidden">
       <div className="h-full flex flex-col space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white mb-2">Outreach CRM</h1>
-          <p className="text-gray-400">Professional lead management and outreach system</p>
-        </div>
+
 
         {/* Enhanced Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -496,10 +492,10 @@ export default function OutreachToolPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-4 gap-6 min-h-0">
+        <div className="flex-1 grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-0">
           
-          {/* Enhanced Lead Pipeline - Takes up 3 columns */}
-          <div className="xl:col-span-3 flex flex-col">
+          {/* Enhanced Lead Pipeline - Takes up 4 columns */}
+          <div className="xl:col-span-4 flex flex-col">
             <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -530,7 +526,7 @@ export default function OutreachToolPage() {
                       onClick={() => { loadCampaignLeads(); loadCampaigns(); }}
                       variant="outline" 
                       size="sm"
-                      className="border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
+                      className="bg-[#1A1A1A] border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
                     >
                       <RefreshCw className="h-4 w-4" />
                     </Button>
@@ -882,61 +878,61 @@ export default function OutreachToolPage() {
                                 )}
                                 {/* Social Media Icons - Overlapping Style */}
                                 <div className="flex items-center relative max-w-[80px]">
-                                  {campaignLead.lead?.instagram_handle && (
-                                    <a
-                                      href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                              {campaignLead.lead?.instagram_handle && (
+                                <a
+                                  href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                       className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
-                                      title={`Instagram: ${campaignLead.lead.instagram_handle}`}
-                                      style={{ marginLeft: '0px' }}
-                                    >
+                                  title={`Instagram: ${campaignLead.lead.instagram_handle}`}
+                                  style={{ marginLeft: '0px' }}
+                                >
                                       <Instagram className="h-3 w-3" />
-                                    </a>
-                                  )}
+                                </a>
+                              )}
                                   {campaignLead.lead?.facebook_page && getSocialMediaLink('facebook', campaignLead.lead.facebook_page) && (
-                                    <a
-                                      href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                <a
+                                  href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                       className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
-                                      title={`Facebook: ${campaignLead.lead.facebook_page}`}
+                                  title={`Facebook: ${campaignLead.lead.facebook_page}`}
                                       style={{ marginLeft: campaignLead.lead.instagram_handle ? '-6px' : '0px' }}
-                                    >
+                                >
                                       <Facebook className="h-3 w-3" />
-                                    </a>
-                                  )}
-                                  {campaignLead.lead?.linkedin_profile && (
-                                    <a
-                                      href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                </a>
+                              )}
+                              {campaignLead.lead?.linkedin_profile && (
+                                <a
+                                  href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                       className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
-                                      title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
+                                  title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
                                       style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page) ? '-6px' : '0px' }}
-                                    >
+                                >
                                       <Linkedin className="h-3 w-3" />
-                                    </a>
-                                  )}
-                                  {campaignLead.lead?.twitter_handle && (
-                                    <a
-                                      href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
+                                </a>
+                              )}
+                              {campaignLead.lead?.twitter_handle && (
+                                <a
+                                  href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                       className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
-                                      title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
+                                  title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
                                       style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page || campaignLead.lead.linkedin_profile) ? '-6px' : '0px' }}
-                                    >
+                                >
                                       <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                                       </svg>
-                                    </a>
-                                  )}
-                                  {!campaignLead.lead?.instagram_handle && !campaignLead.lead?.facebook_page && !campaignLead.lead?.linkedin_profile && !campaignLead.lead?.twitter_handle && (
+                                </a>
+                              )}
+                              {!campaignLead.lead?.instagram_handle && !campaignLead.lead?.facebook_page && !campaignLead.lead?.linkedin_profile && !campaignLead.lead?.twitter_handle && (
                                     <span className="text-gray-500 text-xs">No socials found</span>
                                   )}
                                 </div>
@@ -945,10 +941,10 @@ export default function OutreachToolPage() {
                                     <MapPin className="h-3 w-3" />
                                     <span className="text-xs">{campaignLead.lead.city}, {campaignLead.lead.state_province}</span>
                                   </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
                               <div className="text-sm text-gray-400">
                                 {campaignLead.last_contacted_at ? (
                                   <div>
