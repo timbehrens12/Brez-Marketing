@@ -495,8 +495,8 @@ export default function OutreachToolPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           
           {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col">
-            <Card className="bg-[#1A1A1A] border-[#333] flex flex-col">
+          <div className="xl:col-span-4 flex flex-col h-[700px]">
+            <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -533,7 +533,7 @@ export default function OutreachToolPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="flex flex-col flex-1 overflow-hidden">
+              <CardContent className="flex flex-col flex-1 h-0">
                 {/* Search Bar */}
                 <div className="mb-4">
                   <div className="relative">
@@ -754,7 +754,7 @@ export default function OutreachToolPage() {
                 )}
 
                 {/* Enhanced Lead Table */}
-                <div className="overflow-x-auto min-h-[500px] overflow-y-auto border border-[#333] rounded-md">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333] hover:bg-transparent">
@@ -1015,8 +1015,8 @@ export default function OutreachToolPage() {
           </div>
 
           {/* Dynamic To-Do List Widget */}
-          <div className="xl:col-span-1 h-full overflow-y-auto min-h-[500px] min-h-[500px]">
-            <Card className="bg-[#1A1A1A] border-[#333] h-full">
+          <div className="xl:col-span-1 h-[700px]">
+            <Card className="bg-[#1A1A1A] border-[#333] h-full overflow-hidden">
                 <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Clock className="h-5 w-5 text-gray-400" />
@@ -1024,7 +1024,7 @@ export default function OutreachToolPage() {
                   </CardTitle>
                 <CardDescription className="text-gray-400">AI-powered action items</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 overflow-y-auto flex-1">
                 {/* Overdue Follow-ups */}
                 {campaignLeads.filter(cl => 
                   cl.status === 'contacted' && 
