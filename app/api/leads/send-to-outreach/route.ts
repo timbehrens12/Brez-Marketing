@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { auth } from '@clerk/nextjs';
 
+// Lead management constants
+const MAX_PENDING_LEADS = 75; // Maximum pending leads allowed
+const MAX_TOTAL_LEADS = 200;  // Maximum total leads in outreach
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth();
@@ -26,6 +30,45 @@ export async function POST(request: NextRequest) {
 
     if (leadsError || !leads || leads.length === 0) {
       return NextResponse.json({ error: 'Leads not found' }, { status: 404 });
+    }
+
+    // Check current lead limits before adding new leads
+    const { data: existingCampaigns } = await supabase
+      .from('outreach_campaigns')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (existingCampaigns && existingCampaigns.length > 0) {
+      const campaignIds = existingCampaigns.map(c => c.id);
+      
+      const { data: existingCampaignLeads } = await supabase
+        .from('outreach_campaign_leads')
+        .select('status')
+        .in('campaign_id', campaignIds);
+
+      if (existingCampaignLeads) {
+        const currentTotal = existingCampaignLeads.length;
+        const currentPending = existingCampaignLeads.filter(cl => cl.status === 'pending').length;
+        
+        // Check if adding new leads would exceed limits
+        if (currentTotal + leads.length > MAX_TOTAL_LEADS) {
+          return NextResponse.json({ 
+            error: `Cannot add ${leads.length} leads. You have ${currentTotal} leads in outreach (max: ${MAX_TOTAL_LEADS}). Please complete outreach to existing leads first.`,
+            currentTotal,
+            maxTotal: MAX_TOTAL_LEADS,
+            remainingSlots: MAX_TOTAL_LEADS - currentTotal
+          }, { status: 400 });
+        }
+        
+        if (currentPending + leads.length > MAX_PENDING_LEADS) {
+          return NextResponse.json({ 
+            error: `Cannot add ${leads.length} leads. You have ${currentPending} pending leads (max: ${MAX_PENDING_LEADS}). Please contact existing pending leads first.`,
+            currentPending,
+            maxPending: MAX_PENDING_LEADS,
+            remainingPendingSlots: MAX_PENDING_LEADS - currentPending
+          }, { status: 400 });
+        }
+      }
     }
 
     // Get the brand_id from the first lead (assuming all leads are for the same brand)

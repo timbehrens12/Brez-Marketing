@@ -94,6 +94,11 @@ interface LeadFilters {
   statusFilter: string
 }
 
+// Lead management constants
+const MAX_PENDING_LEADS = 75 // Maximum pending leads allowed
+const MAX_TOTAL_LEADS = 200 // Maximum total leads in outreach
+const WARNING_THRESHOLD = 0.8 // Show warning at 80% of limit
+
 export default function OutreachToolPage() {
   const { getSupabaseClient } = useAuthenticatedSupabase()
   const { selectedBrandId } = useBrandContext()
@@ -113,6 +118,7 @@ export default function OutreachToolPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
   const [isSelectAll, setIsSelectAll] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
   
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
@@ -408,10 +414,16 @@ export default function OutreachToolPage() {
     }
   }
 
-  const copyToClipboard = async (text: string, type: string) => {
+  const copyToClipboard = async (text: string, type: string, fieldId?: string) => {
     try {
       await navigator.clipboard.writeText(text)
       toast.success(`${type} copied to clipboard!`)
+      
+      // Add visual feedback
+      if (fieldId) {
+        setCopiedField(fieldId)
+        setTimeout(() => setCopiedField(null), 2000) // Clear after 2 seconds
+      }
     } catch (err) {
       toast.error(`Failed to copy ${type}`)
     }
@@ -475,6 +487,41 @@ export default function OutreachToolPage() {
     <div className="min-h-screen bg-black text-white p-4">
       <div className="flex flex-col space-y-4">
 
+
+        {/* Lead Limit Warning */}
+        {(stats.pending >= MAX_PENDING_LEADS * WARNING_THRESHOLD || stats.totalLeads >= MAX_TOTAL_LEADS * WARNING_THRESHOLD) && (
+          <Card className="bg-yellow-900/20 border-yellow-500/50">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-yellow-300 font-medium text-sm">
+                    {stats.pending >= MAX_PENDING_LEADS ? 
+                      'Lead Limit Reached' : 
+                      stats.totalLeads >= MAX_TOTAL_LEADS ? 
+                        'Total Lead Limit Reached' :
+                        'Approaching Lead Limits'
+                    }
+                  </div>
+                  <div className="text-yellow-400/80 text-xs mt-1">
+                    {stats.pending >= MAX_PENDING_LEADS && (
+                      <span>You have {stats.pending} pending leads (max: {MAX_PENDING_LEADS}). </span>
+                    )}
+                    {stats.totalLeads >= MAX_TOTAL_LEADS && (
+                      <span>You have {stats.totalLeads} total leads (max: {MAX_TOTAL_LEADS}). </span>
+                    )}
+                    {(stats.pending < MAX_PENDING_LEADS && stats.totalLeads < MAX_TOTAL_LEADS) && (
+                      <span>
+                        Pending: {stats.pending}/{MAX_PENDING_LEADS} • Total: {stats.totalLeads}/{MAX_TOTAL_LEADS}
+                      </span>
+                    )}
+                    <br />Complete outreach to existing leads before adding more.
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Enhanced Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -952,11 +999,13 @@ export default function OutreachToolPage() {
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <Mail className="h-3 w-3" />
                                     <span 
-                                      className="text-xs cursor-pointer hover:text-gray-300 transition-colors"
-                                      onClick={() => copyToClipboard(campaignLead.lead!.email!, 'Email')}
+                                      className={`text-xs cursor-pointer hover:text-gray-300 transition-colors ${
+                                        copiedField === `email-${campaignLead.id}` ? 'text-green-400' : ''
+                                      }`}
+                                      onClick={() => copyToClipboard(campaignLead.lead!.email!, 'Email', `email-${campaignLead.id}`)}
                                       title="Click to copy email"
                                     >
-                                      {campaignLead.lead.email}
+                                      {copiedField === `email-${campaignLead.id}` ? '✓ Copied!' : campaignLead.lead.email}
                                     </span>
                             </div>
                                 )}
@@ -964,11 +1013,13 @@ export default function OutreachToolPage() {
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <Phone className="h-3 w-3" />
                                     <span 
-                                      className="text-xs cursor-pointer hover:text-gray-300 transition-colors"
-                                      onClick={() => copyToClipboard(campaignLead.lead!.phone!, 'Phone')}
+                                      className={`text-xs cursor-pointer hover:text-gray-300 transition-colors ${
+                                        copiedField === `phone-${campaignLead.id}` ? 'text-green-400' : ''
+                                      }`}
+                                      onClick={() => copyToClipboard(campaignLead.lead!.phone!, 'Phone', `phone-${campaignLead.id}`)}
                                       title="Click to copy phone"
                                     >
-                                      {campaignLead.lead.phone}
+                                      {copiedField === `phone-${campaignLead.id}` ? '✓ Copied!' : campaignLead.lead.phone}
                                     </span>
                                   </div>
                                 )}

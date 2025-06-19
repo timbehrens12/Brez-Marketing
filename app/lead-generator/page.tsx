@@ -669,7 +669,22 @@ export default function LeadGeneratorPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to send leads to outreach')
+        const errorData = await response.json().catch(() => ({}))
+        
+        if (errorData.currentTotal !== undefined || errorData.currentPending !== undefined) {
+          // Lead limit error - show detailed message
+          toast.error(errorData.error, { duration: 6000 })
+          
+          if (errorData.remainingSlots > 0) {
+            setTimeout(() => toast(`You can add up to ${errorData.remainingSlots} more leads total.`, { duration: 4000 }), 500)
+          }
+          if (errorData.remainingPendingSlots > 0) {
+            setTimeout(() => toast(`You can add up to ${errorData.remainingPendingSlots} more pending leads.`, { duration: 4000 }), 1000)
+          }
+        } else {
+          toast.error(errorData.error || 'Failed to send leads to outreach')
+        }
+        return
       }
 
       const data = await response.json()
