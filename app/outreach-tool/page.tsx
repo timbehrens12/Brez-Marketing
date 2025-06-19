@@ -495,7 +495,7 @@ export default function OutreachToolPage() {
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
           
           {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-140px)]">
+          <div className="xl:col-span-4 flex flex-col h-[calc(100vh-100px)]">
             <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -1015,7 +1015,7 @@ export default function OutreachToolPage() {
           </div>
 
           {/* Dynamic To-Do List Widget */}
-          <div className="xl:col-span-1 h-[calc(100vh-140px)]">
+          <div className="xl:col-span-1 h-[calc(100vh-100px)]">
             <Card className="bg-[#1A1A1A] border-[#333] h-full overflow-hidden">
                 <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
