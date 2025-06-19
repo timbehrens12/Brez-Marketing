@@ -803,10 +803,10 @@ export default function OutreachToolPage() {
 
                 {/* Bulk Actions Bar */}
                 {selectedLeads.length > 0 && (
-                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/50 rounded-lg">
+                  <div className="mb-4 p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-blue-300 text-sm font-medium">
+                        <span className="text-gray-300 text-sm font-medium">
                           {selectedLeads.length} lead{selectedLeads.length > 1 ? 's' : ''} selected
                         </span>
                       </div>
@@ -818,7 +818,7 @@ export default function OutreachToolPage() {
                           }}
                           variant="outline"
                           size="sm"
-                          className="bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
+                          className="bg-[#1A1A1A] border-[#333] text-gray-400 hover:bg-[#333] hover:text-white"
                         >
                           Clear Selection
                         </Button>
@@ -829,7 +829,7 @@ export default function OutreachToolPage() {
                           className="bg-red-900/20 border-red-500/50 text-red-300 hover:bg-red-900/30 hover:text-red-200"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Remove Selected
+                          Delete Selected
                         </Button>
                       </div>
                     </div>
@@ -854,7 +854,6 @@ export default function OutreachToolPage() {
                         <TableHead className="text-gray-400">Contact Info</TableHead>
                         <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
-                        <TableHead className="text-gray-400">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1070,20 +1069,6 @@ export default function OutreachToolPage() {
                                 Outreach ({outreachMethods.length})
                               </Button>
                             </TableCell>
-                            <TableCell>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/50"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteCampaignLead(campaignLead.id)
-                                }}
-                                title="Remove from outreach"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                          </TableCell>
                         </TableRow>
                         )
                       })}
