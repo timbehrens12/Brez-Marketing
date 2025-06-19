@@ -11,14 +11,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Checkbox } from '@/components/ui/checkbox'
 import { 
   Loader2, Send, MessageSquare, Phone, Mail, Calendar, 
   CheckCircle, Clock, AlertCircle, Star, TrendingUp,
   Plus, Edit, Copy, Sparkles, Target, Users, BarChart3,
   Building2, ExternalLink, Linkedin, Twitter, Instagram,
   Facebook, ChevronRight, Filter, RefreshCw, DollarSign,
-  ArrowUpRight, ArrowDownRight, AlertTriangle, Search, Trash2
+  ArrowUpRight, ArrowDownRight, AlertTriangle, Search,
+      UserCheck, UserX, PhoneCall, MessageCircle,
+  Eye, X
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
@@ -44,31 +46,37 @@ interface Lead {
   created_at?: string
 }
 
-interface OutreachCampaign {
-  id: string
-  name: string
-  description?: string
-  campaign_type: string
-  status: 'active' | 'paused' | 'completed'
-  max_leads: number
-  leads_contacted: number
-  response_rate: string
-  conversion_rate: string
-  created_at: string
-  updated_at: string
-}
-
 interface CampaignLead {
   id: string
   campaign_id: string
   lead_id: string
   status: 'pending' | 'contacted' | 'responded' | 'qualified' | 'signed' | 'rejected'
-  added_at: string
+  outreach_method?: 'email' | 'phone' | 'dm' | 'linkedin'
   last_contacted_at?: string
   next_follow_up_date?: string
   notes?: string
   lead?: Lead
-  campaign?: OutreachCampaign
+}
+
+interface OutreachFilters {
+  status: string[]
+  outreachMethod: string[]
+  hasEmail: boolean
+  hasPhone: boolean
+  hasSocials: boolean
+  responseStatus: string[]
+}
+
+interface OutreachStats {
+  totalLeads: number
+  emailOutreach: number
+  emailResponse: number
+  dmOutreach: number
+  dmResponse: number
+  phoneOutreach: number
+  phoneResponse: number
+  conversionRate: number
+  responseRate: number
 }
 
 export default function OutreachToolPage() {
@@ -76,96 +84,63 @@ export default function OutreachToolPage() {
   const { selectedBrandId } = useBrandContext()
   const { userId } = useAuth()
 
-  const [campaigns, setCampaigns] = useState<OutreachCampaign[]>([])
   const [campaignLeads, setCampaignLeads] = useState<CampaignLead[]>([])
-  const [selectedCampaignLead, setSelectedCampaignLead] = useState<CampaignLead | null>(null)
+  const [filteredLeads, setFilteredLeads] = useState<CampaignLead[]>([])
+  const [selectedLead, setSelectedLead] = useState<CampaignLead | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isGeneratingMessage, setIsGeneratingMessage] = useState(false)
-  const [messageType, setMessageType] = useState<'email' | 'sms' | 'linkedin' | 'call'>('email')
-  const [generatedMessage, setGeneratedMessage] = useState('')
-  const [messageSubject, setMessageSubject] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [showFilters, setShowFilters] = useState(false)
+  const [showOutreachDialog, setShowOutreachDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showMessageComposer, setShowMessageComposer] = useState(false)
+  const [generatedMessage, setGeneratedMessage] = useState('')
+  const [selectedOutreachMethod, setSelectedOutreachMethod] = useState<'email' | 'phone' | 'dm' | 'linkedin'>('email')
 
-  // Calculate statistics based on campaign leads
-  const stats = {
-    totalCampaigns: campaigns.length,
+  const [filters, setFilters] = useState<OutreachFilters>({
+    status: [],
+    outreachMethod: [],
+    hasEmail: false,
+    hasPhone: false,
+    hasSocials: false,
+    responseStatus: []
+  })
+
+  // Calculate comprehensive statistics
+  const stats: OutreachStats = {
     totalLeads: campaignLeads.length,
-    newLeads: campaignLeads.filter(cl => cl.status === 'pending').length,
-    inProgress: campaignLeads.filter(cl => ['contacted', 'responded'].includes(cl.status)).length,
-    signed: campaignLeads.filter(cl => cl.status === 'signed').length,
-    lost: campaignLeads.filter(cl => cl.status === 'rejected').length,
-    conversionRate: campaignLeads.length > 0 ? (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100).toFixed(1) : '0',
-    activeCampaigns: campaigns.filter(c => c.status === 'active').length
+    emailOutreach: campaignLeads.filter(cl => cl.outreach_method === 'email').length,
+    emailResponse: campaignLeads.filter(cl => cl.outreach_method === 'email' && ['responded', 'qualified', 'signed'].includes(cl.status)).length,
+    dmOutreach: campaignLeads.filter(cl => cl.outreach_method === 'dm').length,
+    dmResponse: campaignLeads.filter(cl => cl.outreach_method === 'dm' && ['responded', 'qualified', 'signed'].includes(cl.status)).length,
+    phoneOutreach: campaignLeads.filter(cl => cl.outreach_method === 'phone').length,
+    phoneResponse: campaignLeads.filter(cl => cl.outreach_method === 'phone' && ['responded', 'qualified', 'signed'].includes(cl.status)).length,
+    conversionRate: campaignLeads.length > 0 ? (campaignLeads.filter(cl => cl.status === 'signed').length / campaignLeads.length * 100) : 0,
+    responseRate: campaignLeads.length > 0 ? (campaignLeads.filter(cl => ['responded', 'qualified', 'signed'].includes(cl.status)).length / campaignLeads.length * 100) : 0
   }
 
   useEffect(() => {
     if (userId) {
-      loadCampaigns()
       loadCampaignLeads()
     }
   }, [userId, selectedBrandId])
 
-  const loadCampaigns = async () => {
+  useEffect(() => {
+    applyFilters()
+  }, [campaignLeads, filters, searchQuery])
+
+  const loadCampaignLeads = async () => {
     if (!userId) return
 
     try {
       setIsLoading(true)
       const supabase = await getSupabaseClient()
       
-      let query = supabase
-        .from('outreach_campaigns')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-
-      if (selectedBrandId) {
-        query = query.eq('brand_id', selectedBrandId)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-      setCampaigns(data || [])
-    } catch (error) {
-      console.error('Error loading campaigns:', error)
-      toast.error('Failed to load campaigns')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const loadCampaignLeads = async () => {
-    if (!userId) return
-
-    try {
-      const supabase = await getSupabaseClient()
-      
-      // First get campaigns for this user
-      const { data: userCampaigns, error: campaignsError } = await supabase
-        .from('outreach_campaigns')
-        .select('id')
-        .eq('user_id', userId)
-
-      if (campaignsError) throw campaignsError
-
-      if (!userCampaigns || userCampaigns.length === 0) {
-        setCampaignLeads([])
-        return
-      }
-
-      const campaignIds = userCampaigns.map(c => c.id)
-
-      // Then get campaign leads for those campaigns with lead data
       const { data, error } = await supabase
         .from('outreach_campaign_leads')
         .select(`
           *,
-          lead:leads(*),
-          campaign:outreach_campaigns(*)
+          lead:leads(*)
         `)
-        .in('campaign_id', campaignIds)
+        .eq('lead.user_id', userId)
         .order('added_at', { ascending: false })
 
       if (error) throw error
@@ -173,16 +148,78 @@ export default function OutreachToolPage() {
       setCampaignLeads(data || [])
     } catch (error) {
       console.error('Error loading campaign leads:', error)
-      toast.error('Failed to load campaign leads')
+      toast.error('Failed to load leads')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const generatePersonalizedMessage = async () => {
-    if (!selectedCampaignLead || !selectedCampaignLead.lead) {
-      toast.error('Please select a lead first')
-      return
+  const applyFilters = () => {
+    let filtered = [...campaignLeads]
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(cl => 
+        cl.lead?.business_name?.toLowerCase().includes(query) ||
+        cl.lead?.owner_name?.toLowerCase().includes(query) ||
+        cl.lead?.email?.toLowerCase().includes(query)
+      )
     }
 
+    // Status filter
+    if (filters.status.length > 0) {
+      filtered = filtered.filter(cl => filters.status.includes(cl.status))
+    }
+
+    // Outreach method filter
+    if (filters.outreachMethod.length > 0) {
+      filtered = filtered.filter(cl => cl.outreach_method && filters.outreachMethod.includes(cl.outreach_method))
+    }
+
+    // Contact info filters
+    if (filters.hasEmail) {
+      filtered = filtered.filter(cl => cl.lead?.email)
+    }
+    if (filters.hasPhone) {
+      filtered = filtered.filter(cl => cl.lead?.phone)
+    }
+    if (filters.hasSocials) {
+      filtered = filtered.filter(cl => 
+        cl.lead?.instagram_handle || cl.lead?.facebook_page || 
+        cl.lead?.linkedin_profile || cl.lead?.twitter_handle
+      )
+    }
+
+    setFilteredLeads(filtered)
+  }
+
+  const updateLeadStatus = async (leadId: string, newStatus: string) => {
+    try {
+      const supabase = await getSupabaseClient()
+      
+      const { error } = await supabase
+        .from('outreach_campaign_leads')
+        .update({ 
+          status: newStatus,
+          last_contacted_at: newStatus === 'contacted' ? new Date().toISOString() : undefined
+        })
+        .eq('id', leadId)
+
+      if (error) throw error
+
+      setCampaignLeads(prev => 
+        prev.map(cl => cl.id === leadId ? { ...cl, status: newStatus as any } : cl)
+      )
+
+      toast.success('Status updated successfully')
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast.error('Failed to update status')
+    }
+  }
+
+  const generateOutreachMessage = async (lead: Lead, method: string) => {
     setIsGeneratingMessage(true)
     try {
       const response = await fetch('/api/outreach/generate-message', {
@@ -191,21 +228,19 @@ export default function OutreachToolPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          lead: selectedCampaignLead.lead,
-          messageType,
-          brandInfo: { name: 'Your Business' }
+          lead,
+          messageType: method,
+          brandInfo: { name: selectedBrandId || 'Your Business' }
         }),
       })
 
       const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate message')
-      }
 
-      setGeneratedMessage(data.message)
-      setMessageSubject(data.subject || '')
-      toast.success('Message generated successfully!')
+      if (data.success) {
+        setGeneratedMessage(data.message)
+      } else {
+        throw new Error(data.error)
+      }
     } catch (error) {
       console.error('Error generating message:', error)
       toast.error('Failed to generate message')
@@ -214,716 +249,629 @@ export default function OutreachToolPage() {
     }
   }
 
-  const updateCampaignLeadStatus = async (campaignLeadId: string, newStatus: string) => {
-    try {
-      const supabase = await getSupabaseClient()
-      
-      const { error } = await supabase
-        .from('outreach_campaign_leads')
-        .update({ 
-          status: newStatus,
-          last_contacted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', campaignLeadId)
-
-      if (error) throw error
-      
-      // Refresh the data
-      loadCampaignLeads()
-      toast.success('Status updated successfully!')
-    } catch (error) {
-      console.error('Error updating status:', error)
-      toast.error('Failed to update status')
-    }
-  }
-
-  const deleteCampaignLead = async (campaignLeadId: string) => {
-    if (!confirm('Are you sure you want to remove this lead from outreach?')) {
-      return
-    }
-
-    try {
-      const supabase = await getSupabaseClient()
-      
-      const { error } = await supabase
-        .from('outreach_campaign_leads')
-        .delete()
-        .eq('id', campaignLeadId)
-
-      if (error) throw error
-      
-      // Remove from local state
-      setCampaignLeads(prev => prev.filter(cl => cl.id !== campaignLeadId))
-      toast.success('Lead removed from outreach!')
-    } catch (error) {
-      console.error('Error deleting campaign lead:', error)
-      toast.error('Failed to remove lead')
-    }
-  }
-
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-blue-500/20 text-blue-300 border-blue-500/50'
-      case 'contacted': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50'
-      case 'responded': return 'bg-purple-500/20 text-purple-300 border-purple-500/50'
-      case 'qualified': return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50'
-      case 'signed': return 'bg-green-500/20 text-green-300 border-green-500/50'
-      case 'rejected': return 'bg-red-500/20 text-red-300 border-red-500/50'
-      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/50'
+      case 'pending': return <Clock className="h-4 w-4" />
+      case 'contacted': return <Send className="h-4 w-4" />
+      case 'responded': return <MessageCircle className="h-4 w-4" />
+      case 'qualified': return <UserCheck className="h-4 w-4" />
+      case 'signed': return <CheckCircle className="h-4 w-4" />
+      case 'rejected': return <UserX className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
     }
   }
 
-  const getSocialMediaIcon = (platform: string) => {
-    switch (platform) {
-      case 'instagram': return <Instagram className="h-4 w-4" />
-      case 'facebook': return <Facebook className="h-4 w-4" />
-      case 'linkedin': return <Linkedin className="h-4 w-4" />
-      case 'twitter': 
-        // Modern X logo using SVG
-        return (
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        )
-      default: return null
-    }
+  const getOutreachMethods = (lead: Lead) => {
+    const methods = []
+    if (lead.email) methods.push('email')
+    if (lead.phone) methods.push('phone')
+    if (lead.instagram_handle || lead.facebook_page || lead.twitter_handle) methods.push('dm')
+    if (lead.linkedin_profile) methods.push('linkedin')
+    return methods
   }
 
-  const getSocialMediaLink = (platform: string, handle: string) => {
-    switch (platform) {
-      case 'instagram': return `https://instagram.com/${handle.replace('@', '')}`
-      case 'facebook': return `https://facebook.com/${handle}`
-      case 'linkedin': return handle.startsWith('http') ? handle : `https://linkedin.com/in/${handle}`
-      case 'twitter': return `https://twitter.com/${handle.replace('@', '')}`
-      default: return '#'
-    }
+  const handleOutreachClick = (campaignLead: CampaignLead) => {
+    setSelectedLead(campaignLead)
+    setShowOutreachDialog(true)
+    setGeneratedMessage('')
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  if (isLoading) {
-  return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading outreach data...</span>
-          </div>
-          </div>
-    )
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard!')
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <div className="w-full space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Outreach Center</h1>
-          <p className="text-gray-400">Manage your lead outreach campaigns with AI-powered messaging</p>
+    <div className="h-screen bg-black text-white p-6 overflow-hidden">
+      <div className="w-full h-full flex flex-col space-y-6">
+        
+        {/* Analytics Dashboard */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <Users className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Total Leads</p>
+                  <p className="text-xl font-semibold text-white">{stats.totalLeads}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <Mail className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Email Outreach</p>
+                  <p className="text-xl font-semibold text-white">{stats.emailOutreach}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <ArrowUpRight className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Email Response</p>
+                  <p className="text-xl font-semibold text-white">
+                    {stats.emailOutreach > 0 ? Math.round((stats.emailResponse / stats.emailOutreach) * 100) : 0}%
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <MessageSquare className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">DM Outreach</p>
+                  <p className="text-xl font-semibold text-white">{stats.dmOutreach}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <ArrowUpRight className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">DM Response</p>
+                  <p className="text-xl font-semibold text-white">
+                    {stats.dmOutreach > 0 ? Math.round((stats.dmResponse / stats.dmOutreach) * 100) : 0}%
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Phone Outreach</p>
+                  <p className="text-xl font-semibold text-white">{stats.phoneOutreach}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Response Rate</p>
+                  <p className="text-xl font-semibold text-white">{Math.round(stats.responseRate)}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[#1A1A1A] border-[#333]">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2A2A2A] rounded-lg">
+                  <Target className="h-4 w-4 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Conversion</p>
+                  <p className="text-xl font-semibold text-white">{Math.round(stats.conversionRate)}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Total Leads</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalLeads}</div>
-              <div className="flex items-center text-sm text-gray-400 mt-1">
-                <Users className="h-3 w-3 mr-1" />
-                {stats.newLeads} new
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Active Campaigns</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.activeCampaigns}</div>
-              <div className="flex items-center text-sm text-gray-400 mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {stats.inProgress} in progress
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Conversion Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.conversionRate}%</div>
-              <div className="flex items-center text-sm text-gray-400 mt-1">
-                <ArrowUpRight className="h-3 w-3 mr-1" />
-                {stats.signed} signed
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-400">Total Campaigns</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">{stats.totalCampaigns}</div>
-              <div className="flex items-center text-sm text-gray-400 mt-1">
-                <BarChart3 className="h-3 w-3 mr-1" />
-                All time
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          
-          {/* Lead Pipeline Widget - Takes up 2 columns */}
-          <div className="xl:col-span-2">
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Users className="h-5 w-5 text-gray-400" />
-                      Lead Pipeline
-                    </CardTitle>
-                    <CardDescription className="text-gray-400">Track and manage your outreach leads</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40 bg-[#2A2A2A] border-[#333] text-gray-400">
-                        <SelectValue placeholder="Filter by status" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                        <SelectItem value="all" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">All Statuses</SelectItem>
-                        <SelectItem value="pending" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Pending</SelectItem>
-                        <SelectItem value="contacted" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Contacted</SelectItem>
-                        <SelectItem value="responded" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Responded</SelectItem>
-                        <SelectItem value="qualified" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Qualified</SelectItem>
-                        <SelectItem value="signed" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Signed</SelectItem>
-                        <SelectItem value="rejected" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      onClick={() => { loadCampaignLeads(); loadCampaigns(); }}
-                      variant="outline" 
-                      size="sm"
-                      className="border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Search Bar */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      placeholder="Search by business name or owner..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-300 placeholder-gray-500 focus:border-gray-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-md border border-[#333] max-h-[500px] overflow-y-auto">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-[#1A1A1A]">
-                      <TableRow className="border-[#333] hover:bg-transparent">
-                        <TableHead className="text-gray-400">Business</TableHead>
-                        <TableHead className="text-gray-400">Contact</TableHead>
-                        <TableHead className="text-gray-400">Status</TableHead>
-                        <TableHead className="text-gray-400">Last Contact</TableHead>
-                        <TableHead className="text-gray-400">Social Media</TableHead>
-                        <TableHead className="text-gray-400">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {campaignLeads
-                        .filter(cl => {
-                          // Apply status filter
-                          if (statusFilter !== 'all' && cl.status !== statusFilter) return false
-                          
-                          // Apply search filter
-                          if (searchQuery.trim()) {
-                            const query = searchQuery.toLowerCase()
-                            return (
-                              (cl.lead?.business_name && cl.lead.business_name.toLowerCase().includes(query)) ||
-                              (cl.lead?.owner_name && cl.lead.owner_name.toLowerCase().includes(query))
-                            )
-                          }
-                          
-                          return true
-                        })
-                        .map((campaignLead) => (
-                        <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
-                          <TableCell>
-                            <div>
-                              <div className="font-medium text-white">{campaignLead.lead?.business_name}</div>
-                              <div className="text-sm text-gray-400">{campaignLead.lead?.niche_name}</div>
-                              {campaignLead.lead?.website && (
-                                <a
-                                  href={campaignLead.lead.website.startsWith('http') ? campaignLead.lead.website : `https://${campaignLead.lead.website}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1 mt-1"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                  Visit Website
-                                </a>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1 text-sm">
-                              {campaignLead.lead?.owner_name && (
-                                <div className="text-gray-300">{campaignLead.lead.owner_name}</div>
-                              )}
-                              {campaignLead.lead?.email && (
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Mail className="h-3 w-3" />
-                                  {campaignLead.lead.email}
-                                </div>
-                              )}
-                              {campaignLead.lead?.phone && (
-                                <div className="flex items-center gap-1 text-gray-400">
-                                  <Phone className="h-3 w-3" />
-                                  {campaignLead.lead.phone}
-                            </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={campaignLead.status}
-                              onValueChange={(value) => updateCampaignLeadStatus(campaignLead.id, value)}
-                            >
-                              <SelectTrigger className={`w-32 h-8 ${getStatusColor(campaignLead.status)} bg-transparent border`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                                <SelectItem value="pending" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Pending</SelectItem>
-                                <SelectItem value="contacted" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Contacted</SelectItem>
-                                <SelectItem value="responded" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Responded</SelectItem>
-                                <SelectItem value="qualified" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Qualified</SelectItem>
-                                <SelectItem value="signed" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Signed</SelectItem>
-                                <SelectItem value="rejected" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Rejected</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-400">
-                              {campaignLead.last_contacted_at ? new Date(campaignLead.last_contacted_at).toLocaleDateString() : 'Never'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center relative max-w-[100px]">
-                              {campaignLead.lead?.instagram_handle && (
-                                <a
-                                  href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
-                                  title={`Instagram: ${campaignLead.lead.instagram_handle}`}
-                                  style={{ marginLeft: '0px' }}
-                                >
-                                  {getSocialMediaIcon('instagram')}
-                                </a>
-                              )}
-                              {campaignLead.lead?.facebook_page && (
-                                <a
-                                  href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
-                                  title={`Facebook: ${campaignLead.lead.facebook_page}`}
-                                  style={{ marginLeft: campaignLead.lead?.instagram_handle ? '-8px' : '0px' }}
-                                >
-                                  {getSocialMediaIcon('facebook')}
-                                </a>
-                              )}
-                              {campaignLead.lead?.linkedin_profile && (
-                                <a
-                                  href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
-                                  title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
-                                  style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page) ? '-8px' : '0px' }}
-                                >
-                                  {getSocialMediaIcon('linkedin')}
-                                </a>
-                              )}
-                              {campaignLead.lead?.twitter_handle && (
-                                <a
-                                  href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
-                                  title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
-                                  style={{ marginLeft: (campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page || campaignLead.lead?.linkedin_profile) ? '-8px' : '0px' }}
-                                >
-                                  {getSocialMediaIcon('twitter')}
-                                </a>
-                              )}
-                              {!campaignLead.lead?.instagram_handle && !campaignLead.lead?.facebook_page && !campaignLead.lead?.linkedin_profile && !campaignLead.lead?.twitter_handle && (
-                                <span className="text-gray-500 text-sm">No socials</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                                onClick={() => {
-                                  setSelectedCampaignLead(campaignLead)
-                                  setShowMessageComposer(true)
-                                }}
-                              >
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                Message
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0 border-[#333] hover:bg-red-900/20 text-gray-400 hover:text-red-400 hover:border-red-500/50"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteCampaignLead(campaignLead.id)
-                                }}
-                                title="Remove from outreach"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Sidebar - Action Items Widget */}
-          <div className="space-y-6">
-              <Card className="bg-[#1A1A1A] border-[#333]">
-                <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-gray-400" />
-                  Action Items
-                  </CardTitle>
-                <CardDescription className="text-gray-400">Priority tasks to keep momentum</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                {/* Update Status - Pending leads sitting too long */}
-                {campaignLeads.filter(cl => 
-                  cl.status === 'pending' && 
-                  new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-                ).length > 0 && (
-                  <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-300 text-sm">Update Lead Status</h4>
-                        <p className="text-xs text-gray-400 mb-2">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'pending' && 
-                            new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-                          ).length} leads pending 2+ days
-                        </p>
-                        <div className="space-y-1">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'pending' && 
-                            new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-                          ).slice(0, 2).map(cl => (
-                            <div key={cl.id} className="text-xs text-gray-300 truncate">
-                              • {cl.lead?.business_name}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Stale Contacted Leads */}
-                {campaignLeads.filter(cl => 
-                  cl.status === 'contacted' && 
-                  cl.last_contacted_at && 
-                  new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-                ).length > 0 && (
-                  <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Clock className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-300 text-sm">Follow-up Needed</h4>
-                        <p className="text-xs text-gray-400 mb-2">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'contacted' && 
-                            cl.last_contacted_at && 
-                            new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-                          ).length} leads need follow-up
-                        </p>
-                        <div className="space-y-1">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'contacted' && 
-                            cl.last_contacted_at && 
-                            new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-                          ).slice(0, 2).map(cl => (
-                            <div key={cl.id} className="text-xs text-gray-300 truncate">
-                              • {cl.lead?.business_name}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Recent Wins */}
-                {campaignLeads.filter(cl => 
-                  cl.status === 'signed' && 
-                  new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                ).length > 0 && (
-                  <div className="p-3 bg-[#2A2A2A] border border-[#444] rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Star className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-gray-300 text-sm">Recent Wins 🎉</h4>
-                        <p className="text-xs text-gray-400 mb-2">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'signed' && 
-                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                          ).length} signed this week!
-                        </p>
-                        <div className="space-y-1">
-                          {campaignLeads.filter(cl => 
-                            cl.status === 'signed' && 
-                            new Date(cl.added_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-                          ).slice(0, 2).map(cl => (
-                            <div key={cl.id} className="text-xs text-gray-300 truncate">
-                              ✓ {cl.lead?.business_name}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* All Caught Up */}
-                {campaignLeads.filter(cl => 
-                    cl.status === 'pending' && 
-                    new Date(cl.added_at) < new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
-                  ).length === 0 && 
-                  campaignLeads.filter(cl => 
-                    cl.status === 'contacted' && 
-                    cl.last_contacted_at && 
-                    new Date(cl.last_contacted_at) < new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-                  ).length === 0 && (
-                  <div className="p-4 text-center text-gray-400">
-                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-500" />
-                    <h4 className="text-sm font-medium text-gray-300 mb-1">All Caught Up!</h4>
-                    <p className="text-xs">No urgent tasks right now.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions Widget */}
-            <Card className="bg-[#1A1A1A] border-[#333]">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-gray-400" />
-                  Quick Actions
+        {/* Lead Pipeline Widget */}
+        <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-gray-400" />
+                <CardTitle className="text-lg font-semibold text-gray-400">
+                  Lead Pipeline ({filteredLeads.length}{campaignLeads.length !== filteredLeads.length && ` of ${campaignLeads.length}`})
                 </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+              </div>
+              <div className="flex gap-2">
                 <Button
-                  onClick={() => setShowMessageComposer(true)}
-                  className="w-full bg-[#444] hover:bg-[#555] text-white justify-start"
-                  disabled={!selectedCampaignLead}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Compose Message
-                </Button>
-                <Button
-                  onClick={() => window.open('/lead-generator', '_blank')}
+                  onClick={() => setShowFilters(!showFilters)}
                   variant="outline"
-                  className="w-full border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white justify-start"
+                  size="sm"
+                  className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Generate More Leads
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                  {(filters.status.length > 0 || filters.outreachMethod.length > 0 || 
+                    filters.hasEmail || filters.hasPhone || filters.hasSocials) && (
+                    <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
+                      Active
+                    </Badge>
+                  )}
                 </Button>
-                <Button
-                  onClick={() => { loadCampaignLeads(); loadCampaigns(); }}
-                  variant="outline"
-                  className="w-full border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white justify-start"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Data
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="flex flex-col flex-1 overflow-hidden">
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search by business name, owner, or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 bg-[#2A2A2A] border-[#444] text-gray-300 placeholder-gray-500 focus:border-gray-300"
+                />
+              </div>
+            </div>
 
-        {/* Message Composer Dialog */}
-        <Dialog open={showMessageComposer} onOpenChange={setShowMessageComposer}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Filter Panel */}
+            {showFilters && (
+              <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-gray-400">Filters</Label>
+                  <Button
+                    onClick={() => setFilters({ status: [], outreachMethod: [], hasEmail: false, hasPhone: false, hasSocials: false, responseStatus: [] })}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Clear
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-gray-500">Status</Label>
+                    <div className="space-y-2">
+                      {['pending', 'contacted', 'responded', 'qualified', 'signed', 'rejected'].map((status) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`status-${status}`}
+                            checked={filters.status.includes(status)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilters(prev => ({ ...prev, status: [...prev.status, status] }))
+                              } else {
+                                setFilters(prev => ({ ...prev, status: prev.status.filter(s => s !== status) }))
+                              }
+                            }}
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
+                          />
+                          <label htmlFor={`status-${status}`} className="text-sm text-gray-400 cursor-pointer capitalize flex items-center gap-2">
+                            {getStatusIcon(status)}
+                            {status}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contact Info Filters */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-gray-500">Contact Info</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasEmail"
+                          checked={filters.hasEmail}
+                          onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasEmail: checked as boolean }))}
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="hasEmail" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          Has Email
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasPhone"
+                          checked={filters.hasPhone}
+                          onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasPhone: checked as boolean }))}
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="hasPhone" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          Has Phone
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="hasSocials"
+                          checked={filters.hasSocials}
+                          onCheckedChange={(checked) => setFilters(prev => ({ ...prev, hasSocials: checked as boolean }))}
+                          className="border-[#444] data-[state=checked]:bg-gray-600"
+                        />
+                        <label htmlFor="hasSocials" className="text-sm text-gray-400 cursor-pointer flex items-center gap-1">
+                          <MessageSquare className="h-3 w-3" />
+                          Has Socials
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Outreach Method Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-gray-500">Outreach Method</Label>
+                    <div className="space-y-2">
+                      {['email', 'phone', 'dm', 'linkedin'].map((method) => (
+                        <div key={method} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`method-${method}`}
+                            checked={filters.outreachMethod.includes(method)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setFilters(prev => ({ ...prev, outreachMethod: [...prev.outreachMethod, method] }))
+                              } else {
+                                setFilters(prev => ({ ...prev, outreachMethod: prev.outreachMethod.filter(m => m !== method) }))
+                              }
+                            }}
+                            className="border-[#444] data-[state=checked]:bg-gray-600"
+                          />
+                          <label htmlFor={`method-${method}`} className="text-sm text-gray-400 cursor-pointer capitalize">
+                            {method}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Lead Pipeline Table */}
+            <div className="flex-1 min-h-[400px] max-h-[calc(100vh-200px)] overflow-y-auto border border-[#333] rounded-md">
+              <Table>
+                <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
+                  <TableRow className="border-[#333]">
+                    <TableHead className="text-gray-400">Business</TableHead>
+                    <TableHead className="text-gray-400">Owner</TableHead>
+                    <TableHead className="text-gray-400">Contact</TableHead>
+                    <TableHead className="text-gray-400">Status</TableHead>
+                    <TableHead className="text-gray-400">Method</TableHead>
+                    <TableHead className="text-gray-400">Last Contact</TableHead>
+                    <TableHead className="text-gray-400">Outreach</TableHead>
+                    <TableHead className="text-gray-400">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.map((campaignLead) => (
+                    <TableRow
+                      key={campaignLead.id}
+                      className="border-[#333] hover:bg-[#222]/50"
+                    >
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-400">{campaignLead.lead?.business_name}</div>
+                          {campaignLead.lead?.website && (
+                            <a
+                              href={campaignLead.lead.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Website
+                            </a>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-400">
+                          {campaignLead.lead?.owner_name || <span className="text-gray-500">-</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-400">
+                          {campaignLead.lead?.email && (
+                            <div className="flex items-center gap-1 mb-1">
+                              <Mail className="h-3 w-3" />
+                              {campaignLead.lead.email}
+                            </div>
+                          )}
+                          {campaignLead.lead?.phone && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {campaignLead.lead.phone}
+                            </div>
+                          )}
+                          {!campaignLead.lead?.email && !campaignLead.lead?.phone && <span className="text-gray-500">-</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={campaignLead.status}
+                          onValueChange={(value) => updateLeadStatus(campaignLead.id, value)}
+                        >
+                          <SelectTrigger className="w-32 bg-[#2A2A2A] border-[#444] text-gray-400">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(campaignLead.status)}
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                            <SelectItem value="pending" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Pending
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="contacted" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <Send className="h-4 w-4" />
+                                Contacted
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="responded" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <MessageCircle className="h-4 w-4" />
+                                Responded
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="qualified" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="h-4 w-4" />
+                                Qualified
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="signed" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                Signed
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="rejected" className="text-gray-300 hover:bg-[#2A2A2A]">
+                              <div className="flex items-center gap-2">
+                                <UserX className="h-4 w-4" />
+                                Rejected
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-400 capitalize">
+                          {campaignLead.outreach_method || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-400">
+                          {campaignLead.last_contacted_at 
+                            ? new Date(campaignLead.last_contacted_at).toLocaleDateString()
+                            : '-'
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          onClick={() => handleOutreachClick(campaignLead)}
+                          disabled={!campaignLead.lead}
+                          size="sm"
+                          variant="outline"
+                          className="bg-[#1A1A1A] text-gray-400 border-[#333] hover:bg-[#222] hover:text-white"
+                        >
+                          <Send className="h-3 w-3 mr-1" />
+                          Outreach
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="p-1 h-6 w-6 text-gray-400 hover:text-white hover:bg-[#222]"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="p-1 h-6 w-6 text-gray-400 hover:text-white hover:bg-[#222]"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {filteredLeads.length === 0 && !isLoading && (
+                <div className="text-center py-12 text-gray-400">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  {campaignLeads.length === 0 ? (
+                    <>
+                      <p>No leads in pipeline yet</p>
+                      <p className="text-sm">Import leads from the Lead Generator</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>No leads match your filters</p>
+                      <p className="text-sm">Try adjusting your filter criteria</p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Outreach Dialog */}
+        <Dialog open={showOutreachDialog} onOpenChange={setShowOutreachDialog}>
+          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-gray-400" />
-                AI Message Composer
+              <DialogTitle className="text-gray-400 flex items-center gap-2">
+                <Send className="h-5 w-5" />
+                Outreach: {selectedLead?.lead?.business_name}
               </DialogTitle>
-              <DialogDescription className="text-gray-400">
-                Generate personalized messages for your leads using AI
+              <DialogDescription>
+                {selectedLead?.lead?.owner_name && `Contact: ${selectedLead.lead.owner_name}`}
               </DialogDescription>
             </DialogHeader>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <div className="space-y-4">
-                <div>
-                    <Label className="text-gray-400">Select Lead</Label>
-                    <Select
-                    value={selectedCampaignLead?.id || ''}
-                      onValueChange={(value) => {
-                      const campaignLead = campaignLeads.find(cl => cl.id === value)
-                      setSelectedCampaignLead(campaignLead || null)
-                      }}
-                    >
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
-                        <SelectValue placeholder="Choose a lead to message" />
-                      </SelectTrigger>
-                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                      {campaignLeads.map((campaignLead) => (
-                        <SelectItem key={campaignLead.id} value={campaignLead.id} className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">
-                          {campaignLead.lead?.business_name} - {campaignLead.lead?.owner_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            {selectedLead?.lead && (
+              <div className="space-y-6">
+                {/* Available Outreach Methods */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-400">Available Outreach Methods</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {getOutreachMethods(selectedLead.lead).map((method) => (
+                      <Button
+                        key={method}
+                        onClick={() => {
+                          setSelectedOutreachMethod(method as any)
+                          generateOutreachMessage(selectedLead.lead!, method)
+                        }}
+                        variant={selectedOutreachMethod === method ? "default" : "outline"}
+                        className={`justify-start ${
+                          selectedOutreachMethod === method 
+                            ? "bg-gray-600 text-white" 
+                            : "bg-[#2A2A2A] text-gray-400 border-[#444] hover:bg-[#333]"
+                        }`}
+                      >
+                        {method === 'email' && <Mail className="h-4 w-4 mr-2" />}
+                        {method === 'phone' && <Phone className="h-4 w-4 mr-2" />}
+                        {method === 'dm' && <MessageSquare className="h-4 w-4 mr-2" />}
+                        {method === 'linkedin' && <Linkedin className="h-4 w-4 mr-2" />}
+                        {method.charAt(0).toUpperCase() + method.slice(1)}
+                      </Button>
+                    ))}
                   </div>
+                </div>
 
-                <div>
-                    <Label className="text-gray-400">Message Type</Label>
-                  <Select value={messageType} onValueChange={(value: any) => setMessageType(value)}>
-                    <SelectTrigger className="bg-[#2A2A2A] border-[#333] text-gray-400">
-                        <SelectValue />
-                      </SelectTrigger>
-                    <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                      <SelectItem value="email" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Email</SelectItem>
-                      <SelectItem value="linkedin" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">LinkedIn Message</SelectItem>
-                      <SelectItem value="sms" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">SMS</SelectItem>
-                      <SelectItem value="call" className="text-gray-300 hover:bg-[#2A2A2A] focus:bg-[#2A2A2A]">Call Script</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {/* Generated Message */}
+                {isGeneratingMessage && (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                    <span className="ml-2 text-gray-400">Generating personalized message...</span>
                   </div>
+                )}
 
-                  <Button
-                    onClick={generatePersonalizedMessage}
-                  className="w-full bg-[#444] hover:bg-[#555] text-white"
-                  disabled={!selectedCampaignLead || isGeneratingMessage}
-                  >
-                    {isGeneratingMessage ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      Generate AI Message
-                      </>
-                    )}
-                  </Button>
-
-                {selectedCampaignLead && (
-                  <div className="p-4 bg-[#2A2A2A] rounded-lg space-y-2">
-                    <div className="text-sm">
-                      <span className="text-gray-400">Business:</span>
-                      <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.business_name}</span>
+                {generatedMessage && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-gray-400">
+                        Generated {selectedOutreachMethod.charAt(0).toUpperCase() + selectedOutreachMethod.slice(1)} Message
+                      </Label>
+                      <Button
+                        onClick={() => copyToClipboard(generatedMessage)}
+                        size="sm"
+                        variant="outline"
+                        className="bg-[#2A2A2A] text-gray-400 border-[#444] hover:bg-[#333]"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-gray-400">Contact:</span>
-                      <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.owner_name || 'Unknown'}</span>
+                    <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-lg">
+                      <pre className="whitespace-pre-wrap text-sm text-gray-300 font-sans">
+                        {generatedMessage}
+                      </pre>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-gray-400">Industry:</span>
-                      <span className="text-gray-300 ml-2">{selectedCampaignLead.lead?.niche_name || 'General'}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-400">Status:</span>
-                      <Badge variant="outline" className={`ml-2 ${getStatusColor(selectedCampaignLead.status)}`}>
-                        {selectedCampaignLead.status}
-                      </Badge>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          updateLeadStatus(selectedLead.id, 'contacted')
+                          setShowOutreachDialog(false)
+                          toast.success('Lead marked as contacted!')
+                        }}
+                        className="bg-gray-600 hover:bg-gray-700 text-white"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark as Contacted
+                      </Button>
+                      <Button
+                        onClick={() => copyToClipboard(generatedMessage)}
+                        variant="outline"
+                        className="bg-[#2A2A2A] text-gray-400 border-[#444] hover:bg-[#333]"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy & Close
+                      </Button>
                     </div>
                   </div>
                 )}
+
+                {/* Contact Information */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-400">Contact Information</Label>
+                  <div className="p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-2">
+                    {selectedLead.lead.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-300">{selectedLead.lead.email}</span>
+                      </div>
+                    )}
+                    {selectedLead.lead.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-300">{selectedLead.lead.phone}</span>
+                      </div>
+                    )}
+                    {selectedLead.lead.website && (
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4 text-gray-400" />
+                        <a 
+                          href={selectedLead.lead.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300"
+                        >
+                          {selectedLead.lead.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-4">
-                  {messageType === 'email' && (
-                  <div>
-                      <Label className="text-gray-400">Subject Line</Label>
-                      <Input
-                        value={messageSubject}
-                        onChange={(e) => setMessageSubject(e.target.value)}
-                        placeholder="Email subject..."
-                      className="bg-[#2A2A2A] border-[#333] text-gray-300"
-                      />
-                    </div>
-                  )}
-
-                <div>
-                    <Label className="text-gray-400">Message Content</Label>
-                    <Textarea
-                      value={generatedMessage}
-                      onChange={(e) => setGeneratedMessage(e.target.value)}
-                      placeholder="Your personalized message will appear here..."
-                    className="min-h-[300px] bg-[#2A2A2A] border-[#333] text-gray-300"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                    onClick={() => navigator.clipboard.writeText(generatedMessage)}
-                    variant="outline"
-                    className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                    disabled={!generatedMessage}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Message
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
-                    disabled={!generatedMessage || !selectedCampaignLead}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Send Message
-                    </Button>
-                    </div>
-                  </div>
-            </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
