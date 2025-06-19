@@ -6,7 +6,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
 import type React from "react"
 import { Sidebar } from "@/components/Sidebar"
-import { Footer } from "@/components/Footer"
+import { ConditionalFooter } from "@/components/ConditionalFooter"
+import { ConditionalLayout } from "@/components/ConditionalLayout"
 import { WidgetProvider } from "@/context/WidgetContext"
 import { AuthProvider } from '@/contexts/AuthContext'
 import { BrandProvider } from '@/lib/context/BrandContext'
@@ -142,12 +143,12 @@ export default function RootLayout({
                     <AuthProvider>
                       <div className="flex h-screen overflow-hidden fixed inset-0">
                         <Sidebar className="w-64 flex-shrink-0 h-screen sticky top-0" />
-                        <main className="flex-1 overflow-y-auto h-screen flex flex-col">
+                        <ConditionalLayout>
                           <div className="flex-1">
                             {children}
                           </div>
-                          <Footer />
-                        </main>
+                          <ConditionalFooter />
+                        </ConditionalLayout>
                       </div>
                     </AuthProvider>
                   </WidgetProvider>
