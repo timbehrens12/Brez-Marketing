@@ -720,6 +720,7 @@ export default function OutreachToolPage() {
                         <TableHead className="text-gray-400">Owner</TableHead>
                         <TableHead className="text-gray-400">Status</TableHead>
                         <TableHead className="text-gray-400">Contact Info</TableHead>
+                        <TableHead className="text-gray-400">Social Media</TableHead>
                         <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
                         <TableHead className="text-gray-400">Actions</TableHead>
@@ -830,6 +831,60 @@ export default function OutreachToolPage() {
                                     <MapPin className="h-3 w-3" />
                                     <span className="text-xs">{campaignLead.lead.city}, {campaignLead.lead.state_province}</span>
                                   </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {campaignLead.lead?.instagram_handle && (
+                                  <a
+                                    href={`https://instagram.com/${campaignLead.lead.instagram_handle.replace('@', '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-[#3A3A3A] text-pink-400 hover:text-pink-300"
+                                    title="Instagram"
+                                  >
+                                    <Instagram className="h-3 w-3" />
+                                  </a>
+                                )}
+                                {campaignLead.lead?.facebook_page && (
+                                  <a
+                                    href={campaignLead.lead.facebook_page.startsWith('http') ? campaignLead.lead.facebook_page : `https://facebook.com/${campaignLead.lead.facebook_page}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-[#3A3A3A] text-blue-400 hover:text-blue-300"
+                                    title="Facebook"
+                                  >
+                                    <Facebook className="h-3 w-3" />
+                                  </a>
+                                )}
+                                {campaignLead.lead?.linkedin_profile && (
+                                  <a
+                                    href={campaignLead.lead.linkedin_profile.startsWith('http') ? campaignLead.lead.linkedin_profile : `https://linkedin.com/in/${campaignLead.lead.linkedin_profile}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-[#3A3A3A] text-blue-500 hover:text-blue-400"
+                                    title="LinkedIn"
+                                  >
+                                    <Linkedin className="h-3 w-3" />
+                                  </a>
+                                )}
+                                {campaignLead.lead?.twitter_handle && (
+                                  <a
+                                    href={`https://twitter.com/${campaignLead.lead.twitter_handle.replace('@', '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1 rounded hover:bg-[#3A3A3A] text-sky-400 hover:text-sky-300"
+                                    title="Twitter"
+                                  >
+                                    <Twitter className="h-3 w-3" />
+                                  </a>
+                                )}
+                                {!campaignLead.lead?.instagram_handle && 
+                                 !campaignLead.lead?.facebook_page && 
+                                 !campaignLead.lead?.linkedin_profile && 
+                                 !campaignLead.lead?.twitter_handle && (
+                                  <span className="text-xs text-gray-500">No socials</span>
                                 )}
                               </div>
                             </TableCell>
