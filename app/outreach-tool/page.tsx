@@ -367,13 +367,13 @@ export default function OutreachToolPage() {
   const filteredLeads = applyFilters(campaignLeads)
 
   if (isLoading) {
-    return (
+  return (
       <div className="h-screen bg-black text-white flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Loading outreach data...</span>
-        </div>
-      </div>
+          </div>
+          </div>
     )
   }
 
@@ -438,7 +438,7 @@ export default function OutreachToolPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333]">
+            <Card className="bg-[#1A1A1A] border-[#333]">
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-medium text-gray-400">Conversion</CardTitle>
             </CardHeader>
@@ -720,7 +720,6 @@ export default function OutreachToolPage() {
                         <TableHead className="text-gray-400">Owner</TableHead>
                         <TableHead className="text-gray-400">Status</TableHead>
                         <TableHead className="text-gray-400">Contact Info</TableHead>
-                        <TableHead className="text-gray-400">Social Media</TableHead>
                         <TableHead className="text-gray-400">Last Contact</TableHead>
                         <TableHead className="text-gray-400">Outreach</TableHead>
                         <TableHead className="text-gray-400">Actions</TableHead>
@@ -730,49 +729,46 @@ export default function OutreachToolPage() {
                       {filteredLeads.map((campaignLead) => {
                         const outreachMethods = campaignLead.lead ? getOutreachMethods(campaignLead.lead) : []
                         
-                        return (
-                          <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
-                            <TableCell>
-                              <div>
-                                <div className="font-medium text-white">{campaignLead.lead?.business_name}</div>
-                                <div className="text-sm text-gray-400">{campaignLead.lead?.niche_name}</div>
-                                {campaignLead.lead?.website && (
-                                  <a
-                                    href={campaignLead.lead.website.startsWith('http') ? campaignLead.lead.website : `https://${campaignLead.lead.website}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1 mt-1"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
+                            return (
+                        <TableRow key={campaignLead.id} className="border-[#333] hover:bg-[#2A2A2A]">
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-white">{campaignLead.lead?.business_name}</div>
+                              <div className="text-sm text-gray-400">{campaignLead.lead?.niche_name}</div>
+                              {campaignLead.lead?.website && (
+                                <a
+                                  href={campaignLead.lead.website.startsWith('http') ? campaignLead.lead.website : `https://${campaignLead.lead.website}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-gray-400 hover:text-gray-300 flex items-center gap-1 mt-1"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
                                     Website
-                                  </a>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                                </a>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
                               <div className="text-sm">
                                 {campaignLead.lead?.owner_name ? (
                                   <div className="flex items-center gap-1">
                                     <User className="h-3 w-3 text-gray-400" />
                                     <span className="text-gray-300">{campaignLead.lead.owner_name}</span>
-                                  </div>
+                                </div>
                                 ) : (
                                   <span className="text-gray-500">No owner info</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={campaignLead.status}
-                                onValueChange={(value) => updateCampaignLeadStatus(campaignLead.id, value)}
-                              >
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={campaignLead.status}
+                              onValueChange={(value) => updateCampaignLeadStatus(campaignLead.id, value)}
+                            >
                                 <SelectTrigger className="w-36 h-8 bg-[#2A2A2A] border-[#444] text-gray-300">
-                                  <div className="flex items-center gap-2">
-                                    {getStatusIcon(campaignLead.status)}
-                                    <SelectValue />
-                                  </div>
-                                </SelectTrigger>
-                                <SelectContent className="bg-[#1A1A1A] border-[#333]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#1A1A1A] border-[#333]">
                                   <SelectItem value="pending">
                                     <div className="flex items-center gap-2">
                                       <CircleDot className="h-3 w-3" />
@@ -809,16 +805,16 @@ export default function OutreachToolPage() {
                                       Rejected
                                     </div>
                                   </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
                               <div className="space-y-1 text-sm">
                                 {campaignLead.lead?.email && (
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <Mail className="h-3 w-3" />
                                     <span className="text-xs">{campaignLead.lead.email}</span>
-                                  </div>
+                            </div>
                                 )}
                                 {campaignLead.lead?.phone && (
                                   <div className="flex items-center gap-1 text-gray-400">
@@ -826,65 +822,61 @@ export default function OutreachToolPage() {
                                     <span className="text-xs">{campaignLead.lead.phone}</span>
                                   </div>
                                 )}
+                                {/* Social Media Icons */}
+                                {(campaignLead.lead?.instagram_handle || campaignLead.lead?.facebook_page || 
+                                  campaignLead.lead?.linkedin_profile || campaignLead.lead?.twitter_handle) && (
+                                  <div className="flex items-center gap-2">
+                                    {campaignLead.lead?.instagram_handle && (
+                                      <a 
+                                        href={`https://instagram.com/${campaignLead.lead.instagram_handle.replace('@', '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-400 hover:text-pink-400 transition-colors"
+                                        title="Instagram"
+                                      >
+                                        <Instagram className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {campaignLead.lead?.facebook_page && (
+                                      <a 
+                                        href={campaignLead.lead.facebook_page}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-400 hover:text-blue-400 transition-colors"
+                                        title="Facebook"
+                                      >
+                                        <Facebook className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {campaignLead.lead?.linkedin_profile && (
+                                      <a 
+                                        href={campaignLead.lead.linkedin_profile}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-400 hover:text-blue-300 transition-colors"
+                                        title="LinkedIn"
+                                      >
+                                        <Linkedin className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                    {campaignLead.lead?.twitter_handle && (
+                                      <a 
+                                        href={`https://twitter.com/${campaignLead.lead.twitter_handle.replace('@', '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-gray-400 hover:text-sky-400 transition-colors"
+                                        title="Twitter"
+                                      >
+                                        <Twitter className="h-3 w-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
                                 {campaignLead.lead?.city && campaignLead.lead?.state_province && (
                                   <div className="flex items-center gap-1 text-gray-400">
                                     <MapPin className="h-3 w-3" />
                                     <span className="text-xs">{campaignLead.lead.city}, {campaignLead.lead.state_province}</span>
                                   </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {campaignLead.lead?.instagram_handle && (
-                                  <a
-                                    href={`https://instagram.com/${campaignLead.lead.instagram_handle.replace('@', '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded hover:bg-[#3A3A3A] text-pink-400 hover:text-pink-300"
-                                    title="Instagram"
-                                  >
-                                    <Instagram className="h-3 w-3" />
-                                  </a>
-                                )}
-                                {campaignLead.lead?.facebook_page && (
-                                  <a
-                                    href={campaignLead.lead.facebook_page.startsWith('http') ? campaignLead.lead.facebook_page : `https://facebook.com/${campaignLead.lead.facebook_page}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded hover:bg-[#3A3A3A] text-blue-400 hover:text-blue-300"
-                                    title="Facebook"
-                                  >
-                                    <Facebook className="h-3 w-3" />
-                                  </a>
-                                )}
-                                {campaignLead.lead?.linkedin_profile && (
-                                  <a
-                                    href={campaignLead.lead.linkedin_profile.startsWith('http') ? campaignLead.lead.linkedin_profile : `https://linkedin.com/in/${campaignLead.lead.linkedin_profile}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded hover:bg-[#3A3A3A] text-blue-500 hover:text-blue-400"
-                                    title="LinkedIn"
-                                  >
-                                    <Linkedin className="h-3 w-3" />
-                                  </a>
-                                )}
-                                {campaignLead.lead?.twitter_handle && (
-                                  <a
-                                    href={`https://twitter.com/${campaignLead.lead.twitter_handle.replace('@', '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="p-1 rounded hover:bg-[#3A3A3A] text-sky-400 hover:text-sky-300"
-                                    title="Twitter"
-                                  >
-                                    <Twitter className="h-3 w-3" />
-                                  </a>
-                                )}
-                                {!campaignLead.lead?.instagram_handle && 
-                                 !campaignLead.lead?.facebook_page && 
-                                 !campaignLead.lead?.linkedin_profile && 
-                                 !campaignLead.lead?.twitter_handle && (
-                                  <span className="text-xs text-gray-500">No socials</span>
                                 )}
                               </div>
                             </TableCell>
@@ -899,10 +891,10 @@ export default function OutreachToolPage() {
                                   </div>
                                 ) : (
                                   <span className="text-gray-500">Never</span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -930,8 +922,8 @@ export default function OutreachToolPage() {
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
-                            </TableCell>
-                          </TableRow>
+                          </TableCell>
+                        </TableRow>
                         )
                       })}
                     </TableBody>
@@ -961,14 +953,14 @@ export default function OutreachToolPage() {
           {/* Dynamic To-Do List Widget */}
           <div className="xl:col-span-1 h-full overflow-y-auto">
             <Card className="bg-[#1A1A1A] border-[#333] h-full">
-              <CardHeader>
+                <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Clock className="h-5 w-5 text-gray-400" />
                   Dynamic To-Do List
-                </CardTitle>
+                  </CardTitle>
                 <CardDescription className="text-gray-400">AI-powered action items</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+                </CardHeader>
+                <CardContent className="space-y-4">
                 {/* Overdue Follow-ups */}
                 {campaignLeads.filter(cl => 
                   cl.status === 'contacted' && 
@@ -1102,11 +1094,11 @@ export default function OutreachToolPage() {
 
                 {/* All Caught Up */}
                 {campaignLeads.filter(cl => cl.status === 'pending').length === 0 && 
-                 campaignLeads.filter(cl => 
-                   cl.status === 'contacted' && 
-                   cl.last_contacted_at && 
+                  campaignLeads.filter(cl => 
+                    cl.status === 'contacted' && 
+                    cl.last_contacted_at && 
                    new Date(cl.last_contacted_at) < new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-                 ).length === 0 && (
+                  ).length === 0 && (
                   <div className="p-4 text-center text-gray-400">
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 text-gray-500" />
                     <h4 className="text-sm font-medium text-gray-300 mb-1">All Caught Up!</h4>
@@ -1153,7 +1145,7 @@ export default function OutreachToolPage() {
                   <ChevronRight className="h-4 w-4 ml-auto" />
                 </Button>
               ))}
-            </div>
+          </div>
           </DialogContent>
         </Dialog>
 
@@ -1177,7 +1169,7 @@ export default function OutreachToolPage() {
             <div className="py-6">
               {messageType === 'phone' ? (
                 // Call Script Display
-                <div className="space-y-4">
+              <div className="space-y-4">
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-300 mb-4">Call Script</h3>
                     <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm">
@@ -1185,36 +1177,36 @@ export default function OutreachToolPage() {
                         <div className="text-center py-8 text-gray-500">
                           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                           Generating personalized call script...
-                        </div>
+                  </div>
                       )}
-                    </div>
+                  </div>
                   </div>
                   {generatedMessage && (
-                    <Button
+                  <Button
                       onClick={() => {
                         navigator.clipboard.writeText(generatedMessage)
                         toast.success('Call script copied to clipboard!')
                       }}
-                      className="w-full bg-[#444] hover:bg-[#555] text-white"
+                  className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Script
-                    </Button>
-                  )}
-                </div>
+                  </Button>
+                )}
+              </div>
               ) : (
                 // Message Display
-                <div className="space-y-4">
+              <div className="space-y-4">
                   {messageType === 'email' && messageSubject && (
-                    <div>
+                  <div>
                       <Label className="text-gray-400 mb-2">Subject Line</Label>
                       <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-3">
                         <p className="text-gray-300">{messageSubject}</p>
                       </div>
                     </div>
                   )}
-                  
-                  <div>
+
+                <div>
                     <Label className="text-gray-400 mb-2">Message</Label>
                     <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 min-h-[200px]">
                       {generatedMessage ? (
@@ -1227,10 +1219,10 @@ export default function OutreachToolPage() {
                       )}
                     </div>
                   </div>
-                  
+
                   {generatedMessage && (
                     <div className="flex gap-3">
-                      <Button
+                    <Button
                         onClick={() => {
                           const fullMessage = messageType === 'email' && messageSubject 
                             ? `Subject: ${messageSubject}\n\n${generatedMessage}`
@@ -1239,24 +1231,24 @@ export default function OutreachToolPage() {
                           toast.success('Message copied to clipboard!')
                         }}
                         className="flex-1 bg-[#444] hover:bg-[#555] text-white"
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Message
-                      </Button>
-                      <Button
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Message
+                  </Button>
+                  <Button
                         onClick={() => {
                           updateCampaignLeadStatus(selectedCampaignLead!.id, 'contacted')
                           setShowMessageComposer(false)
                           toast.success('Lead marked as contacted!')
                         }}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Send className="h-4 w-4 mr-2" />
+                    >
+                      <Send className="h-4 w-4 mr-2" />
                         Mark as Sent
-                      </Button>
+                    </Button>
                     </div>
                   )}
-                </div>
+                  </div>
               )}
             </div>
           </DialogContent>
