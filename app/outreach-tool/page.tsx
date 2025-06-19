@@ -881,18 +881,18 @@ export default function OutreachToolPage() {
                                   </div>
                                 )}
                                 {/* Social Media Icons - Overlapping Style */}
-                                <div className="flex items-center relative max-w-[100px]">
+                                <div className="flex items-center relative max-w-[80px]">
                                   {campaignLead.lead?.instagram_handle && (
                                     <a
                                       href={getSocialMediaLink('instagram', campaignLead.lead.instagram_handle)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
+                                      className="relative z-10 text-pink-500 hover:text-pink-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-pink-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                       title={`Instagram: ${campaignLead.lead.instagram_handle}`}
                                       style={{ marginLeft: '0px' }}
                                     >
-                                      {getSocialMediaIcon('instagram')}
+                                      <Instagram className="h-3 w-3" />
                                     </a>
                                   )}
                                   {campaignLead.lead?.facebook_page && getSocialMediaLink('facebook', campaignLead.lead.facebook_page) && (
@@ -900,12 +900,12 @@ export default function OutreachToolPage() {
                                       href={getSocialMediaLink('facebook', campaignLead.lead.facebook_page)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
+                                      className="relative z-10 text-blue-500 hover:text-blue-400 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-500/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                       title={`Facebook: ${campaignLead.lead.facebook_page}`}
-                                      style={{ marginLeft: campaignLead.lead.instagram_handle ? '-8px' : '0px' }}
+                                      style={{ marginLeft: campaignLead.lead.instagram_handle ? '-6px' : '0px' }}
                                     >
-                                      {getSocialMediaIcon('facebook')}
+                                      <Facebook className="h-3 w-3" />
                                     </a>
                                   )}
                                   {campaignLead.lead?.linkedin_profile && (
@@ -913,12 +913,12 @@ export default function OutreachToolPage() {
                                       href={getSocialMediaLink('linkedin', campaignLead.lead.linkedin_profile)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
+                                      className="relative z-10 text-blue-600 hover:text-blue-500 hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-blue-600/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                       title={`LinkedIn: ${campaignLead.lead.linkedin_profile}`}
-                                      style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page) ? '-8px' : '0px' }}
+                                      style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page) ? '-6px' : '0px' }}
                                     >
-                                      {getSocialMediaIcon('linkedin')}
+                                      <Linkedin className="h-3 w-3" />
                                     </a>
                                   )}
                                   {campaignLead.lead?.twitter_handle && (
@@ -926,12 +926,14 @@ export default function OutreachToolPage() {
                                       href={getSocialMediaLink('twitter', campaignLead.lead.twitter_handle)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1.5 rounded-lg transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
+                                      className="relative z-10 text-gray-300 hover:text-white hover:scale-110 p-1 rounded transition-all duration-200 bg-[#2A2A2A] border border-[#444] hover:border-gray-300/50 hover:z-20"
                                       onClick={(e) => e.stopPropagation()}
                                       title={`X/Twitter: ${campaignLead.lead.twitter_handle}`}
-                                      style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page || campaignLead.lead.linkedin_profile) ? '-8px' : '0px' }}
+                                      style={{ marginLeft: (campaignLead.lead.instagram_handle || campaignLead.lead.facebook_page || campaignLead.lead.linkedin_profile) ? '-6px' : '0px' }}
                                     >
-                                      {getSocialMediaIcon('twitter')}
+                                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                      </svg>
                                     </a>
                                   )}
                                   {!campaignLead.lead?.instagram_handle && !campaignLead.lead?.facebook_page && !campaignLead.lead?.linkedin_profile && !campaignLead.lead?.twitter_handle && (
@@ -964,7 +966,7 @@ export default function OutreachToolPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs border-[#333] hover:bg-[#2A2A2A] text-gray-400 hover:text-white"
+                                className="h-8 text-xs bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-[#333] hover:text-white"
                                 onClick={() => {
                                   setSelectedCampaignLead(campaignLead)
                                   setShowOutreachOptions(true)
@@ -979,7 +981,7 @@ export default function OutreachToolPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 w-8 p-0 border-[#333] hover:bg-red-900/20 text-gray-400 hover:text-red-400 hover:border-red-500/50"
+                                className="h-8 w-8 p-0 bg-[#2A2A2A] border-[#444] text-gray-300 hover:bg-red-900/20 hover:text-red-400 hover:border-red-500/50"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   deleteCampaignLead(campaignLead.id)
