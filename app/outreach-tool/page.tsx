@@ -492,10 +492,10 @@ export default function OutreachToolPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-5 gap-6 min-h-0">
+        <div className="flex-1 grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-0">
           
-          {/* Enhanced Lead Pipeline - Takes up 4 columns */}
-          <div className="xl:col-span-4 flex flex-col">
+          {/* Enhanced Lead Pipeline - Takes up 2 columns */}
+          <div className="xl:col-span-2 flex flex-col">
             <Card className="bg-[#1A1A1A] border-[#333] flex flex-col h-full">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -754,7 +754,7 @@ export default function OutreachToolPage() {
                 )}
 
                 {/* Enhanced Lead Table */}
-                <div className="overflow-x-auto flex-1 min-h-[400px] max-h-[calc(100vh-450px)] overflow-y-auto border border-[#333] rounded-md">
+                <div className="overflow-x-auto flex-1 min-h-0 overflow-y-auto border border-[#333] rounded-md">
                   <Table>
                     <TableHeader className="sticky top-0 bg-[#1A1A1A] z-10">
                       <TableRow className="border-[#333] hover:bg-transparent">
