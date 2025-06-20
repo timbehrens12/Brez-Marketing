@@ -93,6 +93,7 @@ interface LeadFilters {
   }
   selectedNicheFilter: string[]
   statusFilter: string
+  minScore: number
 }
 
 // Lead management constants
@@ -134,7 +135,8 @@ export default function OutreachToolPage() {
     hasSocials: false,
     socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
     selectedNicheFilter: [],
-    statusFilter: 'all'
+    statusFilter: 'all',
+    minScore: 0
   })
 
   // Calculate simplified statistics
@@ -563,6 +565,12 @@ export default function OutreachToolPage() {
         ) return false
       }
       
+      // Score filter
+      if (filters.minScore > 0 && cl.lead) {
+        const score = cl.lead.lead_score || calculateLeadScore(cl.lead).total
+        if (score < filters.minScore) return false
+      }
+      
       // Contact filters
       if (filters.hasPhone && !cl.lead?.phone) return false
       if (filters.hasEmail && !cl.lead?.email) return false
@@ -882,7 +890,7 @@ export default function OutreachToolPage() {
                       <Filter className="h-4 w-4 mr-2" />
                       Filters
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials ||
-                        filters.statusFilter !== 'all' || filters.selectedNicheFilter.length > 0) && (
+                        filters.statusFilter !== 'all' || filters.selectedNicheFilter.length > 0 || filters.minScore > 0) && (
                         <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
                           Active
                         </Badge>
@@ -1006,7 +1014,7 @@ export default function OutreachToolPage() {
                         onClick={() => setFilters({
                           hasPhone: false, hasEmail: false, hasWebsite: false, hasSocials: false,
                           socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false },
-                          selectedNicheFilter: [], statusFilter: 'all'
+                          selectedNicheFilter: [], statusFilter: 'all', minScore: 0
                         })}
                         variant="ghost"
                         size="sm"
@@ -1017,23 +1025,29 @@ export default function OutreachToolPage() {
                       </Button>
                     </div>
                     
-                    {/* Status Filter */}
+                    {/* Score Filter */}
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-400">Status</Label>
-                      <Select value={filters.statusFilter} onValueChange={(value) => setFilters(prev => ({ ...prev, statusFilter: value }))}>
-                        <SelectTrigger className="w-full bg-[#1A1A1A] border-[#333] text-gray-400">
-                          <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                          <SelectItem value="all">All Statuses</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="responded">Responded</SelectItem>
-                          <SelectItem value="qualified">Qualified</SelectItem>
-                          <SelectItem value="signed">Signed</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-sm font-medium text-gray-400">Minimum Score</Label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map((score) => (
+                          <Button
+                            key={score}
+                            onClick={() => setFilters(prev => ({ ...prev, minScore: score }))}
+                            variant={filters.minScore === score ? 'default' : 'outline'}
+                            size="sm"
+                            className={`h-8 text-xs ${
+                              filters.minScore === score
+                                ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                            }`}
+                          >
+                            {score === 0 ? 'All' : `${score}+`}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Showing leads with score {filters.minScore === 0 ? 'of any value' : `${filters.minScore} or higher`}
+                      </div>
                     </div>
                     
                     {/* Contact Filters */}
@@ -1904,7 +1918,7 @@ export default function OutreachToolPage() {
 
         {/* Lead Score Breakdown Dialog */}
         <Dialog open={showScoreBreakdown} onOpenChange={setShowScoreBreakdown}>
-          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-2xl">
+          <DialogContent className="bg-[#1A1A1A] border-[#333] max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 <Calculator className="h-5 w-5 text-gray-400" />
@@ -1917,7 +1931,7 @@ export default function OutreachToolPage() {
             
             <div className="py-4">
               {selectedScoreBreakdown && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Score Summary */}
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
