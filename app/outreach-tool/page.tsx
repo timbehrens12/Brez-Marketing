@@ -258,6 +258,26 @@ export default function OutreachToolPage() {
     }
   }
 
+  // Get available status options based on current status (chronological progression)
+  const getAvailableStatuses = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'pending':
+        return ['pending', 'contacted']
+      case 'contacted':
+        return ['contacted', 'responded', 'rejected']
+      case 'responded':
+        return ['responded', 'qualified', 'rejected']
+      case 'qualified':
+        return ['qualified', 'signed', 'rejected']
+      case 'signed':
+        return ['signed'] // Can't change from signed
+      case 'rejected':
+        return ['rejected'] // Can't change from rejected (but this shouldn't show anyway)
+      default:
+        return ['pending', 'contacted', 'responded', 'qualified', 'signed', 'rejected']
+    }
+  }
+
   const updateCampaignLeadStatus = async (campaignLeadId: string, newStatus: string) => {
     // Show confirmation dialog for rejected status
     if (newStatus === 'rejected') {
@@ -983,42 +1003,19 @@ export default function OutreachToolPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent className="bg-[#1A1A1A] border-[#333]">
-                                  <SelectItem value="pending">
+                                {getAvailableStatuses(campaignLead.status).map((status) => (
+                                  <SelectItem key={status} value={status}>
                                     <div className="flex items-center gap-2">
-                                      <CircleDot className="h-3 w-3" />
-                                      Pending
+                                      {status === 'pending' && <CircleDot className="h-3 w-3" />}
+                                      {status === 'contacted' && <MessageCircle className="h-3 w-3" />}
+                                      {status === 'responded' && <MessageSquare className="h-3 w-3" />}
+                                      {status === 'qualified' && <Star className="h-3 w-3" />}
+                                      {status === 'signed' && <CheckCircle2 className="h-3 w-3" />}
+                                      {status === 'rejected' && <XCircle className="h-3 w-3" />}
+                                      {status.charAt(0).toUpperCase() + status.slice(1)}
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="contacted">
-                                    <div className="flex items-center gap-2">
-                                      <MessageCircle className="h-3 w-3" />
-                                      Contacted
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="responded">
-                                    <div className="flex items-center gap-2">
-                                      <MessageSquare className="h-3 w-3" />
-                                      Responded
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="qualified">
-                                    <div className="flex items-center gap-2">
-                                      <Star className="h-3 w-3" />
-                                      Qualified
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="signed">
-                                    <div className="flex items-center gap-2">
-                                      <CheckCircle2 className="h-3 w-3" />
-                                      Signed
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="rejected">
-                                    <div className="flex items-center gap-2">
-                                      <XCircle className="h-3 w-3" />
-                                      Rejected
-                                    </div>
-                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </TableCell>
