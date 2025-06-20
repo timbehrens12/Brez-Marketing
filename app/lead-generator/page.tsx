@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit } from 'lucide-react'
+import { Loader2, Search, MapPin, Globe, Building2, Phone, Mail, ExternalLink, Send, Star, Plus, TrendingUp, Instagram, Facebook, Linkedin, Sparkles, Filter, RefreshCw, Clock, BarChart3, AlertTriangle, Share2, Edit, Calculator } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { useAuthenticatedSupabase } from '@/lib/utils/supabase-auth-client'
 import { useBrandContext } from '@/lib/context/BrandContext'
@@ -87,6 +87,7 @@ interface LeadFilters {
     twitter: boolean
   }
   selectedNicheFilter: string[]
+  minScore: number
 }
 
 export default function LeadGeneratorPage() {
@@ -225,7 +226,8 @@ export default function LeadGeneratorPage() {
       linkedin: false,
       twitter: false
     },
-    selectedNicheFilter: []
+    selectedNicheFilter: [],
+    minScore: 0
   })
 
   // Load data on component mount
@@ -285,6 +287,80 @@ export default function LeadGeneratorPage() {
   // Get unique niches from current leads
   const availableNichesInLeads = Array.from(new Set(leads.map(lead => lead.niche_name).filter(Boolean))).sort()
 
+  // Lead Scoring System (copied from outreach tool)
+  const calculateLeadScore = (lead: Lead) => {
+    if (!lead) return { total: 0, breakdown: {} }
+    
+    const scores = {
+      contactInfo: 0,
+      socialPresence: 0,
+      businessInfo: 0,
+      geographic: 0,
+      industryBonus: 0
+    }
+    
+    // Contact Information (40 points max)
+    if (lead.email) scores.contactInfo += 15
+    if (lead.phone) scores.contactInfo += 15
+    if (lead.website) scores.contactInfo += 10
+    
+    // Social Media Presence (25 points max)
+    if (lead.instagram_handle) scores.socialPresence += 8
+    if (lead.facebook_page) scores.socialPresence += 6
+    if (lead.linkedin_profile) scores.socialPresence += 8
+    if (lead.twitter_handle) scores.socialPresence += 3
+    
+    // Business Information (20 points max)
+    if (lead.business_name) scores.businessInfo += 5
+    if (lead.owner_name) scores.businessInfo += 8
+    if (lead.niche_name) scores.businessInfo += 7
+    
+    // Geographic (10 points max)
+    if (lead.city) scores.geographic += 3
+    if (lead.state_province) scores.geographic += 4
+    if (lead.city && lead.state_province) scores.geographic += 3 // Bonus for complete location
+    
+    // Industry Bonus (5 points max)
+    const highValueIndustries = ['technology', 'healthcare', 'finance', 'real estate', 'e-commerce', 'saas']
+    if (lead.niche_name && highValueIndustries.some(industry => 
+      lead.niche_name?.toLowerCase().includes(industry)
+    )) {
+      scores.industryBonus += 5
+    }
+    
+    const total = Object.values(scores).reduce((sum, score) => sum + score, 0)
+    
+    return {
+      total,
+      breakdown: {
+        contactInfo: { score: scores.contactInfo, max: 40, items: [
+          { name: 'Email Address', value: lead.email ? 15 : 0, max: 15, has: !!lead.email },
+          { name: 'Phone Number', value: lead.phone ? 15 : 0, max: 15, has: !!lead.phone },
+          { name: 'Website', value: lead.website ? 10 : 0, max: 10, has: !!lead.website }
+        ]},
+        socialPresence: { score: scores.socialPresence, max: 25, items: [
+          { name: 'Instagram', value: lead.instagram_handle ? 8 : 0, max: 8, has: !!lead.instagram_handle },
+          { name: 'Facebook', value: lead.facebook_page ? 6 : 0, max: 6, has: !!lead.facebook_page },
+          { name: 'LinkedIn', value: lead.linkedin_profile ? 8 : 0, max: 8, has: !!lead.linkedin_profile },
+          { name: 'Twitter/X', value: lead.twitter_handle ? 3 : 0, max: 3, has: !!lead.twitter_handle }
+        ]},
+        businessInfo: { score: scores.businessInfo, max: 20, items: [
+          { name: 'Business Name', value: lead.business_name ? 5 : 0, max: 5, has: !!lead.business_name },
+          { name: 'Owner Name', value: lead.owner_name ? 8 : 0, max: 8, has: !!lead.owner_name },
+          { name: 'Industry/Niche', value: lead.niche_name ? 7 : 0, max: 7, has: !!lead.niche_name }
+        ]},
+        geographic: { score: scores.geographic, max: 10, items: [
+          { name: 'City', value: lead.city ? 3 : 0, max: 3, has: !!lead.city },
+          { name: 'State/Province', value: lead.state_province ? 4 : 0, max: 4, has: !!lead.state_province },
+          { name: 'Complete Location', value: (lead.city && lead.state_province) ? 3 : 0, max: 3, has: !!(lead.city && lead.state_province) }
+        ]},
+        industryBonus: { score: scores.industryBonus, max: 5, items: [
+          { name: 'High-Value Industry', value: scores.industryBonus, max: 5, has: scores.industryBonus > 0 }
+        ]}
+      }
+    }
+  }
+
   const applyFilters = () => {
     let filtered = [...leads]
     
@@ -336,6 +412,14 @@ export default function LeadGeneratorPage() {
       filtered = filtered.filter(lead => 
         lead.niche_name && filters.selectedNicheFilter.includes(lead.niche_name)
       )
+    }
+    
+    // Apply score filter
+    if (filters.minScore > 0) {
+      filtered = filtered.filter(lead => {
+        const score = calculateLeadScore(lead).total
+        return score >= filters.minScore
+      })
     }
     
     setFilteredLeads(filtered)
@@ -1473,7 +1557,8 @@ export default function LeadGeneratorPage() {
                       Filters
                       {(filters.hasPhone || filters.hasEmail || filters.hasWebsite || filters.hasSocials || 
                         filters.socialPlatforms.instagram || filters.socialPlatforms.facebook || 
-                        filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter) && (
+                        filters.socialPlatforms.linkedin || filters.socialPlatforms.twitter || 
+                        filters.minScore > 0 || filters.selectedNicheFilter.length > 0) && (
                         <Badge className="ml-2 bg-blue-600/20 text-blue-300" variant="secondary">
                           Active
                         </Badge>
@@ -1534,7 +1619,7 @@ export default function LeadGeneratorPage() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-medium text-gray-400">Quick Filters</Label>
                       <Button
-                        onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasSocials: false, socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false }, selectedNicheFilter: [] })}
+                          onClick={() => setFilters({ hasPhone: false, hasEmail: false, hasWebsite: false, hasSocials: false, socialPlatforms: { instagram: false, facebook: false, linkedin: false, twitter: false }, selectedNicheFilter: [], minScore: 0 })}
                         variant="ghost"
                         size="sm"
                         className="text-gray-400 hover:text-white"
@@ -1689,10 +1774,35 @@ export default function LeadGeneratorPage() {
                       )}
                     </div>
                     
-                    {/* Niche Filter */}
-                    {availableNichesInLeads.length > 0 && (
+                                          {/* Score Filter */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-400">Filter by Niche</Label>
+                        <Label className="text-sm font-medium text-gray-400">Minimum Score</Label>
+                        <div className="grid grid-cols-5 gap-2">
+                          {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map((score) => (
+                            <Button
+                              key={score}
+                              onClick={() => setFilters(prev => ({ ...prev, minScore: score }))}
+                              variant={filters.minScore === score ? 'default' : 'outline'}
+                              size="sm"
+                              className={`h-8 text-xs ${
+                                filters.minScore === score
+                                  ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                                  : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                              }`}
+                            >
+                              {score === 0 ? 'All' : `${score}+`}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Showing leads with score {filters.minScore === 0 ? 'of any value' : `${filters.minScore} or higher`}
+                        </div>
+                      </div>
+
+                      {/* Niche Filter */}
+                      {availableNichesInLeads.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-400">Filter by Niche</Label>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
                           {availableNichesInLeads.map((nicheName) => (
                             <div key={nicheName || 'unknown'} className="flex items-center space-x-2">
@@ -1742,6 +1852,7 @@ export default function LeadGeneratorPage() {
                           />
                         </TableHead>
                         <TableHead className="text-gray-400">Business</TableHead>
+                        <TableHead className="text-gray-400">Score</TableHead>
                         <TableHead className="text-gray-400">Contact</TableHead>
                         <TableHead className="text-gray-400">Social Media</TableHead>
                         {businessType === 'ecommerce' ? (
@@ -1793,6 +1904,27 @@ export default function LeadGeneratorPage() {
                                   Website
                                 </a>
                               )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 p-1 hover:bg-[#333] text-gray-300 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Could add score breakdown dialog here in the future
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  <Calculator className="h-3 w-3" />
+                                  <span className="font-mono text-sm">
+                                    {calculateLeadScore(lead).total}
+                                  </span>
+                                </div>
+                              </Button>
+                              <div className="text-xs text-gray-500">/100</div>
                             </div>
                           </TableCell>
                           <TableCell>
