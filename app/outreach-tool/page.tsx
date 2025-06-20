@@ -572,65 +572,95 @@ export default function OutreachToolPage() {
           </Card>
         )}
 
-        {/* Simplified Analytics Cards */}
+        {/* Enhanced Analytics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Total Leads</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.totalLeads}</div>
-              <p className="text-xs text-gray-500 mt-1">In pipeline</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-white">{stats.totalLeads}</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Total Leads</div>
+                    <div className="text-xs text-gray-500">In pipeline</div>
+                  </div>
+                </div>
+                <Users className="h-6 w-6 text-gray-400" />
+              </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Pending</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.pending}</div>
-              <p className="text-xs text-gray-500 mt-1">Need outreach</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-blue-400">{stats.pending}</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Pending</div>
+                    <div className="text-xs text-gray-500">Need outreach</div>
+                  </div>
+                </div>
+                <CircleDot className="h-6 w-6 text-blue-400" />
+              </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Contacted</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.contacted}</div>
-              <p className="text-xs text-gray-500 mt-1">{stats.responseRate}% response</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-green-400">{stats.contacted}</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Contacted</div>
+                    <div className="text-xs text-green-400">{stats.responseRate}% response</div>
+                  </div>
+                </div>
+                <MessageCircle className="h-6 w-6 text-green-400" />
+              </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Responded</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.responded}</div>
-              <p className="text-xs text-gray-500 mt-1">Active conversations</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-purple-400">{stats.responded}</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Responded</div>
+                    <div className="text-xs text-gray-500">Active conversations</div>
+                  </div>
+                </div>
+                <MessageSquare className="h-6 w-6 text-purple-400" />
+              </div>
             </CardContent>
           </Card>
           
-          <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Qualified</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.qualified}</div>
-              <p className="text-xs text-gray-500 mt-1">Ready to close</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-yellow-400">{stats.qualified}</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Qualified</div>
+                    <div className="text-xs text-gray-500">Ready to close</div>
+                  </div>
+                </div>
+                <Star className="h-6 w-6 text-yellow-400" />
+              </div>
             </CardContent>
           </Card>
           
-            <Card className="bg-[#1A1A1A] border-[#333]">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-gray-400">Conversion</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-white">{stats.conversionRate}%</div>
-              <p className="text-xs text-gray-500 mt-1">{stats.signed} signed</p>
+          <Card className="bg-[#1A1A1A] border-[#333] hover:bg-[#222] transition-colors">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl font-bold text-green-500">{stats.conversionRate}%</div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-300">Conversion</div>
+                    <div className="text-xs text-green-400">{stats.signed} signed</div>
+                  </div>
+                </div>
+                <TrendingUp className="h-6 w-6 text-green-500" />
+              </div>
             </CardContent>
           </Card>
         </div>
