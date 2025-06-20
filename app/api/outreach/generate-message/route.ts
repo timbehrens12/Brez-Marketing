@@ -68,9 +68,9 @@ Revenue Estimate: ${lead.estimated_revenue ? `$${lead.estimated_revenue}` : 'Unk
 `
 
     const brandContext = `
-Agency Name: ${brandInfo?.name || 'Digital Marketing Agency'}
-Industry: ${brandInfo?.industry || 'Digital Marketing'}
-Value Proposition: ${brandInfo?.value_prop || 'We help businesses grow through digital marketing'}
+Agency Name: {YOUR_AGENCY_NAME}
+Industry: Digital Marketing
+Value Proposition: We help businesses grow through digital marketing using exclusive AI technology
 
 EXCLUSIVE ADVANTAGE: You have access to proprietary AI-powered marketing software that:
 - Uses advanced computer intelligence to optimize campaigns 24/7
@@ -80,6 +80,8 @@ EXCLUSIVE ADVANTAGE: You have access to proprietary AI-powered marketing softwar
 - Automatically optimizes targeting, budgets, and creatives using AI
 - Predicts campaign performance before spending money
 - Continuously learns and improves results beyond human capability
+
+IMPORTANT: Use {YOUR_AGENCY_NAME} or {YOUR_BRAND} as placeholders for the sender's brand name so users can customize it.
 `
 
     const campaignContext = campaign_context ? `
@@ -176,7 +178,8 @@ Key principles:
 3. Show industry understanding
 4. Clear, low-pressure call-to-action
 5. Professional but conversational tone
-6. Focus on results they care about`
+6. Focus on results they care about
+7. Use {YOUR_AGENCY_NAME} or {YOUR_BRAND} placeholders for sender's business name`
       : `You are an expert sales copywriter and digital marketing strategist. Your job is to create highly personalized, effective outreach messages that convert cold leads into interested prospects.
 
 CRITICAL: You represent someone with access to exclusive, limited-access AI-powered marketing software that delivers superior results compared to any other marketer or agency. This software uses advanced computer intelligence to optimize campaigns in ways that traditional marketers simply cannot match.
@@ -192,7 +195,9 @@ Key principles:
 8. Focus on outcomes they care about
 9. Position the AI technology as a competitive advantage that's rarely available
 
-UNIQUE VALUE PROPOSITION: You have access to proprietary AI marketing software that most agencies don't have access to. This gives you an unfair advantage in delivering results.`
+UNIQUE VALUE PROPOSITION: You have access to proprietary AI marketing software that most agencies don't have access to. This gives you an unfair advantage in delivering results.
+
+CRITICAL FORMATTING: Always use clear placeholders like {YOUR_AGENCY_NAME}, {YOUR_BRAND}, {YOUR_COMPANY} when referring to the sender's business. Never use vague phrases like "your brand" or "our team" - use clear bracketed placeholders so users know exactly what to customize.`
 
     const userPrompt = messageType === 'phone'
       ? `Create a ${messageType} outreach message for:
@@ -209,7 +214,8 @@ Requirements:
 - Personalize for their business and industry
 - Emphasize exclusive AI marketing software advantage
 - Professional but conversational tone
-- Clear call-to-action`
+- Clear call-to-action
+- Use {YOUR_AGENCY_NAME} placeholder for sender's business name`
       : `Create a ${messageType} outreach message for this prospect:
 
 ${leadContext}
@@ -229,7 +235,8 @@ Important:
 4. ALWAYS emphasize the exclusive, limited-access AI software advantage
 5. Position this as an opportunity they won't get from other marketers
 6. Highlight superior results through AI optimization without sounding robotic
-7. Make the AI technology sound exclusive and powerful, but keep the tone human`
+7. Make the AI technology sound exclusive and powerful, but keep the tone human
+8. CRITICAL: Use {YOUR_AGENCY_NAME}, {YOUR_BRAND}, or {YOUR_COMPANY} placeholders for the sender's business name - never use vague terms like "your brand" or "our team"`
 
     console.log('🤖 Calling OpenAI with personalized prompt...')
     console.log('📝 Prompt length:', userPrompt.length)
@@ -322,7 +329,6 @@ Important:
       const ownerName = lead?.owner_name || 'there'
       const industry = lead?.niche_name || 'industry'
       const location = lead?.city || 'your area'
-      const brandName = brandInfo?.name || 'Your Marketing Team'
 
       let fallbackMessage = ''
       let fallbackSubject = ''
@@ -346,12 +352,12 @@ The advantage is significant - while other marketers rely on guesswork, I use AI
 Would you be interested in a brief conversation about how this exclusive technology could specifically benefit ${businessName}?
 
 Best regards,
-${brandName}
+{YOUR_AGENCY_NAME}
 
 P.S. This AI software isn't available to most agencies - it's part of what gives my clients an unfair competitive advantage.`
       } else if (messageType === 'phone') {
         fallbackMessage = `**OPENING:**
-"Hi ${ownerName}, this is ${brandName}. I know you're busy with ${businessName}, so I'll be direct. I have access to exclusive AI marketing software that most agencies don't have access to, and it's delivering results that traditional marketers simply can't match. Do you have 30 seconds for me to explain?"
+"Hi ${ownerName}, this is {YOUR_AGENCY_NAME}. I know you're busy with ${businessName}, so I'll be direct. I have access to exclusive AI marketing software that most agencies don't have access to, and it's delivering results that traditional marketers simply can't match. Do you have 30 seconds for me to explain?"
 
 **VALUE PROP:**
 "Great! So while most marketers in the ${industry} rely on guesswork and manual optimization, I use proprietary AI technology that works 24/7 to optimize campaigns using advanced computer intelligence. It's like having a world-class data scientist working around the clock, but it's actually AI that continuously learns and improves."
@@ -373,7 +379,7 @@ While other marketers in the ${industry} rely on guesswork, this AI optimizes ca
 Interested in seeing how this exclusive technology could benefit ${businessName}?
 
 Best,
-${brandName}`
+{YOUR_AGENCY_NAME}`
       }
 
       console.log('🔄 Using enhanced fallback template')

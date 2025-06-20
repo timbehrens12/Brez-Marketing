@@ -119,6 +119,7 @@ export default function OutreachToolPage() {
   const [selectedLeads, setSelectedLeads] = useState<string[]>([])
   const [isSelectAll, setIsSelectAll] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [justCopied, setJustCopied] = useState(false)
   
   // Advanced filters state
   const [filters, setFilters] = useState<LeadFilters>({
@@ -227,6 +228,9 @@ export default function OutreachToolPage() {
 
   const generatePersonalizedMessage = async (lead: Lead, method: string) => {
     setIsGeneratingMessage(true)
+    setGeneratedMessage('') // Clear previous message
+    setMessageSubject('') // Clear previous subject
+    setJustCopied(false) // Reset copy state
     try {
       // Enhanced AI context with correct API format
       const aiContext = {
@@ -1606,11 +1610,17 @@ export default function OutreachToolPage() {
                   <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-gray-300 mb-4">Call Script</h3>
                     <div className="space-y-4 text-gray-300 whitespace-pre-wrap font-mono text-sm">
-                      {generatedMessage || (
+                      {isGeneratingMessage ? (
                         <div className="text-center py-8 text-gray-500">
                           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                           Generating personalized call script...
-                  </div>
+                        </div>
+                      ) : generatedMessage ? (
+                        generatedMessage
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <div className="text-gray-400">Call script will appear here...</div>
+                        </div>
                       )}
                   </div>
                   </div>
@@ -1618,12 +1628,14 @@ export default function OutreachToolPage() {
                                       <Button
                       onClick={() => {
                         navigator.clipboard.writeText(generatedMessage)
-                        toast.success('✅ Call script copied to clipboard! Ready to make your AI-optimized call.')
+                        setJustCopied(true)
+                        setTimeout(() => setJustCopied(false), 2000)
+                        toast.success('✅ Copied! Ready to make your AI-optimized call.')
                       }}
                   className="w-full bg-[#444] hover:bg-[#555] text-white"
                     >
                       <Copy className="h-4 w-4 mr-2" />
-                      Copy Script
+                      {justCopied ? 'Copied!' : 'Copy Script'}
                   </Button>
                 )}
               </div>
@@ -1642,12 +1654,16 @@ export default function OutreachToolPage() {
                 <div>
                     <Label className="text-gray-400 mb-2">Message</Label>
                     <div className="bg-[#2A2A2A] border border-[#444] rounded-lg p-4 min-h-[200px]">
-                      {generatedMessage ? (
-                        <p className="text-gray-300 whitespace-pre-wrap">{generatedMessage}</p>
-                      ) : (
+                      {isGeneratingMessage ? (
                         <div className="text-center py-8 text-gray-500">
                           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                           Generating personalized message...
+                        </div>
+                      ) : generatedMessage ? (
+                        <p className="text-gray-300 whitespace-pre-wrap">{generatedMessage}</p>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <div className="text-gray-400">Message will appear here...</div>
                         </div>
                       )}
                     </div>
@@ -1662,12 +1678,14 @@ export default function OutreachToolPage() {
                             : generatedMessage
                           
                           navigator.clipboard.writeText(fullMessage)
-                          toast.success('✅ Message copied to clipboard! Ready to send your AI-powered outreach.')
+                          setJustCopied(true)
+                          setTimeout(() => setJustCopied(false), 2000)
+                          toast.success('✅ Copied! Ready to send your AI-powered outreach.')
                         }}
                         className="flex-1 bg-[#444] hover:bg-[#555] text-white"
                   >
                     <Copy className="h-4 w-4 mr-2" />
-                    Copy Message
+                    {justCopied ? 'Copied!' : 'Copy Message'}
                   </Button>
                   <Button
                         onClick={() => {
