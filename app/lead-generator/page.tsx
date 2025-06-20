@@ -1895,31 +1895,28 @@ export default function LeadGeneratorPage() {
                               {!lead.owner_name && !lead.email && !lead.phone && <span className="text-gray-500">-</span>}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 p-1 hover:bg-[#333] text-gray-300 hover:text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const scoreData = calculateLeadScore(lead)
-                                  setSelectedScoreBreakdown({
-                                    lead: lead,
-                                    scoreData
-                                  })
-                                  setShowScoreBreakdown(true)
-                                }}
-                              >
-                                <div className="flex items-center gap-1">
-                                  <Calculator className="h-3 w-3" />
-                                  <span className="font-mono text-sm">
-                                    {lead.lead_score || calculateLeadScore(lead).total}
-                                  </span>
-                                </div>
-                              </Button>
-                              <div className="text-xs text-gray-500">/100</div>
-                            </div>
+                          <TableCell className="w-20">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 hover:bg-[#333] text-gray-300 hover:text-white"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const scoreData = calculateLeadScore(lead)
+                                setSelectedScoreBreakdown({
+                                  lead: lead,
+                                  scoreData
+                                })
+                                setShowScoreBreakdown(true)
+                              }}
+                            >
+                              <div className="flex items-center gap-1">
+                                <Calculator className="h-3 w-3" />
+                                <span className="font-mono text-xs">
+                                  {lead.lead_score || calculateLeadScore(lead).total}
+                                </span>
+                              </div>
+                            </Button>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center relative max-w-[100px]">
