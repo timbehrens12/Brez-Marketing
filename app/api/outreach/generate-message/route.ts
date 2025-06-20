@@ -164,7 +164,9 @@ Format as a structured call script with clear sections.`,
       throw new Error('OpenAI API key not configured')
     }
 
-    const systemPrompt = `You are an expert sales copywriter. Create personalized outreach messages that convert cold leads.
+    // Enhanced prompt for GPT-4 (email/DM), simplified for GPT-3.5-turbo (phone)
+    const systemPrompt = messageType === 'phone' 
+      ? `You are an expert sales copywriter. Create personalized outreach messages that convert cold leads.
 
 You represent someone with exclusive AI-powered marketing software that delivers superior results. This AI technology gives an unfair competitive advantage.
 
@@ -175,8 +177,25 @@ Key principles:
 4. Clear, low-pressure call-to-action
 5. Professional but conversational tone
 6. Focus on results they care about`
+      : `You are an expert sales copywriter and digital marketing strategist. Your job is to create highly personalized, effective outreach messages that convert cold leads into interested prospects.
 
-    const userPrompt = `Create a ${messageType} outreach message for:
+CRITICAL: You represent someone with access to exclusive, limited-access AI-powered marketing software that delivers superior results compared to any other marketer or agency. This software uses advanced computer intelligence to optimize campaigns in ways that traditional marketers simply cannot match.
+
+Key principles:
+1. Always reference specific details about their business
+2. Emphasize the EXCLUSIVE, LIMITED ACCESS to AI-powered marketing technology
+3. Highlight that this AI software delivers results NO OTHER marketer can achieve
+4. Show understanding of their industry challenges
+5. Include social proof when relevant
+6. Make the call-to-action clear and low-pressure
+7. Write in a conversational, professional tone (not robotic)
+8. Focus on outcomes they care about
+9. Position the AI technology as a competitive advantage that's rarely available
+
+UNIQUE VALUE PROPOSITION: You have access to proprietary AI marketing software that most agencies don't have access to. This gives you an unfair advantage in delivering results.`
+
+    const userPrompt = messageType === 'phone'
+      ? `Create a ${messageType} outreach message for:
 
 Business: ${lead.business_name}
 Owner: ${lead.owner_name || 'Unknown'}
@@ -191,18 +210,45 @@ Requirements:
 - Emphasize exclusive AI marketing software advantage
 - Professional but conversational tone
 - Clear call-to-action`
+      : `Create a ${messageType} outreach message for this prospect:
+
+${leadContext}
+
+${brandContext}
+
+${campaignContext}
+
+${instructionsContext}
+
+${methodPrompt}
+
+Important: 
+1. Make this message feel personally crafted for this specific business
+2. Reference their industry, location, or other relevant details
+3. Do NOT use generic templates
+4. ALWAYS emphasize the exclusive, limited-access AI software advantage
+5. Position this as an opportunity they won't get from other marketers
+6. Highlight superior results through AI optimization without sounding robotic
+7. Make the AI technology sound exclusive and powerful, but keep the tone human`
 
     console.log('🤖 Calling OpenAI with personalized prompt...')
     console.log('📝 Prompt length:', userPrompt.length)
 
+    // Use GPT-4 for email/DM (better quality) and GPT-3.5-turbo for phone (faster)
+    const model = messageType === 'phone' ? "gpt-3.5-turbo" : "gpt-4"
+    const maxTokens = messageType === 'phone' ? 500 : 800
+    const timeout = messageType === 'phone' ? 20000 : 30000 // Phone: 20s, Others: 30s
+    
+    console.log(`📱 Using ${model} for ${messageType} outreach`)
+
     // Create timeout controller
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 seconds
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     let aiResponse: string | null | undefined
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: model,
         messages: [
           {
             role: "system",
@@ -213,14 +259,14 @@ Requirements:
             content: userPrompt
           }
         ],
-        max_tokens: 500,
+        max_tokens: maxTokens,
         temperature: 0.7,
       }, {
         signal: controller.signal
       })
 
       clearTimeout(timeoutId)
-      console.log('✅ OpenAI call successful')
+      console.log(`✅ ${model} call successful for ${messageType} outreach`)
 
       aiResponse = completion.choices[0]?.message?.content
     } catch (openaiError) {
