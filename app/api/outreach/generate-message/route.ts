@@ -2,15 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import OpenAI from 'openai'
 
-// Initialize OpenAI with proper error handling
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-}) : null
-
-// Check if OpenAI API key is configured
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('⚠️ OpenAI API key not configured - will use fallback templates')
-}
+})
 
 export async function POST(request: NextRequest) {
   let requestBody: any = null
@@ -164,77 +158,76 @@ Format as a structured call script with clear sections.`,
 
     const methodPrompt = methodPrompts[messageType as keyof typeof methodPrompts] || methodPrompts.email
 
-    // Check if OpenAI is available
-    if (!openai || !process.env.OPENAI_API_KEY) {
-      console.log('⚠️ OpenAI not available, using enhanced fallback')
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('⚠️ OpenAI API key not configured, using enhanced fallback')
       throw new Error('OpenAI API key not configured')
     }
 
-    const systemPrompt = `You are an expert sales copywriter and digital marketing strategist. Your job is to create highly personalized, effective outreach messages that convert cold leads into interested prospects.
+    const systemPrompt = `You are an expert sales copywriter. Create personalized outreach messages that convert cold leads.
 
-CRITICAL: You represent someone with access to exclusive, limited-access AI-powered marketing software that delivers superior results compared to any other marketer or agency. This software uses advanced computer intelligence to optimize campaigns in ways that traditional marketers simply cannot match.
+You represent someone with exclusive AI-powered marketing software that delivers superior results. This AI technology gives an unfair competitive advantage.
 
 Key principles:
-1. Always reference specific details about their business
-2. Emphasize the EXCLUSIVE, LIMITED ACCESS to AI-powered marketing technology
-3. Highlight that this AI software delivers results NO OTHER marketer can achieve
-4. Show understanding of their industry challenges
-5. Include social proof when relevant
-6. Make the call-to-action clear and low-pressure
-7. Write in a conversational, professional tone (not robotic)
-8. Focus on outcomes they care about
-9. Position the AI technology as a competitive advantage that's rarely available
+1. Reference specific business details
+2. Emphasize EXCLUSIVE ACCESS to AI marketing technology  
+3. Show industry understanding
+4. Clear, low-pressure call-to-action
+5. Professional but conversational tone
+6. Focus on results they care about`
 
-UNIQUE VALUE PROPOSITION: You have access to proprietary AI marketing software that most agencies don't have access to. This gives you an unfair advantage in delivering results.`
+    const userPrompt = `Create a ${messageType} outreach message for:
 
-    const userPrompt = `Create a ${messageType} outreach message for this prospect:
-
-${leadContext}
-
-${brandContext}
-
-${campaignContext}
-
-${instructionsContext}
+Business: ${lead.business_name}
+Owner: ${lead.owner_name || 'Unknown'}
+Industry: ${lead.niche_name || 'Unknown'}
+Location: ${lead.city}, ${lead.state_province}
+Website: ${lead.website || 'None'}
 
 ${methodPrompt}
 
-Important: 
-1. Make this message feel personally crafted for this specific business
-2. Reference their industry, location, or other relevant details
-3. Do NOT use generic templates
-4. ALWAYS emphasize the exclusive, limited-access AI software advantage
-5. Position this as an opportunity they won't get from other marketers
-6. Highlight superior results through AI optimization without sounding robotic
-7. Make the AI technology sound exclusive and powerful, but keep the tone human`
+Requirements:
+- Personalize for their business and industry
+- Emphasize exclusive AI marketing software advantage
+- Professional but conversational tone
+- Clear call-to-action`
 
     console.log('🤖 Calling OpenAI with personalized prompt...')
+    console.log('📝 Prompt length:', userPrompt.length)
 
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('OpenAI request timed out')), 25000) // 25 seconds
-    })
+    // Create timeout controller
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 seconds
 
-    // Race the OpenAI call against the timeout
-    const openaiPromise = openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user", 
-          content: userPrompt
-        }
-      ],
-      max_tokens: 800,
-      temperature: 0.7,
-    })
+    let aiResponse: string | null | undefined
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user", 
+            content: userPrompt
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      }, {
+        signal: controller.signal
+      })
 
-    const completion = await Promise.race([openaiPromise, timeoutPromise]) as any
+      clearTimeout(timeoutId)
+      console.log('✅ OpenAI call successful')
 
-    const aiResponse = completion.choices[0]?.message?.content
+      aiResponse = completion.choices[0]?.message?.content
+    } catch (openaiError) {
+      clearTimeout(timeoutId)
+      console.error('❌ OpenAI API error:', openaiError)
+      throw openaiError
+    }
 
     if (!aiResponse) {
       throw new Error('No response from OpenAI')
