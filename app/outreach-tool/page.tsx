@@ -692,6 +692,89 @@ export default function OutreachToolPage() {
                   </div>
                 </div>
 
+                {/* Quick Status Filters */}
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'all' }))}
+                      variant={filters.statusFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'all'
+                          ? 'bg-gray-600 text-white border-gray-600 hover:bg-gray-700'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      All ({stats.totalLeads})
+                    </Button>
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'pending' }))}
+                      variant={filters.statusFilter === 'pending' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'pending'
+                          ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <CircleDot className="h-3 w-3 mr-1" />
+                      Pending ({stats.pending})
+                    </Button>
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'contacted' }))}
+                      variant={filters.statusFilter === 'contacted' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'contacted'
+                          ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <MessageCircle className="h-3 w-3 mr-1" />
+                      Contacted ({stats.contacted})
+                    </Button>
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'responded' }))}
+                      variant={filters.statusFilter === 'responded' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'responded'
+                          ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Responded ({stats.responded})
+                    </Button>
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'qualified' }))}
+                      variant={filters.statusFilter === 'qualified' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'qualified'
+                          ? 'bg-yellow-600 text-white border-yellow-600 hover:bg-yellow-700'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <Star className="h-3 w-3 mr-1" />
+                      Qualified ({stats.qualified})
+                    </Button>
+                    <Button
+                      onClick={() => setFilters(prev => ({ ...prev, statusFilter: 'signed' }))}
+                      variant={filters.statusFilter === 'signed' ? 'default' : 'outline'}
+                      size="sm"
+                      className={`h-8 text-xs ${
+                        filters.statusFilter === 'signed'
+                          ? 'bg-green-700 text-white border-green-700 hover:bg-green-800'
+                          : 'bg-[#2A2A2A] border-[#444] text-gray-400 hover:bg-[#333] hover:text-white'
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Signed ({stats.signed})
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Advanced Filters Panel */}
                 {showFilters && (
                   <div className="mb-4 p-4 bg-[#2A2A2A] border border-[#444] rounded-lg space-y-4">
