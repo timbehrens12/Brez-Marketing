@@ -402,10 +402,10 @@ Generate a ${messageType} message for this lead. Make it highly personalized and
 
     if (messageType === 'email' && aiResponse.includes('Subject:')) {
       const lines = aiResponse.split('\n')
-      const subjectLine = lines.find(line => line.toLowerCase().startsWith('subject:'))
+      const subjectLine = lines.find((line: string) => line.toLowerCase().startsWith('subject:'))
       if (subjectLine) {
         subject = subjectLine.replace(/^subject:\s*/i, '').trim()
-        message = lines.filter(line => !line.toLowerCase().startsWith('subject:')).join('\n').trim()
+        message = lines.filter((line: string) => !line.toLowerCase().startsWith('subject:')).join('\n').trim()
       }
     }
 
@@ -477,11 +477,11 @@ CLOSING:
 
       linkedin: `Hi ${requestBody?.lead?.owner_name || '[Name]'},
 
-I came across ${requestBody?.lead?.business_name || 'your company'} and was impressed by ${requestBody?.lead?.niche_name ? `your work in the ${requestBody.lead.niche_name} space` : 'what you're building'}.
+I came across ${requestBody?.lead?.business_name || 'your company'} and was impressed by ${requestBody?.lead?.niche_name ? 'your work in the ' + requestBody.lead.niche_name + ' space' : 'what you\'re building'}.
 
 I wanted to connect because I have access to exclusive AI-powered marketing technology that's only available to a select group of marketers. This isn't typical automation - it's advanced AI that optimizes campaigns 24/7 and delivers results that traditional agencies simply can't match.
 
-${requestBody?.lead?.niche_name ? `For ${requestBody.lead.niche_name} businesses, we're seeing 150-300% better ROI compared to conventional marketing.` : ''}
+${requestBody?.lead?.niche_name ? 'For ' + requestBody.lead.niche_name + ' businesses, we\'re seeing 150-300% better ROI compared to conventional marketing.' : ''}
 
 The AI technology predicts performance before spending money and continuously improves beyond human capability. It's like having a team of data scientists working on your marketing around the clock.
 
@@ -527,8 +527,8 @@ Would love to chat about how this could help ${requestBody?.lead?.business_name 
 
     console.log('⚠️ Using enhanced fallback template')
     return NextResponse.json({
-      message: fallback.message || fallback,
-      subject: fallback.subject || '',
+      message: typeof fallback === 'string' ? fallback : fallback.message,
+      subject: typeof fallback === 'string' ? '' : (fallback.subject || ''),
       ai_generated: false,
       error: 'AI service temporarily unavailable, using enhanced template'
     })
